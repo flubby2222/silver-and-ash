@@ -20,6 +20,12 @@ public sealed class TickAccumulator
     public float LeftoverSeconds => _leftoverSeconds;
 
     /// <summary>
+    /// How far the current moment is between the last tick and the next one: 0 = exactly at the last tick,
+    /// almost 1 = just before the next. Used to blend positions for smooth drawing (interpolation).
+    /// </summary>
+    public float Alpha => Math.Clamp(_leftoverSeconds / SimulationClock.SecondsPerTick, 0f, 1f);
+
+    /// <summary>
     /// Adds the real time of one frame and returns how many simulation ticks should run now.
     /// </summary>
     public int Advance(float elapsedSeconds)

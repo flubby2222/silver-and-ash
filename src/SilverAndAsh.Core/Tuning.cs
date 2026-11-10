@@ -24,5 +24,14 @@ public static class Tuning
     {
         /// <summary>Height of the eyes above the feet, in metres.</summary>
         public const float EyeHeight = 1.6f;
+
+        /// <summary>Top walking speed in metres per second.</summary>
+        public const float MaxSpeed = 6f;
+
+        /// <summary>Time in seconds to go from standing to top speed (and from top speed to standing).</summary>
+        public const float AccelerationTime = 0.1f;
+
+        /// <summary>Speed change per second, derived from the two values above.</summary>
+        public const float Acceleration = MaxSpeed / AccelerationTime;
     }
 }

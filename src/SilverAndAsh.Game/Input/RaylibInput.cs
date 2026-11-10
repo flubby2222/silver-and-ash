@@ -58,6 +58,12 @@ internal sealed class RaylibInput
 
         _ignoreNextMouseDelta = false;
 
+        // With the mouse released the player is "away from the game": no walking or jumping either.
+        if (!IsMouseCaptured)
+        {
+            return PlayerInput.None;
+        }
+
         return new PlayerInput(ReadMoveKeys(), look, Raylib.IsKeyDown(KeyboardKey.Space));
     }
 

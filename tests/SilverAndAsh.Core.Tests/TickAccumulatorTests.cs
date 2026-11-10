@@ -65,6 +65,26 @@ public class TickAccumulatorTests
         Assert.InRange(accumulator.Advance(0.001f), 0, 1);
     }
 
+    [Fact]
+    public void Alpha_tells_how_far_we_are_towards_the_next_tick()
+    {
+        var accumulator = new TickAccumulator();
+
+        accumulator.Advance(OneTick * 1.25f);
+
+        Assert.Equal(0.25f, accumulator.Alpha, 0.001f);
+    }
+
+    [Fact]
+    public void Alpha_stays_between_zero_and_one()
+    {
+        var accumulator = new TickAccumulator();
+
+        Assert.Equal(0f, accumulator.Alpha);
+        accumulator.Advance(10f);
+        Assert.InRange(accumulator.Alpha, 0f, 1f);
+    }
+
     [Theory]
     [InlineData(-0.1f)]
     [InlineData(float.NaN)]
