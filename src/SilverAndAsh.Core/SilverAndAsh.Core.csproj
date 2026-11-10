@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Game logic and physics. Must NOT reference Raylib or any other rendering library:
+    everything in here has to be testable without a window.
+  -->
+
+</Project>
