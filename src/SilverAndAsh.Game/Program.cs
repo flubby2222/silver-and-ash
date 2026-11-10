@@ -33,23 +33,25 @@ catch (Exception exception) when (exception is IOException or UnauthorizedAccess
 using (log)
 {
     // Last line of defence: crashes on other threads end up in the log, too.
-    AppDomain.CurrentDomain.UnhandledException += (_, args) =>
-        log?.Error("Unhandled exception - the game is crashing.", args.ExceptionObject as Exception);
+    AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        log?.Error("Unhandled exception - the game is crashing.", e.ExceptionObject as Exception);
 
     log?.Info($"Silver & Ash {version} started ({Environment.OSVersion}, .NET {Environment.Version}).");
 
     // Load the level before opening the window: if it is broken, no window flashes up.
-    var levelPath = Path.Combine(AppContext.BaseDirectory, "assets", "levels", "test.txt");
+    // Choose another level with: dotnet run --project src/SilverAndAsh.Game -- --level heights
     Level? level = null;
     try
     {
+        var options = LaunchOptions.Parse(args);
+        var levelPath = options.LevelPath(Path.Combine(AppContext.BaseDirectory, "assets", "levels"));
         level = LevelParser.ParseFile(levelPath);
         log?.Info($"Level '{levelPath}' loaded: {level.Width} x {level.Depth} cells.");
     }
-    catch (Exception exception) when (exception is LevelFormatException or IOException or UnauthorizedAccessException)
+    catch (Exception exception) when (exception is ArgumentException or LevelFormatException or IOException or UnauthorizedAccessException)
     {
-        log?.Error($"Could not load level '{levelPath}'.", exception);
-        Console.Error.WriteLine($"Could not load level '{levelPath}': {exception.Message}");
+        log?.Error("Could not load the level.", exception);
+        Console.Error.WriteLine($"Could not load the level: {exception.Message}");
         Environment.ExitCode = 1;
     }
 

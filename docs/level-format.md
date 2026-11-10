@@ -41,6 +41,16 @@ Die Physik kommt aus [Entscheidung 0002](entscheidungen/0002-spiellogik-von-anfa
 ```
 Eine kleine Treppe nach oben (`123`) und eine Grube (`___`).
 
+## Ein Level starten
+
+Standard ist `assets/levels/test.txt`. Ein anderes Level wählt man beim Start mit `--level <name>` (Dateiname ohne `.txt`):
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --level heights
+```
+
+Die beiden `--` trennen die Optionen für `dotnet` von denen für das Spiel. Erlaubt sind Namen aus Kleinbuchstaben, Ziffern und `-`.
+
 ## Im Code
 
 - Einlesen: [`src/SilverAndAsh.Core/World/LevelParser.cs`](../src/SilverAndAsh.Core/World/LevelParser.cs)
