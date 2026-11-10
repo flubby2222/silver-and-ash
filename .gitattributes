@@ -1,0 +1,10 @@
+# Zeilenenden automatisch vereinheitlichen (Windows/Linux/CI)
+* text=auto
+
+# Binärdateien nie verändern
+*.png binary
+*.jpg binary
+*.glb binary
+*.blend binary
+*.wav binary
+*.ogg binary
