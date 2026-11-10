@@ -29,12 +29,31 @@ public static class CharacterCollision
     private const float Epsilon = 1e-5f;
 
     /// <summary>
+    /// True if <paramref name="cell"/> stops a character whose feet are at <paramref name="feetY"/>:
+    /// solid walls, floors higher than one step, and gaps too low for the character to fit in.
+    /// In version 1.0 all floors and ceilings are equal, so only walls block - the rest prepares stairs and pits.
+    /// </summary>
+    public static bool BlocksMovement(Cell cell, float feetY, float height, float stepHeight)
+    {
+        if (cell.IsSolid)
+        {
+            return true;
+        }
+
+        var tooHighToStepUp = cell.FloorHeight > feetY + stepHeight;
+        var standingHeight = MathF.Max(cell.FloorHeight, feetY);
+        var tooLowToFitIn = cell.CeilingHeight - standingHeight < height;
+        return tooHighToStepUp || tooLowToFitIn;
+    }
+
+    /// <summary>
     /// Moves <paramref name="position"/> by <paramref name="velocity"/> for <paramref name="seconds"/> and resolves
-    /// collisions with solid cells. Height (Y) is not touched. The velocity that comes back has its "into the wall"
-    /// part removed, which makes the character slide along walls.
+    /// collisions with blocking cells (see <see cref="BlocksMovement"/>). Height (Y) is not touched. The velocity
+    /// that comes back has its "into the wall" part removed, which makes the character slide along walls.
     /// </summary>
     public static (Vector3 Position, Vector3 Velocity) Move(
-        Level level, Vector3 position, Vector3 velocity, float radius, float seconds)
+        Level level, Vector3 position, Vector3 velocity, float radius, float seconds,
+        float height = Tuning.Player.Height, float stepHeight = Tuning.Player.StepHeight)
     {
         ArgumentNullException.ThrowIfNull(level);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(radius);
@@ -51,18 +70,90 @@ public static class CharacterCollision
         for (var step = 0; step < steps; step++)
         {
             position += new Vector3(velocity.X, 0f, velocity.Z) * stepSeconds;
-            (position, velocity) = ResolveOverlaps(level, position, velocity, radius);
+            (position, velocity) = ResolveOverlaps(level, position, velocity, radius, height, stepHeight);
         }
 
         return (position, velocity);
     }
 
-    /// <summary>True if a circle at <paramref name="position"/> overlaps any solid cell.</summary>
-    public static bool Overlaps(Level level, Vector3 position, float radius)
+    /// <summary>
+    /// Applies <paramref name="gravity"/> for <paramref name="seconds"/>, moves up or down and keeps the character
+    /// between floor and ceiling. Floor and ceiling come from all walkable cells the circle stands on:
+    /// the highest floor (so a character on the edge of a step stands on the step) and the lowest ceiling.
+    /// </summary>
+    /// <returns>New position and velocity, and whether the character stands on the ground.</returns>
+    public static (Vector3 Position, Vector3 Velocity, bool IsGrounded) MoveVertically(
+        Level level, Vector3 position, Vector3 velocity, float radius, float height, float gravity, float seconds)
+    {
+        ArgumentNullException.ThrowIfNull(level);
+
+        var (floor, ceiling) = FloorAndCeiling(level, position, radius, height);
+
+        // Move with the AVERAGE speed of this tick (start speed and end speed, halved).
+        // Moving with only the start or only the end speed would make every jump slightly too high or too low;
+        // with constant gravity the average is exact.
+        var startSpeed = velocity.Y;
+        var endSpeed = startSpeed - gravity * seconds;
+        position.Y += (startSpeed + endSpeed) / 2f * seconds;
+        velocity.Y = endSpeed;
+
+        // Head hits the ceiling: stop rising.
+        if (position.Y + height > ceiling)
+        {
+            position.Y = ceiling - height;
+            velocity.Y = MathF.Min(velocity.Y, 0f);
+        }
+
+        // Feet reach the floor: stand on it.
+        if (position.Y <= floor)
+        {
+            position.Y = floor;
+            velocity.Y = MathF.Max(velocity.Y, 0f);
+            return (position, velocity, true);
+        }
+
+        return (position, velocity, false);
+    }
+
+    /// <summary>Highest floor and lowest ceiling of all walkable (non-blocking) cells that the circle touches.</summary>
+    public static (float Floor, float Ceiling) FloorAndCeiling(
+        Level level, Vector3 position, float radius,
+        float height = Tuning.Player.Height, float stepHeight = Tuning.Player.StepHeight)
+    {
+        var floor = float.NegativeInfinity;
+        var ceiling = float.PositiveInfinity;
+
+        foreach (var (x, z) in CellsAround(position, radius))
+        {
+            var cell = level[x, z];
+            if (BlocksMovement(cell, position.Y, height, stepHeight) || PenetrationDepth(position, radius, x, z, out _) <= 0f)
+            {
+                continue;
+            }
+
+            floor = MathF.Max(floor, cell.FloorHeight);
+            ceiling = MathF.Min(ceiling, cell.CeilingHeight);
+        }
+
+        if (float.IsNegativeInfinity(floor))
+        {
+            // Should not happen (the circle always touches at least the cell it stands in) - use that cell.
+            var cell = level.CellAt(position);
+            return (cell.FloorHeight, cell.CeilingHeight);
+        }
+
+        return (floor, ceiling);
+    }
+
+    /// <summary>True if a circle at <paramref name="position"/> overlaps any blocking cell.</summary>
+    public static bool Overlaps(
+        Level level, Vector3 position, float radius,
+        float height = Tuning.Player.Height, float stepHeight = Tuning.Player.StepHeight)
     {
         foreach (var (x, z) in CellsAround(position, radius))
         {
-            if (level[x, z].IsSolid && PenetrationDepth(position, radius, x, z, out _) > Epsilon)
+            if (BlocksMovement(level[x, z], position.Y, height, stepHeight)
+                && PenetrationDepth(position, radius, x, z, out _) > Epsilon)
             {
                 return true;
             }
@@ -72,7 +163,7 @@ public static class CharacterCollision
     }
 
     private static (Vector3 Position, Vector3 Velocity) ResolveOverlaps(
-        Level level, Vector3 position, Vector3 velocity, float radius)
+        Level level, Vector3 position, Vector3 velocity, float radius, float height, float stepHeight)
     {
         for (var iteration = 0; iteration < ResolveIterations; iteration++)
         {
@@ -80,7 +171,7 @@ public static class CharacterCollision
 
             foreach (var (x, z) in CellsAround(position, radius))
             {
-                if (!level[x, z].IsSolid)
+                if (!BlocksMovement(level[x, z], position.Y, height, stepHeight))
                 {
                     continue;
                 }

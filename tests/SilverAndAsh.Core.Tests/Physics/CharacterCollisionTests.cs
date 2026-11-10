@@ -174,6 +174,69 @@ public class CharacterCollisionTests
         }
     }
 
+    // Heights: prepared for stairs, platforms and low passages after 1.0.
+    // Row of three cells along X: start (floor 0) | test cell | far cell (floor 0).
+    private static Level RowWithMiddleCell(Cell middle)
+    {
+        var cells = new Cell[3, 1];
+        cells[0, 0] = Cell.Floor;
+        cells[1, 0] = middle;
+        cells[2, 0] = Cell.Floor;
+        return new Level(cells, 0, 0);
+    }
+
+    [Fact]
+    public void A_small_step_can_be_walked_onto()
+    {
+        var level = RowWithMiddleCell(new Cell(false, 0.3f, 3f));
+
+        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), 20);
+
+        Assert.True(position.X > 2.5f, "The step should not block.");
+        Assert.Equal(0.3f, CharacterCollision.FloorAndCeiling(level, position, Radius).Floor);
+    }
+
+    [Fact]
+    public void A_high_ledge_blocks_like_a_wall()
+    {
+        var level = RowWithMiddleCell(new Cell(false, 1f, 3f));
+
+        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), 60);
+
+        Assert.Equal(2f - Radius, position.X, Tolerance);
+    }
+
+    [Fact]
+    public void A_high_ledge_can_be_reached_when_the_feet_are_high_enough()
+    {
+        var level = RowWithMiddleCell(new Cell(false, 1f, 3f));
+
+        // Feet at 0.9 m (in the middle of a jump): the ledge is within one step.
+        var (position, _) = RunTicks(level, level.PlayerStartPosition with { Y = 0.9f }, new Vector3(6f, 0f, 0f), 20);
+
+        Assert.True(position.X > 2.5f);
+    }
+
+    [Fact]
+    public void A_passage_too_low_for_the_player_blocks()
+    {
+        var level = RowWithMiddleCell(new Cell(false, 0f, 1.5f));
+
+        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), 60);
+
+        Assert.Equal(2f - Radius, position.X, Tolerance);
+    }
+
+    [Fact]
+    public void A_lower_floor_does_not_block_so_the_player_can_fall_into_a_pit()
+    {
+        var level = RowWithMiddleCell(new Cell(false, -2f, 3f));
+
+        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), 20);
+
+        Assert.True(position.X > 2.5f);
+    }
+
     private static (Vector3 Position, Vector3 Velocity) RunTicks(Level level, Vector3 position, Vector3 velocity, int ticks)
     {
         var current = (position, velocity);
