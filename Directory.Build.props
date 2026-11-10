@@ -7,5 +7,7 @@
     <!-- Warnings are treated as errors: problems must be fixed, not ignored. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Version for local builds. Release builds override it with the version from the git tag (issue #6). -->
+    <Version>0.0.0-dev</Version>
   </PropertyGroup>
 </Project>
