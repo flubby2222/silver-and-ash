@@ -14,8 +14,20 @@ internal static class LookSettings
     /// <summary>Height of the picture the 3D world is drawn into.</summary>
     public const int RenderHeight = 480;
 
-    /// <summary>Background colour of the 3D world (empty space).</summary>
-    public static readonly Color BackgroundColor = new(20, 16, 24, 255);
+    /// <summary>Dark violet-black that everything fades into with distance.</summary>
+    public static readonly Color FogColor = new(16, 11, 20, 255);
+
+    /// <summary>Background colour of the 3D world - the fog colour, so the end of the view has no hard edge.</summary>
+    public static readonly Color BackgroundColor = FogColor;
+
+    /// <summary>Distance in metres where the fog begins.</summary>
+    public const float FogStart = 2.5f;
+
+    /// <summary>Distance in metres where only fog is left. Also the range of the player's lantern.</summary>
+    public const float FogEnd = 14f;
+
+    /// <summary>Lantern brightness far away (0..1). Close by it is 1.</summary>
+    public const float LanternMinimum = 0.35f;
 
     /// <summary>Colour of the bars when the window shape does not match the picture.</summary>
     public static readonly Color BarColor = Color.Black;

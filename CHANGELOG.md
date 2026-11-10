@@ -11,6 +11,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Das Fenster lässt sich in der Größe ändern; das Bild behält sein Seitenverhältnis (schwarze Balken bei abweichender Form)
 - Flat Shading: Wände, Boden und Decke haben je nach Ausrichtung eine eigene Helligkeit; Ecken sind ohne Kantenlinien erkennbar
 
+### Hinzugefügt
+- Laternenlicht und Nebel: In der Nähe ist es hell, ab etwa 14 m versinkt alles in violett-schwarzem Dunkel
+
 ## [0.2.0] – 2026-11-10 – Bewegung & Physik
 
 Zum ersten Mal ein begehbarer Ort: Du stehst in einem Level, siehst dich um, läufst und springst.
