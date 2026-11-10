@@ -116,7 +116,8 @@ static void RunGame(Level level, string displayVersion)
             var camera = new Camera3D
             {
                 Position = eye,
-                Target = eye + player.View.Forward,
+                // Looking direction, tilted down a little right after landing (the "nod").
+                Target = eye + player.View.ForwardTiltedDown(player.InterpolatedViewTilt(accumulator.Alpha)),
                 Up = Vector3.UnitY,
                 FovY = LookSettings.FieldOfViewDegrees,
                 Projection = CameraProjection.Perspective,

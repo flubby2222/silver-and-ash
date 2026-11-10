@@ -18,6 +18,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Level-Format kennt Podeste (`1`, `2`, `3`) und Gruben (`_`); Beschreibung in `docs/level-format.md`
 - Stufen, Podeste und Gruben werden gezeichnet; man steigt Treppen hinauf, springt auf hohe Podeste und aus Gruben heraus
 - Zweites Testlevel „heights“ mit Treppe, hohem Podest und Grube – starten mit `--level heights`
+- Landungs-Nicken: Beim Aufkommen sackt der Blick kurz ab und neigt sich – je tiefer der Fall, desto stärker
 
 ## [0.2.0] – 2026-11-10 – Bewegung & Physik
 
