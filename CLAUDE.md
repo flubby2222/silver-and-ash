@@ -35,6 +35,7 @@ Ein Pull Request darf gemergt werden, wenn:
 ## Sprachen
 
 - **Code auf Englisch** (Namen, Kommentare).
+- **Texte im Spiel auf Englisch** (Menüs, Hinweise, HUD).
 - **Alles andere auf Deutsch:** Issues, Pull Requests, Doku, Commit-Beschreibungen.
 
 ## Architektur (verbindlich)

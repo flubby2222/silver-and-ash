@@ -92,11 +92,16 @@ static void RunGame(Level level, string displayVersion)
             var playerInput = input.Read();
             player.Look(playerInput);
 
-            // 2. Simulation: fixed ticks. Nothing moves yet - walking follows in the next issue.
-            _ = accumulator.Advance(Raylib.GetFrameTime());
+            // 2. Simulation: as many fixed ticks as fit into the real time of the last frame.
+            var ticks = accumulator.Advance(Raylib.GetFrameTime());
+            for (var i = 0; i < ticks; i++)
+            {
+                player.Tick(playerInput);
+            }
 
-            // 3. Rendering: draw the current state. No game rules in here.
-            var eye = player.EyePosition;
+            // 3. Rendering: draw the current state, blended between the last two ticks (no stutter
+            //    on monitors faster than 60 Hz). No game rules in here.
+            var eye = player.InterpolatedEyePosition(accumulator.Alpha);
             var camera = new Camera3D
             {
                 Position = eye,
@@ -118,7 +123,7 @@ static void RunGame(Level level, string displayVersion)
 
             if (!input.IsMouseCaptured)
             {
-                const string Hint = "Klicken, um dich umzusehen";
+                const string Hint = "Click to look around";
                 var hintWidth = Raylib.MeasureText(Hint, 24);
                 Raylib.DrawText(Hint, (ScreenWidth - hintWidth) / 2, ScreenHeight / 2 + 40, 24, new Color(200, 200, 210, 255));
             }
