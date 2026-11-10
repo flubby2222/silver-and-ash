@@ -88,6 +88,9 @@ static void RunGame(Level level, string displayVersion)
         var accumulator = new TickAccumulator();
         using var world = new LowResolutionTarget(LookSettings.RenderWidth, LookSettings.RenderHeight);
 
+        // The level geometry is built once here and sent to the graphics card.
+        using var levelRenderer = new LevelRenderer(level);
+
         // Game loop: runs once per drawn frame until the window is closed (X button).
         while (!Raylib.WindowShouldClose())
         {
@@ -118,7 +121,7 @@ static void RunGame(Level level, string displayVersion)
             world.BeginDrawing();
             Raylib.ClearBackground(LookSettings.BackgroundColor);
             Raylib.BeginMode3D(camera);
-            LevelRenderer.Draw(level);
+            levelRenderer.Draw();
             Raylib.EndMode3D();
             world.EndDrawing();
 
