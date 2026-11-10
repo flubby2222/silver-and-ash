@@ -1,0 +1,87 @@
+# Continuous Integration: builds the solution and runs all tests
+# for every pull request against main and every push to main.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Only read access to the repository is needed.
+permissions:
+  contents: read
+
+# A newer push to the same branch cancels the run that is still in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build und Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v5
+
+      - name: .NET SDK einrichten (Version aus global.json)
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Abhängigkeiten wiederherstellen
+        run: dotnet restore SilverAndAsh.slnx
+
+      - name: Bauen
+        run: dotnet build SilverAndAsh.slnx --no-restore --configuration Release
+
+      - name: Testen
+        run: >
+          dotnet test SilverAndAsh.slnx --no-build --configuration Release
+          --logger "trx;LogFileName=results.trx"
+          --results-directory TestResults
+
+      - name: Testergebnisse zusammenfassen
+        if: always()
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path TestResults -Filter *.trx -Recurse -ErrorAction SilentlyContinue
+          if (-not $files) {
+            "## Tests`n`nKeine Testergebnisse gefunden – der Build ist vermutlich vorher gescheitert." >> $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+          $total = 0; $passed = 0; $failed = 0; $failedNames = @()
+          foreach ($file in $files) {
+            [xml]$trx = Get-Content $file.FullName
+            $counters = $trx.TestRun.ResultSummary.Counters
+            $total += [int]$counters.total
+            $passed += [int]$counters.passed
+            $failed += [int]$counters.failed
+            $failedNames += $trx.TestRun.Results.UnitTestResult |
+              Where-Object { $_.outcome -eq 'Failed' } |
+              ForEach-Object { $_.testName }
+          }
+          $icon = if ($failed -eq 0) { '✅' } else { '❌' }
+          $summary = @(
+            "## $icon Tests",
+            "",
+            "| Gesamt | Bestanden | Fehlgeschlagen |",
+            "|---|---|---|",
+            "| $total | $passed | $failed |"
+          )
+          if ($failedNames) {
+            $summary += @("", "### Fehlgeschlagene Tests")
+            $summary += $failedNames | ForEach-Object { "- ``$_``" }
+          }
+          $summary -join "`n" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Testergebnisse hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testergebnisse
+          path: TestResults
+          if-no-files-found: ignore
