@@ -22,4 +22,20 @@ internal static class LookSettings
 
     /// <summary>Vertical field of view of the camera in degrees.</summary>
     public const float FieldOfViewDegrees = 70f;
+
+    /// <summary>Base colours of the surfaces before shading.</summary>
+    public static readonly Color WallColor = new(122, 104, 112, 255);
+    public static readonly Color FloorColor = new(84, 72, 78, 255);
+    public static readonly Color CeilingColor = new(64, 56, 66, 255);
+
+    /// <summary>
+    /// Flat shading: brightness factor per facing direction (1 = full base colour).
+    /// Different values for the four wall directions make corners and edges visible without lines.
+    /// </summary>
+    public const float FloorBrightness = 0.9f;
+    public const float CeilingBrightness = 0.55f;
+    public const float WallFacingPlusXBrightness = 1.0f;
+    public const float WallFacingMinusXBrightness = 0.62f;
+    public const float WallFacingPlusZBrightness = 0.82f;
+    public const float WallFacingMinusZBrightness = 0.72f;
 }
