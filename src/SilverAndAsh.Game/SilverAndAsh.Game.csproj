@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Window, input and rendering. Contains no game rules - those live in SilverAndAsh.Core. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SilverAndAsh.Core\SilverAndAsh.Core.csproj" />
+  </ItemGroup>
+
+</Project>
