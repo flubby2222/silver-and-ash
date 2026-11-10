@@ -3,7 +3,9 @@
   <!-- Window, input and rendering. Contains no game rules - those live in SilverAndAsh.Core. -->
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <!-- WinExe: a pure window application - no black console window behind the game.
+         Diagnostic output goes to the log file instead (%LOCALAPPDATA%\SilverAndAsh\logs). -->
+    <OutputType>WinExe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
