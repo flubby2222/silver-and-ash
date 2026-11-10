@@ -29,7 +29,7 @@ public class ArchitectureTests
     {
         // The compiler drops references that are never used, so the assembly check above
         // would miss a package that was added but not yet used. Check the project file too.
-        var project = XDocument.Load(FindCoreProjectFile());
+        var project = XDocument.Load(RepositoryFiles.Find("src/SilverAndAsh.Core/SilverAndAsh.Core.csproj"));
 
         var packages = project.Descendants("PackageReference")
             .Select(element => (string?)element.Attribute("Include") ?? string.Empty);
@@ -39,22 +39,5 @@ public class ArchitectureTests
             .ToList();
 
         Assert.Empty(forbidden);
-    }
-
-    private static string FindCoreProjectFile()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            var candidate = Path.Combine(directory.FullName, "src", "SilverAndAsh.Core", "SilverAndAsh.Core.csproj");
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new FileNotFoundException("Could not find SilverAndAsh.Core.csproj above the test output directory.");
     }
 }
