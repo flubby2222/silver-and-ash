@@ -88,8 +88,11 @@ static void RunGame(Level level, string displayVersion)
         var accumulator = new TickAccumulator();
         using var world = new LowResolutionTarget(LookSettings.RenderWidth, LookSettings.RenderHeight);
 
+        // Lantern light and fog: a small program for the graphics card (assets/shaders/).
+        using var levelShader = new LevelShader(Path.Combine(AppContext.BaseDirectory, "assets", "shaders"));
+
         // The level geometry is built once here and sent to the graphics card.
-        using var levelRenderer = new LevelRenderer(level);
+        using var levelRenderer = new LevelRenderer(level, levelShader.Shader);
 
         // Game loop: runs once per drawn frame until the window is closed (X button).
         while (!Raylib.WindowShouldClose())
@@ -118,6 +121,7 @@ static void RunGame(Level level, string displayVersion)
             };
 
             // 3a. The 3D world goes into the small low-resolution picture ...
+            levelShader.SetCameraPosition(eye);
             world.BeginDrawing();
             Raylib.ClearBackground(LookSettings.BackgroundColor);
             Raylib.BeginMode3D(camera);

@@ -11,15 +11,21 @@ namespace SilverAndAsh.Game.Rendering;
 /// </summary>
 internal sealed class LevelRenderer : IDisposable
 {
-    private readonly Model _model;
+    private Model _model;
 
-    public LevelRenderer(Level level)
+    /// <param name="level">The level to draw.</param>
+    /// <param name="shader">Shader for lantern light and fog. The renderer uses it but does not own it.</param>
+    public LevelRenderer(Level level, Shader shader)
     {
         var mesh = BuildMesh(LevelGeometry.Build(level));
 
         // Copies the data to the graphics card. From then on drawing costs almost nothing.
         Raylib.UploadMesh(ref mesh, false);
         _model = Raylib.LoadModelFromMesh(mesh);
+
+        // The model's material decides HOW it is drawn - here: with our light-and-fog shader.
+        // (UnloadModel does not unload shaders, so LevelShader stays responsible for it.)
+        _model.MaterialsAsSpan()[0].Shader = shader;
     }
 
     public void Draw() => Raylib.DrawModel(_model, Vector3.Zero, 1f, Color.White);
