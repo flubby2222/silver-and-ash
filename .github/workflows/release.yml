@@ -12,6 +12,7 @@ on:
     paths:
       - '.github/workflows/release.yml'
       - 'src/**'
+      - 'assets/**'
       - 'Directory.Build.props'
       - 'global.json'
 

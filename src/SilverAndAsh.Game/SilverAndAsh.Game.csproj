@@ -14,4 +14,12 @@
     <PackageReference Include="Raylib-cs" Version="8.1.0" />
   </ItemGroup>
 
+  <!-- Game data (levels, later models and more) is copied next to the .exe, keeping its folder structure. -->
+  <ItemGroup>
+    <None Include="..\..\assets\**\*"
+          Link="assets\%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
