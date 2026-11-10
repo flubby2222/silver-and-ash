@@ -44,19 +44,22 @@ public static class Tuning
         public const float Acceleration = MaxSpeed / AccelerationTime;
 
         /// <summary>How much of the ground acceleration is available in the air (1 = full control, 0 = none).</summary>
-        public const float AirControl = 0.5f;
+        public const float AirControl = 0.7f;
 
-        /// <summary>How high a jump lifts the feet, in metres.</summary>
-        public const float JumpHeight = 1f;
+        /// <summary>Top speed in the air as a multiple of <see cref="MaxSpeed"/> - a small boost while jumping.</summary>
+        public const float AirSpeedMultiplier = 1.15f;
 
-        /// <summary>Time from take-off to landing on flat ground, in seconds.</summary>
-        public const float JumpDuration = 0.6f;
+        /// <summary>How high a jump lifts the feet, in metres. Must stay below ceiling minus <see cref="Height"/>.</summary>
+        public const float JumpHeight = 1.3f;
+
+        /// <summary>Time from take-off to landing on flat ground, in seconds. Longer = floatier.</summary>
+        public const float JumpDuration = 0.8f;
 
         // Derived from height and duration (physics of a throw straight up):
         // time to the top t = duration / 2, gravity g = 2h / t², take-off speed v = 2h / t.
         private const float TimeToApex = JumpDuration / 2f;
 
-        /// <summary>Downward acceleration in m/s² (derived - about 22, stronger than on Earth for a snappy jump).</summary>
+        /// <summary>Downward acceleration in m/s² (derived - about 16, still stronger than on Earth's 9.81).</summary>
         public const float Gravity = 2f * JumpHeight / (TimeToApex * TimeToApex);
 
         /// <summary>Upward speed at take-off in m/s (derived).</summary>

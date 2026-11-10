@@ -58,9 +58,11 @@ public sealed class Player
         const float Dt = SimulationClock.SecondsPerTick;
         PreviousPosition = Position;
 
-        // Horizontal: accelerate towards the wished velocity - in the air only with part of the strength.
+        // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
+        // but a slightly higher top speed (the small boost while jumping).
         var acceleration = Tuning.Player.Acceleration * (IsGrounded ? 1f : Tuning.Player.AirControl);
-        var targetVelocity = WishDirection(input) * Tuning.Player.MaxSpeed;
+        var topSpeed = Tuning.Player.MaxSpeed * (IsGrounded ? 1f : Tuning.Player.AirSpeedMultiplier);
+        var targetVelocity = WishDirection(input) * topSpeed;
         var horizontal = MoveTowards(new Vector3(Velocity.X, 0f, Velocity.Z), targetVelocity, acceleration * Dt);
 
         // Vertical: jump on a fresh press while standing. Gravity is applied in MoveVertically.
