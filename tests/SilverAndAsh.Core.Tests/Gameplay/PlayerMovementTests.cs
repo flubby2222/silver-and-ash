@@ -12,8 +12,27 @@ public class PlayerMovementTests
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
     private static readonly PlayerInput ForwardRight = PlayerInput.None with { Move = new Vector2(1f, 1f) };
 
-    // Movement has no collision yet, so a single cell is enough for these tests.
-    private static Player NewPlayer() => new(LevelParser.Parse("P"));
+    // A large open hall (60 x 60 m), so walls never get in the way of these movement tests.
+    private static readonly Level OpenHall = CreateOpenHall(size: 31);
+
+    private static Player NewPlayer() => new(OpenHall);
+
+    private static Level CreateOpenHall(int size)
+    {
+        var rows = new string[size];
+        for (var z = 0; z < size; z++)
+        {
+            var row = new string('.', size).ToCharArray();
+            if (z == size / 2)
+            {
+                row[size / 2] = 'P';
+            }
+
+            rows[z] = new string(row);
+        }
+
+        return LevelParser.Parse(string.Join('\n', rows));
+    }
 
     [Fact]
     public void Without_input_the_player_stands_still()
@@ -118,6 +137,29 @@ public class PlayerMovementTests
 
         Assert.Equal(Tuning.Player.MaxSpeed, player.Velocity.Length(), Tolerance);
         Assert.Equal(start.Y, player.Position.Y);
+    }
+
+    [Fact]
+    public void The_player_stops_at_walls_and_starts_again_after_turning_away()
+    {
+        // Looking along +Z, the wall row at z = 6 m is two cells ahead.
+        var player = new Player(LevelParser.Parse(
+            """
+            ...
+            .P.
+            ...
+            ###
+            """));
+
+        RunTicks(player, Forward, 120);
+
+        Assert.Equal(6f - Tuning.Player.Radius, player.Position.Z, Tolerance);
+        Assert.Equal(0f, player.Velocity.Z, Tolerance);
+
+        // Walk back: the wall must not hold the player.
+        var back = PlayerInput.None with { Move = new Vector2(0f, -1f) };
+        RunTicks(player, back, 30);
+        Assert.True(player.Position.Z < 5f);
     }
 
     [Theory]

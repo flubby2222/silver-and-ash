@@ -25,6 +25,12 @@ public static class Tuning
         /// <summary>Height of the eyes above the feet, in metres.</summary>
         public const float EyeHeight = 1.6f;
 
+        /// <summary>Radius of the player's collision capsule in metres (how close the player gets to walls).</summary>
+        public const float Radius = 0.35f;
+
+        /// <summary>Total height of the player's collision capsule in metres.</summary>
+        public const float Height = 1.8f;
+
         /// <summary>Top walking speed in metres per second.</summary>
         public const float MaxSpeed = 6f;
 
