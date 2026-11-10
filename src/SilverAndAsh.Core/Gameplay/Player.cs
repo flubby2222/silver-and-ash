@@ -1,5 +1,6 @@
 using System.Numerics;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
@@ -7,10 +8,13 @@ namespace SilverAndAsh.Core.Gameplay;
 /// <summary>The player character: where it stands, how it moves and where it looks.</summary>
 public sealed class Player
 {
+    private readonly Level _level;
+
     /// <summary>Creates the player standing on the start cell of <paramref name="level"/>.</summary>
     public Player(Level level)
     {
         ArgumentNullException.ThrowIfNull(level);
+        _level = level;
         Position = level.PlayerStartPosition;
         PreviousPosition = Position;
     }
@@ -38,7 +42,10 @@ public sealed class Player
     /// </summary>
     public void Look(PlayerInput input) => View.ApplyMouse(input.Look);
 
-    /// <summary>Advances the player by one simulation tick: walking with acceleration and braking.</summary>
+    /// <summary>
+    /// Advances the player by one simulation tick: walking with acceleration and braking,
+    /// stopped by walls and sliding along them.
+    /// </summary>
     public void Tick(PlayerInput input)
     {
         PreviousPosition = Position;
@@ -46,7 +53,8 @@ public sealed class Player
         var targetVelocity = WishDirection(input) * Tuning.Player.MaxSpeed;
         Velocity = MoveTowards(Velocity, targetVelocity, Tuning.Player.Acceleration * SimulationClock.SecondsPerTick);
 
-        Position += Velocity * SimulationClock.SecondsPerTick;
+        (Position, Velocity) = CharacterCollision.Move(
+            _level, Position, Velocity, Tuning.Player.Radius, SimulationClock.SecondsPerTick);
     }
 
     /// <summary>
