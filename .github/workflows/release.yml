@@ -1,0 +1,134 @@
+# Release: builds a playable Windows .zip.
+# - On a version tag (e.g. v0.1.0): builds the .zip and publishes it as a GitHub Release.
+# - On a pull request that touches the game or this file: builds the .zip as a dry run only
+#   (downloadable from the run), so packaging problems show up before anything is released.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/release.yml'
+      - 'src/**'
+      - 'Directory.Build.props'
+      - 'global.json'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Windows-Paket bauen
+    runs-on: windows-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # full history, needed for the main check below
+
+      - name: Nur Code von main veröffentlichen
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          # A release must only contain reviewed code, i.e. the tagged commit must be part of main.
+          git merge-base --is-ancestor HEAD origin/main
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Tag '$env:GITHUB_REF_NAME' points to a commit that is not on main. Merge first, then tag."
+            exit 1
+          }
+
+      - name: .NET SDK einrichten (Version aus global.json)
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Version bestimmen
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            # Tag "v1.2.3" -> version "1.2.3". Must follow Semantic Versioning.
+            $version = $env:GITHUB_REF_NAME.TrimStart('v')
+            if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+              Write-Error "Tag '$env:GITHUB_REF_NAME' is not a valid version (expected e.g. v0.1.0)."
+              exit 1
+            }
+          } else {
+            $version = "0.0.0-pr.${{ github.event.pull_request.number }}"
+          }
+          "Version: $version"
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Testen (auch unter Windows)
+        run: dotnet test SilverAndAsh.slnx --configuration Release
+
+      - name: Spiel veröffentlichen (eine .exe, läuft ohne installiertes .NET)
+        run: >
+          dotnet publish src/SilverAndAsh.Game
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=embedded
+          -p:Version=${{ steps.version.outputs.version }}
+          --output publish
+
+      - name: Als .zip verpacken
+        shell: pwsh
+        run: |
+          $zip = "SilverAndAsh-${{ steps.version.outputs.version }}-win-x64.zip"
+          Compress-Archive -Path publish/* -DestinationPath $zip
+          Get-ChildItem publish | Format-Table Name, Length
+          "Paket: $zip ($([math]::Round((Get-Item $zip).Length / 1MB, 1)) MB)"
+
+      - name: Paket hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: SilverAndAsh-${{ steps.version.outputs.version }}-win-x64
+          path: SilverAndAsh-*.zip
+          if-no-files-found: error
+
+  release:
+    name: GitHub-Release erstellen
+    needs: build
+    # Only for version tags - never for pull requests.
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write   # needed to create the release
+
+    steps:
+      - name: Paket herunterladen
+        uses: actions/download-artifact@v4
+        with:
+          name: SilverAndAsh-${{ needs.build.outputs.version }}-win-x64
+
+      - name: Release erstellen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          zip="SilverAndAsh-${VERSION}-win-x64.zip"
+
+          # Versions with a suffix (e.g. 0.2.0-beta) are marked as pre-release.
+          prerelease=""
+          if [[ "$VERSION" == *-* ]]; then prerelease="--prerelease"; fi
+
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            # Release already exists (e.g. created by hand on GitHub): just attach the .zip.
+            gh release upload "$GITHUB_REF_NAME" "$zip" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$zip" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Silver & Ash $VERSION" \
+              --generate-notes \
+              $prerelease
+          fi

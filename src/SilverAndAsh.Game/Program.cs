@@ -35,7 +35,8 @@ using (log)
 
     try
     {
-        RunGame();
+        // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
+        RunGame(displayVersion: version.Split('+')[0]);
         log?.Info("Game ended normally.");
     }
     catch (Exception exception)
@@ -46,7 +47,7 @@ using (log)
     }
 }
 
-static void RunGame()
+static void RunGame(string displayVersion)
 {
     Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.Msaa4xHint);
     Raylib.InitWindow(ScreenWidth, ScreenHeight, "Silver & Ash");
@@ -92,6 +93,10 @@ static void RunGame()
 
             Raylib.DrawText("Silver & Ash", 20, 20, 30, new Color(200, 200, 210, 255));
             Raylib.DrawFPS(20, ScreenHeight - 30);
+
+            var versionText = $"v{displayVersion}";
+            var versionWidth = Raylib.MeasureText(versionText, 20);
+            Raylib.DrawText(versionText, ScreenWidth - versionWidth - 20, ScreenHeight - 30, 20, new Color(120, 120, 130, 255));
 
             Raylib.EndDrawing();
         }
