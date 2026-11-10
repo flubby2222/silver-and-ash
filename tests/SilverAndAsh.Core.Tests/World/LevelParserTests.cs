@@ -137,6 +137,57 @@ public class LevelParserTests
         Assert.Equal(0, error.LineNumber);
     }
 
+    [Theory]
+    [InlineData('1', 0.25f)]
+    [InlineData('2', 0.5f)]
+    [InlineData('3', 0.75f)]
+    [InlineData('_', -1f)]
+    public void Platforms_and_pits_have_their_floor_height(char symbol, float expectedFloor)
+    {
+        var level = LevelParser.Parse($"P{symbol}");
+
+        var cell = level[1, 0];
+        Assert.False(cell.IsSolid);
+        Assert.Equal(expectedFloor, cell.FloorHeight);
+        Assert.Equal(Cell.DefaultCeilingHeight, cell.CeilingHeight);
+    }
+
+    [Fact]
+    public void A_staircase_rises_step_by_step()
+    {
+        var level = LevelParser.Parse("P123");
+
+        Assert.Equal(
+            [0f, 0.25f, 0.5f, 0.75f],
+            Enumerable.Range(0, 4).Select(x => level[x, 0].FloorHeight));
+    }
+
+    [Fact]
+    public void Error_message_lists_the_new_symbols()
+    {
+        var error = Assert.Throws<LevelFormatException>(() => LevelParser.Parse("P4"));
+
+        Assert.Contains("'4'", error.Message);
+        Assert.Contains("'1', '2', '3', '_'", error.Message);
+    }
+
+    [Fact]
+    public void Old_levels_without_heights_are_unchanged()
+    {
+        var level = LevelParser.ParseFile(RepositoryFiles.Find("assets/levels/test.txt"));
+
+        for (var z = 0; z < level.Depth; z++)
+        {
+            for (var x = 0; x < level.Width; x++)
+            {
+                if (!level[x, z].IsSolid)
+                {
+                    Assert.Equal(Cell.DefaultFloorHeight, level[x, z].FloorHeight);
+                }
+            }
+        }
+    }
+
     [Fact]
     public void The_shipped_test_level_is_valid()
     {

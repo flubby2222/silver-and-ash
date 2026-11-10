@@ -19,6 +19,7 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 
 - [Entscheidungen](docs/entscheidungen/) – warum das Projekt so ist, wie es ist
 - [Changelog](CHANGELOG.md) – was sich pro Version geändert hat
+- [Level-Format](docs/level-format.md) – wie man Level baut
 - [Release veröffentlichen](docs/release.md) – Schritt für Schritt
 - [CLAUDE.md](CLAUDE.md) – Arbeitsregeln für die KI
 
