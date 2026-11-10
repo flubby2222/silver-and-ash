@@ -42,19 +42,43 @@ public sealed class Player
     /// </summary>
     public void Look(PlayerInput input) => View.ApplyMouse(input.Look);
 
+    /// <summary>True while the feet are on the ground. Jumping is only possible from here.</summary>
+    public bool IsGrounded { get; private set; } = true;
+
+    // Was the jump button already held in the previous tick? A jump needs a fresh press,
+    // so holding the button down does not make the player hop again and again.
+    private bool _jumpWasHeld;
+
     /// <summary>
-    /// Advances the player by one simulation tick: walking with acceleration and braking,
-    /// stopped by walls and sliding along them.
+    /// Advances the player by one simulation tick: walking (with less control in the air), jumping,
+    /// gravity, walls, floor and ceiling.
     /// </summary>
     public void Tick(PlayerInput input)
     {
+        const float Dt = SimulationClock.SecondsPerTick;
         PreviousPosition = Position;
 
+        // Horizontal: accelerate towards the wished velocity - in the air only with part of the strength.
+        var acceleration = Tuning.Player.Acceleration * (IsGrounded ? 1f : Tuning.Player.AirControl);
         var targetVelocity = WishDirection(input) * Tuning.Player.MaxSpeed;
-        Velocity = MoveTowards(Velocity, targetVelocity, Tuning.Player.Acceleration * SimulationClock.SecondsPerTick);
+        var horizontal = MoveTowards(new Vector3(Velocity.X, 0f, Velocity.Z), targetVelocity, acceleration * Dt);
 
-        (Position, Velocity) = CharacterCollision.Move(
-            _level, Position, Velocity, Tuning.Player.Radius, SimulationClock.SecondsPerTick);
+        // Vertical: jump on a fresh press while standing. Gravity is applied in MoveVertically.
+        var vertical = Velocity.Y;
+        var jumpPressed = input.Jump && !_jumpWasHeld;
+        _jumpWasHeld = input.Jump;
+        if (jumpPressed && IsGrounded)
+        {
+            vertical = Tuning.Player.JumpSpeed;
+        }
+
+        Velocity = horizontal with { Y = vertical };
+
+        // Walls first (sideways), then gravity, floor and ceiling (up and down).
+        (Position, Velocity) = CharacterCollision.Move(_level, Position, Velocity, Tuning.Player.Radius, Dt);
+        (Position, Velocity, var grounded) = CharacterCollision.MoveVertically(
+            _level, Position, Velocity, Tuning.Player.Radius, Tuning.Player.Height, Tuning.Player.Gravity, Dt);
+        IsGrounded = grounded;
     }
 
     /// <summary>
