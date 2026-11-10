@@ -6,6 +6,27 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.2.0] – 2026-11-10 – Bewegung & Physik
+
+Zum ersten Mal ein begehbarer Ort: Du stehst in einem Level, siehst dich um, läufst und springst.
+
+### Hinzugefügt
+- Level aus Textdateien (Raster aus 2 × 2 m großen Zellen mit eigener Boden- und Deckenhöhe), erstes Testlevel mit vier Räumen
+- Darstellung des Levels mit Wänden, Boden und Decke
+- Ego-Perspektive: Umsehen mit der Maus (nicht invertiert, Blick nach oben und unten begrenzt)
+- Laufen mit WASD (6 m/s, kurzes Anfahren und Abbremsen), flüssig auch auf Monitoren über 60 Hz
+- Kollision mit Wänden: Man gleitet an Wänden entlang und rutscht um Türkanten herum
+- Schwerkraft und Springen mit der Leertaste (ca. 1 m hoch), in der Luft eingeschränkt lenkbar
+- Esc gibt die Maus frei, ein Klick ins Fenster fängt sie wieder ein
+
+### Geändert
+- Esc beendet das Spiel nicht mehr – Beenden über das X des Fensters
+- Kein Konsolenfenster mehr hinter dem Spiel
+- Texte im Spiel sind englisch
+
+### Entfernt
+- Der drehende Würfel aus 0.1.0
+
 ## [0.1.0] – 2026-11-10 – Walking Skeleton
 
 Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht, um entwickelt, geprüft und ausgeliefert zu werden.
@@ -18,5 +39,6 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.1.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/flubby2222/silver-and-ash/releases/tag/v0.1.0
