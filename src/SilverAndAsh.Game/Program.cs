@@ -2,8 +2,10 @@
 using System.Reflection;
 using Raylib_cs;
 using SilverAndAsh.Core;
+using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
 using SilverAndAsh.Core.World;
+using SilverAndAsh.Game.Input;
 using SilverAndAsh.Game.Rendering;
 
 const int ScreenWidth = 1280;
@@ -72,30 +74,38 @@ static void RunGame(Level level, string displayVersion)
     Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.Msaa4xHint);
     Raylib.InitWindow(ScreenWidth, ScreenHeight, "Silver & Ash");
 
+    // Esc must not close the game any more - it releases the mouse (later: opens the pause menu).
+    Raylib.SetExitKey(KeyboardKey.Null);
+
     try
     {
-        // Temporary overview camera, looking down at the level at an angle.
-        // Replaced by the first-person camera in the next issue.
-        var levelCentre = new Vector3(level.Width * Level.CellSize / 2f, 0f, level.Depth * Level.CellSize / 2f);
-        var camera = new Camera3D
-        {
-            Position = levelCentre + new Vector3(0f, 26f, 20f),
-            Target = levelCentre,
-            Up = Vector3.UnitY,
-            FovY = 45f,
-            Projection = CameraProjection.Perspective,
-        };
+        var player = new Player(level);
+        var input = new RaylibInput();
+        input.CaptureMouse();
 
         var accumulator = new TickAccumulator();
 
-        // Game loop: runs once per drawn frame until the window is closed (Esc or the X button).
+        // Game loop: runs once per drawn frame until the window is closed (X button).
         while (!Raylib.WindowShouldClose())
         {
-            // 1. Simulation: nothing moves yet - the player arrives with the first-person camera.
-            //    The accumulator already keeps the fixed timestep running.
+            // 1. Input: looking around happens every frame, so it feels immediate.
+            var playerInput = input.Read();
+            player.Look(playerInput);
+
+            // 2. Simulation: fixed ticks. Nothing moves yet - walking follows in the next issue.
             _ = accumulator.Advance(Raylib.GetFrameTime());
 
-            // 2. Rendering: draw the current state. No game rules in here.
+            // 3. Rendering: draw the current state. No game rules in here.
+            var eye = player.EyePosition;
+            var camera = new Camera3D
+            {
+                Position = eye,
+                Target = eye + player.View.Forward,
+                Up = Vector3.UnitY,
+                FovY = 70f,
+                Projection = CameraProjection.Perspective,
+            };
+
             Raylib.BeginDrawing();
             Raylib.ClearBackground(new Color(20, 16, 24, 255));
 
@@ -105,6 +115,13 @@ static void RunGame(Level level, string displayVersion)
 
             Raylib.DrawText("Silver & Ash", 20, 20, 30, new Color(200, 200, 210, 255));
             Raylib.DrawFPS(20, ScreenHeight - 30);
+
+            if (!input.IsMouseCaptured)
+            {
+                const string Hint = "Klicken, um dich umzusehen";
+                var hintWidth = Raylib.MeasureText(Hint, 24);
+                Raylib.DrawText(Hint, (ScreenWidth - hintWidth) / 2, ScreenHeight / 2 + 40, 24, new Color(200, 200, 210, 255));
+            }
 
             var versionText = $"v{displayVersion}";
             var versionWidth = Raylib.MeasureText(versionText, 20);
