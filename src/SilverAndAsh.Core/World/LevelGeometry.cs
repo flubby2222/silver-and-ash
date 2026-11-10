@@ -23,8 +23,9 @@ public readonly record struct Face(Vector3 A, Vector3 B, Vector3 C, Vector3 D, V
 
 /// <summary>
 /// Turns a <see cref="Level"/> into the faces that can actually be seen: floor and ceiling of every walkable
-/// cell, and a wall face wherever a walkable cell borders a solid one. Faces between two solid cells are never
-/// visible and are left out. Built once when a level is loaded, not every frame.
+/// cell, a wall face wherever a walkable cell borders a solid one, and the vertical pieces between walkable
+/// cells of different heights (step edges, pit walls). Faces between two solid cells are never visible and are
+/// left out. Built once when a level is loaded, not every frame.
 /// </summary>
 public static class LevelGeometry
 {
@@ -57,9 +58,24 @@ public static class LevelGeometry
 
                 foreach (var (dx, dz, normal) in Directions)
                 {
-                    if (level[x + dx, z + dz].IsSolid)
+                    var neighbour = level[x + dx, z + dz];
+                    if (neighbour.IsSolid)
                     {
                         faces.Add(WallFace(x, z, dx, dz, normal, cell.FloorHeight, cell.CeilingHeight));
+                        continue;
+                    }
+
+                    // Two walkable cells with different heights: the vertical piece in between is seen from the
+                    // LOWER floor (a step edge or a pit wall) ...
+                    if (neighbour.FloorHeight > cell.FloorHeight)
+                    {
+                        faces.Add(WallFace(x, z, dx, dz, normal, cell.FloorHeight, neighbour.FloorHeight));
+                    }
+
+                    // ... and from the HIGHER ceiling (the edge where a ceiling drops down).
+                    if (neighbour.CeilingHeight < cell.CeilingHeight)
+                    {
+                        faces.Add(WallFace(x, z, dx, dz, normal, neighbour.CeilingHeight, cell.CeilingHeight));
                     }
                 }
             }

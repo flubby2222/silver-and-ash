@@ -110,6 +110,65 @@ public class LevelGeometryTests
     }
 
     [Fact]
+    public void A_step_between_two_floors_gets_one_face_seen_from_below()
+    {
+        // Floor 0 next to a platform at 0.5 m.
+        var faces = LevelGeometry.Build(LevelParser.Parse("P2"));
+
+        // The only wall face lying in the plane x = 2 m (the border between the two cells).
+        var step = Assert.Single(faces, f => f.Kind == SurfaceKind.Wall && f.A.X == 2f && f.C.X == 2f);
+        var heights = new[] { step.A.Y, step.B.Y, step.C.Y, step.D.Y };
+        Assert.Equal(0f, heights.Min());
+        Assert.Equal(0.5f, heights.Max());
+
+        // It faces the lower cell (towards -X, the start cell at x 0..2 m).
+        Assert.Equal(-Vector3.UnitX, step.Normal);
+    }
+
+    [Fact]
+    public void A_pit_gets_walls_down_to_its_floor()
+    {
+        // A pit cell surrounded by floor on all sides (and the outer walls).
+        var level = LevelParser.Parse(
+            """
+            ...
+            ._.
+            .P.
+            """);
+
+        var pitWalls = LevelGeometry.Build(level)
+            .Where(f => f.Kind == SurfaceKind.Wall && new[] { f.A.Y, f.B.Y, f.C.Y, f.D.Y }.Min() == -1f)
+            .ToList();
+
+        // Four walls from -1 m up to the surrounding floor at 0 m.
+        Assert.Equal(4, pitWalls.Count);
+        Assert.All(pitWalls, f => Assert.Equal(0f, new[] { f.A.Y, f.B.Y, f.C.Y, f.D.Y }.Max()));
+    }
+
+    [Fact]
+    public void Equal_neighbours_get_no_step_face()
+    {
+        var faces = LevelGeometry.Build(LevelParser.Parse("P....\n....."));
+
+        // Only the outer walls: 5 + 5 along X, 2 + 2 along Z.
+        Assert.Equal(14, faces.Count(f => f.Kind == SurfaceKind.Wall));
+    }
+
+    [Fact]
+    public void A_lower_ceiling_next_door_gets_a_face_seen_from_the_high_room()
+    {
+        var cells = new Cell[2, 1];
+        cells[0, 0] = new Cell(false, 0f, 4f);
+        cells[1, 0] = new Cell(false, 0f, 2.5f);
+
+        var faces = LevelGeometry.Build(new Level(cells, 0, 0));
+
+        var lintel = Assert.Single(faces, f => f.Kind == SurfaceKind.Wall && new[] { f.A.Y, f.B.Y, f.C.Y, f.D.Y }.Min() == 2.5f);
+        Assert.Equal(4f, new[] { lintel.A.Y, lintel.B.Y, lintel.C.Y, lintel.D.Y }.Max());
+        Assert.Equal(-Vector3.UnitX, lintel.Normal);
+    }
+
+    [Fact]
     public void Every_face_is_one_cell_wide_with_equal_opposite_edges()
     {
         foreach (var face in LevelGeometry.Build(LevelParser.Parse("P")))

@@ -14,6 +14,8 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ### Hinzugefügt
 - Laternenlicht und Nebel: In der Nähe ist es hell, ab etwa 14 m versinkt alles in violett-schwarzem Dunkel
 - Level-Format kennt Podeste (`1`, `2`, `3`) und Gruben (`_`); Beschreibung in `docs/level-format.md`
+- Stufen, Podeste und Gruben werden gezeichnet; man steigt Treppen hinauf, springt auf hohe Podeste und aus Gruben heraus
+- Zweites Testlevel „heights“ mit Treppe, hohem Podest und Grube – starten mit `--level heights`
 
 ## [0.2.0] – 2026-11-10 – Bewegung & Physik
 
