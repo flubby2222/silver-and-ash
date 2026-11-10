@@ -55,17 +55,20 @@ public static class Tuning
         /// <summary>Time from take-off to landing on flat ground, in seconds. Longer = floatier.</summary>
         public const float JumpDuration = 0.8f;
 
-        /// <summary>Landing dip: how far the eyes sink per m/s of falling speed when landing, in metres.</summary>
-        public const float LandingDipPerSpeed = 0.02f;
+        /// <summary>
+        /// Landing dip: how deep the eyes sink per m/s of falling speed, in metres.
+        /// A normal jump landing (about 6.5 m/s) gives about 8 cm.
+        /// </summary>
+        public const float LandingDipPerSpeed = 0.0125f;
 
         /// <summary>Landing dip: the eyes never sink further than this, in metres.</summary>
-        public const float LandingDipMax = 0.18f;
+        public const float LandingDipMax = 0.15f;
 
-        /// <summary>Landing dip: time constant of the spring back in seconds (after about 3× this it is gone).</summary>
-        public const float LandingDipRecoveryTime = 0.09f;
+        /// <summary>Landing dip: how long the whole nod (down and back up) takes, in seconds. Longer = softer.</summary>
+        public const float LandingDipDuration = 0.45f;
 
         /// <summary>Landing dip: how much the view tilts down per metre of dip, in radians (the "nod").</summary>
-        public const float LandingTiltPerMetre = 0.5f;
+        public const float LandingTiltPerMetre = 0.35f;
 
         // Derived from height and duration (physics of a throw straight up):
         // time to the top t = duration / 2, gravity g = 2h / t², take-off speed v = 2h / t.

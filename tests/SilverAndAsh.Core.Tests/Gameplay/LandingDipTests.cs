@@ -25,12 +25,14 @@ public class LandingDipTests
     }
 
     [Fact]
-    public void Landing_after_a_jump_dips_the_eyes()
+    public void Landing_after_a_jump_dips_the_eyes_a_few_centimetres()
     {
         var player = new Player(Room);
-        var maxDip = JumpAndLand(player);
+        JumpAndLand(player);
 
-        Assert.InRange(maxDip, 0.05f, Tuning.Player.LandingDipMax);
+        var (deepest, _) = WatchDip(player, SimulationClock.TicksPerSecond);
+
+        Assert.InRange(deepest, 0.04f, 0.12f);
     }
 
     [Fact]
@@ -38,6 +40,7 @@ public class LandingDipTests
     {
         var player = new Player(Room);
         JumpAndLand(player);
+        RunTicks(player, PlayerInput.None, 5);
 
         var normalEyes = player.Position.Y + Tuning.Player.EyeHeight;
         Assert.True(player.InterpolatedEyePosition(1f).Y < normalEyes);
@@ -45,44 +48,81 @@ public class LandingDipTests
     }
 
     [Fact]
-    public void The_dip_springs_back_within_half_a_second()
+    public void The_dip_is_soft_no_sudden_jumps_between_ticks()
+    {
+        // Softness = the camera never moves more than 1 cm per tick (at 60 ticks per second).
+        // The first version moved the full dip in a single tick - that was the unpleasant twitch.
+        var player = new Player(Room);
+        JumpAndLand(player);
+
+        var (_, largestStep) = WatchDip(player, SimulationClock.TicksPerSecond);
+
+        Assert.True(largestStep <= 0.01f, $"Largest change per tick was {largestStep:0.0000} m.");
+    }
+
+    [Fact]
+    public void The_lowest_point_comes_after_a_moment_not_instantly()
     {
         var player = new Player(Room);
         JumpAndLand(player);
 
-        RunTicks(player, PlayerInput.None, SimulationClock.SecondsToTicks(0.5f));
+        var deepestTick = 0;
+        var deepest = 0f;
+        for (var tick = 1; tick <= 60; tick++)
+        {
+            player.Tick(PlayerInput.None);
+            if (player.LandingDip.Depth > deepest)
+            {
+                deepest = player.LandingDip.Depth;
+                deepestTick = tick;
+            }
+        }
+
+        // Halfway through the nod.
+        var expected = SimulationClock.SecondsToTicks(Tuning.Player.LandingDipDuration / 2f);
+        Assert.InRange(deepestTick, expected - 3, expected + 3);
+    }
+
+    [Fact]
+    public void The_camera_comes_back_without_overshooting_and_comes_to_rest()
+    {
+        var player = new Player(Room);
+        JumpAndLand(player);
+
+        for (var i = 0; i < SimulationClock.TicksPerSecond; i++)
+        {
+            player.Tick(PlayerInput.None);
+
+            // Never above the normal eye height ("no bouncing").
+            Assert.True(player.LandingDip.Depth >= 0f);
+        }
 
         Assert.Equal(0f, player.LandingDip.Depth);
     }
 
     [Fact]
-    public void The_dip_never_grows_while_springing_back()
+    public void A_second_landing_during_a_nod_does_not_restart_it()
     {
-        var player = new Player(Room);
-        JumpAndLand(player);
-
-        var previous = player.LandingDip.Depth;
-        for (var i = 0; i < 30; i++)
+        var dip = new LandingDip();
+        dip.Land(6f);
+        for (var i = 0; i < 5; i++)
         {
-            player.Tick(PlayerInput.None);
-            Assert.True(player.LandingDip.Depth <= previous);
-            previous = player.LandingDip.Depth;
+            dip.Tick();
         }
+
+        var before = dip.Depth;
+        dip.Land(10f);
+        dip.Tick();
+
+        // Still on the same smooth wave - no jump.
+        Assert.InRange(dip.Depth - before, 0f, 0.01f);
     }
 
     [Fact]
     public void Harder_landings_dip_more_but_never_beyond_the_limit()
     {
-        var soft = new LandingDip();
-        var hard = new LandingDip();
-        var extreme = new LandingDip();
-
-        soft.Land(2f);
-        hard.Land(6f);
-        extreme.Land(100f);
-
-        Assert.True(soft.Depth < hard.Depth);
-        Assert.Equal(Tuning.Player.LandingDipMax, extreme.Depth);
+        Assert.True(PeakDepth(2f) < PeakDepth(6f));
+        Assert.True(PeakDepth(100f) <= Tuning.Player.LandingDipMax + 0.001f);
     }
 
     [Fact]
@@ -97,8 +137,22 @@ public class LandingDipTests
         }
     }
 
-    /// <summary>Jumps once and returns the deepest dip seen right after landing.</summary>
-    private static float JumpAndLand(Player player)
+    private static float PeakDepth(float fallSpeed)
+    {
+        var dip = new LandingDip();
+        dip.Land(fallSpeed);
+        var peak = 0f;
+        for (var i = 0; i < 60; i++)
+        {
+            dip.Tick();
+            peak = MathF.Max(peak, dip.Depth);
+        }
+
+        return peak;
+    }
+
+    /// <summary>Jumps once and waits until the player has landed.</summary>
+    private static void JumpAndLand(Player player)
     {
         player.Tick(Jump);
         var guard = 0;
@@ -106,8 +160,25 @@ public class LandingDipTests
         {
             player.Tick(PlayerInput.None);
         }
+    }
 
-        return player.LandingDip.Depth;
+    /// <summary>Watches the dip for some ticks: deepest point and largest change between two ticks.</summary>
+    private static (float Deepest, float LargestStep) WatchDip(Player player, int ticks)
+    {
+        var deepest = player.LandingDip.Depth;
+        var largestStep = 0f;
+        var previous = player.LandingDip.Depth;
+
+        for (var i = 0; i < ticks; i++)
+        {
+            player.Tick(PlayerInput.None);
+            var depth = player.LandingDip.Depth;
+            deepest = MathF.Max(deepest, depth);
+            largestStep = MathF.Max(largestStep, MathF.Abs(depth - previous));
+            previous = depth;
+        }
+
+        return (deepest, largestStep);
     }
 
     private static void RunTicks(Player player, PlayerInput input, int ticks)
