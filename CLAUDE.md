@@ -11,17 +11,18 @@ Diese Datei liest Claude bei jeder Aufgabe. Sie beschreibt, wie wir arbeiten. Di
 
 1. **Ein Issue = ein Branch = ein kleiner Pull Request.** Branch-Namen: `feat/kurze-beschreibung`, `fix/…`, `docs/…`.
 2. **Commits nach Conventional Commits:** `feat: …`, `fix: …`, `docs: …`, `test: …`, `refactor: …`, `chore: …`, `ci: …`.
-3. **Pull-Request-Text auf Deutsch** mit den Abschnitten: *Was*, *Warum*, *Wie testen*, *Bitte genauer ansehen*. Verweist mit `Closes #<nr>` auf das Issue.
-4. **Claude merged nie.** Nur der Mensch merged.
-5. **Keine neuen Bibliotheken (NuGet-Pakete) ohne Zustimmung.**
-6. **Bei unklaren Anforderungen fragen statt raten.**
-7. **Prüfschleife vor jedem Pull Request:** Build, Tests und eigene Code-Review wiederholen, bis keine Fehler mehr auftreten.
+3. **Changelog pro Pull Request:** Jeder PR mit für Spielende sichtbarer Änderung trägt sie in `CHANGELOG.md` unter *Unveröffentlicht* ein (Hinzugefügt / Geändert / Behoben / Entfernt). Beim Release wird der Abschnitt nur noch umbenannt (siehe [docs/release.md](docs/release.md)).
+4. **Pull-Request-Text auf Deutsch** mit den Abschnitten: *Was*, *Warum*, *Wie testen*, *Bitte genauer ansehen*. Verweist mit `Closes #<nr>` auf das Issue.
+5. **Claude merged nie.** Nur der Mensch merged.
+6. **Keine neuen Bibliotheken (NuGet-Pakete) ohne Zustimmung.**
+7. **Bei unklaren Anforderungen fragen statt raten.**
+8. **Prüfschleife vor jedem Pull Request:** Build, Tests und eigene Code-Review wiederholen, bis keine Fehler mehr auftreten.
    - **Nie Tests verbiegen**, um grün zu werden (nicht löschen, abschwächen, überspringen). Ist ein Test selbst falsch: im Pull Request ausdrücklich begründen.
    - **Notbremse:** nach ~3 gescheiterten Versuchen am selben Fehler aufhören und fragen.
-8. **Nach jedem Merge mit neuem Konzept:** eine Konzept-Notiz im Obsidian-Vault `D:\Obsidian\Gamedev` anlegen (`Konzepte/` oder `Werkzeuge/`, Frontmatter `autor: claude`, auf Deutsch, mit Links zum Code).
-9. **Retro am Ende jedes Meilensteins:** Claude schreibt sie als Doku in `Retros/` (fertig, Zahlen, gut/schlecht, neue Begriffe, Änderungen für die nächste Woche) und lässt einen kurzen optionalen Abschnitt „Meine Sicht“ frei.
-10. **Alles aufs Kanban-Board:** Pull Requests ohne eigenes Issue (z. B. kleine Doku-Änderungen) kommen direkt als Karte aufs Board in die Spalte *Review*.
-11. **Merge immer selbst prüfen** (`gh pr view`), bevor lokal aufgeräumt wird. **Jedes Issue sagt, wie es abgeschlossen wird** – per PR-Merge oder durch Schließen des Issues (bei reinen Einstellungen).
+9. **Nach jedem Merge mit neuem Konzept:** eine Konzept-Notiz im Obsidian-Vault `D:\Obsidian\Gamedev` anlegen (`Konzepte/` oder `Werkzeuge/`, Frontmatter `autor: claude`, auf Deutsch, mit Links zum Code).
+10. **Retro am Ende jedes Meilensteins:** Claude schreibt sie als Doku in `Retros/` (fertig, Zahlen, gut/schlecht, neue Begriffe, Änderungen für die nächste Woche) und lässt einen kurzen optionalen Abschnitt „Meine Sicht“ frei. Zum Abschluss gehört auch: Meilenstein schließen.
+11. **Alles aufs Kanban-Board:** Pull Requests ohne eigenes Issue (z. B. kleine Doku-Änderungen) kommen direkt als Karte aufs Board in die Spalte *Review*.
+12. **Merge immer selbst prüfen** (`gh pr view`), bevor lokal aufgeräumt wird. **Jedes Issue sagt, wie es abgeschlossen wird** – per PR-Merge oder durch Schließen des Issues (bei reinen Einstellungen).
 
 ## Definition of Done
 
@@ -30,7 +31,8 @@ Ein Pull Request darf gemergt werden, wenn:
 - neue Spiellogik eigene Tests hat,
 - der Mensch das Feature selbst gespielt hat,
 - der Mensch jede geänderte Datei grob verstanden hat und Fragen geklärt sind,
-- die Doku angepasst ist, falls nötig.
+- die Doku angepasst ist, falls nötig,
+- sichtbare Änderungen im `CHANGELOG.md` unter *Unveröffentlicht* stehen.
 
 ## Sprachen
 
