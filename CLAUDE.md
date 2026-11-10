@@ -20,7 +20,8 @@ Diese Datei liest Claude bei jeder Aufgabe. Sie beschreibt, wie wir arbeiten. Di
    - **Notbremse:** nach ~3 gescheiterten Versuchen am selben Fehler aufhören und fragen.
 8. **Nach jedem Merge mit neuem Konzept:** eine Konzept-Notiz im Obsidian-Vault `D:\Obsidian\Gamedev` anlegen (`Konzepte/` oder `Werkzeuge/`, Frontmatter `autor: claude`, auf Deutsch, mit Links zum Code).
 9. **Retro am Ende jedes Meilensteins:** Claude schreibt sie als Doku in `Retros/` (fertig, Zahlen, gut/schlecht, neue Begriffe, Änderungen für die nächste Woche) und lässt einen kurzen optionalen Abschnitt „Meine Sicht“ frei.
-10. **Merge immer selbst prüfen** (`gh pr view`), bevor lokal aufgeräumt wird. **Jedes Issue sagt, wie es abgeschlossen wird** – per PR-Merge oder durch Schließen des Issues (bei reinen Einstellungen).
+10. **Alles aufs Kanban-Board:** Pull Requests ohne eigenes Issue (z. B. kleine Doku-Änderungen) kommen direkt als Karte aufs Board in die Spalte *Review*.
+11. **Merge immer selbst prüfen** (`gh pr view`), bevor lokal aufgeräumt wird. **Jedes Issue sagt, wie es abgeschlossen wird** – per PR-Merge oder durch Schließen des Issues (bei reinen Einstellungen).
 
 ## Definition of Done
 
