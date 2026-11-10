@@ -8,8 +8,9 @@ using SilverAndAsh.Core.World;
 using SilverAndAsh.Game.Input;
 using SilverAndAsh.Game.Rendering;
 
-const int ScreenWidth = 1280;
-const int ScreenHeight = 720;
+// Starting size of the window. It can be resized; the 3D picture keeps its shape (black bars if needed).
+const int WindowWidth = 1280;
+const int WindowHeight = 720;
 
 var version = typeof(Program).Assembly
     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
@@ -71,8 +72,9 @@ using (log)
 
 static void RunGame(Level level, string displayVersion)
 {
-    Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.Msaa4xHint);
-    Raylib.InitWindow(ScreenWidth, ScreenHeight, "Silver & Ash");
+    // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted.
+    Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
+    Raylib.InitWindow(WindowWidth, WindowHeight, "Silver & Ash");
 
     // Esc must not close the game any more - it releases the mouse (later: opens the pause menu).
     Raylib.SetExitKey(KeyboardKey.Null);
@@ -84,6 +86,7 @@ static void RunGame(Level level, string displayVersion)
         input.CaptureMouse();
 
         var accumulator = new TickAccumulator();
+        using var world = new LowResolutionTarget(LookSettings.RenderWidth, LookSettings.RenderHeight);
 
         // Game loop: runs once per drawn frame until the window is closed (X button).
         while (!Raylib.WindowShouldClose())
@@ -107,31 +110,23 @@ static void RunGame(Level level, string displayVersion)
                 Position = eye,
                 Target = eye + player.View.Forward,
                 Up = Vector3.UnitY,
-                FovY = 70f,
+                FovY = LookSettings.FieldOfViewDegrees,
                 Projection = CameraProjection.Perspective,
             };
 
-            Raylib.BeginDrawing();
-            Raylib.ClearBackground(new Color(20, 16, 24, 255));
-
+            // 3a. The 3D world goes into the small low-resolution picture ...
+            world.BeginDrawing();
+            Raylib.ClearBackground(LookSettings.BackgroundColor);
             Raylib.BeginMode3D(camera);
             LevelRenderer.Draw(level);
             Raylib.EndMode3D();
+            world.EndDrawing();
 
-            Raylib.DrawText("Silver & Ash", 20, 20, 30, new Color(200, 200, 210, 255));
-            Raylib.DrawFPS(20, ScreenHeight - 30);
-
-            if (!input.IsMouseCaptured)
-            {
-                const string Hint = "Click to look around";
-                var hintWidth = Raylib.MeasureText(Hint, 24);
-                Raylib.DrawText(Hint, (ScreenWidth - hintWidth) / 2, ScreenHeight / 2 + 40, 24, new Color(200, 200, 210, 255));
-            }
-
-            var versionText = $"v{displayVersion}";
-            var versionWidth = Raylib.MeasureText(versionText, 20);
-            Raylib.DrawText(versionText, ScreenWidth - versionWidth - 20, ScreenHeight - 30, 20, new Color(120, 120, 130, 255));
-
+            // 3b. ... which is scaled up onto the screen. The HUD is drawn afterwards at full resolution (sharp).
+            Raylib.BeginDrawing();
+            Raylib.ClearBackground(LookSettings.BarColor);
+            world.DrawToScreen();
+            DrawHud(input.IsMouseCaptured, displayVersion);
             Raylib.EndDrawing();
         }
     }
@@ -139,4 +134,26 @@ static void RunGame(Level level, string displayVersion)
     {
         Raylib.CloseWindow();
     }
+}
+
+// Texts on top of the 3D world, in full window resolution - always sharp, whatever the window size.
+static void DrawHud(bool isMouseCaptured, string displayVersion)
+{
+    var screenWidth = Raylib.GetScreenWidth();
+    var screenHeight = Raylib.GetScreenHeight();
+    var textColor = new Color(200, 200, 210, 255);
+
+    Raylib.DrawText("Silver & Ash", 20, 20, 30, textColor);
+    Raylib.DrawFPS(20, screenHeight - 30);
+
+    if (!isMouseCaptured)
+    {
+        const string Hint = "Click to look around";
+        var hintWidth = Raylib.MeasureText(Hint, 24);
+        Raylib.DrawText(Hint, (screenWidth - hintWidth) / 2, screenHeight / 2 + 40, 24, textColor);
+    }
+
+    var versionText = $"v{displayVersion}";
+    var versionWidth = Raylib.MeasureText(versionText, 20);
+    Raylib.DrawText(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
 }
