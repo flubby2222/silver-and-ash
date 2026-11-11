@@ -224,5 +224,9 @@ static void DrawDebugInfo(Player player)
     {
         Raylib.DrawText("DASH", 20, 110, 20, new Color(140, 200, 230, 255));
     }
+    else if (player.IsDodging)
+    {
+        Raylib.DrawText("DODGE", 20, 110, 20, new Color(140, 230, 160, 255));
+    }
 }
 #endif

@@ -37,10 +37,16 @@ public sealed class Player
     /// <summary>The camera "nod" after landing.</summary>
     public LandingDip LandingDip { get; } = new();
 
-    /// <summary>Position of the eyes after the latest tick.</summary>
-    public Vector3 EyePosition => Position + EyeOffset;
+    /// <summary>Position of the eyes after the latest tick (lower while ducked).</summary>
+    public Vector3 EyePosition => Position + new Vector3(0f, Crouch.EyeHeight(Crouch.Amount), 0f);
 
-    private static Vector3 EyeOffset => new(0f, Tuning.Player.EyeHeight, 0f);
+    /// <summary>How far the player is ducked (for the camera).</summary>
+    public Crouch Crouch { get; } = new();
+
+    /// <summary>
+    /// Height of the body for collisions (ceiling now, enemies and projectiles later): smaller while dodging.
+    /// </summary>
+    public float CollisionHeight => IsDodging ? Tuning.Player.DodgeHeight : Tuning.Player.Height;
 
     /// <summary>
     /// Applies the look part of the input. Called once per drawn frame (not per tick),
@@ -73,8 +79,23 @@ public sealed class Player
     private static readonly float DashSpeed = Tuning.Player.DashDistance / (DashTicks * SimulationClock.SecondsPerTick);
     private int _dashTicksLeft;
     private Vector3 _dashDirection;
-    private bool _dashWasHeld;
     private bool _airDashUsed;
+
+    // Jump pressed at the end of a dash: kept until the landing, however long the fall after the dash takes.
+    private bool _jumpPressedAtDashEnd;
+
+    /// <summary>
+    /// True during a dodge: ducked, fast, fully steerable, no refilling. No jumping either - except a jump
+    /// pressed at its end, which comes as a perfect jump when the dodge is over.
+    /// </summary>
+    public bool IsDodging => _dodgeTicksLeft > 0;
+
+    private static readonly int DodgeTicks = SimulationClock.SecondsToTicks(Tuning.Player.DodgeDuration);
+    private int _dodgeTicksLeft;
+    private Vector3 _dodgeDirection;
+
+    // Shift is one button for two moves: dash in the air, dodge on the ground. Needs a fresh press.
+    private bool _evadeWasHeld;
 
     // How long the feet have been on the ground without a break.
     private int _ticksOnGround;
@@ -88,6 +109,7 @@ public sealed class Player
     private static readonly int PerfectWindowTicks = SimulationClock.SecondsToTicks(Tuning.Player.PerfectJumpWindow);
     private int _ticksSinceLanding = Never;
     private int _ticksSinceJumpPressedInAir = Never;
+    private int _ticksSinceDodgeEnded = Never;
     private int _ticksInAir;
     private bool _perfectJumpQueued;
 
@@ -108,6 +130,7 @@ public sealed class Player
         var wasGrounded = IsGrounded;
         _ticksSinceLanding = Math.Min(_ticksSinceLanding + 1, Never);
         _ticksSinceJumpPressedInAir = Math.Min(_ticksSinceJumpPressedInAir + 1, Never);
+        _ticksSinceDodgeEnded = Math.Min(_ticksSinceDodgeEnded + 1, Never);
 
         // A chain of jumps ends when the player stays on the ground longer than the perfect window:
         // bonus and exhaustion are over. It ends on the ground, not at the moment of landing - a timed press
@@ -120,7 +143,8 @@ public sealed class Player
             IsExhausted = false;
         }
 
-        Stamina.SetRecharging(chainOver);
+        // No refilling during a dodge either - otherwise standing on the ground would pay part of it back.
+        Stamina.SetRecharging(chainOver && !IsDodging);
         Stamina.Tick();
 
         // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
@@ -134,18 +158,48 @@ public sealed class Player
         var jumpPressed = input.Jump && !_jumpWasHeld;
         _jumpWasHeld = input.Jump;
 
-        if (jumpPressed && !IsGrounded && !IsDashing)
+        if (jumpPressed && !IsGrounded && !IsDashing && !IsDodging)
         {
             // Pressed in the air: remember when - if we land soon, the jump happens then ("buffered").
             _ticksSinceJumpPressedInAir = 0;
         }
 
-        // Dash: starts on a fresh press, then overrides walking and jumping for its duration.
-        var dashPressed = input.Dash && !_dashWasHeld;
-        _dashWasHeld = input.Dash;
-        if (dashPressed)
+        if (jumpPressed && IsDashing && _dashTicksLeft <= PerfectWindowTicks)
         {
-            TryStartDash(input);
+            // Pressed at the end of a dash: a perfect jump on landing. Earlier in the dash the press is ignored -
+            // otherwise a dash that lands on a low step would fire a late jump (code review finding).
+            // Already on the ground (the dash landed on a step): no landing will follow, so the jump comes
+            // right after the dash instead of waiting for some much later landing.
+            if (IsGrounded)
+            {
+                _perfectJumpQueued = true;
+            }
+            else
+            {
+                _jumpPressedAtDashEnd = true;
+            }
+        }
+
+        if (jumpPressed && IsDodging && _dodgeTicksLeft <= PerfectWindowTicks)
+        {
+            // Pressed at the end of a dodge: jump as soon as it is over, as a timed jump - the same rhythm
+            // as pressing shortly before landing. Pressed earlier in the dodge, the press is simply ignored.
+            _perfectJumpQueued = true;
+        }
+
+        // Shift on a fresh press: dodge on the ground, dash in the air. Both override walking and jumping.
+        var evadePressed = input.Dash && !_evadeWasHeld;
+        _evadeWasHeld = input.Dash;
+        if (evadePressed)
+        {
+            if (IsGrounded)
+            {
+                TryStartDodge(input);
+            }
+            else
+            {
+                TryStartDash(input);
+            }
         }
 
         if (IsDashing)
@@ -154,12 +208,26 @@ public sealed class Player
             vertical = 0f;
         }
 
-        var jumpNow = !IsDashing && IsGrounded && (jumpPressed || _perfectJumpQueued);
+        if (IsDodging)
+        {
+            // Fully steerable: the dodge always goes where the player walks. Without keys it keeps its last direction.
+            var wish = WishDirection(input);
+            if (wish.LengthSquared() > 0f)
+            {
+                _dodgeDirection = Vector3.Normalize(wish);
+            }
+
+            horizontal = _dodgeDirection * Tuning.Player.DodgeSpeed;
+        }
+
+        var jumpNow = !IsDashing && !IsDodging && IsGrounded && (jumpPressed || _perfectJumpQueued);
         if (jumpNow)
         {
-            // Timed: either pressed shortly before landing (queued) or shortly after landing.
+            // Timed: pressed shortly before landing or at the end of a dodge (queued),
+            // or shortly after landing or after a dodge.
             var wasQueued = _perfectJumpQueued;
-            var timed = wasQueued || _ticksSinceLanding <= PerfectWindowTicks;
+            var afterDodge = _ticksSinceDodgeEnded <= PerfectWindowTicks;
+            var timed = wasQueued || afterDodge || _ticksSinceLanding <= PerfectWindowTicks;
             _perfectJumpQueued = false;
             vertical = Tuning.Player.JumpSpeed;
 
@@ -192,7 +260,7 @@ public sealed class Player
         Velocity = horizontal with { Y = vertical };
 
         // Walls first (sideways), then gravity, floor and ceiling (up and down).
-        (Position, Velocity) = CharacterCollision.Move(_level, Position, Velocity, Tuning.Player.Radius, Dt);
+        (Position, Velocity) = CharacterCollision.Move(_level, Position, Velocity, Tuning.Player.Radius, Dt, CollisionHeight);
 
         // Falling speed at the end of this tick - needed for the landing dip, because landing sets it to 0.
         var fallSpeed = -(Velocity.Y - Tuning.Player.Gravity * Dt);
@@ -200,22 +268,53 @@ public sealed class Player
         var airTicksBeforeLanding = _ticksInAir;
         var gravity = IsDashing ? 0f : Tuning.Player.Gravity;
         (Position, Velocity, var grounded) = CharacterCollision.MoveVertically(
-            _level, Position, Velocity, Tuning.Player.Radius, Tuning.Player.Height, gravity, Dt);
+            _level, Position, Velocity, Tuning.Player.Radius, CollisionHeight, gravity, Dt);
         IsGrounded = grounded;
         _ticksInAir = grounded ? 0 : _ticksInAir + 1;
         _ticksOnGround = grounded ? _ticksOnGround + 1 : 0;
 
-        // Back on the ground (and not in the middle of a dash): the air dash is available again.
-        // Not during a dash - touching a low step mid-dash must not hand out a second one.
-        if (grounded && !IsDashing)
+        // Back on the ground (and not in the middle of a dash or dodge): the air dash is available again.
+        // Not during them - touching a low step mid-dash must not hand out a second one.
+        if (grounded && !IsDashing && !IsDodging)
         {
             _airDashUsed = false;
         }
 
         if (IsDashing)
         {
-            EndDashTick();
+            _dashTicksLeft--;
+            if (!IsDashing)
+            {
+                FallBackToTopSpeed();
+            }
         }
+
+        if (IsDodging)
+        {
+            _dodgeTicksLeft--;
+            if (!IsDodging)
+            {
+                FallBackToTopSpeed();
+
+                // The window for a perfect jump out of the dodge - only on the ground. A dodge that ended in the
+                // air (off a ledge) must not keep a queued jump for a much later landing.
+                if (grounded)
+                {
+                    _ticksSinceDodgeEnded = 0;
+
+                    // The dodge used up the air dash (for dodges off a ledge). It ended on the ground, so the
+                    // next stay in the air gets its own - a jump straight out of the dodge never touches the
+                    // ground long enough to get it back otherwise (found while playing).
+                    _airDashUsed = false;
+                }
+                else
+                {
+                    _perfectJumpQueued = false;
+                }
+            }
+        }
+
+        Crouch.Tick(IsDodging);
 
         if (!wasGrounded && grounded)
         {
@@ -228,9 +327,12 @@ public sealed class Player
                 _ticksSinceLanding = 0;
             }
 
-            if (realLanding && _ticksSinceJumpPressedInAir <= PerfectWindowTicks)
+            var pressedAtDashEnd = _jumpPressedAtDashEnd;
+            _jumpPressedAtDashEnd = false;
+            if ((realLanding && _ticksSinceJumpPressedInAir <= PerfectWindowTicks) || pressedAtDashEnd)
             {
-                // Pressed just before landing: jump again right away in the next tick, as a timed jump.
+                // Pressed just before landing (or at the end of the dash): jump again right away in the next tick
+                // (after a dash that landed on a step: when the dash is over), as a timed jump.
                 // Only a jump the stamina can pay for lands softly.
                 _perfectJumpQueued = true;
                 _ticksSinceJumpPressedInAir = Never;
@@ -249,7 +351,7 @@ public sealed class Player
     /// </summary>
     private void TryStartDash(PlayerInput input)
     {
-        var allowed = !IsDashing && !IsGrounded && !_airDashUsed;
+        var allowed = !IsDashing && !IsDodging && !IsGrounded && !_airDashUsed;
         if (!allowed || !Stamina.TryPay())
         {
             return;
@@ -264,15 +366,30 @@ public sealed class Player
         _airDashUsed = true;
     }
 
-    /// <summary>Counts the dash down. On its last tick the speed falls back to the normal top speed.</summary>
-    private void EndDashTick()
+    /// <summary>
+    /// Starts a dodge if allowed: on the ground, not already dodging, and the stamina pays
+    /// <see cref="Tuning.Player.DodgeStaminaSegments"/> segments. Direction: where the player walks, or forward.
+    /// </summary>
+    private void TryStartDodge(PlayerInput input)
     {
-        _dashTicksLeft--;
-        if (IsDashing)
+        if (IsDodging || !Stamina.TryPay(Tuning.Player.DodgeStaminaSegments))
         {
             return;
         }
 
+        var wish = WishDirection(input);
+        _dodgeDirection = wish.LengthSquared() > 0f ? Vector3.Normalize(wish) : View.FlatForward;
+        _dodgeTicksLeft = DodgeTicks;
+        _perfectJumpQueued = false;
+
+        // If the dodge runs off a ledge, that stay in the air already had its move - no dash on top
+        // (code review finding: dodge + dash = about 8 m of evading).
+        _airDashUsed = true;
+    }
+
+    /// <summary>After a dash or dodge: the speed falls back to the normal top speed (if it is above it).</summary>
+    private void FallBackToTopSpeed()
+    {
         var horizontal = new Vector3(Velocity.X, 0f, Velocity.Z);
         var topSpeed = TopSpeed(IsGrounded);
         if (horizontal.Length() > topSpeed)
@@ -304,8 +421,7 @@ public sealed class Player
     /// </summary>
     public Vector3 InterpolatedEyePosition(float alpha) =>
         Vector3.Lerp(PreviousPosition, Position, Math.Clamp(alpha, 0f, 1f))
-        + EyeOffset
-        - new Vector3(0f, LandingDip.Interpolated(alpha), 0f);
+        + new Vector3(0f, Crouch.EyeHeight(Crouch.Interpolated(alpha)) - LandingDip.Interpolated(alpha), 0f);
 
     /// <summary>How far the view tilts down because of the landing dip, in radians (for drawing).</summary>
     public float InterpolatedViewTilt(float alpha) => LandingDip.Interpolated(alpha) * Tuning.Player.LandingTiltPerMetre;

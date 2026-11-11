@@ -57,15 +57,15 @@ public static class Tuning
 
         /// <summary>
         /// Landing dip: how deep the eyes sink per m/s of falling speed, in metres.
-        /// A normal jump landing (about 6.5 m/s) gives about 8 cm.
+        /// A normal jump landing (about 6.5 m/s) gives about 12 cm.
         /// </summary>
-        public const float LandingDipPerSpeed = 0.0125f;
+        public const float LandingDipPerSpeed = 0.01875f;
 
         /// <summary>Landing dip: the eyes never sink further than this, in metres.</summary>
-        public const float LandingDipMax = 0.15f;
+        public const float LandingDipMax = 0.22f;
 
         /// <summary>Landing dip: how long the whole nod (down and back up) takes, in seconds. Longer = softer.</summary>
-        public const float LandingDipDuration = 0.45f;
+        public const float LandingDipDuration = 0.3f;
 
         /// <summary>
         /// Perfect jump: how close to the landing (before OR after) the jump must be pressed, in seconds.
@@ -99,6 +99,24 @@ public static class Tuning
 
         /// <summary>Dash: how long it takes, in seconds. No gravity during this time.</summary>
         public const float DashDuration = 0.15f;
+
+        /// <summary>Dodge (on the ground): how long it lasts, in seconds.</summary>
+        public const float DodgeDuration = 0.4f;
+
+        /// <summary>Dodge: speed in m/s (0.4 s x 10 m/s = about 4 m).</summary>
+        public const float DodgeSpeed = 10f;
+
+        /// <summary>Dodge: stamina cost in segments.</summary>
+        public const int DodgeStaminaSegments = 2;
+
+        /// <summary>Dodge: height of the ducked body (hitbox) in metres, instead of <see cref="Height"/>.</summary>
+        public const float DodgeHeight = 1f;
+
+        /// <summary>Dodge: eye height while ducked, instead of <see cref="EyeHeight"/>.</summary>
+        public const float DodgeEyeHeight = 0.85f;
+
+        /// <summary>Ducking and standing up take this long, in seconds (smooth, no jerk).</summary>
+        public const float CrouchTransitionTime = 0.1f;
 
         /// <summary>Landing dip: how much the view tilts down per metre of dip, in radians (the "nod").</summary>
         public const float LandingTiltPerMetre = 0.35f;

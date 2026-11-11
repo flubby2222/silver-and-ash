@@ -32,7 +32,8 @@ public class LandingDipTests
 
         var (deepest, _) = WatchDip(player, SimulationClock.TicksPerSecond);
 
-        Assert.InRange(deepest, 0.04f, 0.12f);
+        // About 12 cm for a normal jump (harder since playtesting; before: about 8 cm).
+        Assert.InRange(deepest, 0.08f, 0.16f);
     }
 
     [Fact]
@@ -50,14 +51,16 @@ public class LandingDipTests
     [Fact]
     public void The_dip_is_soft_no_sudden_jumps_between_ticks()
     {
-        // Softness = the camera never moves more than 1 cm per tick (at 60 ticks per second).
-        // The first version moved the full dip in a single tick - that was the unpleasant twitch.
+        // Softness = the camera never moves more than a fifth of the dip in one tick, so the way down takes
+        // several ticks. The first version moved the full dip in a single tick - that was the unpleasant twitch.
+        // (Until the harder nod from playtesting this was a fixed 1 cm per tick; a deeper, faster nod needs
+        // bigger steps, so the rule is now relative to the depth.)
         var player = new Player(Room);
         JumpAndLand(player);
 
-        var (_, largestStep) = WatchDip(player, SimulationClock.TicksPerSecond);
+        var (deepest, largestStep) = WatchDip(player, SimulationClock.TicksPerSecond);
 
-        Assert.True(largestStep <= 0.01f, $"Largest change per tick was {largestStep:0.0000} m.");
+        Assert.True(largestStep <= deepest / 5f, $"Largest change per tick was {largestStep:0.0000} m of {deepest:0.0000} m.");
     }
 
     [Fact]
@@ -114,8 +117,9 @@ public class LandingDipTests
         dip.Land(10f);
         dip.Tick();
 
-        // Still on the same smooth wave - no jump.
-        Assert.InRange(dip.Depth - before, 0f, 0.01f);
+        // Still on the same smooth wave - no jump. A restart would drop the depth back to almost 0.
+        // (2.5 cm instead of 1 cm since the faster nod from playtesting: one normal step is about 2 cm now.)
+        Assert.InRange(dip.Depth - before, 0f, 0.025f);
     }
 
     [Fact]
