@@ -76,8 +76,24 @@ public sealed class Player
     /// <summary>Pays for jumps and dashes.</summary>
     public Stamina Stamina { get; } = new();
 
-    /// <summary>Health of the player. Nothing does damage yet - enemies come in v0.5.</summary>
-    public int Health { get; } = Tuning.Combat.PlayerMaxHealth;
+    /// <summary>Number of this player (0 for now; with online co-op every player gets their own).</summary>
+    public int Id { get; }
+
+    /// <summary>Health of the player.</summary>
+    public int Health { get; private set; } = Tuning.Combat.PlayerMaxHealth;
+
+    /// <summary>The player's body, for enemies that must not crawl through it.</summary>
+    public CylinderBody Body => new(Position, Tuning.Player.Radius, CollisionHeight);
+
+    /// <summary>Takes <paramref name="damage"/> (never below 0) and reports it into <paramref name="events"/>.</summary>
+    public void TakeDamage(int damage, ICollection<GameEvent> events)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(damage);
+        ArgumentNullException.ThrowIfNull(events);
+        var taken = Math.Min(damage, Health);
+        Health -= taken;
+        events.Add(new PlayerHit(Id, taken));
+    }
 
     /// <summary>Waiting time of the silver blade.</summary>
     public Cooldown BladeCooldown { get; } = new(Tuning.Combat.BladeCooldown);

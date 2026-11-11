@@ -91,6 +91,33 @@ public static class Tuning
 
         /// <summary>Seconds the dead body lies on the ground before it disappears.</summary>
         public const float CorpseTime = 2f;
+
+        /// <summary>It notices a player it can see who is closer than this, in metres.</summary>
+        public const float SightRange = 12f;
+
+        /// <summary>Height of its eyes above its feet (for seeing players), in metres.</summary>
+        public const float EyeHeight = 0.8f;
+
+        /// <summary>Crawling speed in m/s - slower than the player (6 m/s): you can get away.</summary>
+        public const float Speed = 3.5f;
+
+        /// <summary>It starts its blow when a player is this close (centre to centre, flat), in metres.</summary>
+        public const float AttackReach = 1.5f;
+
+        /// <summary>Seconds of drawing back before the blow - the time to step away or dodge.</summary>
+        public const float WindUpTime = 0.5f;
+
+        /// <summary>The blow only hits a player at most this many degrees to the side of where it faced at the start.</summary>
+        public const float AttackHalfAngle = 60f;
+
+        /// <summary>Damage of a blow.</summary>
+        public const int AttackDamage = 20;
+
+        /// <summary>Seconds of rest after a blow.</summary>
+        public const float RecoverTime = 0.8f;
+
+        /// <summary>The way to the target is searched again at most this often, in seconds.</summary>
+        public const float RepathTime = 0.5f;
     }
 
     /// <summary>The player character.</summary>

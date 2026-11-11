@@ -33,6 +33,15 @@ public sealed record DummyHit(int DummyId, int Damage, bool Critical = false) : 
 /// <summary>Ghoul <paramref name="GhoulId"/> took <paramref name="Damage"/>; <paramref name="Critical"/> for a headshot.</summary>
 public sealed record GhoulHit(int GhoulId, int Damage, bool Critical = false) : GameEvent;
 
+/// <summary>Ghoul <paramref name="GhoulId"/> starts drawing back for a blow.</summary>
+public sealed record GhoulWindUp(int GhoulId) : GameEvent;
+
+/// <summary>Ghoul <paramref name="GhoulId"/> strikes; <paramref name="Hit"/> tells whether the blow landed.</summary>
+public sealed record GhoulStruck(int GhoulId, bool Hit) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> took <paramref name="Damage"/>.</summary>
+public sealed record PlayerHit(int PlayerId, int Damage) : GameEvent;
+
 /// <summary>Ghoul <paramref name="GhoulId"/> reached 0 health and dies.</summary>
 public sealed record GhoulDied(int GhoulId) : GameEvent;
 
