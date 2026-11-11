@@ -21,7 +21,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Landungs-Nicken: Beim Aufkommen sackt der Blick kurz ab und neigt sich – je tiefer der Fall, desto stärker
 - Perfect Jump: Wer kurz vor oder nach dem Aufkommen erneut springt, bekommt +20 % Tempo (nicht stapelbar); die Landung fällt dabei sanfter aus
 - Stamina-Balken (unten in der Mitte) mit 5 Segmenten: Jeder Sprung kostet eins. Er lädt nur am Boden, in 3 s von leer bis voll. Ein Sprung mit leerem Balken ist erschöpft: 20 % langsamer als Laufen (4,8 statt 6 m/s) bis zum Ende der Sprungkette
-- Dash mit der linken Umschalttaste: 4 m in 0,15 s in Laufrichtung (ohne Richtung nach vorn), ohne Schwerkraft. Kostet ein Stamina-Segment, in der Luft einmal pro Sprung
+- Dash in der Luft mit der linken Umschalttaste: 4 m in 0,15 s in Laufrichtung (ohne Richtung nach vorn), ohne Schwerkraft. Einmal pro Sprung, kostet ein Stamina-Segment
 
 ## [0.2.0] – 2026-11-10 – Bewegung & Physik
 

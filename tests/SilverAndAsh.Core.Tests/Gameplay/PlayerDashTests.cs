@@ -17,62 +17,73 @@ public class PlayerDashTests
     private static float SegmentFraction => 1f / Tuning.Player.StaminaJumps;
 
     [Fact]
+    public void On_the_ground_there_is_no_dash()
+    {
+        // Found while playing: on the ground the bar refills, so dashing there could be repeated again and again.
+        var player = StandingPlayer();
+
+        player.Tick(DashOnly);
+
+        Assert.False(player.IsDashing);
+        Assert.Equal(1f, player.Stamina.Fraction);
+    }
+
+    [Fact]
     public void A_dash_covers_the_dash_distance_in_the_dash_duration()
     {
-        var player = StandingPlayer();
+        var player = InTheAir(StandingPlayer());
         var start = player.Position;
 
         player.Tick(DashOnly);
         RunTicks(player, PlayerInput.None, DashTicks - 1);
 
         Assert.False(player.IsDashing);
-        Assert.Equal(Tuning.Player.DashDistance, Vector3.Distance(start, player.Position), Tolerance);
+        Assert.Equal(Tuning.Player.DashDistance, FlatDistance(start, player.Position), Tolerance);
     }
 
     [Fact]
     public void Without_a_walking_direction_the_dash_goes_forward()
     {
-        var player = StandingPlayer();
+        var player = InTheAir(StandingPlayer());
         var start = player.Position;
 
         player.Tick(DashOnly);
         RunTicks(player, PlayerInput.None, DashTicks - 1);
 
-        var moved = Vector3.Normalize(player.Position - start);
-        Assert.Equal(1f, Vector3.Dot(moved, player.View.FlatForward), Tolerance);
+        Assert.Equal(1f, Vector3.Dot(FlatDirection(start, player.Position), player.View.FlatForward), Tolerance);
     }
 
     [Fact]
     public void The_dash_follows_the_walking_direction()
     {
-        var player = new Player(OpenField());
+        var player = InTheAir(new Player(OpenField()));
         var right = PlayerInput.None with { Move = new Vector2(1f, 0f) };
         var start = player.Position;
 
         player.Tick(right with { Dash = true });
         RunTicks(player, right, DashTicks - 1);
 
-        var moved = Vector3.Normalize(player.Position - start);
-        Assert.Equal(1f, Vector3.Dot(moved, player.View.FlatRight), Tolerance);
+        Assert.Equal(1f, Vector3.Dot(FlatDirection(start, player.Position), player.View.FlatRight), Tolerance);
     }
 
     [Fact]
     public void A_dash_costs_one_segment()
     {
-        var player = StandingPlayer();
+        var player = InTheAir(StandingPlayer());
+        var before = player.Stamina.Fraction;
 
         player.Tick(DashOnly);
 
         Assert.True(player.IsDashing);
-        Assert.Equal(1f - SegmentFraction, player.Stamina.Fraction, Tolerance);
+        Assert.Equal(before - SegmentFraction, player.Stamina.Fraction, Tolerance);
     }
 
     [Fact]
     public void Holding_the_dash_button_dashes_only_once()
     {
-        // Counts dash starts directly - the stamina is no good measure here, it refills while standing
-        // (code review: two dashes would still have left more than 1 - 2 segments).
-        var player = StandingPlayer();
+        // Counts dash starts directly instead of looking at the stamina
+        // (code review: a weaker check let two dashes slip through).
+        var player = InTheAir(StandingPlayer());
         var starts = 0;
 
         for (var i = 0; i < 3 * DashTicks; i++)
@@ -89,26 +100,11 @@ public class PlayerDashTests
     }
 
     [Fact]
-    public void A_dash_off_a_ledge_uses_up_the_air_dash()
-    {
-        // Found by the code review: ground dash over a pit, then a second dash in the air = 8 m flat glide
-        // without a jump. The stay in the air starts during the first dash, so that one counts as the air dash.
-        var player = new Player(LevelParser.Parse("P\n_\n_\n_\n_\n."));
-        player.Tick(DashOnly);
-        RunTicks(player, PlayerInput.None, DashTicks - 1);
-        Assert.False(player.IsGrounded);
-
-        player.Tick(DashOnly);
-
-        Assert.False(player.IsDashing);
-    }
-
-    [Fact]
     public void A_jump_pressed_during_a_dash_is_not_buffered()
     {
         // Found by the code review: an air dash that lands on a low step (0.25 m) while jump is being pressed.
         // The press was buffered, and the jump fired after the dash - late, but still as a perfect jump.
-        // A dash ignores the jump button: on the ground it already did, now in the air, too.
+        // A dash ignores the jump button.
         var scenarios = 0;
         for (var flat = 3; flat <= 8; flat++)
         {
@@ -209,44 +205,42 @@ public class PlayerDashTests
     [Fact]
     public void A_wall_stops_the_dash()
     {
-        // Wall 2 cells ahead: the start is in the middle of cell 0, the wall begins at 3 m.
-        var player = new Player(LevelParser.Parse("P\n.\n#"));
+        // Wall 2 cells ahead: the start is in the middle of cell 0, the wall begins 3 m ahead.
+        var player = InTheAir(new Player(LevelParser.Parse("P\n.\n#")));
         var start = player.Position;
 
         player.Tick(DashOnly);
         RunTicks(player, PlayerInput.None, DashTicks + 5);
 
-        var travelled = Vector3.Distance(start, player.Position);
+        var travelled = FlatDistance(start, player.Position);
         Assert.True(travelled < 3f - Tuning.Player.Radius + Tolerance, $"Travelled {travelled:0.00} m into a wall 3 m away.");
     }
 
     [Fact]
     public void After_the_dash_the_speed_falls_back_to_the_top_speed()
     {
-        var player = StandingPlayer();
+        var player = InTheAir(StandingPlayer());
 
         player.Tick(ForwardDash);
         RunTicks(player, Forward, DashTicks - 1);
 
         Assert.False(player.IsDashing);
-        Assert.Equal(Tuning.Player.MaxSpeed, HorizontalSpeed(player), Tolerance);
-    }
-
-    [Fact]
-    public void Jumping_is_not_possible_during_a_dash()
-    {
-        var player = StandingPlayer();
-        player.Tick(DashOnly);
-
-        player.Tick(PlayerInput.None with { Jump = true });
-
-        Assert.True(player.IsGrounded);
-        Assert.True(player.IsDashing);
+        Assert.False(player.IsGrounded);
+        Assert.Equal(NormalAirSpeed, HorizontalSpeed(player), Tolerance);
     }
 
     /// <summary>A player standing at the start of a long corridor.</summary>
     private static Player StandingPlayer() =>
         new(LevelParser.Parse(string.Join('\n', Enumerable.Repeat(".", 40).Prepend("P"))));
+
+    /// <summary>Jumps straight up (no walking) and waits a few ticks, so the player is clearly in the air.</summary>
+    private static Player InTheAir(Player player)
+    {
+        player.Tick(PlayerInput.None with { Jump = true });
+        RunTicks(player, PlayerInput.None, 5);
+        Assert.False(player.IsGrounded);
+        return player;
+    }
 
     /// <summary>A wide open room, so the dash can go sideways, too.</summary>
     private static Level OpenField()
@@ -256,4 +250,8 @@ public class PlayerDashTests
         rows[5] = "....." + "P" + ".....";
         return LevelParser.Parse(string.Join('\n', rows));
     }
+
+    private static float FlatDistance(Vector3 from, Vector3 to) => new Vector2(to.X - from.X, to.Z - from.Z).Length();
+
+    private static Vector3 FlatDirection(Vector3 from, Vector3 to) => Vector3.Normalize((to - from) with { Y = 0f });
 }

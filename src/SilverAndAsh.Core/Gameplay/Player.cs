@@ -206,7 +206,7 @@ public sealed class Player
         _ticksOnGround = grounded ? _ticksOnGround + 1 : 0;
 
         // Back on the ground (and not in the middle of a dash): the air dash is available again.
-        // Not during a dash - a dash that runs off a ledge already is the air dash (code review finding).
+        // Not during a dash - touching a low step mid-dash must not hand out a second one.
         if (grounded && !IsDashing)
         {
             _airDashUsed = false;
@@ -243,12 +243,13 @@ public sealed class Player
     }
 
     /// <summary>
-    /// Starts a dash if allowed: not already dashing, at most once per stay in the air, and the stamina
-    /// pays one segment (empty bar = no dash). Direction: where the player walks, or forward if not walking.
+    /// Starts a dash if allowed: only in the air (on the ground the bar refills - dashing there could be
+    /// repeated again and again, found while playing), once per stay in the air, not already dashing, and the
+    /// stamina pays one segment (empty bar = no dash). Direction: where the player walks, or forward if not walking.
     /// </summary>
     private void TryStartDash(PlayerInput input)
     {
-        var allowed = !IsDashing && (IsGrounded || !_airDashUsed);
+        var allowed = !IsDashing && !IsGrounded && !_airDashUsed;
         if (!allowed || !Stamina.TryPay())
         {
             return;
@@ -260,7 +261,6 @@ public sealed class Player
         _perfectJumpQueued = false;
         _ticksSinceJumpPressedInAir = Never;
 
-        // Every dash counts as the air dash until the feet are on the ground after it.
         _airDashUsed = true;
     }
 
