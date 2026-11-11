@@ -79,6 +79,21 @@ public static class Tuning
         /// <summary>Perfect jump: the landing nod is scaled by this (0.4 = only 40 % as deep - "cleanly absorbed").</summary>
         public const float PerfectJumpDipFactor = 0.4f;
 
+        /// <summary>Stamina: how many jumps a full bar pays for. Every jump costs one, normal or perfect.</summary>
+        public const int StaminaJumps = 5;
+
+        /// <summary>
+        /// Stamina: seconds from empty to full. Refills only while standing on the ground
+        /// (longer than the perfect window, so a chain of jumps never refills it).
+        /// </summary>
+        public const float StaminaRechargeTime = 3f;
+
+        /// <summary>
+        /// Jump with an empty bar ("exhausted"): walking speed is lowered by this, e.g. 0.2 = -20 %,
+        /// until the chain of jumps ends.
+        /// </summary>
+        public const float ExhaustedJumpSpeedPenalty = 0.2f;
+
         /// <summary>Landing dip: how much the view tilts down per metre of dip, in radians (the "nod").</summary>
         public const float LandingTiltPerMetre = 0.35f;
 

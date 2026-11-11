@@ -138,6 +138,7 @@ static void RunGame(Level level, string displayVersion)
             Raylib.ClearBackground(LookSettings.BarColor);
             world.DrawToScreen();
             DrawHud(input.IsMouseCaptured, displayVersion);
+            DrawStaminaBar(player);
 #if DEBUG
             DrawDebugInfo(player);
 #endif
@@ -172,18 +173,51 @@ static void DrawHud(bool isMouseCaptured, string displayVersion)
     Raylib.DrawText(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
 }
 
+// Stamina for jumps: one segment per jump at the bottom centre. A segment fills up from left to right.
+static void DrawStaminaBar(Player player)
+{
+    const int Segments = Tuning.Player.StaminaJumps;
+    const int SegmentWidth = 48;
+    const int Gap = 4;
+    const int Height = 8;
+
+    var totalWidth = Segments * SegmentWidth + (Segments - 1) * Gap;
+    var left = (Raylib.GetScreenWidth() - totalWidth) / 2;
+    var top = Raylib.GetScreenHeight() - 40;
+
+    // Red background while exhausted: the player should see at once why they are slow.
+    var background = player.IsExhausted ? new Color(110, 25, 30, 220) : new Color(40, 35, 45, 200);
+    var fill = new Color(200, 205, 220, 255);
+
+    for (var i = 0; i < Segments; i++)
+    {
+        var x = left + i * (SegmentWidth + Gap);
+        var segmentFill = Math.Clamp(player.Stamina.Fraction * Segments - i, 0f, 1f);
+
+        Raylib.DrawRectangle(x, top, SegmentWidth, Height, background);
+        Raylib.DrawRectangle(x, top, (int)MathF.Round(SegmentWidth * segmentFill), Height, fill);
+    }
+}
+
 #if DEBUG
 // Test display, only in the debug build (dotnet run) - the released game does not show it.
 static void DrawDebugInfo(Player player)
 {
     var speedText = string.Create(CultureInfo.InvariantCulture, $"Speed {player.HorizontalSpeed:0.00} m/s");
     var bonusColor = new Color(230, 190, 90, 255);
-    var color = player.HasPerfectJumpBonus ? bonusColor : new Color(200, 200, 210, 255);
+    var exhaustedColor = new Color(220, 80, 80, 255);
+    var color = player.HasPerfectJumpBonus ? bonusColor
+        : player.IsExhausted ? exhaustedColor
+        : new Color(200, 200, 210, 255);
 
     Raylib.DrawText(speedText, 20, 60, 20, color);
     if (player.HasPerfectJumpBonus)
     {
         Raylib.DrawText("PERFECT", 20, 85, 20, bonusColor);
+    }
+    else if (player.IsExhausted)
+    {
+        Raylib.DrawText("EXHAUSTED", 20, 85, 20, exhaustedColor);
     }
 }
 #endif
