@@ -6,7 +6,7 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// Everything that is simulated together: the level, the player and the training dummies.
+/// Everything that is simulated together: the level, the player, the training dummies and the ghouls.
 /// One tick of the world advances all of them and collects their events in one list.
 /// <para>
 /// The whole game state lives in this object, not in static fields - a requirement for online co-op later
@@ -17,6 +17,7 @@ public sealed class GameWorld
 {
     private readonly List<GameEvent> _events = [];
     private readonly List<TrainingDummy> _dummies;
+    private readonly List<Ghoul> _ghouls;
 
     /// <summary>Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.</summary>
     public GameWorld(Level level)
@@ -25,8 +26,14 @@ public sealed class GameWorld
         Level = level;
         _dummies = level.DummyPositions.Select((position, index) => new TrainingDummy(index, position)).ToList();
 
-        // The player cannot walk through standing dummies; lying ones are stepped over.
-        Player = new Player(level, () => _dummies.Where(dummy => !dummy.IsDown).Select(dummy => dummy.Body));
+        // Ghoul numbers continue after the dummies': every target has its own number.
+        // They start looking towards the player's start (their head is at the front).
+        _ghouls = level.GhoulPositions
+            .Select((position, index) => new Ghoul(_dummies.Count + index, position, FacingTowards(position, level.PlayerStartPosition)))
+            .ToList();
+
+        // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
+        Player = new Player(level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body));
     }
 
     public Level Level { get; }
@@ -34,6 +41,12 @@ public sealed class GameWorld
     public Player Player { get; }
 
     public IReadOnlyList<TrainingDummy> Dummies => _dummies;
+
+    /// <summary>The ghouls, dead ones included (until the end of the level).</summary>
+    public IReadOnlyList<Ghoul> Ghouls => _ghouls;
+
+    /// <summary>Everything the weapons can hit: dummies and ghouls.</summary>
+    public IEnumerable<ITarget> Targets => _dummies.Cast<ITarget>().Concat(_ghouls);
 
     /// <summary>
     /// The rules that turn a hit into damage (headshots, later items, ...). Part of the world, not static:
@@ -44,15 +57,15 @@ public sealed class GameWorld
     /// <summary>Everything that happened in the latest tick (player and dummies). Read it after every tick.</summary>
     public IReadOnlyList<GameEvent> Events => _events;
 
-    /// <summary>A swing hits every standing dummy in the blade's cone (see <see cref="BladeStrike"/>).</summary>
+    /// <summary>A swing hits every target in the blade's cone (see <see cref="BladeStrike"/>).</summary>
     private void StrikeWithBlade(BladeSwung swing)
     {
-        foreach (var dummy in _dummies)
+        foreach (var target in Targets.Where(target => target.IsHittable).ToList())
         {
-            if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, dummy.Body))
+            if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body))
             {
                 // The blade hits the whole body at once - it has no hit zone (and so no headshot bonus).
-                Damage(dummy, new Hit(Weapon.Blade, HitZone.Body, Tuning.Combat.BladeDamage, swing.Charge));
+                Damage(target, new Hit(Weapon.Blade, HitZone.Body, Tuning.Combat.BladeDamage, swing.Charge));
             }
         }
     }
@@ -67,13 +80,13 @@ public sealed class GameWorld
         var wall = Raycast.AgainstLevel(Level, shot.Origin, direction, Tuning.Combat.PistolRange);
         var nearest = wall?.Distance ?? Tuning.Combat.PistolRange;
 
-        TrainingDummy? target = null;
-        foreach (var dummy in _dummies.Where(dummy => !dummy.IsDown))
+        ITarget? target = null;
+        foreach (var candidate in Targets.Where(candidate => candidate.IsHittable))
         {
-            if (Raycast.AgainstCylinder(shot.Origin, direction, dummy.Body) is { } distance && distance <= nearest)
+            if (Raycast.AgainstCylinder(shot.Origin, direction, candidate.Body) is { } distance && distance <= nearest)
             {
                 nearest = distance;
-                target = dummy;
+                target = candidate;
             }
         }
 
@@ -88,11 +101,18 @@ public sealed class GameWorld
         }
     }
 
+    /// <summary>The flat direction from <paramref name="from"/> to <paramref name="to"/> (length 1), or +Z if they are on top of each other.</summary>
+    private static Vector3 FacingTowards(Vector3 from, Vector3 to)
+    {
+        var flat = (to - from) with { Y = 0f };
+        return flat.LengthSquared() > 0.0001f ? Vector3.Normalize(flat) : Vector3.UnitZ;
+    }
+
     /// <summary>Turns a hit into damage with the world's rules and applies it.</summary>
-    private void Damage(TrainingDummy dummy, Hit hit)
+    private void Damage(ITarget target, Hit hit)
     {
         var result = DamageRules.Calculate(hit);
-        dummy.TakeDamage(result.Amount, _events, result.IsCritical);
+        target.TakeDamage(result.Amount, _events, result.IsCritical);
     }
 
     /// <summary>Advances the whole world by one simulation tick.</summary>
@@ -115,6 +135,11 @@ public sealed class GameWorld
         foreach (var dummy in _dummies)
         {
             dummy.Tick(_events);
+        }
+
+        foreach (var ghoul in _ghouls)
+        {
+            ghoul.Tick(_events);
         }
     }
 }

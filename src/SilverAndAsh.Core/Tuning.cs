@@ -74,6 +74,25 @@ public static class Tuning
         public const float DummyHeadHeight = 0.35f;
     }
 
+    /// <summary>The ghoul: a crawling enemy.</summary>
+    public static class Ghoul
+    {
+        /// <summary>Health (2 blade hits, 1 pistol headshot, 3 pistol body shots).</summary>
+        public const int MaxHealth = 80;
+
+        /// <summary>Radius of its body in metres - a bit wider than the player, it crawls on all fours.</summary>
+        public const float Radius = 0.4f;
+
+        /// <summary>Height of its body in metres - crawling, so much lower than the player.</summary>
+        public const float Height = 1f;
+
+        /// <summary>The top part of this height (in metres), in its front half, counts as the head.</summary>
+        public const float HeadHeight = 0.35f;
+
+        /// <summary>Seconds the dead body lies on the ground before it disappears.</summary>
+        public const float CorpseTime = 2f;
+    }
+
     /// <summary>The player character.</summary>
     public static class Player
     {

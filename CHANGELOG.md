@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- Ghule in beiden Testleveln (im Level-Format: `G`): kriechende Gestalten, niedriger als du, mit dem Kopf vorn. 80 Leben – zwei Klingenhiebe oder ein Pistolenschuss auf den Kopf. Sie blinken bei Treffern (blutrot bei Kopfschuss), zucken zurück und brechen bei 0 Leben zur Seite zusammen; kurz darauf ist der Körper verschwunden. Noch bewegen sie sich nicht
+
 ## [0.4.0] – 2026-11-11 – Waffen & HUD
 
 Silber gegen Stroh: Klinge und Pistole treffen Trainingspuppen – mit Kopfschüssen, aufgeladenen Schlägen, Waffen im Bild und einem HUD.

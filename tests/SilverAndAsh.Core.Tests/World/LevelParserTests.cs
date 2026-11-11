@@ -182,6 +182,32 @@ public class LevelParserTests
     }
 
     [Fact]
+    public void G_is_floor_with_a_ghoul_in_the_cell_centre()
+    {
+        var level = LevelParser.Parse("P.G\nG..");
+
+        Assert.False(level[2, 0].IsSolid);
+        Assert.Equal([level.CellCenter(2, 0), level.CellCenter(0, 1)], level.GhoulPositions);
+        Assert.Empty(level.DummyPositions);
+    }
+
+    [Fact]
+    public void Error_message_lists_the_ghoul_symbol()
+    {
+        var error = Assert.Throws<LevelFormatException>(() => LevelParser.Parse("P4"));
+
+        Assert.Contains("'G'", error.Message);
+    }
+
+    [Theory]
+    [InlineData("assets/levels/test.txt")]
+    [InlineData("assets/levels/heights.txt")]
+    public void The_shipped_levels_have_ghouls(string path)
+    {
+        Assert.NotEmpty(LevelParser.ParseFile(RepositoryFiles.Find(path)).GhoulPositions);
+    }
+
+    [Fact]
     public void A_level_without_D_has_no_dummies()
     {
         Assert.Empty(LevelParser.Parse("P..").DummyPositions);

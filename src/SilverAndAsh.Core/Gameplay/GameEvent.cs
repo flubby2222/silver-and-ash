@@ -30,6 +30,12 @@ public sealed record BulletImpact(Vector3 Point, Vector3 Normal) : GameEvent;
 /// </summary>
 public sealed record DummyHit(int DummyId, int Damage, bool Critical = false) : GameEvent;
 
+/// <summary>Ghoul <paramref name="GhoulId"/> took <paramref name="Damage"/>; <paramref name="Critical"/> for a headshot.</summary>
+public sealed record GhoulHit(int GhoulId, int Damage, bool Critical = false) : GameEvent;
+
+/// <summary>Ghoul <paramref name="GhoulId"/> reached 0 health and dies.</summary>
+public sealed record GhoulDied(int GhoulId) : GameEvent;
+
 /// <summary>Training dummy <paramref name="DummyId"/> reached 0 health and falls over.</summary>
 public sealed record DummyKnockedDown(int DummyId) : GameEvent;
 
