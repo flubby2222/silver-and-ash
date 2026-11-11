@@ -62,10 +62,28 @@ public class PlayerStaminaTests
         RunTicks(player, Forward, Window + 1);              // chain over - but only 1 tick of refilling
 
         player.Tick(ForwardJump);                           // too late for a timed jump
-        RunTicks(player, Forward, 20);
+        Assert.Equal(ExhaustedAirSpeed, HorizontalSpeed(player), Tolerance);   // at once, no dip below it
 
+        RunTicks(player, Forward, 20);
         Assert.True(player.IsExhausted);
         Assert.Equal(ExhaustedAirSpeed, HorizontalSpeed(player), Tolerance);
+    }
+
+    [Fact]
+    public void Exhausted_is_slower_than_walking_by_the_penalty()
+    {
+        // Found while playing: the penalty was taken from the air speed (6.9 m/s), so exhausted was
+        // 5.87 m/s - only 2 % below walking. It must be the penalty below walking speed.
+        var walking = Tuning.Player.MaxSpeed;
+
+        Assert.Equal(walking * (1f - Tuning.Player.ExhaustedJumpSpeedPenalty), ExhaustedAirSpeed, Tolerance);
+
+        var player = RunningPlayer();
+        player.Tick(ForwardJump);
+        ChainTimedJumps(player, TimedJumpsUntilEmpty + 1);
+        RunTicks(player, Forward, 20);
+
+        Assert.Equal(walking * (1f - Tuning.Player.ExhaustedJumpSpeedPenalty), HorizontalSpeed(player), Tolerance);
     }
 
     [Fact]

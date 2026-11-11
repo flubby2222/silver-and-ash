@@ -115,8 +115,7 @@ public sealed class Player
         // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
         // but a slightly higher top speed - more with the perfect jump bonus, less when exhausted.
         var acceleration = Tuning.Player.Acceleration * (IsGrounded ? 1f : Tuning.Player.AirControl);
-        var topSpeed = Tuning.Player.MaxSpeed * (IsGrounded ? 1f : Tuning.Player.AirSpeedMultiplier) * SpeedFactor;
-        var targetVelocity = WishDirection(input) * topSpeed;
+        var targetVelocity = WishDirection(input) * TopSpeed(IsGrounded);
         var horizontal = MoveTowards(new Vector3(Velocity.X, 0f, Velocity.Z), targetVelocity, acceleration * Dt);
 
         // Vertical: jump on a fresh press while standing. Gravity is applied in MoveVertically.
@@ -205,7 +204,18 @@ public sealed class Player
         }
     }
 
-    // 1 normally, e.g. 1.2 with the perfect jump bonus or 0.9 when exhausted.
+    /// <summary>
+    /// Top speed on the ground or in the air. In the air a little faster (air speed multiplier) -
+    /// except when exhausted: then the penalty applies to the walking speed (6 m/s x 0.85 = 5.1 m/s),
+    /// otherwise air boost and penalty would almost cancel out (6.9 x 0.85 = 5.87, found while playing).
+    /// </summary>
+    private float TopSpeed(bool grounded)
+    {
+        var air = grounded || IsExhausted ? 1f : Tuning.Player.AirSpeedMultiplier;
+        return Tuning.Player.MaxSpeed * air * SpeedFactor;
+    }
+
+    // 1 normally, e.g. 1.2 with the perfect jump bonus or 0.85 when exhausted.
     private float SpeedFactor =>
         HasPerfectJumpBonus ? 1f + Tuning.Player.PerfectJumpSpeedBonus
         : IsExhausted ? 1f - Tuning.Player.ExhaustedJumpSpeedPenalty

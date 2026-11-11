@@ -21,7 +21,8 @@ internal static class JumpTestKit
 
     public static float BonusAirSpeed => NormalAirSpeed * (1f + Tuning.Player.PerfectJumpSpeedBonus);
 
-    public static float ExhaustedAirSpeed => NormalAirSpeed * (1f - Tuning.Player.ExhaustedJumpSpeedPenalty);
+    // Exhausted: no air boost, the penalty applies to the walking speed.
+    public static float ExhaustedAirSpeed => Tuning.Player.MaxSpeed * (1f - Tuning.Player.ExhaustedJumpSpeedPenalty);
 
     /// <summary>A player at full running speed in a long corridor (no walls in the way).</summary>
     public static Player RunningPlayer()
