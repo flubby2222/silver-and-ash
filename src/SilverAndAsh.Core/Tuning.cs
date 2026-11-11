@@ -67,6 +67,18 @@ public static class Tuning
         /// <summary>Landing dip: how long the whole nod (down and back up) takes, in seconds. Longer = softer.</summary>
         public const float LandingDipDuration = 0.45f;
 
+        /// <summary>
+        /// Perfect jump: how close to the landing (before OR after) the jump must be pressed, in seconds.
+        /// Bigger = easier.
+        /// </summary>
+        public const float PerfectJumpWindow = 0.12f;
+
+        /// <summary>Perfect jump: extra top speed, e.g. 0.2 = +20 %. Does not stack.</summary>
+        public const float PerfectJumpSpeedBonus = 0.2f;
+
+        /// <summary>Perfect jump: the landing nod is scaled by this (0.4 = only 40 % as deep - "cleanly absorbed").</summary>
+        public const float PerfectJumpDipFactor = 0.4f;
+
         /// <summary>Landing dip: how much the view tilts down per metre of dip, in radians (the "nod").</summary>
         public const float LandingTiltPerMetre = 0.35f;
 
