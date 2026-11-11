@@ -10,8 +10,11 @@ namespace SilverAndAsh.Core.Gameplay;
 /// </summary>
 public abstract record GameEvent;
 
-/// <summary>The silver blade was swung from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/>.</summary>
-public sealed record BladeSwung(Vector3 Origin, Vector3 Direction) : GameEvent;
+/// <summary>
+/// The silver blade was swung from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/>, charged by
+/// <paramref name="Charge"/> (0 = not at all, 1 = fully).
+/// </summary>
+public sealed record BladeSwung(Vector3 Origin, Vector3 Direction, float Charge = 0f) : GameEvent;
 
 /// <summary>The pistol was fired from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/>.</summary>
 public sealed record ShotFired(Vector3 Origin, Vector3 Direction) : GameEvent;

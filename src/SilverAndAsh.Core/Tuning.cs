@@ -31,6 +31,15 @@ public static class Tuning
         /// <summary>Silver blade: damage per hit.</summary>
         public const int BladeDamage = 40;
 
+        /// <summary>Silver blade: seconds of holding the button until the blade is fully charged.</summary>
+        public const float BladeChargeTime = 1f;
+
+        /// <summary>Silver blade: damage multiplier when fully charged (2 = 200 %), linear from 1 when not charged.</summary>
+        public const float BladeChargeMaxMultiplier = 2f;
+
+        /// <summary>Silver blade: stamina segments a full charge costs (spent linearly while charging).</summary>
+        public const int BladeChargeStaminaSegments = 1;
+
         /// <summary>Silver blade: how far it reaches from the eyes, in metres (to the surface of the target).</summary>
         public const float BladeRange = 2f;
 
