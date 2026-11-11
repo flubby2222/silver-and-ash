@@ -40,6 +40,9 @@ public sealed class GameWorld
 
     public Player Player { get; }
 
+    /// <summary>All players. One for now - enemies already pick their target from this list (online co-op later).</summary>
+    public IReadOnlyList<Player> Players => [Player];
+
     public IReadOnlyList<TrainingDummy> Dummies => _dummies;
 
     /// <summary>The ghouls, dead ones included (until the end of the level).</summary>
@@ -139,6 +142,11 @@ public sealed class GameWorld
 
         foreach (var ghoul in _ghouls)
         {
+            // Every ghoul is blocked by the players, the other living ghouls and the standing dummies.
+            var obstacles = Players.Select(player => player.Body)
+                .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, ghoul)).Select(target => target.Body))
+                .ToList();
+            ghoul.Act(Level, Players, obstacles, _events);
             ghoul.Tick(_events);
         }
     }
