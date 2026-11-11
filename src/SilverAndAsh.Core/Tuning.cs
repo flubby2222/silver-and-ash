@@ -106,9 +106,6 @@ public static class Tuning
         /// <summary>Dodge: speed in m/s (0.4 s x 10 m/s = about 4 m).</summary>
         public const float DodgeSpeed = 10f;
 
-        /// <summary>Dodge: how fast its direction can still be steered, in radians per second (2 = about 115 °/s).</summary>
-        public const float DodgeTurnRate = 2f;
-
         /// <summary>Dodge: stamina cost in segments.</summary>
         public const int DodgeStaminaSegments = 2;
 

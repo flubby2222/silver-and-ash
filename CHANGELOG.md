@@ -14,7 +14,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Räume sind 3,5 m hoch (vorher 3 m), damit der höhere Sprung nicht an die Decke stößt
 
 ### Hinzugefügt
-- Laternenlicht und Nebel: In der Nähe ist es hell, ab etwa 14 m versinkt alles in violett-schwarzem Dunkel
+- Laternenlicht und Nebel: In der Nähe ist es hell, ab etwa 18 m versinkt alles in violett-schwarzem Dunkel
 - Level-Format kennt Podeste (`1`, `2`, `3`) und Gruben (`_`); Beschreibung in `docs/level-format.md`
 - Stufen, Podeste und Gruben werden gezeichnet; man steigt Treppen hinauf, springt auf hohe Podeste und aus Gruben heraus
 - Zweites Testlevel „heights“ mit Treppe, hohem Podest und Grube – starten mit `--level heights`
@@ -22,7 +22,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Perfect Jump: Wer kurz vor oder nach dem Aufkommen erneut springt, bekommt +20 % Tempo (nicht stapelbar); die Landung fällt dabei sanfter aus
 - Stamina-Balken (unten in der Mitte) mit 5 Segmenten: Jeder Sprung kostet eins. Er lädt nur am Boden, in 3 s von leer bis voll. Ein Sprung mit leerem Balken ist erschöpft: 20 % langsamer als Laufen (4,8 statt 6 m/s) bis zum Ende der Sprungkette
 - Dash in der Luft mit der linken Umschalttaste: 4 m in 0,15 s in Laufrichtung (ohne Richtung nach vorn), ohne Schwerkraft. Einmal pro Sprung, kostet ein Stamina-Segment
-- Dodge am Boden mit der linken Umschalttaste: 0,4 s geduckt und schnell (10 m/s, etwa 4 m) in Laufrichtung, leicht lenkbar; die Kamera sinkt dabei weich ab. Kostet zwei Stamina-Segmente, währenddessen kein Springen und kein Aufladen
+- Dodge am Boden mit der linken Umschalttaste: 0,4 s geduckt und schnell (10 m/s, etwa 4 m) in Laufrichtung, frei lenkbar (ohne Taste behält er die Richtung); die Kamera sinkt dabei weich ab. Kostet zwei Stamina-Segmente, währenddessen kein Springen und kein Aufladen
 
 ## [0.2.0] – 2026-11-10 – Bewegung & Physik
 

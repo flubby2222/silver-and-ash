@@ -69,21 +69,36 @@ public class PlayerDodgeTests
     }
 
     [Fact]
-    public void The_dodge_can_be_steered_a_little_but_not_turned_around()
+    public void The_dodge_follows_the_walking_direction_freely()
     {
-        // Start forward, then steer hard right for the whole dodge: the direction turns, but only by
-        // turn rate x duration (about 46 degrees), not the full 90.
+        // Wish from playtesting: full control during the dodge. It starts forward, and one tick of
+        // "right" turns it fully to the right - even a full turn around works.
+        var player = new Player(OpenField());
+        var right = PlayerInput.None with { Move = new Vector2(1f, 0f) };
+        var back = PlayerInput.None with { Move = new Vector2(0f, -1f) };
+
+        player.Tick(Shift);
+        player.Tick(right);
+        Assert.Equal(1f, Vector3.Dot(FlatVelocityDirection(player), player.View.FlatRight), Tolerance);
+        Assert.Equal(Tuning.Player.DodgeSpeed, HorizontalSpeed(player), Tolerance);
+
+        player.Tick(back);
+        Assert.Equal(-1f, Vector3.Dot(FlatVelocityDirection(player), player.View.FlatForward), Tolerance);
+        Assert.True(player.IsDodging);
+    }
+
+    [Fact]
+    public void Letting_go_of_the_keys_during_a_dodge_keeps_its_last_direction()
+    {
         var player = new Player(OpenField());
         var right = PlayerInput.None with { Move = new Vector2(1f, 0f) };
 
         player.Tick(Shift);
-        RunTicks(player, right, DodgeTicks - 2);
-        var direction = Vector3.Normalize(player.Velocity with { Y = 0f });
+        player.Tick(right);
+        player.Tick(PlayerInput.None);
 
-        var turned = MathF.Acos(Math.Clamp(Vector3.Dot(direction, player.View.FlatForward), -1f, 1f));
-        var maxTurn = Tuning.Player.DodgeTurnRate * (DodgeTicks - 2) * SimulationClock.SecondsPerTick;
-        Assert.InRange(turned, maxTurn * 0.9f, maxTurn * 1.01f);
-        Assert.True(Vector3.Dot(direction, player.View.FlatRight) > 0f, "It should turn to the right.");
+        Assert.Equal(1f, Vector3.Dot(FlatVelocityDirection(player), player.View.FlatRight), Tolerance);
+        Assert.Equal(Tuning.Player.DodgeSpeed, HorizontalSpeed(player), Tolerance);
     }
 
     [Fact]
@@ -244,4 +259,6 @@ public class PlayerDodgeTests
         rows[5] = "....." + "P" + ".....";
         return LevelParser.Parse(string.Join('\n', rows));
     }
+
+    private static Vector3 FlatVelocityDirection(Player player) => Vector3.Normalize(player.Velocity with { Y = 0f });
 }

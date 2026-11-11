@@ -179,11 +179,11 @@ public sealed class Player
 
         if (IsDodging)
         {
-            // Still a little steerable: the direction turns towards the walking direction, at a limited rate.
+            // Fully steerable: the dodge always goes where the player walks. Without keys it keeps its last direction.
             var wish = WishDirection(input);
             if (wish.LengthSquared() > 0f)
             {
-                _dodgeDirection = TurnTowards(_dodgeDirection, Vector3.Normalize(wish), Tuning.Player.DodgeTurnRate * Dt);
+                _dodgeDirection = Vector3.Normalize(wish);
             }
 
             horizontal = _dodgeDirection * Tuning.Player.DodgeSpeed;
@@ -381,20 +381,6 @@ public sealed class Player
 
         // Without this, walking diagonally (W + D) would be about 41 % faster than straight.
         return direction.LengthSquared() > 1f ? Vector3.Normalize(direction) : direction;
-    }
-
-    /// <summary>
-    /// Turns the flat direction <paramref name="from"/> towards <paramref name="to"/> by at most
-    /// <paramref name="maxRadians"/>. Both have length 1 and lie flat (Y = 0).
-    /// </summary>
-    private static Vector3 TurnTowards(Vector3 from, Vector3 to, float maxRadians)
-    {
-        // Angles around the vertical axis; the difference is wrapped into -pi..pi (the shorter way round).
-        var fromAngle = MathF.Atan2(from.X, from.Z);
-        var difference = MathF.Atan2(to.X, to.Z) - fromAngle;
-        difference = MathF.IEEERemainder(difference, 2f * MathF.PI);
-        var angle = fromAngle + Math.Clamp(difference, -maxRadians, maxRadians);
-        return new Vector3(MathF.Sin(angle), 0f, MathF.Cos(angle));
     }
 
     /// <summary>Changes <paramref name="current"/> towards <paramref name="target"/> by at most <paramref name="maxChange"/>.</summary>
