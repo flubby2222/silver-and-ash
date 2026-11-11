@@ -14,12 +14,14 @@ Level sind einfache Textdateien in `assets/levels/`. **Ein Zeichen = eine Zelle*
 | `2` | Podest, mittel | 0,5 m | 3,5 m |
 | `3` | Podest, hoch | 0,75 m | 3,5 m |
 | `_` | Grube | −1 m | 3,5 m |
+| `D` | Boden mit **Trainingspuppe** in der Mitte (beliebig oft) | 0 m | 3,5 m |
 
 ## Regeln
 
 - Kürzere Zeilen werden mit Wand aufgefüllt. Alles außerhalb des Levels gilt als Wand.
 - Leere Zeilen am Ende werden ignoriert.
 - Fehler (unbekanntes Zeichen, fehlendes oder doppeltes `P`, leeres Level) werden mit **Zeile und Spalte** gemeldet.
+- **Trainingspuppen** (`D`) stehen auf normalem Boden (0 m). Man läuft nicht durch sie hindurch; liegt eine am Boden, kann man über sie hinweggehen.
 
 ## Was der Spieler mit Höhen machen kann
 

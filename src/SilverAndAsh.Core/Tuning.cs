@@ -30,6 +30,18 @@ public static class Tuning
 
         /// <summary>Pistol: seconds before the next shot.</summary>
         public const float PistolCooldown = 0.8f;
+
+        /// <summary>Training dummy: health (and the most it can be).</summary>
+        public const int DummyMaxHealth = 100;
+
+        /// <summary>Training dummy: seconds it lies on the ground before it stands up again.</summary>
+        public const float DummyDownTime = 3f;
+
+        /// <summary>Training dummy: radius of its body in metres (a bit slimmer than the player).</summary>
+        public const float DummyRadius = 0.3f;
+
+        /// <summary>Training dummy: height of its body in metres.</summary>
+        public const float DummyHeight = 1.8f;
     }
 
     /// <summary>The player character.</summary>

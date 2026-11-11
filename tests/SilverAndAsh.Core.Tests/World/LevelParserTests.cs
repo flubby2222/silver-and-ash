@@ -172,6 +172,40 @@ public class LevelParserTests
     }
 
     [Fact]
+    public void D_is_floor_with_a_training_dummy_in_the_cell_centre()
+    {
+        var level = LevelParser.Parse("P.D\n.D.");
+
+        Assert.False(level[2, 0].IsSolid);
+        Assert.Equal(Cell.DefaultFloorHeight, level[2, 0].FloorHeight);
+        Assert.Equal([level.CellCenter(2, 0), level.CellCenter(1, 1)], level.DummyPositions);
+    }
+
+    [Fact]
+    public void A_level_without_D_has_no_dummies()
+    {
+        Assert.Empty(LevelParser.Parse("P..").DummyPositions);
+    }
+
+    [Fact]
+    public void Error_message_lists_the_dummy_symbol()
+    {
+        var error = Assert.Throws<LevelFormatException>(() => LevelParser.Parse("P4"));
+
+        Assert.Contains("'D'", error.Message);
+    }
+
+    [Theory]
+    [InlineData("assets/levels/test.txt")]
+    [InlineData("assets/levels/heights.txt")]
+    public void The_shipped_levels_have_training_dummies(string path)
+    {
+        var level = LevelParser.ParseFile(RepositoryFiles.Find(path));
+
+        Assert.NotEmpty(level.DummyPositions);
+    }
+
+    [Fact]
     public void Old_levels_without_heights_are_unchanged()
     {
         var level = LevelParser.ParseFile(RepositoryFiles.Find("assets/levels/test.txt"));

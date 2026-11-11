@@ -53,7 +53,8 @@ public static class CharacterCollision
     /// </summary>
     public static (Vector3 Position, Vector3 Velocity) Move(
         Level level, Vector3 position, Vector3 velocity, float radius, float seconds,
-        float height = Tuning.Player.Height, float stepHeight = Tuning.Player.StepHeight)
+        float height = Tuning.Player.Height, float stepHeight = Tuning.Player.StepHeight,
+        IReadOnlyList<CylinderBody>? bodies = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(radius);
@@ -70,6 +71,9 @@ public static class CharacterCollision
         for (var step = 0; step < steps; step++)
         {
             position += new Vector3(velocity.X, 0f, velocity.Z) * stepSeconds;
+
+            // Bodies first, walls last: walls always win, so nobody is ever pushed into a wall.
+            (position, velocity) = ResolveBodyOverlaps(position, velocity, radius, height, bodies);
             (position, velocity) = ResolveOverlaps(level, position, velocity, radius, height, stepHeight);
         }
 
@@ -201,6 +205,49 @@ public static class CharacterCollision
             if (!pushedOut)
             {
                 break;
+            }
+        }
+
+        return (position, velocity);
+    }
+
+    /// <summary>
+    /// Pushes the character out of standing bodies (upright cylinders) on the ground plane and removes the
+    /// "into the body" part of the velocity - the same sliding as along walls. Bodies above or below the
+    /// character (no height overlap) are ignored.
+    /// </summary>
+    private static (Vector3 Position, Vector3 Velocity) ResolveBodyOverlaps(
+        Vector3 position, Vector3 velocity, float radius, float height, IReadOnlyList<CylinderBody>? bodies)
+    {
+        if (bodies is null)
+        {
+            return (position, velocity);
+        }
+
+        foreach (var body in bodies)
+        {
+            var heightsOverlap = position.Y < body.Position.Y + body.Height && body.Position.Y < position.Y + height;
+            if (!heightsOverlap)
+            {
+                continue;
+            }
+
+            var offset = new Vector2(position.X - body.Position.X, position.Z - body.Position.Z);
+            var distance = offset.Length();
+            var penetration = radius + body.Radius - distance;
+            if (penetration <= 0f)
+            {
+                continue;
+            }
+
+            // Exactly on the centre (should not happen): leave in any fixed direction.
+            var normal = distance > Epsilon ? offset / distance : Vector2.UnitX;
+            position += new Vector3(normal.X, 0f, normal.Y) * penetration;
+
+            var into = (velocity.X * normal.X) + (velocity.Z * normal.Y);
+            if (into < 0f)
+            {
+                velocity -= new Vector3(normal.X, 0f, normal.Y) * into;
             }
         }
 

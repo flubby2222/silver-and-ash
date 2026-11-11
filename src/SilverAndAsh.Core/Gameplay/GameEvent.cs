@@ -15,3 +15,12 @@ public sealed record BladeSwung(Vector3 Origin, Vector3 Direction) : GameEvent;
 
 /// <summary>The pistol was fired from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/>.</summary>
 public sealed record ShotFired(Vector3 Origin, Vector3 Direction) : GameEvent;
+
+/// <summary>Training dummy <paramref name="DummyId"/> took <paramref name="Damage"/>.</summary>
+public sealed record DummyHit(int DummyId, int Damage) : GameEvent;
+
+/// <summary>Training dummy <paramref name="DummyId"/> reached 0 health and falls over.</summary>
+public sealed record DummyKnockedDown(int DummyId) : GameEvent;
+
+/// <summary>Training dummy <paramref name="DummyId"/> stands up again with full health.</summary>
+public sealed record DummyStoodUp(int DummyId) : GameEvent;

@@ -40,6 +40,20 @@ internal sealed class LevelShader : IDisposable
     public void SetCameraPosition(Vector3 position) =>
         Raylib.SetShaderValue(Shader, _viewPositionLocation, position, ShaderUniformDataType.Vec3);
 
+    /// <summary>
+    /// Starts drawing figures (boxes from <see cref="ShadedBox"/>) with lantern light and fog, like the level.
+    /// Their corners are already in world positions, so the model matrix is set to "no change" (identity).
+    /// </summary>
+    public void BeginFigures()
+    {
+        Raylib.BeginShaderMode(Shader);
+        Raylib.SetShaderValueMatrix(Shader, Raylib.GetShaderLocation(Shader, "matModel"), Matrix4x4.Identity);
+        Raylib.SetShaderValue(Shader, Raylib.GetShaderLocation(Shader, "colDiffuse"), Vector4.One, ShaderUniformDataType.Vec4);
+    }
+
+    /// <summary>Ends drawing figures.</summary>
+    public void EndFigures() => Raylib.EndShaderMode();
+
     public void Dispose() => Raylib.UnloadShader(Shader);
 
     private void SetFloat(string name, float value) =>

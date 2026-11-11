@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- Trainingspuppen aus Holz und Stroh in beiden Testleveln (im Level-Format: `D`). Man läuft nicht durch sie hindurch. Sie haben 100 Leben, blinken bei Treffern hell auf, kippen bei 0 vom Spieler weg um und stehen nach 3 s wieder auf – treffen kann man sie ab der Silberklinge und der Pistole
+
 ## [0.3.2] – 2026-11-11 – Fenster-Fix
 
 Eine Fehlerkorrektur für 0.3.0.

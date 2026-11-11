@@ -91,7 +91,7 @@ internal sealed class LevelRenderer : IDisposable
         {
             SurfaceKind.Floor => (LookSettings.FloorColor, LookSettings.FloorBrightness),
             SurfaceKind.Ceiling => (LookSettings.CeilingColor, LookSettings.CeilingBrightness),
-            _ => (LookSettings.WallColor, WallBrightness(face.Normal)),
+            _ => (LookSettings.WallColor, FlatShading.WallBrightness(face.Normal)),
         };
 
         return new Color(
@@ -100,9 +100,4 @@ internal sealed class LevelRenderer : IDisposable
             (byte)(baseColor.B * brightness),
             (byte)255);
     }
-
-    private static float WallBrightness(Vector3 normal) =>
-        MathF.Abs(normal.X) > MathF.Abs(normal.Z)
-            ? (normal.X > 0f ? LookSettings.WallFacingPlusXBrightness : LookSettings.WallFacingMinusXBrightness)
-            : (normal.Z > 0f ? LookSettings.WallFacingPlusZBrightness : LookSettings.WallFacingMinusZBrightness);
 }
