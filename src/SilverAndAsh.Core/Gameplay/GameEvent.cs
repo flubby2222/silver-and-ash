@@ -42,6 +42,9 @@ public sealed record GhoulStruck(int GhoulId, bool Hit) : GameEvent;
 /// <summary>Player <paramref name="PlayerId"/> took <paramref name="Damage"/>.</summary>
 public sealed record PlayerHit(int PlayerId, int Damage) : GameEvent;
 
+/// <summary>Player <paramref name="PlayerId"/> reached 0 health.</summary>
+public sealed record PlayerDied(int PlayerId) : GameEvent;
+
 /// <summary>Ghoul <paramref name="GhoulId"/> reached 0 health and dies.</summary>
 public sealed record GhoulDied(int GhoulId) : GameEvent;
 

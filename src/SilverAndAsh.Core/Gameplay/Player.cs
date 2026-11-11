@@ -57,7 +57,14 @@ public sealed class Player
     /// Applies the look part of the input. Called once per drawn frame (not per tick),
     /// so turning the view feels immediate even at high frame rates.
     /// </summary>
-    public void Look(PlayerInput input) => View.ApplyMouse(input.Look);
+    public void Look(PlayerInput input)
+    {
+        // The dead do not look around.
+        if (!IsDead)
+        {
+            View.ApplyMouse(input.Look);
+        }
+    }
 
     /// <summary>True while the feet are on the ground. Jumping is only possible from here.</summary>
     public bool IsGrounded { get; private set; } = true;
@@ -82,6 +89,9 @@ public sealed class Player
     /// <summary>Health of the player.</summary>
     public int Health { get; private set; } = Tuning.Combat.PlayerMaxHealth;
 
+    /// <summary>True at 0 health: the player can no longer move, look around or attack.</summary>
+    public bool IsDead => Health == 0;
+
     /// <summary>The player's body, for enemies that must not crawl through it.</summary>
     public CylinderBody Body => new(Position, Tuning.Player.Radius, CollisionHeight);
 
@@ -90,9 +100,18 @@ public sealed class Player
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
         ArgumentNullException.ThrowIfNull(events);
+        if (IsDead)
+        {
+            return;
+        }
+
         var taken = Math.Min(damage, Health);
         Health -= taken;
         events.Add(new PlayerHit(Id, taken));
+        if (IsDead)
+        {
+            events.Add(new PlayerDied(Id));
+        }
     }
 
     /// <summary>Waiting time of the silver blade.</summary>
@@ -171,6 +190,13 @@ public sealed class Player
     {
         const float Dt = SimulationClock.SecondsPerTick;
         PreviousPosition = Position;
+
+        // A dead player does nothing any more: no walking, jumping, dashing - gravity still works.
+        if (IsDead)
+        {
+            input = PlayerInput.None;
+        }
+
         _events.Clear();
         BladeCooldown.Tick();
         PistolCooldown.Tick();
@@ -402,6 +428,17 @@ public sealed class Player
     /// </summary>
     private void Attack(PlayerInput input)
     {
+        if (IsDead)
+        {
+            // Dying while charging must not count as "let go" - drop the charge without a swing.
+            if (BladeCharge.IsCharging)
+            {
+                BladeCharge.Release();
+            }
+
+            return;
+        }
+
         var meleePressed = input.Melee && !_meleeWasHeld;
         var shootPressed = input.Shoot && !_shootWasHeld;
         _meleeWasHeld = input.Melee;
