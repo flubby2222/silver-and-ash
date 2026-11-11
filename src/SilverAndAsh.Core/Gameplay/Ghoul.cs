@@ -162,7 +162,7 @@ public sealed class Ghoul : ITarget
                 Stand(level, obstacles);
                 if (--_stateTicksLeft == 0)
                 {
-                    var hit = InReach(target) && InFront(target);
+                    var hit = InHitReach(target) && InFront(target);
                     if (hit)
                     {
                         target.TakeDamage(Tuning.Ghoul.AttackDamage, events);
@@ -199,8 +199,14 @@ public sealed class Ghoul : ITarget
     private Player? Nearest(IReadOnlyList<Player> players) =>
         players.OrderBy(player => FlatDistance(Position, player.Position)).FirstOrDefault();
 
-    private bool InReach(Player player) =>
-        FlatDistance(Position, player.Position) <= Tuning.Ghoul.AttackReach
+    /// <summary>Close enough to start a blow.</summary>
+    private bool InReach(Player player) => IsWithin(player, Tuning.Ghoul.AttackReach);
+
+    /// <summary>Close enough to be hit by the blow - a bit farther than where it starts.</summary>
+    private bool InHitReach(Player player) => IsWithin(player, Tuning.Ghoul.HitReach);
+
+    private bool IsWithin(Player player, float reach) =>
+        FlatDistance(Position, player.Position) <= reach
         && MathF.Abs(player.Position.Y - Position.Y) < Tuning.Ghoul.Height;
 
     private bool InFront(Player player)

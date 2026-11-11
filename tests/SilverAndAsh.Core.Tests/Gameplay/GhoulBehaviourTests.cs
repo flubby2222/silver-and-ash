@@ -108,6 +108,24 @@ public class GhoulBehaviourTests
     }
 
     [Fact]
+    public void The_blow_reaches_farther_than_where_it_starts_a_small_step_back_is_not_enough()
+    {
+        // Wish from playtesting: the player is fast, so the blow reaches farther (HitReach) than the distance at
+        // which the ghoul starts it (AttackReach). One short step back during the wind-up still gets you hit.
+        var world = new GameWorld(LevelParser.Parse("...P...G"));
+        Assert.True(RunUntil(world, PlayerInput.None, 3 * Second, w => w.Events.Any(e => e is GhoulWindUp)));
+
+        Run(world, PlayerInput.None with { Move = new Vector2(1f, 0f) }, 6);    // a short step away
+        Run(world, PlayerInput.None, WindUpTicks - 7);
+        var distance = Distance(world);
+        Assert.InRange(distance, Tuning.Ghoul.AttackReach, Tuning.Ghoul.HitReach);   // the test only means something here
+
+        world.Tick(PlayerInput.None);
+
+        Assert.Contains(new GhoulStruck(world.Ghouls[0].Id, Hit: true), world.Events);
+    }
+
+    [Fact]
     public void After_a_blow_it_rests_before_the_next_one()
     {
         var world = new GameWorld(LevelParser.Parse("P..G"));

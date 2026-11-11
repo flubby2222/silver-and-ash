@@ -98,11 +98,17 @@ public static class Tuning
         /// <summary>Height of its eyes above its feet (for seeing players), in metres.</summary>
         public const float EyeHeight = 0.8f;
 
-        /// <summary>Crawling speed in m/s - slower than the player (6 m/s): you can get away.</summary>
-        public const float Speed = 3.5f;
+        /// <summary>Crawling speed in m/s - three quarters of the player's 6 m/s: you can get away, but not by strolling.</summary>
+        public const float Speed = 4.5f;
 
         /// <summary>It starts its blow when a player is this close (centre to centre, flat), in metres.</summary>
-        public const float AttackReach = 1.5f;
+        public const float AttackReach = 1.6f;
+
+        /// <summary>
+        /// The blow hits a player up to this far away (centre to centre, flat) - farther than <see cref="AttackReach"/>,
+        /// so one short step back is not enough; you have to really get away or dodge.
+        /// </summary>
+        public const float HitReach = 2.4f;
 
         /// <summary>Seconds of drawing back before the blow - the time to step away or dodge.</summary>
         public const float WindUpTime = 0.5f;

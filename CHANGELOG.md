@@ -7,7 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
-- Ghule in beiden Testleveln (im Level-Format: `G`): kriechende Gestalten, niedriger als du, mit dem Kopf vorn. 80 Leben – zwei Klingenhiebe oder ein Pistolenschuss auf den Kopf. Sie blinken bei Treffern (blutrot bei Kopfschuss), zucken zurück und brechen bei 0 Leben zur Seite zusammen; kurz darauf ist der Körper verschwunden. Sie lauern still, bis sie dich in weniger als 12 m sehen oder getroffen werden. Dann kriechen sie dir nach (3,5 m/s, langsamer als du), finden den Weg um Ecken und durch Türen, richten sich 0,5 s lang drohend auf und schlagen zu: 20 Schaden. Wer rechtzeitig zurückweicht, wird verfehlt. Danach brauchen sie kurz Erholung
+- Ghule in beiden Testleveln (im Level-Format: `G`): kriechende Gestalten, niedriger als du, mit dem Kopf vorn. 80 Leben – zwei Klingenhiebe oder ein Pistolenschuss auf den Kopf. Sie blinken bei Treffern (blutrot bei Kopfschuss), zucken zurück und brechen bei 0 Leben zur Seite zusammen; kurz darauf ist der Körper verschwunden. Sie lauern still, bis sie dich in weniger als 12 m sehen oder getroffen werden. Dann kriechen sie dir nach (4,5 m/s, etwas langsamer als du), finden den Weg um Ecken und durch Türen, richten sich 0,5 s lang drohend auf und schlagen zu: 20 Schaden, bis 2,4 m weit. Ein kleiner Schritt zurück reicht nicht, wer richtig ausweicht oder dodget, wird verfehlt. Danach brauchen sie kurz Erholung
 
 ## [0.4.0] – 2026-11-11 – Waffen & HUD
 
