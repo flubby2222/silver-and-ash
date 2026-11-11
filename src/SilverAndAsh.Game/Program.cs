@@ -5,6 +5,7 @@ using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 using SilverAndAsh.Game.Input;
 using SilverAndAsh.Game.Rendering;
@@ -61,7 +62,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(level, displayVersion: version.Split('+')[0]);
+            RunGame(level, displayVersion: version.Split('+')[0], log);
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -73,11 +74,12 @@ using (log)
     }
 }
 
-static void RunGame(Level level, string displayVersion)
+static void RunGame(Level level, string displayVersion, FileLog? log)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted.
     Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
     Raylib.InitWindow(WindowWidth, WindowHeight, "Silver & Ash");
+    BringWindowOnScreen(log);
 
     // Esc must not close the game any more - it releases the mouse (later: opens the pause menu).
     Raylib.SetExitKey(KeyboardKey.Null);
@@ -148,6 +150,33 @@ static void RunGame(Level level, string displayVersion)
     finally
     {
         Raylib.CloseWindow();
+    }
+}
+
+// Started on a monitor left of the main monitor, Raylib/GLFW put the window far outside every monitor
+// (found while testing v0.3.0). If that happens, move it to the middle of the main monitor.
+static void BringWindowOnScreen(FileLog? log)
+{
+    var position = Raylib.GetWindowPosition();
+    var window = new DesktopRect((int)position.X, (int)position.Y, Raylib.GetScreenWidth(), Raylib.GetScreenHeight());
+
+    // GLFW always lists the main monitor first.
+    var monitors = Enumerable.Range(0, Raylib.GetMonitorCount())
+        .Select(i =>
+        {
+            var corner = Raylib.GetMonitorPosition(i);
+            return new DesktopRect((int)corner.X, (int)corner.Y, Raylib.GetMonitorWidth(i), Raylib.GetMonitorHeight(i));
+        })
+        .ToList();
+    if (monitors.Count == 0)
+    {
+        return;
+    }
+
+    if (WindowPlacement.CorrectedPosition(window, monitors, monitors[0]) is var (x, y))
+    {
+        log?.Warning($"Window was off-screen at {window.X}, {window.Y} - moved to {x}, {y} on the main monitor.");
+        Raylib.SetWindowPosition(x, y);
     }
 }
 

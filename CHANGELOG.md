@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Behoben
+- Beim Start auf einem Bildschirm links vom Hauptbildschirm war das Fenster unsichtbar (weit außerhalb aller Bildschirme) und die Maus eingefangen. Liegt das Fenster nach dem Start auf keinem Bildschirm, wird es jetzt auf den Hauptbildschirm geholt
+
 ## [0.3.0] – 2026-11-11 – PS2-Look
 
 Das Schloss bekommt Stimmung: grobe Pixel, Licht wie von einer Laterne, Dunkelheit in der Ferne – und erstmals Höhenunterschiede. Dazu wird die Bewegung zum Können: Perfect Jump, Stamina, Dash in der Luft und Dodge am Boden.
