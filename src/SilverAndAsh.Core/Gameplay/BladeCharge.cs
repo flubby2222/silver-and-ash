@@ -44,8 +44,9 @@ public sealed class BladeCharge
             return;
         }
 
-        // Whole numbers: what should be paid after one more tick, minus what was paid already.
-        var owed = (_ticks + 1) * FullCost / FullTicks;
+        // Whole numbers: what should be paid after one more tick, minus what was paid already. Rounded UP, so every
+        // tick costs something - rounded down, the first tick was free and an empty bar could still charge a bit.
+        var owed = ((_ticks + 1) * FullCost + FullTicks - 1) / FullTicks;
         if (stamina.TryPayPart(owed - _paid))
         {
             _ticks++;

@@ -16,7 +16,7 @@ public class GameWorldBladeTests
     {
         var world = InFrontOfADummy();
 
-        world.Tick(Melee);
+        Swing(world);
 
         Assert.Equal(Tuning.Combat.DummyMaxHealth - Tuning.Combat.BladeDamage, world.Dummies[0].Health);
         Assert.Contains(new DummyHit(0, Tuning.Combat.BladeDamage), world.Events);
@@ -30,7 +30,7 @@ public class GameWorldBladeTests
 
         for (var swing = 0; swing < 3; swing++)
         {
-            world.Tick(Melee);
+            Swing(world);
             seen.AddRange(world.Events);
             RunTicks(world, PlayerInput.None, BladeTicks);
         }
@@ -44,7 +44,7 @@ public class GameWorldBladeTests
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\nD"));   // dummy 4 m ahead
 
-        world.Tick(Melee);
+        Swing(world);
 
         Assert.Equal(Tuning.Combat.DummyMaxHealth, world.Dummies[0].Health);
         Assert.DoesNotContain(world.Events, e => e is DummyHit);
@@ -63,7 +63,7 @@ public class GameWorldBladeTests
         }
 
         RunTicks(world, PlayerInput.None, 10);
-        world.Tick(Melee);
+        Swing(world);
 
         Assert.All(world.Dummies, dummy => Assert.Equal(Tuning.Combat.DummyMaxHealth - Tuning.Combat.BladeDamage, dummy.Health));
     }
@@ -72,12 +72,42 @@ public class GameWorldBladeTests
     public void A_swing_during_the_cooldown_does_no_damage()
     {
         var world = InFrontOfADummy();
-        world.Tick(Melee);
+        Swing(world);
         world.Tick(PlayerInput.None);
 
-        world.Tick(Melee);
+        Swing(world);
 
         Assert.Equal(Tuning.Combat.DummyMaxHealth - Tuning.Combat.BladeDamage, world.Dummies[0].Health);
+    }
+
+    [Fact]
+    public void Two_fully_charged_swings_knock_a_dummy_down()
+    {
+        // Full charge: 200 % of the blade damage (80); the dummy (100) falls with the second swing.
+        var world = InFrontOfADummy();
+        var fullTicks = SimulationClock.SecondsToTicks(Tuning.Combat.BladeChargeTime);
+
+        world.Tick(Melee);
+        RunTicks(world, Melee, fullTicks);
+        world.Tick(PlayerInput.None);
+
+        var charged = (int)(Tuning.Combat.BladeDamage * Tuning.Combat.BladeChargeMaxMultiplier);
+        Assert.Contains(new DummyHit(0, charged), world.Events);
+        Assert.False(world.Dummies[0].IsDown);
+
+        RunTicks(world, PlayerInput.None, BladeTicks);
+        world.Tick(Melee);
+        RunTicks(world, Melee, fullTicks);
+        world.Tick(PlayerInput.None);
+
+        Assert.True(world.Dummies[0].IsDown);
+    }
+
+    /// <summary>A quick (uncharged) swing: button pressed in one tick, let go in the next - the swing happens then.</summary>
+    private static void Swing(GameWorld world)
+    {
+        world.Tick(Melee);
+        world.Tick(PlayerInput.None);
     }
 
     /// <summary>The player walked up to a dummy and stands right in front of it.</summary>

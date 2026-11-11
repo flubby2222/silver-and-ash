@@ -100,6 +100,7 @@ public class PlayerBladeChargeTests
     {
         var player = RunningPlayer();
         player.Tick(Melee);
+        Assert.True(player.BladeCooldown.IsReady, "The cooldown must not start when the button is pressed.");
         RunTicks(player, Melee, FullTicks / 2);
         Assert.True(player.BladeCooldown.IsReady);
 

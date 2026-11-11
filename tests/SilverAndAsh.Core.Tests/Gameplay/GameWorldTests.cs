@@ -87,7 +87,7 @@ public class GameWorldTests
     public void Events_of_a_tick_are_gone_in_the_next_tick()
     {
         var world = new GameWorld(Corridor);
-        world.Tick(PlayerInput.None with { Melee = true });
+        world.Tick(PlayerInput.None with { Shoot = true });
 
         world.Tick(PlayerInput.None);
 

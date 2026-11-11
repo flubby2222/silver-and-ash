@@ -19,11 +19,12 @@ public class PlayerCombatTests
     }
 
     [Fact]
-    public void Pressing_melee_swings_the_blade_from_the_eyes_in_the_looking_direction()
+    public void A_click_swings_the_blade_from_the_eyes_in_the_looking_direction()
     {
+        // Since #71 the blade swings when the button is let go (holding it charges the blade).
         var player = RunningPlayer();
 
-        player.Tick(Melee);
+        Click(player);
 
         var swing = Assert.IsType<BladeSwung>(Assert.Single(player.Events));
         Assert.Equal(player.EyePosition, swing.Origin);
@@ -46,7 +47,7 @@ public class PlayerCombatTests
     public void Events_are_reported_only_in_the_tick_they_happen()
     {
         var player = RunningPlayer();
-        player.Tick(Melee);
+        Click(player);
 
         player.Tick(PlayerInput.None);
 
@@ -57,6 +58,7 @@ public class PlayerCombatTests
     public void Holding_the_button_attacks_only_once()
     {
         // Same rule as jumping: every attack needs a fresh press, even after the cooldown is over.
+        // (The blade swings once when the button is finally let go.)
         var player = RunningPlayer();
         var swings = 0;
         var shots = 0;
@@ -68,6 +70,9 @@ public class PlayerCombatTests
             shots += player.Events.OfType<ShotFired>().Count();
         }
 
+        player.Tick(PlayerInput.None);
+        swings += player.Events.OfType<BladeSwung>().Count();
+
         Assert.Equal(1, swings);
         Assert.Equal(1, shots);
     }
@@ -76,10 +81,10 @@ public class PlayerCombatTests
     public void A_press_during_the_cooldown_does_nothing()
     {
         var player = RunningPlayer();
-        player.Tick(Melee);
-        player.Tick(PlayerInput.None);
+        Click(player);
 
         player.Tick(Melee);                                 // fresh press, but still waiting
+        player.Tick(PlayerInput.None);
 
         Assert.Empty(player.Events);
     }
@@ -88,10 +93,10 @@ public class PlayerCombatTests
     public void After_the_cooldown_the_next_press_swings_again()
     {
         var player = RunningPlayer();
-        player.Tick(Melee);
+        Click(player);
         RunTicks(player, PlayerInput.None, BladeTicks - 1);
 
-        player.Tick(Melee);
+        Click(player);
 
         Assert.IsType<BladeSwung>(Assert.Single(player.Events));
     }
@@ -100,7 +105,7 @@ public class PlayerCombatTests
     public void Blade_and_pistol_have_their_own_cooldowns()
     {
         var player = RunningPlayer();
-        player.Tick(Melee);
+        Click(player);
 
         player.Tick(Shoot);
 
@@ -110,23 +115,26 @@ public class PlayerCombatTests
     }
 
     [Fact]
-    public void Both_weapons_in_the_same_tick_both_attack()
+    public void Both_buttons_together_use_both_weapons()
     {
+        // The pistol fires on the press, the blade swings when its button is let go.
         var player = RunningPlayer();
 
         player.Tick(Melee with { Shoot = true });
+        Assert.IsType<ShotFired>(Assert.Single(player.Events));
 
-        Assert.Equal(2, player.Events.Count);
-        Assert.Contains(player.Events, e => e is BladeSwung);
-        Assert.Contains(player.Events, e => e is ShotFired);
+        player.Tick(PlayerInput.None);
+        Assert.IsType<BladeSwung>(Assert.Single(player.Events));
     }
 
     [Fact]
     public void Attacks_cost_no_stamina()
     {
+        // A quick click of the blade (not charged) and a shot cost nothing.
         var player = RunningPlayer();
 
         player.Tick(Melee with { Shoot = true });
+        player.Tick(PlayerInput.None);
 
         Assert.Equal(1f, player.Stamina.Fraction);
     }
@@ -137,6 +145,7 @@ public class PlayerCombatTests
         var jumping = RunningPlayer();
         jumping.Tick(ForwardJump);
         jumping.Tick(Forward with { Melee = true });
+        jumping.Tick(Forward);
         Assert.False(jumping.IsGrounded);
         Assert.Single(jumping.Events);
 
@@ -151,7 +160,15 @@ public class PlayerCombatTests
         var dodging = RunningPlayer();
         dodging.Tick(ForwardDash);
         dodging.Tick(ForwardDash with { Melee = true });
+        dodging.Tick(ForwardDash);
         Assert.True(dodging.IsDodging);
         Assert.Single(dodging.Events);
+    }
+
+    /// <summary>A quick click of the blade button: pressed in one tick, let go in the next (the swing happens then).</summary>
+    private static void Click(Player player)
+    {
+        player.Tick(Melee);
+        player.Tick(PlayerInput.None);
     }
 }

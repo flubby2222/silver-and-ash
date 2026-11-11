@@ -66,6 +66,9 @@ internal sealed class PlaceholderWeaponView : IWeaponView
     private static readonly Vector3 PistolHand = new(0.095f, -0.08f, 0.18f);
 
     private float _swing = 1f;      // 0 = swing starts, 1 = finished
+    private float _windUp;          // 0 = blade at rest, 1 = fully drawn back for a charged swing
+    private bool _fullyCharged;
+    private float _time;
     private float _recoil = 1f;     // 0 = shot fired, 1 = settled
     private float _flash;           // 1 = bright, fading to 0
     private float _bobPhase;
@@ -104,6 +107,13 @@ internal sealed class PlaceholderWeaponView : IWeaponView
 
         // Every soft movement uses the same "catch up a part of the way each frame" smoothing, so nothing jumps.
         var catchUp = 1f - MathF.Exp(-SwayCatchUp * frameSeconds);
+        _time += frameSeconds;
+
+        // Charging the blade: drawn back a little at once, further the longer it is held.
+        var charge = player.BladeCharge;
+        var windUpTarget = charge.IsCharging ? 0.25f + 0.75f * charge.Fraction : 0f;
+        _windUp += (windUpTarget - _windUp) * MathF.Min(1f, catchUp * 2f);
+        _fullyCharged = charge.IsCharging && charge.Fraction >= 1f;
 
         // Turning: the hands lag behind the view and then glide back to their place.
         var yaw = player.View.YawRadians;
@@ -159,10 +169,14 @@ internal sealed class PlaceholderWeaponView : IWeaponView
         var sweep = t * 95f;         // degrees around the camera's up axis, the tip turning to the right
         var tilt = 20f + t * 25f;    // blade leans over while swinging
 
+        // Wind-up while charging: the tip turns back to the left, the hand pulls back. Fully charged, it trembles.
+        var tremble = _fullyCharged ? MathF.Sin(_time * 45f) * 0.0012f : 0f;
+        var windUp = new Vector3(-0.03f * _windUp + tremble, 0.015f * _windUp, -0.04f * _windUp);
+
         var hand =
             Matrix4x4.CreateRotationZ(Deg(-tilt)) *
-            Matrix4x4.CreateRotationY(Deg(sweep)) *
-            Matrix4x4.CreateTranslation(BladeHand + new Vector3(t * 0.06f, t * 0.04f, 0f)) *
+            Matrix4x4.CreateRotationY(Deg(sweep - 35f * _windUp)) *
+            Matrix4x4.CreateTranslation(BladeHand + windUp + new Vector3(t * 0.06f, t * 0.04f, 0f)) *
             motion;
 
         // Handle, guard and the long silver blade pointing forward and a little up.
