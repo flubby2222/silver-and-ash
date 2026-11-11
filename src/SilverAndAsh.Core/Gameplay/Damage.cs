@@ -57,6 +57,7 @@ public sealed class DamageRules
     {
         var rules = new DamageRules();
         rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.Head, Tuning.Combat.PistolHeadshotMultiplier));
+        rules.Add(new ChargeBonus(Tuning.Combat.BladeChargeMaxMultiplier));
         return rules;
     }
 

@@ -46,6 +46,22 @@ public sealed class Stamina
         return true;
     }
 
+    /// <summary>
+    /// Pays a part of a segment, in the bar's own unit (<see cref="CostPerSegment"/> per segment) - for costs that grow
+    /// bit by bit, like charging the blade. Returns false (and takes nothing) if there is not enough.
+    /// </summary>
+    public bool TryPayPart(int amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        if (_amount < amount)
+        {
+            return false;
+        }
+
+        _amount -= amount;
+        return true;
+    }
+
     /// <summary>Switches refilling on (standing on the ground) or off (jumping).</summary>
     public void SetRecharging(bool recharging) => IsRecharging = recharging;
 

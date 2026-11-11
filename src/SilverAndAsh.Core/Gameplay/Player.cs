@@ -85,6 +85,9 @@ public sealed class Player
     /// <summary>Waiting time of the pistol.</summary>
     public Cooldown PistolCooldown { get; } = new(Tuning.Combat.PistolCooldown);
 
+    /// <summary>Charging the silver blade (hold the button, swing on release).</summary>
+    public BladeCharge BladeCharge { get; } = new();
+
     /// <summary>
     /// What happened in the latest tick (swings, shots, ...), for the presentation.
     /// Emptied at the start of every tick - read it after each tick.
@@ -173,7 +176,7 @@ public sealed class Player
         }
 
         // No refilling during a dodge either - otherwise standing on the ground would pay part of it back.
-        Stamina.SetRecharging(chainOver && !IsDodging);
+        Stamina.SetRecharging(chainOver && !IsDodging && !BladeCharge.IsCharging);
         Stamina.Tick();
 
         // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
@@ -388,9 +391,20 @@ public sealed class Player
         _meleeWasHeld = input.Melee;
         _shootWasHeld = input.Shoot;
 
-        if (meleePressed && BladeCooldown.TryUse())
+        // Blade: pressing starts charging (only when the cooldown is over), holding charges, letting go swings.
+        if (meleePressed && BladeCooldown.IsReady)
         {
-            _events.Add(new BladeSwung(EyePosition, View.Forward));
+            BladeCharge.Start();
+        }
+        else if (BladeCharge.IsCharging && input.Melee)
+        {
+            BladeCharge.Tick(Stamina);
+        }
+        else if (BladeCharge.IsCharging)
+        {
+            var charge = BladeCharge.Release();
+            BladeCooldown.TryUse();
+            _events.Add(new BladeSwung(EyePosition, View.Forward, charge));
         }
 
         if (shootPressed && PistolCooldown.TryUse())

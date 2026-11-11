@@ -52,7 +52,7 @@ public sealed class GameWorld
             if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, dummy.Body))
             {
                 // The blade hits the whole body at once - it has no hit zone (and so no headshot bonus).
-                Damage(dummy, new Hit(Weapon.Blade, HitZone.Body, Tuning.Combat.BladeDamage));
+                Damage(dummy, new Hit(Weapon.Blade, HitZone.Body, Tuning.Combat.BladeDamage, swing.Charge));
             }
         }
     }

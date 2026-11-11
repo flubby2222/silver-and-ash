@@ -32,6 +32,17 @@ public class DamageRulesTests
     }
 
     [Fact]
+    public void A_charged_blade_hits_harder_linearly_up_to_double()
+    {
+        var rules = DamageRules.Standard();
+
+        Assert.Equal(40, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, Charge: 0f)).Amount);
+        Assert.Equal(60, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, Charge: 0.5f)).Amount);
+        Assert.Equal(80, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, Charge: 1f)).Amount);
+        Assert.False(rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, Charge: 1f)).IsCritical);
+    }
+
+    [Fact]
     public void A_new_rule_plugs_in_without_touching_anything_else()
     {
         // Like a future item "blessed ammunition": +20 % for every pistol hit.
