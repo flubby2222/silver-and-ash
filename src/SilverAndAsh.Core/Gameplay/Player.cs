@@ -53,9 +53,20 @@ public sealed class Player
 
     /// <summary>
     /// True while the speed bonus of a perfect jump is active: from a perfectly timed jump
-    /// until the next landing that is NOT followed by another perfect jump.
+    /// until the chain ends (see <see cref="Tick"/>).
     /// </summary>
     public bool HasPerfectJumpBonus { get; private set; }
+
+    /// <summary>
+    /// True after a timed jump with an empty stamina bar: slower than normal until the chain ends.
+    /// </summary>
+    public bool IsExhausted { get; private set; }
+
+    /// <summary>Pays for perfect jumps.</summary>
+    public Stamina Stamina { get; } = new();
+
+    // How long the feet have been on the ground without a break.
+    private int _ticksOnGround;
 
     // Was the jump button already held in the previous tick? A jump needs a fresh press,
     // so holding the button down does not make the player hop again and again.
@@ -87,10 +98,23 @@ public sealed class Player
         _ticksSinceLanding = Math.Min(_ticksSinceLanding + 1, Never);
         _ticksSinceJumpPressedInAir = Math.Min(_ticksSinceJumpPressedInAir + 1, Never);
 
+        // A chain of timed jumps ends when the player stays on the ground longer than the perfect window:
+        // bonus and exhaustion are over, and the bar refills. It ends on the ground, not at the moment of landing -
+        // a timed press shortly after landing still belongs to the chain, and so does brushing the edge of a
+        // platform for a few ticks while still rising (code review finding).
+        if (IsGrounded && _ticksOnGround > PerfectWindowTicks)
+        {
+            HasPerfectJumpBonus = false;
+            IsExhausted = false;
+            Stamina.SetRecharging(true);
+        }
+
+        Stamina.Tick();
+
         // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
-        // but a slightly higher top speed - and even more with the perfect jump bonus.
+        // but a slightly higher top speed - more with the perfect jump bonus, less when exhausted.
         var acceleration = Tuning.Player.Acceleration * (IsGrounded ? 1f : Tuning.Player.AirControl);
-        var topSpeed = Tuning.Player.MaxSpeed * (IsGrounded ? 1f : Tuning.Player.AirSpeedMultiplier) * BonusFactor;
+        var topSpeed = Tuning.Player.MaxSpeed * (IsGrounded ? 1f : Tuning.Player.AirSpeedMultiplier) * SpeedFactor;
         var targetVelocity = WishDirection(input) * topSpeed;
         var horizontal = MoveTowards(new Vector3(Velocity.X, 0f, Velocity.Z), targetVelocity, acceleration * Dt);
 
@@ -108,24 +132,28 @@ public sealed class Player
         var jumpNow = IsGrounded && (jumpPressed || _perfectJumpQueued);
         if (jumpNow)
         {
-            // Perfect: either pressed shortly before landing (queued) or shortly after landing.
+            // Timed: either pressed shortly before landing (queued) or shortly after landing.
             var wasQueued = _perfectJumpQueued;
-            var perfect = wasQueued || _ticksSinceLanding <= PerfectWindowTicks;
+            var timed = wasQueued || _ticksSinceLanding <= PerfectWindowTicks;
             _perfectJumpQueued = false;
             vertical = Tuning.Player.JumpSpeed;
 
-            if (perfect)
+            if (timed)
             {
-                if (!HasPerfectJumpBonus)
-                {
-                    // Noticeable right away: the current speed gets the bonus, too (it does not stack).
-                    horizontal *= 1f + Tuning.Player.PerfectJumpSpeedBonus;
-                }
+                // A timed jump belongs to a chain: no refilling until the chain ends.
+                Stamina.SetRecharging(false);
 
-                HasPerfectJumpBonus = true;
+                var factorBefore = SpeedFactor;
+                var paid = Stamina.TryPayForJump();
+                HasPerfectJumpBonus = paid;
+                IsExhausted = !paid;
+
+                // Noticeable right away: the current speed changes with the factor, too. Same factor
+                // as before (perfect after perfect) = no change, so the bonus does not stack.
+                horizontal *= SpeedFactor / factorBefore;
 
                 // A queued jump already softened the dip when it landed - softening twice would make it 0.4 x 0.4.
-                if (!wasQueued)
+                if (paid && !wasQueued)
                 {
                     LandingDip.Soften(Tuning.Player.PerfectJumpDipFactor);
                 }
@@ -145,6 +173,7 @@ public sealed class Player
             _level, Position, Velocity, Tuning.Player.Radius, Tuning.Player.Height, Tuning.Player.Gravity, Dt);
         IsGrounded = grounded;
         _ticksInAir = grounded ? 0 : _ticksInAir + 1;
+        _ticksOnGround = grounded ? _ticksOnGround + 1 : 0;
 
         if (!wasGrounded && grounded)
         {
@@ -159,21 +188,23 @@ public sealed class Player
 
             if (realLanding && _ticksSinceJumpPressedInAir <= PerfectWindowTicks)
             {
-                // Pressed just before landing: jump again right away in the next tick, as a perfect jump.
+                // Pressed just before landing: jump again right away in the next tick, as a timed jump.
+                // Only a jump the stamina can pay for lands softly.
                 _perfectJumpQueued = true;
                 _ticksSinceJumpPressedInAir = Never;
-                LandingDip.Soften(Tuning.Player.PerfectJumpDipFactor);
-            }
-            else
-            {
-                // A normal landing ends the bonus - a perfect press within the window after it brings it back.
-                HasPerfectJumpBonus = false;
+                if (Stamina.CanPayForJump)
+                {
+                    LandingDip.Soften(Tuning.Player.PerfectJumpDipFactor);
+                }
             }
         }
     }
 
-    // 1 normally, e.g. 1.2 with the perfect jump bonus.
-    private float BonusFactor => HasPerfectJumpBonus ? 1f + Tuning.Player.PerfectJumpSpeedBonus : 1f;
+    // 1 normally, e.g. 1.2 with the perfect jump bonus or 0.9 when exhausted.
+    private float SpeedFactor =>
+        HasPerfectJumpBonus ? 1f + Tuning.Player.PerfectJumpSpeedBonus
+        : IsExhausted ? 1f - Tuning.Player.ExhaustedJumpSpeedPenalty
+        : 1f;
 
     /// <summary>
     /// Eye position for drawing, blended between the previous and the latest tick, lowered by the landing dip.

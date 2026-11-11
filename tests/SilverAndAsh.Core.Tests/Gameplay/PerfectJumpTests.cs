@@ -1,25 +1,13 @@
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
-using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.Gameplay.JumpTestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
 public class PerfectJumpTests
 {
     private const float Tolerance = 0.01f;
-
-    private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
-    private static readonly PlayerInput ForwardJump = Forward with { Jump = true };
-
-    private static readonly int Window = SimulationClock.SecondsToTicks(Tuning.Player.PerfectJumpWindow);
-
-    // Ticks from pressing jump until the player is on the ground again (same for every jump on flat ground).
-    private static readonly int AirTicks = MeasureAirTicks();
-
-    private static float NormalAirSpeed => Tuning.Player.MaxSpeed * Tuning.Player.AirSpeedMultiplier;
-
-    private static float BonusAirSpeed => NormalAirSpeed * (1f + Tuning.Player.PerfectJumpSpeedBonus);
 
     [Fact]
     public void A_normal_jump_gives_no_bonus()
@@ -203,66 +191,5 @@ public class PerfectJumpTests
         player.Tick(ForwardJump);                           // jump right after touching down
 
         Assert.False(player.HasPerfectJumpBonus);
-    }
-
-    /// <summary>A player at full running speed in a long corridor (no walls in the way).</summary>
-    private static Player RunningPlayer()
-    {
-        var corridor = string.Join('\n', Enumerable.Repeat(".", 80).Prepend("P"));
-        var player = new Player(LevelParser.Parse(corridor));
-        RunTicks(player, Forward, 30);
-        return player;
-    }
-
-    private static int MeasureAirTicks()
-    {
-        var player = RunningPlayer();
-        player.Tick(ForwardJump);
-        var ticks = 1;
-        while (!player.IsGrounded)
-        {
-            player.Tick(Forward);
-            ticks++;
-        }
-
-        return ticks;
-    }
-
-    private static float DeepestDip(Player player)
-    {
-        var deepest = 0f;
-        for (var i = 0; i < 40; i++)
-        {
-            deepest = MathF.Max(deepest, player.LandingDip.Depth);
-            player.Tick(Forward);
-        }
-
-        return deepest;
-    }
-
-    /// <summary>Runs until the player goes from "in the air" to "on the ground".</summary>
-    private static void RunUntilLanded(Player player, PlayerInput? input = null)
-    {
-        var tickInput = input ?? Forward;
-        var guard = 0;
-        while (player.IsGrounded && guard++ < 300)
-        {
-            player.Tick(tickInput);
-        }
-
-        while (!player.IsGrounded && guard++ < 600)
-        {
-            player.Tick(tickInput);
-        }
-    }
-
-    private static float HorizontalSpeed(Player player) => new Vector2(player.Velocity.X, player.Velocity.Z).Length();
-
-    private static void RunTicks(Player player, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            player.Tick(input);
-        }
     }
 }
