@@ -1,4 +1,6 @@
+using System.Numerics;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
@@ -48,6 +50,36 @@ public sealed class GameWorld
         }
     }
 
+    /// <summary>
+    /// A shot hits the first thing on its ray within the pistol's range: a standing dummy (damage) or a wall,
+    /// floor or ceiling (an impact). Instant - no flying bullet ("hitscan").
+    /// </summary>
+    private void FirePistol(ShotFired shot)
+    {
+        var direction = Vector3.Normalize(shot.Direction);
+        var wall = Raycast.AgainstLevel(Level, shot.Origin, direction, Tuning.Combat.PistolRange);
+        var nearest = wall?.Distance ?? Tuning.Combat.PistolRange;
+
+        TrainingDummy? target = null;
+        foreach (var dummy in _dummies.Where(dummy => !dummy.IsDown))
+        {
+            if (Raycast.AgainstCylinder(shot.Origin, direction, dummy.Body) is { } distance && distance <= nearest)
+            {
+                nearest = distance;
+                target = dummy;
+            }
+        }
+
+        if (target is not null)
+        {
+            target.TakeDamage(Tuning.Combat.PistolDamage, _events);
+        }
+        else if (wall is { } impact)
+        {
+            _events.Add(new BulletImpact(impact.Point, impact.Normal));
+        }
+    }
+
     /// <summary>Advances the whole world by one simulation tick.</summary>
     public void Tick(PlayerInput input)
     {
@@ -58,6 +90,11 @@ public sealed class GameWorld
         foreach (var swing in Player.Events.OfType<BladeSwung>())
         {
             StrikeWithBlade(swing);
+        }
+
+        foreach (var shot in Player.Events.OfType<ShotFired>())
+        {
+            FirePistol(shot);
         }
 
         foreach (var dummy in _dummies)
