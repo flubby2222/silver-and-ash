@@ -14,6 +14,8 @@ public class PlayerDodgeTests
 
     private static readonly PlayerInput Shift = PlayerInput.None with { Dash = true };
 
+    private static readonly PlayerInput JumpOnly = PlayerInput.None with { Jump = true };
+
     private static float SegmentFraction => 1f / Tuning.Player.StaminaJumps;
 
     [Fact]
@@ -229,6 +231,117 @@ public class PlayerDodgeTests
     }
 
     [Fact]
+    public void A_jump_pressed_at_the_end_of_a_dodge_is_a_perfect_jump_when_the_dodge_ends()
+    {
+        // Wish from playtesting: dodge, then jump out of it with the perfect jump rhythm.
+        var player = StandingPlayer();
+        player.Tick(Shift);
+        RunTicks(player, PlayerInput.None, DodgeTicks - 4);   // 3 ticks of the dodge left
+
+        player.Tick(JumpOnly);
+        Assert.True(player.IsDodging, "The dodge is not cut short.");
+        Assert.True(player.IsGrounded);
+
+        RunWhileDodging(player);
+        player.Tick(PlayerInput.None);
+
+        Assert.False(player.IsGrounded, "The jump comes right after the dodge.");
+        Assert.True(player.HasPerfectJumpBonus);
+    }
+
+    [Fact]
+    public void A_jump_pressed_shortly_after_a_dodge_is_a_perfect_jump()
+    {
+        var player = StandingPlayer();
+        player.Tick(Shift);
+        RunWhileDodging(player);
+        RunTicks(player, PlayerInput.None, Window - 1);
+
+        player.Tick(JumpOnly);
+
+        Assert.False(player.IsGrounded);
+        Assert.True(player.HasPerfectJumpBonus);
+    }
+
+    [Fact]
+    public void A_jump_long_after_a_dodge_is_a_normal_jump()
+    {
+        var player = StandingPlayer();
+        player.Tick(Shift);
+        RunWhileDodging(player);
+        RunTicks(player, PlayerInput.None, Window + 2);
+
+        player.Tick(JumpOnly);
+
+        Assert.False(player.IsGrounded);
+        Assert.False(player.HasPerfectJumpBonus);
+    }
+
+    [Fact]
+    public void A_jump_pressed_early_in_a_dodge_is_forgotten()
+    {
+        // Only the end of the dodge counts - pressing early must not jump later "by itself".
+        var player = StandingPlayer();
+        player.Tick(Shift);
+        player.Tick(JumpOnly);
+
+        RunWhileDodging(player);
+        RunTicks(player, PlayerInput.None, 5);
+
+        Assert.True(player.IsGrounded);
+        Assert.False(player.HasPerfectJumpBonus);
+    }
+
+    [Fact]
+    public void Dodge_and_perfect_jump_cost_three_segments()
+    {
+        var player = StandingPlayer();
+        player.Tick(Shift);
+        RunWhileDodging(player);
+
+        player.Tick(JumpOnly);
+
+        Assert.Equal(1f - 3 * SegmentFraction, player.Stamina.Fraction, Tolerance);
+    }
+
+    [Fact]
+    public void After_a_dodge_with_an_empty_bar_the_jump_is_exhausted()
+    {
+        // Exactly two segments left: the dodge takes both, and the jump out of it has nothing to pay with.
+        var player = RunningPlayer();
+        player.Tick(ForwardJump);
+        ChainTimedJumps(player, Tuning.Player.StaminaJumps - 3);   // two segments left
+        RunUntilLanded(player);
+        Assert.Equal(2 * SegmentFraction, player.Stamina.Fraction, Tolerance);
+
+        player.Tick(ForwardDash);
+        RunWhileDodging(player);
+        player.Tick(ForwardJump);
+
+        Assert.False(player.IsGrounded);
+        Assert.False(player.HasPerfectJumpBonus);
+        Assert.True(player.IsExhausted);
+    }
+
+    [Fact]
+    public void A_dodge_that_ends_in_the_air_does_not_keep_the_jump_for_later()
+    {
+        // Dodge off a ledge with jump pressed at its end: no jump in the air, and none fires later on landing.
+        var player = new Player(LevelParser.Parse("P\n_\n_\n_\n_\n."));
+        player.Tick(Shift);
+        RunTicks(player, PlayerInput.None, DodgeTicks - 4);
+        Assert.False(player.IsGrounded);
+        player.Tick(JumpOnly);
+
+        RunWhileDodging(player);
+        RunUntilLanded(player);
+        RunTicks(player, PlayerInput.None, 5);
+
+        Assert.True(player.IsGrounded);
+        Assert.False(player.HasPerfectJumpBonus);
+    }
+
+    [Fact]
     public void Holding_shift_dodges_only_once()
     {
         var player = StandingPlayer();
@@ -258,6 +371,14 @@ public class PlayerDodgeTests
         var rows = Enumerable.Repeat(row, 11).ToArray();
         rows[5] = "....." + "P" + ".....";
         return LevelParser.Parse(string.Join('\n', rows));
+    }
+
+    private static void RunWhileDodging(Player player)
+    {
+        while (player.IsDodging)
+        {
+            player.Tick(PlayerInput.None);
+        }
     }
 
     private static Vector3 FlatVelocityDirection(Player player) => Vector3.Normalize(player.Velocity with { Y = 0f });

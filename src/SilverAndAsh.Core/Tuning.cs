@@ -57,15 +57,15 @@ public static class Tuning
 
         /// <summary>
         /// Landing dip: how deep the eyes sink per m/s of falling speed, in metres.
-        /// A normal jump landing (about 6.5 m/s) gives about 8 cm.
+        /// A normal jump landing (about 6.5 m/s) gives about 12 cm.
         /// </summary>
-        public const float LandingDipPerSpeed = 0.0125f;
+        public const float LandingDipPerSpeed = 0.01875f;
 
         /// <summary>Landing dip: the eyes never sink further than this, in metres.</summary>
-        public const float LandingDipMax = 0.15f;
+        public const float LandingDipMax = 0.22f;
 
         /// <summary>Landing dip: how long the whole nod (down and back up) takes, in seconds. Longer = softer.</summary>
-        public const float LandingDipDuration = 0.45f;
+        public const float LandingDipDuration = 0.3f;
 
         /// <summary>
         /// Perfect jump: how close to the landing (before OR after) the jump must be pressed, in seconds.

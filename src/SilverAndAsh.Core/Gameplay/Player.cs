@@ -81,7 +81,10 @@ public sealed class Player
     private Vector3 _dashDirection;
     private bool _airDashUsed;
 
-    /// <summary>True during a dodge: ducked, fast, a little steerable, no jumping, no refilling.</summary>
+    /// <summary>
+    /// True during a dodge: ducked, fast, fully steerable, no refilling. No jumping either - except a jump
+    /// pressed at its end, which comes as a perfect jump when the dodge is over.
+    /// </summary>
     public bool IsDodging => _dodgeTicksLeft > 0;
 
     private static readonly int DodgeTicks = SimulationClock.SecondsToTicks(Tuning.Player.DodgeDuration);
@@ -103,6 +106,7 @@ public sealed class Player
     private static readonly int PerfectWindowTicks = SimulationClock.SecondsToTicks(Tuning.Player.PerfectJumpWindow);
     private int _ticksSinceLanding = Never;
     private int _ticksSinceJumpPressedInAir = Never;
+    private int _ticksSinceDodgeEnded = Never;
     private int _ticksInAir;
     private bool _perfectJumpQueued;
 
@@ -123,6 +127,7 @@ public sealed class Player
         var wasGrounded = IsGrounded;
         _ticksSinceLanding = Math.Min(_ticksSinceLanding + 1, Never);
         _ticksSinceJumpPressedInAir = Math.Min(_ticksSinceJumpPressedInAir + 1, Never);
+        _ticksSinceDodgeEnded = Math.Min(_ticksSinceDodgeEnded + 1, Never);
 
         // A chain of jumps ends when the player stays on the ground longer than the perfect window:
         // bonus and exhaustion are over. It ends on the ground, not at the moment of landing - a timed press
@@ -154,6 +159,13 @@ public sealed class Player
         {
             // Pressed in the air: remember when - if we land soon, the jump happens then ("buffered").
             _ticksSinceJumpPressedInAir = 0;
+        }
+
+        if (jumpPressed && IsDodging && _dodgeTicksLeft <= PerfectWindowTicks)
+        {
+            // Pressed at the end of a dodge: jump as soon as it is over, as a timed jump - the same rhythm
+            // as pressing shortly before landing. Pressed earlier in the dodge, the press is simply ignored.
+            _perfectJumpQueued = true;
         }
 
         // Shift on a fresh press: dodge on the ground, dash in the air. Both override walking and jumping.
@@ -192,9 +204,11 @@ public sealed class Player
         var jumpNow = !IsDashing && !IsDodging && IsGrounded && (jumpPressed || _perfectJumpQueued);
         if (jumpNow)
         {
-            // Timed: either pressed shortly before landing (queued) or shortly after landing.
+            // Timed: pressed shortly before landing or at the end of a dodge (queued),
+            // or shortly after landing or after a dodge.
             var wasQueued = _perfectJumpQueued;
-            var timed = wasQueued || _ticksSinceLanding <= PerfectWindowTicks;
+            var afterDodge = _ticksSinceDodgeEnded <= PerfectWindowTicks;
+            var timed = wasQueued || afterDodge || _ticksSinceLanding <= PerfectWindowTicks;
             _perfectJumpQueued = false;
             vertical = Tuning.Player.JumpSpeed;
 
@@ -262,6 +276,17 @@ public sealed class Player
             if (!IsDodging)
             {
                 FallBackToTopSpeed();
+
+                // The window for a perfect jump out of the dodge - only on the ground. A dodge that ended in the
+                // air (off a ledge) must not keep a queued jump for a much later landing.
+                if (grounded)
+                {
+                    _ticksSinceDodgeEnded = 0;
+                }
+                else
+                {
+                    _perfectJumpQueued = false;
+                }
             }
         }
 
