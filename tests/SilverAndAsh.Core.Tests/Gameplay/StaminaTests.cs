@@ -7,11 +7,11 @@ public class StaminaTests
     private static readonly int RechargeTicks = SimulationClock.SecondsToTicks(Tuning.Player.StaminaRechargeTime);
 
     [Fact]
-    public void A_full_bar_pays_for_exactly_four_jumps()
+    public void A_full_bar_pays_for_exactly_the_tuned_number_of_jumps()
     {
         var stamina = new Stamina();
 
-        for (var jump = 0; jump < Tuning.Player.StaminaPerfectJumps; jump++)
+        for (var jump = 0; jump < Tuning.Player.StaminaJumps; jump++)
         {
             Assert.True(stamina.TryPayForJump(), $"Jump {jump + 1} should be paid.");
         }
@@ -26,7 +26,7 @@ public class StaminaTests
         // Guards against tuning mistakes (code review): with uneven values a rest would stay in the bar,
         // and with a cost of 0 the jumps would be free.
         Assert.True(Stamina.CostPerJump > 0);
-        Assert.Equal(Stamina.Capacity, Stamina.CostPerJump * Tuning.Player.StaminaPerfectJumps);
+        Assert.Equal(Stamina.Capacity, Stamina.CostPerJump * Tuning.Player.StaminaJumps);
     }
 
     [Fact]
@@ -53,13 +53,13 @@ public class StaminaTests
     }
 
     [Fact]
-    public void One_jump_is_refilled_in_a_quarter_of_the_time()
+    public void One_jump_is_refilled_in_its_share_of_the_time()
     {
         var stamina = new Stamina();
         stamina.TryPayForJump();
         stamina.SetRecharging(true);
 
-        Tick(stamina, RechargeTicks / Tuning.Player.StaminaPerfectJumps);
+        Tick(stamina, RechargeTicks / Tuning.Player.StaminaJumps);
 
         Assert.Equal(1f, stamina.Fraction);
     }

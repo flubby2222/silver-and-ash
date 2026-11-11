@@ -20,7 +20,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Zweites Testlevel „heights“ mit Treppe, hohem Podest und Grube – starten mit `--level heights`
 - Landungs-Nicken: Beim Aufkommen sackt der Blick kurz ab und neigt sich – je tiefer der Fall, desto stärker
 - Perfect Jump: Wer kurz vor oder nach dem Aufkommen erneut springt, bekommt +20 % Tempo (nicht stapelbar); die Landung fällt dabei sanfter aus
-- Stamina-Balken für den Perfect Jump (unten in der Mitte): Er reicht für 4 Perfect Jumps am Stück und lädt sich nach dem Ende der Sprungkette in 3 s wieder voll. Ein getimter Sprung mit leerem Balken ist erschöpft (−10 % Tempo bis zum Ende der Kette)
+- Stamina-Balken (unten in der Mitte) mit 5 Segmenten: Jeder Sprung kostet eins. Er lädt nur am Boden, in 3 s von leer bis voll. Ein Sprung mit leerem Balken ist erschöpft (−15 % Tempo bis zum Ende der Sprungkette)
 
 ## [0.2.0] – 2026-11-10 – Bewegung & Physik
 

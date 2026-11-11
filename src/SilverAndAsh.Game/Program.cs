@@ -173,10 +173,10 @@ static void DrawHud(bool isMouseCaptured, string displayVersion)
     Raylib.DrawText(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
 }
 
-// Stamina for perfect jumps: one segment per jump at the bottom centre. A segment fills up from left to right.
+// Stamina for jumps: one segment per jump at the bottom centre. A segment fills up from left to right.
 static void DrawStaminaBar(Player player)
 {
-    const int Segments = Tuning.Player.StaminaPerfectJumps;
+    const int Segments = Tuning.Player.StaminaJumps;
     const int SegmentWidth = 48;
     const int Gap = 4;
     const int Height = 8;

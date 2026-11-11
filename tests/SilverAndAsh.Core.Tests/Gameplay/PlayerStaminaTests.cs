@@ -10,28 +10,60 @@ public class PlayerStaminaTests
 
     private static readonly int RechargeTicks = SimulationClock.SecondsToTicks(Tuning.Player.StaminaRechargeTime);
 
+    // Every jump costs one segment - the first (normal) jump of a chain, too.
+    private static readonly int TimedJumpsUntilEmpty = Tuning.Player.StaminaJumps - 1;
+
     [Fact]
-    public void Four_perfect_jumps_in_a_row_use_up_the_whole_bar()
+    public void A_normal_jump_costs_one_segment()
+    {
+        var player = RunningPlayer();
+
+        player.Tick(ForwardJump);
+
+        var expected = (Tuning.Player.StaminaJumps - 1f) / Tuning.Player.StaminaJumps;
+        Assert.Equal(expected, player.Stamina.Fraction, Tolerance);
+        Assert.False(player.HasPerfectJumpBonus);
+        Assert.False(player.IsExhausted);
+    }
+
+    [Fact]
+    public void A_full_bar_pays_for_a_whole_chain_of_jumps()
     {
         var player = RunningPlayer();
         player.Tick(ForwardJump);
 
-        ChainTimedJumps(player, Tuning.Player.StaminaPerfectJumps);
+        ChainTimedJumps(player, TimedJumpsUntilEmpty);
 
         Assert.True(player.HasPerfectJumpBonus);
         Assert.Equal(0f, player.Stamina.Fraction);
     }
 
     [Fact]
-    public void The_fifth_timed_jump_is_exhausted_and_slower_than_normal()
+    public void The_next_timed_jump_on_an_empty_bar_is_exhausted_and_slower_than_normal()
     {
         var player = RunningPlayer();
         player.Tick(ForwardJump);
 
-        ChainTimedJumps(player, Tuning.Player.StaminaPerfectJumps + 1);
+        ChainTimedJumps(player, TimedJumpsUntilEmpty + 1);
         RunTicks(player, Forward, 20);
 
         Assert.False(player.HasPerfectJumpBonus);
+        Assert.True(player.IsExhausted);
+        Assert.Equal(ExhaustedAirSpeed, HorizontalSpeed(player), Tolerance);
+    }
+
+    [Fact]
+    public void A_normal_jump_on_an_empty_bar_is_exhausted_too()
+    {
+        var player = RunningPlayer();
+        player.Tick(ForwardJump);
+        ChainTimedJumps(player, TimedJumpsUntilEmpty);
+        RunUntilLanded(player);
+        RunTicks(player, Forward, Window + 1);              // chain over - but only 1 tick of refilling
+
+        player.Tick(ForwardJump);                           // too late for a timed jump
+        RunTicks(player, Forward, 20);
+
         Assert.True(player.IsExhausted);
         Assert.Equal(ExhaustedAirSpeed, HorizontalSpeed(player), Tolerance);
     }
@@ -41,7 +73,7 @@ public class PlayerStaminaTests
     {
         var player = RunningPlayer();
         player.Tick(ForwardJump);
-        ChainTimedJumps(player, Tuning.Player.StaminaPerfectJumps + 1);
+        ChainTimedJumps(player, TimedJumpsUntilEmpty + 1);
         RunUntilLanded(player);
 
         RunTicks(player, Forward, Window);
@@ -56,7 +88,7 @@ public class PlayerStaminaTests
     {
         var player = RunningPlayer();
         player.Tick(ForwardJump);
-        ChainTimedJumps(player, Tuning.Player.StaminaPerfectJumps);
+        ChainTimedJumps(player, TimedJumpsUntilEmpty);
         RunUntilLanded(player);
         player.Tick(Forward);
         var before = HorizontalSpeed(player);
@@ -68,31 +100,33 @@ public class PlayerStaminaTests
     }
 
     [Fact]
-    public void Starting_a_chain_stops_the_refilling()
+    public void The_bar_refills_only_while_standing()
     {
         var player = RunningPlayer();
         player.Tick(ForwardJump);
-        ChainTimedJumps(player, Tuning.Player.StaminaPerfectJumps);
+        ChainTimedJumps(player, TimedJumpsUntilEmpty);
         RunUntilLanded(player);
-        RunTicks(player, Forward, Window + 20);             // chain over, refilling
+        RunTicks(player, Forward, Window + 60);             // chain over, refilling on the ground
         Assert.True(player.Stamina.IsRecharging);
 
-        player.Tick(ForwardJump);                           // a normal jump - refilling goes on ...
-        PressShortlyBeforeLanding(player);                  // ... until a timed jump starts a new chain
-        player.Tick(Forward);
+        player.Tick(ForwardJump);                           // a normal jump ...
+        var inTheAir = player.Stamina.Fraction;
+        RunTicks(player, Forward, 20);
 
+        Assert.False(player.IsGrounded);
         Assert.False(player.Stamina.IsRecharging);
+        Assert.Equal(inTheAir, player.Stamina.Fraction);    // ... no refilling in the air
     }
 
     [Fact]
     public void The_bar_does_not_refill_during_a_chain()
     {
-        // Pressing shortly AFTER each landing: every landing is a normal one for a moment.
-        // Recharging must still not start, or a long chain would get more than four perfect jumps.
+        // Pressing shortly AFTER each landing: the feet touch the ground for a moment every time.
+        // Refilling must still not start, or a long chain would get more jumps than the bar holds.
         var player = RunningPlayer();
         player.Tick(ForwardJump);
 
-        for (var hop = 0; hop < Tuning.Player.StaminaPerfectJumps; hop++)
+        for (var hop = 0; hop < TimedJumpsUntilEmpty; hop++)
         {
             RunUntilLanded(player);
             RunTicks(player, Forward, Window / 2);
@@ -105,36 +139,19 @@ public class PlayerStaminaTests
     }
 
     [Fact]
-    public void After_a_normal_landing_the_empty_bar_is_full_again_after_the_recharge_time()
+    public void After_the_chain_the_empty_bar_is_full_again_after_the_recharge_time()
     {
         var player = RunningPlayer();
         player.Tick(ForwardJump);
-        ChainTimedJumps(player, Tuning.Player.StaminaPerfectJumps);
-        RunUntilLanded(player);                             // normal landing - the chain is over
+        ChainTimedJumps(player, TimedJumpsUntilEmpty);
+        RunUntilLanded(player);                             // landing without pressing
 
-        // Recharging starts once the perfect window has passed, then takes the full recharge time.
+        // Refilling starts once the perfect window has passed, then takes the full recharge time.
         RunTicks(player, Forward, Window + RechargeTicks - 1);
         Assert.True(player.Stamina.Fraction < 1f);
 
         player.Tick(Forward);
         Assert.Equal(1f, player.Stamina.Fraction);
-    }
-
-    [Fact]
-    public void The_bar_keeps_refilling_during_normal_jumps()
-    {
-        var player = RunningPlayer();
-        player.Tick(ForwardJump);
-        ChainTimedJumps(player, Tuning.Player.StaminaPerfectJumps);
-        RunUntilLanded(player);
-        RunTicks(player, Forward, Window + 5);
-        var before = player.Stamina.Fraction;
-
-        player.Tick(ForwardJump);                           // a normal jump (window long over)
-        RunTicks(player, Forward, 20);
-
-        Assert.False(player.IsGrounded);
-        Assert.True(player.Stamina.Fraction > before);
     }
 
     [Theory]
@@ -179,7 +196,7 @@ public class PlayerStaminaTests
 
         var exhausted = RunningPlayer();
         exhausted.Tick(ForwardJump);
-        ChainTimedJumps(exhausted, Tuning.Player.StaminaPerfectJumps);
+        ChainTimedJumps(exhausted, TimedJumpsUntilEmpty);
         PressShortlyBeforeLanding(exhausted);               // timed, but the bar is empty
         var exhaustedDip = DeepestDip(exhausted);
 

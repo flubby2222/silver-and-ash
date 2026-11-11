@@ -98,17 +98,18 @@ public sealed class Player
         _ticksSinceLanding = Math.Min(_ticksSinceLanding + 1, Never);
         _ticksSinceJumpPressedInAir = Math.Min(_ticksSinceJumpPressedInAir + 1, Never);
 
-        // A chain of timed jumps ends when the player stays on the ground longer than the perfect window:
-        // bonus and exhaustion are over, and the bar refills. It ends on the ground, not at the moment of landing -
-        // a timed press shortly after landing still belongs to the chain, and so does brushing the edge of a
-        // platform for a few ticks while still rising (code review finding).
-        if (IsGrounded && _ticksOnGround > PerfectWindowTicks)
+        // A chain of jumps ends when the player stays on the ground longer than the perfect window:
+        // bonus and exhaustion are over. It ends on the ground, not at the moment of landing - a timed press
+        // shortly after landing still belongs to the chain, and so does brushing the edge of a platform for a
+        // few ticks while still rising (code review finding). The bar refills only while standing like this.
+        var chainOver = IsGrounded && _ticksOnGround > PerfectWindowTicks;
+        if (chainOver)
         {
             HasPerfectJumpBonus = false;
             IsExhausted = false;
-            Stamina.SetRecharging(true);
         }
 
+        Stamina.SetRecharging(chainOver);
         Stamina.Tick();
 
         // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
@@ -138,25 +139,29 @@ public sealed class Player
             _perfectJumpQueued = false;
             vertical = Tuning.Player.JumpSpeed;
 
-            if (timed)
+            // Every jump costs stamina. Timed and paid = perfect (bonus). Not paid = exhausted (slower).
+            // A normal, paid jump changes nothing about bonus or exhaustion.
+            var factorBefore = SpeedFactor;
+            var paid = Stamina.TryPayForJump();
+            if (!paid)
             {
-                // A timed jump belongs to a chain: no refilling until the chain ends.
-                Stamina.SetRecharging(false);
+                HasPerfectJumpBonus = false;
+                IsExhausted = true;
+            }
+            else if (timed)
+            {
+                HasPerfectJumpBonus = true;
+                IsExhausted = false;
+            }
 
-                var factorBefore = SpeedFactor;
-                var paid = Stamina.TryPayForJump();
-                HasPerfectJumpBonus = paid;
-                IsExhausted = !paid;
+            // Noticeable right away: the current speed changes with the factor, too. Same factor
+            // as before (perfect after perfect) = no change, so the bonus does not stack.
+            horizontal *= SpeedFactor / factorBefore;
 
-                // Noticeable right away: the current speed changes with the factor, too. Same factor
-                // as before (perfect after perfect) = no change, so the bonus does not stack.
-                horizontal *= SpeedFactor / factorBefore;
-
-                // A queued jump already softened the dip when it landed - softening twice would make it 0.4 x 0.4.
-                if (paid && !wasQueued)
-                {
-                    LandingDip.Soften(Tuning.Player.PerfectJumpDipFactor);
-                }
+            // A queued jump already softened the dip when it landed - softening twice would make it 0.4 x 0.4.
+            if (timed && paid && !wasQueued)
+            {
+                LandingDip.Soften(Tuning.Player.PerfectJumpDipFactor);
             }
         }
 
