@@ -206,7 +206,7 @@ public sealed class Player
 
     /// <summary>
     /// Top speed on the ground or in the air. In the air a little faster (air speed multiplier) -
-    /// except when exhausted: then the penalty applies to the walking speed (6 m/s x 0.85 = 5.1 m/s),
+    /// except when exhausted: then the penalty applies to the walking speed (6 m/s x 0.8 = 4.8 m/s),
     /// otherwise air boost and penalty would almost cancel out (6.9 x 0.85 = 5.87, found while playing).
     /// </summary>
     private float TopSpeed(bool grounded)
@@ -215,7 +215,7 @@ public sealed class Player
         return Tuning.Player.MaxSpeed * air * SpeedFactor;
     }
 
-    // 1 normally, e.g. 1.2 with the perfect jump bonus or 0.85 when exhausted.
+    // 1 normally, e.g. 1.2 with the perfect jump bonus or 0.8 when exhausted.
     private float SpeedFactor =>
         HasPerfectJumpBonus ? 1f + Tuning.Player.PerfectJumpSpeedBonus
         : IsExhausted ? 1f - Tuning.Player.ExhaustedJumpSpeedPenalty

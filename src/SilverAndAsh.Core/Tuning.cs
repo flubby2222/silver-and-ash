@@ -89,10 +89,10 @@ public static class Tuning
         public const float StaminaRechargeTime = 3f;
 
         /// <summary>
-        /// Jump with an empty bar ("exhausted"): top speed is lowered by this, e.g. 0.15 = -15 %,
+        /// Jump with an empty bar ("exhausted"): walking speed is lowered by this, e.g. 0.2 = -20 %,
         /// until the chain of jumps ends.
         /// </summary>
-        public const float ExhaustedJumpSpeedPenalty = 0.15f;
+        public const float ExhaustedJumpSpeedPenalty = 0.2f;
 
         /// <summary>Landing dip: how much the view tilts down per metre of dip, in radians (the "nod").</summary>
         public const float LandingTiltPerMetre = 0.35f;
