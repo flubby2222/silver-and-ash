@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- Vampirfledermäuse in beiden Testleveln (im Level-Format: `B`): klein, mit schlagenden Flügeln, schweben sie über deinem Kopf – du läufst unter ihnen durch. 30 Leben: ein Pistolenschuss oder ein Klingenhieb, wenn du zu ihr hochschaust. Getroffen blinken sie, tot trudeln sie zu Boden und verschwinden kurz darauf. Noch fliegen und spucken sie nicht
+
 ## [0.5.0] – 2026-11-11 – Ghul
 
 Der erste echte Gegner: Ghule lauern in den Gängen, jagen dich um Ecken und schlagen zurück – und zum ersten Mal kannst du sterben.

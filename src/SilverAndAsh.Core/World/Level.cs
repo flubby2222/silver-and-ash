@@ -16,6 +16,7 @@ public sealed class Level
 
     private readonly List<(int X, int Z)> _dummyCells;
     private readonly List<(int X, int Z)> _ghoulCells;
+    private readonly List<(int X, int Z)> _batCells;
 
     /// <summary>
     /// Creates a level. <paramref name="cells"/> is indexed as [x, z]. <paramref name="dummyCells"/> are the grid
@@ -23,7 +24,8 @@ public sealed class Level
     /// </summary>
     public Level(
         Cell[,] cells, int playerStartX, int playerStartZ,
-        IEnumerable<(int X, int Z)>? dummyCells = null, IEnumerable<(int X, int Z)>? ghoulCells = null)
+        IEnumerable<(int X, int Z)>? dummyCells = null, IEnumerable<(int X, int Z)>? ghoulCells = null,
+        IEnumerable<(int X, int Z)>? batCells = null)
     {
         ArgumentNullException.ThrowIfNull(cells);
         _cells = (Cell[,])cells.Clone();
@@ -69,9 +71,21 @@ public sealed class Level
                 throw new ArgumentException("Ghouls must start on walkable cells inside the level.", nameof(ghoulCells));
             }
         }
+
+        _batCells = batCells?.ToList() ?? [];
+        foreach (var (x, z) in _batCells)
+        {
+            if (!IsInside(x, z) || this[x, z].IsSolid)
+            {
+                throw new ArgumentException("Bats must start above walkable cells inside the level.", nameof(batCells));
+            }
+        }
     }
 
     /// <summary>World positions where the ghouls start: centres of their cells, on the floor.</summary>
+    /// <summary>Floor positions of the cells where bats start (they hover above them).</summary>
+    public IReadOnlyList<System.Numerics.Vector3> BatPositions => _batCells.Select(cell => CellCenter(cell.X, cell.Z)).ToList();
+
     public IReadOnlyList<System.Numerics.Vector3> GhoulPositions => _ghoulCells.Select(cell => CellCenter(cell.X, cell.Z)).ToList();
 
     /// <summary>World positions of the training dummies' feet: centres of their cells, on the floor.</summary>
