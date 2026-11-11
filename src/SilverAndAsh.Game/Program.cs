@@ -122,20 +122,6 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                 }
             }
 
-#if DEBUG
-            // Test key until the weapons can hit (#60, #61): K hits every dummy for 40.
-            if (Raylib.IsKeyPressed(KeyboardKey.K))
-            {
-                var debugEvents = new List<GameEvent>();
-                foreach (var dummy in gameWorld.Dummies)
-                {
-                    dummy.TakeDamage(40, debugEvents);
-                }
-
-                debugEvents.ForEach(gameEvent => dummyView.OnEvent(gameEvent, player.Position));
-            }
-#endif
-
             dummyView.Update(Raylib.GetFrameTime());
 
             // 3. Rendering: draw the current state, blended between the last two ticks (no stutter
