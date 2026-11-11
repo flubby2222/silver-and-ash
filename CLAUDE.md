@@ -51,6 +51,7 @@ Ein Pull Request darf gemergt werden, wenn:
 - **Darstellung von Figuren hinter einer austauschbaren Schnittstelle** – Bewegungen per Code jetzt, Skelett-Animation später.
 - **Balancing-Werte** (Leben, Schaden, Abklingzeiten, Geschwindigkeiten …) in einer JSON-Konfigurationsdatei, nicht im Code verstreut.
 - **Logs nur lokal:** technisches Log (Fehler/Warnungen); ab v0.8 Run-Statistik pro Durchlauf.
+- **Online-Coop offen halten** (siehe [0003](docs/entscheidungen/0003-online-coop-offenhalten.md)): in `Core` nie „der Spieler“, sondern „ein Spieler“; alles, was das Spiel verändert, kommt als Eingabe in den Tick; Zufall nur mit Seed im Spielzustand; kein veränderlicher `static`-Zustand; Sound und Effekte über Ereignisse aus `Core`.
 
 ## Setting
 

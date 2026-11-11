@@ -13,3 +13,4 @@ Entscheidungen werden nicht gelöscht. Ändert sich etwas, kommt eine neue Notiz
 |---|---|---|
 | [0001](0001-projektgrundlagen.md) | Projektgrundlagen | angenommen |
 | [0002](0002-spiellogik-von-anfang-an-3d.md) | Spiellogik von Anfang an in 3D | angenommen |
+| [0003](0003-online-coop-offenhalten.md) | Online-Coop offen halten | angenommen |
