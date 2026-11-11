@@ -34,6 +34,16 @@ public class PerfectJumpTests
     }
 
     [Fact]
+    public void Horizontal_speed_ignores_falling_and_rising()
+    {
+        var player = RunningPlayer();
+        player.Tick(ForwardJump);                          // now moving up fast, too
+
+        Assert.NotEqual(0f, player.Velocity.Y);
+        Assert.Equal(HorizontalSpeed(player), player.HorizontalSpeed, Tolerance);
+    }
+
+    [Fact]
     public void Pressing_shortly_before_landing_jumps_again_with_the_bonus()
     {
         var player = RunningPlayer();

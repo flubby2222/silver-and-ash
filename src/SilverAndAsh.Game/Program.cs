@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Globalization;
+using System.Numerics;
 using System.Reflection;
 using Raylib_cs;
 using SilverAndAsh.Core;
@@ -137,6 +138,9 @@ static void RunGame(Level level, string displayVersion)
             Raylib.ClearBackground(LookSettings.BarColor);
             world.DrawToScreen();
             DrawHud(input.IsMouseCaptured, displayVersion);
+#if DEBUG
+            DrawDebugInfo(player);
+#endif
             Raylib.EndDrawing();
         }
     }
@@ -167,3 +171,19 @@ static void DrawHud(bool isMouseCaptured, string displayVersion)
     var versionWidth = Raylib.MeasureText(versionText, 20);
     Raylib.DrawText(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
 }
+
+#if DEBUG
+// Test display, only in the debug build (dotnet run) - the released game does not show it.
+static void DrawDebugInfo(Player player)
+{
+    var speedText = string.Create(CultureInfo.InvariantCulture, $"Speed {player.HorizontalSpeed:0.00} m/s");
+    var bonusColor = new Color(230, 190, 90, 255);
+    var color = player.HasPerfectJumpBonus ? bonusColor : new Color(200, 200, 210, 255);
+
+    Raylib.DrawText(speedText, 20, 60, 20, color);
+    if (player.HasPerfectJumpBonus)
+    {
+        Raylib.DrawText("PERFECT", 20, 85, 20, bonusColor);
+    }
+}
+#endif

@@ -28,6 +28,9 @@ public sealed class Player
     /// <summary>Current movement in metres per second.</summary>
     public Vector3 Velocity { get; private set; }
 
+    /// <summary>Speed over the ground in metres per second (without up and down).</summary>
+    public float HorizontalSpeed => new Vector2(Velocity.X, Velocity.Z).Length();
+
     /// <summary>Where the player is looking.</summary>
     public FirstPersonView View { get; } = new();
 
