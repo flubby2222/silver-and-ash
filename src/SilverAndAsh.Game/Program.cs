@@ -90,6 +90,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
         var gameWorld = new GameWorld(level);
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
+        IGhoulView ghoulView = new PlaceholderGhoulView();
         var impactMarks = new ImpactMarks();
         IWeaponView weaponView = new PlaceholderWeaponView();
         var input = new RaylibInput();
@@ -121,12 +122,14 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                 foreach (var gameEvent in gameWorld.Events)
                 {
                     dummyView.OnEvent(gameEvent, player.Position);
+                    ghoulView.OnEvent(gameEvent);
                     impactMarks.OnEvent(gameEvent);
                     weaponView.OnEvent(gameEvent);
                 }
             }
 
             dummyView.Update(Raylib.GetFrameTime());
+            ghoulView.Update(Raylib.GetFrameTime());
             impactMarks.Update(Raylib.GetFrameTime());
             weaponView.Update(Raylib.GetFrameTime(), player);
 
@@ -153,6 +156,11 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
+            }
+
+            foreach (var ghoul in gameWorld.Ghouls)
+            {
+                ghoulView.Draw(ghoul);
             }
 
             impactMarks.Draw();

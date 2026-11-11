@@ -15,6 +15,7 @@ Level sind einfache Textdateien in `assets/levels/`. **Ein Zeichen = eine Zelle*
 | `3` | Podest, hoch | 0,75 m | 3,5 m |
 | `_` | Grube | −1 m | 3,5 m |
 | `D` | Boden mit **Trainingspuppe** in der Mitte (beliebig oft) | 0 m | 3,5 m |
+| `G` | Boden, auf dem ein **Ghul** startet (beliebig oft); er schaut zum Spielerstart | 0 m | 3,5 m |
 
 ## Regeln
 

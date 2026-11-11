@@ -7,7 +7,7 @@ namespace SilverAndAsh.Core.Gameplay;
 /// A training dummy: something to hit before there are enemies (those come in v0.5 and reuse all of this).
 /// It has health, falls over at 0 and stands up again with full health after a short time.
 /// </summary>
-public sealed class TrainingDummy
+public sealed class TrainingDummy : ITarget
 {
     private static readonly int DownTicks = SimulationClock.SecondsToTicks(Tuning.Combat.DummyDownTime);
 
@@ -34,6 +34,8 @@ public sealed class TrainingDummy
 
     /// <summary>True while the dummy lies on the ground. It cannot be hit then and does not block the way.</summary>
     public bool IsDown => _downTicksLeft > 0;
+
+    public bool IsHittable => !IsDown;
 
     /// <summary>The body for collisions and hits.</summary>
     public CylinderBody Body => new(Position, Tuning.Combat.DummyRadius, Tuning.Combat.DummyHeight);
