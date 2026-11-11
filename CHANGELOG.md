@@ -6,6 +6,10 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.4.0] – 2026-11-11 – Waffen & HUD
+
+Silber gegen Stroh: Klinge und Pistole treffen Trainingspuppen – mit Kopfschüssen, aufgeladenen Schlägen, Waffen im Bild und einem HUD.
+
 ### Hinzugefügt
 - Trainingspuppen aus Holz und Stroh in beiden Testleveln (im Level-Format: `D`). Man läuft nicht durch sie hindurch. Sie haben 100 Leben, blinken bei Treffern hell auf, kippen bei 0 vom Spieler weg um und stehen nach 3 s wieder auf
 - Silberklinge (linke Maustaste): trifft alles in einem Kegel vor dir – 2 m weit, 90° breit, auch nach oben und unten –, aber nicht durch Wände. 40 Schaden, ein Schlag alle 0,4 s; drei Treffer werfen eine Trainingspuppe um
@@ -81,7 +85,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.2...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.2.0...v0.3.0
