@@ -14,6 +14,9 @@ internal sealed class RaylibInput
     // Ignoring the very next frame's delta avoids the view snapping around.
     private bool _ignoreNextMouseDelta = true;
 
+    // The left click that captures the mouse must not also swing the blade.
+    private readonly CaptureClickFilter _captureClick = new();
+
     /// <summary>
     /// True while the mouse is captured: the cursor is hidden and every movement turns the view.
     /// </summary>
@@ -25,6 +28,7 @@ internal sealed class RaylibInput
         Raylib.DisableCursor();
         IsMouseCaptured = true;
         _ignoreNextMouseDelta = true;
+        _captureClick.MouseCaptured();
     }
 
     /// <summary>Releases the mouse (normal cursor again, the view stays still).</summary>
@@ -65,7 +69,12 @@ internal sealed class RaylibInput
         }
 
         return new PlayerInput(
-            ReadMoveKeys(), look, Jump: Raylib.IsKeyDown(KeyboardKey.Space), Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift));
+            ReadMoveKeys(),
+            look,
+            Jump: Raylib.IsKeyDown(KeyboardKey.Space),
+            Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift),
+            Melee: _captureClick.Filter(Raylib.IsMouseButtonDown(MouseButton.Left)),
+            Shoot: Raylib.IsMouseButtonDown(MouseButton.Right));
     }
 
     private static Vector2 ReadMoveKeys()

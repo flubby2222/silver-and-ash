@@ -19,6 +19,19 @@ public static class Tuning
         public const float MaxPitchRadians = 89f * MathF.PI / 180f;
     }
 
+    /// <summary>Weapons and health.</summary>
+    public static class Combat
+    {
+        /// <summary>The player's health at the start (and the most it can be).</summary>
+        public const int PlayerMaxHealth = 100;
+
+        /// <summary>Silver blade: seconds before the next swing.</summary>
+        public const float BladeCooldown = 0.4f;
+
+        /// <summary>Pistol: seconds before the next shot.</summary>
+        public const float PistolCooldown = 0.8f;
+    }
+
     /// <summary>The player character.</summary>
     public static class Player
     {

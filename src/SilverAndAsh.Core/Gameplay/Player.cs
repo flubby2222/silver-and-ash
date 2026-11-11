@@ -71,6 +71,23 @@ public sealed class Player
     /// <summary>Pays for jumps and dashes.</summary>
     public Stamina Stamina { get; } = new();
 
+    /// <summary>Health of the player. Nothing does damage yet - enemies come in v0.5.</summary>
+    public int Health { get; } = Tuning.Combat.PlayerMaxHealth;
+
+    /// <summary>Waiting time of the silver blade.</summary>
+    public Cooldown BladeCooldown { get; } = new(Tuning.Combat.BladeCooldown);
+
+    /// <summary>Waiting time of the pistol.</summary>
+    public Cooldown PistolCooldown { get; } = new(Tuning.Combat.PistolCooldown);
+
+    /// <summary>
+    /// What happened in the latest tick (swings, shots, ...), for the presentation.
+    /// Emptied at the start of every tick - read it after each tick.
+    /// </summary>
+    public IReadOnlyList<GameEvent> Events => _events;
+
+    private readonly List<GameEvent> _events = [];
+
     /// <summary>True during a dash: fast, flat, no gravity, no jumping.</summary>
     public bool IsDashing => _dashTicksLeft > 0;
 
@@ -96,6 +113,10 @@ public sealed class Player
 
     // Shift is one button for two moves: dash in the air, dodge on the ground. Needs a fresh press.
     private bool _evadeWasHeld;
+
+    // Attacks need a fresh press, too: holding the button swings or shoots only once.
+    private bool _meleeWasHeld;
+    private bool _shootWasHeld;
 
     // How long the feet have been on the ground without a break.
     private int _ticksOnGround;
@@ -126,6 +147,9 @@ public sealed class Player
     {
         const float Dt = SimulationClock.SecondsPerTick;
         PreviousPosition = Position;
+        _events.Clear();
+        BladeCooldown.Tick();
+        PistolCooldown.Tick();
         LandingDip.Tick();
         var wasGrounded = IsGrounded;
         _ticksSinceLanding = Math.Min(_ticksSinceLanding + 1, Never);
@@ -341,6 +365,31 @@ public sealed class Player
                     LandingDip.Soften(Tuning.Player.PerfectJumpDipFactor);
                 }
             }
+        }
+
+        Attack(input);
+    }
+
+    /// <summary>
+    /// Blade and pistol: each needs a fresh press and a finished cooldown. They work in every movement
+    /// (jumping, dash, dodge) and cost no stamina. Done after moving, so the events start at the eyes'
+    /// position of this tick.
+    /// </summary>
+    private void Attack(PlayerInput input)
+    {
+        var meleePressed = input.Melee && !_meleeWasHeld;
+        var shootPressed = input.Shoot && !_shootWasHeld;
+        _meleeWasHeld = input.Melee;
+        _shootWasHeld = input.Shoot;
+
+        if (meleePressed && BladeCooldown.TryUse())
+        {
+            _events.Add(new BladeSwung(EyePosition, View.Forward));
+        }
+
+        if (shootPressed && PistolCooldown.TryUse())
+        {
+            _events.Add(new ShotFired(EyePosition, View.Forward));
         }
     }
 
