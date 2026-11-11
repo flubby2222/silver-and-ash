@@ -249,6 +249,9 @@ static void DrawDebugInfo(Player player)
         Raylib.DrawText("EXHAUSTED", 20, 85, 20, exhaustedColor);
     }
 
+    var weaponsText = $"Blade {CooldownText(player.BladeCooldown)}   Pistol {CooldownText(player.PistolCooldown)}";
+    Raylib.DrawText(weaponsText, 20, 135, 20, new Color(200, 200, 210, 255));
+
     if (player.IsDashing)
     {
         Raylib.DrawText("DASH", 20, 110, 20, new Color(140, 200, 230, 255));
@@ -258,4 +261,10 @@ static void DrawDebugInfo(Player player)
         Raylib.DrawText("DODGE", 20, 110, 20, new Color(140, 230, 160, 255));
     }
 }
+
+// "ready" or the seconds left, e.g. "0.25 s".
+static string CooldownText(Cooldown cooldown) =>
+    cooldown.IsReady
+        ? "ready"
+        : string.Create(CultureInfo.InvariantCulture, $"{cooldown.RemainingSeconds:0.00} s");
 #endif
