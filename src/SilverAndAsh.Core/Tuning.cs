@@ -28,6 +28,15 @@ public static class Tuning
         /// <summary>Silver blade: seconds before the next swing.</summary>
         public const float BladeCooldown = 0.4f;
 
+        /// <summary>Silver blade: damage per hit.</summary>
+        public const int BladeDamage = 40;
+
+        /// <summary>Silver blade: how far it reaches from the eyes, in metres (to the surface of the target).</summary>
+        public const float BladeRange = 2f;
+
+        /// <summary>Silver blade: full width of the cone in degrees (90 = 45 to each side, also up and down).</summary>
+        public const float BladeAngle = 90f;
+
         /// <summary>Pistol: seconds before the next shot.</summary>
         public const float PistolCooldown = 0.8f;
 
