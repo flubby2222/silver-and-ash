@@ -25,6 +25,9 @@ public static class Tuning
         /// <summary>The player's health at the start (and the most it can be).</summary>
         public const int PlayerMaxHealth = 100;
 
+        /// <summary>Seconds between the player's death and the restart of the level.</summary>
+        public const float RestartDelay = 2f;
+
         /// <summary>Silver blade: seconds before the next swing.</summary>
         public const float BladeCooldown = 0.4f;
 

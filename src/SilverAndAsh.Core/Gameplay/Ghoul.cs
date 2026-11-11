@@ -125,10 +125,19 @@ public sealed class Ghoul : ITarget
             return;
         }
 
+        if (_target is { IsDead: true })
+        {
+            // Its prey is dead: back to lurking (with online co-op it would look for the next player).
+            State = GhoulState.Lurking;
+            _target = null;
+            _alerted = false;
+        }
+
         if (State == GhoulState.Lurking)
         {
-            // Online co-op rule 1: choose from THE players, not "the player".
-            _target = players.FirstOrDefault(player => CanSee(level, player)) ?? (_alerted ? Nearest(players) : null);
+            // Online co-op rule 1: choose from THE players, not "the player" - and only living ones.
+            _target = players.FirstOrDefault(player => !player.IsDead && CanSee(level, player))
+                ?? (_alerted ? Nearest(players) : null);
             if (_target is null)
             {
                 Stand(level, obstacles);
@@ -197,7 +206,7 @@ public sealed class Ghoul : ITarget
     }
 
     private Player? Nearest(IReadOnlyList<Player> players) =>
-        players.OrderBy(player => FlatDistance(Position, player.Position)).FirstOrDefault();
+        players.Where(player => !player.IsDead).OrderBy(player => FlatDistance(Position, player.Position)).FirstOrDefault();
 
     /// <summary>Close enough to start a blow.</summary>
     private bool InReach(Player player) => IsWithin(player, Tuning.Ghoul.AttackReach);

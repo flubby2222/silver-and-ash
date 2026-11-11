@@ -27,11 +27,15 @@ internal static class CombatHud
         var centreX = Raylib.GetScreenWidth() / 2;
         var centreY = Raylib.GetScreenHeight() / 2;
 
-        DrawCrosshair(centreX, centreY);
+        // Dead: no aiming any more - only the (empty) health stays.
+        if (!player.IsDead)
+        {
+            DrawCrosshair(centreX, centreY);
 
-        // Blade on the left, pistol on the right - the same sides as the weapons in the hands.
-        DrawReadiness(centreX - 22, centreY, player.BladeCooldown);
-        DrawReadiness(centreX + 19, centreY, player.PistolCooldown);
+            // Blade on the left, pistol on the right - the same sides as the weapons in the hands.
+            DrawReadiness(centreX - 22, centreY, player.BladeCooldown);
+            DrawReadiness(centreX + 19, centreY, player.PistolCooldown);
+        }
 
         if (player.BladeCharge.IsCharging)
         {

@@ -93,6 +93,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
         IGhoulView ghoulView = new PlaceholderGhoulView();
         var impactMarks = new ImpactMarks();
         IWeaponView weaponView = new PlaceholderWeaponView();
+        var damageFeedback = new DamageFeedback();
         var input = new RaylibInput();
         input.CaptureMouse();
 
@@ -125,22 +126,41 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                     ghoulView.OnEvent(gameEvent);
                     impactMarks.OnEvent(gameEvent);
                     weaponView.OnEvent(gameEvent);
+                    damageFeedback.OnEvent(gameEvent);
                 }
+            }
+
+            // Dead long enough: start the level again with a fresh world - and fresh views, so no flash,
+            // corpse or impact mark of the old run is left over.
+            if (gameWorld.ShouldRestart)
+            {
+                gameWorld = gameWorld.Restarted();
+                player = gameWorld.Player;
+                dummyView = new PlaceholderDummyView();
+                ghoulView = new PlaceholderGhoulView();
+                impactMarks = new ImpactMarks();
+                weaponView = new PlaceholderWeaponView();
+                damageFeedback = new DamageFeedback();
             }
 
             dummyView.Update(Raylib.GetFrameTime());
             ghoulView.Update(Raylib.GetFrameTime());
             impactMarks.Update(Raylib.GetFrameTime());
             weaponView.Update(Raylib.GetFrameTime(), player);
+            damageFeedback.Update(Raylib.GetFrameTime());
 
             // 3. Rendering: draw the current state, blended between the last two ticks (no stutter
             //    on monitors faster than 60 Hz). No game rules in here.
             var eye = player.InterpolatedEyePosition(accumulator.Alpha);
+
+            // Looking direction, tilted down a little right after landing (the "nod"), jolted when hit.
+            var forward = player.View.ForwardTiltedDown(player.InterpolatedViewTilt(accumulator.Alpha));
+            var jolt = damageFeedback.Jolt();
+            forward += player.View.FlatRight * jolt.X + Vector3.UnitY * jolt.Y;
             var camera = new Camera3D
             {
                 Position = eye,
-                // Looking direction, tilted down a little right after landing (the "nod").
-                Target = eye + player.View.ForwardTiltedDown(player.InterpolatedViewTilt(accumulator.Alpha)),
+                Target = eye + forward,
                 Up = Vector3.UnitY,
                 FovY = LookSettings.FieldOfViewDegrees,
                 Projection = CameraProjection.Perspective,
@@ -176,6 +196,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             Raylib.BeginDrawing();
             Raylib.ClearBackground(LookSettings.BarColor);
             picture.DrawToScreen();
+            damageFeedback.Draw();
             DrawHud(input.IsMouseCaptured, displayVersion);
             DrawStaminaBar(player);
             CombatHud.Draw(player);

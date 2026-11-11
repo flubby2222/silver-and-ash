@@ -15,7 +15,10 @@ namespace SilverAndAsh.Core.Gameplay;
 /// </summary>
 public sealed class GameWorld
 {
+    private static readonly int RestartTicks = SimulationClock.SecondsToTicks(Tuning.Combat.RestartDelay);
+
     private readonly List<GameEvent> _events = [];
+    private int _ticksAllPlayersDead;
     private readonly List<TrainingDummy> _dummies;
     private readonly List<Ghoul> _ghouls;
 
@@ -42,6 +45,12 @@ public sealed class GameWorld
 
     /// <summary>All players. One for now - enemies already pick their target from this list (online co-op later).</summary>
     public IReadOnlyList<Player> Players => [Player];
+
+    /// <summary>True when every player is dead and the restart delay has passed: time to start the level again.</summary>
+    public bool ShouldRestart => _ticksAllPlayersDead >= RestartTicks;
+
+    /// <summary>A fresh world for the same level: full health, every dummy and ghoul as at the start.</summary>
+    public GameWorld Restarted() => new(Level);
 
     public IReadOnlyList<TrainingDummy> Dummies => _dummies;
 
@@ -149,5 +158,7 @@ public sealed class GameWorld
             ghoul.Act(Level, Players, obstacles, _events);
             ghoul.Tick(_events);
         }
+
+        _ticksAllPlayersDead = Players.All(player => player.IsDead) ? _ticksAllPlayersDead + 1 : 0;
     }
 }

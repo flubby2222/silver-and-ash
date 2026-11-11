@@ -195,7 +195,8 @@ public class GhoulBehaviourTests
         player.TakeDamage(500, events);
 
         Assert.Equal(0, player.Health);
-        Assert.Equal([new PlayerHit(player.Id, 30), new PlayerHit(player.Id, 70)], events);
+        // Since #79 reaching 0 also reports the death.
+        Assert.Equal([new PlayerHit(player.Id, 30), new PlayerHit(player.Id, 70), new PlayerDied(player.Id)], events);
     }
 
     private static float Distance(GameWorld world)
