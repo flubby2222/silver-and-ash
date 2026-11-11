@@ -90,6 +90,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
         var gameWorld = new GameWorld(level);
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
+        var impactMarks = new ImpactMarks();
         var input = new RaylibInput();
         input.CaptureMouse();
 
@@ -119,10 +120,12 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                 foreach (var gameEvent in gameWorld.Events)
                 {
                     dummyView.OnEvent(gameEvent, player.Position);
+                    impactMarks.OnEvent(gameEvent);
                 }
             }
 
             dummyView.Update(Raylib.GetFrameTime());
+            impactMarks.Update(Raylib.GetFrameTime());
 
             // 3. Rendering: draw the current state, blended between the last two ticks (no stutter
             //    on monitors faster than 60 Hz). No game rules in here.
@@ -148,6 +151,8 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             {
                 dummyView.Draw(dummy);
             }
+
+            impactMarks.Draw();
 
             levelShader.EndFigures();
             Raylib.EndMode3D();
