@@ -170,6 +170,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             picture.DrawToScreen();
             DrawHud(input.IsMouseCaptured, displayVersion);
             DrawStaminaBar(player);
+            CombatHud.Draw(player);
 #if DEBUG
             DrawDebugInfo(player);
 #endif
