@@ -101,11 +101,12 @@ public class PlayerDashTests
     }
 
     [Fact]
-    public void A_jump_pressed_during_a_dash_is_not_buffered()
+    public void A_jump_pressed_early_in_a_dash_is_not_buffered()
     {
         // Found by the code review: an air dash that lands on a low step (0.25 m) while jump is being pressed.
         // The press was buffered, and the jump fired after the dash - late, but still as a perfect jump.
-        // A dash ignores the jump button.
+        // A dash ignores the jump button - except at its very end (see the test below), so here the
+        // presses stop before the last perfect window of the dash.
         var scenarios = 0;
         for (var flat = 3; flat <= 8; flat++)
         {
@@ -122,7 +123,8 @@ public class PlayerDashTests
             var landedDuringDash = false;
             for (var i = 0; player.IsDashing; i++)
             {
-                player.Tick(i % 2 == 0 ? ForwardJump : Forward);
+                var early = i < DashTicks - 1 - Window;
+                player.Tick(early && i % 2 == 0 ? ForwardJump : Forward);
                 landedDuringDash |= player.IsGrounded;
             }
 
@@ -138,6 +140,90 @@ public class PlayerDashTests
         }
 
         Assert.True(scenarios > 0, "No setup landed during the dash - the test proves nothing.");
+    }
+
+    [Fact]
+    public void A_jump_pressed_at_the_end_of_a_dash_is_a_perfect_jump_on_landing()
+    {
+        // Wish from playtesting: press jump at the end of the dash, get a perfect jump on landing - however long
+        // the fall after the dash takes (at least about 0.15 s, longer than the normal window).
+        var player = RunningPlayer();
+        player.Tick(ForwardJump);
+        RunTicks(player, Forward, 20);
+        player.Tick(ForwardDash);
+        RunTicks(player, Forward, DashTicks - 4);        // 3 ticks of the dash left
+
+        player.Tick(ForwardJump);
+        Assert.True(player.IsDashing, "The dash is not cut short.");
+
+        RunUntilLanded(player);
+        player.Tick(Forward);
+
+        Assert.False(player.IsGrounded, "The jump comes right after landing.");
+        Assert.True(player.HasPerfectJumpBonus);
+
+        // Used up: the next landing without a press stays on the ground (no endless hopping).
+        RunUntilLanded(player);
+        RunTicks(player, Forward, 5);
+        Assert.True(player.IsGrounded);
+    }
+
+    [Fact]
+    public void A_jump_at_the_end_of_a_dash_that_already_landed_comes_right_after_the_dash()
+    {
+        // Found in the own review: the dash lands on a low step, jump is pressed at its end - on the ground,
+        // so no landing follows. The press must still come as the jump after the dash and not stay
+        // "remembered" until some much later landing.
+        var scenarios = 0;
+        for (var flat = 3; flat <= 8; flat++)
+        {
+            var rows = Enumerable.Repeat(".", flat).Prepend("P").Concat(Enumerable.Repeat("1", 60));
+            var player = new Player(LevelParser.Parse(string.Join('\n', rows)));
+            RunTicks(player, Forward, 30);
+            player.Tick(ForwardJump);
+            while (!player.IsGrounded && !(player.Velocity.Y < 0f && player.Position.Y < 0.2f))
+            {
+                player.Tick(Forward);
+            }
+
+            player.Tick(ForwardDash);
+            var pressedOnTheGround = false;
+            for (var i = 0; player.IsDashing; i++)
+            {
+                var atTheEnd = i >= DashTicks - 1 - Window;
+                var press = atTheEnd && !pressedOnTheGround && player.IsGrounded;
+                pressedOnTheGround |= press;
+                player.Tick(press ? ForwardJump : Forward);
+            }
+
+            if (!pressedOnTheGround)
+            {
+                continue;
+            }
+
+            scenarios++;
+            player.Tick(Forward);
+            Assert.False(player.IsGrounded, $"{flat} flat cells: no jump after the dash.");
+            Assert.True(player.HasPerfectJumpBonus, $"{flat} flat cells: the jump after the dash is not perfect.");
+        }
+
+        Assert.True(scenarios > 0, "No setup landed during the dash - the test proves nothing.");
+    }
+
+    [Fact]
+    public void A_jump_pressed_early_in_a_dash_is_forgotten_on_landing()
+    {
+        var player = RunningPlayer();
+        player.Tick(ForwardJump);
+        RunTicks(player, Forward, 20);
+        player.Tick(ForwardDash);
+        player.Tick(ForwardJump);
+
+        RunUntilLanded(player);
+        RunTicks(player, Forward, 5);
+
+        Assert.True(player.IsGrounded);
+        Assert.False(player.HasPerfectJumpBonus);
     }
 
     [Fact]

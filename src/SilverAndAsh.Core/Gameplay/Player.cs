@@ -81,6 +81,9 @@ public sealed class Player
     private Vector3 _dashDirection;
     private bool _airDashUsed;
 
+    // Jump pressed at the end of a dash: kept until the landing, however long the fall after the dash takes.
+    private bool _jumpPressedAtDashEnd;
+
     /// <summary>
     /// True during a dodge: ducked, fast, fully steerable, no refilling. No jumping either - except a jump
     /// pressed at its end, which comes as a perfect jump when the dodge is over.
@@ -159,6 +162,22 @@ public sealed class Player
         {
             // Pressed in the air: remember when - if we land soon, the jump happens then ("buffered").
             _ticksSinceJumpPressedInAir = 0;
+        }
+
+        if (jumpPressed && IsDashing && _dashTicksLeft <= PerfectWindowTicks)
+        {
+            // Pressed at the end of a dash: a perfect jump on landing. Earlier in the dash the press is ignored -
+            // otherwise a dash that lands on a low step would fire a late jump (code review finding).
+            // Already on the ground (the dash landed on a step): no landing will follow, so the jump comes
+            // right after the dash instead of waiting for some much later landing.
+            if (IsGrounded)
+            {
+                _perfectJumpQueued = true;
+            }
+            else
+            {
+                _jumpPressedAtDashEnd = true;
+            }
         }
 
         if (jumpPressed && IsDodging && _dodgeTicksLeft <= PerfectWindowTicks)
@@ -282,6 +301,11 @@ public sealed class Player
                 if (grounded)
                 {
                     _ticksSinceDodgeEnded = 0;
+
+                    // The dodge used up the air dash (for dodges off a ledge). It ended on the ground, so the
+                    // next stay in the air gets its own - a jump straight out of the dodge never touches the
+                    // ground long enough to get it back otherwise (found while playing).
+                    _airDashUsed = false;
                 }
                 else
                 {
@@ -303,9 +327,12 @@ public sealed class Player
                 _ticksSinceLanding = 0;
             }
 
-            if (realLanding && _ticksSinceJumpPressedInAir <= PerfectWindowTicks)
+            var pressedAtDashEnd = _jumpPressedAtDashEnd;
+            _jumpPressedAtDashEnd = false;
+            if ((realLanding && _ticksSinceJumpPressedInAir <= PerfectWindowTicks) || pressedAtDashEnd)
             {
-                // Pressed just before landing: jump again right away in the next tick, as a timed jump.
+                // Pressed just before landing (or at the end of the dash): jump again right away in the next tick
+                // (after a dash that landed on a step: when the dash is over), as a timed jump.
                 // Only a jump the stamina can pay for lands softly.
                 _perfectJumpQueued = true;
                 _ticksSinceJumpPressedInAir = Never;

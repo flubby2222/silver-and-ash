@@ -264,6 +264,24 @@ public class PlayerDodgeTests
     }
 
     [Fact]
+    public void During_a_perfect_jump_out_of_a_dodge_the_air_dash_works()
+    {
+        // Found while playing: the dodge used up the air dash (meant for dodges off a ledge), and a jump
+        // straight out of the dodge never touched the ground long enough to get it back.
+        var player = StandingPlayer();
+        player.Tick(Shift);
+        RunTicks(player, PlayerInput.None, DodgeTicks - 4);
+        player.Tick(JumpOnly);
+        RunWhileDodging(player);
+        RunTicks(player, PlayerInput.None, 5);
+        Assert.False(player.IsGrounded);
+
+        player.Tick(Shift);
+
+        Assert.True(player.IsDashing);
+    }
+
+    [Fact]
     public void A_jump_long_after_a_dodge_is_a_normal_jump()
     {
         var player = StandingPlayer();
