@@ -25,14 +25,19 @@ Eine Endung wie `-beta` (z. B. `v0.3.0-beta`) markiert das Release auf GitHub al
    git switch main
    git pull
    ```
-4. **Tag setzen und hochladen:**
+4. **Prüfen, worauf das Tag kommt:** `git tag` setzt das Tag auf den Commit, auf dem du gerade stehst. Der oberste Commit muss der Merge des Changelog-PRs sein:
+   ```
+   git log --oneline -1
+   ```
+   (v0.3.1 wurde ohne diesen Blick auf einem veralteten `main` getaggt und enthielt den Fix nicht – siehe CHANGELOG.)
+5. **Tag setzen und hochladen:**
    ```
    git tag -a v0.1.0 -m "Silver & Ash 0.1.0 – Walking Skeleton"
    git push origin v0.1.0
    ```
-5. **Zuschauen:** Unter *Actions* läuft der Workflow **Release** (ca. 3–5 Minuten). Danach liegt das Release unter *Releases* – mit der `.zip` und automatisch erzeugten Notizen aus den gemergten Pull Requests.
-6. **Ausprobieren:** `.zip` herunterladen, entpacken, `SilverAndAsh.Game.exe` starten. Unten rechts muss die Versionsnummer stehen.
-7. **Abschließen:** Release-Issue schließen und den **Meilenstein schließen** (*Issues → Milestones → Close*). Claude schreibt die Retro.
+6. **Zuschauen:** Unter *Actions* läuft der Workflow **Release** (ca. 3–5 Minuten). Danach liegt das Release unter *Releases* – mit der `.zip` und automatisch erzeugten Notizen aus den gemergten Pull Requests.
+7. **Ausprobieren:** `.zip` herunterladen, entpacken, `SilverAndAsh.Game.exe` starten. Unten rechts muss die Versionsnummer stehen.
+8. **Abschließen:** Release-Issue schließen und den **Meilenstein schließen** (*Issues → Milestones → Close*). Claude schreibt die Retro.
 
 ## Wenn etwas schiefgeht
 
