@@ -62,8 +62,19 @@ public sealed class Player
     /// </summary>
     public bool IsExhausted { get; private set; }
 
-    /// <summary>Pays for perfect jumps.</summary>
+    /// <summary>Pays for jumps and dashes.</summary>
     public Stamina Stamina { get; } = new();
+
+    /// <summary>True during a dash: fast, flat, no gravity, no jumping.</summary>
+    public bool IsDashing => _dashTicksLeft > 0;
+
+    // Dash speed chosen so that the dash covers exactly DashDistance in its whole number of ticks.
+    private static readonly int DashTicks = SimulationClock.SecondsToTicks(Tuning.Player.DashDuration);
+    private static readonly float DashSpeed = Tuning.Player.DashDistance / (DashTicks * SimulationClock.SecondsPerTick);
+    private int _dashTicksLeft;
+    private Vector3 _dashDirection;
+    private bool _dashWasHeld;
+    private bool _airDashUsed;
 
     // How long the feet have been on the ground without a break.
     private int _ticksOnGround;
@@ -123,13 +134,27 @@ public sealed class Player
         var jumpPressed = input.Jump && !_jumpWasHeld;
         _jumpWasHeld = input.Jump;
 
-        if (jumpPressed && !IsGrounded)
+        if (jumpPressed && !IsGrounded && !IsDashing)
         {
             // Pressed in the air: remember when - if we land soon, the jump happens then ("buffered").
             _ticksSinceJumpPressedInAir = 0;
         }
 
-        var jumpNow = IsGrounded && (jumpPressed || _perfectJumpQueued);
+        // Dash: starts on a fresh press, then overrides walking and jumping for its duration.
+        var dashPressed = input.Dash && !_dashWasHeld;
+        _dashWasHeld = input.Dash;
+        if (dashPressed)
+        {
+            TryStartDash(input);
+        }
+
+        if (IsDashing)
+        {
+            horizontal = _dashDirection * DashSpeed;
+            vertical = 0f;
+        }
+
+        var jumpNow = !IsDashing && IsGrounded && (jumpPressed || _perfectJumpQueued);
         if (jumpNow)
         {
             // Timed: either pressed shortly before landing (queued) or shortly after landing.
@@ -141,7 +166,7 @@ public sealed class Player
             // Every jump costs stamina. Timed and paid = perfect (bonus). Not paid = exhausted (slower).
             // A normal, paid jump changes nothing about bonus or exhaustion.
             var factorBefore = SpeedFactor;
-            var paid = Stamina.TryPayForJump();
+            var paid = Stamina.TryPay();
             if (!paid)
             {
                 HasPerfectJumpBonus = false;
@@ -173,11 +198,24 @@ public sealed class Player
         var fallSpeed = -(Velocity.Y - Tuning.Player.Gravity * Dt);
 
         var airTicksBeforeLanding = _ticksInAir;
+        var gravity = IsDashing ? 0f : Tuning.Player.Gravity;
         (Position, Velocity, var grounded) = CharacterCollision.MoveVertically(
-            _level, Position, Velocity, Tuning.Player.Radius, Tuning.Player.Height, Tuning.Player.Gravity, Dt);
+            _level, Position, Velocity, Tuning.Player.Radius, Tuning.Player.Height, gravity, Dt);
         IsGrounded = grounded;
         _ticksInAir = grounded ? 0 : _ticksInAir + 1;
         _ticksOnGround = grounded ? _ticksOnGround + 1 : 0;
+
+        // Back on the ground (and not in the middle of a dash): the air dash is available again.
+        // Not during a dash - a dash that runs off a ledge already is the air dash (code review finding).
+        if (grounded && !IsDashing)
+        {
+            _airDashUsed = false;
+        }
+
+        if (IsDashing)
+        {
+            EndDashTick();
+        }
 
         if (!wasGrounded && grounded)
         {
@@ -196,11 +234,50 @@ public sealed class Player
                 // Only a jump the stamina can pay for lands softly.
                 _perfectJumpQueued = true;
                 _ticksSinceJumpPressedInAir = Never;
-                if (Stamina.CanPayForJump)
+                if (Stamina.CanPay)
                 {
                     LandingDip.Soften(Tuning.Player.PerfectJumpDipFactor);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Starts a dash if allowed: not already dashing, at most once per stay in the air, and the stamina
+    /// pays one segment (empty bar = no dash). Direction: where the player walks, or forward if not walking.
+    /// </summary>
+    private void TryStartDash(PlayerInput input)
+    {
+        var allowed = !IsDashing && (IsGrounded || !_airDashUsed);
+        if (!allowed || !Stamina.TryPay())
+        {
+            return;
+        }
+
+        var wish = WishDirection(input);
+        _dashDirection = wish.LengthSquared() > 0f ? Vector3.Normalize(wish) : View.FlatForward;
+        _dashTicksLeft = DashTicks;
+        _perfectJumpQueued = false;
+        _ticksSinceJumpPressedInAir = Never;
+
+        // Every dash counts as the air dash until the feet are on the ground after it.
+        _airDashUsed = true;
+    }
+
+    /// <summary>Counts the dash down. On its last tick the speed falls back to the normal top speed.</summary>
+    private void EndDashTick()
+    {
+        _dashTicksLeft--;
+        if (IsDashing)
+        {
+            return;
+        }
+
+        var horizontal = new Vector3(Velocity.X, 0f, Velocity.Z);
+        var topSpeed = TopSpeed(IsGrounded);
+        if (horizontal.Length() > topSpeed)
+        {
+            Velocity = (Vector3.Normalize(horizontal) * topSpeed) with { Y = Velocity.Y };
         }
     }
 

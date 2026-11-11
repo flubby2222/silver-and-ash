@@ -64,7 +64,8 @@ internal sealed class RaylibInput
             return PlayerInput.None;
         }
 
-        return new PlayerInput(ReadMoveKeys(), look, Raylib.IsKeyDown(KeyboardKey.Space));
+        return new PlayerInput(
+            ReadMoveKeys(), look, Jump: Raylib.IsKeyDown(KeyboardKey.Space), Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift));
     }
 
     private static Vector2 ReadMoveKeys()

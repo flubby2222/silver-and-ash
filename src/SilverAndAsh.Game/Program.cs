@@ -219,5 +219,10 @@ static void DrawDebugInfo(Player player)
     {
         Raylib.DrawText("EXHAUSTED", 20, 85, 20, exhaustedColor);
     }
+
+    if (player.IsDashing)
+    {
+        Raylib.DrawText("DASH", 20, 110, 20, new Color(140, 200, 230, 255));
+    }
 }
 #endif

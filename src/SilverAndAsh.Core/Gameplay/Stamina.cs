@@ -1,7 +1,7 @@
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// The stamina bar that pays for jumps (every jump costs the same). A full bar holds exactly
+/// The stamina bar that pays for jumps and dashes (one segment each). A full bar holds exactly
 /// <see cref="Tuning.Player.StaminaJumps"/> of them. It refills at a steady rate
 /// (empty to full in <see cref="Tuning.Player.StaminaRechargeTime"/> seconds), but only while recharging is switched on.
 /// <para>
@@ -14,8 +14,8 @@ public sealed class Stamina
     /// <summary>Recharge ticks from empty to full - also the size of a full bar.</summary>
     public static readonly int Capacity = SimulationClock.SecondsToTicks(Tuning.Player.StaminaRechargeTime);
 
-    /// <summary>What one jump costs.</summary>
-    public static readonly int CostPerJump = Capacity / Tuning.Player.StaminaJumps;
+    /// <summary>What one segment is worth: the cost of one jump or one dash.</summary>
+    public static readonly int CostPerSegment = Capacity / Tuning.Player.StaminaJumps;
 
     private int _amount = Capacity;
 
@@ -25,18 +25,18 @@ public sealed class Stamina
     /// <summary>True while the bar refills every tick.</summary>
     public bool IsRecharging { get; private set; }
 
-    /// <summary>True if there is enough for one more jump.</summary>
-    public bool CanPayForJump => _amount >= CostPerJump;
+    /// <summary>True if there is enough for one more jump or dash.</summary>
+    public bool CanPay => _amount >= CostPerSegment;
 
-    /// <summary>Pays for one jump, if there is enough. Returns false (and takes nothing) otherwise.</summary>
-    public bool TryPayForJump()
+    /// <summary>Pays one segment (a jump or a dash), if there is enough. Returns false (and takes nothing) otherwise.</summary>
+    public bool TryPay()
     {
-        if (!CanPayForJump)
+        if (!CanPay)
         {
             return false;
         }
 
-        _amount -= CostPerJump;
+        _amount -= CostPerSegment;
         return true;
     }
 
