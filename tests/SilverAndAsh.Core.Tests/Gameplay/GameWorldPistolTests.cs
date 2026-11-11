@@ -23,17 +23,20 @@ public class GameWorldPistolTests
     }
 
     [Fact]
-    public void Four_shots_knock_a_dummy_down()
+    public void Enough_shots_knock_a_dummy_down_one_less_does_not()
     {
+        // Counted from the values (35 damage: 3 shots), so the test stays right when the damage is tuned.
+        var shotsNeeded = (int)Math.Ceiling((double)Tuning.Combat.DummyMaxHealth / Tuning.Combat.PistolDamage);
         var world = new GameWorld(LevelParser.Parse("P\n.\nD"));
 
-        for (var shot = 0; shot < 4; shot++)
+        for (var shot = 1; shot <= shotsNeeded; shot++)
         {
             world.Tick(Shoot);
             RunTicks(world, PlayerInput.None, PistolTicks);
+            Assert.Equal(shot == shotsNeeded, world.Dummies[0].IsDown);
         }
 
-        Assert.True(world.Dummies[0].IsDown);
+        Assert.Equal(3, shotsNeeded);
     }
 
     [Fact]

@@ -9,7 +9,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ### Hinzugefügt
 - Trainingspuppen aus Holz und Stroh in beiden Testleveln (im Level-Format: `D`). Man läuft nicht durch sie hindurch. Sie haben 100 Leben, blinken bei Treffern hell auf, kippen bei 0 vom Spieler weg um und stehen nach 3 s wieder auf
 - Silberklinge (linke Maustaste): trifft alles in einem Kegel vor dir – 2 m weit, 90° breit, auch nach oben und unten –, aber nicht durch Wände. 40 Schaden, ein Schlag alle 0,4 s; drei Treffer werfen eine Trainingspuppe um
-- Pistole mit Silberkugeln (rechte Maustaste): trifft sofort genau dort, wohin du schaust – das erste Ziel bis 50 m. 25 Schaden, ein Schuss alle 0,8 s; vier Treffer werfen eine Trainingspuppe um. An Wänden, Boden und Decke bleibt ein Einschlag zurück: kurzer Funke, dann einige Sekunden ein dunkler Fleck
+- Pistole mit Silberkugeln (rechte Maustaste): trifft sofort genau dort, wohin du schaust – das erste Ziel bis 50 m. 35 Schaden, ein Schuss alle 0,8 s; drei Treffer werfen eine Trainingspuppe um. An Wänden, Boden und Decke bleibt ein Einschlag zurück: kurzer Funke, dann einige Sekunden ein dunkler Fleck
 
 ## [0.3.2] – 2026-11-11 – Fenster-Fix
 

@@ -37,8 +37,8 @@ public static class Tuning
         /// <summary>Silver blade: full width of the cone in degrees (90 = 45 to each side, also up and down).</summary>
         public const float BladeAngle = 90f;
 
-        /// <summary>Pistol: damage per hit.</summary>
-        public const int PistolDamage = 25;
+        /// <summary>Pistol: damage per hit. A bit less than the blade, but with its slow rate every shot must count.</summary>
+        public const int PistolDamage = 35;
 
         /// <summary>Pistol: how far a shot reaches, in metres.</summary>
         public const float PistolRange = 50f;
