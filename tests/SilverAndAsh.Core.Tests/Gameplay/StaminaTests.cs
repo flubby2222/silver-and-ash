@@ -13,10 +13,10 @@ public class StaminaTests
 
         for (var jump = 0; jump < Tuning.Player.StaminaJumps; jump++)
         {
-            Assert.True(stamina.TryPayForJump(), $"Jump {jump + 1} should be paid.");
+            Assert.True(stamina.TryPay(), $"Jump {jump + 1} should be paid.");
         }
 
-        Assert.False(stamina.TryPayForJump());
+        Assert.False(stamina.TryPay());
         Assert.Equal(0f, stamina.Fraction);
     }
 
@@ -25,8 +25,8 @@ public class StaminaTests
     {
         // Guards against tuning mistakes (code review): with uneven values a rest would stay in the bar,
         // and with a cost of 0 the jumps would be free.
-        Assert.True(Stamina.CostPerJump > 0);
-        Assert.Equal(Stamina.Capacity, Stamina.CostPerJump * Tuning.Player.StaminaJumps);
+        Assert.True(Stamina.CostPerSegment > 0);
+        Assert.Equal(Stamina.Capacity, Stamina.CostPerSegment * Tuning.Player.StaminaJumps);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class StaminaTests
     public void One_jump_is_refilled_in_its_share_of_the_time()
     {
         var stamina = new Stamina();
-        stamina.TryPayForJump();
+        stamina.TryPay();
         stamina.SetRecharging(true);
 
         Tick(stamina, RechargeTicks / Tuning.Player.StaminaJumps);
@@ -78,7 +78,7 @@ public class StaminaTests
     private static Stamina EmptyStamina()
     {
         var stamina = new Stamina();
-        while (stamina.TryPayForJump())
+        while (stamina.TryPay())
         {
         }
 

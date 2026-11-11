@@ -10,6 +10,7 @@ internal static class JumpTestKit
 {
     public static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
     public static readonly PlayerInput ForwardJump = Forward with { Jump = true };
+    public static readonly PlayerInput ForwardDash = Forward with { Dash = true };
 
     /// <summary>The perfect window in ticks.</summary>
     public static readonly int Window = SimulationClock.SecondsToTicks(Tuning.Player.PerfectJumpWindow);

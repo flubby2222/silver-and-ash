@@ -94,6 +94,12 @@ public static class Tuning
         /// </summary>
         public const float ExhaustedJumpSpeedPenalty = 0.2f;
 
+        /// <summary>Dash: how far it goes, in metres (flat, in the walking direction).</summary>
+        public const float DashDistance = 4f;
+
+        /// <summary>Dash: how long it takes, in seconds. No gravity during this time.</summary>
+        public const float DashDuration = 0.15f;
+
         /// <summary>Landing dip: how much the view tilts down per metre of dip, in radians (the "nod").</summary>
         public const float LandingTiltPerMetre = 0.35f;
 
