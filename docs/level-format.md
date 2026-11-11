@@ -8,12 +8,12 @@ Level sind einfache Textdateien in `assets/levels/`. **Ein Zeichen = eine Zelle*
 |---|---|---|---|
 | `#` | Wand | – | – |
 | ` ` (Leerzeichen) | Wand (praktisch für unregelmäßige Formen) | – | – |
-| `.` | Boden | 0 m | 3 m |
-| `P` | Boden mit **Spielerstart** – genau einmal pro Level | 0 m | 3 m |
-| `1` | Podest, niedrig | 0,25 m | 3 m |
-| `2` | Podest, mittel | 0,5 m | 3 m |
-| `3` | Podest, hoch | 0,75 m | 3 m |
-| `_` | Grube | −1 m | 3 m |
+| `.` | Boden | 0 m | 3,5 m |
+| `P` | Boden mit **Spielerstart** – genau einmal pro Level | 0 m | 3,5 m |
+| `1` | Podest, niedrig | 0,25 m | 3,5 m |
+| `2` | Podest, mittel | 0,5 m | 3,5 m |
+| `3` | Podest, hoch | 0,75 m | 3,5 m |
+| `_` | Grube | −1 m | 3,5 m |
 
 ## Regeln
 

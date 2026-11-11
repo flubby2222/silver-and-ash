@@ -10,12 +10,15 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Retro-Look: Die 3D-Welt wird in 854 × 480 gezeichnet und mit harten Pixelkanten hochskaliert; Texte bleiben scharf
 - Das Fenster lässt sich in der Größe ändern; das Bild behält sein Seitenverhältnis (schwarze Balken bei abweichender Form)
 - Flat Shading: Wände, Boden und Decke haben je nach Ausrichtung eine eigene Helligkeit; Ecken sind ohne Kantenlinien erkennbar
+- Sprung schwebender: 1,3 m hoch und 0,8 s in der Luft, mehr Kontrolle in der Luft und ein kleiner Tempo-Schub beim Springen
+- Räume sind 3,5 m hoch (vorher 3 m), damit der höhere Sprung nicht an die Decke stößt
 
 ### Hinzugefügt
 - Laternenlicht und Nebel: In der Nähe ist es hell, ab etwa 14 m versinkt alles in violett-schwarzem Dunkel
 - Level-Format kennt Podeste (`1`, `2`, `3`) und Gruben (`_`); Beschreibung in `docs/level-format.md`
 - Stufen, Podeste und Gruben werden gezeichnet; man steigt Treppen hinauf, springt auf hohe Podeste und aus Gruben heraus
 - Zweites Testlevel „heights“ mit Treppe, hohem Podest und Grube – starten mit `--level heights`
+- Landungs-Nicken: Beim Aufkommen sackt der Blick kurz ab und neigt sich – je tiefer der Fall, desto stärker
 
 ## [0.2.0] – 2026-11-10 – Bewegung & Physik
 

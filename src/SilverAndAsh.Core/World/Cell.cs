@@ -13,7 +13,7 @@ public readonly record struct Cell(bool IsSolid, float FloorHeight, float Ceilin
     public const float DefaultFloorHeight = 0f;
 
     /// <summary>Standard ceiling height for version 1.0.</summary>
-    public const float DefaultCeilingHeight = 3f;
+    public const float DefaultCeilingHeight = 3.5f;
 
     /// <summary>A solid wall cell.</summary>
     public static Cell Wall { get; } = new(true, DefaultFloorHeight, DefaultCeilingHeight);

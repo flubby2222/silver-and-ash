@@ -31,6 +31,9 @@ public sealed class Player
     /// <summary>Where the player is looking.</summary>
     public FirstPersonView View { get; } = new();
 
+    /// <summary>The camera "nod" after landing.</summary>
+    public LandingDip LandingDip { get; } = new();
+
     /// <summary>Position of the eyes after the latest tick.</summary>
     public Vector3 EyePosition => Position + EyeOffset;
 
@@ -57,10 +60,14 @@ public sealed class Player
     {
         const float Dt = SimulationClock.SecondsPerTick;
         PreviousPosition = Position;
+        LandingDip.Tick();
+        var wasGrounded = IsGrounded;
 
-        // Horizontal: accelerate towards the wished velocity - in the air only with part of the strength.
+        // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
+        // but a slightly higher top speed (the small boost while jumping).
         var acceleration = Tuning.Player.Acceleration * (IsGrounded ? 1f : Tuning.Player.AirControl);
-        var targetVelocity = WishDirection(input) * Tuning.Player.MaxSpeed;
+        var topSpeed = Tuning.Player.MaxSpeed * (IsGrounded ? 1f : Tuning.Player.AirSpeedMultiplier);
+        var targetVelocity = WishDirection(input) * topSpeed;
         var horizontal = MoveTowards(new Vector3(Velocity.X, 0f, Velocity.Z), targetVelocity, acceleration * Dt);
 
         // Vertical: jump on a fresh press while standing. Gravity is applied in MoveVertically.
@@ -76,17 +83,31 @@ public sealed class Player
 
         // Walls first (sideways), then gravity, floor and ceiling (up and down).
         (Position, Velocity) = CharacterCollision.Move(_level, Position, Velocity, Tuning.Player.Radius, Dt);
+
+        // Falling speed at the end of this tick - needed for the landing dip, because landing sets it to 0.
+        var fallSpeed = -(Velocity.Y - Tuning.Player.Gravity * Dt);
+
         (Position, Velocity, var grounded) = CharacterCollision.MoveVertically(
             _level, Position, Velocity, Tuning.Player.Radius, Tuning.Player.Height, Tuning.Player.Gravity, Dt);
         IsGrounded = grounded;
+
+        if (!wasGrounded && grounded)
+        {
+            LandingDip.Land(fallSpeed);
+        }
     }
 
     /// <summary>
-    /// Eye position for drawing, blended between the previous and the latest tick.
+    /// Eye position for drawing, blended between the previous and the latest tick, lowered by the landing dip.
     /// <paramref name="alpha"/> 0 = previous tick, 1 = latest tick.
     /// </summary>
     public Vector3 InterpolatedEyePosition(float alpha) =>
-        Vector3.Lerp(PreviousPosition, Position, Math.Clamp(alpha, 0f, 1f)) + EyeOffset;
+        Vector3.Lerp(PreviousPosition, Position, Math.Clamp(alpha, 0f, 1f))
+        + EyeOffset
+        - new Vector3(0f, LandingDip.Interpolated(alpha), 0f);
+
+    /// <summary>How far the view tilts down because of the landing dip, in radians (for drawing).</summary>
+    public float InterpolatedViewTilt(float alpha) => LandingDip.Interpolated(alpha) * Tuning.Player.LandingTiltPerMetre;
 
     /// <summary>Desired walking direction on the ground, relative to the view. Length 1 at most.</summary>
     private Vector3 WishDirection(PlayerInput input)
