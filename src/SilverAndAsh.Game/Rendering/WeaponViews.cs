@@ -26,7 +26,9 @@ internal interface IWeaponView
 
 /// <summary>
 /// Placeholder weapons made of boxes: the silver blade in the left hand, the pistol in the right.
-/// Movement by code: a gentle bob while walking, a swing of the blade, recoil and a muzzle flash for the pistol.
+/// Movement by code, all of it soft so the player seems to glide through the world: a slow, gentle bob while walking,
+/// hands that trail behind when looking around or walking sideways ("weapon sway"), a dip with the landing nod,
+/// a swing of the blade, recoil and a muzzle flash for the pistol.
 /// <para>
 /// Everything stays within about 30 cm of the eyes. The player keeps at least 35 cm away from every wall
 /// (its radius), so the weapons can never disappear into a wall.
@@ -38,9 +40,20 @@ internal sealed class PlaceholderWeaponView : IWeaponView
     private const float RecoilSeconds = 0.18f;
     private const float FlashSeconds = 0.06f;
 
-    // Bob: how far the hands move while walking, and how many bob cycles per metre walked.
-    private const float BobAmount = 0.008f;
-    private const float BobCyclesPerMetre = 0.55f;
+    // Bob: how far the hands move while walking, and how many bob cycles per metre walked. Small and slow = gliding.
+    private const float BobAmount = 0.004f;
+    private const float BobCyclesPerMetre = 0.3f;
+
+    // Sway: how far the hands trail behind per radian of turning, the most they trail, and how quickly they catch up
+    // (per second - higher = stiffer). Also how far they lean against walking sideways or forward, per m/s.
+    private const float TurnSwayPerRadian = 0.05f;
+    private const float MaxTurnSway = 0.025f;
+    private const float SwayCatchUp = 6f;
+    private const float WalkSwayPerSpeed = 0.0016f;
+
+    // Landing: the hands sink this much further than the eyes per metre of landing dip, and tilt down a little.
+    private const float DipFollow = 0.35f;
+    private const float DipTiltDegreesPerMetre = 60f;
 
     private static readonly Color Silver = new(206, 210, 222, 255);
     private static readonly Color DarkSilver = new(132, 136, 150, 255);
@@ -57,6 +70,11 @@ internal sealed class PlaceholderWeaponView : IWeaponView
     private float _flash;           // 1 = bright, fading to 0
     private float _bobPhase;
     private float _bobStrength;
+    private Vector2 _turnSway;      // x = right, y = up, in metres
+    private Vector2 _walkSway;
+    private float _dip;             // landing dip of the eyes, followed softly
+    private float? _lastYaw;
+    private float? _lastPitch;
 
     public void OnEvent(GameEvent gameEvent)
     {
@@ -83,21 +101,58 @@ internal sealed class PlaceholderWeaponView : IWeaponView
         var walking = player.IsGrounded ? Math.Clamp(player.HorizontalSpeed / Tuning.Player.MaxSpeed, 0f, 1f) : 0f;
         _bobStrength += (walking - _bobStrength) * MathF.Min(1f, frameSeconds * 8f);
         _bobPhase += player.HorizontalSpeed * frameSeconds * BobCyclesPerMetre * 2f * MathF.PI;
+
+        // Every soft movement uses the same "catch up a part of the way each frame" smoothing, so nothing jumps.
+        var catchUp = 1f - MathF.Exp(-SwayCatchUp * frameSeconds);
+
+        // Turning: the hands lag behind the view and then glide back to their place.
+        var yaw = player.View.YawRadians;
+        var pitch = player.View.PitchRadians;
+        if (_lastYaw is { } lastYaw && _lastPitch is { } lastPitch)
+        {
+            var turned = new Vector2(
+                MathF.IEEERemainder(yaw - lastYaw, 2f * MathF.PI),
+                pitch - lastPitch);
+            _turnSway -= turned * TurnSwayPerRadian;
+            if (_turnSway.Length() > MaxTurnSway)
+            {
+                _turnSway = Vector2.Normalize(_turnSway) * MaxTurnSway;
+            }
+        }
+
+        _lastYaw = yaw;
+        _lastPitch = pitch;
+        _turnSway -= _turnSway * catchUp;
+
+        // Walking: the hands lean a little against the direction of movement (sideways and forward/back).
+        var velocity = player.Velocity;
+        var sideways = Vector3.Dot(velocity, player.View.FlatRight);
+        var forwards = Vector3.Dot(velocity, player.View.FlatForward);
+        var walkTarget = new Vector2(-sideways, -forwards * 0.3f) * WalkSwayPerSpeed;
+        _walkSway += (walkTarget - _walkSway) * catchUp;
+
+        // Landing: follow the eyes' nod a little deeper and a little later.
+        _dip += (player.LandingDip.Depth - _dip) * MathF.Min(1f, catchUp * 2f);
     }
 
     public void Draw(Vector3 eye, Vector3 forward)
     {
-        var camera = CameraToWorld(eye, forward);
-
         // Bob: a small figure eight - side to side once, up and down twice per cycle.
         var bob = new Vector3(MathF.Sin(_bobPhase) * BobAmount, -MathF.Abs(MathF.Cos(_bobPhase)) * BobAmount, 0f)
             * _bobStrength;
+        var sway = new Vector3(_turnSway.X + _walkSway.X, _turnSway.Y + _walkSway.Y - _dip * DipFollow, 0f);
 
-        DrawBlade(camera, bob);
-        DrawPistol(camera, bob);
+        // All soft movements together, applied to both hands in camera space.
+        var motion =
+            Matrix4x4.CreateRotationX(Deg(_dip * DipTiltDegreesPerMetre)) *
+            Matrix4x4.CreateTranslation(bob + sway) *
+            CameraToWorld(eye, forward);
+
+        DrawBlade(motion);
+        DrawPistol(motion);
     }
 
-    private void DrawBlade(Matrix4x4 camera, Vector3 bob)
+    private void DrawBlade(Matrix4x4 motion)
     {
         // Swing: quickly out across the view from left to right (40 % of the time), then calmly back.
         var t = _swing < 0.4f ? EaseOut(_swing / 0.4f) : 1f - EaseInOut((_swing - 0.4f) / 0.6f);
@@ -107,8 +162,8 @@ internal sealed class PlaceholderWeaponView : IWeaponView
         var hand =
             Matrix4x4.CreateRotationZ(Deg(-tilt)) *
             Matrix4x4.CreateRotationY(Deg(sweep)) *
-            Matrix4x4.CreateTranslation(BladeHand + bob + new Vector3(t * 0.06f, t * 0.04f, 0f)) *
-            camera;
+            Matrix4x4.CreateTranslation(BladeHand + new Vector3(t * 0.06f, t * 0.04f, 0f)) *
+            motion;
 
         // Handle, guard and the long silver blade pointing forward and a little up.
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.03f) * hand, new Vector3(0.022f, 0.022f, 0.07f), Wood);
@@ -118,14 +173,14 @@ internal sealed class PlaceholderWeaponView : IWeaponView
             new Vector3(0.016f, 0.005f, 0.15f), Silver);
     }
 
-    private void DrawPistol(Matrix4x4 camera, Vector3 bob)
+    private void DrawPistol(Matrix4x4 motion)
     {
         // Recoil: kicked back and up at once, then easing back into place.
         var kick = 1f - EaseOut(_recoil);
         var hand =
             Matrix4x4.CreateRotationX(Deg(-14f * kick)) *
-            Matrix4x4.CreateTranslation(PistolHand + bob + new Vector3(0f, 0.012f * kick, -0.035f * kick)) *
-            camera;
+            Matrix4x4.CreateTranslation(PistolHand + new Vector3(0f, 0.012f * kick, -0.035f * kick)) *
+            motion;
 
         // Grip, frame and barrel.
         ShadedBox.Draw(

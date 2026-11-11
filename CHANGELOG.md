@@ -10,7 +10,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Trainingspuppen aus Holz und Stroh in beiden Testleveln (im Level-Format: `D`). Man läuft nicht durch sie hindurch. Sie haben 100 Leben, blinken bei Treffern hell auf, kippen bei 0 vom Spieler weg um und stehen nach 3 s wieder auf
 - Silberklinge (linke Maustaste): trifft alles in einem Kegel vor dir – 2 m weit, 90° breit, auch nach oben und unten –, aber nicht durch Wände. 40 Schaden, ein Schlag alle 0,4 s; drei Treffer werfen eine Trainingspuppe um
 - Pistole mit Silberkugeln (rechte Maustaste): trifft sofort genau dort, wohin du schaust – das erste Ziel bis 50 m. 35 Schaden, ein Schuss alle 0,8 s; drei Treffer werfen eine Trainingspuppe um. An Wänden, Boden und Decke bleibt ein Einschlag zurück: kurzer Funke, dann einige Sekunden ein dunkler Fleck
-- Waffen im Bild: links die Silberklinge, rechts die Pistole (Platzhalter aus Grundformen). Beim Laufen wippen sie leicht, die Klinge schwingt beim Schlag quer durchs Bild, die Pistole kickt beim Schuss nach oben, vorn blitzt die Mündung
+- Waffen im Bild: links die Silberklinge, rechts die Pistole (Platzhalter aus Grundformen). Sie bewegen sich weich, als würde man durch die Welt gleiten: ruhiges Wippen beim Laufen, Nachziehen beim Umsehen und Seitwärtslaufen, Mitnicken beim Landen. Die Klinge schwingt beim Schlag quer durchs Bild, die Pistole kickt beim Schuss nach oben, vorn blitzt die Mündung
 
 ## [0.3.2] – 2026-11-11 – Fenster-Fix
 
