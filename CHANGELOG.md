@@ -6,6 +6,10 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.3.1] – 2026-11-11 – Fenster-Fix
+
+Eine Fehlerkorrektur für 0.3.0.
+
 ### Behoben
 - Beim Start auf einem Bildschirm links vom Hauptbildschirm war das Fenster unsichtbar (weit außerhalb aller Bildschirme) und die Maus eingefangen. Liegt das Fenster nach dem Start auf keinem Bildschirm, wird es jetzt auf den Hauptbildschirm geholt
 
@@ -64,7 +68,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/flubby2222/silver-and-ash/releases/tag/v0.1.0
