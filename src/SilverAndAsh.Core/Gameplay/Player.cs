@@ -9,12 +9,17 @@ namespace SilverAndAsh.Core.Gameplay;
 public sealed class Player
 {
     private readonly Level _level;
+    private readonly Func<IEnumerable<CylinderBody>> _bodies;
 
-    /// <summary>Creates the player standing on the start cell of <paramref name="level"/>.</summary>
-    public Player(Level level)
+    /// <summary>
+    /// Creates the player standing on the start cell of <paramref name="level"/>. <paramref name="bodies"/> gives the
+    /// bodies the player cannot walk through (training dummies, later enemies); asked anew every tick.
+    /// </summary>
+    public Player(Level level, Func<IEnumerable<CylinderBody>>? bodies = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         _level = level;
+        _bodies = bodies ?? (() => []);
         Position = level.PlayerStartPosition;
         PreviousPosition = Position;
     }
@@ -284,7 +289,8 @@ public sealed class Player
         Velocity = horizontal with { Y = vertical };
 
         // Walls first (sideways), then gravity, floor and ceiling (up and down).
-        (Position, Velocity) = CharacterCollision.Move(_level, Position, Velocity, Tuning.Player.Radius, Dt, CollisionHeight);
+        (Position, Velocity) = CharacterCollision.Move(
+            _level, Position, Velocity, Tuning.Player.Radius, Dt, CollisionHeight, bodies: _bodies().ToList());
 
         // Falling speed at the end of this tick - needed for the landing dip, because landing sets it to 0.
         var fallSpeed = -(Velocity.Y - Tuning.Player.Gravity * Dt);

@@ -14,8 +14,13 @@ public sealed class Level
 
     private readonly Cell[,] _cells;
 
-    /// <summary>Creates a level. <paramref name="cells"/> is indexed as [x, z].</summary>
-    public Level(Cell[,] cells, int playerStartX, int playerStartZ)
+    private readonly List<(int X, int Z)> _dummyCells;
+
+    /// <summary>
+    /// Creates a level. <paramref name="cells"/> is indexed as [x, z]. <paramref name="dummyCells"/> are the grid
+    /// positions of training dummies (optional).
+    /// </summary>
+    public Level(Cell[,] cells, int playerStartX, int playerStartZ, IEnumerable<(int X, int Z)>? dummyCells = null)
     {
         ArgumentNullException.ThrowIfNull(cells);
         _cells = (Cell[,])cells.Clone();
@@ -43,7 +48,19 @@ public sealed class Level
 
         PlayerStartX = playerStartX;
         PlayerStartZ = playerStartZ;
+
+        _dummyCells = dummyCells?.ToList() ?? [];
+        foreach (var (x, z) in _dummyCells)
+        {
+            if (!IsInside(x, z) || this[x, z].IsSolid)
+            {
+                throw new ArgumentException("Training dummies must stand on walkable cells inside the level.", nameof(dummyCells));
+            }
+        }
     }
+
+    /// <summary>World positions of the training dummies' feet: centres of their cells, on the floor.</summary>
+    public IReadOnlyList<System.Numerics.Vector3> DummyPositions => _dummyCells.Select(cell => CellCenter(cell.X, cell.Z)).ToList();
 
     /// <summary>Number of cells along the X axis.</summary>
     public int Width { get; }

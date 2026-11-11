@@ -86,12 +86,15 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
 
     try
     {
-        var player = new Player(level);
+        // The whole simulation: level, player, training dummies.
+        var gameWorld = new GameWorld(level);
+        var player = gameWorld.Player;
+        IDummyView dummyView = new PlaceholderDummyView();
         var input = new RaylibInput();
         input.CaptureMouse();
 
         var accumulator = new TickAccumulator();
-        using var world = new LowResolutionTarget(LookSettings.RenderWidth, LookSettings.RenderHeight);
+        using var picture = new LowResolutionTarget(LookSettings.RenderWidth, LookSettings.RenderHeight);
 
         // Lantern light and fog: a small program for the graphics card (assets/shaders/).
         using var levelShader = new LevelShader(Path.Combine(AppContext.BaseDirectory, "assets", "shaders"));
@@ -110,8 +113,30 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             var ticks = accumulator.Advance(Raylib.GetFrameTime());
             for (var i = 0; i < ticks; i++)
             {
-                player.Tick(playerInput);
+                gameWorld.Tick(playerInput);
+
+                // Events must be read after EVERY tick - the next tick clears them.
+                foreach (var gameEvent in gameWorld.Events)
+                {
+                    dummyView.OnEvent(gameEvent, player.Position);
+                }
             }
+
+#if DEBUG
+            // Test key until the weapons can hit (#60, #61): K hits every dummy for 40.
+            if (Raylib.IsKeyPressed(KeyboardKey.K))
+            {
+                var debugEvents = new List<GameEvent>();
+                foreach (var dummy in gameWorld.Dummies)
+                {
+                    dummy.TakeDamage(40, debugEvents);
+                }
+
+                debugEvents.ForEach(gameEvent => dummyView.OnEvent(gameEvent, player.Position));
+            }
+#endif
+
+            dummyView.Update(Raylib.GetFrameTime());
 
             // 3. Rendering: draw the current state, blended between the last two ticks (no stutter
             //    on monitors faster than 60 Hz). No game rules in here.
@@ -128,17 +153,24 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
 
             // 3a. The 3D world goes into the small low-resolution picture ...
             levelShader.SetCameraPosition(eye);
-            world.BeginDrawing();
+            picture.BeginDrawing();
             Raylib.ClearBackground(LookSettings.BackgroundColor);
             Raylib.BeginMode3D(camera);
             levelRenderer.Draw();
+            levelShader.BeginFigures();
+            foreach (var dummy in gameWorld.Dummies)
+            {
+                dummyView.Draw(dummy);
+            }
+
+            levelShader.EndFigures();
             Raylib.EndMode3D();
-            world.EndDrawing();
+            picture.EndDrawing();
 
             // 3b. ... which is scaled up onto the screen. The HUD is drawn afterwards at full resolution (sharp).
             Raylib.BeginDrawing();
             Raylib.ClearBackground(LookSettings.BarColor);
-            world.DrawToScreen();
+            picture.DrawToScreen();
             DrawHud(input.IsMouseCaptured, displayVersion);
             DrawStaminaBar(player);
 #if DEBUG
