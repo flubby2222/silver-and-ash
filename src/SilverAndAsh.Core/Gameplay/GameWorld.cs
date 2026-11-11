@@ -22,6 +22,8 @@ public sealed class GameWorld
     private readonly List<TrainingDummy> _dummies;
     private readonly List<Ghoul> _ghouls;
     private readonly List<Bat> _bats;
+    private readonly List<Projectile> _projectiles = [];
+    private int _nextProjectileId;
 
     /// <summary>Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.</summary>
     public GameWorld(Level level)
@@ -62,6 +64,78 @@ public sealed class GameWorld
 
     /// <summary>The ghouls, dead ones included (until the end of the level).</summary>
     public IReadOnlyList<Ghoul> Ghouls => _ghouls;
+
+    /// <summary>The projectiles in flight (gone ones are removed after each tick).</summary>
+    public IReadOnlyList<Projectile> Projectiles => _projectiles;
+
+    /// <summary>
+    /// Fires a projectile from <paramref name="origin"/> in <paramref name="direction"/> - for enemies (and tests).
+    /// It hits only players, never other enemies or dummies.
+    /// </summary>
+    public Projectile Fire(Vector3 origin, Vector3 direction, float speed, int damage, float radius, float lifeSeconds)
+    {
+        var projectile = new Projectile(_nextProjectileId++, origin, Vector3.Normalize(direction) * speed, damage, radius, lifeSeconds);
+        _projectiles.Add(projectile);
+        _events.Add(new ProjectileFired(projectile.Id, origin));
+        return projectile;
+    }
+
+    /// <summary>
+    /// Moves every projectile one tick, in small steps so it cannot jump through a thin target: the first living
+    /// player it touches takes its damage; a wall, the floor or the ceiling stops it; its lifetime runs out.
+    /// </summary>
+    private void MoveProjectiles()
+    {
+        const float SubStep = 0.05f;
+        foreach (var projectile in _projectiles)
+        {
+            projectile.PreviousPosition = projectile.Position;
+            var travel = projectile.Velocity * SimulationClock.SecondsPerTick;
+            var steps = Math.Max(1, (int)MathF.Ceiling(travel.Length() / SubStep));
+            var lastFree = projectile.Position;
+
+            for (var step = 1; step <= steps && !projectile.IsGone; step++)
+            {
+                var point = projectile.PreviousPosition + travel * ((float)step / steps);
+
+                var victim = Players.FirstOrDefault(player => !player.IsDead && Touches(point, projectile.Radius, player.Body));
+                if (victim is not null)
+                {
+                    victim.TakeDamage(projectile.Damage, _events);
+                    _events.Add(new ProjectileHitPlayer(projectile.Id, victim.Id, point));
+                    projectile.Position = point;
+                    projectile.IsGone = true;
+                }
+                else if (LineOfSight.IsInsideGeometry(Level, point))
+                {
+                    _events.Add(new ProjectileImpact(projectile.Id, lastFree));
+                    projectile.Position = lastFree;
+                    projectile.IsGone = true;
+                }
+                else
+                {
+                    projectile.Position = point;
+                    lastFree = point;
+                }
+            }
+
+            if (!projectile.IsGone && --projectile.TicksLeft <= 0)
+            {
+                projectile.IsGone = true;
+            }
+        }
+
+        _projectiles.RemoveAll(projectile => projectile.IsGone);
+    }
+
+    /// <summary>Does a ball at <paramref name="centre"/> touch the upright cylinder <paramref name="body"/>?</summary>
+    private static bool Touches(Vector3 centre, float radius, CylinderBody body)
+    {
+        var flat = new Vector2(centre.X - body.Position.X, centre.Z - body.Position.Z).Length();
+        return flat <= body.Radius + radius
+            && centre.Y + radius >= body.Position.Y
+            && centre.Y - radius <= body.Position.Y + body.Height;
+    }
 
     /// <summary>The bats, dead ones included (until the end of the level).</summary>
     public IReadOnlyList<Bat> Bats => _bats;
@@ -172,6 +246,8 @@ public sealed class GameWorld
         {
             bat.Tick(Level, _events);
         }
+
+        MoveProjectiles();
 
         _ticksAllPlayersDead = Players.All(player => player.IsDead) ? _ticksAllPlayersDead + 1 : 0;
     }
