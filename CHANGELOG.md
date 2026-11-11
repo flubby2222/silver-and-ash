@@ -8,7 +8,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [0.3.0] – 2026-11-11 – PS2-Look
 
-Das Schloss bekommt Stimmung: grobe Pixel, Licht wie von einer Laterne, Dunkelheit in der Ferne – und erstmals Höhenunterschiede.
+Das Schloss bekommt Stimmung: grobe Pixel, Licht wie von einer Laterne, Dunkelheit in der Ferne – und erstmals Höhenunterschiede. Dazu wird die Bewegung zum Können: Perfect Jump, Stamina, Dash in der Luft und Dodge am Boden.
 
 ### Geändert
 - Retro-Look: Die 3D-Welt wird in 854 × 480 gezeichnet und mit harten Pixelkanten hochskaliert; Texte bleiben scharf
