@@ -40,6 +40,9 @@ public static class Tuning
         /// <summary>Pistol: damage per hit. A bit less than the blade, but with its slow rate every shot must count.</summary>
         public const int PistolDamage = 35;
 
+        /// <summary>Pistol: damage multiplier for a hit on the head (critical hit), e.g. 3 = 300 %.</summary>
+        public const float PistolHeadshotMultiplier = 3f;
+
         /// <summary>Pistol: how far a shot reaches, in metres.</summary>
         public const float PistolRange = 50f;
 
@@ -57,6 +60,9 @@ public static class Tuning
 
         /// <summary>Training dummy: height of its body in metres.</summary>
         public const float DummyHeight = 1.8f;
+
+        /// <summary>Training dummy: the top part of this height (in metres) counts as the head.</summary>
+        public const float DummyHeadHeight = 0.35f;
     }
 
     /// <summary>The player character.</summary>

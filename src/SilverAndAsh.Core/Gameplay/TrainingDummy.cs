@@ -42,7 +42,7 @@ public sealed class TrainingDummy
     /// Takes <paramref name="damage"/>. Reports <see cref="DummyHit"/> and, at 0 health, <see cref="DummyKnockedDown"/>
     /// into <paramref name="events"/>. A dummy that is already down ignores hits.
     /// </summary>
-    public void TakeDamage(int damage, ICollection<GameEvent> events)
+    public void TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
         ArgumentNullException.ThrowIfNull(events);
@@ -52,7 +52,7 @@ public sealed class TrainingDummy
         }
 
         Health = Math.Max(0, Health - damage);
-        events.Add(new DummyHit(Id, damage));
+        events.Add(new DummyHit(Id, damage, critical));
 
         if (Health == 0)
         {
@@ -60,6 +60,10 @@ public sealed class TrainingDummy
             events.Add(new DummyKnockedDown(Id));
         }
     }
+
+    /// <summary>Which zone a hit at <paramref name="point"/> (on the body's surface) belongs to.</summary>
+    public HitZone ZoneAt(Vector3 point) =>
+        point.Y >= Position.Y + Tuning.Combat.DummyHeight - Tuning.Combat.DummyHeadHeight ? HitZone.Head : HitZone.Body;
 
     /// <summary>Advances by one tick: a dummy that lies down long enough stands up with full health.</summary>
     public void Tick(ICollection<GameEvent> events)

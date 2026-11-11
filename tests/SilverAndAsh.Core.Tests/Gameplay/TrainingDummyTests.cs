@@ -93,6 +93,28 @@ public class TrainingDummyTests
     }
 
     [Fact]
+    public void The_top_part_is_the_head_the_rest_is_the_body()
+    {
+        var dummy = new TrainingDummy(3, new Vector3(1f, 0.5f, 2f));         // standing on a platform
+        var headStart = 0.5f + Tuning.Combat.DummyHeight - Tuning.Combat.DummyHeadHeight;
+
+        Assert.Equal(HitZone.Head, dummy.ZoneAt(new Vector3(1.3f, headStart + 0.01f, 2f)));
+        Assert.Equal(HitZone.Head, dummy.ZoneAt(new Vector3(1f, 0.5f + Tuning.Combat.DummyHeight, 2f)));
+        Assert.Equal(HitZone.Body, dummy.ZoneAt(new Vector3(1.3f, headStart - 0.01f, 2f)));
+        Assert.Equal(HitZone.Body, dummy.ZoneAt(new Vector3(1.3f, 0.6f, 2f)));
+    }
+
+    [Fact]
+    public void A_critical_hit_is_reported_as_critical()
+    {
+        var dummy = new TrainingDummy(3, Vector3.Zero);
+
+        dummy.TakeDamage(105, _events, critical: true);
+
+        Assert.Contains(new DummyHit(3, 105, Critical: true), _events);
+    }
+
+    [Fact]
     public void Negative_damage_is_not_allowed()
     {
         var dummy = new TrainingDummy(3, Vector3.Zero);

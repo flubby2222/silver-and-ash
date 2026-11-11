@@ -21,8 +21,11 @@ public sealed record ShotFired(Vector3 Origin, Vector3 Direction) : GameEvent;
 /// </summary>
 public sealed record BulletImpact(Vector3 Point, Vector3 Normal) : GameEvent;
 
-/// <summary>Training dummy <paramref name="DummyId"/> took <paramref name="Damage"/>.</summary>
-public sealed record DummyHit(int DummyId, int Damage) : GameEvent;
+/// <summary>
+/// Training dummy <paramref name="DummyId"/> took <paramref name="Damage"/>; <paramref name="Critical"/> for a critical
+/// hit such as a headshot.
+/// </summary>
+public sealed record DummyHit(int DummyId, int Damage, bool Critical = false) : GameEvent;
 
 /// <summary>Training dummy <paramref name="DummyId"/> reached 0 health and falls over.</summary>
 public sealed record DummyKnockedDown(int DummyId) : GameEvent;
