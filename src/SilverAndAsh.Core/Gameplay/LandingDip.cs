@@ -54,6 +54,18 @@ public sealed class LandingDip
         _elapsed = 0f;
     }
 
+    /// <summary>
+    /// Makes the dip that is playing weaker by <paramref name="factor"/> (e.g. 0.4 = 40 % of the depth) -
+    /// after a perfect jump the landing feels "cleanly absorbed". Scaling the whole wave keeps it smooth.
+    /// </summary>
+    public void Soften(float factor)
+    {
+        var f = Math.Clamp(factor, 0f, 1f);
+        _amplitude *= f;
+        Depth *= f;
+        PreviousDepth *= f;
+    }
+
     /// <summary>Depth for drawing, blended between the previous and the latest tick.</summary>
     public float Interpolated(float alpha) => PreviousDepth + (Depth - PreviousDepth) * Math.Clamp(alpha, 0f, 1f);
 }

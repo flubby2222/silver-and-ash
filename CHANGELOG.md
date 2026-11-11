@@ -19,6 +19,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Stufen, Podeste und Gruben werden gezeichnet; man steigt Treppen hinauf, springt auf hohe Podeste und aus Gruben heraus
 - Zweites Testlevel „heights“ mit Treppe, hohem Podest und Grube – starten mit `--level heights`
 - Landungs-Nicken: Beim Aufkommen sackt der Blick kurz ab und neigt sich – je tiefer der Fall, desto stärker
+- Perfect Jump: Wer kurz vor oder nach dem Aufkommen erneut springt, bekommt +20 % Tempo (nicht stapelbar); die Landung fällt dabei sanfter aus
 
 ## [0.2.0] – 2026-11-10 – Bewegung & Physik
 

@@ -28,6 +28,9 @@ public sealed class Player
     /// <summary>Current movement in metres per second.</summary>
     public Vector3 Velocity { get; private set; }
 
+    /// <summary>Speed over the ground in metres per second (without up and down).</summary>
+    public float HorizontalSpeed => new Vector2(Velocity.X, Velocity.Z).Length();
+
     /// <summary>Where the player is looking.</summary>
     public FirstPersonView View { get; } = new();
 
@@ -48,13 +51,32 @@ public sealed class Player
     /// <summary>True while the feet are on the ground. Jumping is only possible from here.</summary>
     public bool IsGrounded { get; private set; } = true;
 
+    /// <summary>
+    /// True while the speed bonus of a perfect jump is active: from a perfectly timed jump
+    /// until the next landing that is NOT followed by another perfect jump.
+    /// </summary>
+    public bool HasPerfectJumpBonus { get; private set; }
+
     // Was the jump button already held in the previous tick? A jump needs a fresh press,
     // so holding the button down does not make the player hop again and again.
     private bool _jumpWasHeld;
 
+    // Perfect jump timing, counted in ticks. "Never" is a large number so the first jump is never perfect.
+    private const int Never = int.MaxValue / 2;
+    private static readonly int PerfectWindowTicks = SimulationClock.SecondsToTicks(Tuning.Player.PerfectJumpWindow);
+    private int _ticksSinceLanding = Never;
+    private int _ticksSinceJumpPressedInAir = Never;
+    private int _ticksInAir;
+    private bool _perfectJumpQueued;
+
+    // A drop must last at least this long to count as a "landing" for the perfect window -
+    // stepping down a small step is not a landing (code review finding). 0.25 s rules out drops up to
+    // about 0.5 m; a real jump (0.8 s) or falling into a pit still counts.
+    private static readonly int MinimumAirTicksForLanding = SimulationClock.SecondsToTicks(0.25f);
+
     /// <summary>
     /// Advances the player by one simulation tick: walking (with less control in the air), jumping,
-    /// gravity, walls, floor and ceiling.
+    /// perfect jumps, gravity, walls, floor and ceiling.
     /// </summary>
     public void Tick(PlayerInput input)
     {
@@ -62,11 +84,13 @@ public sealed class Player
         PreviousPosition = Position;
         LandingDip.Tick();
         var wasGrounded = IsGrounded;
+        _ticksSinceLanding = Math.Min(_ticksSinceLanding + 1, Never);
+        _ticksSinceJumpPressedInAir = Math.Min(_ticksSinceJumpPressedInAir + 1, Never);
 
         // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
-        // but a slightly higher top speed (the small boost while jumping).
+        // but a slightly higher top speed - and even more with the perfect jump bonus.
         var acceleration = Tuning.Player.Acceleration * (IsGrounded ? 1f : Tuning.Player.AirControl);
-        var topSpeed = Tuning.Player.MaxSpeed * (IsGrounded ? 1f : Tuning.Player.AirSpeedMultiplier);
+        var topSpeed = Tuning.Player.MaxSpeed * (IsGrounded ? 1f : Tuning.Player.AirSpeedMultiplier) * BonusFactor;
         var targetVelocity = WishDirection(input) * topSpeed;
         var horizontal = MoveTowards(new Vector3(Velocity.X, 0f, Velocity.Z), targetVelocity, acceleration * Dt);
 
@@ -74,9 +98,38 @@ public sealed class Player
         var vertical = Velocity.Y;
         var jumpPressed = input.Jump && !_jumpWasHeld;
         _jumpWasHeld = input.Jump;
-        if (jumpPressed && IsGrounded)
+
+        if (jumpPressed && !IsGrounded)
         {
+            // Pressed in the air: remember when - if we land soon, the jump happens then ("buffered").
+            _ticksSinceJumpPressedInAir = 0;
+        }
+
+        var jumpNow = IsGrounded && (jumpPressed || _perfectJumpQueued);
+        if (jumpNow)
+        {
+            // Perfect: either pressed shortly before landing (queued) or shortly after landing.
+            var wasQueued = _perfectJumpQueued;
+            var perfect = wasQueued || _ticksSinceLanding <= PerfectWindowTicks;
+            _perfectJumpQueued = false;
             vertical = Tuning.Player.JumpSpeed;
+
+            if (perfect)
+            {
+                if (!HasPerfectJumpBonus)
+                {
+                    // Noticeable right away: the current speed gets the bonus, too (it does not stack).
+                    horizontal *= 1f + Tuning.Player.PerfectJumpSpeedBonus;
+                }
+
+                HasPerfectJumpBonus = true;
+
+                // A queued jump already softened the dip when it landed - softening twice would make it 0.4 x 0.4.
+                if (!wasQueued)
+                {
+                    LandingDip.Soften(Tuning.Player.PerfectJumpDipFactor);
+                }
+            }
         }
 
         Velocity = horizontal with { Y = vertical };
@@ -87,15 +140,40 @@ public sealed class Player
         // Falling speed at the end of this tick - needed for the landing dip, because landing sets it to 0.
         var fallSpeed = -(Velocity.Y - Tuning.Player.Gravity * Dt);
 
+        var airTicksBeforeLanding = _ticksInAir;
         (Position, Velocity, var grounded) = CharacterCollision.MoveVertically(
             _level, Position, Velocity, Tuning.Player.Radius, Tuning.Player.Height, Tuning.Player.Gravity, Dt);
         IsGrounded = grounded;
+        _ticksInAir = grounded ? 0 : _ticksInAir + 1;
 
         if (!wasGrounded && grounded)
         {
             LandingDip.Land(fallSpeed);
+
+            // Only real drops open the perfect window (see MinimumAirTicksForLanding).
+            var realLanding = airTicksBeforeLanding >= MinimumAirTicksForLanding;
+            if (realLanding)
+            {
+                _ticksSinceLanding = 0;
+            }
+
+            if (realLanding && _ticksSinceJumpPressedInAir <= PerfectWindowTicks)
+            {
+                // Pressed just before landing: jump again right away in the next tick, as a perfect jump.
+                _perfectJumpQueued = true;
+                _ticksSinceJumpPressedInAir = Never;
+                LandingDip.Soften(Tuning.Player.PerfectJumpDipFactor);
+            }
+            else
+            {
+                // A normal landing ends the bonus - a perfect press within the window after it brings it back.
+                HasPerfectJumpBonus = false;
+            }
         }
     }
+
+    // 1 normally, e.g. 1.2 with the perfect jump bonus.
+    private float BonusFactor => HasPerfectJumpBonus ? 1f + Tuning.Player.PerfectJumpSpeedBonus : 1f;
 
     /// <summary>
     /// Eye position for drawing, blended between the previous and the latest tick, lowered by the landing dip.
