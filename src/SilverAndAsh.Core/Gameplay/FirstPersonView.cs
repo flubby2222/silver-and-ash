@@ -37,6 +37,18 @@ public sealed class FirstPersonView
     }
 
     /// <summary>
+    /// Like <see cref="Forward"/>, but tilted down by an extra <paramref name="tiltDownRadians"/> - for camera effects
+    /// such as the landing nod. The stored angles do not change.
+    /// </summary>
+    public Vector3 ForwardTiltedDown(float tiltDownRadians)
+    {
+        var pitch = Math.Clamp(
+            PitchRadians - tiltDownRadians, -Tuning.Controls.MaxPitchRadians, Tuning.Controls.MaxPitchRadians);
+        var horizontal = MathF.Cos(pitch);
+        return new Vector3(MathF.Sin(YawRadians) * horizontal, MathF.Sin(pitch), MathF.Cos(YawRadians) * horizontal);
+    }
+
+    /// <summary>
     /// Unit vector of the view direction flattened onto the ground. Walking uses this,
     /// so looking up or down does not make the player slower.
     /// </summary>

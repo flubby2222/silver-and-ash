@@ -146,6 +146,40 @@ public class PlayerJumpTests
         Assert.True(airSpeed < groundSpeed, "Steering in the air must be weaker than on the ground.");
     }
 
+    [Fact]
+    public void Running_jumps_get_a_small_speed_boost()
+    {
+        // A 40 m long corridor along +Z, so no wall gets in the way while running and jumping.
+        var player = new Player(LevelParser.Parse(string.Join('\n', Enumerable.Repeat(".", 19).Prepend("P"))));
+        RunTicks(player, Forward, 30);   // full running speed on the ground
+        var groundSpeed = new Vector2(player.Velocity.X, player.Velocity.Z).Length();
+
+        player.Tick(Forward with { Jump = true });
+        RunTicks(player, Forward, 20);   // still in the air
+        var airSpeed = new Vector2(player.Velocity.X, player.Velocity.Z).Length();
+
+        Assert.False(player.IsGrounded);
+        Assert.Equal(Tuning.Player.MaxSpeed, groundSpeed, 0.001f);
+        Assert.Equal(Tuning.Player.MaxSpeed * Tuning.Player.AirSpeedMultiplier, airSpeed, 0.001f);
+    }
+
+    [Fact]
+    public void A_full_jump_fits_under_the_standard_ceiling()
+    {
+        // Otherwise every jump in a normal room would bump the head.
+        Assert.True(Tuning.Player.Height + Tuning.Player.JumpHeight < Cell.DefaultCeilingHeight);
+    }
+
+    [Fact]
+    public void A_jump_in_a_normal_room_is_not_stopped_by_the_ceiling()
+    {
+        var player = new Player(Room);
+
+        var (maxHeight, _) = JumpAndMeasure(player);
+
+        Assert.Equal(Tuning.Player.JumpHeight, maxHeight, 0.05f);
+    }
+
     /// <summary>Presses jump once, then waits until the player has landed.</summary>
     private static (float MaxHeight, int AirTicks) JumpAndMeasure(Player player)
     {

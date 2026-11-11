@@ -21,10 +21,13 @@ internal static class LookSettings
     public static readonly Color BackgroundColor = FogColor;
 
     /// <summary>Distance in metres where the fog begins.</summary>
-    public const float FogStart = 2.5f;
+    public const float FogStart = 3.25f;
 
-    /// <summary>Distance in metres where only fog is left. Also the range of the player's lantern.</summary>
-    public const float FogEnd = 14f;
+    /// <summary>
+    /// Distance in metres where only fog is left. Also the range of the player's lantern.
+    /// 30 % further than the first 14 m: with dash and dodge the player is fast and needs to see further ahead.
+    /// </summary>
+    public const float FogEnd = 18.2f;
 
     /// <summary>Lantern brightness far away (0..1). Close by it is 1.</summary>
     public const float LanternMinimum = 0.35f;
