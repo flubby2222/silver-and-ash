@@ -12,6 +12,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Pistole mit Silberkugeln (rechte Maustaste): trifft sofort genau dort, wohin du schaust – das erste Ziel bis 50 m. 35 Schaden, ein Schuss alle 0,8 s; drei Treffer werfen eine Trainingspuppe um. An Wänden, Boden und Decke bleibt ein Einschlag zurück: kurzer Funke, dann einige Sekunden ein dunkler Fleck
 - Silberklinge aufladen: Linke Maustaste halten, beim Loslassen wird zugeschlagen. Der Schaden steigt linear bis 200 % nach 1 s Halten (80 statt 40), das kostet bis zu einem Stamina-Segment. Reicht die Stamina nicht, lädt die Klinge nur so weit wie möglich. Die Klinge holt dabei sichtbar aus und zittert, wenn sie voll ist
 - Kritische Treffer: Ein Pistolenschuss auf den Kopf einer Trainingspuppe macht 300 % Schaden (105) und wirft sie mit einem Schuss um; die Puppe blitzt dabei blutrot statt weiß auf. Die Silberklinge bekommt keinen Zonenbonus
+- HUD für den Kampf: Fadenkreuz in der Bildmitte; links und rechts davon zeigen kleine Balken, ob Klinge und Pistole bereit sind; darunter ein Ladebalken beim Aufladen der Klinge (golden, wenn voll); unten links das Leben
 - Waffen im Bild: links die Silberklinge, rechts die Pistole (Platzhalter aus Grundformen). Sie bewegen sich weich, als würde man durch die Welt gleiten: ruhiges Wippen beim Laufen, Nachziehen beim Umsehen und Seitwärtslaufen, Mitnicken beim Landen. Die Klinge schwingt beim Schlag quer durchs Bild, die Pistole kickt beim Schuss nach oben, vorn blitzt die Mündung
 
 ## [0.3.2] – 2026-11-11 – Fenster-Fix
