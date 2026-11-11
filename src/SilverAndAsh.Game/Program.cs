@@ -91,6 +91,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
         var impactMarks = new ImpactMarks();
+        IWeaponView weaponView = new PlaceholderWeaponView();
         var input = new RaylibInput();
         input.CaptureMouse();
 
@@ -121,11 +122,13 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                 {
                     dummyView.OnEvent(gameEvent, player.Position);
                     impactMarks.OnEvent(gameEvent);
+                    weaponView.OnEvent(gameEvent);
                 }
             }
 
             dummyView.Update(Raylib.GetFrameTime());
             impactMarks.Update(Raylib.GetFrameTime());
+            weaponView.Update(Raylib.GetFrameTime(), player);
 
             // 3. Rendering: draw the current state, blended between the last two ticks (no stutter
             //    on monitors faster than 60 Hz). No game rules in here.
@@ -153,6 +156,9 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             }
 
             impactMarks.Draw();
+
+            // Last: the weapons in the hands, in front of everything else.
+            weaponView.Draw(camera.Position, camera.Target - camera.Position);
 
             levelShader.EndFigures();
             Raylib.EndMode3D();
