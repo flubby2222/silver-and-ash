@@ -100,6 +100,27 @@ public static class Tuning
         /// <summary>Dash: how long it takes, in seconds. No gravity during this time.</summary>
         public const float DashDuration = 0.15f;
 
+        /// <summary>Dodge (on the ground): how long it lasts, in seconds.</summary>
+        public const float DodgeDuration = 0.4f;
+
+        /// <summary>Dodge: speed in m/s (0.4 s x 10 m/s = about 4 m).</summary>
+        public const float DodgeSpeed = 10f;
+
+        /// <summary>Dodge: how fast its direction can still be steered, in radians per second (2 = about 115 °/s).</summary>
+        public const float DodgeTurnRate = 2f;
+
+        /// <summary>Dodge: stamina cost in segments.</summary>
+        public const int DodgeStaminaSegments = 2;
+
+        /// <summary>Dodge: height of the ducked body (hitbox) in metres, instead of <see cref="Height"/>.</summary>
+        public const float DodgeHeight = 1f;
+
+        /// <summary>Dodge: eye height while ducked, instead of <see cref="EyeHeight"/>.</summary>
+        public const float DodgeEyeHeight = 0.85f;
+
+        /// <summary>Ducking and standing up take this long, in seconds (smooth, no jerk).</summary>
+        public const float CrouchTransitionTime = 0.1f;
+
         /// <summary>Landing dip: how much the view tilts down per metre of dip, in radians (the "nod").</summary>
         public const float LandingTiltPerMetre = 0.35f;
 

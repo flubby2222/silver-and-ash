@@ -1,7 +1,7 @@
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// The stamina bar that pays for jumps and dashes (one segment each). A full bar holds exactly
+/// The stamina bar that pays for jumps and dashes (one segment each) and dodges (more). A full bar holds exactly
 /// <see cref="Tuning.Player.StaminaJumps"/> of them. It refills at a steady rate
 /// (empty to full in <see cref="Tuning.Player.StaminaRechargeTime"/> seconds), but only while recharging is switched on.
 /// <para>
@@ -26,17 +26,23 @@ public sealed class Stamina
     public bool IsRecharging { get; private set; }
 
     /// <summary>True if there is enough for one more jump or dash.</summary>
-    public bool CanPay => _amount >= CostPerSegment;
+    public bool CanPay => CanPayFor(1);
 
-    /// <summary>Pays one segment (a jump or a dash), if there is enough. Returns false (and takes nothing) otherwise.</summary>
-    public bool TryPay()
+    /// <summary>True if there is enough for <paramref name="segments"/> segments (e.g. 2 for a dodge).</summary>
+    public bool CanPayFor(int segments) => _amount >= segments * CostPerSegment;
+
+    /// <summary>
+    /// Pays <paramref name="segments"/> segments (1 for a jump or a dash, 2 for a dodge), if there is enough.
+    /// Returns false (and takes nothing) otherwise.
+    /// </summary>
+    public bool TryPay(int segments = 1)
     {
-        if (!CanPay)
+        if (!CanPayFor(segments))
         {
             return false;
         }
 
-        _amount -= CostPerSegment;
+        _amount -= segments * CostPerSegment;
         return true;
     }
 

@@ -20,12 +20,13 @@ public class PlayerDashTests
     public void On_the_ground_there_is_no_dash()
     {
         // Found while playing: on the ground the bar refills, so dashing there could be repeated again and again.
+        // On the ground the same button starts the (more expensive) dodge instead.
         var player = StandingPlayer();
 
         player.Tick(DashOnly);
 
         Assert.False(player.IsDashing);
-        Assert.Equal(1f, player.Stamina.Fraction);
+        Assert.True(player.IsDodging);
     }
 
     [Fact]

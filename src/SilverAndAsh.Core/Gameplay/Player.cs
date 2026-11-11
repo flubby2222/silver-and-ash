@@ -37,10 +37,16 @@ public sealed class Player
     /// <summary>The camera "nod" after landing.</summary>
     public LandingDip LandingDip { get; } = new();
 
-    /// <summary>Position of the eyes after the latest tick.</summary>
-    public Vector3 EyePosition => Position + EyeOffset;
+    /// <summary>Position of the eyes after the latest tick (lower while ducked).</summary>
+    public Vector3 EyePosition => Position + new Vector3(0f, Crouch.EyeHeight(Crouch.Amount), 0f);
 
-    private static Vector3 EyeOffset => new(0f, Tuning.Player.EyeHeight, 0f);
+    /// <summary>How far the player is ducked (for the camera).</summary>
+    public Crouch Crouch { get; } = new();
+
+    /// <summary>
+    /// Height of the body for collisions (ceiling now, enemies and projectiles later): smaller while dodging.
+    /// </summary>
+    public float CollisionHeight => IsDodging ? Tuning.Player.DodgeHeight : Tuning.Player.Height;
 
     /// <summary>
     /// Applies the look part of the input. Called once per drawn frame (not per tick),
@@ -73,8 +79,17 @@ public sealed class Player
     private static readonly float DashSpeed = Tuning.Player.DashDistance / (DashTicks * SimulationClock.SecondsPerTick);
     private int _dashTicksLeft;
     private Vector3 _dashDirection;
-    private bool _dashWasHeld;
     private bool _airDashUsed;
+
+    /// <summary>True during a dodge: ducked, fast, a little steerable, no jumping, no refilling.</summary>
+    public bool IsDodging => _dodgeTicksLeft > 0;
+
+    private static readonly int DodgeTicks = SimulationClock.SecondsToTicks(Tuning.Player.DodgeDuration);
+    private int _dodgeTicksLeft;
+    private Vector3 _dodgeDirection;
+
+    // Shift is one button for two moves: dash in the air, dodge on the ground. Needs a fresh press.
+    private bool _evadeWasHeld;
 
     // How long the feet have been on the ground without a break.
     private int _ticksOnGround;
@@ -120,7 +135,8 @@ public sealed class Player
             IsExhausted = false;
         }
 
-        Stamina.SetRecharging(chainOver);
+        // No refilling during a dodge either - otherwise standing on the ground would pay part of it back.
+        Stamina.SetRecharging(chainOver && !IsDodging);
         Stamina.Tick();
 
         // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
@@ -134,18 +150,25 @@ public sealed class Player
         var jumpPressed = input.Jump && !_jumpWasHeld;
         _jumpWasHeld = input.Jump;
 
-        if (jumpPressed && !IsGrounded && !IsDashing)
+        if (jumpPressed && !IsGrounded && !IsDashing && !IsDodging)
         {
             // Pressed in the air: remember when - if we land soon, the jump happens then ("buffered").
             _ticksSinceJumpPressedInAir = 0;
         }
 
-        // Dash: starts on a fresh press, then overrides walking and jumping for its duration.
-        var dashPressed = input.Dash && !_dashWasHeld;
-        _dashWasHeld = input.Dash;
-        if (dashPressed)
+        // Shift on a fresh press: dodge on the ground, dash in the air. Both override walking and jumping.
+        var evadePressed = input.Dash && !_evadeWasHeld;
+        _evadeWasHeld = input.Dash;
+        if (evadePressed)
         {
-            TryStartDash(input);
+            if (IsGrounded)
+            {
+                TryStartDodge(input);
+            }
+            else
+            {
+                TryStartDash(input);
+            }
         }
 
         if (IsDashing)
@@ -154,7 +177,19 @@ public sealed class Player
             vertical = 0f;
         }
 
-        var jumpNow = !IsDashing && IsGrounded && (jumpPressed || _perfectJumpQueued);
+        if (IsDodging)
+        {
+            // Still a little steerable: the direction turns towards the walking direction, at a limited rate.
+            var wish = WishDirection(input);
+            if (wish.LengthSquared() > 0f)
+            {
+                _dodgeDirection = TurnTowards(_dodgeDirection, Vector3.Normalize(wish), Tuning.Player.DodgeTurnRate * Dt);
+            }
+
+            horizontal = _dodgeDirection * Tuning.Player.DodgeSpeed;
+        }
+
+        var jumpNow = !IsDashing && !IsDodging && IsGrounded && (jumpPressed || _perfectJumpQueued);
         if (jumpNow)
         {
             // Timed: either pressed shortly before landing (queued) or shortly after landing.
@@ -192,7 +227,7 @@ public sealed class Player
         Velocity = horizontal with { Y = vertical };
 
         // Walls first (sideways), then gravity, floor and ceiling (up and down).
-        (Position, Velocity) = CharacterCollision.Move(_level, Position, Velocity, Tuning.Player.Radius, Dt);
+        (Position, Velocity) = CharacterCollision.Move(_level, Position, Velocity, Tuning.Player.Radius, Dt, CollisionHeight);
 
         // Falling speed at the end of this tick - needed for the landing dip, because landing sets it to 0.
         var fallSpeed = -(Velocity.Y - Tuning.Player.Gravity * Dt);
@@ -200,22 +235,37 @@ public sealed class Player
         var airTicksBeforeLanding = _ticksInAir;
         var gravity = IsDashing ? 0f : Tuning.Player.Gravity;
         (Position, Velocity, var grounded) = CharacterCollision.MoveVertically(
-            _level, Position, Velocity, Tuning.Player.Radius, Tuning.Player.Height, gravity, Dt);
+            _level, Position, Velocity, Tuning.Player.Radius, CollisionHeight, gravity, Dt);
         IsGrounded = grounded;
         _ticksInAir = grounded ? 0 : _ticksInAir + 1;
         _ticksOnGround = grounded ? _ticksOnGround + 1 : 0;
 
-        // Back on the ground (and not in the middle of a dash): the air dash is available again.
-        // Not during a dash - touching a low step mid-dash must not hand out a second one.
-        if (grounded && !IsDashing)
+        // Back on the ground (and not in the middle of a dash or dodge): the air dash is available again.
+        // Not during them - touching a low step mid-dash must not hand out a second one.
+        if (grounded && !IsDashing && !IsDodging)
         {
             _airDashUsed = false;
         }
 
         if (IsDashing)
         {
-            EndDashTick();
+            _dashTicksLeft--;
+            if (!IsDashing)
+            {
+                FallBackToTopSpeed();
+            }
         }
+
+        if (IsDodging)
+        {
+            _dodgeTicksLeft--;
+            if (!IsDodging)
+            {
+                FallBackToTopSpeed();
+            }
+        }
+
+        Crouch.Tick(IsDodging);
 
         if (!wasGrounded && grounded)
         {
@@ -249,7 +299,7 @@ public sealed class Player
     /// </summary>
     private void TryStartDash(PlayerInput input)
     {
-        var allowed = !IsDashing && !IsGrounded && !_airDashUsed;
+        var allowed = !IsDashing && !IsDodging && !IsGrounded && !_airDashUsed;
         if (!allowed || !Stamina.TryPay())
         {
             return;
@@ -264,15 +314,30 @@ public sealed class Player
         _airDashUsed = true;
     }
 
-    /// <summary>Counts the dash down. On its last tick the speed falls back to the normal top speed.</summary>
-    private void EndDashTick()
+    /// <summary>
+    /// Starts a dodge if allowed: on the ground, not already dodging, and the stamina pays
+    /// <see cref="Tuning.Player.DodgeStaminaSegments"/> segments. Direction: where the player walks, or forward.
+    /// </summary>
+    private void TryStartDodge(PlayerInput input)
     {
-        _dashTicksLeft--;
-        if (IsDashing)
+        if (IsDodging || !Stamina.TryPay(Tuning.Player.DodgeStaminaSegments))
         {
             return;
         }
 
+        var wish = WishDirection(input);
+        _dodgeDirection = wish.LengthSquared() > 0f ? Vector3.Normalize(wish) : View.FlatForward;
+        _dodgeTicksLeft = DodgeTicks;
+        _perfectJumpQueued = false;
+
+        // If the dodge runs off a ledge, that stay in the air already had its move - no dash on top
+        // (code review finding: dodge + dash = about 8 m of evading).
+        _airDashUsed = true;
+    }
+
+    /// <summary>After a dash or dodge: the speed falls back to the normal top speed (if it is above it).</summary>
+    private void FallBackToTopSpeed()
+    {
         var horizontal = new Vector3(Velocity.X, 0f, Velocity.Z);
         var topSpeed = TopSpeed(IsGrounded);
         if (horizontal.Length() > topSpeed)
@@ -304,8 +369,7 @@ public sealed class Player
     /// </summary>
     public Vector3 InterpolatedEyePosition(float alpha) =>
         Vector3.Lerp(PreviousPosition, Position, Math.Clamp(alpha, 0f, 1f))
-        + EyeOffset
-        - new Vector3(0f, LandingDip.Interpolated(alpha), 0f);
+        + new Vector3(0f, Crouch.EyeHeight(Crouch.Interpolated(alpha)) - LandingDip.Interpolated(alpha), 0f);
 
     /// <summary>How far the view tilts down because of the landing dip, in radians (for drawing).</summary>
     public float InterpolatedViewTilt(float alpha) => LandingDip.Interpolated(alpha) * Tuning.Player.LandingTiltPerMetre;
@@ -317,6 +381,20 @@ public sealed class Player
 
         // Without this, walking diagonally (W + D) would be about 41 % faster than straight.
         return direction.LengthSquared() > 1f ? Vector3.Normalize(direction) : direction;
+    }
+
+    /// <summary>
+    /// Turns the flat direction <paramref name="from"/> towards <paramref name="to"/> by at most
+    /// <paramref name="maxRadians"/>. Both have length 1 and lie flat (Y = 0).
+    /// </summary>
+    private static Vector3 TurnTowards(Vector3 from, Vector3 to, float maxRadians)
+    {
+        // Angles around the vertical axis; the difference is wrapped into -pi..pi (the shorter way round).
+        var fromAngle = MathF.Atan2(from.X, from.Z);
+        var difference = MathF.Atan2(to.X, to.Z) - fromAngle;
+        difference = MathF.IEEERemainder(difference, 2f * MathF.PI);
+        var angle = fromAngle + Math.Clamp(difference, -maxRadians, maxRadians);
+        return new Vector3(MathF.Sin(angle), 0f, MathF.Cos(angle));
     }
 
     /// <summary>Changes <paramref name="current"/> towards <paramref name="target"/> by at most <paramref name="maxChange"/>.</summary>
