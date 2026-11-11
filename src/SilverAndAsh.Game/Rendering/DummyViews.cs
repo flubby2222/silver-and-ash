@@ -27,6 +27,7 @@ internal interface IDummyView
 internal sealed class PlaceholderDummyView : IDummyView
 {
     private const float FlashSeconds = 0.15f;
+    private const float CriticalFlashSeconds = 0.35f;
     private const float FallDegreesPerSecond = 300f;
     private const float RiseDegreesPerSecond = 150f;
     private const float LyingDegrees = 85f;
@@ -35,6 +36,7 @@ internal sealed class PlaceholderDummyView : IDummyView
     private static readonly Color Straw = new(176, 146, 92, 255);
     private static readonly Color Sack = new(150, 128, 96, 255);
     private static readonly Color FlashColor = new(255, 250, 235, 255);
+    private static readonly Color CriticalFlashColor = new(230, 40, 50, 255);
 
     // (size, centre above the feet, colour) of every box of the figure.
     private static readonly (Vector3 Size, Vector3 Centre, Color Color)[] Parts =
@@ -53,7 +55,9 @@ internal sealed class PlaceholderDummyView : IDummyView
         switch (gameEvent)
         {
             case DummyHit hit:
+                // A critical hit (headshot) flashes longer and blood red instead of white.
                 StateOf(hit.DummyId).Flash = 1f;
+                StateOf(hit.DummyId).FlashIsCritical = hit.Critical;
                 break;
             case DummyKnockedDown down:
                 StateOf(down.DummyId).IsDown = true;
@@ -69,7 +73,8 @@ internal sealed class PlaceholderDummyView : IDummyView
     {
         foreach (var state in _states.Values)
         {
-            state.Flash = MathF.Max(0f, state.Flash - frameSeconds / FlashSeconds);
+            var flashSeconds = state.FlashIsCritical ? CriticalFlashSeconds : FlashSeconds;
+            state.Flash = MathF.Max(0f, state.Flash - frameSeconds / flashSeconds);
             state.TiltDegrees = state.IsDown
                 ? MathF.Min(LyingDegrees, state.TiltDegrees + FallDegreesPerSecond * frameSeconds)
                 : MathF.Max(0f, state.TiltDegrees - RiseDegreesPerSecond * frameSeconds);
@@ -93,7 +98,8 @@ internal sealed class PlaceholderDummyView : IDummyView
 
         foreach (var (size, centre, color) in Parts)
         {
-            var shown = state.Flash > 0f ? Blend(color, FlashColor, state.Flash) : color;
+            var flashColor = state.FlashIsCritical ? CriticalFlashColor : FlashColor;
+            var shown = state.Flash > 0f ? Blend(color, flashColor, state.Flash) : color;
             ShadedBox.Draw(Matrix4x4.CreateTranslation(centre) * placement, size, shown);
         }
     }
@@ -118,6 +124,8 @@ internal sealed class PlaceholderDummyView : IDummyView
     private sealed class State
     {
         public float Flash { get; set; }
+
+        public bool FlashIsCritical { get; set; }
 
         public bool IsDown { get; set; }
 

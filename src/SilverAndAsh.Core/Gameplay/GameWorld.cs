@@ -35,6 +35,12 @@ public sealed class GameWorld
 
     public IReadOnlyList<TrainingDummy> Dummies => _dummies;
 
+    /// <summary>
+    /// The rules that turn a hit into damage (headshots, later items, ...). Part of the world, not static:
+    /// adding a rule here changes every following hit.
+    /// </summary>
+    public DamageRules DamageRules { get; } = DamageRules.Standard();
+
     /// <summary>Everything that happened in the latest tick (player and dummies). Read it after every tick.</summary>
     public IReadOnlyList<GameEvent> Events => _events;
 
@@ -45,7 +51,8 @@ public sealed class GameWorld
         {
             if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, dummy.Body))
             {
-                dummy.TakeDamage(Tuning.Combat.BladeDamage, _events);
+                // The blade hits the whole body at once - it has no hit zone (and so no headshot bonus).
+                Damage(dummy, new Hit(Weapon.Blade, HitZone.Body, Tuning.Combat.BladeDamage));
             }
         }
     }
@@ -72,12 +79,20 @@ public sealed class GameWorld
 
         if (target is not null)
         {
-            target.TakeDamage(Tuning.Combat.PistolDamage, _events);
+            var zone = target.ZoneAt(shot.Origin + direction * nearest);
+            Damage(target, new Hit(Weapon.Pistol, zone, Tuning.Combat.PistolDamage));
         }
         else if (wall is { } impact)
         {
             _events.Add(new BulletImpact(impact.Point, impact.Normal));
         }
+    }
+
+    /// <summary>Turns a hit into damage with the world's rules and applies it.</summary>
+    private void Damage(TrainingDummy dummy, Hit hit)
+    {
+        var result = DamageRules.Calculate(hit);
+        dummy.TakeDamage(result.Amount, _events, result.IsCritical);
     }
 
     /// <summary>Advances the whole world by one simulation tick.</summary>
