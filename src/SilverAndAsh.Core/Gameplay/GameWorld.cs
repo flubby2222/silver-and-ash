@@ -21,6 +21,7 @@ public sealed class GameWorld
     private int _ticksAllPlayersDead;
     private readonly List<TrainingDummy> _dummies;
     private readonly List<Ghoul> _ghouls;
+    private readonly List<Bat> _bats;
 
     /// <summary>Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.</summary>
     public GameWorld(Level level)
@@ -33,6 +34,11 @@ public sealed class GameWorld
         // They start looking towards the player's start (their head is at the front).
         _ghouls = level.GhoulPositions
             .Select((position, index) => new Ghoul(_dummies.Count + index, position, FacingTowards(position, level.PlayerStartPosition)))
+            .ToList();
+
+        // Bat numbers continue after the ghouls'. They start hovering above their cells.
+        _bats = level.BatPositions
+            .Select((position, index) => new Bat(_dummies.Count + _ghouls.Count + index, Bat.HoverPosition(level, position)))
             .ToList();
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
@@ -57,8 +63,11 @@ public sealed class GameWorld
     /// <summary>The ghouls, dead ones included (until the end of the level).</summary>
     public IReadOnlyList<Ghoul> Ghouls => _ghouls;
 
+    /// <summary>The bats, dead ones included (until the end of the level).</summary>
+    public IReadOnlyList<Bat> Bats => _bats;
+
     /// <summary>Everything the weapons can hit: dummies and ghouls.</summary>
-    public IEnumerable<ITarget> Targets => _dummies.Cast<ITarget>().Concat(_ghouls);
+    public IEnumerable<ITarget> Targets => _dummies.Cast<ITarget>().Concat(_ghouls).Concat(_bats);
 
     /// <summary>
     /// The rules that turn a hit into damage (headshots, later items, ...). Part of the world, not static:
@@ -157,6 +166,11 @@ public sealed class GameWorld
                 .ToList();
             ghoul.Act(Level, Players, obstacles, _events);
             ghoul.Tick(_events);
+        }
+
+        foreach (var bat in _bats)
+        {
+            bat.Tick(Level, _events);
         }
 
         _ticksAllPlayersDead = Players.All(player => player.IsDead) ? _ticksAllPlayersDead + 1 : 0;

@@ -91,6 +91,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
         IGhoulView ghoulView = new PlaceholderGhoulView();
+        IBatView batView = new PlaceholderBatView();
         var impactMarks = new ImpactMarks();
         IWeaponView weaponView = new PlaceholderWeaponView();
         var damageFeedback = new DamageFeedback();
@@ -124,6 +125,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                 {
                     dummyView.OnEvent(gameEvent, player.Position);
                     ghoulView.OnEvent(gameEvent);
+                    batView.OnEvent(gameEvent);
                     impactMarks.OnEvent(gameEvent);
                     weaponView.OnEvent(gameEvent);
                     damageFeedback.OnEvent(gameEvent);
@@ -138,6 +140,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                 player = gameWorld.Player;
                 dummyView = new PlaceholderDummyView();
                 ghoulView = new PlaceholderGhoulView();
+                batView = new PlaceholderBatView();
                 impactMarks = new ImpactMarks();
                 weaponView = new PlaceholderWeaponView();
                 damageFeedback = new DamageFeedback();
@@ -145,6 +148,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
 
             dummyView.Update(Raylib.GetFrameTime());
             ghoulView.Update(Raylib.GetFrameTime());
+            batView.Update(Raylib.GetFrameTime());
             impactMarks.Update(Raylib.GetFrameTime());
             weaponView.Update(Raylib.GetFrameTime(), player);
             damageFeedback.Update(Raylib.GetFrameTime());
@@ -181,6 +185,11 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             foreach (var ghoul in gameWorld.Ghouls)
             {
                 ghoulView.Draw(ghoul);
+            }
+
+            foreach (var bat in gameWorld.Bats)
+            {
+                batView.Draw(bat, eye);
             }
 
             impactMarks.Draw();

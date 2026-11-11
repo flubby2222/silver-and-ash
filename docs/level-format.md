@@ -16,6 +16,7 @@ Level sind einfache Textdateien in `assets/levels/`. **Ein Zeichen = eine Zelle*
 | `_` | Grube | −1 m | 3,5 m |
 | `D` | Boden mit **Trainingspuppe** in der Mitte (beliebig oft) | 0 m | 3,5 m |
 | `G` | Boden, auf dem ein **Ghul** startet (beliebig oft); er schaut zum Spielerstart | 0 m | 3,5 m |
+| `B` | Boden, über dem eine **Vampirfledermaus** schwebt (beliebig oft), ca. 2,2 m hoch und immer mit Abstand zur Decke | 0 m | 3,5 m |
 
 ## Regeln
 

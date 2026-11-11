@@ -77,6 +77,28 @@ public static class Tuning
         public const float DummyHeadHeight = 0.35f;
     }
 
+    /// <summary>The vampire bat: a small flying enemy.</summary>
+    public static class Bat
+    {
+        /// <summary>Health: one blade hit or one pistol shot.</summary>
+        public const int MaxHealth = 30;
+
+        /// <summary>Radius of its body in metres (wings spread).</summary>
+        public const float Radius = 0.35f;
+
+        /// <summary>Height of its body in metres.</summary>
+        public const float Height = 0.4f;
+
+        /// <summary>How high above the floor it hovers (bottom of its body), in metres. Rooms are 3.5 m high.</summary>
+        public const float HoverHeight = 2.2f;
+
+        /// <summary>It keeps at least this much room between the top of its body and the ceiling, in metres.</summary>
+        public const float CeilingGap = 0.3f;
+
+        /// <summary>Seconds the dead body lies on the floor before it disappears (counted from its death).</summary>
+        public const float CorpseTime = 2.5f;
+    }
+
     /// <summary>The ghoul: a crawling enemy.</summary>
     public static class Ghoul
     {
