@@ -117,8 +117,17 @@ public static class Tuning
         /// <summary>It notices a player it can see who is closer than this, in metres.</summary>
         public const float SightRange = 15f;
 
-        /// <summary>Distance (flat) at which it circles the player, in metres.</summary>
-        public const float CircleRadius = 5f;
+        /// <summary>Smallest distance (flat) at which a bat circles the player, in metres. Each bat gets its own.</summary>
+        public const float CircleRadiusMin = 4f;
+
+        /// <summary>Largest distance (flat) at which a bat circles the player, in metres.</summary>
+        public const float CircleRadiusMax = 6f;
+
+        /// <summary>While circling it turns round after a random time between this ...</summary>
+        public const float TurnRoundMin = 2f;
+
+        /// <summary>... and this, in seconds.</summary>
+        public const float TurnRoundMax = 4f;
 
         /// <summary>Speed along the circle in m/s.</summary>
         public const float CircleSpeed = 4f;

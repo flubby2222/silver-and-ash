@@ -50,8 +50,13 @@ public sealed class Bat : ITarget
     /// <summary>Pressed against a wall for this many ticks, it turns round and circles the other way.</summary>
     private static readonly int TurnRoundTicks = SimulationClock.SecondsToTicks(0.25f);
 
+    private static readonly int TurnRoundMinTicks = SimulationClock.SecondsToTicks(Tuning.Bat.TurnRoundMin);
+    private static readonly int TurnRoundMaxTicks = SimulationClock.SecondsToTicks(Tuning.Bat.TurnRoundMax);
+
+    private readonly Random _random;
     private int _corpseTicksLeft;
     private Vector3 _velocity;
+    private int _turnTicksLeft;
 
     private bool _alerted;
     private Player? _target;
@@ -67,17 +72,33 @@ public sealed class Bat : ITarget
     private int _repathTicksLeft;
     private (int X, int Z) _pathGoal;
 
-    /// <summary>Creates a bat whose body starts at <paramref name="position"/> (the bottom of its body, in the air).</summary>
-    public Bat(int id, Vector3 position)
+    /// <summary>
+    /// Creates a bat whose body starts at <paramref name="position"/> (the bottom of its body, in the air).
+    /// <paramref name="random"/> is the world's random generator (online co-op rule 3: no chance of its own); from it
+    /// every bat gets its own circle - distance, direction and the beat of its rising and sinking - and the moments
+    /// it turns round. Without one (single bats in tests) it uses a generator started from its number.
+    /// </summary>
+    public Bat(int id, Vector3 position, Random? random = null)
     {
         Id = id;
         Position = position;
+        _random = random ?? new Random(id);
+        CircleRadius = Tuning.Bat.CircleRadiusMin + (float)_random.NextDouble() * (Tuning.Bat.CircleRadiusMax - Tuning.Bat.CircleRadiusMin);
+        _circleDirection = _random.Next(2) == 0 ? 1f : -1f;
+        _bobTick = _random.Next(BobTicks);
+        _turnTicksLeft = NextTurnTicks();
     }
 
     public int Id { get; }
 
     /// <summary>What it is doing right now.</summary>
     public BatState State { get; private set; } = BatState.Lurking;
+
+    /// <summary>Its own distance to the player while circling, in metres (chosen at random when it is created).</summary>
+    public float CircleRadius { get; }
+
+    /// <summary>Which way round it circles: +1 or -1. Changes now and then.</summary>
+    public float CircleDirection => _circleDirection;
 
     /// <summary>How far the spit warning has come: 0 before it, 1 at the spit. For drawing.</summary>
     public float SpitWindUpProgress => _spitWarned ? 1f - (float)_spitTicksLeft / SpitWindUpTicks : 0f;
@@ -291,11 +312,19 @@ public sealed class Bat : ITarget
     }
 
     /// <summary>
-    /// One tick of circling: flies round the target at <see cref="Tuning.Bat.CircleRadius"/>, rising and sinking a
-    /// little. If a wall is between them, it first finds its way round. Pressed against a wall, it turns round.
+    /// One tick of circling: flies round the target at its own <see cref="CircleRadius"/>, rising and sinking a
+    /// little. If a wall is between them, it first finds its way round. It turns round now and then - and whenever it
+    /// is pressed against a wall.
     /// </summary>
     private void Circle(Level level, Player target)
     {
+        // Now and then it turns round, at random - harder to predict, harder to hit.
+        if (--_turnTicksLeft <= 0)
+        {
+            _circleDirection = -_circleDirection;
+            _turnTicksLeft = NextTurnTicks();
+        }
+
         Vector3 velocity;
         if (Pathfinder.CanWalkStraight(level, Position, target.Position, Tuning.Bat.Radius, FlyingStepHeight))
         {
@@ -306,7 +335,7 @@ public sealed class Bat : ITarget
             var along = new Vector3(-outward.Z, 0f, outward.X) * _circleDirection;
 
             // Along the circle, plus a pull back onto it when too close or too far.
-            velocity = along * Tuning.Bat.CircleSpeed + outward * ((Tuning.Bat.CircleRadius - distance) * 2f);
+            velocity = along * Tuning.Bat.CircleSpeed + outward * ((CircleRadius - distance) * 2f);
         }
         else
         {
@@ -335,6 +364,9 @@ public sealed class Bat : ITarget
         var maxClimb = Tuning.Bat.ClimbSpeed * SimulationClock.SecondsPerTick;
         Position = position with { Y = Position.Y + Math.Clamp(height - Position.Y, -maxClimb, maxClimb) };
     }
+
+    /// <summary>A random time until it turns round next, between <see cref="Tuning.Bat.TurnRoundMin"/> and <see cref="Tuning.Bat.TurnRoundMax"/>.</summary>
+    private int NextTurnTicks() => _random.Next(TurnRoundMinTicks, TurnRoundMaxTicks + 1);
 
     /// <summary>The velocity towards the next point of the way round the walls (searched again now and then).</summary>
     private Vector3 AlongPath(Level level, Player target)

@@ -86,8 +86,10 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
 
     try
     {
-        // The whole simulation: level, player, training dummies.
-        var gameWorld = new GameWorld(level);
+        // The whole simulation: level, player, enemies. A new seed every game, so the bats fly differently each time;
+        // it goes into the log, so a strange run can be repeated.
+        var gameWorld = new GameWorld(level, Random.Shared.Next());
+        log?.Info($"Seed: {gameWorld.Seed}.");
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
         IGhoulView ghoulView = new PlaceholderGhoulView();
@@ -139,6 +141,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             if (gameWorld.ShouldRestart)
             {
                 gameWorld = gameWorld.Restarted();
+                log?.Info($"Restart, seed: {gameWorld.Seed}.");
                 player = gameWorld.Player;
                 dummyView = new PlaceholderDummyView();
                 ghoulView = new PlaceholderGhoulView();

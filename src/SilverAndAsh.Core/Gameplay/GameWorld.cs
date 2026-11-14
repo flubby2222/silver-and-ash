@@ -18,6 +18,7 @@ public sealed class GameWorld
     private static readonly int RestartTicks = SimulationClock.SecondsToTicks(Tuning.Combat.RestartDelay);
 
     private readonly List<GameEvent> _events = [];
+    private readonly Random _random;
     private int _ticksAllPlayersDead;
     private readonly List<TrainingDummy> _dummies;
     private readonly List<Ghoul> _ghouls;
@@ -25,11 +26,18 @@ public sealed class GameWorld
     private readonly List<Projectile> _projectiles = [];
     private int _nextProjectileId;
 
-    /// <summary>Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.</summary>
-    public GameWorld(Level level)
+    /// <summary>
+    /// Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.
+    /// <paramref name="seed"/> starts the world's random numbers: the same seed always gives the same game.
+    /// </summary>
+    public GameWorld(Level level, int seed = 0)
     {
         ArgumentNullException.ThrowIfNull(level);
         Level = level;
+        Seed = seed;
+
+        // Online co-op rule 3: all chance comes from this one generator, started from the seed.
+        _random = new Random(seed);
         _dummies = level.DummyPositions.Select((position, index) => new TrainingDummy(index, position)).ToList();
 
         // Ghoul numbers continue after the dummies': every target has its own number.
@@ -40,7 +48,7 @@ public sealed class GameWorld
 
         // Bat numbers continue after the ghouls'. They start hovering above their cells.
         _bats = level.BatPositions
-            .Select((position, index) => new Bat(_dummies.Count + _ghouls.Count + index, Bat.HoverPosition(level, position)))
+            .Select((position, index) => new Bat(_dummies.Count + _ghouls.Count + index, Bat.HoverPosition(level, position), _random))
             .ToList();
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
@@ -57,8 +65,14 @@ public sealed class GameWorld
     /// <summary>True when every player is dead and the restart delay has passed: time to start the level again.</summary>
     public bool ShouldRestart => _ticksAllPlayersDead >= RestartTicks;
 
-    /// <summary>A fresh world for the same level: full health, every dummy and ghoul as at the start.</summary>
-    public GameWorld Restarted() => new(Level);
+    /// <summary>The start value of this world's random numbers.</summary>
+    public int Seed { get; }
+
+    /// <summary>
+    /// A fresh world for the same level: full health, every enemy back at its start - but with a new seed (taken
+    /// from this one), so the bats fly differently than last time.
+    /// </summary>
+    public GameWorld Restarted() => new(Level, new Random(Seed).Next());
 
     public IReadOnlyList<TrainingDummy> Dummies => _dummies;
 

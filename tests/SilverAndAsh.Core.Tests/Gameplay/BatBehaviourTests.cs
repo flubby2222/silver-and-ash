@@ -86,7 +86,7 @@ public class BatBehaviourTests
         {
             world.Tick(PlayerInput.None);
             var distance = FlatDistance(centre, bat.Position);
-            Assert.InRange(distance, Tuning.Bat.CircleRadius - 0.6f, Tuning.Bat.CircleRadius + 0.6f);
+            Assert.InRange(distance, bat.CircleRadius - 0.6f, bat.CircleRadius + 0.6f);
             Assert.InRange(bat.Position.Y, Tuning.Bat.CircleHeightMin - 0.05f, Tuning.Bat.CircleHeightMax + 0.05f);
             heights.Add(bat.Position.Y);
 
@@ -97,6 +97,96 @@ public class BatBehaviourTests
 
         Assert.True(turned > MathF.PI / 2f, $"It only went {turned * 180f / MathF.PI:0} degrees around the player.");
         Assert.True(heights.Max() - heights.Min() > 0.3f, "It does not rise and sink while circling.");
+    }
+
+    [Fact]
+    public void It_turns_round_every_few_seconds_while_circling()
+    {
+        var world = new GameWorld(BigRoom, seed: 3);
+        var bat = world.Bats[0];
+        var minTicks = SimulationClock.SecondsToTicks(Tuning.Bat.TurnRoundMin);
+        var maxTicks = SimulationClock.SecondsToTicks(Tuning.Bat.TurnRoundMax);
+
+        // Count only the ticks spent circling: screech, dive and rise pause the turning.
+        var circlingTicks = 0;
+        var direction = bat.CircleDirection;
+        var turns = new List<int> { 0 };
+        for (var tick = 0; tick < 10 * Second; tick++)
+        {
+            world.Tick(PlayerInput.None);
+            if (bat.State == BatState.Circling)
+            {
+                circlingTicks++;
+            }
+
+            if (bat.CircleDirection != direction)
+            {
+                turns.Add(circlingTicks);
+                direction = bat.CircleDirection;
+            }
+        }
+
+        Assert.True(turns.Count >= 3, $"Only {turns.Count - 1} turns in 10 s.");
+        Assert.All(turns.Zip(turns.Skip(1), (a, b) => b - a), gap => Assert.InRange(gap, minTicks, maxTicks));
+    }
+
+    [Fact]
+    public void Every_bat_gets_its_own_circle()
+    {
+        var bats = Enumerable.Range(0, 20).Select(seed => new GameWorld(BigRoom, seed).Bats[0]).ToList();
+
+        Assert.All(bats, bat => Assert.InRange(bat.CircleRadius, Tuning.Bat.CircleRadiusMin, Tuning.Bat.CircleRadiusMax));
+        Assert.True(bats.Select(bat => bat.CircleRadius).Distinct().Count() > 10, "The distances hardly differ.");
+        Assert.Contains(bats, bat => bat.CircleDirection > 0);
+        Assert.Contains(bats, bat => bat.CircleDirection < 0);
+    }
+
+    [Fact]
+    public void Bats_do_not_rise_and_sink_in_step()
+    {
+        // Two bats that notice the player in the same tick, at the same start height.
+        var level = LevelParser.Parse(string.Join('\n', "B.....B", ".......", ".......", "...P..."));
+        var outOfStep = 0;
+        for (var seed = 0; seed < 10; seed++)
+        {
+            var world = new GameWorld(level, seed);
+            Run(world, PlayerInput.None, 3 * Second / 2);
+            if (MathF.Abs(world.Bats[0].Position.Y - world.Bats[1].Position.Y) > 0.1f)
+            {
+                outOfStep++;
+            }
+        }
+
+        Assert.True(outOfStep >= 5, $"Only {outOfStep} of 10 pairs fly at different heights.");
+    }
+
+    [Fact]
+    public void The_same_seed_gives_the_same_flight()
+    {
+        Assert.Equal(FlightAfterFiveSeconds(7), FlightAfterFiveSeconds(7));
+    }
+
+    [Fact]
+    public void Other_seeds_give_other_flights()
+    {
+        var reference = FlightAfterFiveSeconds(7);
+
+        Assert.Contains(Enumerable.Range(0, 5), seed => FlightAfterFiveSeconds(seed) != reference);
+    }
+
+    [Fact]
+    public void A_restart_brings_a_new_seed()
+    {
+        var world = new GameWorld(BigRoom, seed: 7);
+
+        Assert.NotEqual(world.Seed, world.Restarted().Seed);
+    }
+
+    private static Vector3 FlightAfterFiveSeconds(int seed)
+    {
+        var world = new GameWorld(BigRoom, seed);
+        Run(world, PlayerInput.None, 5 * Second);
+        return world.Bats[0].Position;
     }
 
     [Fact]
