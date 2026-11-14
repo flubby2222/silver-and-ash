@@ -49,6 +49,12 @@ public static class Tuning
         /// <summary>Silver blade: full width of the cone in degrees (90 = 45 to each side, also up and down).</summary>
         public const float BladeAngle = 90f;
 
+        /// <summary>
+        /// Silver blade: the tip of the cone lies this far behind the eyes, in metres - so right in front of you the
+        /// cone is already about a metre wide and close enemies at the side are hit. The reach still counts from the eyes.
+        /// </summary>
+        public const float BladeConeStartBehind = 0.6f;
+
         /// <summary>Pistol: damage per hit. A bit less than the blade, but with its slow rate every shot must count.</summary>
         public const int PistolDamage = 35;
 

@@ -6,8 +6,9 @@ namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
 /// Which bodies a swing of the silver blade hits: everything inside a cone in front of the eyes -
-/// <see cref="Tuning.Combat.BladeRange"/> long, <see cref="Tuning.Combat.BladeAngle"/> wide, up and down as well
-/// as left and right - and not behind a wall.
+/// <see cref="Tuning.Combat.BladeRange"/> long (from the eyes), <see cref="Tuning.Combat.BladeAngle"/> wide, up and
+/// down as well as left and right - and not behind a wall. The cone's tip lies
+/// <see cref="Tuning.Combat.BladeConeStartBehind"/> behind the eyes, so close to you it is already wide.
 /// </summary>
 public static class BladeStrike
 {
@@ -31,11 +32,14 @@ public static class BladeStrike
         }
 
         // Inside the cone: the angle between the looking direction and the direction to the body is at most
-        // half the blade angle - in any direction, so up and down count as well as left and right.
+        // half the blade angle - in any direction, so up and down count as well as left and right. The angle is
+        // measured from the cone's tip BEHIND the eyes: so the cone is already wide right in front of you.
         var forward = Vector3.Normalize(direction);
-        if (distance > 0.0001f)
+        var tip = eye - forward * Tuning.Combat.BladeConeStartBehind;
+        var fromTip = axisPoint - tip;
+        if (fromTip.Length() > 0.0001f)
         {
-            var cosine = Vector3.Dot(forward, toBody / distance);
+            var cosine = Vector3.Dot(forward, Vector3.Normalize(fromTip));
             if (cosine < MathF.Cos(Tuning.Combat.BladeAngle / 2f * MathF.PI / 180f))
             {
                 return false;

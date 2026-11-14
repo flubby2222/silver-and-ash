@@ -10,6 +10,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Vampirfledermäuse in beiden Testleveln (im Level-Format: `B`): klein, mit schlagenden Flügeln, schweben sie über deinem Kopf – du läufst unter ihnen durch. 30 Leben: ein Pistolenschuss oder ein Klingenhieb, wenn du zu ihr hochschaust. Getroffen blinken sie, tot trudeln sie zu Boden und verschwinden kurz darauf. Noch fliegen und spucken sie nicht
 - Blutgeschosse: glühend rote Kugeln, die man fliegen sieht (12 m/s) und denen man ausweichen kann – Seitschritt, Sprung oder Dodge (geduckt fliegen sie über dich hinweg). Ein Treffer kostet 15 Leben; an Wänden zerplatzen sie. Gegner und Puppen treffen sie nicht. In der Testversion schießt die Taste P eine Kugel auf dich, bis die Fledermäuse selbst spucken
 
+### Geändert
+- Die Silberklinge trifft nahe Gegner leichter: Ihr Treffkegel beginnt jetzt etwas hinter dir und ist dadurch direkt vor dir schon gut einen Meter breit – auch Gegner seitlich vor dir werden getroffen. Reichweite (2 m) und Winkel (90°) bleiben
+
 ## [0.5.0] – 2026-11-11 – Ghul
 
 Der erste echte Gegner: Ghule lauern in den Gängen, jagen dich um Ecken und schlagen zurück – und zum ersten Mal kannst du sterben.
