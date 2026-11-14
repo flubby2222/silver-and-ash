@@ -242,9 +242,17 @@ public sealed class GameWorld
             ghoul.Tick(_events);
         }
 
+        var batEventsFrom = _events.Count;
         foreach (var bat in _bats)
         {
+            bat.Act(Level, Players, _events);
             bat.Tick(Level, _events);
+        }
+
+        // Every spit of this tick becomes a blood bolt.
+        foreach (var spit in _events.Skip(batEventsFrom).OfType<BatSpat>().ToList())
+        {
+            Fire(spit.Origin, spit.Direction, Tuning.BloodBolt.Speed, Tuning.BloodBolt.Damage, Tuning.BloodBolt.Radius, Tuning.BloodBolt.LifeTime);
         }
 
         MoveProjectiles();

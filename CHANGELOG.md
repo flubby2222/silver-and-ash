@@ -7,8 +7,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
-- Vampirfledermäuse in beiden Testleveln (im Level-Format: `B`): klein, mit schlagenden Flügeln, schweben sie über deinem Kopf – du läufst unter ihnen durch. 30 Leben: ein Pistolenschuss oder ein Klingenhieb, wenn du zu ihr hochschaust. Getroffen blinken sie, tot trudeln sie zu Boden und verschwinden kurz darauf. Noch fliegen und spucken sie nicht
-- Blutgeschosse: glühend rote Kugeln, die man fliegen sieht (12 m/s) und denen man ausweichen kann – Seitschritt, Sprung oder Dodge (geduckt fliegen sie über dich hinweg). Ein Treffer kostet 15 Leben; an Wänden zerplatzen sie. Gegner und Puppen treffen sie nicht. In der Testversion schießt die Taste P eine Kugel auf dich, bis die Fledermäuse selbst spucken
+- Vampirfledermäuse in beiden Testleveln (im Level-Format: `B`): klein, mit schlagenden Flügeln, schweben sie über deinem Kopf – du läufst unter ihnen durch. 30 Leben: ein Pistolenschuss oder ein Klingenhieb, wenn du zu ihr hochschaust. Getroffen blinken sie, tot trudeln sie zu Boden und verschwinden kurz darauf
+- Blutgeschosse: glühend rote Kugeln, die man fliegen sieht (12 m/s) und denen man ausweichen kann – Seitschritt, Sprung oder Dodge (geduckt fliegen sie über dich hinweg). Ein Treffer kostet 15 Leben; an Wänden zerplatzen sie. Gegner und Puppen treffen sie nicht
+- Fledermäuse greifen an: Sie hängen still, bis sie dich sehen (bis 15 m) oder getroffen werden. Dann kreisen sie in etwa 5 m Abstand um dich, steigen und sinken dabei und finden im Flug ihren Weg um Ecken. Etwa alle 2 s spucken sie ein Blutgeschoss – vorher leuchten sie kurz rot auf. Etwa alle 6 s kreischen sie (Flügel hoch) und stoßen dann auf die Stelle herab, an der du beim Kreischen standest: Wer jetzt zur Seite geht oder dodged, lässt sie ins Leere stoßen, sonst beißen sie für 15 Leben. Im Sturzflug sind sie tief – ein guter Moment für die Klinge
 
 ## [0.5.0] – 2026-11-11 – Ghul
 

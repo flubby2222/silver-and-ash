@@ -113,6 +113,54 @@ public static class Tuning
 
         /// <summary>Seconds the dead body lies on the floor before it disappears (counted from its death).</summary>
         public const float CorpseTime = 2.5f;
+
+        /// <summary>It notices a player it can see who is closer than this, in metres.</summary>
+        public const float SightRange = 15f;
+
+        /// <summary>Distance (flat) at which it circles the player, in metres.</summary>
+        public const float CircleRadius = 5f;
+
+        /// <summary>Speed along the circle in m/s.</summary>
+        public const float CircleSpeed = 4f;
+
+        /// <summary>Highest flying speed in m/s (getting to the circle, following a path).</summary>
+        public const float FlySpeed = 6f;
+
+        /// <summary>Speed up and down in m/s (rising, sinking, bobbing).</summary>
+        public const float ClimbSpeed = 3f;
+
+        /// <summary>Lowest height above the floor while circling (bottom of its body), in metres.</summary>
+        public const float CircleHeightMin = 2f;
+
+        /// <summary>Highest height above the floor while circling (bottom of its body), in metres.</summary>
+        public const float CircleHeightMax = 2.8f;
+
+        /// <summary>Seconds for one rise and sink while circling.</summary>
+        public const float BobTime = 2f;
+
+        /// <summary>Seconds between two spits.</summary>
+        public const float SpitInterval = 2f;
+
+        /// <summary>Seconds it glows before it spits - the warning.</summary>
+        public const float SpitWindUpTime = 0.4f;
+
+        /// <summary>It aims this far below the player's eyes, in metres: a ducked (dodging) player is under the bolt.</summary>
+        public const float SpitAimBelowEyes = 0.2f;
+
+        /// <summary>Seconds between two dives (counted while circling).</summary>
+        public const float DiveInterval = 6f;
+
+        /// <summary>Seconds of screeching before a dive - the warning; stepping aside now makes it miss.</summary>
+        public const float ScreechTime = 0.5f;
+
+        /// <summary>Diving speed in m/s.</summary>
+        public const float DiveSpeed = 10f;
+
+        /// <summary>Damage of its bite at the end of a dive.</summary>
+        public const int BiteDamage = 15;
+
+        /// <summary>The way to its target is searched again at most this often, in seconds.</summary>
+        public const float RepathTime = 0.5f;
     }
 
     /// <summary>The ghoul: a crawling enemy.</summary>
