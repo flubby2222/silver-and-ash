@@ -11,6 +11,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - Blutgeschosse: glühend rote Kugeln, die man fliegen sieht (12 m/s) und denen man ausweichen kann – Seitschritt, Sprung oder Dodge (geduckt fliegen sie über dich hinweg). Ein Treffer kostet 15 Leben; an Wänden zerplatzen sie. Gegner und Puppen treffen sie nicht
 - Fledermäuse greifen an: Sie hängen still, bis sie dich sehen (bis 15 m) oder getroffen werden. Dann kreisen sie um dich – jede mit eigenem Abstand (4–6 m), eigener Richtung und eigenem Auf und Ab –, wechseln alle 2–4 s zufällig die Richtung und finden im Flug ihren Weg um Ecken. Jedes Spiel und jeder Neustart fliegt anders. Etwa alle 2 s spucken sie ein Blutgeschoss – vorher leuchten sie kurz rot auf. Etwa alle 6 s kreischen sie (Flügel hoch) und stoßen dann auf die Stelle herab, an der du beim Kreischen standest: Wer jetzt zur Seite geht oder dodged, lässt sie ins Leere stoßen, sonst beißen sie für 15 Leben. Im Sturzflug sind sie tief – ein guter Moment für die Klinge
 
+### Geändert
+- Die Silberklinge trifft nahe Gegner leichter: Ihr Treffkegel beginnt jetzt etwas hinter dir und ist dadurch direkt vor dir schon gut einen Meter breit – auch Gegner seitlich vor dir werden getroffen. Reichweite (2 m) und Winkel (90°) bleiben
+
 ## [0.5.0] – 2026-11-11 – Ghul
 
 Der erste echte Gegner: Ghule lauern in den Gängen, jagen dich um Ecken und schlagen zurück – und zum ersten Mal kannst du sterben.

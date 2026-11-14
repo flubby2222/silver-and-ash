@@ -32,13 +32,24 @@ public class BladeStrikeTests
     }
 
     [Fact]
-    public void The_cone_is_as_wide_as_the_blade_angle()
+    public void The_cone_is_as_wide_as_the_blade_angle_seen_from_its_tip()
     {
+        // The tip lies behind the eyes; 2.1 m from the tip is 1.5 m in front of the eyes - well within reach.
         var half = Tuning.Combat.BladeAngle / 2f;
 
-        Assert.True(Hits(At(half - 5f, 1.5f)));
-        Assert.True(Hits(At(-(half - 5f), 1.5f)));
-        Assert.False(Hits(At(half + 5f, 1.5f)));
+        Assert.True(Hits(FromTip(half - 5f, 2.1f)));
+        Assert.True(Hits(FromTip(-(half - 5f), 2.1f)));
+        Assert.False(Hits(FromTip(half + 5f, 2.1f)));
+    }
+
+    [Fact]
+    public void Close_to_the_player_the_cone_is_wider()
+    {
+        // 0.8 m to the side, 0.5 m ahead: 58 degrees seen from the eyes - outside a cone starting there.
+        // Seen from the tip behind the eyes it is well inside.
+        var body = new CylinderBody(new Vector3(Eye.X + 0.8f, 0f, Eye.Z + 0.5f), BodyRadius, Tuning.Combat.DummyHeight);
+
+        Assert.True(Hits(body));
     }
 
     [Fact]
@@ -50,13 +61,14 @@ public class BladeStrikeTests
     [Fact]
     public void The_cone_also_points_up_and_down()
     {
-        // Same body at eye height in front: looking 30 degrees down still hits, 60 degrees up does not.
+        // Same body at eye height in front: looking 30 degrees down still hits, 75 degrees up does not.
+        // (Seen from the tip behind the eyes the body is about 52 degrees off then - outside the cone.)
         var body = At(0f, 1.2f);
         var down30 = Vector3.Normalize(new Vector3(0f, -MathF.Tan(30f * MathF.PI / 180f), 1f));
-        var up60 = Vector3.Normalize(new Vector3(0f, MathF.Tan(60f * MathF.PI / 180f), 1f));
+        var up75 = Vector3.Normalize(new Vector3(0f, MathF.Tan(75f * MathF.PI / 180f), 1f));
 
         Assert.True(BladeStrike.Hits(Field, Eye, down30, body));
-        Assert.False(BladeStrike.Hits(Field, Eye, up60, body));
+        Assert.False(BladeStrike.Hits(Field, Eye, up75, body));
     }
 
     [Fact]
@@ -73,6 +85,15 @@ public class BladeStrikeTests
     }
 
     private static bool Hits(CylinderBody body) => BladeStrike.Hits(Field, Eye, Ahead, body);
+
+    /// <summary>Like <see cref="At"/>, but the angle and distance are measured from the cone's tip behind the eyes.</summary>
+    private static CylinderBody FromTip(float degrees, float distance)
+    {
+        var radians = degrees * MathF.PI / 180f;
+        var tip = Eye - Ahead * Tuning.Combat.BladeConeStartBehind;
+        var position = new Vector3(tip.X + MathF.Sin(radians) * distance, 0f, tip.Z + MathF.Cos(radians) * distance);
+        return new CylinderBody(position, BodyRadius, Tuning.Combat.DummyHeight);
+    }
 
     /// <summary>A dummy-sized body on the floor, <paramref name="degrees"/> to the side of straight ahead.</summary>
     private static CylinderBody At(float degrees, float distance)
