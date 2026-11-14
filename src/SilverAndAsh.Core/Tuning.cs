@@ -129,8 +129,8 @@ public static class Tuning
         /// <summary>... and this, in seconds.</summary>
         public const float TurnRoundMax = 4f;
 
-        /// <summary>Speed along the circle in m/s.</summary>
-        public const float CircleSpeed = 4f;
+        /// <summary>Speed along the circle in m/s - slow enough to follow it with your eyes.</summary>
+        public const float CircleSpeed = 3f;
 
         /// <summary>Highest flying speed in m/s (getting to the circle, following a path).</summary>
         public const float FlySpeed = 6f;
