@@ -23,8 +23,9 @@ internal interface IBatView
 }
 
 /// <summary>
-/// Placeholder bat made of boxes: a dark body, two pointed ears and two wings that beat fast. It flashes when hit;
-/// dead, it folds its wings and tumbles while it falls.
+/// Placeholder bat made of boxes: a dark body, two pointed ears and two wings that beat fast. It glows red before a
+/// spit, raises its wings and shivers while screeching, sweeps them back in a dive and flashes when hit; dead, it
+/// folds its wings and tumbles while it falls.
 /// </summary>
 internal sealed class PlaceholderBatView : IBatView
 {
@@ -36,6 +37,7 @@ internal sealed class PlaceholderBatView : IBatView
     private static readonly Color Wing = new(88, 52, 62, 255);
     private static readonly Color Eye = new(220, 40, 40, 255);
     private static readonly Color FlashColor = new(255, 250, 235, 255);
+    private static readonly Color GlowColor = new(255, 60, 50, 255);
 
     private readonly Dictionary<int, State> _states = [];
     private float _time;
@@ -79,16 +81,24 @@ internal sealed class PlaceholderBatView : IBatView
         var yaw = toViewer.LengthSquared() > 0.0001f ? MathF.Atan2(toViewer.X, toViewer.Z) : 0f;
 
         // Alive: a slight bob with the wing beat. Dead: tumbling (until it lies still, the core lets it fall).
+        // Screeching: it shivers - the warning before a dive.
         var beat = MathF.Sin(_time * WingBeatsPerSecond * 2f * MathF.PI + bat.Id);
         var bob = state.IsDead ? 0f : beat * 0.04f;
         var tumble = state.IsDead ? MathF.Min(state.Tumble, 160f) : 0f;
+        var shiver = bat.State == BatState.Screeching ? MathF.Sin(_time * 90f) * 0.025f : 0f;
         var body =
             Matrix4x4.CreateRotationX(Deg(tumble)) *
-            Matrix4x4.CreateTranslation(0f, 0.2f + bob, 0f) *
+            Matrix4x4.CreateTranslation(shiver, 0.2f + bob, 0f) *
             Matrix4x4.CreateRotationY(yaw) *
             Matrix4x4.CreateTranslation(bat.Position);
 
-        Color Shown(Color color) => state.Flash > 0f ? Blend(color, FlashColor, state.Flash) : color;
+        // Before a spit it glows up red - the warning. A hit flash wins over the glow.
+        var glow = state.IsDead ? 0f : bat.SpitWindUpProgress;
+        Color Shown(Color color)
+        {
+            var glowing = glow > 0f ? Blend(color, GlowColor, 0.25f + 0.65f * glow) : color;
+            return state.Flash > 0f ? Blend(glowing, FlashColor, state.Flash) : glowing;
+        }
 
         ShadedBox.Draw(body, new Vector3(0.2f, 0.18f, 0.24f), Shown(Fur));                                  // body
         ShadedBox.Draw(Matrix4x4.CreateTranslation(-0.06f, 0.13f, 0.05f) * body, new Vector3(0.04f, 0.09f, 0.04f), Shown(Fur));   // ears
@@ -96,8 +106,12 @@ internal sealed class PlaceholderBatView : IBatView
         ShadedBox.Draw(Matrix4x4.CreateTranslation(-0.05f, 0.03f, 0.125f) * body, new Vector3(0.03f, 0.03f, 0.01f), Eye);         // eyes
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0.05f, 0.03f, 0.125f) * body, new Vector3(0.03f, 0.03f, 0.01f), Eye);
 
-        // Wings: hinged at the body's sides, beating up and down. Dead: folded against the body.
-        var flap = state.IsDead ? 70f : beat * 40f;
+        // Wings: hinged at the body's sides, beating up and down. Screeching: raised high and trembling.
+        // Diving: swept back against the body, like dead (which is folded).
+        var flap = state.IsDead ? 70f
+            : bat.State == BatState.Screeching ? -65f + MathF.Sin(_time * 70f) * 6f
+            : bat.State == BatState.Diving ? 60f
+            : beat * 40f;
         foreach (var side in (ReadOnlySpan<float>)[-1f, 1f])
         {
             var wing =

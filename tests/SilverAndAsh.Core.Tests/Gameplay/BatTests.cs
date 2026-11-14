@@ -38,9 +38,11 @@ public class BatTests
     [Fact]
     public void A_bat_hovers_at_its_height_and_stays_there()
     {
-        var world = new GameWorld(Room);
+        // A wall hides the player: the bat does not notice anyone and keeps hanging still (#88).
+        var level = LevelParser.Parse("P#B");
+        var world = new GameWorld(level);
         var bat = world.Bats[0];
-        var floor = Room.CellCenter(2, 0);
+        var floor = level.CellCenter(2, 0);
 
         Assert.Equal(floor + new Vector3(0f, Tuning.Bat.HoverHeight, 0f), bat.Position);
         Assert.Equal(Tuning.Bat.MaxHealth, bat.Health);

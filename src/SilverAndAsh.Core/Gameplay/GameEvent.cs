@@ -48,6 +48,21 @@ public sealed record BatHit(int BatId, int Damage) : GameEvent;
 /// <summary>Bat <paramref name="BatId"/> reached 0 health and tumbles to the floor.</summary>
 public sealed record BatDied(int BatId) : GameEvent;
 
+/// <summary>Bat <paramref name="BatId"/> starts glowing: it will spit a blood bolt shortly.</summary>
+public sealed record BatSpitWindUp(int BatId) : GameEvent;
+
+/// <summary>Bat <paramref name="BatId"/> spits a blood bolt from <paramref name="Origin"/> along <paramref name="Direction"/>.</summary>
+public sealed record BatSpat(int BatId, Vector3 Origin, Vector3 Direction) : GameEvent;
+
+/// <summary>Bat <paramref name="BatId"/> screeches: it will dive at the spot where its target is now.</summary>
+public sealed record BatScreeched(int BatId) : GameEvent;
+
+/// <summary>Bat <paramref name="BatId"/> bit player <paramref name="PlayerId"/> in its dive.</summary>
+public sealed record BatBit(int BatId, int PlayerId) : GameEvent;
+
+/// <summary>Bat <paramref name="BatId"/> dived into empty air.</summary>
+public sealed record BatDiveMissed(int BatId) : GameEvent;
+
 /// <summary>Ghoul <paramref name="GhoulId"/> starts drawing back for a blow.</summary>
 public sealed record GhoulWindUp(int GhoulId) : GameEvent;
 
