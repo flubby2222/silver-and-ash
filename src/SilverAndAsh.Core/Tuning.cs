@@ -77,6 +77,22 @@ public static class Tuning
         public const float DummyHeadHeight = 0.35f;
     }
 
+    /// <summary>The bat's blood bolt: a flying projectile you can dodge.</summary>
+    public static class BloodBolt
+    {
+        /// <summary>Speed in m/s - fast, but you see it coming.</summary>
+        public const float Speed = 12f;
+
+        /// <summary>Damage to the player.</summary>
+        public const int Damage = 15;
+
+        /// <summary>Radius of the ball in metres.</summary>
+        public const float Radius = 0.15f;
+
+        /// <summary>Seconds until it disappears if it hits nothing.</summary>
+        public const float LifeTime = 5f;
+    }
+
     /// <summary>The vampire bat: a small flying enemy.</summary>
     public static class Bat
     {

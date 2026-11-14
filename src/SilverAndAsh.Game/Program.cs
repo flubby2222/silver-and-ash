@@ -5,6 +5,7 @@ using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 using SilverAndAsh.Game.Input;
@@ -92,6 +93,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
         IDummyView dummyView = new PlaceholderDummyView();
         IGhoulView ghoulView = new PlaceholderGhoulView();
         IBatView batView = new PlaceholderBatView();
+        var projectileView = new ProjectileView();
         var impactMarks = new ImpactMarks();
         IWeaponView weaponView = new PlaceholderWeaponView();
         var damageFeedback = new DamageFeedback();
@@ -126,6 +128,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                     dummyView.OnEvent(gameEvent, player.Position);
                     ghoulView.OnEvent(gameEvent);
                     batView.OnEvent(gameEvent);
+                    projectileView.OnEvent(gameEvent);
                     impactMarks.OnEvent(gameEvent);
                     weaponView.OnEvent(gameEvent);
                     damageFeedback.OnEvent(gameEvent);
@@ -141,6 +144,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                 dummyView = new PlaceholderDummyView();
                 ghoulView = new PlaceholderGhoulView();
                 batView = new PlaceholderBatView();
+                projectileView = new ProjectileView();
                 impactMarks = new ImpactMarks();
                 weaponView = new PlaceholderWeaponView();
                 damageFeedback = new DamageFeedback();
@@ -149,6 +153,19 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             dummyView.Update(Raylib.GetFrameTime());
             ghoulView.Update(Raylib.GetFrameTime());
             batView.Update(Raylib.GetFrameTime());
+            projectileView.Update(Raylib.GetFrameTime());
+
+#if DEBUG
+            // Test key until the bats spit (#88): P fires a blood bolt at the player from up to 8 m ahead.
+            if (Raylib.IsKeyPressed(KeyboardKey.P) && !player.IsDead)
+            {
+                var ahead = player.View.FlatForward;
+                var wall = Raycast.AgainstLevel(level, player.EyePosition, ahead, 8f);
+                var origin = player.EyePosition + ahead * ((wall?.Distance ?? 8f) - 0.5f) - new Vector3(0f, 0.2f, 0f);
+                gameWorld.Fire(origin, player.EyePosition - new Vector3(0f, 0.2f, 0f) - origin,
+                    Tuning.BloodBolt.Speed, Tuning.BloodBolt.Damage, Tuning.BloodBolt.Radius, Tuning.BloodBolt.LifeTime);
+            }
+#endif
             impactMarks.Update(Raylib.GetFrameTime());
             weaponView.Update(Raylib.GetFrameTime(), player);
             damageFeedback.Update(Raylib.GetFrameTime());
@@ -191,6 +208,8 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             {
                 batView.Draw(bat, eye);
             }
+
+            projectileView.Draw(gameWorld.Projectiles, accumulator.Alpha);
 
             impactMarks.Draw();
 

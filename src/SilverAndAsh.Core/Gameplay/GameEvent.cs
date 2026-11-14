@@ -33,6 +33,15 @@ public sealed record DummyHit(int DummyId, int Damage, bool Critical = false) : 
 /// <summary>Ghoul <paramref name="GhoulId"/> took <paramref name="Damage"/>; <paramref name="Critical"/> for a headshot.</summary>
 public sealed record GhoulHit(int GhoulId, int Damage, bool Critical = false) : GameEvent;
 
+/// <summary>Projectile <paramref name="ProjectileId"/> was fired from <paramref name="Origin"/>.</summary>
+public sealed record ProjectileFired(int ProjectileId, Vector3 Origin) : GameEvent;
+
+/// <summary>Projectile <paramref name="ProjectileId"/> hit player <paramref name="PlayerId"/> at <paramref name="Point"/>.</summary>
+public sealed record ProjectileHitPlayer(int ProjectileId, int PlayerId, Vector3 Point) : GameEvent;
+
+/// <summary>Projectile <paramref name="ProjectileId"/> hit a wall, the floor or the ceiling at <paramref name="Point"/>.</summary>
+public sealed record ProjectileImpact(int ProjectileId, Vector3 Point) : GameEvent;
+
 /// <summary>Bat <paramref name="BatId"/> took <paramref name="Damage"/>.</summary>
 public sealed record BatHit(int BatId, int Damage) : GameEvent;
 
