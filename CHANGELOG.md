@@ -6,6 +6,10 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.6.0] – 2026-11-14 – Vampirfledermaus
+
+Der Angriff kommt von oben: Vampirfledermäuse kreisen um dich, spucken Blutgeschosse und stoßen herab – alles mit Vorwarnung, alles ausweichbar.
+
 ### Hinzugefügt
 - Vampirfledermäuse in beiden Testleveln (im Level-Format: `B`): klein, mit schlagenden Flügeln, schweben sie über deinem Kopf – du läufst unter ihnen durch. 30 Leben: ein Pistolenschuss oder ein Klingenhieb, wenn du zu ihr hochschaust. Getroffen blinken sie, tot trudeln sie zu Boden und verschwinden kurz darauf
 - Blutgeschosse: glühend rote Kugeln, die man fliegen sieht (12 m/s) und denen man ausweichen kann – Seitschritt, Sprung oder Dodge (geduckt fliegen sie über dich hinweg). Ein Treffer kostet 15 Leben; an Wänden zerplatzen sie. Gegner und Puppen treffen sie nicht
@@ -101,7 +105,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.5.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.1...v0.3.2
