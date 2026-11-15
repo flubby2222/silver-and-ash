@@ -119,6 +119,24 @@ public sealed class Player
     /// <summary>The player's body, for enemies that must not crawl through it.</summary>
     public CylinderBody Body => new(Position, BodySizes.Player.Radius, CollisionHeight);
 
+    /// <summary>
+    /// Gives back up to <paramref name="amount"/> health, never above <see cref="MaxHealth"/>, and reports it into
+    /// <paramref name="events"/>. The dead are not healed. Returns how much was really healed.
+    /// </summary>
+    public int Heal(int amount, ICollection<GameEvent> events)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        ArgumentNullException.ThrowIfNull(events);
+        var healed = IsDead ? 0 : Math.Min(amount, MaxHealth - Health);
+        if (healed > 0)
+        {
+            Health += healed;
+            events.Add(new PlayerHealed(Id, healed));
+        }
+
+        return healed;
+    }
+
     /// <summary>Takes <paramref name="damage"/> (never below 0) and reports it into <paramref name="events"/>.</summary>
     public void TakeDamage(int damage, ICollection<GameEvent> events)
     {

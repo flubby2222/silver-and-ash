@@ -6,11 +6,12 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// What the player sees when hurt: a red flash at the screen's edges and a short jolt of the camera.
-/// At death the picture turns red and "YOU DIED" appears. Pure presentation - Core reports
-/// <see cref="PlayerHit"/> and <see cref="PlayerDied"/>.
+/// At death the picture turns red and "YOU DIED" appears. When healed, "+50" rises next to the health bar.
+/// Pure presentation - Core reports <see cref="PlayerHit"/>, <see cref="PlayerDied"/> and <see cref="PlayerHealed"/>.
 /// </summary>
 internal sealed class DamageFeedback
 {
+    private const float HealSeconds = 1.2f;
     private const float FlashSeconds = 0.4f;
     private const float JoltSeconds = 0.25f;
     private const float DeathFadeSeconds = 1f;
@@ -21,6 +22,8 @@ internal sealed class DamageFeedback
     private float _deathFade;
     private bool _isDead;
     private float _time;
+    private float _heal;
+    private int _healAmount;
 
     public void OnEvent(GameEvent gameEvent)
     {
@@ -29,6 +32,10 @@ internal sealed class DamageFeedback
             case PlayerHit:
                 _flash = 1f;
                 _jolt = 1f;
+                break;
+            case PlayerHealed healed:
+                _heal = 1f;
+                _healAmount = healed.Amount;
                 break;
             case PlayerDied:
                 _isDead = true;
@@ -41,6 +48,7 @@ internal sealed class DamageFeedback
         _time += frameSeconds;
         _flash = MathF.Max(0f, _flash - frameSeconds / FlashSeconds);
         _jolt = MathF.Max(0f, _jolt - frameSeconds / JoltSeconds);
+        _heal = MathF.Max(0f, _heal - frameSeconds / HealSeconds);
         if (_isDead)
         {
             _deathFade = MathF.Min(1f, _deathFade + frameSeconds / DeathFadeSeconds);
@@ -70,6 +78,14 @@ internal sealed class DamageFeedback
             Raylib.DrawRectangleGradientH(width - band, 0, band, height, clear, edge);
             Raylib.DrawRectangleGradientV(0, 0, width, band, edge, clear);
             Raylib.DrawRectangleGradientV(0, height - band, width, band, clear, edge);
+        }
+
+        if (_heal > 0f)
+        {
+            // "+50" right of the health bar (bottom left), rising a little and fading out.
+            var text = $"+{_healAmount}";
+            var rise = (int)(18 * (1f - _heal));
+            Raylib.DrawText(text, 250, height - 70 - rise, 24, new Color(235, 205, 120, (int)(255 * MathF.Min(1f, _heal * 2f))));
         }
 
         if (_deathFade > 0f)

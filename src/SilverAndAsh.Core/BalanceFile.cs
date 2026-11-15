@@ -40,6 +40,7 @@ public static class BalanceFile
         "player.landingDipPerSpeed", "player.landingDipMax", "player.landingTiltPerMetre", "player.dodgeStaminaSegments",
         "blade.damage", "blade.chargeStaminaSegments", "blade.coneStartBehind",
         "pistol.damage", "ghoul.attackDamage", "bat.biteDamage", "bat.spitAimBelowEyes", "bloodBolt.damage",
+        "drops.ghoulChance", "drops.batChance", "bloodVial.heal",
     };
 
     /// <summary>Highest sensible values. A jump may at most bring the head up to the ceiling.</summary>
@@ -49,6 +50,8 @@ public static class BalanceFile
         ["player.jumpHeight"] = Cell.DefaultCeilingHeight - BodySizes.Player.Height,
         ["blade.angle"] = 180,
         ["ghoul.attackHalfAngle"] = 180,
+        ["drops.ghoulChance"] = 1,
+        ["drops.batChance"] = 1,
     };
 
     /// <summary>Values that must stay below a limit (a penalty of 100 % would mean standing still).</summary>

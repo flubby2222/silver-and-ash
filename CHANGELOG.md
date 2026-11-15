@@ -8,6 +8,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ### Hinzugefügt
 - Balancing-Datei `assets/balance.json`: Leben, Schaden, Abklingzeiten, Geschwindigkeiten und Zeiten lassen sich ändern, ohne das Spiel neu zu bauen – mit Kommentaren zu jedem Wert. Fehler in der Datei halten das Spiel nicht auf: Es nimmt dann die Standardwerte und schreibt eine Warnung ins Log. In der Testversion lädt F5 die Datei neu. Anleitung: `docs/balancing.md`
+- Blutphiolen: Getötete Ghule lassen in 30 % der Fälle, Fledermäuse in 15 % eine Blutphiole fallen – eine kleine, rot pulsierende Flasche, die über dem Boden schwebt. Drüberlaufen heilt 50 Leben (nie über das Maximum), neben der Lebensanzeige steigt „+50“ auf. Bei vollem Leben bleibt sie liegen
 
 ## [0.6.0] – 2026-11-14 – Vampirfledermaus
 
