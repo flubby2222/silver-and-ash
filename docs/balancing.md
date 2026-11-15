@@ -45,6 +45,48 @@ Zum **Ausprobieren** die Kopie neben dem Spiel ändern. Ein Wert, der **bleiben*
 1. Wert in der Datei ändern, speichern.
 2. Spiel neu starten – oder in der **Testversion** (`dotnet run`) einfach **F5** drücken: Die Datei wird neu gelesen und das Level startet mit den neuen Werten (auf Ebene 0 mit demselben Seed, also demselben Grundriss, solange sich `layout` nicht ändert). Oben links erscheint kurz „Balancing reloaded“.
 
+## Balance-Report: Erwartungswerte ohne Spielen
+
+Der Report baut viele Ebenen genau wie das Spiel (Standard 500 Seeds) und zeigt, was eine Ebene im Schnitt bringt. Für jeden Wert gibt es Durchschnitt, Minimum und Maximum:
+- Räume;
+- Gegner und Gegner-HP;
+- erreichte Stufe;
+- Silber;
+- Schlüssel gegen Schlösser;
+- Kisten je Stufe;
+- Heilung;
+- eine grobe Zeitschätzung.
+
+Ein Lauf dauert wenige Sekunden. Aufruf aus dem Repository-Ordner:
+
+```bash
+dotnet run --project tools/SilverAndAsh.BalanceReport
+```
+
+Mehr Ebenen oder eine andere Datei:
+
+```bash
+dotnet run --project tools/SilverAndAsh.BalanceReport -- --seeds 1000
+```
+```bash
+dotnet run --project tools/SilverAndAsh.BalanceReport -- meine-werte.json
+```
+
+**Vorher/nachher vergleichen:** Datei kopieren, Werte ändern, dann
+
+```bash
+dotnet run --project tools/SilverAndAsh.BalanceReport -- --compare meine-werte.json
+```
+
+Das zeigt `assets/balance.json` (A) neben der Kopie (B) und den Unterschied B - A.
+
+**So liest man ihn:**
+- **Anzahlen** (Räume, Gegner, Kisten, Silber in Kisten, Schlösser) sind exakt.
+- **Alles mit Zufall** (Silber und Schlüssel von Gegnern, Phiolen) ist ein **Erwartungswert**: Chance × Anzahl.
+- **Die Zeit ist eine grobe Schätzung:** jedes Bodenfeld einmal mit voller Geschwindigkeit durchlaufen, jeden Gegner nur mit der Klinge besiegt. Zum Abgleich dient `runs.log`. Der erste Abgleich (15.11.): Schätzung 6,5 min, gespielt 6:11.
+
+Die Berechnung steht in [`BalanceReport.cs`](../src/SilverAndAsh.Core/Balancing/BalanceReport.cs), das Tool in [`tools/SilverAndAsh.BalanceReport`](../tools/SilverAndAsh.BalanceReport/Program.cs). Das Tool gehört nicht zum Release.
+
 ## Wenn etwas nicht stimmt
 
 Das Spiel startet **immer**. Was nicht passt, landet als Warnung im Log (`%LOCALAPPDATA%\SilverAndAsh\logs\`):
