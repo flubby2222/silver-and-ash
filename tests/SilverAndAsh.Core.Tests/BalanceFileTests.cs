@@ -113,6 +113,8 @@ public class BalanceFileTests
     [InlineData("""{ "drops": { "ghoulChance": 1.5 } }""", "drops.ghoulChance")]
     [InlineData("""{ "drops": { "batChance": 2 } }""", "drops.batChance")]
     [InlineData("""{ "drops": { "consecratedAmmoShare": 1.2 } }""", "drops.consecratedAmmoShare")]
+    [InlineData("""{ "silver": { "ghoulChance": 1.5 } }""", "silver.ghoulChance")]
+    [InlineData("""{ "silver": { "batChance": 2 } }""", "silver.batChance")]
     [InlineData("""{ "layout": { "corridorChance": 1.5 } }""", "layout.corridorChance")]
     [InlineData("""{ "difficulty": { "ghoulShareNear": 1.5 } }""", "difficulty.ghoulShareNear")]
     [InlineData("""{ "difficulty": { "ghoulShareFar": 2 } }""", "difficulty.ghoulShareFar")]
@@ -155,6 +157,30 @@ public class BalanceFileTests
 
         Assert.Equal(Balance.Default.Layout, result.Balance.Layout);
         Assert.Contains(result.Warnings, w => w.Contains("layout.combatRoomsMin") && w.Contains("layout.combatRoomsMax"));
+    }
+
+    [Theory]
+    [InlineData("ghoulMin", "ghoulMax")]
+    [InlineData("batMin", "batMax")]
+    public void More_minimum_than_maximum_silver_falls_back_to_both_standards(string min, string max)
+    {
+        var result = BalanceFile.Parse($$"""{ "silver": { "{{min}}": 5, "{{max}}": 2 } }""");
+
+        Assert.Equal(Balance.Default.Silver, result.Balance.Silver);
+        Assert.Contains(result.Warnings, w => w.Contains($"silver.{min}") && w.Contains($"silver.{max}"));
+    }
+
+    [Fact]
+    public void Negative_silver_falls_back_to_its_standard_and_no_silver_is_fine()
+    {
+        var result = BalanceFile.Parse("""{ "silver": { "ghoulMin": -1, "batMin": 0, "batMax": 0, "batChance": 0 } }""");
+
+        Assert.Equal(Balance.Default.Silver.GhoulMin, result.Balance.Silver.GhoulMin);
+        Assert.Contains(result.Warnings, w => w.Contains("silver.ghoulMin"));
+        Assert.Equal(0, result.Balance.Silver.BatMin);
+        Assert.Equal(0, result.Balance.Silver.BatMax);
+        Assert.Equal(0f, result.Balance.Silver.BatChance);
+        Assert.DoesNotContain(result.Warnings, w => w.Contains("silver.bat"));
     }
 
     [Fact]

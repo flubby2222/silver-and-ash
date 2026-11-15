@@ -7,7 +7,8 @@ namespace SilverAndAsh.Game.Rendering;
 /// <summary>
 /// Consumables lying in the level, floating a hand's width above the floor and turning slowly - easy to spot in the
 /// dark: a blood vial pulsing red, or three cartridges of consecrated ammunition with glowing silver tips. Drawn
-/// between two ticks so a falling one moves smoothly. Pure presentation.
+/// between two ticks so a falling one moves smoothly. Silver lies flat on the floor as a small stack of coins.
+/// Pure presentation.
 /// </summary>
 internal sealed class PickupView
 {
@@ -18,6 +19,8 @@ internal sealed class PickupView
     private static readonly Color Brass = new(176, 140, 72, 255);
     private static readonly Color SilverTip = new(200, 206, 220, 255);
     private static readonly Color HolyGlow = new(245, 250, 255, 255);
+    private static readonly Color Coin = new(150, 156, 170, 255);
+    private static readonly Color CoinGlint = new(240, 244, 255, 255);
 
     private float _time;
 
@@ -44,6 +47,28 @@ internal sealed class PickupView
                 case ConsumableKind.ConsecratedAmmo:
                     DrawCartridges(place, pulse);
                     break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Silver lying in the level: a small stack of coins on the floor (one coin per silver, at most five), turning
+    /// slowly, its top coin glinting now and then so it catches the eye in the dark.
+    /// </summary>
+    public void DrawSilver(IReadOnlyList<SilverPile> piles, float alpha)
+    {
+        foreach (var pile in piles)
+        {
+            var bottom = Vector3.Lerp(pile.PreviousPosition, pile.Position, alpha);
+            var place = Matrix4x4.CreateRotationY(_time * 0.8f + pile.Id) * Matrix4x4.CreateTranslation(bottom);
+            var glint = MathF.Max(0f, MathF.Sin(_time * 3f + pile.Id * 1.7f));
+            var coins = Math.Min(pile.Amount, 5);
+            for (var coin = 0; coin < coins; coin++)
+            {
+                // Each coin a little off the one below, like a careless stack.
+                var shift = new Vector3(MathF.Sin(coin * 2.3f) * 0.02f, 0.015f + coin * 0.025f, MathF.Cos(coin * 2.3f) * 0.02f);
+                var colour = coin == coins - 1 ? Blend(Coin, CoinGlint, glint * glint) : Coin;
+                ShadedBox.Draw(Matrix4x4.CreateTranslation(shift) * place, new Vector3(0.11f, 0.02f, 0.11f), colour);
             }
         }
     }

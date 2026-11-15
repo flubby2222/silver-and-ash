@@ -35,6 +35,9 @@ public sealed class RunStatistics
     /// <summary>Arenas whose enemies were all killed.</summary>
     public int RoomsCleared { get; private set; }
 
+    /// <summary>Silver the players picked up (silver still lying around does not count).</summary>
+    public int SilverCollected { get; private set; }
+
     /// <summary>One more tick of the run.</summary>
     public void AddTick() => Ticks++;
 
@@ -64,6 +67,9 @@ public sealed class RunStatistics
                 case RoomCleared:
                     RoomsCleared++;
                     break;
+                case SilverTaken taken:
+                    SilverCollected += taken.Amount;
+                    break;
             }
         }
     }
@@ -80,7 +86,8 @@ public sealed record RunSummary(
     int DamageTaken,
     int Level,
     int RoomsCleared,
-    int ArenaRooms)
+    int ArenaRooms,
+    int Silver)
 {
     /// <summary>The run time as minutes:seconds, e.g. "12:34".</summary>
     public string Time
@@ -92,11 +99,11 @@ public sealed record RunSummary(
         }
     }
 
-    /// <summary>One line for the run log, e.g. "2026-11-15 18:40:12 | won | seed 123 | 12:34 | ghouls 31 | ...".</summary>
+    /// <summary>One line for the run log, e.g. "2026-11-15 18:40:12 | won | seed 123 | 12:34 | ghouls 31 | ... | silver 42".</summary>
     public string ToLogLine(DateTimeOffset when) => string.Create(
         CultureInfo.InvariantCulture,
         $"{when:yyyy-MM-dd HH:mm:ss} | {Outcome.ToString().ToLowerInvariant()} | seed {Seed} | {Time} | ghouls {GhoulsKilled} | "
-        + $"bats {BatsKilled} | dealt {DamageDealt} | taken {DamageTaken} | level {Level} | rooms {RoomsCleared}/{ArenaRooms}");
+        + $"bats {BatsKilled} | dealt {DamageDealt} | taken {DamageTaken} | level {Level} | rooms {RoomsCleared}/{ArenaRooms} | silver {Silver}");
 }
 
 /// <summary>

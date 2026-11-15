@@ -54,6 +54,12 @@ public sealed record BatDied(int BatId) : GameEvent;
 /// <summary>A killed enemy dropped pickup <paramref name="PickupId"/> of <paramref name="Kind"/> at <paramref name="Position"/>.</summary>
 public sealed record PickupDropped(int PickupId, ConsumableKind Kind, Vector3 Position) : GameEvent;
 
+/// <summary>A killed enemy dropped silver pile <paramref name="PileId"/> worth <paramref name="Amount"/> at <paramref name="Position"/>.</summary>
+public sealed record SilverDropped(int PileId, int Amount, Vector3 Position) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> picked up silver pile <paramref name="PileId"/> worth <paramref name="Amount"/>.</summary>
+public sealed record SilverTaken(int PileId, int PlayerId, int Amount) : GameEvent;
+
 /// <summary>Player <paramref name="PlayerId"/> picked up pickup <paramref name="PickupId"/> of <paramref name="Kind"/>.</summary>
 public sealed record PickupTaken(int PickupId, int PlayerId, ConsumableKind Kind) : GameEvent;
 

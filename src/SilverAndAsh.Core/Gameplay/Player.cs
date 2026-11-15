@@ -143,6 +143,12 @@ public sealed class Player
     private int _consecratedTicksLeft;
     private readonly float _consecratedFireRate;
 
+    /// <summary>Silver collected in this run - 0 at the start, back to 0 after death (a new world).</summary>
+    public int Silver { get; private set; }
+
+    /// <summary>Adds <paramref name="amount"/> picked-up silver.</summary>
+    internal void AddSilver(int amount) => Silver += amount;
+
     /// <summary>The player's level in this run - 1 at the start, back to 1 after death (a new world).</summary>
     public int Level { get; private set; } = 1;
 

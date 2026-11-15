@@ -62,6 +62,17 @@ public sealed class RunStatisticsTests : IDisposable
     }
 
     [Fact]
+    public void Collected_silver_is_counted_but_dropped_silver_is_not()
+    {
+        var statistics = new RunStatistics();
+
+        statistics.Count([new SilverDropped(1, 3, Vector3.Zero), new SilverTaken(1, 0, 3)]);
+        statistics.Count([new SilverTaken(2, 0, 2)]);
+
+        Assert.Equal(5, statistics.SilverCollected);
+    }
+
+    [Fact]
     public void Time_is_counted_in_ticks()
     {
         var statistics = new RunStatistics();
@@ -175,7 +186,7 @@ public sealed class RunStatisticsTests : IDisposable
 
     private static readonly RunSummary Example = new(
         Seed: 123, Outcome: RunOutcome.Won, Seconds: 754.4f, GhoulsKilled: 31, BatsKilled: 9, DamageDealt: 4210,
-        DamageTaken: 380, Level: 6, RoomsCleared: 9, ArenaRooms: 9);
+        DamageTaken: 380, Level: 6, RoomsCleared: 9, ArenaRooms: 9, Silver: 142);
 
     [Fact]
     public void A_summary_becomes_one_readable_line()
@@ -183,7 +194,7 @@ public sealed class RunStatisticsTests : IDisposable
         var line = Example.ToLogLine(new DateTimeOffset(2026, 11, 15, 18, 40, 12, TimeSpan.FromHours(1)));
 
         Assert.Equal(
-            "2026-11-15 18:40:12 | won | seed 123 | 12:34 | ghouls 31 | bats 9 | dealt 4210 | taken 380 | level 6 | rooms 9/9",
+            "2026-11-15 18:40:12 | won | seed 123 | 12:34 | ghouls 31 | bats 9 | dealt 4210 | taken 380 | level 6 | rooms 9/9 | silver 142",
             line);
         Assert.DoesNotContain('\n', line);
     }

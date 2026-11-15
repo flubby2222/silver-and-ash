@@ -116,6 +116,16 @@
     "consecratedAmmoShare": 0.3         // of all drops, 30 % are consecrated ammunition, the rest blood vials
   },
 
+  // Silver, the currency of a run (spent at the merchant from v0.11). A kill drops silver with its chance, between min and max (both included).
+  "silver": {
+    "ghoulChance": 0.5,                 // a killed ghoul drops silver in 50 % of cases (0 = never, 1 = always)
+    "batChance": 0.5,                   // a killed bat as well
+    "ghoulMin": 1,                      // a killed ghoul drops 1 to 3 silver ...
+    "ghoulMax": 3,
+    "batMin": 1,                        // ... a killed bat as well (0 and 0 = none)
+    "batMax": 3
+  },
+
   "bloodVial": {
     "heal": 50                          // health it gives back (never above the maximum)
   },
