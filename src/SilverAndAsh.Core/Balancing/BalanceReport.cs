@@ -52,6 +52,10 @@ public static class BalanceReport
         var ghouls = level.Level.GhoulPositions.Count;
         var bats = level.Level.BatPositions.Count;
         var enemies = ghouls + bats;
+        var combatRooms = rooms.Where(room => room.Kind == RoomKind.Combat).ToList();
+        var enemyCells = level.Level.GhoulPositions.Concat(level.Level.BatPositions)
+            .Select(position => Level.ToGrid(position.X, position.Z))
+            .ToList();
         var chests = level.Chests ?? [];
         var arenas = Count(RoomKind.Combat) + Count(RoomKind.Boss);
         var floorCells = rooms.Sum(room => room.FloorCells.Count);
@@ -90,6 +94,8 @@ public static class BalanceReport
             new(Enemies, "Ghouls", ghouls),
             new(Enemies, "Bats", bats),
             new(Enemies, "Enemies", enemies),
+            new(Enemies, "Budget per combat room", combatRooms.Count == 0 ? 0 : combatRooms.Average(room => EnemyPlacement.BudgetOf(room, rooms, balance.Difficulty))),
+            new(Enemies, "Enemies per combat room", combatRooms.Count == 0 ? 0 : combatRooms.Average(room => enemyCells.Count(room.FloorCells.Contains))),
             new(Enemies, "Enemy health", enemyHealth),
             new(Enemies, "Experience", experience),
             new(Enemies, "Player level reached", LevelReached(experience, balance.Experience)),

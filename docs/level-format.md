@@ -81,7 +81,7 @@ Ab v0.8 werden Ebenen aus **Raum-Vorlagen** zusammengesetzt (siehe [Entscheidung
 | Ordner | Raumart | Decke | Besonderheit |
 |---|---|---|---|
 | `start` | Startraum | 6 m | genau ein `P` |
-| `combat` | Kampfraum | 6 m | groß und verwinkelt (10–18 Zellen je Richtung), mind. 3 Gegnerplätze |
+| `combat` | Kampfraum | 6 m | groß und verwinkelt (10–18 Zellen je Richtung), mind. 30 freie Felder abseits der Türen |
 | `corridor` | Gang | 3,5 m | schmal, gern mit Knick |
 | `boss` | Bossraum | 6 m | **genau ein** Türplatz (gilt später für alle Räume mit nur einem Eingang) |
 
@@ -102,7 +102,7 @@ Regeln für Vorlagen:
   ###+###    #####+#
   #.....#    #.....#
   ```
-- `G` und `B` sind **Plätze für Gegner** – wie viele davon wirklich besetzt werden, entscheidet später die Schwierigkeit.
+- `G` und `B` sind in Vorlagen erlaubt, werden aber **nicht mehr benutzt**: Seit dem Spawn-Budget stehen Gegner auf zufälligen freien Feldern (siehe „Arenen und Schwierigkeit“). Die mitgelieferten Vorlagen haben keine mehr.
 - `C` ist ein **Kistenplatz** (Boden), nur in Kampf-, Schatz- und Secret-Räumen. Ob dort wirklich eine Kiste steht, entscheidet der Seed (siehe „Kisten“). Jede Kampf-Vorlage hat einen, jede Schatz-Vorlage einen oder zwei.
 - **Schatzräume** (`assets/rooms/treasure/`) und **Secret Rooms** (`assets/rooms/secret/`) haben **genau einen** Türplatz, **keine** Gegnerplätze und **mindestens einen** Kistenplatz.
 - Sie sind **Schutzräume**: Gegner betreten sie nie, auch nicht ihre Tür, und sehen keinen Spieler darin. Für Bewegung, Sicht und Wegsuche der Gegner sind diese Felder Wand (`GameWorld.EnemyLevel`).
@@ -147,7 +147,7 @@ Regeln, die immer gelten (und über viele Seeds getestet werden):
 - Ungenutzte Türplätze bleiben Wand. Türen sind 3,5 m hoch, auch in hohen Räumen.
 - Bleibt der Generator stecken (kein Raum passt mehr), versucht er es mit den nächsten Zufallszahlen **desselben** Seeds noch einmal – das Ergebnis bleibt also gleich.
 
-Zu jeder erzeugten Ebene gibt es neben den Zellen eine Liste der **Räume** (Art, Fläche, Abstand zum Start in Räumen, Gegnerplätze) und der **Türen** (Lage, welche zwei Räume). Die Gegner setzt danach [`EnemyPlacement`](../src/SilverAndAsh.Core/World/EnemyPlacement.cs) auf die Gegnerplätze (siehe „Arenen und Schwierigkeit“).
+Zu jeder erzeugten Ebene gibt es neben den Zellen eine Liste der **Räume** (Art, Fläche, Abstand zum Start in Räumen) und der **Türen** (Lage, welche zwei Räume). Die Gegner setzt danach [`EnemyPlacement`](../src/SilverAndAsh.Core/World/EnemyPlacement.cs) mit dem Spawn-Budget (siehe „Arenen und Schwierigkeit“).
 
 ## Türen im Spiel
 
@@ -176,18 +176,12 @@ Kisten setzt [`ChestPlacement`](../src/SilverAndAsh.Core/World/ChestPlacement.cs
 
 **Gegner aufstellen** ([`EnemyPlacement`](../src/SilverAndAsh.Core/World/EnemyPlacement.cs)):
 
-- Nur **Kampf-** und **Bossräume** bekommen Gegner; Startraum und Gänge bleiben leer.
-- Wie viele der Gegnerplätze einer Vorlage besetzt werden, hängt vom **Abstand zum Start** ab. Im nächstgelegenen Kampfraum gelten die „near“-Anteile, im entferntesten (und im Bossraum) die „far“-Anteile, dazwischen steigt es gleichmäßig. Die Werte stehen in `balance.json` unter `difficulty`:
-
-  | Wert | Standard | Bedeutung |
-  |---|---|---|
-  | `ghoulShareNear` | 0,5 | Hälfte der Ghul-Plätze im nächsten Kampfraum |
-  | `ghoulShareFar` | 1 | alle Ghul-Plätze ganz hinten |
-  | `batShareNear` | 0 | keine Fledermaus am Anfang |
-  | `batShareFar` | 1 | alle Fledermaus-Plätze ganz hinten |
-
-- Jeder Kampfraum bekommt **mindestens einen** Gegner. Welche Plätze besetzt werden, entscheidet der Seed: **gleicher Seed = gleiche Gegner**.
-- Die Kampf-Vorlagen haben je **5 Ghul- und 3 Fledermausplätze**, der Bossraum **6 und 3**.
+- Nur **Kampf-** und **Bossräume** bekommen Gegner. Startraum, Gänge, Schatz- und Secret-Räume bleiben leer.
+- **Spawn-Budget:** Jeder Kampfraum bekommt ein Budget. Es steigt mit dem **Abstand zum Start**: `budgetNear` im nächsten Kampfraum, `budgetFar` im entferntesten, dazwischen gleichmäßig. Der Bossraum hat sein eigenes (`budgetBoss`).
+- Der Raum **kauft** davon Gegner: Ein Ghul kostet `ghoulCost`, eine Fledermaus `batCost`. Welche Art als Nächstes kommt, entscheiden **Gewichte**, die ebenfalls von „near“ nach „far“ gleiten; weiter hinten gibt es mehr Fledermäuse.
+- **Freie Plätze:** Jeder Gegner steht auf einem zufälligen Bodenfeld des Raums, mindestens `doorDistance` (4 m) von seinen Türen und `spacing` (2,5 m) von anderen Gegnern entfernt. Gibt es keinen freien Platz mehr, endet der Einkauf.
+- So sieht derselbe Raum in jedem Durchlauf anders aus. Jeder Kampfraum bekommt **mindestens einen** Gegner. **Gleicher Seed = gleiche Gegner.**
+- Alle Werte stehen in `balance.json` unter `difficulty`; der Balance-Report zeigt Budget und Gegner pro Kampfraum.
 
 **Arena** ([`RoomState`](../src/SilverAndAsh.Core/Gameplay/RoomState.cs), Logik in `GameWorld`):
 

@@ -93,7 +93,7 @@ public class RunTests
     [Fact]
     public void After_a_run_the_next_one_has_a_new_seed_and_a_new_layout()
     {
-        var balance = Balance.Default with { Difficulty = Balance.Default.Difficulty with { BatShareNear = 0.5f } };
+        var balance = Balance.Default with { Difficulty = Balance.Default.Difficulty with { BudgetNear = 12 } };
         var first = Catacombs.NewRun(55, balance);
 
         var next = Catacombs.NextRun(first);
