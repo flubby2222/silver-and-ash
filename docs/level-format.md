@@ -134,7 +134,7 @@ Regeln, die immer gelten (und über viele Seeds getestet werden):
 - Ungenutzte Türplätze bleiben Wand. Türen sind 3,5 m hoch, auch in hohen Räumen.
 - Bleibt der Generator stecken (kein Raum passt mehr), versucht er es mit den nächsten Zufallszahlen **desselben** Seeds noch einmal – das Ergebnis bleibt also gleich.
 
-Zu jeder erzeugten Ebene gibt es neben den Zellen eine Liste der **Räume** (Art, Fläche, Abstand zum Start in Räumen, Gegnerplätze) und der **Türen** (Lage, welche zwei Räume). Gegner werden noch nicht aufgestellt – das kommt mit den Arenen (#122).
+Zu jeder erzeugten Ebene gibt es neben den Zellen eine Liste der **Räume** (Art, Fläche, Abstand zum Start in Räumen, Gegnerplätze) und der **Türen** (Lage, welche zwei Räume). Die Gegner setzt danach [`EnemyPlacement`](../src/SilverAndAsh.Core/World/EnemyPlacement.cs) auf die Gegnerplätze (siehe „Arenen und Schwierigkeit“).
 
 ## Türen im Spiel
 
@@ -142,5 +142,31 @@ Jede Tür des Generators wird im Spiel zu einer echten Tür ([`Door.cs`](../src/
 
 - **Alle Türen starten geschlossen.** Eine geschlossene Tür füllt ihre Türzelle aus. Die Welt behandelt diese Zelle dann als Wand, deshalb blockiert sie Laufen, Sicht der Gegner, Schüsse, Blutgeschosse und die Wegsuche der Gegner, ganz ohne Sonderregeln.
 - **F** öffnet die Tür, auf die man schaut, aus höchstens 2 m (von den Augen bis zur Türfläche). Dafür erscheint der Hinweis „[F] Open“. Offen bleibt offen; ein neuer Durchlauf beginnt wieder mit geschlossenen Türen.
-- **Arten:** normal (Holz) und Boss (die Tür zum Bossraum). Verschlossen (Schlüssel, v0.9) und Arena-Gitter (#122) sind schon vorgesehen.
+- **Arten:** normal (Holz) und Boss (die Tür zum Bossraum). Verschlossen (Schlüssel, v0.9) ist schon vorgesehen.
+- **Gitter:** Jede Tür kann zusätzlich **vergittert** sein (Arena, siehe unten). Dann blockiert sie, auch wenn sie offen ist, und F wirkt nicht.
 - F ist die **eine** Interaktionstaste. Alles, womit man interagieren kann, ist ein `IInteractable` (heute nur Türen, später Kisten, Schlösser, Personen).
+
+## Arenen und Schwierigkeit
+
+**Gegner aufstellen** ([`EnemyPlacement`](../src/SilverAndAsh.Core/World/EnemyPlacement.cs)):
+
+- Nur **Kampf-** und **Bossräume** bekommen Gegner; Startraum und Gänge bleiben leer.
+- Wie viele der Gegnerplätze einer Vorlage besetzt werden, hängt vom **Abstand zum Start** ab. Im nächstgelegenen Kampfraum gelten die „near“-Anteile, im entferntesten (und im Bossraum) die „far“-Anteile, dazwischen steigt es gleichmäßig. Die Werte stehen in `balance.json` unter `difficulty`:
+
+  | Wert | Standard | Bedeutung |
+  |---|---|---|
+  | `ghoulShareNear` | 0,5 | Hälfte der Ghul-Plätze im nächsten Kampfraum |
+  | `ghoulShareFar` | 1 | alle Ghul-Plätze ganz hinten |
+  | `batShareNear` | 0 | keine Fledermaus am Anfang |
+  | `batShareFar` | 1 | alle Fledermaus-Plätze ganz hinten |
+
+- Jeder Kampfraum bekommt **mindestens einen** Gegner. Welche Plätze besetzt werden, entscheidet der Seed: **gleicher Seed = gleiche Gegner**.
+- Die Kampf-Vorlagen haben je **5 Ghul- und 3 Fledermausplätze**, der Bossraum **6 und 3**.
+
+**Arena** ([`RoomState`](../src/SilverAndAsh.Core/Gameplay/RoomState.cs), Logik in `GameWorld`):
+
+1. Gegner in Kampf- und Bossräumen **schlafen**: Sie stehen bzw. hängen still, bis der Raum betreten wird. Trifft man einen schlafenden Gegner (z. B. durch die offene Tür), wacht sein ganzer Raum auf, wird aber nicht versiegelt.
+2. **Betreten** heißt: mit dem **ganzen Körper** im Raum, nicht mehr in der Türzelle. Sonst würde das Gitter auf den Spieler fallen.
+3. Beim **ersten Betreten** eines Kampf- oder Bossraums mit lebenden Gegnern fallen an **allen** seinen Türen Gitter herunter, die Gegner erwachen (Ereignis `RoomSealed`).
+4. Sind alle Gegner des Raums tot, ist er **geräumt** (`RoomCleared`). Die Gitter heben sich, die Tür, durch die man kam, **öffnet sich von selbst**, die anderen lassen sich mit F öffnen.
+5. Ein geräumter Raum versiegelt sich **nie wieder**. Ein Kampfraum ohne Gegner gilt beim Betreten sofort als geräumt.

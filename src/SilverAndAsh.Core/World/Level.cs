@@ -133,6 +133,10 @@ public sealed class Level
         return new Level(cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells);
     }
 
+    /// <summary>A copy of this level with these ghouls and bats instead of its own (cells, start and dummies stay).</summary>
+    public Level WithEnemies(IEnumerable<(int X, int Z)> ghoulCells, IEnumerable<(int X, int Z)> batCells) =>
+        new(_cells, PlayerStartX, PlayerStartZ, _dummyCells, ghoulCells, batCells);
+
     /// <summary>True if (x, z) is a grid position inside the level.</summary>
     public bool IsInside(int x, int z) => x >= 0 && x < Width && z >= 0 && z < Depth;
 

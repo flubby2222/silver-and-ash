@@ -4,8 +4,9 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// A door between two rooms. It fills one cell of the level: while closed, the world treats that cell as wall
-/// (so it blocks walking, sight, shots, blood bolts and the enemies' way-finding); once open it stays open.
+/// A door between two rooms. It fills one cell of the level: while closed or barred, the world treats that cell as
+/// wall (so it blocks walking, sight, shots, blood bolts and the enemies' way-finding). Once open it stays open -
+/// only an arena's grate can block it for a while.
 /// </summary>
 public sealed class Door : IInteractable
 {
@@ -42,14 +43,24 @@ public sealed class Door : IInteractable
 
     public bool IsOpen { get; private set; }
 
+    /// <summary>True while the grate of an arena is down: the door blocks, open or not, and F does nothing.</summary>
+    public bool IsBarred { get; private set; }
+
+    /// <summary>True if nothing can pass: closed, or barred.</summary>
+    public bool Blocks => !IsOpen || IsBarred;
+
     public string Prompt => "Open";
 
-    /// <summary>Wooden and boss doors open with F. Locked doors need keys and arena grates open by themselves (later).</summary>
-    public bool CanInteract => !IsOpen && Kind is DoorKind.Normal or DoorKind.Boss;
+    /// <summary>Wooden and boss doors open with F - unless barred. Locked doors need keys (later).</summary>
+    public bool CanInteract => !IsOpen && !IsBarred && Kind is DoorKind.Normal or DoorKind.Boss;
 
     public Vector3 BoxMin { get; }
 
     public Vector3 BoxMax { get; }
 
     internal void Open() => IsOpen = true;
+
+    internal void Bar() => IsBarred = true;
+
+    internal void Lift() => IsBarred = false;
 }

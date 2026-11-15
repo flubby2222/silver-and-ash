@@ -51,6 +51,9 @@ public sealed record Balance
     /// <summary>How a level is put together from room templates.</summary>
     public LayoutBalance Layout { get; init; } = new();
 
+    /// <summary>How many enemies the rooms get, depending on how far they are from the start.</summary>
+    public DifficultyBalance Difficulty { get; init; } = new();
+
     /// <summary>Seconds between the death of all players and the restart of the level.</summary>
     public float RestartDelay { get; init; } = 2f;
 }
@@ -130,6 +133,26 @@ public sealed record LayoutBalance
 
     /// <summary>Most loops (extra connections that make a second way round). 0 = the rooms form a tree.</summary>
     public int MaxLoops { get; init; } = 2;
+}
+
+/// <summary>
+/// Which share of a combat room's enemy places is taken: "near" in the combat room nearest to the start, "far" in the
+/// farthest one (and in the boss room), rising evenly in between. 0 = none, 1 = all. Every combat room gets at least
+/// one enemy.
+/// </summary>
+public sealed record DifficultyBalance
+{
+    /// <summary>Share of ghoul places taken in the nearest combat room.</summary>
+    public float GhoulShareNear { get; init; } = 0.5f;
+
+    /// <summary>Share of ghoul places taken in the farthest combat room and the boss room.</summary>
+    public float GhoulShareFar { get; init; } = 1f;
+
+    /// <summary>Share of bat places taken in the nearest combat room.</summary>
+    public float BatShareNear { get; init; } = 0f;
+
+    /// <summary>Share of bat places taken in the farthest combat room and the boss room.</summary>
+    public float BatShareFar { get; init; } = 1f;
 }
 
 /// <summary>Balancing values of the blood vial.</summary>

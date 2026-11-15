@@ -45,18 +45,23 @@ using (log)
     // A level built from the room templates: ... -- --level generated --seed 123 (without --seed: a new one each start)
     Level? level = null;
     IReadOnlyList<LevelDoor> doors = [];
+    IReadOnlyList<PlacedRoom> rooms = [];
     try
     {
         var options = LaunchOptions.Parse(args);
         if (options.IsGenerated)
         {
-            var rooms = RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms"));
-            var layout = BalanceFile.Load(Path.Combine(AppContext.BaseDirectory, "assets", "balance.json")).Balance.Layout;
-            var generated = LevelGenerator.Generate(rooms, options.Seed ?? Random.Shared.Next(), layout);
+            var templates = RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms"));
+            var levelBalance = BalanceFile.Load(Path.Combine(AppContext.BaseDirectory, "assets", "balance.json")).Balance;
+            var generated = EnemyPlacement.Populate(
+                LevelGenerator.Generate(templates, options.Seed ?? Random.Shared.Next(), levelBalance.Layout),
+                levelBalance.Difficulty);
             level = generated.Level;
             doors = generated.Doors;
-            log?.Info($"Level generated from {rooms.Count} room templates, seed {generated.Seed}: "
-                + $"{generated.Rooms.Count} rooms, {generated.Doors.Count} doors, {level.Width} x {level.Depth} cells.");
+            rooms = generated.Rooms;
+            log?.Info($"Level generated from {templates.Count} room templates, seed {generated.Seed}: "
+                + $"{generated.Rooms.Count} rooms, {generated.Doors.Count} doors, "
+                + $"{level.GhoulPositions.Count} ghouls, {level.BatPositions.Count} bats, {level.Width} x {level.Depth} cells.");
         }
         else
         {
@@ -77,7 +82,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(level, doors, displayVersion: version.Split('+')[0], log);
+            RunGame(level, doors, rooms, displayVersion: version.Split('+')[0], log);
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -89,7 +94,7 @@ using (log)
     }
 }
 
-static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, string displayVersion, FileLog? log)
+static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, IReadOnlyList<PlacedRoom> rooms, string displayVersion, FileLog? log)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted.
     Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
@@ -107,7 +112,7 @@ static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, string displayV
 
         // The whole simulation: level, player, enemies. A new seed every game, so the bats fly differently each time;
         // it goes into the log, so a strange run can be repeated.
-        var gameWorld = new GameWorld(level, Random.Shared.Next(), balance, doors);
+        var gameWorld = new GameWorld(level, Random.Shared.Next(), balance, doors, rooms);
         log?.Info($"Seed: {gameWorld.Seed}.");
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
@@ -219,7 +224,7 @@ static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, string displayV
             // Test key: F5 reads the balancing file again and starts the level with its values.
             if (Raylib.IsKeyPressed(KeyboardKey.F5))
             {
-                StartFresh(new GameWorld(level, Random.Shared.Next(), LoadBalance(balancePath, log), doors));
+                StartFresh(new GameWorld(level, Random.Shared.Next(), LoadBalance(balancePath, log), doors, rooms));
                 log?.Info($"Balancing reloaded, seed: {gameWorld.Seed}.");
                 reloadedNoticeSeconds = 2f;
             }
