@@ -7,6 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Luft-Dash in Blickrichtung:** W + Shift in der Luft dasht dorthin, wohin man schaut, auch schräg nach oben, z. B. auf höhere Stellen in den 6 m hohen Räumen. Andere Richtungen dashen wie bisher flach. Gleiche Strecke und Ausdauer, einmal pro Sprung; an Decke und Boden endet der Dash
 - **Blutphiolen auf der Karte:** Eine liegen gelassene Blutphiole in einem schon entdeckten Raum erscheint auf der Karte (M) als roter Punkt. Hebt man sie auf, verschwindet der Punkt
 
 ### Geändert
