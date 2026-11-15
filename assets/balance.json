@@ -1,0 +1,103 @@
+// Silver & Ash - balancing values.
+// Change a number, save, and start the game again (in the test build: F5 reloads at once).
+// Times in seconds (s), distances in metres (m), speeds in metres per second (m/s).
+// A missing value uses its standard; a wrong one (negative, a typo in the name ...) too - see the log.
+// Explained in docs/balancing.md.
+{
+  // Seconds between dying and the level starting again.
+  "restartDelay": 2,
+
+  "player": {
+    "maxHealth": 100,
+    "maxSpeed": 6,                      // m/s walking
+    "accelerationTime": 0.1,            // s from standing to full speed
+    "airControl": 0.7,                  // 0 = no steering in the air, 1 = full
+    "airSpeedMultiplier": 1.15,         // top speed in the air, times maxSpeed
+    "jumpHeight": 1.3,                  // m (at most 1.7: rooms are 3.5 m, the player 1.8 m)
+    "jumpDuration": 0.8,                // s from take-off to landing - gravity follows from height and duration
+    "landingDipPerSpeed": 0.01875,      // m the eyes sink per m/s of falling speed
+    "landingDipMax": 0.22,              // m, never deeper
+    "landingDipDuration": 0.3,          // s for the whole nod
+    "landingTiltPerMetre": 0.35,        // how much the view tilts down with the dip
+    "perfectJumpWindow": 0.12,          // s before or after landing
+    "perfectJumpSpeedBonus": 0.2,       // +20 % top speed
+    "perfectJumpDipFactor": 0.4,        // the landing nod is only 40 % as deep
+    "staminaJumps": 5,                  // segments of the stamina bar
+    "staminaRechargeTime": 3,           // s from empty to full (only on the ground)
+    "exhaustedJumpSpeedPenalty": 0.2,   // -20 % speed after a jump with an empty bar
+    "dashDistance": 4,                  // m
+    "dashDuration": 0.15,               // s
+    "dodgeDuration": 0.4,               // s
+    "dodgeSpeed": 10,                   // m/s
+    "dodgeStaminaSegments": 2,
+    "crouchTransitionTime": 0.1         // s to duck or stand up
+  },
+
+  "blade": {
+    "cooldown": 0.4,                    // s between swings
+    "damage": 40,
+    "chargeTime": 1,                    // s of holding until fully charged
+    "chargeMaxMultiplier": 2,           // fully charged: 200 % damage
+    "chargeStaminaSegments": 1,         // a full charge costs this much stamina
+    "range": 2,                         // m from the eyes
+    "angle": 90,                        // degrees, full width of the cone (at most 180)
+    "coneStartBehind": 0.6              // m the cone's tip lies behind the eyes (wider close up)
+  },
+
+  "pistol": {
+    "damage": 35,
+    "headshotMultiplier": 3,            // 300 % on the head
+    "range": 50,                        // m
+    "cooldown": 0.8                     // s between shots
+  },
+
+  "dummy": {
+    "maxHealth": 100,
+    "downTime": 3                       // s lying on the ground
+  },
+
+  "ghoul": {
+    "maxHealth": 80,
+    "corpseTime": 2,                    // s the body lies there
+    "sightRange": 12,                   // m
+    "speed": 4.5,                       // m/s crawling
+    "attackReach": 1.6,                 // m: starts its blow this close
+    "hitReach": 2.4,                    // m: the blow still hits this far
+    "windUpTime": 0.5,                  // s of warning before the blow
+    "attackHalfAngle": 60,              // degrees to the side it still hits
+    "attackDamage": 20,
+    "recoverTime": 0.8,                 // s of rest after a blow
+    "repathTime": 0.5                   // s between path searches
+  },
+
+  "bat": {
+    "maxHealth": 30,
+    "corpseTime": 2.5,                  // s the body lies there
+    "sightRange": 15,                   // m
+    "circleRadiusMin": 4,               // m, each bat gets its own distance ...
+    "circleRadiusMax": 6,               // ... between these two
+    "turnRoundMin": 2,                  // s, turns round after a random time ...
+    "turnRoundMax": 4,                  // ... between these two
+    "circleSpeed": 3,                   // m/s along the circle
+    "flySpeed": 6,                      // m/s at most
+    "climbSpeed": 3,                    // m/s up and down
+    "circleHeightMin": 2,               // m above the floor ...
+    "circleHeightMax": 2.8,             // ... rising and sinking between these two
+    "bobTime": 2,                       // s for one rise and sink
+    "spitInterval": 2,                  // s between spits
+    "spitWindUpTime": 0.4,              // s of glowing before a spit
+    "spitAimBelowEyes": 0.2,            // m - a dodging (ducked) player is under the bolt
+    "diveInterval": 6,                  // s between dives
+    "screechTime": 0.5,                 // s of screeching before a dive
+    "diveSpeed": 10,                    // m/s
+    "biteDamage": 15,
+    "repathTime": 0.5                   // s between path searches
+  },
+
+  "bloodBolt": {
+    "speed": 12,                        // m/s
+    "damage": 15,
+    "radius": 0.15,                     // m
+    "lifeTime": 5                       // s until it disappears
+  }
+}

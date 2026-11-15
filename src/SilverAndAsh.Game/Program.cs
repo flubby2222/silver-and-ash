@@ -86,9 +86,13 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
 
     try
     {
+        // Balancing values from assets/balance.json - a broken file only costs warnings in the log, never the game.
+        var balancePath = Path.Combine(AppContext.BaseDirectory, "assets", "balance.json");
+        var balance = LoadBalance(balancePath, log);
+
         // The whole simulation: level, player, enemies. A new seed every game, so the bats fly differently each time;
         // it goes into the log, so a strange run can be repeated.
-        var gameWorld = new GameWorld(level, Random.Shared.Next());
+        var gameWorld = new GameWorld(level, Random.Shared.Next(), balance);
         log?.Info($"Seed: {gameWorld.Seed}.");
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
@@ -100,6 +104,25 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
         var damageFeedback = new DamageFeedback();
         var input = new RaylibInput();
         input.CaptureMouse();
+
+#if DEBUG
+        var reloadedNoticeSeconds = 0f;
+#endif
+
+        // A new world (restart or reloaded values) gets fresh views, so no flash, corpse or impact mark of the
+        // old run is left over.
+        void StartFresh(GameWorld world)
+        {
+            gameWorld = world;
+            player = gameWorld.Player;
+            dummyView = new PlaceholderDummyView();
+            ghoulView = new PlaceholderGhoulView();
+            batView = new PlaceholderBatView();
+            projectileView = new ProjectileView();
+            impactMarks = new ImpactMarks();
+            weaponView = new PlaceholderWeaponView();
+            damageFeedback = new DamageFeedback();
+        }
 
         var accumulator = new TickAccumulator();
         using var picture = new LowResolutionTarget(LookSettings.RenderWidth, LookSettings.RenderHeight);
@@ -136,21 +159,24 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
                 }
             }
 
-            // Dead long enough: start the level again with a fresh world - and fresh views, so no flash,
-            // corpse or impact mark of the old run is left over.
+            // Dead long enough: start the level again with a fresh world.
             if (gameWorld.ShouldRestart)
             {
-                gameWorld = gameWorld.Restarted();
+                StartFresh(gameWorld.Restarted());
                 log?.Info($"Restart, seed: {gameWorld.Seed}.");
-                player = gameWorld.Player;
-                dummyView = new PlaceholderDummyView();
-                ghoulView = new PlaceholderGhoulView();
-                batView = new PlaceholderBatView();
-                projectileView = new ProjectileView();
-                impactMarks = new ImpactMarks();
-                weaponView = new PlaceholderWeaponView();
-                damageFeedback = new DamageFeedback();
             }
+
+#if DEBUG
+            // Test key: F5 reads the balancing file again and starts the level with its values.
+            if (Raylib.IsKeyPressed(KeyboardKey.F5))
+            {
+                StartFresh(new GameWorld(level, Random.Shared.Next(), LoadBalance(balancePath, log)));
+                log?.Info($"Balancing reloaded, seed: {gameWorld.Seed}.");
+                reloadedNoticeSeconds = 2f;
+            }
+
+            reloadedNoticeSeconds = MathF.Max(0f, reloadedNoticeSeconds - Raylib.GetFrameTime());
+#endif
 
             dummyView.Update(Raylib.GetFrameTime());
             ghoulView.Update(Raylib.GetFrameTime());
@@ -220,6 +246,10 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             CombatHud.Draw(player);
 #if DEBUG
             DrawDebugInfo(player);
+            if (reloadedNoticeSeconds > 0f)
+            {
+                Raylib.DrawText("Balancing reloaded", 20, 160, 20, new Color(230, 190, 90, 255));
+            }
 #endif
             Raylib.EndDrawing();
         }
@@ -277,6 +307,19 @@ static void DrawHud(bool isMouseCaptured, string displayVersion)
     var versionText = $"v{displayVersion}";
     var versionWidth = Raylib.MeasureText(versionText, 20);
     Raylib.DrawText(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
+}
+
+// Reads the balancing file; every problem with it goes into the log as a warning.
+static Balance LoadBalance(string path, FileLog? log)
+{
+    var result = BalanceFile.Load(path);
+    foreach (var warning in result.Warnings)
+    {
+        log?.Warning(warning);
+    }
+
+    log?.Info($"Balancing values loaded from '{path}' ({result.Warnings.Count} warnings).");
+    return result.Balance;
 }
 
 // Stamina for jumps: one segment per jump at the bottom centre. A segment fills up from left to right.
