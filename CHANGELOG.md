@@ -13,6 +13,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Schatzräume:** Jede Ebene hat einen Schatzraum und einen zweiten hinter einer **verschlossenen Tür**. Beide sind gegnerfreie Sackgassen mit 1–2 Kisten, hinter dem Schloss eher King's und Vampire's Chests. Sie liegen nie direkt am Start und nie hinter dem Boss; der Boss ist immer ohne Schlüssel erreichbar. Auf der Karte sind Schatzräume golden. Anzahl und Kisten-Anteile stehen in `balance.json` (`layout`, `chests`)
 - **Secret Room:** Jede Ebene versteckt einen Raum hinter einer Wand mit feinen Rissen an einem Kampfraum. Nur ein **voll aufgeladener Klingenhieb** bricht sie auf; normale Hiebe, Schüsse und F tun nichts. Bis dahin verrät auch die Karte nichts. Drinnen steht eine Kiste: Guard's, King's oder mit Glück Vampire's Chest. Auf der Karte ist der Secret Room violett
 
+### Behoben
+- Ein Durchlauf stand doppelt in `runs.log`, wenn man vom Endbildschirm zum Titel ging. Jetzt steht er genau einmal darin
+
 ## [0.8.0] – 2026-11-15 – Run-Grundgerüst
 
 Aus dem Testlevel wird ein Durchlauf: Jede Runde baut eine neue Ebene aus handgebauten Räumen, Kampfräume schließen sich zur Arena, je weiter man kommt, desto mehr wartet – mit Titel, Pause, Karte und einer Statistik am Ende.

@@ -182,6 +182,74 @@ public sealed class RunStatisticsTests : IDisposable
         Assert.Equal(0, restarted.Statistics.DamageTaken + restarted.Statistics.DamageDealt);
     }
 
+    // ---- The end of a run is handed out once (end screen and run log) -------------------------------------------
+
+    [Fact]
+    public void A_running_world_has_no_end_summary_yet()
+    {
+        var world = new GameWorld(LevelParser.Parse(Hall));
+        world.Tick(PlayerInput.None);
+
+        Assert.Null(world.TakeEndSummary());
+    }
+
+    [Fact]
+    public void A_lost_run_hands_out_its_summary_exactly_once()
+    {
+        var world = new GameWorld(LevelParser.Parse(Hall));
+        world.Player.TakeDamage(world.Player.MaxHealth, []);
+        world.Tick(PlayerInput.None);
+
+        var first = world.TakeEndSummary();
+        world.Tick(PlayerInput.None);
+        var second = world.TakeEndSummary();
+
+        Assert.NotNull(first);
+        Assert.Equal(RunOutcome.Lost, first.Outcome);
+        Assert.Null(second);
+    }
+
+    [Fact]
+    public void A_won_run_hands_out_its_summary_exactly_once()
+    {
+        // Start room in row 0, a door in row 1, an empty boss room behind it: entering it wins the run.
+        static List<(int X, int Z)> Rows(int from, int to) =>
+            Enumerable.Range(from, to - from + 1).SelectMany(z => new[] { (1, z), (2, z), (3, z) }).ToList();
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, Rows(0, 0), [], []),
+            new(1, RoomKind.Boss, "boss", 0, 2, 5, 4, 1, Rows(2, 5), [], []),
+        ];
+        var world = new GameWorld(
+            LevelParser.Parse("#.P.#\n##.##\n#...#\n#...#\n#...#\n#...#"), 1, Balance.Default,
+            [new LevelDoor(2, 1, 0, 1, RoomSide.South, DoorKind.Boss)], rooms);
+
+        world.Tick(PlayerInput.None with { Interact = true });
+        for (var i = 0; i < 3 * SimulationClock.TicksPerSecond && !world.IsWon; i++)
+        {
+            world.Tick(PlayerInput.None with { Move = new Vector2(0f, 1f) });
+        }
+
+        Assert.True(world.IsWon, "The run was not won - the test would prove nothing.");
+        Assert.Equal(RunOutcome.Won, world.TakeEndSummary()?.Outcome);
+        Assert.Null(world.TakeEndSummary());
+    }
+
+    [Fact]
+    public void A_new_try_has_its_own_end_summary_again()
+    {
+        var world = new GameWorld(LevelParser.Parse(Hall));
+        world.Player.TakeDamage(world.Player.MaxHealth, []);
+        world.Tick(PlayerInput.None);
+        world.TakeEndSummary();
+
+        var next = world.Restarted();
+        next.Player.TakeDamage(next.Player.MaxHealth, []);
+        next.Tick(PlayerInput.None);
+
+        Assert.NotNull(next.TakeEndSummary());
+    }
+
     // ---- The local run log ----------------------------------------------------------------------------------------
 
     private static readonly RunSummary Example = new(
