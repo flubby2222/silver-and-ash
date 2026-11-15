@@ -149,6 +149,23 @@ public sealed class Player
     /// <summary>Adds <paramref name="amount"/> picked-up silver.</summary>
     internal void AddSilver(int amount) => Silver += amount;
 
+    /// <summary>Keys in hand in this run - each fits every lock and is used up. 0 at the start and after death.</summary>
+    public int Keys { get; private set; }
+
+    /// <summary>Adds <paramref name="amount"/> picked-up keys.</summary>
+    internal void AddKeys(int amount) => Keys += amount;
+
+    /// <summary>Uses up one key (to unlock a door). There must be one.</summary>
+    internal void UseKey()
+    {
+        if (Keys <= 0)
+        {
+            throw new InvalidOperationException("The player has no key to use.");
+        }
+
+        Keys--;
+    }
+
     /// <summary>The player's level in this run - 1 at the start, back to 1 after death (a new world).</summary>
     public int Level { get; private set; } = 1;
 

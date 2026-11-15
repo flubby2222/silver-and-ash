@@ -8,6 +8,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ### Hinzugefügt
 - **Silber**, die Währung des Durchlaufs: Getötete Ghule und Fledermäuse lassen in der Hälfte der Fälle 1–3 Silber fallen, als kleinen Münzstapel am Boden. Drüberlaufen sammelt es ein. Oben rechts zeigt der Zähler „SILVER“; der Endbildschirm und `runs.log` nennen das gesammelte Silber. Ein neuer Durchlauf beginnt bei 0. Einstellbar in `balance.json` unter `silver`. Ausgeben kann man es ab v0.11 beim Händler
+- **Schlüssel und verschlossene Türen:** Ein geräumter Kampfraum lässt mit 15 % einen goldenen Schlüssel in seiner Mitte liegen, ein getöteter Gegner mit 5 %. Drüberlaufen sammelt ihn ein, der Zähler „KEYS“ steht unter dem Silber. Verschlossene Türen sind aus dunklem Eisen mit Vorhängeschloss (auf der Karte golden): Mit Schlüssel öffnet **F** sie („[F] Unlock (1 key)“) und verbraucht einen, ohne Schlüssel steht dort „Locked - needs a key“. Schlüssel gelten nur für den Durchlauf. Einstellbar in `balance.json` unter `keys`. Die verschlossenen Türen setzt der Generator mit den Schatzräumen ein
 
 ## [0.8.0] – 2026-11-15 – Run-Grundgerüst
 

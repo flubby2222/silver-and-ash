@@ -6,7 +6,7 @@ namespace SilverAndAsh.Core.Gameplay;
 /// <summary>
 /// A door between two rooms. It fills one cell of the level: while closed or barred, the world treats that cell as
 /// wall (so it blocks walking, sight, shots, blood bolts and the enemies' way-finding). Once open it stays open -
-/// only an arena's grate can block it for a while.
+/// only an arena's grate can block it for a while. A locked door needs a key (<see cref="Player.Keys"/>) to open.
 /// </summary>
 public sealed class Door : IInteractable
 {
@@ -57,10 +57,20 @@ public sealed class Door : IInteractable
     /// <summary>True if nothing can pass: closed, or barred.</summary>
     public bool Blocks => !IsOpen || IsBarred;
 
-    public string Prompt => "Open";
+    /// <summary>Every closed door that is not barred is offered - a locked one too, to say that it needs a key.</summary>
+    public bool CanInteract => !IsOpen && !IsBarred;
 
-    /// <summary>Wooden and boss doors open with F - unless barred. Locked doors need keys (later).</summary>
-    public bool CanInteract => !IsOpen && !IsBarred && Kind is DoorKind.Normal or DoorKind.Boss;
+    /// <summary>Wooden and boss doors open with F. A locked door opens with F only for a player with a key, and uses it up.</summary>
+    public InteractionOffer OfferFor(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        if (Kind != DoorKind.Locked)
+        {
+            return new("Open", true);
+        }
+
+        return player.Keys > 0 ? new("Unlock (1 key)", true) : new("Locked - needs a key", false);
+    }
 
     public Vector3 BoxMin { get; }
 

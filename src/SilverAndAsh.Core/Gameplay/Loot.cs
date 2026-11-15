@@ -3,21 +3,31 @@ using SilverAndAsh.Core.Physics;
 
 namespace SilverAndAsh.Core.Gameplay;
 
+/// <summary>What a piece of <see cref="Loot"/> is.</summary>
+public enum LootKind
+{
+    /// <summary>Silver coins, the currency of a run (<see cref="Player.Silver"/>).</summary>
+    Silver,
+
+    /// <summary>A key: fits every lock and is used up (<see cref="Player.Keys"/>).</summary>
+    Key,
+}
+
 /// <summary>
-/// A few silver coins lying in the level - dropped by a killed enemy today, later also by chests. Silver is the
-/// currency of a run (decision records 0005 and 0006): it falls to the floor and waits there until a living player
-/// walks over it; that player's <see cref="Player.Silver"/> goes up by <see cref="Amount"/>. Unlike a consumable it
-/// is always taken.
+/// Something of value lying in the level - silver or a key, dropped by a killed enemy or a cleared room today, later
+/// also by chests (decision records 0005 and 0006). It falls to the floor and waits there until a living player walks
+/// over it; that player gets <see cref="Amount"/> of it. Unlike a consumable it is always taken.
 /// </summary>
-public sealed class SilverPile
+public sealed class Loot
 {
     private Vector3 _velocity;
 
-    /// <summary>Creates a pile worth <paramref name="amount"/> at <paramref name="position"/> (the bottom of its body; it falls from there).</summary>
-    public SilverPile(int id, int amount, Vector3 position)
+    /// <summary>Creates loot worth <paramref name="amount"/> at <paramref name="position"/> (the bottom of its body; it falls from there).</summary>
+    public Loot(int id, LootKind kind, int amount, Vector3 position)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
         Id = id;
+        Kind = kind;
         Amount = amount;
         Position = position;
         PreviousPosition = position;
@@ -25,7 +35,9 @@ public sealed class SilverPile
 
     public int Id { get; }
 
-    /// <summary>How much silver it is worth.</summary>
+    public LootKind Kind { get; }
+
+    /// <summary>How much it is worth: silver coins, or keys.</summary>
     public int Amount { get; }
 
     /// <summary>Bottom centre of its body in world coordinates.</summary>

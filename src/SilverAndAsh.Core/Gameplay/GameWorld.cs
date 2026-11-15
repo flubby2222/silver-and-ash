@@ -27,8 +27,8 @@ public sealed class GameWorld
     private readonly List<Pickup> _pickups = [];
     private readonly HashSet<int> _dropsRolled = [];
     private int _nextPickupId;
-    private readonly List<SilverPile> _silverPiles = [];
-    private int _nextSilverPileId;
+    private readonly List<Loot> _loot = [];
+    private int _nextLootId;
     private int _nextProjectileId;
     private readonly Level _levelWithOpenDoors;
     private readonly IReadOnlyList<LevelDoor> _doorPlan;
@@ -223,14 +223,20 @@ public sealed class GameWorld
         return nearest;
     }
 
-    /// <summary>Everything that can be used with F. Doors today; chests, locks and people later.</summary>
+    /// <summary>Everything that can be used with F. Doors today; chests and people later.</summary>
     private IEnumerable<IInteractable> Interactables => _doors;
 
     private void Interact(Player player)
     {
         switch (InteractionTarget(player))
         {
-            case Door door:
+            case Door door when door.OfferFor(player).IsPossible:
+                if (door.Kind == DoorKind.Locked)
+                {
+                    player.UseKey();
+                    _events.Add(new DoorUnlocked(door.Id, player.Id));
+                }
+
                 OpenDoor(door);
                 break;
         }
@@ -285,6 +291,7 @@ public sealed class GameWorld
         {
             room.Clear();
             _events.Add(new RoomCleared(room.Index));
+            MaybeDropKeyIn(room);
             WinIfBoss(room);
             return;
         }
@@ -313,6 +320,7 @@ public sealed class GameWorld
             room.Clear();
             UpdateLevel();
             _events.Add(new RoomCleared(room.Index));
+            MaybeDropKeyIn(room);
             WinIfBoss(room);
         }
     }
@@ -377,13 +385,17 @@ public sealed class GameWorld
     /// <summary>Consumables lying in the level (taken ones are removed after each tick).</summary>
     public IReadOnlyList<Pickup> Pickups => _pickups;
 
-    /// <summary>Silver lying in the level (taken piles are removed after each tick).</summary>
-    public IReadOnlyList<SilverPile> SilverPiles => _silverPiles;
+    /// <summary>Silver and keys lying in the level (taken ones are removed after each tick).</summary>
+    public IReadOnlyList<Loot> Loot => _loot;
+
+    /// <summary>The silver among <see cref="Loot"/>.</summary>
+    public IReadOnlyList<Loot> SilverPiles => _loot.Where(loot => loot.Kind == LootKind.Silver).ToList();
 
     /// <summary>
     /// Every enemy that died since the last tick gets exactly one chance to drop a consumable (its own chance from
     /// <see cref="DropsBalance"/>, rolled with the world's random generator) and may drop silver
-    /// (<see cref="SilverBalance"/>, rolled with the loot's own random generator). Both appear where it died.
+    /// (<see cref="SilverBalance"/>) and a key (<see cref="KeysBalance"/>), both rolled with the loot's own random
+    /// generator. Everything appears where it died.
     /// </summary>
     private void DropFromTheDead()
     {
@@ -391,12 +403,14 @@ public sealed class GameWorld
         {
             MaybeDrop(Balance.Drops.GhoulChance, ghoul.Position);
             DropSilver(Balance.Silver.GhoulChance, Balance.Silver.GhoulMin, Balance.Silver.GhoulMax, ghoul.Position);
+            MaybeDropKey(Balance.Keys.EnemyChance, ghoul.Position);
         }
 
         foreach (var bat in _bats.Where(bat => bat.IsDead && _dropsRolled.Add(bat.Id)))
         {
             MaybeDrop(Balance.Drops.BatChance, bat.Position);
             DropSilver(Balance.Silver.BatChance, Balance.Silver.BatMin, Balance.Silver.BatMax, bat.Position);
+            MaybeDropKey(Balance.Keys.EnemyChance, bat.Position);
         }
     }
 
@@ -417,29 +431,65 @@ public sealed class GameWorld
             return;
         }
 
-        var pile = new SilverPile(_nextSilverPileId++, amount, position);
-        _silverPiles.Add(pile);
+        var pile = new Loot(_nextLootId++, LootKind.Silver, amount, position);
+        _loot.Add(pile);
         _events.Add(new SilverDropped(pile.Id, amount, position));
     }
 
-    /// <summary>Silver falls to the floor; a living player who touches a pile takes it (always - silver is never wasted).</summary>
-    private void MoveSilver()
+    /// <summary>With <paramref name="chance"/>, drops one key at <paramref name="position"/>.</summary>
+    private void MaybeDropKey(float chance, Vector3 position)
     {
-        foreach (var pile in _silverPiles)
+        if (_lootRandom.NextDouble() >= chance)
         {
-            pile.Fall(Level, Balance.Player.Gravity);
-            var taker = Players.FirstOrDefault(player => !player.IsDead && BodiesTouch(player.Body, pile.Body));
+            return;
+        }
+
+        var key = new Loot(_nextLootId++, LootKind.Key, 1, position);
+        _loot.Add(key);
+        _events.Add(new KeyDropped(key.Id, position));
+    }
+
+    /// <summary>A cleared room may leave a key, on the floor cell nearest to its middle.</summary>
+    private void MaybeDropKeyIn(RoomState room)
+    {
+        var middleX = (float)room.Cells.Average(cell => cell.X);
+        var middleZ = (float)room.Cells.Average(cell => cell.Z);
+        var (x, z) = room.Cells
+            .OrderBy(cell => ((cell.X - middleX) * (cell.X - middleX)) + ((cell.Z - middleZ) * (cell.Z - middleZ)))
+            .ThenBy(cell => cell.Z)
+            .ThenBy(cell => cell.X)
+            .First();
+        var floor = new Vector3((x + 0.5f) * Level.CellSize, Level[x, z].FloorHeight, (z + 0.5f) * Level.CellSize);
+        MaybeDropKey(Balance.Keys.RoomChance, floor);
+    }
+
+    /// <summary>Loot falls to the floor; a living player who touches it takes it (always - nothing of value is wasted).</summary>
+    private void MoveLoot()
+    {
+        foreach (var loot in _loot)
+        {
+            loot.Fall(Level, Balance.Player.Gravity);
+            var taker = Players.FirstOrDefault(player => !player.IsDead && BodiesTouch(player.Body, loot.Body));
             if (taker is null)
             {
                 continue;
             }
 
-            pile.IsTaken = true;
-            taker.AddSilver(pile.Amount);
-            _events.Add(new SilverTaken(pile.Id, taker.Id, pile.Amount));
+            loot.IsTaken = true;
+            switch (loot.Kind)
+            {
+                case LootKind.Silver:
+                    taker.AddSilver(loot.Amount);
+                    _events.Add(new SilverTaken(loot.Id, taker.Id, loot.Amount));
+                    break;
+                case LootKind.Key:
+                    taker.AddKeys(loot.Amount);
+                    _events.Add(new KeyTaken(loot.Id, taker.Id));
+                    break;
+            }
         }
 
-        _silverPiles.RemoveAll(pile => pile.IsTaken);
+        _loot.RemoveAll(loot => loot.IsTaken);
     }
 
     private void MaybeDrop(float chance, Vector3 position)
@@ -768,7 +818,7 @@ public sealed class GameWorld
         MoveProjectiles();
         DropFromTheDead();
         MovePickups();
-        MoveSilver();
+        MoveLoot();
         ClearRooms();
 
         // The clock of the run stops with victory or defeat; this tick still counts.

@@ -21,6 +21,8 @@ internal sealed class PickupView
     private static readonly Color HolyGlow = new(245, 250, 255, 255);
     private static readonly Color Coin = new(150, 156, 170, 255);
     private static readonly Color CoinGlint = new(240, 244, 255, 255);
+    private static readonly Color KeyGold = new(196, 150, 60, 255);
+    private static readonly Color KeyGlow = new(255, 214, 120, 255);
 
     private float _time;
 
@@ -52,17 +54,24 @@ internal sealed class PickupView
     }
 
     /// <summary>
-    /// Silver lying in the level: a small stack of coins on the floor (one coin per silver, at most five), turning
-    /// slowly, its top coin glinting now and then so it catches the eye in the dark.
+    /// Loot lying in the level. Silver: a small stack of coins on the floor (one coin per silver, at most five),
+    /// turning slowly, its top coin glinting now and then so it catches the eye in the dark. A key: golden, floating
+    /// and turning like a consumable.
     /// </summary>
-    public void DrawSilver(IReadOnlyList<SilverPile> piles, float alpha)
+    public void DrawLoot(IReadOnlyList<Loot> loot, float alpha)
     {
-        foreach (var pile in piles)
+        foreach (var piece in loot)
         {
-            var bottom = Vector3.Lerp(pile.PreviousPosition, pile.Position, alpha);
-            var place = Matrix4x4.CreateRotationY(_time * 0.8f + pile.Id) * Matrix4x4.CreateTranslation(bottom);
-            var glint = MathF.Max(0f, MathF.Sin(_time * 3f + pile.Id * 1.7f));
-            var coins = Math.Min(pile.Amount, 5);
+            var bottom = Vector3.Lerp(piece.PreviousPosition, piece.Position, alpha);
+            if (piece.Kind == LootKind.Key)
+            {
+                DrawKey(bottom, piece.Id);
+                continue;
+            }
+
+            var place = Matrix4x4.CreateRotationY(_time * 0.8f + piece.Id) * Matrix4x4.CreateTranslation(bottom);
+            var glint = MathF.Max(0f, MathF.Sin(_time * 3f + piece.Id * 1.7f));
+            var coins = Math.Min(piece.Amount, 5);
             for (var coin = 0; coin < coins; coin++)
             {
                 // Each coin a little off the one below, like a careless stack.
@@ -71,6 +80,20 @@ internal sealed class PickupView
                 ShadedBox.Draw(Matrix4x4.CreateTranslation(shift) * place, new Vector3(0.11f, 0.02f, 0.11f), colour);
             }
         }
+    }
+
+    /// <summary>An old key standing upright: a ring bow on top, a shaft, a bit at the bottom - glowing gold.</summary>
+    private void DrawKey(Vector3 bottom, int id)
+    {
+        var hover = 0.18f + MathF.Sin(_time * 2.5f + id) * 0.04f;
+        var place = Matrix4x4.CreateRotationY(_time * 1.8f + id) * Matrix4x4.CreateTranslation(bottom + new Vector3(0f, hover, 0f));
+        var gold = Blend(KeyGold, KeyGlow, 0.5f + 0.5f * MathF.Sin(_time * 5f + id));
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.32f, 0f) * place, new Vector3(0.12f, 0.025f, 0.03f), gold);  // bow top
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.22f, 0f) * place, new Vector3(0.12f, 0.025f, 0.03f), gold);  // bow bottom
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(-0.05f, 0.27f, 0f) * place, new Vector3(0.025f, 0.1f, 0.03f), gold); // bow left
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0.05f, 0.27f, 0f) * place, new Vector3(0.025f, 0.1f, 0.03f), gold);  // bow right
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.12f, 0f) * place, new Vector3(0.03f, 0.18f, 0.03f), gold);    // shaft
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0.04f, 0.05f, 0f) * place, new Vector3(0.06f, 0.04f, 0.03f), gold);  // bit
     }
 
     /// <summary>A red glass vial: the blood inside pulses, dark glass around a glowing core.</summary>

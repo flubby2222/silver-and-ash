@@ -119,7 +119,7 @@ public class DoorTests
         var target = world.InteractionTarget(world.Player);
 
         Assert.Same(world.Doors[0], target);
-        Assert.Equal("Open", target!.Prompt);
+        Assert.Equal(new InteractionOffer("Open", true), target!.OfferFor(world.Player));
     }
 
     [Fact]
@@ -146,15 +146,17 @@ public class DoorTests
     }
 
     // The arena grate is no kind of door any more but a state of every door (IsBarred) - see ArenaTests.
+    // A locked door is offered - to say that it needs a key - but F does nothing without one (more in KeyTests).
     [Theory]
     [InlineData(DoorKind.Locked)]
-    public void Locked_doors_do_not_open_with_F(DoorKind kind)
+    public void Locked_doors_do_not_open_with_F_without_a_key(DoorKind kind)
     {
         var world = new GameWorld(LevelParser.Parse(Hall), 1, Balance.Default, [new LevelDoor(1, 1, 0, 1, RoomSide.South, kind)]);
 
         Run(world, PressF, 1);
 
-        Assert.Null(world.InteractionTarget(world.Player));
+        Assert.Same(world.Doors[0], world.InteractionTarget(world.Player));
+        Assert.False(world.Doors[0].OfferFor(world.Player).IsPossible);
         Assert.False(world.Doors[0].IsOpen);
     }
 

@@ -45,6 +45,9 @@ public sealed record Balance
     /// <summary>How much silver killed enemies leave behind.</summary>
     public SilverBalance Silver { get; init; } = new();
 
+    /// <summary>How often keys drop.</summary>
+    public KeysBalance Keys { get; init; } = new();
+
     /// <summary>The blood vial: a consumable that heals.</summary>
     public BloodVialBalance BloodVial { get; init; } = new();
 
@@ -135,6 +138,16 @@ public sealed record SilverBalance
 
     /// <summary>Most silver a killed bat drops.</summary>
     public int BatMax { get; init; } = 3;
+}
+
+/// <summary>Keys open locked doors; each fits every lock and is used up. Chances: 0 = never, 1 = always.</summary>
+public sealed record KeysBalance
+{
+    /// <summary>Chance that a cleared combat (or boss) room leaves a key in its middle.</summary>
+    public float RoomChance { get; init; } = 0.15f;
+
+    /// <summary>Chance that a killed enemy drops a key.</summary>
+    public float EnemyChance { get; init; } = 0.05f;
 }
 
 /// <summary>Balancing values of consecrated ammunition.</summary>
