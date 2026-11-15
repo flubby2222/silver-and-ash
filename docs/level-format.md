@@ -55,6 +55,8 @@ dotnet run --project src/SilverAndAsh.Game -- --seed 123
 
 **Sieg (vorläufig):** Ist der Bossraum geräumt, ist der Durchlauf gewonnen. Troll und Wendeltreppe kommen in v0.10.
 
+**Ende eines Durchlaufs:** Nach dem Tod (2 s später) bzw. dem Sieg (2 s später) erscheint „YOU DIED“ / „VICTORY“ mit der Statistik des Durchlaufs und der Wahl „New run“ / „Title“. Die Statistik wird außerdem als Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log` geschrieben.
+
 Die alten **handgebauten Level** aus `assets/levels/` startet man mit `--level <name>` (Dateiname ohne `.txt`). Sie haben keine Räume und Türen, alle Gegner sind von Anfang an wach, und nach dem Tod beginnt dasselbe Level von vorn:
 
 ```

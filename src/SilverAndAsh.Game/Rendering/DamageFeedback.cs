@@ -6,7 +6,7 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// What the player sees when hurt: a red flash at the screen's edges and a short jolt of the camera.
-/// At death the picture turns red and "YOU DIED" appears. When healed, "+50" rises next to the health bar.
+/// At death the picture turns red (the end screen with "YOU DIED" follows). When healed, "+50" rises next to the health bar.
 /// (A level up shows the bonus window instead - <see cref="BoonWindow"/>.) Pure presentation - Core reports
 /// <see cref="PlayerHit"/>, <see cref="PlayerDied"/> and <see cref="PlayerHealed"/>.
 /// </summary>
@@ -91,12 +91,8 @@ internal sealed class DamageFeedback
 
         if (_deathFade > 0f)
         {
+            // Only the red: "YOU DIED" with the numbers of the run follows on the end screen.
             Raylib.DrawRectangle(0, 0, width, height, new Color(90, 0, 8, (int)(170 * _deathFade)));
-
-            const string Text = "YOU DIED";
-            const int Size = 64;
-            var textWidth = Raylib.MeasureText(Text, Size);
-            Raylib.DrawText(Text, (width - textWidth) / 2, height / 2 - Size, Size, new Color(235, 220, 220, (int)(255 * _deathFade)));
         }
     }
 }

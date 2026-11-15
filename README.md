@@ -37,3 +37,5 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | Esc | Menü: weiter, Mausempfindlichkeit, zum Titel, beenden (allein steht das Spiel solange still) |
 
 **Einstellungen** (heute nur die Mausempfindlichkeit) speichert das Spiel lokal in `%LOCALAPPDATA%\SilverAndAsh\settings.json` – kein Spielstand, nichts wird verschickt. Fehlt die Datei oder ist sie kaputt, gelten die Standardwerte.
+
+**Run-Statistik:** Jeder beendete Durchlauf (Tod oder Sieg) landet als eine Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log`, z. B. `2026-11-15 18:40:12 | won | seed 123 | 12:34 | ghouls 31 | bats 9 | dealt 4210 | taken 380 | level 6 | rooms 9/9`. Auch das bleibt auf dem eigenen Rechner.
