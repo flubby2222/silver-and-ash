@@ -51,7 +51,9 @@ public static class BalanceFile
         "experience.ghoul", "experience.bat",
         "boons.staminaRegen", "boons.health", "boons.damage", "boons.experience",
         "layout.corridorChance", "layout.maxLoops", "layout.treasureRooms", "layout.lockedTreasureRooms", "layout.secretRooms",
-        "difficulty.ghoulShareNear", "difficulty.ghoulShareFar", "difficulty.batShareNear", "difficulty.batShareFar",
+        "difficulty.budgetNear", "difficulty.budgetFar", "difficulty.budgetBoss",
+        "difficulty.ghoulWeightNear", "difficulty.ghoulWeightFar", "difficulty.batWeightNear", "difficulty.batWeightFar",
+        "difficulty.doorDistance", "difficulty.spacing",
     };
 
     /// <summary>Highest sensible values. A jump may at most bring the head up to the ceiling.</summary>
@@ -78,10 +80,6 @@ public static class BalanceFile
         ["chests.vampire.bloodVialChance"] = 1,
         ["silver.batChance"] = 1,
         ["layout.corridorChance"] = 1,
-        ["difficulty.ghoulShareNear"] = 1,
-        ["difficulty.ghoulShareFar"] = 1,
-        ["difficulty.batShareNear"] = 1,
-        ["difficulty.batShareFar"] = 1,
     };
 
     /// <summary>Values that must stay below a limit (a penalty of 100 % would mean standing still).</summary>

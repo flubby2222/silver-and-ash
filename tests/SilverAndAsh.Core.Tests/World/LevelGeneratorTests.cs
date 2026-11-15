@@ -400,8 +400,6 @@ public class LevelGeneratorTests
                 var floor = room.FloorCells.ToHashSet();
                 Assert.All(room.GhoulSlots.Concat(room.BatSlots), slot => Assert.Contains(slot, floor));
             });
-
-            Assert.Contains(generated.Rooms, room => room.GhoulSlots.Count > 0);
         });
     }
 

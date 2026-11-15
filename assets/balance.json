@@ -165,11 +165,21 @@
     "secretRooms": 1                    // secret rooms per level, behind a cracked wall of a combat room
   },
 
+  // Spawn budget: each combat room buys enemies with its budget (near the start -> farthest, evenly in between; the boss
+  // room has its own). Each kind costs points; weights (near -> far) decide which kind comes next. Enemies stand on
+  // random free floor, keeping away from the doors and from each other. Every combat room gets at least one enemy.
   "difficulty": {
-    "ghoulShareNear": 0.7,              // the combat room nearest to the start fills 70 % of its ghoul places ...
-    "ghoulShareFar": 1,                 // ... the farthest one (and the boss room) all of them; in between it rises evenly
-    "batShareNear": 0.25,               // bats: a quarter of the places near the start ...
-    "batShareFar": 1                    // ... all places far away. Every combat room gets at least one enemy
+    "budgetNear": 10,                   // budget of the combat room nearest to the start ...
+    "budgetFar": 20,                    // ... and of the farthest one
+    "budgetBoss": 22,                   // the boss room
+    "ghoulCost": 2,
+    "batCost": 3,
+    "ghoulWeightNear": 0.85,            // near the start mostly ghouls ...
+    "ghoulWeightFar": 0.6,
+    "batWeightNear": 0.15,              // ... far away more bats
+    "batWeightFar": 0.4,
+    "doorDistance": 4,                  // m: no enemy closer than this to a door of its room
+    "spacing": 2.5                      // m: no two enemies closer than this
   },
 
   "bloodBolt": {

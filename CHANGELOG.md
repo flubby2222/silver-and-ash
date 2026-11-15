@@ -11,6 +11,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Blutphiolen auf der Karte:** Eine liegen gelassene Blutphiole in einem schon entdeckten Raum erscheint auf der Karte (M) als roter Punkt. Hebt man sie auf, verschwindet der Punkt
 
 ### Geändert
+- **Gegner stehen jedes Mal anders:** Statt fester Plätze bekommt jeder Kampfraum ein Gegner-Budget, das weiter vom Start wächst. Davon kauft er Ghule und Fledermäuse (hinten mehr Fledermäuse) und stellt sie auf zufällige freie Felder, mit Abstand zu den Türen und zueinander. Insgesamt etwa so viele Gegner wie bisher. Einstellbar in `balance.json` unter `difficulty`
 - Der **Startraum hat nur noch eine Tür**. Der Ausgang liegt je Durchlauf in einer anderen Richtung, und der Weg zum Boss wird etwas länger
 
 ## [0.9.0] – 2026-11-15 – Schatz & Wirtschaft

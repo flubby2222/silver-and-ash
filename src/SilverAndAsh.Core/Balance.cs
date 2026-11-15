@@ -275,23 +275,45 @@ public sealed record LayoutBalance
 }
 
 /// <summary>
-/// Which share of a combat room's enemy places is taken: "near" in the combat room nearest to the start, "far" in the
-/// farthest one (and in the boss room), rising evenly in between. 0 = none, 1 = all. Every combat room gets at least
-/// one enemy.
+/// The spawn budget (issue #157): every combat room buys enemies with a budget - "near" in the combat room nearest to
+/// the start, "far" in the farthest, evenly in between; the boss room has its own. Each kind of enemy costs points, and
+/// weights (also "near" to "far") decide which kind comes next. Enemies stand on random free floor, keeping away from the
+/// doors and from each other. Every combat room gets at least one enemy.
 /// </summary>
 public sealed record DifficultyBalance
 {
-    /// <summary>Share of ghoul places taken in the nearest combat room.</summary>
-    public float GhoulShareNear { get; init; } = 0.7f;
+    /// <summary>Budget of the combat room nearest to the start.</summary>
+    public int BudgetNear { get; init; } = 10;
 
-    /// <summary>Share of ghoul places taken in the farthest combat room and the boss room.</summary>
-    public float GhoulShareFar { get; init; } = 1f;
+    /// <summary>Budget of the farthest combat room.</summary>
+    public int BudgetFar { get; init; } = 20;
 
-    /// <summary>Share of bat places taken in the nearest combat room.</summary>
-    public float BatShareNear { get; init; } = 0.25f;
+    /// <summary>Budget of the boss room.</summary>
+    public int BudgetBoss { get; init; } = 22;
 
-    /// <summary>Share of bat places taken in the farthest combat room and the boss room.</summary>
-    public float BatShareFar { get; init; } = 1f;
+    /// <summary>What a ghoul costs.</summary>
+    public int GhoulCost { get; init; } = 2;
+
+    /// <summary>What a bat costs.</summary>
+    public int BatCost { get; init; } = 3;
+
+    /// <summary>Weight of ghouls near the start (the weights of all kinds count in proportion).</summary>
+    public float GhoulWeightNear { get; init; } = 0.85f;
+
+    /// <summary>Weight of ghouls far from the start (and in the boss room).</summary>
+    public float GhoulWeightFar { get; init; } = 0.6f;
+
+    /// <summary>Weight of bats near the start.</summary>
+    public float BatWeightNear { get; init; } = 0.15f;
+
+    /// <summary>Weight of bats far from the start (and in the boss room).</summary>
+    public float BatWeightFar { get; init; } = 0.4f;
+
+    /// <summary>Least distance (metres, cell middle to cell middle) of an enemy from the room's doors.</summary>
+    public float DoorDistance { get; init; } = 4f;
+
+    /// <summary>Least distance (metres) between two enemies of a room.</summary>
+    public float Spacing { get; init; } = 2.5f;
 }
 
 /// <summary>Balancing values of the blood vial.</summary>

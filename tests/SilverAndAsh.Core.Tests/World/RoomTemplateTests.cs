@@ -238,7 +238,12 @@ public class RoomTemplateTests
         {
             Assert.InRange(room.Width, 10, 18);
             Assert.InRange(room.Depth, 10, 18);
-            Assert.True(room.GhoulSlots.Count + room.BatSlots.Count >= 3, $"{room.Name} has too few enemy places.");
+            // Enemies stand on free floor away from the doors (spawn budget): there must be plenty of it.
+            var doorDistance = Balance.Default.Difficulty.DoorDistance / Level.CellSize;
+            var free = Enumerable.Range(0, room.Width).SelectMany(x => Enumerable.Range(0, room.Depth).Select(z => (x, z)))
+                .Where(cell => !room.CellAt(cell.x, cell.z).IsSolid)
+                .Count(cell => room.DoorSlots.All(door => Math.Sqrt(Math.Pow(cell.x - door.X, 2) + Math.Pow(cell.z - door.Z, 2)) >= doorDistance));
+            Assert.True(free >= 30, $"{room.Name} has only {free} free cells away from its doors.");
         });
     }
 }
