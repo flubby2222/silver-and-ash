@@ -603,6 +603,13 @@ public sealed class GameWorld
     {
         _events.Clear();
 
+        // Esc menu: the world stands still while every player has paused (online co-op rule 2: the pause is input
+        // like everything else). There is one player for now, so their input decides.
+        if (input.Paused)
+        {
+            return;
+        }
+
         // A level up waits for its bonus: the world stands still until the choice comes in as input
         // (online co-op rule 2 - everything that changes the game is tick input).
         var choosing = Players.FirstOrDefault(player => player.PendingBoons > 0);
