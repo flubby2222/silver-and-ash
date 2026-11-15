@@ -67,6 +67,8 @@ Leitlinie dabei: **Online-Coop bleibt möglich** ([0003](https://github.com/flub
 
 ### Boss von Ebene 0: Troll mit Keule und Kette
 
+> Einzelheiten (Name „Gorm, the Chained“, Werte, Ausweichen, Sieg) in [ADR 0007](0007-boss-gorm-luft-dash.md).
+
 | Angriff | Ankündigung | Ausweichen |
 |---|---|---|
 | Keulen-Hammerschlag | Keule hoch, 0,8 s | Schockwelle am Boden → **springen** |
