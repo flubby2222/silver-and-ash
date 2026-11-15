@@ -11,6 +11,7 @@ Entscheidungen werden nicht gelöscht. Ändert sich etwas, kommt eine neue Notiz
 
 | Nr. | Titel | Status |
 |---|---|---|
-| [0001](0001-projektgrundlagen.md) | Projektgrundlagen | angenommen, teilweise abgelöst durch 0004 |
+| [0001](0001-projektgrundlagen.md) | Projektgrundlagen | angenommen, teilweise abgelöst durch 0004 und 0005 |
 | [0002](0002-spiellogik-von-anfang-an-3d.md) | Spiellogik von Anfang an in 3D | angenommen |
-| [0004](0004-fortschritt-stufen-beute-skills.md) | Fortschritt: Stufen, Beute, Skills | angenommen |
+| [0004](0004-fortschritt-stufen-beute-skills.md) | Fortschritt: Stufen, Beute, Skills | angenommen, teilweise abgelöst durch 0005 |
+| [0005](0005-ebenen-raeume-durchlauf.md) | Ebenen, Räume und Durchlauf | angenommen |

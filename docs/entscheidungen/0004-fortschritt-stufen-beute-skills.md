@@ -1,6 +1,6 @@
 # 0004 – Fortschritt: Stufen, Beute, Skills
 
-- **Status:** angenommen
+- **Status:** angenommen, teilweise abgelöst durch [0005](0005-ebenen-raeume-durchlauf.md) (was davon zu 1.0 gehört, Bonus-Wahl ohne Stillstand)
 - **Datum:** 2026-11-15
 - **Löst ab:** in [0001](0001-projektgrundlagen.md) die Zeilen zu *Blutrausch*, *Items* und den Meilenstein v0.7
 
