@@ -42,7 +42,7 @@ internal static class CombatHud
             DrawCharge(centreX, centreY + 16, player.BladeCharge.Fraction);
         }
 
-        DrawHealth(player.Health);
+        DrawHealth(player.Health, player.MaxHealth);
     }
 
     /// <summary>Four short lines with a gap in the middle and a dot, with a dark outline so it shows on any wall.</summary>
@@ -92,12 +92,12 @@ internal static class CombatHud
     }
 
     /// <summary>Health at the bottom left, above the frame counter: a blood-red bar with the number next to it.</summary>
-    private static void DrawHealth(int health)
+    private static void DrawHealth(int health, int maxHealth)
     {
         const int Width = 180;
         const int Height = 10;
         var top = Raylib.GetScreenHeight() - 56;
-        var fraction = Math.Clamp((float)health / Tuning.Combat.PlayerMaxHealth, 0f, 1f);
+        var fraction = Math.Clamp((float)health / maxHealth, 0f, 1f);
 
         Raylib.DrawText("HEALTH", 20, top - 20, 16, TextColor);
         Raylib.DrawRectangle(20, top, Width, Height, Track);

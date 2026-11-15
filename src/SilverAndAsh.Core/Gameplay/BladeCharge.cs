@@ -2,8 +2,8 @@ namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
 /// Charging the silver blade: hold the button, release to swing harder. Linear from 0 (released at once) to 1
-/// (held for <see cref="Tuning.Combat.BladeChargeTime"/>). Charging costs up to
-/// <see cref="Tuning.Combat.BladeChargeStaminaSegments"/> stamina segments, linearly as well - and stops when the
+/// (held for <see cref="BladeBalance.ChargeTime"/>). Charging costs up to
+/// <see cref="BladeBalance.ChargeStaminaSegments"/> stamina segments, linearly as well - and stops when the
 /// stamina cannot pay for the next bit.
 /// <para>
 /// Its own small class (like <see cref="Cooldown"/>): the player only starts, ticks and releases it, and what the
@@ -12,17 +12,25 @@ namespace SilverAndAsh.Core.Gameplay;
 /// </summary>
 public sealed class BladeCharge
 {
-    private static readonly int FullTicks = SimulationClock.SecondsToTicks(Tuning.Combat.BladeChargeTime);
-    private static readonly int FullCost = Stamina.CostPerSegment * Tuning.Combat.BladeChargeStaminaSegments;
+    private readonly int _fullTicks;
+    private readonly int _segments;
 
     private int _ticks;
     private int _paid;
+
+    /// <summary>Not charging; as slow and as costly as <paramref name="balance"/> says (the standard values if none is given).</summary>
+    public BladeCharge(BladeBalance? balance = null)
+    {
+        balance ??= Balance.Default.Blade;
+        _fullTicks = SimulationClock.SecondsToTicks(balance.ChargeTime);
+        _segments = balance.ChargeStaminaSegments;
+    }
 
     /// <summary>True while the button is held and the blade is being charged.</summary>
     public bool IsCharging { get; private set; }
 
     /// <summary>How far the blade is charged: 0 = not at all, 1 = fully.</summary>
-    public float Fraction => (float)_ticks / FullTicks;
+    public float Fraction => (float)_ticks / _fullTicks;
 
     /// <summary>Starts charging (the button was just pressed).</summary>
     public void Start()
@@ -39,14 +47,15 @@ public sealed class BladeCharge
     public void Tick(Stamina stamina)
     {
         ArgumentNullException.ThrowIfNull(stamina);
-        if (!IsCharging || _ticks >= FullTicks)
+        if (!IsCharging || _ticks >= _fullTicks)
         {
             return;
         }
 
         // Whole numbers: what should be paid after one more tick, minus what was paid already. Rounded UP, so every
         // tick costs something - rounded down, the first tick was free and an empty bar could still charge a bit.
-        var owed = ((_ticks + 1) * FullCost + FullTicks - 1) / FullTicks;
+        var fullCost = stamina.CostPerSegment * _segments;
+        var owed = ((_ticks + 1) * fullCost + _fullTicks - 1) / _fullTicks;
         if (stamina.TryPayPart(owed - _paid))
         {
             _ticks++;
@@ -65,7 +74,7 @@ public sealed class BladeCharge
     }
 }
 
-/// <summary>Damage rule: a charged blade hits harder, linearly up to <see cref="Tuning.Combat.BladeChargeMaxMultiplier"/>.</summary>
+/// <summary>Damage rule: a charged blade hits harder, linearly up to <see cref="BladeBalance.ChargeMaxMultiplier"/>.</summary>
 public sealed record ChargeBonus(float MaxMultiplier) : IDamageRule
 {
     public bool IsCritical => false;

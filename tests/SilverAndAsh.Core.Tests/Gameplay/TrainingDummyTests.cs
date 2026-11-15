@@ -5,7 +5,7 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 
 public class TrainingDummyTests
 {
-    private static readonly int DownTicks = SimulationClock.SecondsToTicks(Tuning.Combat.DummyDownTime);
+    private static readonly int DownTicks = SimulationClock.SecondsToTicks(Balance.Default.Dummy.DownTime);
 
     private readonly List<GameEvent> _events = [];
 
@@ -14,7 +14,7 @@ public class TrainingDummyTests
     {
         var dummy = new TrainingDummy(3, new Vector3(1f, 0f, 2f));
 
-        Assert.Equal(Tuning.Combat.DummyMaxHealth, dummy.Health);
+        Assert.Equal(Balance.Default.Dummy.MaxHealth, dummy.Health);
         Assert.False(dummy.IsDown);
         Assert.Equal(3, dummy.Id);
         Assert.Equal(new Vector3(1f, 0f, 2f), dummy.Body.Position);
@@ -27,7 +27,7 @@ public class TrainingDummyTests
 
         dummy.TakeDamage(40, _events);
 
-        Assert.Equal(Tuning.Combat.DummyMaxHealth - 40, dummy.Health);
+        Assert.Equal(Balance.Default.Dummy.MaxHealth - 40, dummy.Health);
         Assert.Equal(new DummyHit(3, 40), Assert.Single(_events));
     }
 
@@ -48,7 +48,7 @@ public class TrainingDummyTests
     public void A_dummy_on_the_ground_ignores_hits()
     {
         var dummy = new TrainingDummy(3, Vector3.Zero);
-        dummy.TakeDamage(Tuning.Combat.DummyMaxHealth, _events);
+        dummy.TakeDamage(Balance.Default.Dummy.MaxHealth, _events);
         _events.Clear();
 
         dummy.TakeDamage(40, _events);
@@ -61,7 +61,7 @@ public class TrainingDummyTests
     public void After_the_down_time_it_stands_up_with_full_health()
     {
         var dummy = new TrainingDummy(3, Vector3.Zero);
-        dummy.TakeDamage(Tuning.Combat.DummyMaxHealth, _events);
+        dummy.TakeDamage(Balance.Default.Dummy.MaxHealth, _events);
         _events.Clear();
 
         for (var tick = 1; tick < DownTicks; tick++)
@@ -74,7 +74,7 @@ public class TrainingDummyTests
         dummy.Tick(_events);
 
         Assert.False(dummy.IsDown);
-        Assert.Equal(Tuning.Combat.DummyMaxHealth, dummy.Health);
+        Assert.Equal(Balance.Default.Dummy.MaxHealth, dummy.Health);
         Assert.Equal(new DummyStoodUp(3), Assert.Single(_events));
     }
 
@@ -96,10 +96,10 @@ public class TrainingDummyTests
     public void The_top_part_is_the_head_the_rest_is_the_body()
     {
         var dummy = new TrainingDummy(3, new Vector3(1f, 0.5f, 2f));         // standing on a platform
-        var headStart = 0.5f + Tuning.Combat.DummyHeight - Tuning.Combat.DummyHeadHeight;
+        var headStart = 0.5f + BodySizes.Dummy.Height - BodySizes.Dummy.HeadHeight;
 
         Assert.Equal(HitZone.Head, dummy.ZoneAt(new Vector3(1.3f, headStart + 0.01f, 2f)));
-        Assert.Equal(HitZone.Head, dummy.ZoneAt(new Vector3(1f, 0.5f + Tuning.Combat.DummyHeight, 2f)));
+        Assert.Equal(HitZone.Head, dummy.ZoneAt(new Vector3(1f, 0.5f + BodySizes.Dummy.Height, 2f)));
         Assert.Equal(HitZone.Body, dummy.ZoneAt(new Vector3(1.3f, headStart - 0.01f, 2f)));
         Assert.Equal(HitZone.Body, dummy.ZoneAt(new Vector3(1.3f, 0.6f, 2f)));
     }

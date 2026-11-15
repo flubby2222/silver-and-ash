@@ -15,7 +15,7 @@ public class PlayerTests
         var player = new Player(level);
 
         Assert.Equal(level.PlayerStartPosition, player.Position);
-        Assert.Equal(level.PlayerStartPosition + new Vector3(0f, Tuning.Player.EyeHeight, 0f), player.EyePosition);
+        Assert.Equal(level.PlayerStartPosition + new Vector3(0f, BodySizes.Player.EyeHeight, 0f), player.EyePosition);
     }
 
     [Fact]

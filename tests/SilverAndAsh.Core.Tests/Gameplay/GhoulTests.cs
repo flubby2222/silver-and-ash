@@ -5,7 +5,7 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 
 public class GhoulTests
 {
-    private static readonly int CorpseTicks = SimulationClock.SecondsToTicks(Tuning.Ghoul.CorpseTime);
+    private static readonly int CorpseTicks = SimulationClock.SecondsToTicks(Balance.Default.Ghoul.CorpseTime);
 
     private readonly List<GameEvent> _events = [];
 
@@ -14,11 +14,11 @@ public class GhoulTests
     {
         var ghoul = new Ghoul(7, new Vector3(3f, 0f, 5f));
 
-        Assert.Equal(Tuning.Ghoul.MaxHealth, ghoul.Health);
+        Assert.Equal(Balance.Default.Ghoul.MaxHealth, ghoul.Health);
         Assert.False(ghoul.IsDead);
         Assert.True(ghoul.IsHittable);
         Assert.Equal(new Vector3(3f, 0f, 5f), ghoul.Body.Position);
-        Assert.Equal(Tuning.Ghoul.Height, ghoul.Body.Height);
+        Assert.Equal(BodySizes.Ghoul.Height, ghoul.Body.Height);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class GhoulTests
 
         ghoul.TakeDamage(40, _events, critical: true);
 
-        Assert.Equal(Tuning.Ghoul.MaxHealth - 40, ghoul.Health);
+        Assert.Equal(Balance.Default.Ghoul.MaxHealth - 40, ghoul.Health);
         Assert.Equal(new GhoulHit(7, 40, Critical: true), Assert.Single(_events));
     }
 
@@ -51,7 +51,7 @@ public class GhoulTests
     public void The_dead_body_disappears_after_the_corpse_time_and_never_comes_back()
     {
         var ghoul = new Ghoul(7, Vector3.Zero);
-        ghoul.TakeDamage(Tuning.Ghoul.MaxHealth, _events);
+        ghoul.TakeDamage(Balance.Default.Ghoul.MaxHealth, _events);
 
         for (var tick = 1; tick < CorpseTicks; tick++)
         {
@@ -89,11 +89,11 @@ public class GhoulTests
     {
         // Looking along +X, standing on a 0.5 m platform.
         var ghoul = new Ghoul(7, new Vector3(0f, 0.5f, 0f), Vector3.UnitX);
-        var headHeight = 0.5f + Tuning.Ghoul.Height - Tuning.Ghoul.HeadHeight / 2f;
-        var r = Tuning.Ghoul.Radius;
+        var headHeight = 0.5f + BodySizes.Ghoul.Height - BodySizes.Ghoul.HeadHeight / 2f;
+        var r = BodySizes.Ghoul.Radius;
 
         Assert.Equal(HitZone.Head, ghoul.ZoneAt(new Vector3(r, headHeight, 0f)));                    // front, high
-        Assert.Equal(HitZone.Head, ghoul.ZoneAt(new Vector3(0.3f, 0.5f + Tuning.Ghoul.Height, 0.1f)));
+        Assert.Equal(HitZone.Head, ghoul.ZoneAt(new Vector3(0.3f, 0.5f + BodySizes.Ghoul.Height, 0.1f)));
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(-r, headHeight, 0f)));                   // back, high
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0f, headHeight, r)));                    // side, high
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(r, 0.7f, 0f)));                          // front, low

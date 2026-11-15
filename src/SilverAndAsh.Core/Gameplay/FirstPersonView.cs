@@ -43,7 +43,7 @@ public sealed class FirstPersonView
     public Vector3 ForwardTiltedDown(float tiltDownRadians)
     {
         var pitch = Math.Clamp(
-            PitchRadians - tiltDownRadians, -Tuning.Controls.MaxPitchRadians, Tuning.Controls.MaxPitchRadians);
+            PitchRadians - tiltDownRadians, -ControlSettings.MaxPitchRadians, ControlSettings.MaxPitchRadians);
         var horizontal = MathF.Cos(pitch);
         return new Vector3(MathF.Sin(YawRadians) * horizontal, MathF.Sin(pitch), MathF.Cos(YawRadians) * horizontal);
     }
@@ -60,7 +60,7 @@ public sealed class FirstPersonView
     /// <summary>
     /// Turns the view by a mouse movement in pixels. Mouse right turns right, mouse up looks up (not inverted).
     /// </summary>
-    public void ApplyMouse(Vector2 deltaPixels, float sensitivity = Tuning.Controls.MouseSensitivity)
+    public void ApplyMouse(Vector2 deltaPixels, float sensitivity = ControlSettings.MouseSensitivity)
     {
         // Turning right means rotating from +Z towards -X, i.e. a smaller yaw.
         // IEEERemainder keeps the angle between -π and π, so it never grows without limit.
@@ -69,7 +69,7 @@ public sealed class FirstPersonView
         // Screen Y grows downwards, so moving the mouse up (negative Y) must increase the pitch.
         PitchRadians = Math.Clamp(
             PitchRadians - deltaPixels.Y * sensitivity,
-            -Tuning.Controls.MaxPitchRadians,
-            Tuning.Controls.MaxPitchRadians);
+            -ControlSettings.MaxPitchRadians,
+            ControlSettings.MaxPitchRadians);
     }
 }

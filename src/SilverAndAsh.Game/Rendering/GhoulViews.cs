@@ -106,7 +106,7 @@ internal sealed class PlaceholderGhoulView : IGhoulView
         // Crawling: the arms reach forward in turn, faster the faster it moves.
         var speed = new Vector2(ghoul.Velocity.X, ghoul.Velocity.Z).Length();
         state.CrawlPhase += speed * _frameSeconds * CrawlCyclesPerMetre * 2f * MathF.PI;
-        var crawl = MathF.Min(1f, speed / Tuning.Ghoul.Speed);
+        var crawl = MathF.Min(1f, speed / ghoul.Speed);
 
         // Winding up: rears up and lifts both arms. Blow: a short lunge forward.
         var windUp = ghoul.WindUpProgress;

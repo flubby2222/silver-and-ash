@@ -9,15 +9,22 @@ namespace SilverAndAsh.Core.Gameplay;
 /// </summary>
 public sealed class TrainingDummy : ITarget
 {
-    private static readonly int DownTicks = SimulationClock.SecondsToTicks(Tuning.Combat.DummyDownTime);
+    private readonly DummyBalance _balance;
+    private readonly int _downTicks;
 
     private int _downTicksLeft;
 
-    /// <summary>Creates a dummy standing at <paramref name="position"/> (centre of its feet).</summary>
-    public TrainingDummy(int id, Vector3 position)
+    /// <summary>
+    /// Creates a dummy standing at <paramref name="position"/> (centre of its feet), with the health and down time
+    /// from <paramref name="balance"/> (the standard values if none is given).
+    /// </summary>
+    public TrainingDummy(int id, Vector3 position, Balance? balance = null)
     {
         Id = id;
         Position = position;
+        _balance = (balance ?? Balance.Default).Dummy;
+        _downTicks = SimulationClock.SecondsToTicks(_balance.DownTime);
+        Health = _balance.MaxHealth;
     }
 
     /// <summary>
@@ -30,7 +37,7 @@ public sealed class TrainingDummy : ITarget
     public Vector3 Position { get; }
 
     /// <summary>Current health; 0 while lying on the ground.</summary>
-    public int Health { get; private set; } = Tuning.Combat.DummyMaxHealth;
+    public int Health { get; private set; }
 
     /// <summary>True while the dummy lies on the ground. It cannot be hit then and does not block the way.</summary>
     public bool IsDown => _downTicksLeft > 0;
@@ -38,7 +45,7 @@ public sealed class TrainingDummy : ITarget
     public bool IsHittable => !IsDown;
 
     /// <summary>The body for collisions and hits.</summary>
-    public CylinderBody Body => new(Position, Tuning.Combat.DummyRadius, Tuning.Combat.DummyHeight);
+    public CylinderBody Body => new(Position, BodySizes.Dummy.Radius, BodySizes.Dummy.Height);
 
     /// <summary>
     /// Takes <paramref name="damage"/>. Reports <see cref="DummyHit"/> and, at 0 health, <see cref="DummyKnockedDown"/>
@@ -58,14 +65,14 @@ public sealed class TrainingDummy : ITarget
 
         if (Health == 0)
         {
-            _downTicksLeft = DownTicks;
+            _downTicksLeft = _downTicks;
             events.Add(new DummyKnockedDown(Id));
         }
     }
 
     /// <summary>Which zone a hit at <paramref name="point"/> (on the body's surface) belongs to.</summary>
     public HitZone ZoneAt(Vector3 point) =>
-        point.Y >= Position.Y + Tuning.Combat.DummyHeight - Tuning.Combat.DummyHeadHeight ? HitZone.Head : HitZone.Body;
+        point.Y >= Position.Y + BodySizes.Dummy.Height - BodySizes.Dummy.HeadHeight ? HitZone.Head : HitZone.Body;
 
     /// <summary>Advances by one tick: a dummy that lies down long enough stands up with full health.</summary>
     public void Tick(ICollection<GameEvent> events)
@@ -79,7 +86,7 @@ public sealed class TrainingDummy : ITarget
         _downTicksLeft--;
         if (!IsDown)
         {
-            Health = Tuning.Combat.DummyMaxHealth;
+            Health = _balance.MaxHealth;
             events.Add(new DummyStoodUp(Id));
         }
     }

@@ -282,12 +282,12 @@ static void DrawHud(bool isMouseCaptured, string displayVersion)
 // Stamina for jumps: one segment per jump at the bottom centre. A segment fills up from left to right.
 static void DrawStaminaBar(Player player)
 {
-    const int Segments = Tuning.Player.StaminaJumps;
+    var segments = player.Stamina.Segments;
     const int SegmentWidth = 48;
     const int Gap = 4;
     const int Height = 8;
 
-    var totalWidth = Segments * SegmentWidth + (Segments - 1) * Gap;
+    var totalWidth = segments * SegmentWidth + (segments - 1) * Gap;
     var left = (Raylib.GetScreenWidth() - totalWidth) / 2;
     var top = Raylib.GetScreenHeight() - 40;
 
@@ -295,10 +295,10 @@ static void DrawStaminaBar(Player player)
     var background = player.IsExhausted ? new Color(110, 25, 30, 220) : new Color(40, 35, 45, 200);
     var fill = new Color(200, 205, 220, 255);
 
-    for (var i = 0; i < Segments; i++)
+    for (var i = 0; i < segments; i++)
     {
         var x = left + i * (SegmentWidth + Gap);
-        var segmentFill = Math.Clamp(player.Stamina.Fraction * Segments - i, 0f, 1f);
+        var segmentFill = Math.Clamp(player.Stamina.Fraction * segments - i, 0f, 1f);
 
         Raylib.DrawRectangle(x, top, SegmentWidth, Height, background);
         Raylib.DrawRectangle(x, top, (int)MathF.Round(SegmentWidth * segmentFill), Height, fill);

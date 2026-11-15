@@ -52,12 +52,16 @@ public sealed class DamageRules
 {
     private readonly List<IDamageRule> _rules = [];
 
-    /// <summary>The rules of a normal game: headshots with the pistol do triple damage.</summary>
-    public static DamageRules Standard()
+    /// <summary>
+    /// The rules of a normal game: headshots with the pistol do triple damage, a charged blade up to double -
+    /// with the multipliers from <paramref name="balance"/> (the standard values if none is given).
+    /// </summary>
+    public static DamageRules Standard(Balance? balance = null)
     {
+        balance ??= Balance.Default;
         var rules = new DamageRules();
-        rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.Head, Tuning.Combat.PistolHeadshotMultiplier));
-        rules.Add(new ChargeBonus(Tuning.Combat.BladeChargeMaxMultiplier));
+        rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.Head, balance.Pistol.HeadshotMultiplier));
+        rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
         return rules;
     }
 

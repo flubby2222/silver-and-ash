@@ -7,7 +7,7 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 
 public class PlayerDeathTests
 {
-    private static readonly int RestartTicks = SimulationClock.SecondsToTicks(Tuning.Combat.RestartDelay);
+    private static readonly int RestartTicks = SimulationClock.SecondsToTicks(Balance.Default.RestartDelay);
 
     private static readonly PlayerInput Everything = new(
         new Vector2(0f, 1f), new Vector2(50f, 20f), Jump: true, Dash: true, Melee: true, Shoot: true);
@@ -30,7 +30,7 @@ public class PlayerDeathTests
     public void A_dead_player_no_longer_moves_looks_or_attacks()
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\n."));
-        world.Player.TakeDamage(Tuning.Combat.PlayerMaxHealth, []);
+        world.Player.TakeDamage(Balance.Default.Player.MaxHealth, []);
         var position = world.Player.Position;
         var yaw = world.Player.View.YawRadians;
 
@@ -56,7 +56,7 @@ public class PlayerDeathTests
             world.Tick(melee);
         }
 
-        world.Player.TakeDamage(Tuning.Combat.PlayerMaxHealth, []);
+        world.Player.TakeDamage(Balance.Default.Player.MaxHealth, []);
         for (var i = 0; i < 10; i++)
         {
             world.Tick(melee);
@@ -70,7 +70,7 @@ public class PlayerDeathTests
     public void Ghouls_leave_a_dead_player_alone()
     {
         var world = new GameWorld(LevelParser.Parse("P..G"));
-        world.Player.TakeDamage(Tuning.Combat.PlayerMaxHealth, []);
+        world.Player.TakeDamage(Balance.Default.Player.MaxHealth, []);
 
         for (var i = 0; i < 3 * SimulationClock.TicksPerSecond; i++)
         {
@@ -90,7 +90,7 @@ public class PlayerDeathTests
         }
 
         Assert.Equal(GhoulState.WindingUp, world.Ghouls[0].State);
-        world.Player.TakeDamage(Tuning.Combat.PlayerMaxHealth, []);
+        world.Player.TakeDamage(Balance.Default.Player.MaxHealth, []);
 
         world.Tick(PlayerInput.None);
 
@@ -101,7 +101,7 @@ public class PlayerDeathTests
     public void The_level_restarts_after_the_restart_delay()
     {
         var world = new GameWorld(LevelParser.Parse("P..G"));
-        world.Player.TakeDamage(Tuning.Combat.PlayerMaxHealth, []);
+        world.Player.TakeDamage(Balance.Default.Player.MaxHealth, []);
 
         for (var tick = 1; tick < RestartTicks; tick++)
         {
@@ -130,18 +130,18 @@ public class PlayerDeathTests
     public void A_restarted_world_starts_from_scratch()
     {
         var world = new GameWorld(LevelParser.Parse("P.D\n..G"));
-        world.Player.TakeDamage(Tuning.Combat.PlayerMaxHealth, []);
-        world.Ghouls[0].TakeDamage(Tuning.Ghoul.MaxHealth, []);
+        world.Player.TakeDamage(Balance.Default.Player.MaxHealth, []);
+        world.Ghouls[0].TakeDamage(Balance.Default.Ghoul.MaxHealth, []);
         world.Dummies[0].TakeDamage(30, []);
 
         var fresh = world.Restarted();
 
         Assert.NotSame(world, fresh);
         Assert.Same(world.Level, fresh.Level);
-        Assert.Equal(Tuning.Combat.PlayerMaxHealth, fresh.Player.Health);
+        Assert.Equal(Balance.Default.Player.MaxHealth, fresh.Player.Health);
         Assert.False(fresh.Player.IsDead);
         Assert.False(fresh.Ghouls[0].IsDead);
-        Assert.Equal(Tuning.Combat.DummyMaxHealth, fresh.Dummies[0].Health);
+        Assert.Equal(Balance.Default.Dummy.MaxHealth, fresh.Dummies[0].Health);
         Assert.Equal(GhoulState.Lurking, fresh.Ghouls[0].State);
     }
 }

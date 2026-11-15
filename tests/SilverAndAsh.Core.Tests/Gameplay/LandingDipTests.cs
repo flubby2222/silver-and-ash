@@ -43,7 +43,7 @@ public class LandingDipTests
         JumpAndLand(player);
         RunTicks(player, PlayerInput.None, 5);
 
-        var normalEyes = player.Position.Y + Tuning.Player.EyeHeight;
+        var normalEyes = player.Position.Y + BodySizes.Player.EyeHeight;
         Assert.True(player.InterpolatedEyePosition(1f).Y < normalEyes);
         Assert.True(player.InterpolatedViewTilt(1f) > 0f);
     }
@@ -82,7 +82,7 @@ public class LandingDipTests
         }
 
         // Halfway through the nod.
-        var expected = SimulationClock.SecondsToTicks(Tuning.Player.LandingDipDuration / 2f);
+        var expected = SimulationClock.SecondsToTicks(Balance.Default.Player.LandingDipDuration / 2f);
         Assert.InRange(deepestTick, expected - 3, expected + 3);
     }
 
@@ -126,7 +126,7 @@ public class LandingDipTests
     public void Harder_landings_dip_more_but_never_beyond_the_limit()
     {
         Assert.True(PeakDepth(2f) < PeakDepth(6f));
-        Assert.True(PeakDepth(100f) <= Tuning.Player.LandingDipMax + 0.001f);
+        Assert.True(PeakDepth(100f) <= Balance.Default.Player.LandingDipMax + 0.001f);
     }
 
     [Fact]

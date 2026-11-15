@@ -7,7 +7,7 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 
 public class BatTests
 {
-    private static readonly int CorpseTicks = SimulationClock.SecondsToTicks(Tuning.Bat.CorpseTime);
+    private static readonly int CorpseTicks = SimulationClock.SecondsToTicks(Balance.Default.Bat.CorpseTime);
     private static readonly Level Room = LevelParser.Parse("P.B\n...");
 
     private readonly List<GameEvent> _events = [];
@@ -44,13 +44,13 @@ public class BatTests
         var bat = world.Bats[0];
         var floor = level.CellCenter(2, 0);
 
-        Assert.Equal(floor + new Vector3(0f, Tuning.Bat.HoverHeight, 0f), bat.Position);
-        Assert.Equal(Tuning.Bat.MaxHealth, bat.Health);
+        Assert.Equal(floor + new Vector3(0f, BodySizes.Bat.HoverHeight, 0f), bat.Position);
+        Assert.Equal(Balance.Default.Bat.MaxHealth, bat.Health);
         Assert.True(bat.IsHittable);
 
         Run(world, PlayerInput.None, 2 * SimulationClock.TicksPerSecond);
 
-        Assert.Equal(floor.Y + Tuning.Bat.HoverHeight, bat.Position.Y, 0.001f);
+        Assert.Equal(floor.Y + BodySizes.Bat.HoverHeight, bat.Position.Y, 0.001f);
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class BatTests
 
         var position = Bat.HoverPosition(level, floor);
 
-        var top = position.Y + Tuning.Bat.Height;
-        Assert.True(top <= Cell.DefaultCeilingHeight - Tuning.Bat.CeilingGap + 0.001f, $"Top at {top} m.");
+        var top = position.Y + BodySizes.Bat.Height;
+        Assert.True(top <= Cell.DefaultCeilingHeight - BodySizes.Bat.CeilingGap + 0.001f, $"Top at {top} m.");
         Assert.True(position.Y > floor.Y);
     }
 
@@ -87,7 +87,7 @@ public class BatTests
     {
         var world = new GameWorld(Room);
         var bat = world.Bats[0];
-        bat.TakeDamage(Tuning.Bat.MaxHealth, []);
+        bat.TakeDamage(Balance.Default.Bat.MaxHealth, []);
 
         Run(world, PlayerInput.None, SimulationClock.TicksPerSecond);
         Assert.Equal(Room.CellCenter(2, 0).Y, bat.Position.Y, 0.001f);
@@ -102,7 +102,7 @@ public class BatTests
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\n.\nB"));
         var bat = world.Bats[0];
-        AimAt(world.Player, bat.Position + new Vector3(0f, Tuning.Bat.Height / 2f, 0f));
+        AimAt(world.Player, bat.Position + new Vector3(0f, BodySizes.Bat.Height / 2f, 0f));
 
         world.Tick(PlayerInput.None with { Shoot = true });
 
@@ -117,7 +117,7 @@ public class BatTests
         // in the middle of the blade's cone. (Standing right below it, it would be too steep above the view.)
         var world = new GameWorld(LevelParser.Parse("P\nB"));
         var bat = world.Bats[0];
-        AimAt(world.Player, bat.Position + new Vector3(0f, Tuning.Bat.Height / 2f, 0f));
+        AimAt(world.Player, bat.Position + new Vector3(0f, BodySizes.Bat.Height / 2f, 0f));
 
         world.Tick(PlayerInput.None with { Melee = true });
         world.Tick(PlayerInput.None);
@@ -152,8 +152,8 @@ public class BatTests
         player.Look(PlayerInput.None with
         {
             Look = new Vector2(
-                -(MathF.Atan2(direction.X, direction.Z) - player.View.YawRadians) / Tuning.Controls.MouseSensitivity,
-                -(MathF.Asin(direction.Y) - player.View.PitchRadians) / Tuning.Controls.MouseSensitivity),
+                -(MathF.Atan2(direction.X, direction.Z) - player.View.YawRadians) / ControlSettings.MouseSensitivity,
+                -(MathF.Asin(direction.Y) - player.View.PitchRadians) / ControlSettings.MouseSensitivity),
         });
     }
 

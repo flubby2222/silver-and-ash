@@ -10,7 +10,7 @@ public class GameWorldGhoulTests
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
     private static readonly PlayerInput Melee = PlayerInput.None with { Melee = true };
     private static readonly PlayerInput Shoot = PlayerInput.None with { Shoot = true };
-    private static readonly int BladeTicks = SimulationClock.SecondsToTicks(Tuning.Combat.BladeCooldown);
+    private static readonly int BladeTicks = SimulationClock.SecondsToTicks(Balance.Default.Blade.Cooldown);
 
     [Fact]
     public void The_world_puts_a_ghoul_on_every_G_cell_with_ids_after_the_dummies()
@@ -56,8 +56,8 @@ public class GameWorldGhoulTests
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\n.\nG\n."));
         var ghoul = world.Ghouls[0];
-        var head = ghoul.Position + ghoul.Facing * (Tuning.Ghoul.Radius * 0.8f)
-            + new Vector3(0f, Tuning.Ghoul.Height - Tuning.Ghoul.HeadHeight / 2f, 0f);
+        var head = ghoul.Position + ghoul.Facing * (BodySizes.Ghoul.Radius * 0.8f)
+            + new Vector3(0f, BodySizes.Ghoul.Height - BodySizes.Ghoul.HeadHeight / 2f, 0f);
         AimAt(world.Player, head);
 
         world.Tick(Shoot);
@@ -74,7 +74,7 @@ public class GameWorldGhoulTests
         Assert.True(alive.Player.Position.Z < alive.Ghouls[0].Position.Z);
 
         var dead = new GameWorld(LevelParser.Parse("P\n.\nG\n.\n.\n."));
-        dead.Ghouls[0].TakeDamage(Tuning.Ghoul.MaxHealth, []);
+        dead.Ghouls[0].TakeDamage(Balance.Default.Ghoul.MaxHealth, []);
         RunTicks(dead, Forward, SimulationClock.TicksPerSecond);
         Assert.True(dead.Player.Position.Z > dead.Ghouls[0].Position.Z);
     }
@@ -83,7 +83,7 @@ public class GameWorldGhoulTests
     public void A_shot_flies_over_a_dead_ghoul()
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\nG\n.\nD"));
-        world.Ghouls[0].TakeDamage(Tuning.Ghoul.MaxHealth, []);
+        world.Ghouls[0].TakeDamage(Balance.Default.Ghoul.MaxHealth, []);
         AimAt(world.Player, world.Dummies[0].Position + new Vector3(0f, 1f, 0f));
 
         world.Tick(Shoot);
@@ -95,9 +95,9 @@ public class GameWorldGhoulTests
     public void The_world_lets_dead_ghouls_disappear()
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\nG"));
-        world.Ghouls[0].TakeDamage(Tuning.Ghoul.MaxHealth, []);
+        world.Ghouls[0].TakeDamage(Balance.Default.Ghoul.MaxHealth, []);
 
-        RunTicks(world, PlayerInput.None, SimulationClock.SecondsToTicks(Tuning.Ghoul.CorpseTime) + 1);
+        RunTicks(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Ghoul.CorpseTime) + 1);
 
         Assert.True(world.Ghouls[0].IsGone);
     }
@@ -123,8 +123,8 @@ public class GameWorldGhoulTests
     {
         var direction = Vector3.Normalize(point - player.EyePosition);
         var pixels = new Vector2(
-            -(MathF.Atan2(direction.X, direction.Z) - player.View.YawRadians) / Tuning.Controls.MouseSensitivity,
-            -(MathF.Asin(direction.Y) - player.View.PitchRadians) / Tuning.Controls.MouseSensitivity);
+            -(MathF.Atan2(direction.X, direction.Z) - player.View.YawRadians) / ControlSettings.MouseSensitivity,
+            -(MathF.Asin(direction.Y) - player.View.PitchRadians) / ControlSettings.MouseSensitivity);
         player.Look(PlayerInput.None with { Look = pixels });
     }
 
