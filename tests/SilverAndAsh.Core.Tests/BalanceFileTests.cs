@@ -221,12 +221,33 @@ public class BalanceFileTests
     public void Chests_may_hold_nothing_and_never_stand_in_combat_rooms()
     {
         var result = BalanceFile.Parse("""
-            { "chests": { "combatRoomChance": 0, "vampire": { "lockedChance": 0, "silverMin": 0, "silverMax": 0, "bloodVialChance": 0 } } }
+            { "chests": { "combatRoomChance": 0, "vampire": { "treasureShare": 0, "lockedTreasureShare": 0, "lockedChance": 0, "silverMin": 0, "silverMax": 0, "bloodVialChance": 0 } } }
             """);
 
         Assert.Equal(0f, result.Balance.Chests.CombatRoomChance);
         Assert.Equal(new ChestTierBalance(), result.Balance.Chests.Vampire);
         Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void Levels_may_have_no_treasure_rooms_and_treasure_rooms_no_chests()
+    {
+        var result = BalanceFile.Parse("""
+            { "layout": { "treasureRooms": 0, "lockedTreasureRooms": 0 }, "chests": { "treasureChestsMin": 0, "treasureChestsMax": 0 } }
+            """);
+
+        Assert.Equal(0, result.Balance.Layout.TreasureRooms + result.Balance.Layout.LockedTreasureRooms);
+        Assert.Equal(0, result.Balance.Chests.TreasureChestsMax);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void More_minimum_than_maximum_treasure_chests_falls_back_to_both_standards()
+    {
+        var result = BalanceFile.Parse("""{ "chests": { "treasureChestsMin": 3, "treasureChestsMax": 1 } }""");
+
+        Assert.Equal(Balance.Default.Chests, result.Balance.Chests);
+        Assert.Contains(result.Warnings, w => w.Contains("chests.treasureChestsMin") && w.Contains("chests.treasureChestsMax"));
     }
 
     [Fact]

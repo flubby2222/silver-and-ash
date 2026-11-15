@@ -4,8 +4,11 @@ namespace SilverAndAsh.Core.World;
 /// Builds a level from room templates with a seed (ADR 0005). The start room is placed first; combat rooms are
 /// joined to free door slots - directly through a shared wall or through a corridor - until the number from
 /// <see cref="LayoutBalance"/> is reached; while loops are wanted, places are sought where a new room (or a room
-/// and a corridor) joins two free door slots, so there is a second way round. The boss room comes
-/// last, behind one of the rooms farthest from the start, so it is always the farthest room and has one entrance.
+/// and a corridor) joins two free door slots, so there is a second way round. Then the boss room, behind one of the
+/// rooms farthest from the start, so it is always the farthest room and has one entrance. Last the treasure rooms
+/// (<see cref="LayoutBalance.TreasureRooms"/>, <see cref="LayoutBalance.LockedTreasureRooms"/>): dead ends, never at the
+/// start room, never as far as the boss; a locked one gets a <see cref="DoorKind.Locked"/> door - so nothing important
+/// ever lies behind a lock.
 /// <para>Same seed and same templates = same level. If a try gets stuck (no room fits anywhere), the generator
 /// starts again with the next random numbers of the same seed.</para>
 /// </summary>
@@ -149,7 +152,7 @@ public static class LevelGenerator
             {
             }
 
-            return TryJoinBoss();
+            return TryJoinBoss() && TryJoinTreasures();
         }
 
         public GeneratedLevel ToLevel(int seed)
@@ -250,6 +253,67 @@ public static class LevelGenerator
                 {
                     if ((useCorridor ? throughCorridor : direct) && TryJoin(RoomKind.Boss, slot, useCorridor))
                     {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        // Treasure rooms come after the boss: they must stay nearer to the start than the boss room.
+        private bool TryJoinTreasures()
+        {
+            if (!catalog.ContainsKey(RoomKind.Treasure))
+            {
+                return true;
+            }
+
+            for (var i = 0; i < layout.TreasureRooms; i++)
+            {
+                if (!TryJoinTreasure(locked: false))
+                {
+                    return false;
+                }
+            }
+
+            for (var i = 0; i < layout.LockedTreasureRooms; i++)
+            {
+                if (!TryJoinTreasure(locked: true))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // A dead end at a free slot of any room but the start room, closer to the start than the boss room.
+        private bool TryJoinTreasure(bool locked)
+        {
+            var distances = Distances();
+            var boss = distances[_rooms.FindIndex(room => room.Variant.Kind == RoomKind.Boss)];
+            var slots = _open.Where(slot => slot.Room != 0).OrderBy(_ => random.Next()).ToList();
+
+            foreach (var slot in slots)
+            {
+                var direct = distances[slot.Room] + 1 < boss;
+                var throughCorridor = UsesCorridors && distances[slot.Room] + 2 < boss;
+                var corridorFirst = UsesCorridors && random.NextDouble() < layout.CorridorChance;
+
+                // With corridors always (chance 1) a treasure room is never joined through a shared wall.
+                var ways = corridorFirst ? new[] { true, false } : [false, true];
+                foreach (var useCorridor in ways.Where(corridor => corridor || layout.CorridorChance < 1f))
+                {
+                    if ((useCorridor ? throughCorridor : direct) && TryJoin(RoomKind.Treasure, slot, useCorridor))
+                    {
+                        if (locked)
+                        {
+                            // Its only door - the one leading into it - gets the lock.
+                            var entrance = _doors.FindIndex(door => door.RoomB == _rooms.Count - 1);
+                            _doors[entrance] = _doors[entrance] with { Kind = DoorKind.Locked };
+                        }
+
                         return true;
                     }
                 }

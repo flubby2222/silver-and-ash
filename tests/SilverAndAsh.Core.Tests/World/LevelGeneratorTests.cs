@@ -151,14 +151,29 @@ public class LevelGeneratorTests
     }
 
     [Fact]
-    public void The_door_of_the_boss_room_is_a_boss_door_and_all_others_are_normal()
+    public void The_door_of_the_boss_room_is_a_boss_door_one_treasure_room_is_locked_and_all_others_are_normal()
     {
         Assert.All(ManyLevels.Value, generated =>
         {
             var boss = generated.Rooms.Single(room => room.Kind == RoomKind.Boss).Index;
+            bool IsTreasure(int room) => generated.Rooms[room].Kind == RoomKind.Treasure;
 
-            Assert.All(generated.Doors, door => Assert.Equal(
-                door.RoomA == boss || door.RoomB == boss ? DoorKind.Boss : DoorKind.Normal, door.Kind));
+            Assert.All(generated.Doors, door =>
+            {
+                if (door.RoomA == boss || door.RoomB == boss)
+                {
+                    Assert.Equal(DoorKind.Boss, door.Kind);
+                }
+                else if (door.Kind == DoorKind.Locked)
+                {
+                    Assert.True(IsTreasure(door.RoomA) || IsTreasure(door.RoomB), $"Seed {generated.Seed}: a lock not at a treasure room.");
+                }
+                else
+                {
+                    Assert.Equal(DoorKind.Normal, door.Kind);
+                }
+            });
+            Assert.Single(generated.Doors, door => door.Kind == DoorKind.Locked);
         });
     }
 
@@ -373,6 +388,7 @@ public class LevelGeneratorTests
 
     [Theory]
     [InlineData(RoomKind.Boss, true)]
+    [InlineData(RoomKind.Treasure, true)]
     [InlineData(RoomKind.Start, false)]
     [InlineData(RoomKind.Combat, false)]
     [InlineData(RoomKind.Corridor, false)]

@@ -1,7 +1,8 @@
 namespace SilverAndAsh.Core.World;
 
 /// <summary>
-/// Puts chests on the chest places ('C') of a generated level (decision record 0006). About every fourth combat room
+/// Puts chests on the chest places ('C') of a generated level (decision record 0006). Treasure rooms get 1-2 chests
+/// (better ones behind a locked door) that stand from the start. About every fourth combat room
 /// (<see cref="ChestsBalance.CombatRoomChance"/>) gets one, on one of its chest places; it rises from the floor once the
 /// room is cleared. Its tier follows the combat shares of <see cref="ChestTierBalance"/> - "near" in the combat room
 /// nearest to the start, "far" in the farthest, rising evenly in between. Lock and contents are rolled at once, so the
@@ -34,8 +35,22 @@ public static class ChestPlacement
 
             var (x, z) = places[random.Next(places.Count)];
             var far = farthest == nearest ? 0f : (room.DistanceFromStart - nearest) / (float)(farthest - nearest);
-            var tier = PickTier(chests, far, random);
+            var tier = PickTier(chests, values => values.CombatShareNear + ((values.CombatShareFar - values.CombatShareNear) * far), random);
             plans.Add(Roll(chests, tier, x, z, room.Index, risesWhenCleared: true, random));
+        }
+
+        // Treasure rooms: 1-2 chests standing from the start, better behind a locked door. Rolled after the combat
+        // rooms' chests, so these stay as they were.
+        foreach (var room in generated.Rooms.Where(room => room.Kind == RoomKind.Treasure))
+        {
+            var locked = generated.Doors.Any(door => (door.RoomA == room.Index || door.RoomB == room.Index) && door.Kind == DoorKind.Locked);
+            var places = Shuffled(room.ChestSlots ?? [], random);
+            var count = Math.Min(random.Next(chests.TreasureChestsMin, chests.TreasureChestsMax + 1), places.Count);
+            foreach (var (x, z) in places.Take(count))
+            {
+                var tier = PickTier(chests, values => locked ? values.LockedTreasureShare : values.TreasureShare, random);
+                plans.Add(Roll(chests, tier, x, z, room.Index, risesWhenCleared: false, random));
+            }
         }
 
         return generated with { Chests = plans };
@@ -51,18 +66,27 @@ public static class ChestPlacement
         return new ChestPlan(x, z, room, tier, isLocked, silver, hasVial, risesWhenCleared);
     }
 
+    /// <summary>The places in random order (Fisher-Yates).</summary>
+    private static List<(int X, int Z)> Shuffled(IReadOnlyList<(int X, int Z)> places, Random random)
+    {
+        var shuffled = places.ToList();
+        for (var i = shuffled.Count - 1; i > 0; i--)
+        {
+            var j = random.Next(i + 1);
+            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+        }
+
+        return shuffled;
+    }
+
     /// <summary>
-    /// A tier drawn by the combat shares, <paramref name="far"/> of the way from "near" (0) to "far" (1).
-    /// The shares need not add up to 1; if all are 0 it is a Beggar's Chest.
+    /// A tier drawn by the <paramref name="share"/> each tier has here. The shares need not add up to 1; if all are 0
+    /// it is a Beggar's Chest.
     /// </summary>
-    private static ChestTier PickTier(ChestsBalance chests, float far, Random random)
+    private static ChestTier PickTier(ChestsBalance chests, Func<ChestTierBalance, float> share, Random random)
     {
         var tiers = Enum.GetValues<ChestTier>();
-        var shares = tiers.Select(tier =>
-        {
-            var values = chests.Of(tier);
-            return MathF.Max(0f, values.CombatShareNear + ((values.CombatShareFar - values.CombatShareNear) * far));
-        }).ToList();
+        var shares = tiers.Select(tier => MathF.Max(0f, share(chests.Of(tier)))).ToList();
 
         var total = shares.Sum();
         if (total <= 0f)
