@@ -270,15 +270,15 @@ public sealed class GameWorld
     /// <summary>Everything that happened in the latest tick (player and dummies). Read it after every tick.</summary>
     public IReadOnlyList<GameEvent> Events => _events;
 
-    /// <summary>A swing hits every target in the blade's cone (see <see cref="BladeStrike"/>).</summary>
-    private void StrikeWithBlade(BladeSwung swing)
+    /// <summary>A swing of <paramref name="attacker"/> hits every target in the blade's cone (see <see cref="BladeStrike"/>).</summary>
+    private void StrikeWithBlade(BladeSwung swing, Player attacker)
     {
         foreach (var target in Targets.Where(target => target.IsHittable).ToList())
         {
             if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, Balance.Blade))
             {
                 // The blade hits the whole body at once - it has no hit zone (and so no headshot bonus).
-                Damage(target, new Hit(Weapon.Blade, HitZone.Body, Balance.Blade.Damage, swing.Charge));
+                Damage(target, new Hit(Weapon.Blade, HitZone.Body, Balance.Blade.Damage, swing.Charge), attacker);
             }
         }
     }
@@ -287,7 +287,7 @@ public sealed class GameWorld
     /// A shot hits the first thing on its ray within the pistol's range: a standing dummy (damage) or a wall,
     /// floor or ceiling (an impact). Instant - no flying bullet ("hitscan").
     /// </summary>
-    private void FirePistol(ShotFired shot)
+    private void FirePistol(ShotFired shot, Player attacker)
     {
         var direction = Vector3.Normalize(shot.Direction);
         var wall = Raycast.AgainstLevel(Level, shot.Origin, direction, Balance.Pistol.Range);
@@ -306,7 +306,7 @@ public sealed class GameWorld
         if (target is not null)
         {
             var zone = target.ZoneAt(shot.Origin + direction * nearest);
-            Damage(target, new Hit(Weapon.Pistol, zone, Balance.Pistol.Damage));
+            Damage(target, new Hit(Weapon.Pistol, zone, Balance.Pistol.Damage), attacker);
         }
         else if (wall is { } impact)
         {
@@ -321,11 +321,27 @@ public sealed class GameWorld
         return flat.LengthSquared() > 0.0001f ? Vector3.Normalize(flat) : Vector3.UnitZ;
     }
 
-    /// <summary>Turns a hit into damage with the world's rules and applies it.</summary>
-    private void Damage(ITarget target, Hit hit)
+    /// <summary>
+    /// Turns a hit of <paramref name="attacker"/> into damage with the world's rules and applies it. If it kills an
+    /// enemy, the attacker gets that enemy's experience - only the killing hit counts (online co-op: the one who
+    /// finishes it off, not everyone who hit it).
+    /// </summary>
+    private void Damage(ITarget target, Hit hit, Player attacker)
     {
         var result = DamageRules.Calculate(hit);
+        var wasAlive = target.IsHittable;
         target.TakeDamage(result.Amount, _events, result.IsCritical);
+
+        var experience = target switch
+        {
+            Ghoul { IsDead: true } => Balance.Experience.Ghoul,
+            Bat { IsDead: true } => Balance.Experience.Bat,
+            _ => 0,
+        };
+        if (wasAlive && experience > 0)
+        {
+            attacker.AddExperience(experience, _events);
+        }
     }
 
     /// <summary>Advances the whole world by one simulation tick.</summary>
@@ -337,12 +353,12 @@ public sealed class GameWorld
 
         foreach (var swing in Player.Events.OfType<BladeSwung>())
         {
-            StrikeWithBlade(swing);
+            StrikeWithBlade(swing, Player);
         }
 
         foreach (var shot in Player.Events.OfType<ShotFired>())
         {
-            FirePistol(shot);
+            FirePistol(shot, Player);
         }
 
         foreach (var dummy in _dummies)

@@ -57,6 +57,12 @@ public sealed record PickupDropped(int PickupId, ConsumableKind Kind, Vector3 Po
 /// <summary>Player <paramref name="PlayerId"/> picked up pickup <paramref name="PickupId"/> of <paramref name="Kind"/>.</summary>
 public sealed record PickupTaken(int PickupId, int PlayerId, ConsumableKind Kind) : GameEvent;
 
+/// <summary>Player <paramref name="PlayerId"/> gained <paramref name="Amount"/> experience (for a kill).</summary>
+public sealed record ExperienceGained(int PlayerId, int Amount) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> reached level <paramref name="Level"/>.</summary>
+public sealed record LevelUp(int PlayerId, int Level) : GameEvent;
+
 /// <summary>Player <paramref name="PlayerId"/> got <paramref name="Amount"/> health back.</summary>
 public sealed record PlayerHealed(int PlayerId, int Amount) : GameEvent;
 

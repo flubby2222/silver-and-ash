@@ -24,6 +24,7 @@ public sealed class Player
         _level = level;
         _bodies = bodies ?? (() => []);
         _player = balance.Player;
+        _experience = balance.Experience;
         _consecratedFireRate = balance.ConsecratedAmmo.FireRateMultiplier;
         Position = level.PlayerStartPosition;
         PreviousPosition = Position;
@@ -129,6 +130,41 @@ public sealed class Player
 
     private int _consecratedTicksLeft;
     private readonly float _consecratedFireRate;
+
+    /// <summary>The player's level in this run - 1 at the start, back to 1 after death (a new world).</summary>
+    public int Level { get; private set; } = 1;
+
+    /// <summary>Experience gathered towards the next level.</summary>
+    public int Experience { get; private set; }
+
+    /// <summary>Experience needed for the next level: the first level's amount, then more each level.</summary>
+    public int ExperienceToNextLevel => _experience.FirstLevel + (Level - 1) * _experience.PerLevel;
+
+    /// <summary>
+    /// Adds <paramref name="amount"/> experience and climbs as many levels as it pays for; what is left over counts
+    /// towards the next. Reports <see cref="ExperienceGained"/> and every <see cref="LevelUp"/>. The dead gain nothing.
+    /// </summary>
+    public void AddExperience(int amount, ICollection<GameEvent> events)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        ArgumentNullException.ThrowIfNull(events);
+        if (IsDead || amount == 0)
+        {
+            return;
+        }
+
+        Experience += amount;
+        events.Add(new ExperienceGained(Id, amount));
+        // A level that needs nothing (values set to 0 in code) would be climbed forever - stop there.
+        while (ExperienceToNextLevel > 0 && Experience >= ExperienceToNextLevel)
+        {
+            Experience -= ExperienceToNextLevel;
+            Level++;
+            events.Add(new LevelUp(Id, Level));
+        }
+    }
+
+    private readonly ExperienceBalance _experience;
 
     /// <summary>The most health the player can have.</summary>
     public int MaxHealth => _player.MaxHealth;
