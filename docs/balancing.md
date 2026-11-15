@@ -40,7 +40,7 @@ Zum **Ausprobieren** die Kopie neben dem Spiel ändern. Ein Wert, der **bleiben*
 ## Ändern und ausprobieren
 
 1. Wert in der Datei ändern, speichern.
-2. Spiel neu starten – oder in der **Testversion** (`dotnet run`) einfach **F5** drücken: Die Datei wird neu gelesen und das Level startet mit den neuen Werten. Oben links erscheint kurz „Balancing reloaded“.
+2. Spiel neu starten – oder in der **Testversion** (`dotnet run`) einfach **F5** drücken: Die Datei wird neu gelesen und das Level startet mit den neuen Werten (auf Ebene 0 mit demselben Seed, also demselben Grundriss, solange sich `layout` nicht ändert). Oben links erscheint kurz „Balancing reloaded“.
 
 ## Wenn etwas nicht stimmt
 

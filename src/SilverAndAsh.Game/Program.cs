@@ -40,33 +40,30 @@ using (log)
 
     log?.Info($"Silver & Ash {version} started ({Environment.OSVersion}, .NET {Environment.Version}).");
 
-    // Load the level before opening the window: if it is broken, no window flashes up.
-    // Choose another level with: dotnet run --project src/SilverAndAsh.Game -- --level heights
-    // A level built from the room templates: ... -- --level generated --seed 123 (without --seed: a new one each start)
-    Level? level = null;
-    IReadOnlyList<LevelDoor> doors = [];
-    IReadOnlyList<PlacedRoom> rooms = [];
+    // Load the level (or the room templates) before opening the window: if it is broken, no window flashes up.
+    // Without options the game plays a generated level 0 - every run a new layout. A fixed one: -- --seed 123
+    // The old hand-made levels: dotnet run --project src/SilverAndAsh.Game -- --level test (or heights)
+    Func<int, Balance, GameWorld>? newWorld = null;
+    Func<GameWorld, GameWorld>? nextWorld = null;
+    int? seed = null;
     try
     {
         var options = LaunchOptions.Parse(args);
+        seed = options.Seed;
         if (options.IsGenerated)
         {
             var templates = RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms"));
-            var levelBalance = BalanceFile.Load(Path.Combine(AppContext.BaseDirectory, "assets", "balance.json")).Balance;
-            var generated = EnemyPlacement.Populate(
-                LevelGenerator.Generate(templates, options.Seed ?? Random.Shared.Next(), levelBalance.Layout),
-                levelBalance.Difficulty);
-            level = generated.Level;
-            doors = generated.Doors;
-            rooms = generated.Rooms;
-            log?.Info($"Level generated from {templates.Count} room templates, seed {generated.Seed}: "
-                + $"{generated.Rooms.Count} rooms, {generated.Doors.Count} doors, "
-                + $"{level.GhoulPositions.Count} ghouls, {level.BatPositions.Count} bats, {level.Width} x {level.Depth} cells.");
+            var levelZero = new LevelZero(templates);
+            newWorld = levelZero.NewRun;
+            nextWorld = levelZero.NextRun;
+            log?.Info($"Level 0 from {templates.Count} room templates.");
         }
         else
         {
             var levelPath = options.LevelPath(Path.Combine(AppContext.BaseDirectory, "assets", "levels"));
-            level = LevelParser.ParseFile(levelPath);
+            var level = LevelParser.ParseFile(levelPath);
+            newWorld = (worldSeed, balance) => new GameWorld(level, worldSeed, balance);
+            nextWorld = world => world.Restarted();
             log?.Info($"Level '{levelPath}' loaded: {level.Width} x {level.Depth} cells.");
         }
     }
@@ -77,12 +74,12 @@ using (log)
         Environment.ExitCode = 1;
     }
 
-    if (level is not null)
+    if (newWorld is not null && nextWorld is not null)
     {
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(level, doors, rooms, displayVersion: version.Split('+')[0], log);
+            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log);
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -94,7 +91,9 @@ using (log)
     }
 }
 
-static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, IReadOnlyList<PlacedRoom> rooms, string displayVersion, FileLog? log)
+// newWorld builds a world from a seed and balancing values; nextWorld the one after a run ended (new layout on level 0).
+static void RunGame(
+    Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted.
     Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
@@ -110,10 +109,10 @@ static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, IReadOnlyList<P
         var balancePath = Path.Combine(AppContext.BaseDirectory, "assets", "balance.json");
         var balance = LoadBalance(balancePath, log);
 
-        // The whole simulation: level, player, enemies. A new seed every game, so the bats fly differently each time;
-        // it goes into the log, so a strange run can be repeated.
-        var gameWorld = new GameWorld(level, Random.Shared.Next(), balance, doors, rooms);
-        log?.Info($"Seed: {gameWorld.Seed}.");
+        // The whole simulation: level, player, enemies. A new seed every game (unless --seed is given), so every run
+        // looks different; it goes into the log, so a strange run can be repeated.
+        var gameWorld = newWorld(seed ?? Random.Shared.Next(), balance);
+        LogRun(gameWorld, log);
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
         IGhoulView ghoulView = new PlaceholderGhoulView();
@@ -130,11 +129,16 @@ static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, IReadOnlyList<P
         var reloadedNoticeSeconds = 0f;
 #endif
 
+        // The level name ("THE CATACOMBS") shows for a few seconds whenever a run starts.
+        var levelNameSeconds = gameWorld.LevelName is null ? 0f : LevelBanner.Duration;
+
         // A new world (restart or reloaded values) gets fresh views, so no flash, corpse or impact mark of the
         // old run is left over.
         void StartFresh(GameWorld world)
         {
             gameWorld = world;
+            levelNameSeconds = gameWorld.LevelName is null ? 0f : LevelBanner.Duration;
+            LogRun(gameWorld, log);
             player = gameWorld.Player;
             dummyView = new PlaceholderDummyView();
             ghoulView = new PlaceholderGhoulView();
@@ -161,8 +165,9 @@ static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, IReadOnlyList<P
         // Lantern light and fog: a small program for the graphics card (assets/shaders/).
         using var levelShader = new LevelShader(Path.Combine(AppContext.BaseDirectory, "assets", "shaders"));
 
-        // The level geometry is built once here and sent to the graphics card.
-        using var levelRenderer = new LevelRenderer(level, levelShader.Shader);
+        // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
+        using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, levelShader.Shader);
+        var renderedLevel = gameWorld.LevelAsBuilt;
 
         // Game loop: runs once per drawn frame until the window is closed (X button).
         while (!Raylib.WindowShouldClose())
@@ -213,19 +218,19 @@ static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, IReadOnlyList<P
                 }
             }
 
-            // Dead long enough: start the level again with a fresh world.
+            // Dead long enough: the next run (on level 0 a new layout, on hand-made levels the same one again).
             if (gameWorld.ShouldRestart)
             {
-                StartFresh(gameWorld.Restarted());
-                log?.Info($"Restart, seed: {gameWorld.Seed}.");
+                StartFresh(nextWorld(gameWorld));
             }
 
 #if DEBUG
             // Test key: F5 reads the balancing file again and starts the level with its values.
             if (Raylib.IsKeyPressed(KeyboardKey.F5))
             {
-                StartFresh(new GameWorld(level, Random.Shared.Next(), LoadBalance(balancePath, log), doors, rooms));
-                log?.Info($"Balancing reloaded, seed: {gameWorld.Seed}.");
+                // The same seed: the same layout again (unless the layout values changed), now with the new values.
+                StartFresh(newWorld(gameWorld.Seed, LoadBalance(balancePath, log)));
+                log?.Info("Balancing reloaded.");
                 reloadedNoticeSeconds = 2f;
             }
 
@@ -263,6 +268,12 @@ static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, IReadOnlyList<P
             picture.BeginDrawing();
             Raylib.ClearBackground(LookSettings.BackgroundColor);
             Raylib.BeginMode3D(camera);
+            if (!ReferenceEquals(renderedLevel, gameWorld.LevelAsBuilt))
+            {
+                levelRenderer.Rebuild(gameWorld.LevelAsBuilt);
+                renderedLevel = gameWorld.LevelAsBuilt;
+            }
+
             levelRenderer.Draw();
             levelShader.BeginFigures();
             DoorView.Draw(gameWorld.Doors, seconds);
@@ -304,6 +315,14 @@ static void RunGame(Level level, IReadOnlyList<LevelDoor> doors, IReadOnlyList<P
             if (!choosing)
             {
                 InteractionPrompt.Draw(gameWorld.InteractionTarget(player));
+            }
+
+            levelNameSeconds = MathF.Max(0f, levelNameSeconds - Raylib.GetFrameTime());
+            LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
+            if (gameWorld.IsWon)
+            {
+                // Placeholder until the victory screen (#125).
+                LevelBanner.DrawVictory();
             }
 
             if (choosing)
@@ -376,6 +395,10 @@ static void DrawHud(bool isMouseCaptured, string displayVersion)
 }
 
 // Reads the balancing file; every problem with it goes into the log as a warning.
+static void LogRun(GameWorld world, FileLog? log) =>
+    log?.Info($"New run, seed {world.Seed}: {world.Rooms.Count} rooms, {world.Doors.Count} doors, "
+        + $"{world.Ghouls.Count} ghouls, {world.Bats.Count} bats, {world.Level.Width} x {world.Level.Depth} cells.");
+
 static Balance LoadBalance(string path, FileLog? log)
 {
     var result = BalanceFile.Load(path);

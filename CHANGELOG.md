@@ -7,7 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
-- Zum Ausprobieren: zufällig erzeugte Ebenen aus handgebauten Räumen, mit Gängen und Schleifen, der Bossraum am weitesten vom Start. Start mit `--level generated`, mit `--seed <Zahl>` immer derselbe Grundriss
+- **Durchläufe auf Ebene 0 „The Catacombs“:** Das Spiel startet auf einer zufällig erzeugten Ebene aus handgebauten Räumen, mit Gängen und Schleifen, der Bossraum am weitesten vom Start. Beim Start erscheint kurz der Name der Ebene. Nach dem Tod beginnt ein neuer Durchlauf mit neuem Grundriss. Ist der Bossraum geräumt, ist der Durchlauf gewonnen („VICTORY“, vorläufig). Mit `--seed <Zahl>` immer derselbe Grundriss; die alten Testlevel gibt es weiter mit `--level test` / `--level heights`
 - Türen zwischen den Räumen der erzeugten Ebenen: Alle sind zu und halten Spieler, Gegner, Sicht und Schüsse auf. Mit **F** öffnet man die Tür, auf die man aus der Nähe schaut („[F] Open“); offen bleibt offen. Die Tür zum Bossraum ist dunkel, mit Schädeln und rotem Schimmer
 - Kampfräume werden zur Arena: Beim ersten Betreten fallen an allen Türen Gitter, die schlafenden Gegner erwachen. Sind alle tot, heben sich die Gitter und die Tür, durch die man kam, öffnet sich
 - Je weiter ein Kampfraum vom Start entfernt ist, desto mehr Ghule und Fledermäuse warten darin; der Bossraum ist voll besetzt. Einstellbar in `balance.json` unter `difficulty`
