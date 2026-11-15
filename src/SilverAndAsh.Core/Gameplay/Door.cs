@@ -23,6 +23,8 @@ public sealed class Door : IInteractable
         Z = plan.Z;
         Kind = plan.Kind;
         Side = plan.Side;
+        RoomA = plan.RoomA;
+        RoomB = plan.RoomB;
         BoxMin = new Vector3(plan.X * Level.CellSize, cell.FloorHeight, plan.Z * Level.CellSize);
         BoxMax = new Vector3((plan.X + 1) * Level.CellSize, cell.CeilingHeight, (plan.Z + 1) * Level.CellSize);
     }
@@ -37,6 +39,12 @@ public sealed class Door : IInteractable
     public int Z { get; }
 
     public DoorKind Kind { get; }
+
+    /// <summary>The room on one side (number in <see cref="GameWorld.Rooms"/>).</summary>
+    public int RoomA { get; }
+
+    /// <summary>The room on the other side.</summary>
+    public int RoomB { get; }
 
     /// <summary>Which way the passage runs: North/South = along Z, East/West = along X.</summary>
     public RoomSide Side { get; }

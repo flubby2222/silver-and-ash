@@ -453,6 +453,12 @@ static void RunGame(
                 LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
             }
 
+            // The map while M is held - the game goes on meanwhile (no pause: online co-op).
+            if (!frozen && !choosing && Raylib.IsKeyDown(KeyboardKey.M))
+            {
+                MapView.Draw(gameWorld, player);
+            }
+
             if (choosing)
             {
                 BoonWindow.Draw(player, gameWorld.Balance.Boons);

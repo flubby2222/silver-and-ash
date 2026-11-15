@@ -33,6 +33,7 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | Linke Maustaste | Silberklinge |
 | Rechte Maustaste | Pistole |
 | F | Interagieren (Tür öffnen) |
+| M (halten) | Karte: betretene Räume, ihre Türen, eigene Position |
 | Q | Blutrausch |
 | Esc | Menü: weiter, Mausempfindlichkeit, zum Titel, beenden (allein steht das Spiel solange still) |
 

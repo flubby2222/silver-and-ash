@@ -38,7 +38,7 @@ Leitlinie dabei: **Online-Coop bleibt möglich** ([0003](https://github.com/flub
 - **Nur einen Eingang** haben: Schatzräume, Secret Room, Händler, Altar, Boss.
 - **Generator-Garantien:** Boss, Händler und Altar sind ohne Schlüssel erreichbar; der Secret Room grenzt an einen Kampfraum; Start, Händler und Altar sind gegnerfrei; gleicher Seed = gleicher Grundriss.
 - **Ebene 0:** Decken **6 m** in Räumen (für den Luft-Dash), 3,5 m in Gängen; **keine Höhenunterschiede** (Stufen, Gruben kommen später). Look erst **funktional** (grau-brauner Stein, Kerzen/Fackeln, Nebel), so gebaut, dass Texturen und Animationen später separat dazukommen. Ebenenname beim Betreten.
-- **Orientierung:** keine Minimap; **erkennbare Türen** übernehmen die Führung.
+- **Orientierung:** **Karte auf M** (nur solange gehalten, das Spiel läuft weiter): zeigt die **betretenen Räume**, ihre Türen und die eigene Position. Keine dauerhafte Minimap; **erkennbare Türen** führen weiterhin. *(Nachtrag 2026-11-15, #129: Beim Anspielen des Generators wünschte sich der Product Owner doch eine Karte.)*
 
 ### Türen und Interaktion
 - **F** ist die Interaktionstaste: Türen, Kisten, Schlösser öffnen, Personen ansprechen. Kleinkram (Verbrauchsgüter, Silber) nimmt man durch **Drüberlaufen** auf.
@@ -103,4 +103,4 @@ Nicht in 1.0: Ebenen 1 und 2, weitere Bosse, Höhenunterschiede in Ebenen, Minim
 - **Positiv:** Kein Stillstand außer der Solo-Pause – Online-Coop bleibt offen.
 - **Negativ:** Der Umfang bis 1.0 wächst deutlich (Generator, Türen, Wirtschaft, Boss, Ausrüstung, Skills) – dafür hat 1.0 nur eine Ebene.
 - **Negativ:** Die Bonus-Wahl aus v0.7 muss umgebaut werden (kein Anhalten mehr).
-- **Negativ:** Ohne Minimap hängt die Orientierung an guten Vorlagen und erkennbaren Türen – das muss beim Anspielen geprüft werden.
+- **Negativ:** Ohne dauerhafte Minimap hängt die Orientierung an guten Vorlagen, erkennbaren Türen und der Karte auf M – das muss beim Anspielen geprüft werden.
