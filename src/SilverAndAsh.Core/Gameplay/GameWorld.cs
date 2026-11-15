@@ -34,6 +34,7 @@ public sealed class GameWorld
     private readonly List<RoomState> _rooms;
     private readonly Dictionary<(int X, int Z), RoomState> _roomOfCell = [];
     private readonly HashSet<int> _asleep = [];
+    private bool _lossReported;
 
     /// <summary>
     /// Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.
@@ -106,6 +107,18 @@ public sealed class GameWorld
             }
         }
     }
+
+    /// <summary>Name of the level, shown briefly at the start (e.g. "THE CATACOMBS"), or null for hand-made levels.</summary>
+    public string? LevelName { get; init; }
+
+    /// <summary>The level as it was built, all doors open - for drawing. <see cref="Level"/> is what blocks.</summary>
+    public Level LevelAsBuilt => _levelWithOpenDoors;
+
+    /// <summary>True once the boss room is cleared: the run is won (for now; the troll and the stairs come in v0.10).</summary>
+    public bool IsWon { get; private set; }
+
+    /// <summary>True when every player is dead before the run was won.</summary>
+    public bool IsLost => !IsWon && Players.All(player => player.IsDead);
 
     /// <summary>The rooms of a generated level and what happened in them (empty for hand-made levels).</summary>
     public IReadOnlyList<RoomState> Rooms => _rooms;
@@ -234,6 +247,7 @@ public sealed class GameWorld
         {
             room.Clear();
             _events.Add(new RoomCleared(room.Index));
+            WinIfBoss(room);
             return;
         }
 
@@ -261,6 +275,26 @@ public sealed class GameWorld
             room.Clear();
             UpdateLevel();
             _events.Add(new RoomCleared(room.Index));
+            WinIfBoss(room);
+        }
+    }
+
+    // A room is cleared only once, and there is one boss room - so the run is won only once.
+    private void WinIfBoss(RoomState room)
+    {
+        if (room.Kind == RoomKind.Boss)
+        {
+            IsWon = true;
+            _events.Add(new RunWon());
+        }
+    }
+
+    private void ReportLoss()
+    {
+        if (IsLost && !_lossReported)
+        {
+            _lossReported = true;
+            _events.Add(new RunLost());
         }
     }
 
@@ -642,6 +676,7 @@ public sealed class GameWorld
         DropFromTheDead();
         MovePickups();
         ClearRooms();
+        ReportLoss();
 
         _ticksAllPlayersDead = Players.All(player => player.IsDead) ? _ticksAllPlayersDead + 1 : 0;
     }

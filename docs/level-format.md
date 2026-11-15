@@ -47,19 +47,25 @@ Eine kleine Treppe nach oben (`123`) und eine Grube (`___`).
 
 ## Ein Level starten
 
-Standard ist `assets/levels/test.txt`. Ein anderes Level wählt man beim Start mit `--level <name>` (Dateiname ohne `.txt`):
+**Standard ist ein Durchlauf auf Ebene 0** („THE CATACOMBS“): eine aus den Raum-Vorlagen erzeugte Ebene (siehe unten), bei jedem Start und nach jedem Tod mit **neuem Seed**, also neuem Grundriss. Der Seed steht im Log. Mit `--seed` spielt man einen bestimmten Grundriss; gleicher Seed = gleiche Ebene, gleiche Gegner:
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --seed 123
+```
+
+**Sieg (vorläufig):** Ist der Bossraum geräumt, ist der Durchlauf gewonnen. Troll und Wendeltreppe kommen in v0.10.
+
+Die alten **handgebauten Level** aus `assets/levels/` startet man mit `--level <name>` (Dateiname ohne `.txt`). Sie haben keine Räume und Türen, alle Gegner sind von Anfang an wach, und nach dem Tod beginnt dasselbe Level von vorn:
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --level test
+```
 
 ```
 dotnet run --project src/SilverAndAsh.Game -- --level heights
 ```
 
-Die beiden `--` trennen die Optionen für `dotnet` von denen für das Spiel. Erlaubt sind Namen aus Kleinbuchstaben, Ziffern und `-`.
-
-Eine **erzeugte Ebene** (aus den Raum-Vorlagen, siehe unten) startet man mit dem Namen `generated`. Mit `--seed` wählt man den Startwert. Gleicher Seed = gleicher Grundriss; ohne `--seed` gibt es bei jedem Start einen neuen (er steht im Log):
-
-```
-dotnet run --project src/SilverAndAsh.Game -- --level generated --seed 123
-```
+Die beiden `--` trennen die Optionen für `dotnet` von denen für das Spiel. Erlaubt sind Namen aus Kleinbuchstaben, Ziffern und `-`. `--level generated` ist dasselbe wie gar kein `--level`.
 
 ## Im Code
 

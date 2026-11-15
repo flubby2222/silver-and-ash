@@ -99,6 +99,12 @@ public sealed record RoomSealed(int RoomIndex) : GameEvent;
 /// <summary>All enemies of room <paramref name="RoomIndex"/> are dead: its grates rise.</summary>
 public sealed record RoomCleared(int RoomIndex) : GameEvent;
 
+/// <summary>The boss room is cleared: the run is won.</summary>
+public sealed record RunWon : GameEvent;
+
+/// <summary>Every player is dead before the run was won.</summary>
+public sealed record RunLost : GameEvent;
+
 /// <summary>Player <paramref name="PlayerId"/> took <paramref name="Damage"/>.</summary>
 public sealed record PlayerHit(int PlayerId, int Damage) : GameEvent;
 

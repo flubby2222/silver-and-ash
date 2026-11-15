@@ -3,9 +3,18 @@ namespace SilverAndAsh.Core.Tests;
 public class LaunchOptionsTests
 {
     [Fact]
-    public void Without_options_the_test_level_is_loaded()
+    public void Without_options_a_generated_level_0_is_played()
     {
-        Assert.Equal("test", LaunchOptions.Parse([]).LevelName);
+        var options = LaunchOptions.Parse([]);
+
+        Assert.Equal("generated", options.LevelName);
+        Assert.True(options.IsGenerated);
+    }
+
+    [Fact]
+    public void The_old_test_level_can_still_be_chosen()
+    {
+        Assert.False(LaunchOptions.Parse(["--level", "test"]).IsGenerated);
     }
 
     [Fact]

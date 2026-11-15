@@ -10,8 +10,8 @@ namespace SilverAndAsh.Core;
 /// <param name="Seed">Seed chosen with <c>--seed</c>, or null for a new one every game.</param>
 public sealed partial record LaunchOptions(string LevelName, int? Seed = null)
 {
-    /// <summary>Level that is loaded when no <c>--level</c> is given.</summary>
-    public const string DefaultLevelName = "test";
+    /// <summary>Level that is played when no <c>--level</c> is given: a generated level 0.</summary>
+    public const string DefaultLevelName = GeneratedLevelName;
 
     /// <summary>This "level name" builds a level from the room templates instead of loading a file.</summary>
     public const string GeneratedLevelName = "generated";
