@@ -125,6 +125,13 @@
     "duration": 10                      // ... for 10 s, starting at once when picked up
   },
 
+  "layout": {
+    "combatRoomsMin": 7,                // a level has 7 to 9 combat rooms (with start and boss: about 20 minutes)
+    "combatRoomsMax": 9,
+    "corridorChance": 0.6,              // 60 % of rooms are reached through a corridor, the rest through a shared wall
+    "maxLoops": 2                       // at most 2 extra connections that make a second way round
+  },
+
   "bloodBolt": {
     "speed": 12,                        // m/s
     "damage": 15,

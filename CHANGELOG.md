@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- Zum Ausprobieren: zufällig erzeugte Ebenen aus handgebauten Räumen, mit Gängen und Schleifen, der Bossraum am weitesten vom Start. Start mit `--level generated`, mit `--seed <Zahl>` immer derselbe Grundriss. Noch ohne Gegner und Türen
+
 ### Geändert
 - Ist die Silberklinge voll aufgeladen, füllt sich die Ausdauer wieder auf, auch wenn man die Taste weiter hält. Während des Ladens selbst füllt sie sich weiterhin nicht
 

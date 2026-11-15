@@ -6,6 +6,8 @@ namespace SilverAndAsh.Core.World;
 ///   <item><c>+</c> – door slot: a place on the outer wall where the generator may put a door.
 ///   Must sit on a side (not in a corner) with floor right behind it. Unused slots stay walls.</item>
 /// </list>
+/// The outer ring of a template is always wall or door slot. Rooms with a single entrance (the boss room) have
+/// exactly one door slot.
 /// 'G' and 'B' mark places for enemies, 'P' the player start (only in the start room).
 /// Training dummies ('D') are not allowed in rooms. The ceiling height comes from the kind of room.
 /// Full description: docs/level-format.md.
@@ -116,6 +118,8 @@ public static class RoomTemplateParser
             throw new LevelFormatException(name, 0, "A start room needs a player start 'P'.");
         }
 
+        CheckEdgeIsClosed(cells, name);
+
         var doorSlots = doorCells.Select(cell => ToDoorSlot(cells, cell, name)).ToList();
 
         if (doorSlots.Count == 0)
@@ -123,10 +127,10 @@ public static class RoomTemplateParser
             throw new LevelFormatException(name, 0, "The room has no door slot '+'.");
         }
 
-        if (kind == RoomKind.Boss && doorSlots.Count != 1)
+        if (kind.HasSingleEntrance() && doorSlots.Count != 1)
         {
             throw new LevelFormatException(
-                name, 0, $"A boss room needs exactly one door slot '+', but this one has {doorSlots.Count}.");
+                name, 0, $"A {kind.ToString().ToLowerInvariant()} room needs exactly one door slot '+', but this one has {doorSlots.Count}.");
         }
 
         CheckFloorIsConnected(cells, name);
@@ -164,6 +168,23 @@ public static class RoomTemplateParser
         }
 
         return new DoorSlot(x, z, side);
+    }
+
+    // The outer ring is wall or door slot: rooms never open onto the outside, and joined rooms meet wall on wall.
+    private static void CheckEdgeIsClosed(Cell[,] cells, string name)
+    {
+        var lastX = cells.GetLength(0) - 1;
+        var lastZ = cells.GetLength(1) - 1;
+        for (var z = 0; z <= lastZ; z++)
+        {
+            for (var x = 0; x <= lastX; x++)
+            {
+                if ((x == 0 || x == lastX || z == 0 || z == lastZ) && !cells[x, z].IsSolid)
+                {
+                    throw Error(name, x, z, $"Floor on the edge of the room in column {x + 1}; the edge must be wall or a door slot '+'.");
+                }
+            }
+        }
     }
 
     // Every walkable cell must be reachable from every other one, or enemies and loot could end up out of reach.

@@ -43,6 +43,7 @@ public static class BalanceFile
         "drops.ghoulChance", "drops.batChance", "drops.consecratedAmmoShare", "bloodVial.heal",
         "experience.ghoul", "experience.bat",
         "boons.staminaRegen", "boons.health", "boons.damage", "boons.experience",
+        "layout.corridorChance", "layout.maxLoops",
     };
 
     /// <summary>Highest sensible values. A jump may at most bring the head up to the ceiling.</summary>
@@ -55,6 +56,7 @@ public static class BalanceFile
         ["drops.ghoulChance"] = 1,
         ["drops.batChance"] = 1,
         ["drops.consecratedAmmoShare"] = 1,
+        ["layout.corridorChance"] = 1,
     };
 
     /// <summary>Values that must stay below a limit (a penalty of 100 % would mean standing still).</summary>
@@ -69,6 +71,7 @@ public static class BalanceFile
         ("bat", "circleRadiusMin", "circleRadiusMax"),
         ("bat", "turnRoundMin", "turnRoundMax"),
         ("bat", "circleHeightMin", "circleHeightMax"),
+        ("layout", "combatRoomsMin", "combatRoomsMax"),
     ];
 
     /// <summary>Reads the file at <paramref name="path"/>. A missing or unreadable file gives the standard values.</summary>

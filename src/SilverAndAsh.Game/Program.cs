@@ -42,15 +42,28 @@ using (log)
 
     // Load the level before opening the window: if it is broken, no window flashes up.
     // Choose another level with: dotnet run --project src/SilverAndAsh.Game -- --level heights
+    // A level built from the room templates: ... -- --level generated --seed 123 (without --seed: a new one each start)
     Level? level = null;
     try
     {
         var options = LaunchOptions.Parse(args);
-        var levelPath = options.LevelPath(Path.Combine(AppContext.BaseDirectory, "assets", "levels"));
-        level = LevelParser.ParseFile(levelPath);
-        log?.Info($"Level '{levelPath}' loaded: {level.Width} x {level.Depth} cells.");
+        if (options.IsGenerated)
+        {
+            var rooms = RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms"));
+            var layout = BalanceFile.Load(Path.Combine(AppContext.BaseDirectory, "assets", "balance.json")).Balance.Layout;
+            var generated = LevelGenerator.Generate(rooms, options.Seed ?? Random.Shared.Next(), layout);
+            level = generated.Level;
+            log?.Info($"Level generated from {rooms.Count} room templates, seed {generated.Seed}: "
+                + $"{generated.Rooms.Count} rooms, {generated.Doors.Count} doors, {level.Width} x {level.Depth} cells.");
+        }
+        else
+        {
+            var levelPath = options.LevelPath(Path.Combine(AppContext.BaseDirectory, "assets", "levels"));
+            level = LevelParser.ParseFile(levelPath);
+            log?.Info($"Level '{levelPath}' loaded: {level.Width} x {level.Depth} cells.");
+        }
     }
-    catch (Exception exception) when (exception is ArgumentException or LevelFormatException or IOException or UnauthorizedAccessException)
+    catch (Exception exception) when (exception is ArgumentException or LevelFormatException or IOException or UnauthorizedAccessException or InvalidOperationException)
     {
         log?.Error("Could not load the level.", exception);
         Console.Error.WriteLine($"Could not load the level: {exception.Message}");

@@ -86,6 +86,9 @@ public class RoomTemplateTests
     [InlineData("##+##\n#.P.#\n#####", RoomKind.Combat, "player start")]
     [InlineData("#+###\n#.#.#\n###.#\n#####", RoomKind.Combat, "connected")]
     [InlineData("##+##\n#.D.#\n#####", RoomKind.Combat, "Unknown symbol 'D'")]
+    [InlineData("##+##\n#....\n#####", RoomKind.Combat, "edge must be wall")]
+    [InlineData("##+#\n#...\n#..", RoomKind.Combat, "edge must be wall")]
+    [InlineData("##+##\n#...#\n#.###", RoomKind.Combat, "edge must be wall")]
     public void Mistakes_are_reported_with_the_room_name(string text, RoomKind kind, string problem)
     {
         var error = Assert.Throws<LevelFormatException>(() => RoomTemplateParser.Parse(text, kind, "broken"));

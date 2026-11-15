@@ -113,6 +113,7 @@ public class BalanceFileTests
     [InlineData("""{ "drops": { "ghoulChance": 1.5 } }""", "drops.ghoulChance")]
     [InlineData("""{ "drops": { "batChance": 2 } }""", "drops.batChance")]
     [InlineData("""{ "drops": { "consecratedAmmoShare": 1.2 } }""", "drops.consecratedAmmoShare")]
+    [InlineData("""{ "layout": { "corridorChance": 1.5 } }""", "layout.corridorChance")]
     public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);
@@ -141,6 +142,15 @@ public class BalanceFileTests
 
         Assert.Equal(Balance.Default.Bat, result.Balance.Bat);
         Assert.Contains(result.Warnings, w => w.Contains($"bat.{min}") && w.Contains($"bat.{max}"));
+    }
+
+    [Fact]
+    public void More_minimum_than_maximum_combat_rooms_falls_back_to_both_standards()
+    {
+        var result = BalanceFile.Parse("""{ "layout": { "combatRoomsMin": 9, "combatRoomsMax": 4 } }""");
+
+        Assert.Equal(Balance.Default.Layout, result.Balance.Layout);
+        Assert.Contains(result.Warnings, w => w.Contains("layout.combatRoomsMin") && w.Contains("layout.combatRoomsMax"));
     }
 
     [Fact]

@@ -18,3 +18,13 @@ public enum RoomKind
     /// <summary>The last room of a level; has exactly one door.</summary>
     Boss,
 }
+
+/// <summary>Rules that depend on the kind of room.</summary>
+public static class RoomKindRules
+{
+    /// <summary>
+    /// True for rooms that may only have one way in. Later also treasure, secret, merchant and altar rooms.
+    /// The level generator never adds a second door or a loop to them.
+    /// </summary>
+    public static bool HasSingleEntrance(this RoomKind kind) => kind == RoomKind.Boss;
+}

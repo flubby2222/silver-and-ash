@@ -48,6 +48,9 @@ public sealed record Balance
     /// <summary>Consecrated ammunition: a consumable that makes the pistol fire faster for a while.</summary>
     public ConsecratedAmmoBalance ConsecratedAmmo { get; init; } = new();
 
+    /// <summary>How a level is put together from room templates.</summary>
+    public LayoutBalance Layout { get; init; } = new();
+
     /// <summary>Seconds between the death of all players and the restart of the level.</summary>
     public float RestartDelay { get; init; } = 2f;
 }
@@ -111,6 +114,22 @@ public sealed record ConsecratedAmmoBalance
 
     /// <summary>Seconds it lasts - starting at once when picked up. Picking up another starts the time again.</summary>
     public float Duration { get; init; } = 10f;
+}
+
+/// <summary>The pattern of a level: how many rooms, how often corridors and loops.</summary>
+public sealed record LayoutBalance
+{
+    /// <summary>Fewest combat rooms in a level. The generator picks a number between this and the maximum.</summary>
+    public int CombatRoomsMin { get; init; } = 7;
+
+    /// <summary>Most combat rooms in a level.</summary>
+    public int CombatRoomsMax { get; init; } = 9;
+
+    /// <summary>Chance that a room is reached through a corridor instead of a door in a shared wall: 0 = never, 1 = always.</summary>
+    public float CorridorChance { get; init; } = 0.6f;
+
+    /// <summary>Most loops (extra connections that make a second way round). 0 = the rooms form a tree.</summary>
+    public int MaxLoops { get; init; } = 2;
 }
 
 /// <summary>Balancing values of the blood vial.</summary>
