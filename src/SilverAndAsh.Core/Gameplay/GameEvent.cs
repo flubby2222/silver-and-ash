@@ -90,6 +90,9 @@ public sealed record GhoulWindUp(int GhoulId) : GameEvent;
 /// <summary>Ghoul <paramref name="GhoulId"/> strikes; <paramref name="Hit"/> tells whether the blow landed.</summary>
 public sealed record GhoulStruck(int GhoulId, bool Hit) : GameEvent;
 
+/// <summary>Door <paramref name="DoorId"/> was opened.</summary>
+public sealed record DoorOpened(int DoorId) : GameEvent;
+
 /// <summary>Player <paramref name="PlayerId"/> took <paramref name="Damage"/>.</summary>
 public sealed record PlayerHit(int PlayerId, int Damage) : GameEvent;
 

@@ -8,7 +8,7 @@ namespace SilverAndAsh.Core.Gameplay;
 /// <summary>The player character: where it stands, how it moves and where it looks.</summary>
 public sealed class Player
 {
-    private readonly Level _level;
+    private Level _level;
     private readonly Func<IEnumerable<CylinderBody>> _bodies;
     private readonly PlayerBalance _player;
 
@@ -62,6 +62,12 @@ public sealed class Player
 
     /// <summary>Where the player is looking.</summary>
     public FirstPersonView View { get; } = new();
+
+    /// <summary>
+    /// From now on the player moves in <paramref name="level"/> - the same level with some cells changed
+    /// (a door opened). Called by the world.
+    /// </summary>
+    internal void ChangeLevel(Level level) => _level = level ?? throw new ArgumentNullException(nameof(level));
 
     /// <summary>The camera "nod" after landing.</summary>
     public LandingDip LandingDip { get; }

@@ -16,9 +16,12 @@ namespace SilverAndAsh.Core.Input;
 /// <param name="Melee">True while the button for the silver blade is held (left mouse button).</param>
 /// <param name="Shoot">True while the button for the pistol is held (right mouse button).</param>
 /// <param name="ChooseBoon">The boon chosen after a level up (keys 1 / 2 / 3 or a click), or null for none.</param>
+/// <param name="Interact">
+/// True in the one tick after the interaction key (F) was pressed: open the door (later: chest, lock, person) in front.
+/// </param>
 public readonly record struct PlayerInput(
     Vector2 Move, Vector2 Look, bool Jump, bool Dash = false, bool Melee = false, bool Shoot = false,
-    Gameplay.Boon? ChooseBoon = null)
+    Gameplay.Boon? ChooseBoon = null, bool Interact = false)
 {
     /// <summary>No input at all.</summary>
     public static PlayerInput None { get; } = new(Vector2.Zero, Vector2.Zero, false);

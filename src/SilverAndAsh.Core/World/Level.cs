@@ -112,6 +112,27 @@ public sealed class Level
     /// </summary>
     public Cell this[int x, int z] => IsInside(x, z) ? _cells[x, z] : Cell.Wall;
 
+    /// <summary>
+    /// A copy of this level with some cells replaced - start and figures stay. Levels never change themselves,
+    /// so a world that opens a door gets a new level instead.
+    /// </summary>
+    public Level WithCells(IEnumerable<(int X, int Z, Cell Cell)> changes)
+    {
+        ArgumentNullException.ThrowIfNull(changes);
+        var cells = (Cell[,])_cells.Clone();
+        foreach (var (x, z, cell) in changes)
+        {
+            if (!IsInside(x, z))
+            {
+                throw new ArgumentException($"Cell {x}/{z} lies outside the level.", nameof(changes));
+            }
+
+            cells[x, z] = cell;
+        }
+
+        return new Level(cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells);
+    }
+
     /// <summary>True if (x, z) is a grid position inside the level.</summary>
     public bool IsInside(int x, int z) => x >= 0 && x < Width && z >= 0 && z < Depth;
 
