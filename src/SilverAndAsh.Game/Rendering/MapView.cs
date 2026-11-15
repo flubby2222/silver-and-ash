@@ -22,6 +22,7 @@ internal static class MapView
     private static readonly Color DoorOpen = new(210, 200, 180, 255);
     private static readonly Color DoorBarred = new(150, 152, 165, 255);
     private static readonly Color DoorBoss = new(210, 40, 44, 255);
+    private static readonly Color DoorLocked = new(220, 180, 70, 255);
     private static readonly Color PlayerColor = new(230, 190, 90, 255);
     private static readonly Color Heading = new(214, 204, 180, 255);
     private static readonly Color Hint = new(150, 150, 160, 255);
@@ -75,6 +76,7 @@ internal static class MapView
             var color = door.IsBarred ? DoorBarred
                 : door.IsOpen ? DoorOpen
                 : door.Kind == DoorKind.Boss ? DoorBoss
+                : door.Kind == DoorKind.Locked ? DoorLocked
                 : DoorClosed;
             var corner = ToScreen(door.X, door.Z);
             var inset = size * 0.15f;

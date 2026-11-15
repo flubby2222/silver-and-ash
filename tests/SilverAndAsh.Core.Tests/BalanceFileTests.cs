@@ -115,6 +115,8 @@ public class BalanceFileTests
     [InlineData("""{ "drops": { "consecratedAmmoShare": 1.2 } }""", "drops.consecratedAmmoShare")]
     [InlineData("""{ "silver": { "ghoulChance": 1.5 } }""", "silver.ghoulChance")]
     [InlineData("""{ "silver": { "batChance": 2 } }""", "silver.batChance")]
+    [InlineData("""{ "keys": { "roomChance": 1.5 } }""", "keys.roomChance")]
+    [InlineData("""{ "keys": { "enemyChance": 3 } }""", "keys.enemyChance")]
     [InlineData("""{ "layout": { "corridorChance": 1.5 } }""", "layout.corridorChance")]
     [InlineData("""{ "difficulty": { "ghoulShareNear": 1.5 } }""", "difficulty.ghoulShareNear")]
     [InlineData("""{ "difficulty": { "ghoulShareFar": 2 } }""", "difficulty.ghoulShareFar")]
@@ -181,6 +183,15 @@ public class BalanceFileTests
         Assert.Equal(0, result.Balance.Silver.BatMax);
         Assert.Equal(0f, result.Balance.Silver.BatChance);
         Assert.DoesNotContain(result.Warnings, w => w.Contains("silver.bat"));
+    }
+
+    [Fact]
+    public void Keys_may_never_drop()
+    {
+        var result = BalanceFile.Parse("""{ "keys": { "roomChance": 0, "enemyChance": 0 } }""");
+
+        Assert.Equal(new KeysBalance { RoomChance = 0f, EnemyChance = 0f }, result.Balance.Keys);
+        Assert.Empty(result.Warnings);
     }
 
     [Fact]

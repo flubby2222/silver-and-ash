@@ -420,7 +420,7 @@ static void RunGame(
 
             projectileView.Draw(gameWorld.Projectiles, accumulator.Alpha);
             pickupView.Draw(gameWorld.Pickups, accumulator.Alpha);
-            pickupView.DrawSilver(gameWorld.SilverPiles, accumulator.Alpha);
+            pickupView.DrawLoot(gameWorld.Loot, accumulator.Alpha);
 
             impactMarks.Draw();
 
@@ -445,7 +445,7 @@ static void RunGame(
             CombatHud.Draw(player);
             if (!choosing && !frozen)
             {
-                InteractionPrompt.Draw(gameWorld.InteractionTarget(player));
+                InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);
             }
 
             levelNameSeconds = MathF.Max(0f, levelNameSeconds - Raylib.GetFrameTime());

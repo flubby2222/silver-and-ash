@@ -12,6 +12,6 @@ public enum DoorKind
     /// <summary>The door of the boss room: large, skulls, red light. F opens it.</summary>
     Boss,
 
-    /// <summary>An iron door with a padlock - needs a key (keys come in v0.9; not used yet).</summary>
+    /// <summary>An iron door with a padlock - needs a key, which is used up. Once unlocked it stays open.</summary>
     Locked,
 }

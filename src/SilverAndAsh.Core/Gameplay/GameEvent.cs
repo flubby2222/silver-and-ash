@@ -60,6 +60,15 @@ public sealed record SilverDropped(int PileId, int Amount, Vector3 Position) : G
 /// <summary>Player <paramref name="PlayerId"/> picked up silver pile <paramref name="PileId"/> worth <paramref name="Amount"/>.</summary>
 public sealed record SilverTaken(int PileId, int PlayerId, int Amount) : GameEvent;
 
+/// <summary>A key was dropped as loot <paramref name="LootId"/> at <paramref name="Position"/> (by a killed enemy or a cleared room).</summary>
+public sealed record KeyDropped(int LootId, Vector3 Position) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> picked up the key <paramref name="LootId"/>.</summary>
+public sealed record KeyTaken(int LootId, int PlayerId) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> used a key on the locked door <paramref name="DoorId"/> (it opens in the same tick).</summary>
+public sealed record DoorUnlocked(int DoorId, int PlayerId) : GameEvent;
+
 /// <summary>Player <paramref name="PlayerId"/> picked up pickup <paramref name="PickupId"/> of <paramref name="Kind"/>.</summary>
 public sealed record PickupTaken(int PickupId, int PlayerId, ConsumableKind Kind) : GameEvent;
 

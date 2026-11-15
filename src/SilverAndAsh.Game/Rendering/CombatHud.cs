@@ -48,6 +48,7 @@ internal static class CombatHud
         DrawHealth(player.Health, player.MaxHealth);
         DrawLevel(player.Level, player.Experience, player.ExperienceToNextLevel);
         DrawSilver(player.Silver);
+        DrawKeys(player.Keys);
 
         if (player.IsConsecrated)
         {
@@ -85,6 +86,15 @@ internal static class CombatHud
         Raylib.DrawCircle(coinX, coinY, 8f, SilverRim);
         Raylib.DrawCircle(coinX, coinY, 6f, SilverCoin);
         Raylib.DrawCircle(coinX - 2, coinY - 2, 2f, Light);
+    }
+
+    /// <summary>The keys in hand under the silver at the top right: "KEYS 2", golden.</summary>
+    private static void DrawKeys(int keys)
+    {
+        const int FontSize = 20;
+        var text = string.Create(CultureInfo.InvariantCulture, $"KEYS {keys}");
+        var left = Raylib.GetScreenWidth() - 20 - Raylib.MeasureText(text, FontSize);
+        Raylib.DrawText(text, left, 48, FontSize, keys > 0 ? Charged : Cooling);
     }
 
     /// <summary>Consecrated ammunition: its time left, above the health - pale and holy, blinking in the last 3 s.</summary>

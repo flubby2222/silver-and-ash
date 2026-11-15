@@ -8,7 +8,8 @@ namespace SilverAndAsh.Game.Rendering;
 /// <summary>
 /// Placeholder doors: a closed door fills its whole doorway cell (exactly what blocks you), an open one is gone.
 /// Wooden doors are brown planks with dark bands; the boss door is almost black with bone-white skulls and a red
-/// glow. The grate of an arena shows as iron bars on both faces of the doorway. Pure presentation - real models
+/// glow; a locked door is dark iron with rivets and a brass padlock on both faces. The grate of an arena shows as
+/// iron bars on both faces of the doorway. Pure presentation - real models
 /// come later.
 /// </summary>
 internal static class DoorView
@@ -19,6 +20,9 @@ internal static class DoorView
     private static readonly Color Bone = new(214, 204, 180, 255);
     private static readonly Color RedGlow = new(200, 30, 30, 255);
     private static readonly Color Iron = new(70, 72, 80, 255);
+    private static readonly Color DarkIron = new(52, 54, 60, 255);
+    private static readonly Color Rivet = new(96, 98, 108, 255);
+    private static readonly Color Brass = new(176, 140, 72, 255);
 
     /// <summary>Draws all closed doors. Call between BeginMode3D and EndMode3D.</summary>
     public static void Draw(IReadOnlyList<Door> doors, float seconds)
@@ -38,6 +42,10 @@ internal static class DoorView
             if (!door.IsOpen && door.Kind == DoorKind.Boss)
             {
                 DrawBossDoor(place, width, size.Y, depth, seconds);
+            }
+            else if (!door.IsOpen && door.Kind == DoorKind.Locked)
+            {
+                DrawLockedDoor(place, width, size.Y, depth);
             }
             else if (!door.IsOpen)
             {
@@ -81,6 +89,25 @@ internal static class DoorView
                 new Vector3(width * 0.98f, 0.18f, depth + 0.04f),
                 Band);
         }
+    }
+
+    // Dark iron with rows of rivets, and a brass padlock at hand height on both faces.
+    private static void DrawLockedDoor(Matrix4x4 place, float width, float height, float depth)
+    {
+        ShadedBox.Draw(place, new Vector3(width, height, depth), DarkIron);
+        foreach (var y in new[] { -0.4f, 0f, 0.4f })
+        {
+            for (var i = 0; i < 5; i++)
+            {
+                var x = -width / 2f + width * (i + 0.5f) / 5f;
+                ShadedBox.Draw(Matrix4x4.CreateTranslation(x, y * height, 0f) * place, new Vector3(0.07f, 0.07f, depth + 0.04f), Rivet);
+            }
+        }
+
+        // At hand height (1.1 m above the floor), below the eyes - so it does not fill the view close up.
+        var lockY = 1.1f - height / 2f;
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, lockY, 0f) * place, new Vector3(0.26f, 0.24f, depth + 0.14f), Brass);        // body
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, lockY + 0.19f, 0f) * place, new Vector3(0.18f, 0.14f, depth + 0.08f), Iron); // shackle
     }
 
     private static void DrawBossDoor(Matrix4x4 place, float width, float height, float depth, float seconds)
