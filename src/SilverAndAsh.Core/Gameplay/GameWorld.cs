@@ -27,17 +27,24 @@ public sealed class GameWorld
     private readonly HashSet<int> _dropsRolled = [];
     private int _nextPickupId;
     private int _nextProjectileId;
+    private readonly Level _levelWithOpenDoors;
+    private readonly IReadOnlyList<LevelDoor> _doorPlan;
+    private readonly List<Door> _doors;
 
     /// <summary>
     /// Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.
     /// <paramref name="seed"/> starts the world's random numbers: the same seed always gives the same game.
     /// <paramref name="balance"/> holds all balancing values; every figure of this world gets them (the standard
-    /// values if none is given).
+    /// values if none is given). <paramref name="doors"/> (optional) are the doors of a generated level; they all
+    /// start closed. Their cells must be walkable in <paramref name="level"/>.
     /// </summary>
-    public GameWorld(Level level, int seed = 0, Balance? balance = null)
+    public GameWorld(Level level, int seed = 0, Balance? balance = null, IReadOnlyList<LevelDoor>? doors = null)
     {
         ArgumentNullException.ThrowIfNull(level);
-        Level = level;
+        _levelWithOpenDoors = level;
+        _doorPlan = doors ?? [];
+        _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level)).ToList();
+        Level = WithClosedDoors();
         Seed = seed;
         Balance = balance ?? Balance.Default;
         _restartTicks = SimulationClock.SecondsToTicks(Balance.RestartDelay);
@@ -61,10 +68,17 @@ public sealed class GameWorld
             .ToList();
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
-        Player = new Player(level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random);
+        Player = new Player(Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random);
     }
 
-    public Level Level { get; }
+    /// <summary>
+    /// The level as everything in the world sees it: closed doors are walls here. Opening a door replaces it
+    /// with a new level in which that cell is free.
+    /// </summary>
+    public Level Level { get; private set; }
+
+    /// <summary>The doors of the level, in the order they were given.</summary>
+    public IReadOnlyList<Door> Doors => _doors;
 
     /// <summary>All balancing values of this world. They never change while it runs.</summary>
     public Balance Balance { get; }
@@ -84,7 +98,69 @@ public sealed class GameWorld
     /// A fresh world for the same level: full health, every enemy back at its start - but with a new seed (taken
     /// from this one), so the bats fly differently than last time. The balancing values stay the same.
     /// </summary>
-    public GameWorld Restarted() => new(Level, new Random(Seed).Next(), Balance);
+    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan);
+
+    /// <summary>
+    /// What <paramref name="player"/> would use with F right now: the nearest usable thing they look at, within
+    /// <see cref="ControlSettings.InteractionReach"/> and not behind a wall - or null. The HUD shows its prompt.
+    /// </summary>
+    public IInteractable? InteractionTarget(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        if (player.IsDead)
+        {
+            return null;
+        }
+
+        var eye = player.EyePosition;
+        var direction = player.View.Forward;
+        var reach = ControlSettings.InteractionReach;
+
+        // A closed door is wall in Level, so the wall hit is its own front - a small margin lets it count.
+        var wall = Raycast.AgainstLevel(Level, eye, direction, reach)?.Distance ?? float.MaxValue;
+        IInteractable? nearest = null;
+        var nearestDistance = float.MaxValue;
+        foreach (var thing in Interactables.Where(thing => thing.CanInteract))
+        {
+            if (Raycast.AgainstBox(eye, direction, thing.BoxMin, thing.BoxMax) is { } distance
+                && distance <= reach && distance <= wall + 0.01f && distance < nearestDistance)
+            {
+                nearest = thing;
+                nearestDistance = distance;
+            }
+        }
+
+        return nearest;
+    }
+
+    /// <summary>Everything that can be used with F. Doors today; chests, locks and people later.</summary>
+    private IEnumerable<IInteractable> Interactables => _doors;
+
+    private void Interact(Player player)
+    {
+        switch (InteractionTarget(player))
+        {
+            case Door door:
+                OpenDoor(door);
+                break;
+        }
+    }
+
+    private void OpenDoor(Door door)
+    {
+        door.Open();
+        Level = WithClosedDoors();
+        foreach (var player in Players)
+        {
+            player.ChangeLevel(Level);
+        }
+
+        _events.Add(new DoorOpened(door.Id));
+    }
+
+    private Level WithClosedDoors() => _doors.Count == 0
+        ? _levelWithOpenDoors
+        : _levelWithOpenDoors.WithCells(_doors.Where(door => !door.IsOpen).Select(door => (door.X, door.Z, Cell.Wall)));
 
     public IReadOnlyList<TrainingDummy> Dummies => _dummies;
 
@@ -364,6 +440,11 @@ public sealed class GameWorld
 
         Player.Tick(input);
         _events.AddRange(Player.Events);
+
+        if (input.Interact)
+        {
+            Interact(Player);
+        }
 
         foreach (var swing in Player.Events.OfType<BladeSwung>())
         {

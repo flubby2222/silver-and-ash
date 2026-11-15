@@ -135,3 +135,12 @@ Regeln, die immer gelten (und über viele Seeds getestet werden):
 - Bleibt der Generator stecken (kein Raum passt mehr), versucht er es mit den nächsten Zufallszahlen **desselben** Seeds noch einmal – das Ergebnis bleibt also gleich.
 
 Zu jeder erzeugten Ebene gibt es neben den Zellen eine Liste der **Räume** (Art, Fläche, Abstand zum Start in Räumen, Gegnerplätze) und der **Türen** (Lage, welche zwei Räume). Gegner werden noch nicht aufgestellt – das kommt mit den Arenen (#122).
+
+## Türen im Spiel
+
+Jede Tür des Generators wird im Spiel zu einer echten Tür ([`Door.cs`](../src/SilverAndAsh.Core/Gameplay/Door.cs)):
+
+- **Alle Türen starten geschlossen.** Eine geschlossene Tür füllt ihre Türzelle aus. Die Welt behandelt diese Zelle dann als Wand, deshalb blockiert sie Laufen, Sicht der Gegner, Schüsse, Blutgeschosse und die Wegsuche der Gegner, ganz ohne Sonderregeln.
+- **F** öffnet die Tür, auf die man schaut, aus höchstens 2 m (von den Augen bis zur Türfläche). Dafür erscheint der Hinweis „[F] Open“. Offen bleibt offen; ein neuer Durchlauf beginnt wieder mit geschlossenen Türen.
+- **Arten:** normal (Holz) und Boss (die Tür zum Bossraum). Verschlossen (Schlüssel, v0.9) und Arena-Gitter (#122) sind schon vorgesehen.
+- F ist die **eine** Interaktionstaste. Alles, womit man interagieren kann, ist ein `IInteractable` (heute nur Türen, später Kisten, Schlösser, Personen).

@@ -15,6 +15,44 @@ public static class Raycast
     public const float StepLength = 0.1f;
 
     /// <summary>
+    /// Distance along the ray from <paramref name="origin"/> in <paramref name="direction"/> to where it enters the
+    /// box between <paramref name="min"/> and <paramref name="max"/> (edges along the axes), or null if it misses.
+    /// 0 if the ray starts inside. Uses the "slab" method: the ray is inside the box where it is inside all three
+    /// pairs of parallel faces at once.
+    /// </summary>
+    public static float? AgainstBox(Vector3 origin, Vector3 direction, Vector3 min, Vector3 max)
+    {
+        var enter = 0f;
+        var leave = float.MaxValue;
+        for (var axis = 0; axis < 3; axis++)
+        {
+            var start = origin[axis];
+            var step = direction[axis];
+            if (MathF.Abs(step) < 1e-8f)
+            {
+                // Parallel to these two faces: it is between them all along, or never.
+                if (start < min[axis] || start > max[axis])
+                {
+                    return null;
+                }
+
+                continue;
+            }
+
+            var first = (min[axis] - start) / step;
+            var second = (max[axis] - start) / step;
+            enter = MathF.Max(enter, MathF.Min(first, second));
+            leave = MathF.Min(leave, MathF.Max(first, second));
+            if (enter > leave)
+            {
+                return null;
+            }
+        }
+
+        return enter;
+    }
+
+    /// <summary>
     /// First wall, floor or ceiling the ray from <paramref name="origin"/> in <paramref name="direction"/> (length 1)
     /// hits within <paramref name="maxDistance"/>, or null.
     /// </summary>

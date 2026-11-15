@@ -151,6 +151,18 @@ public class LevelGeneratorTests
     }
 
     [Fact]
+    public void The_door_of_the_boss_room_is_a_boss_door_and_all_others_are_normal()
+    {
+        Assert.All(ManyLevels.Value, generated =>
+        {
+            var boss = generated.Rooms.Single(room => room.Kind == RoomKind.Boss).Index;
+
+            Assert.All(generated.Doors, door => Assert.Equal(
+                door.RoomA == boss || door.RoomB == boss ? DoorKind.Boss : DoorKind.Normal, door.Kind));
+        });
+    }
+
+    [Fact]
     public void Distance_from_the_start_counts_the_rooms_on_the_shortest_way()
     {
         Assert.All(ManyLevels.Value, generated =>

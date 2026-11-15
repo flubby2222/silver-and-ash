@@ -96,4 +96,35 @@ public class RaycastTests
 
         Assert.Null(Raycast.AgainstCylinder(new Vector3(0f, 1f, 0f), Vector3.UnitX, body));
     }
+
+    [Theory]
+    [InlineData(1f, 0f, 0f, 2f)]    // straight at the -X face
+    [InlineData(0f, 0f, 1f, 4f)]    // straight at the -Z face
+    public void A_box_is_hit_at_its_near_face(float dx, float dy, float dz, float expected)
+    {
+        var min = new Vector3(-1f, 0f, -1f) + new Vector3(3f, 0f, 5f) * new Vector3(dx, 0f, dz);
+        var max = min + new Vector3(2f, 3f, 2f);
+
+        var distance = Raycast.AgainstBox(new Vector3(0f, 1f, 0f), new Vector3(dx, dy, dz), min, max);
+
+        Assert.NotNull(distance);
+        Assert.Equal(expected, distance!.Value, 0.0001f);
+    }
+
+    [Fact]
+    public void A_box_beside_or_behind_the_ray_is_missed()
+    {
+        var min = new Vector3(2f, 0f, -1f);
+        var max = new Vector3(4f, 3f, 1f);
+
+        Assert.Null(Raycast.AgainstBox(new Vector3(0f, 1f, 0f), -Vector3.UnitX, min, max));
+        Assert.Null(Raycast.AgainstBox(new Vector3(0f, 1f, 0f), Vector3.UnitZ, min, max));
+        Assert.Null(Raycast.AgainstBox(new Vector3(0f, 4f, 0f), Vector3.UnitX, min, max));
+    }
+
+    [Fact]
+    public void A_ray_starting_inside_a_box_hits_it_at_once()
+    {
+        Assert.Equal(0f, Raycast.AgainstBox(new Vector3(1f, 1f, 1f), Vector3.UnitX, Vector3.Zero, new Vector3(2f, 2f, 2f)));
+    }
 }

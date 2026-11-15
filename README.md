@@ -32,5 +32,6 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | Leertaste | Springen |
 | Linke Maustaste | Silberklinge |
 | Rechte Maustaste | Pistole |
+| F | Interagieren (Tür öffnen) |
 | Q | Blutrausch |
 | Esc | Pause |

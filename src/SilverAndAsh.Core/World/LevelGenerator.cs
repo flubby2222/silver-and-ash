@@ -513,7 +513,10 @@ public static class LevelGenerator
         private void AddDoor(OpenSlot from, int toRoom)
         {
             _open.Remove(from);
-            _doors.Add(new LevelDoor(from.X, from.Z, from.Room, toRoom, from.Side));
+            var kind = _rooms[from.Room].Variant.Kind == RoomKind.Boss || _rooms[toRoom].Variant.Kind == RoomKind.Boss
+                ? DoorKind.Boss
+                : DoorKind.Normal;
+            _doors.Add(new LevelDoor(from.X, from.Z, from.Room, toRoom, from.Side, kind));
         }
 
         // True if two rooms share a door or are both joined to the same corridor.

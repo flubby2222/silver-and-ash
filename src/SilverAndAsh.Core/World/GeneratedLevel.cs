@@ -38,4 +38,5 @@ public sealed record PlacedRoom(
 /// <param name="RoomA">The room on the inner side of the door.</param>
 /// <param name="RoomB">The room on the outer side.</param>
 /// <param name="Side">The wall of room A the door sits in: room B lies in this direction.</param>
-public sealed record LevelDoor(int X, int Z, int RoomA, int RoomB, RoomSide Side);
+/// <param name="Kind">What kind of door it is (the door of the boss room is a boss door).</param>
+public sealed record LevelDoor(int X, int Z, int RoomA, int RoomB, RoomSide Side, DoorKind Kind = DoorKind.Normal);

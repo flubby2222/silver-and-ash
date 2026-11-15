@@ -75,7 +75,8 @@ internal sealed class RaylibInput
             Jump: Raylib.IsKeyDown(KeyboardKey.Space),
             Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift),
             Melee: _captureClick.Filter(Raylib.IsMouseButtonDown(MouseButton.Left)),
-            Shoot: Raylib.IsMouseButtonDown(MouseButton.Right));
+            Shoot: Raylib.IsMouseButtonDown(MouseButton.Right),
+            Interact: Raylib.IsKeyPressed(KeyboardKey.F));
     }
 
     private static Vector2 ReadMoveKeys()

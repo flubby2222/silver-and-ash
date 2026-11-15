@@ -13,4 +13,7 @@ public static class ControlSettings
 
     /// <summary>Maximum look up/down angle: just under 90 degrees, so the view never flips over.</summary>
     public const float MaxPitchRadians = 89f * MathF.PI / 180f;
+
+    /// <summary>How far away (from the eyes, in metres) something can be to be used with the interaction key F.</summary>
+    public const float InteractionReach = 2f;
 }
