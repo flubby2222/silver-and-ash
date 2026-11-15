@@ -39,7 +39,7 @@ public sealed record Balance
     /// <summary>The blood vial: a consumable that heals.</summary>
     public BloodVialBalance BloodVial { get; init; } = new();
 
-    /// <summary>Consecrated ammunition: a consumable that makes the pistol stronger for a while.</summary>
+    /// <summary>Consecrated ammunition: a consumable that makes the pistol fire faster for a while.</summary>
     public ConsecratedAmmoBalance ConsecratedAmmo { get; init; } = new();
 
     /// <summary>Seconds between the death of all players and the restart of the level.</summary>
@@ -62,8 +62,8 @@ public sealed record DropsBalance
 /// <summary>Balancing values of consecrated ammunition.</summary>
 public sealed record ConsecratedAmmoBalance
 {
-    /// <summary>The pistol's damage is multiplied by this while it lasts (2 = double).</summary>
-    public float DamageMultiplier { get; init; } = 2f;
+    /// <summary>The pistol fires this many times as fast while it lasts (2 = half the cooldown). The damage stays.</summary>
+    public float FireRateMultiplier { get; init; } = 2f;
 
     /// <summary>Seconds it lasts - starting at once when picked up. Picking up another starts the time again.</summary>
     public float Duration { get; init; } = 15f;

@@ -105,7 +105,7 @@
   },
 
   "consecratedAmmo": {
-    "damageMultiplier": 2,              // pistol damage x2 ...
+    "fireRateMultiplier": 2,            // the pistol fires twice as fast (damage stays) ...
     "duration": 15                      // ... for 15 s, starting at once when picked up
   },
 

@@ -24,6 +24,7 @@ public sealed class Player
         _level = level;
         _bodies = bodies ?? (() => []);
         _player = balance.Player;
+        _consecratedFireRate = balance.ConsecratedAmmo.FireRateMultiplier;
         Position = level.PlayerStartPosition;
         PreviousPosition = Position;
 
@@ -107,7 +108,7 @@ public sealed class Player
     /// <summary>Health of the player.</summary>
     public int Health { get; private set; }
 
-    /// <summary>True while consecrated ammunition makes the pistol stronger.</summary>
+    /// <summary>True while consecrated ammunition makes the pistol fire faster.</summary>
     public bool IsConsecrated => _consecratedTicksLeft > 0;
 
     /// <summary>Seconds of consecrated ammunition left (0 if none).</summary>
@@ -115,7 +116,7 @@ public sealed class Player
 
     /// <summary>
     /// Loads consecrated ammunition for <paramref name="seconds"/> - starting now. Any time left is replaced, not added:
-    /// a second pickup restarts the time, it does not make the shots any stronger.
+    /// a second pickup restarts the time, it does not make the pistol any faster.
     /// </summary>
     public void Consecrate(float seconds)
     {
@@ -127,6 +128,7 @@ public sealed class Player
     }
 
     private int _consecratedTicksLeft;
+    private readonly float _consecratedFireRate;
 
     /// <summary>The most health the player can have.</summary>
     public int MaxHealth => _player.MaxHealth;
@@ -525,7 +527,8 @@ public sealed class Player
             _events.Add(new BladeSwung(EyePosition, View.Forward, charge));
         }
 
-        if (shootPressed && PistolCooldown.TryUse())
+        // Consecrated ammunition: the pistol is ready again sooner.
+        if (shootPressed && PistolCooldown.TryUse(IsConsecrated ? _consecratedFireRate : 1f))
         {
             _events.Add(new ShotFired(EyePosition, View.Forward, IsConsecrated));
         }

@@ -306,7 +306,7 @@ public sealed class GameWorld
         if (target is not null)
         {
             var zone = target.ZoneAt(shot.Origin + direction * nearest);
-            Damage(target, new Hit(Weapon.Pistol, zone, Balance.Pistol.Damage, Consecrated: shot.Consecrated));
+            Damage(target, new Hit(Weapon.Pistol, zone, Balance.Pistol.Damage));
         }
         else if (wall is { } impact)
         {

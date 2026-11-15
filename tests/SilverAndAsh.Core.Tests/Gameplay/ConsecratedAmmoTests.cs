@@ -9,7 +9,8 @@ public class ConsecratedAmmoTests
 {
     private static readonly int Second = SimulationClock.TicksPerSecond;
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
-    private static readonly int Pistol = Balance.Default.Pistol.Damage;
+    private static readonly PlayerInput Shoot = PlayerInput.None with { Shoot = true };
+    private static readonly int PistolTicks = SimulationClock.SecondsToTicks(Balance.Default.Pistol.Cooldown);
 
     /// <summary>Every kill drops consecrated ammo.</summary>
     private static readonly Balance AlwaysAmmo = Balance.Default with
@@ -48,12 +49,43 @@ public class ConsecratedAmmoTests
     }
 
     [Fact]
-    public void Picking_it_up_doubles_the_pistol_damage_at_once()
+    public void Picking_it_up_doubles_the_fire_rate_at_once()
     {
         var world = WorldWithAmmoPickedUp(AlwaysAmmo);
 
         Assert.True(world.Player.IsConsecrated);
-        Assert.Equal(Balance.Default.Dummy.MaxHealth - 2 * Pistol, ShootTheDummy(world));
+        Assert.Equal(PistolTicks / 2, TicksUntilThePistolIsReadyAgain(world));
+    }
+
+    [Fact]
+    public void Without_it_the_pistol_waits_as_usual()
+    {
+        var world = new GameWorld(Corridor);
+
+        Assert.Equal(PistolTicks, TicksUntilThePistolIsReadyAgain(world));
+    }
+
+    [Fact]
+    public void The_damage_stays_the_same()
+    {
+        var world = WorldWithAmmoPickedUp(AlwaysAmmo);
+
+        Assert.Equal(Balance.Default.Dummy.MaxHealth - Balance.Default.Pistol.Damage, ShootTheDummy(world));
+    }
+
+    [Fact]
+    public void Two_quick_shots_fit_into_one_normal_wait()
+    {
+        // Holding the trigger is not enough (a fresh press per shot): shoot, let go, shoot again as soon as possible.
+        var world = WorldWithAmmoPickedUp(AlwaysAmmo);
+        var shots = 0;
+        for (var tick = 0; tick < PistolTicks; tick++)
+        {
+            world.Tick(tick % 2 == 0 ? Shoot : PlayerInput.None);
+            shots += world.Events.Count(e => e is ShotFired);
+        }
+
+        Assert.Equal(2, shots);
     }
 
     [Fact]
@@ -73,7 +105,7 @@ public class ConsecratedAmmoTests
         Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.ConsecratedAmmo.Duration));
 
         Assert.False(world.Player.IsConsecrated);
-        Assert.Equal(Balance.Default.Dummy.MaxHealth - Pistol, ShootTheDummy(world));
+        Assert.Equal(PistolTicks, TicksUntilThePistolIsReadyAgain(world));
     }
 
     [Fact]
@@ -88,56 +120,27 @@ public class ConsecratedAmmoTests
     }
 
     [Fact]
-    public void The_blade_is_not_consecrated()
+    public void The_blade_is_not_faster()
     {
         var world = WorldWithAmmoPickedUp(AlwaysAmmo);
-        var dummy = world.Dummies[0];
-        for (var tick = 0; Vector3.Distance(world.Player.Position, dummy.Position) > 1.5f; tick++)
-        {
-            Assert.True(tick < 2 * Second, "The player never got close to the dummy.");
-            world.Tick(Forward);
-        }
 
-        Face(world.Player, dummy.Position + new Vector3(0f, 1f, 0f));
         world.Tick(PlayerInput.None with { Melee = true });
         world.Tick(PlayerInput.None);
 
-        Assert.Equal(Balance.Default.Dummy.MaxHealth - Balance.Default.Blade.Damage, dummy.Health);
+        Assert.Equal(1f, world.Player.BladeCooldown.RemainingFraction, 0.05f);
+        Assert.Equal(SimulationClock.SecondsToTicks(Balance.Default.Blade.Cooldown), world.Player.BladeCooldown.DurationTicks);
     }
 
     [Fact]
-    public void A_second_pickup_restarts_the_time_but_does_not_double_again()
+    public void A_second_pickup_restarts_the_time_but_is_not_faster()
     {
-        var player = new Player(LevelParser.Parse("P"));
-        player.Consecrate(15f);
-        player.Tick(PlayerInput.None);
-        player.Tick(PlayerInput.None);
+        var world = WorldWithAmmoPickedUp(AlwaysAmmo);
+        Run(world, PlayerInput.None, Second);
 
-        player.Consecrate(15f);
+        world.Player.Consecrate(Balance.Default.ConsecratedAmmo.Duration);
 
-        Assert.Equal(15f, player.ConsecratedSecondsLeft, 0.001f);
-        var rules = DamageRules.Standard();
-        Assert.Equal(2 * Pistol, rules.Calculate(new Hit(Weapon.Pistol, HitZone.Body, Pistol, Consecrated: true)).Amount);
-    }
-
-    [Fact]
-    public void Together_with_a_headshot_it_multiplies()
-    {
-        var rules = DamageRules.Standard();
-
-        var hit = rules.Calculate(new Hit(Weapon.Pistol, HitZone.Head, Pistol, Consecrated: true));
-
-        Assert.Equal(Pistol * 3 * 2, hit.Amount);
-        Assert.True(hit.IsCritical);
-    }
-
-    [Fact]
-    public void Only_consecrated_pistol_hits_count()
-    {
-        var rules = DamageRules.Standard();
-
-        Assert.Equal(Pistol, rules.Calculate(new Hit(Weapon.Pistol, HitZone.Body, Pistol)).Amount);
-        Assert.Equal(40, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, Consecrated: true)).Amount);
+        Assert.Equal(Balance.Default.ConsecratedAmmo.Duration, world.Player.ConsecratedSecondsLeft, 0.001f);
+        Assert.Equal(PistolTicks / 2, TicksUntilThePistolIsReadyAgain(world));
     }
 
     [Fact]
@@ -156,25 +159,23 @@ public class ConsecratedAmmoTests
     {
         var world = WorldWithAmmoPickedUp(AlwaysAmmo);
 
-        world.Tick(PlayerInput.None with { Shoot = true });
+        world.Tick(Shoot);
 
         var shot = Assert.Single(world.Events.OfType<ShotFired>());
         Assert.True(shot.Consecrated);
     }
 
     [Fact]
-    public void Strength_and_time_come_from_the_world()
+    public void Speed_and_time_come_from_the_world()
     {
         var world = WorldWithAmmoPickedUp(AlwaysAmmo with
         {
-            ConsecratedAmmo = new ConsecratedAmmoBalance { DamageMultiplier = 1.5f, Duration = 4f },
+            ConsecratedAmmo = new ConsecratedAmmoBalance { FireRateMultiplier = 4f, Duration = 4f },
         });
 
         // 4 s from the pickup, minus the quarter second the helper waits afterwards.
         Assert.Equal(4f - 0.25f, world.Player.ConsecratedSecondsLeft, 0.05f);
-
-        // 35 x 1.5 = 52.5, rounded to 53 (not x3: 105 would knock the 100-health dummy down and hide the number).
-        Assert.Equal(Balance.Default.Dummy.MaxHealth - 53, ShootTheDummy(world));
+        Assert.Equal(PistolTicks / 4, TicksUntilThePistolIsReadyAgain(world));
     }
 
     private static ConsumableKind DropAfterKillingTheGhoul(Balance balance)
@@ -201,24 +202,34 @@ public class ConsecratedAmmoTests
         return world;
     }
 
+    /// <summary>Fires once and counts the ticks until the pistol could fire again.</summary>
+    private static int TicksUntilThePistolIsReadyAgain(GameWorld world)
+    {
+        world.Tick(Shoot);
+        Assert.Contains(world.Events, e => e is ShotFired);
+        var ticks = 0;
+        for (; !world.Player.PistolCooldown.IsReady; ticks++)
+        {
+            Assert.True(ticks < 2 * Second, "The pistol never got ready again.");
+            world.Tick(PlayerInput.None);
+        }
+
+        return ticks;
+    }
+
     /// <summary>Aims at the dummy's chest, shoots once and returns its health afterwards.</summary>
     private static int ShootTheDummy(GameWorld world)
     {
         var dummy = world.Dummies[0];
-        Face(world.Player, dummy.Position + new Vector3(0f, 1f, 0f));
-        world.Tick(PlayerInput.None with { Shoot = true });
-        return dummy.Health;
-    }
-
-    private static void Face(Player player, Vector3 point)
-    {
-        var direction = Vector3.Normalize(point - player.EyePosition);
-        player.Look(PlayerInput.None with
+        var direction = Vector3.Normalize(dummy.Position + new Vector3(0f, 1f, 0f) - world.Player.EyePosition);
+        world.Player.Look(PlayerInput.None with
         {
             Look = new Vector2(
-                -(MathF.Atan2(direction.X, direction.Z) - player.View.YawRadians) / ControlSettings.MouseSensitivity,
-                -(MathF.Asin(direction.Y) - player.View.PitchRadians) / ControlSettings.MouseSensitivity),
+                -(MathF.Atan2(direction.X, direction.Z) - world.Player.View.YawRadians) / ControlSettings.MouseSensitivity,
+                -(MathF.Asin(direction.Y) - world.Player.View.PitchRadians) / ControlSettings.MouseSensitivity),
         });
+        world.Tick(Shoot);
+        return dummy.Health;
     }
 
     private static void Run(GameWorld world, PlayerInput input, int ticks)
