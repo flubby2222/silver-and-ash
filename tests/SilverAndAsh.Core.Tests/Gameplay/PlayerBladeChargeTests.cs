@@ -50,9 +50,12 @@ public class PlayerBladeChargeTests
     [InlineData(1f)]
     public void Charging_costs_stamina_linearly_up_to_one_segment(float part)
     {
+        // Measured while still holding, at the moment the charge is reached: once it is full, the bar refills
+        // again (#116) - after letting go it would already be a little fuller.
         var player = RunningPlayer();
 
-        HoldAndRelease(player, (int)(part * FullTicks));
+        player.Tick(Melee);
+        RunTicks(player, Melee, (int)(part * FullTicks));
 
         var cost = part * Balance.Default.Blade.ChargeStaminaSegments * SegmentFraction;
         Assert.Equal(1f - cost, player.Stamina.Fraction, Tolerance);
@@ -93,6 +96,28 @@ public class PlayerBladeChargeTests
         RunTicks(player, Melee, FullTicks / 2);
 
         Assert.Equal(before - SegmentFraction / 2f, player.Stamina.Fraction, Tolerance);
+    }
+
+    [Fact]
+    public void Once_fully_charged_the_bar_refills_while_the_button_is_held()
+    {
+        // As above: 2 of 5 segments left, standing still. Charge fully, then keep holding for half a second.
+        var player = RunningPlayer();
+        var dodge = PlayerInput.None with { Dash = true };
+        player.Tick(dodge);
+        RunTicks(player, PlayerInput.None, 30);
+        player.Tick(dodge);
+        RunTicks(player, PlayerInput.None, 60);
+        player.Tick(Melee);
+        RunTicks(player, Melee, FullTicks);
+        Assert.Equal(1f, player.BladeCharge.Fraction);
+        var full = player.Stamina.Fraction;
+
+        RunTicks(player, Melee, SimulationClock.TicksPerSecond / 2);
+
+        // Half a second of refilling: a sixth of the bar (3 s from empty to full).
+        Assert.True(player.BladeCharge.IsCharging);
+        Assert.Equal(full + 1f / 6f, player.Stamina.Fraction, Tolerance);
     }
 
     [Fact]

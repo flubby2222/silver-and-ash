@@ -402,7 +402,10 @@ public sealed class Player
         }
 
         // No refilling during a dodge either - otherwise standing on the ground would pay part of it back.
-        Stamina.SetRecharging(chainOver && !IsDodging && !BladeCharge.IsCharging);
+        // Nor while the blade is still charging (it pays bit by bit); once it is fully charged, holding on is free
+        // and the bar refills again (found while playing).
+        var stillCharging = BladeCharge.IsCharging && !BladeCharge.IsFull;
+        Stamina.SetRecharging(chainOver && !IsDodging && !stillCharging);
         Stamina.Tick();
 
         // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,

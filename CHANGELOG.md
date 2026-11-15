@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Geändert
+- Ist die Silberklinge voll aufgeladen, füllt sich die Ausdauer wieder auf, auch wenn man die Taste weiter hält. Während des Ladens selbst füllt sie sich weiterhin nicht
+
 ## [0.7.0] – 2026-11-15 – Stufen & Beute
 
 Kämpfen lohnt sich: Gegner lassen Blutphiolen und Geweihte Munition fallen, Kills bringen Erfahrung, und jeder Aufstieg bietet eine Wahl – dazu alle Werte in einer Datei zum Nachjustieren.
