@@ -4,7 +4,7 @@ namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
 /// Level 0, the catacombs (ADR 0005): every run is a freshly generated level from the room templates, with enemies
-/// placed by distance. A lost run is followed by a new one with a new seed - so a new layout.
+/// placed by distance and chests in some combat rooms. A lost run is followed by a new one with a new seed - so a new layout.
 /// </summary>
 public sealed class LevelZero
 {
@@ -24,8 +24,9 @@ public sealed class LevelZero
     public GameWorld NewRun(int seed, Balance balance)
     {
         ArgumentNullException.ThrowIfNull(balance);
-        var generated = EnemyPlacement.Populate(LevelGenerator.Generate(_templates, seed, balance.Layout), balance.Difficulty);
-        return new GameWorld(generated.Level, seed, balance, generated.Doors, generated.Rooms) { LevelName = Name };
+        var built = LevelGenerator.Generate(_templates, seed, balance.Layout);
+        var generated = ChestPlacement.Place(EnemyPlacement.Populate(built, balance.Difficulty), balance.Chests);
+        return new GameWorld(generated.Level, seed, balance, generated.Doors, generated.Rooms, generated.Chests) { LevelName = Name };
     }
 
     /// <summary>The run after <paramref name="finished"/>: a new seed taken from its seed, the same balancing values.</summary>

@@ -19,6 +19,7 @@ public sealed class RoomTemplate
         IReadOnlyList<DoorSlot> doorSlots,
         IReadOnlyList<(int X, int Z)> ghoulSlots,
         IReadOnlyList<(int X, int Z)> batSlots,
+        IReadOnlyList<(int X, int Z)> chestSlots,
         (int X, int Z)? playerStart)
     {
         Name = name;
@@ -27,6 +28,7 @@ public sealed class RoomTemplate
         DoorSlots = doorSlots;
         GhoulSlots = ghoulSlots;
         BatSlots = batSlots;
+        ChestSlots = chestSlots;
         PlayerStart = playerStart;
     }
 
@@ -52,6 +54,9 @@ public sealed class RoomTemplate
 
     /// <summary>Cells above which a bat may hover ('B').</summary>
     public IReadOnlyList<(int X, int Z)> BatSlots { get; }
+
+    /// <summary>Cells where a chest may stand ('C'); only combat rooms have them for now.</summary>
+    public IReadOnlyList<(int X, int Z)> ChestSlots { get; }
 
     /// <summary>The player start ('P'); only the start room has one.</summary>
     public (int X, int Z)? PlayerStart { get; }
@@ -128,6 +133,7 @@ public sealed class RoomTemplate
             }).ToList(),
             GhoulSlots.Select(Move).ToList(),
             BatSlots.Select(Move).ToList(),
+            ChestSlots.Select(Move).ToList(),
             PlayerStart is { } start ? Move(start) : null);
     }
 }

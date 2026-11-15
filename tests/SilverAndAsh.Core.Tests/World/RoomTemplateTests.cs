@@ -90,6 +90,9 @@ public class RoomTemplateTests
     [InlineData("##+##\n#.P.#\n#####", RoomKind.Combat, "player start")]
     [InlineData("##+####\n#...#.#\n#...#.#\n#######", RoomKind.Combat, "connected")]
     [InlineData("##+##\n#.D.#\n#####", RoomKind.Combat, "Unknown symbol 'D'")]
+    [InlineData("##+##\n#PC.#\n#####", RoomKind.Start, "chest place")]
+    [InlineData("#+###\n#C..+\n#####", RoomKind.Corridor, "chest place")]
+    [InlineData("##+##\n#.C.#\n#####", RoomKind.Boss, "chest place")]
     [InlineData("##+##\n#....\n#####", RoomKind.Combat, "edge must be wall")]
     [InlineData("##+#\n#...\n#..", RoomKind.Combat, "edge must be wall")]
     [InlineData("##+##\n#...#\n#.###", RoomKind.Combat, "edge must be wall")]
@@ -118,6 +121,26 @@ public class RoomTemplateTests
         Assert.StartsWith("combat/broken.txt, line 1:", error.Message);
         Assert.Contains("column 3", error.Message);
         Assert.Equal(1, error.LineNumber);
+    }
+
+    [Fact]
+    public void It_finds_the_chest_places_on_the_floor()
+    {
+        var room = RoomTemplateParser.Parse("##+##\n#C..#\n#..C#\n#####", RoomKind.Combat, "chests");
+
+        Assert.Equal([(1, 1), (3, 2)], room.ChestSlots);
+        Assert.False(room.CellAt(1, 1).IsSolid);
+        Assert.Equal(Cell.DefaultFloorHeight, room.CellAt(1, 1).FloorHeight);
+    }
+
+    [Fact]
+    public void Chest_places_turn_and_mirror_with_the_room()
+    {
+        // 5 wide, 3 deep, a chest place in the left of the middle row (1, 1).
+        var room = RoomTemplateParser.Parse("##+##\n#C..#\n#####", RoomKind.Combat, "wide");
+
+        Assert.Equal([(1, 1)], room.Rotated(1).ChestSlots);
+        Assert.Equal([(3, 1)], room.Mirrored().ChestSlots);
     }
 
     [Fact]

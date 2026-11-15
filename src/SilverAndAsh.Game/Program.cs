@@ -403,6 +403,7 @@ static void RunGame(
             levelRenderer.Draw();
             levelShader.BeginFigures();
             DoorView.Draw(gameWorld.Doors, seconds);
+            ChestView.Draw(gameWorld.Chests, seconds, camera.Position);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);

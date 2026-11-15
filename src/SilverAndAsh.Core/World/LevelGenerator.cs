@@ -193,7 +193,8 @@ public static class LevelGenerator
                     distances[index],
                     variant.Floor.Select(ToLevelCell).ToList(),
                     template.GhoulSlots.Select(ToLevelCell).ToList(),
-                    template.BatSlots.Select(ToLevelCell).ToList()));
+                    template.BatSlots.Select(ToLevelCell).ToList(),
+                    template.ChestSlots.Select(ToLevelCell).ToList()));
             }
 
             // Door cells are floor with the low standard ceiling (a 3.5 m high doorway).

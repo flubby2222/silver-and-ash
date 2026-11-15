@@ -37,6 +37,8 @@ public sealed class GameWorld
     private readonly List<RoomState> _rooms;
     private readonly Dictionary<(int X, int Z), RoomState> _roomOfCell = [];
     private readonly HashSet<int> _asleep = [];
+    private readonly IReadOnlyList<ChestPlan> _chestPlan;
+    private readonly List<Chest> _chests;
     private bool _lossReported;
 
     /// <summary>
@@ -46,11 +48,12 @@ public sealed class GameWorld
     /// values if none is given). <paramref name="doors"/> (optional) are the doors of a generated level; they all
     /// start closed. Their cells must be walkable in <paramref name="level"/>. <paramref name="rooms"/> (optional) are
     /// the rooms of a generated level: enemies in combat and boss rooms sleep until a player enters, then the room
-    /// becomes an arena (see <see cref="RoomState"/>).
+    /// becomes an arena (see <see cref="RoomState"/>). <paramref name="chests"/> (optional) are the chests of a generated
+    /// level; a combat room's chest rises once its room is cleared.
     /// </summary>
     public GameWorld(
         Level level, int seed = 0, Balance? balance = null, IReadOnlyList<LevelDoor>? doors = null,
-        IReadOnlyList<PlacedRoom>? rooms = null)
+        IReadOnlyList<PlacedRoom>? rooms = null, IReadOnlyList<ChestPlan>? chests = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         _levelWithOpenDoors = level;
@@ -83,6 +86,9 @@ public sealed class GameWorld
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
         Player = new Player(Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random);
+
+        _chestPlan = chests ?? [];
+        _chests = _chestPlan.Select((plan, index) => new Chest(index, plan, level)).ToList();
 
         _roomPlan = rooms ?? [];
         _rooms = _roomPlan.Select(room => new RoomState(room, _doorPlan
@@ -170,6 +176,9 @@ public sealed class GameWorld
     /// <summary>The doors of the level, in the order they were given.</summary>
     public IReadOnlyList<Door> Doors => _doors;
 
+    /// <summary>The chests of the level, in the order they were given (hidden ones included).</summary>
+    public IReadOnlyList<Chest> Chests => _chests;
+
     /// <summary>All balancing values of this world. They never change while it runs.</summary>
     public Balance Balance { get; }
 
@@ -188,7 +197,7 @@ public sealed class GameWorld
     /// A fresh world for the same level: full health, every enemy back at its start - but with a new seed (taken
     /// from this one), so the bats fly differently than last time. The balancing values stay the same.
     /// </summary>
-    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan, _roomPlan);
+    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan, _roomPlan, _chestPlan);
 
     /// <summary>
     /// What <paramref name="player"/> would use with F right now: the nearest usable thing they look at, within
@@ -223,8 +232,8 @@ public sealed class GameWorld
         return nearest;
     }
 
-    /// <summary>Everything that can be used with F. Doors today; chests and people later.</summary>
-    private IEnumerable<IInteractable> Interactables => _doors;
+    /// <summary>Everything that can be used with F: doors and chests today, people later.</summary>
+    private IEnumerable<IInteractable> Interactables => _doors.Concat<IInteractable>(_chests);
 
     private void Interact(Player player)
     {
@@ -239,6 +248,53 @@ public sealed class GameWorld
 
                 OpenDoor(door);
                 break;
+            case Chest chest when chest.OfferFor(player).IsPossible:
+                if (chest.IsLocked)
+                {
+                    player.UseKey();
+                    chest.Unlock();
+                    _events.Add(new ChestUnlocked(chest.Id, player.Id));
+                }
+
+                OpenChest(chest, player);
+                break;
+        }
+    }
+
+    // The contents jump out towards the opener and fall to the floor in front of the chest - still in its cell, so
+    // never into a wall: silver straight towards them, a blood vial a little to the side.
+    private void OpenChest(Chest chest, Player opener)
+    {
+        chest.Open();
+        _events.Add(new ChestOpened(chest.Id, opener.Id, chest.Tier));
+
+        var towards = FacingTowards(chest.Position, opener.Position);
+        var lid = new Vector3(0f, Chest.Height, 0f);
+        const float Out = 0.8f;
+        if (chest.Plan.Silver > 0)
+        {
+            var place = chest.Position + (towards * Out) + lid;
+            var pile = new Loot(_nextLootId++, LootKind.Silver, chest.Plan.Silver, place);
+            _loot.Add(pile);
+            _events.Add(new SilverDropped(pile.Id, pile.Amount, place));
+        }
+
+        if (chest.Plan.HasBloodVial)
+        {
+            var side = Vector3.Transform(towards, Matrix4x4.CreateRotationY(MathF.PI / 5f));
+            var place = chest.Position + (side * Out) + lid;
+            var vial = new Pickup(_nextPickupId++, ConsumableKind.BloodVial, place);
+            _pickups.Add(vial);
+            _events.Add(new PickupDropped(vial.Id, vial.Kind, place));
+        }
+    }
+
+    // A cleared combat room lets its chest rise from the floor.
+    private void RaiseChestsIn(RoomState room)
+    {
+        foreach (var chest in _chests.Where(chest => chest.Plan.Room == room.Index && chest.StartRising()))
+        {
+            _events.Add(new ChestRose(chest.Id));
         }
     }
 
@@ -292,6 +348,7 @@ public sealed class GameWorld
             room.Clear();
             _events.Add(new RoomCleared(room.Index));
             MaybeDropKeyIn(room);
+            RaiseChestsIn(room);
             WinIfBoss(room);
             return;
         }
@@ -321,6 +378,7 @@ public sealed class GameWorld
             UpdateLevel();
             _events.Add(new RoomCleared(room.Index));
             MaybeDropKeyIn(room);
+            RaiseChestsIn(room);
             WinIfBoss(room);
         }
     }
@@ -819,6 +877,10 @@ public sealed class GameWorld
         DropFromTheDead();
         MovePickups();
         MoveLoot();
+        foreach (var chest in _chests)
+        {
+            chest.Tick();
+        }
         ClearRooms();
 
         // The clock of the run stops with victory or defeat; this tick still counts.

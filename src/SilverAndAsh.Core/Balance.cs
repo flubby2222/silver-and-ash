@@ -48,6 +48,9 @@ public sealed record Balance
     /// <summary>How often keys drop.</summary>
     public KeysBalance Keys { get; init; } = new();
 
+    /// <summary>Chests: where they stand, which tier, how often locked, what is inside.</summary>
+    public ChestsBalance Chests { get; init; } = new();
+
     /// <summary>The blood vial: a consumable that heals.</summary>
     public BloodVialBalance BloodVial { get; init; } = new();
 
@@ -148,6 +151,73 @@ public sealed record KeysBalance
 
     /// <summary>Chance that a killed enemy drops a key.</summary>
     public float EnemyChance { get; init; } = 0.05f;
+}
+
+/// <summary>Chests (decision record 0006). Each tier has its own values - see <see cref="ChestTierBalance"/>.</summary>
+public sealed record ChestsBalance
+{
+    /// <summary>Chance that a combat room gets a chest (on one of its chest places): 0 = never, 1 = always.</summary>
+    public float CombatRoomChance { get; init; } = 0.25f;
+
+    /// <summary>Beggar's Chest (wood).</summary>
+    public ChestTierBalance Beggar { get; init; } = new()
+    {
+        CombatShareNear = 0.7f, CombatShareFar = 0.55f, LockedChance = 0.1f, SilverMin = 10, SilverMax = 20, BloodVialChance = 0.2f,
+    };
+
+    /// <summary>Guard's Chest (metal).</summary>
+    public ChestTierBalance Guard { get; init; } = new()
+    {
+        CombatShareNear = 0.27f, CombatShareFar = 0.37f, LockedChance = 0.35f, SilverMin = 20, SilverMax = 35, BloodVialChance = 0.35f,
+    };
+
+    /// <summary>King's Chest (gold).</summary>
+    public ChestTierBalance King { get; init; } = new()
+    {
+        CombatShareNear = 0.03f, CombatShareFar = 0.08f, LockedChance = 0.7f, SilverMin = 40, SilverMax = 60, BloodVialChance = 0.6f,
+    };
+
+    /// <summary>Vampire's Chest (red).</summary>
+    public ChestTierBalance Vampire { get; init; } = new()
+    {
+        CombatShareNear = 0f, CombatShareFar = 0f, LockedChance = 1f, SilverMin = 80, SilverMax = 120, BloodVialChance = 1f,
+    };
+
+    /// <summary>The values of <paramref name="tier"/>.</summary>
+    public ChestTierBalance Of(World.ChestTier tier) => tier switch
+    {
+        World.ChestTier.Beggar => Beggar,
+        World.ChestTier.Guard => Guard,
+        World.ChestTier.King => King,
+        World.ChestTier.Vampire => Vampire,
+        _ => throw new ArgumentOutOfRangeException(nameof(tier), tier, "Unknown chest tier."),
+    };
+}
+
+/// <summary>
+/// The values of one chest tier. Combat shares: how likely a combat room's chest is of this tier, "near" in the combat
+/// room nearest to the start and "far" in the farthest, rising evenly in between. The shares of all tiers need not add
+/// up to 1 - each counts in proportion to the others.
+/// </summary>
+public sealed record ChestTierBalance
+{
+    /// <summary>Share of this tier among the chests of the combat room nearest to the start.</summary>
+    public float CombatShareNear { get; init; }
+
+    /// <summary>Share of this tier among the chests of the farthest combat room.</summary>
+    public float CombatShareFar { get; init; }
+
+    /// <summary>Chance that a chest of this tier is locked: 0 = never, 1 = always.</summary>
+    public float LockedChance { get; init; }
+
+    /// <summary>Least silver inside.</summary>
+    public int SilverMin { get; init; }
+
+    /// <summary>Most silver inside.</summary>
+    public int SilverMax { get; init; }
+
+    /// <summary>Chance that a blood vial lies inside too: 0 = never, 1 = always.</summary>
+    public float BloodVialChance { get; init; }
 }
 
 /// <summary>Balancing values of consecrated ammunition.</summary>

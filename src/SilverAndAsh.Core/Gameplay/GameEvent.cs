@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
 
@@ -68,6 +69,15 @@ public sealed record KeyTaken(int LootId, int PlayerId) : GameEvent;
 
 /// <summary>Player <paramref name="PlayerId"/> used a key on the locked door <paramref name="DoorId"/> (it opens in the same tick).</summary>
 public sealed record DoorUnlocked(int DoorId, int PlayerId) : GameEvent;
+
+/// <summary>The chest <paramref name="ChestId"/> of a cleared combat room starts rising from the floor.</summary>
+public sealed record ChestRose(int ChestId) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> used a key on the locked chest <paramref name="ChestId"/> (it opens in the same tick).</summary>
+public sealed record ChestUnlocked(int ChestId, int PlayerId) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> opened the chest <paramref name="ChestId"/> of <paramref name="Tier"/>; its contents jump out.</summary>
+public sealed record ChestOpened(int ChestId, int PlayerId, ChestTier Tier) : GameEvent;
 
 /// <summary>Player <paramref name="PlayerId"/> picked up pickup <paramref name="PickupId"/> of <paramref name="Kind"/>.</summary>
 public sealed record PickupTaken(int PickupId, int PlayerId, ConsumableKind Kind) : GameEvent;
