@@ -133,14 +133,17 @@
   },
 
   // Chests (decision record 0006). About every fourth combat room gets one; it rises from the floor once the room is cleared.
-  // Per tier: its share among combat-room chests (near the start / farthest away, rising in between - the shares of all
-  // tiers count in proportion), how often it is locked, the silver inside (min to max) and the chance of a blood vial.
+  // Per tier: its share among combat-room chests (near the start / farthest away, rising in between), in a treasure room
+  // and in a locked treasure room (the shares of all tiers count in proportion), how often it is locked, the silver
+  // inside (min to max) and the chance of a blood vial.
   "chests": {
     "combatRoomChance": 0.25,
-    "beggar":  { "combatShareNear": 0.7,  "combatShareFar": 0.55, "lockedChance": 0.1,  "silverMin": 10, "silverMax": 20,  "bloodVialChance": 0.2 },
-    "guard":   { "combatShareNear": 0.27, "combatShareFar": 0.37, "lockedChance": 0.35, "silverMin": 20, "silverMax": 35,  "bloodVialChance": 0.35 },
-    "king":    { "combatShareNear": 0.03, "combatShareFar": 0.08, "lockedChance": 0.7,  "silverMin": 40, "silverMax": 60,  "bloodVialChance": 0.6 },
-    "vampire": { "combatShareNear": 0,    "combatShareFar": 0,    "lockedChance": 1,    "silverMin": 80, "silverMax": 120, "bloodVialChance": 1 }
+    "treasureChestsMin": 1,             // a treasure room holds 1 to 2 chests
+    "treasureChestsMax": 2,
+    "beggar":  { "combatShareNear": 0.7,  "combatShareFar": 0.55, "treasureShare": 0.2, "lockedTreasureShare": 0.15, "lockedChance": 0.1,  "silverMin": 10, "silverMax": 20,  "bloodVialChance": 0.2 },
+    "guard":   { "combatShareNear": 0.27, "combatShareFar": 0.37, "treasureShare": 0.45, "lockedTreasureShare": 0.3, "lockedChance": 0.35, "silverMin": 20, "silverMax": 35,  "bloodVialChance": 0.35 },
+    "king":    { "combatShareNear": 0.03, "combatShareFar": 0.08, "treasureShare": 0.3, "lockedTreasureShare": 0.45, "lockedChance": 0.7,  "silverMin": 40, "silverMax": 60,  "bloodVialChance": 0.6 },
+    "vampire": { "combatShareNear": 0,    "combatShareFar": 0,    "treasureShare": 0.05, "lockedTreasureShare": 0.1, "lockedChance": 1,    "silverMin": 80, "silverMax": 120, "bloodVialChance": 1 }
   },
 
   "bloodVial": {
@@ -156,7 +159,9 @@
     "combatRoomsMin": 7,                // a level has 7 to 9 combat rooms (with start and boss: about 20 minutes)
     "combatRoomsMax": 9,
     "corridorChance": 0.6,              // 60 % of rooms are reached through a corridor, the rest through a shared wall
-    "maxLoops": 2                       // at most 2 extra connections that make a second way round
+    "maxLoops": 2,                      // at most 2 extra connections that make a second way round
+    "treasureRooms": 1,                 // treasure rooms per level with an ordinary door ...
+    "lockedTreasureRooms": 1            // ... and behind a locked door (needs a key)
   },
 
   "difficulty": {

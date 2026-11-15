@@ -17,6 +17,7 @@ internal static class MapView
     private static readonly Color CorridorFloor = new(92, 86, 84, 230);
     private static readonly Color StartFloor = new(104, 118, 104, 230);
     private static readonly Color BossFloor = new(130, 60, 62, 230);
+    private static readonly Color TreasureFloor = new(150, 126, 60, 230);
     private static readonly Color Cleared = new(150, 140, 120, 230);
     private static readonly Color DoorClosed = new(150, 104, 62, 255);
     private static readonly Color DoorOpen = new(210, 200, 180, 255);
@@ -61,6 +62,7 @@ internal static class MapView
                 RoomKind.Start => StartFloor,
                 RoomKind.Corridor => CorridorFloor,
                 RoomKind.Boss => BossFloor,
+                RoomKind.Treasure => TreasureFloor,
                 _ when room.IsCleared => Cleared,
                 _ => Floor,
             };

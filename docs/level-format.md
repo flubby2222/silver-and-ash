@@ -103,7 +103,8 @@ Regeln für Vorlagen:
   #.....#    #.....#
   ```
 - `G` und `B` sind **Plätze für Gegner** – wie viele davon wirklich besetzt werden, entscheidet später die Schwierigkeit.
-- `C` ist ein **Kistenplatz** (Boden), nur in Kampfräumen (später auch Schatzräume). Ob dort wirklich eine Kiste steht, entscheidet der Seed (siehe „Kisten“). Jede Kampf-Vorlage hat einen.
+- `C` ist ein **Kistenplatz** (Boden), nur in Kampf- und Schatzräumen. Ob dort wirklich eine Kiste steht, entscheidet der Seed (siehe „Kisten“). Jede Kampf-Vorlage hat einen, jede Schatz-Vorlage einen oder zwei.
+- **Schatzräume** (`assets/rooms/treasure/`) haben **genau einen** Türplatz, **keine** Gegnerplätze und **mindestens einen** Kistenplatz.
 - `P` gibt es **nur im Startraum**, Trainingspuppen (`D`) gar nicht.
 - Der Boden muss **zusammenhängen** – kein Bodenfeld darf abgeschnitten sein.
 - Auf Ebene 0 gibt es noch **keine Höhenunterschiede** (keine `1`/`2`/`3`/`_`), auch wenn der Parser sie schon versteht.
@@ -131,7 +132,8 @@ Der [`LevelGenerator`](../src/SilverAndAsh.Core/World/LevelGenerator.cs) setzt a
 1. **Startraum** hinlegen (zufällige Vorlage, gedreht/gespiegelt).
 2. **Kampfräume** an freie Türplätze anhängen, bis die Zahl aus `balance.json` (`layout.combatRoomsMin` … `combatRoomsMax`) erreicht ist. Mit der Chance `layout.corridorChance` liegt ein **Gang** dazwischen, sonst teilen sich die Räume eine Wand mit Tür. Bei `0` gibt es gar keine Gänge.
 3. **Schleifen** (höchstens `layout.maxLoops`): Der Generator sucht gezielt Stellen, an denen ein neuer Raum – oder ein Raum plus Gang, oder nur ein Gang – zwei freie Türplätze verbindet. So gibt es einen zweiten Weg herum. Zwei Räume, die schon verbunden sind (Tür oder Gang), werden nicht ein zweites Mal verbunden.
-4. **Bossraum** zuletzt, hinter einem der Räume, die am weitesten vom Start liegen. Er ist damit **immer der entfernteste Raum** und hat **genau einen Eingang**.
+4. **Bossraum** hinter einem der Räume, die am weitesten vom Start liegen. Er ist damit **immer der entfernteste Raum** und hat **genau einen Eingang**.
+5. **Schatzräume** zuletzt: `layout.treasureRooms` mit normaler Tür und `layout.lockedTreasureRooms` hinter einer **verschlossenen Tür** (Standard je 1). Sie sind **Sackgassen**, hängen **nie am Startraum** und liegen immer **näher am Start als der Boss**. Hinter einem Schloss liegt so nie etwas Wichtiges: Der Boss ist immer ohne Schlüssel erreichbar.
 
 Regeln, die immer gelten (und über viele Seeds getestet werden):
 
@@ -139,7 +141,7 @@ Regeln, die immer gelten (und über viele Seeds getestet werden):
 - Räume sind **nur über Türen** verbunden; jede Tür verbindet **genau zwei Räume**.
 - **Alles ist erreichbar.**
 - Ein **Gang** führt immer von einem Raum zu einem anderen, nie ins Leere und nie direkt in einen weiteren Gang.
-- Räume mit **nur einem Eingang** (heute der Boss, später Schatz, Händler, Altar) bekommen nie eine zweite Tür.
+- Räume mit **nur einem Eingang** (Boss und Schatz, später Händler, Altar) bekommen nie eine zweite Tür.
 - Ungenutzte Türplätze bleiben Wand. Türen sind 3,5 m hoch, auch in hohen Räumen.
 - Bleibt der Generator stecken (kein Raum passt mehr), versucht er es mit den nächsten Zufallszahlen **desselben** Seeds noch einmal – das Ergebnis bleibt also gleich.
 
@@ -160,6 +162,7 @@ Jede Tür des Generators wird im Spiel zu einer echten Tür ([`Door.cs`](../src/
 Kisten setzt [`ChestPlacement`](../src/SilverAndAsh.Core/World/ChestPlacement.cs) nach den Gegnern auf die Kistenplätze `C` (ADR 0006):
 
 - Etwa **jeder 4. Kampfraum** bekommt eine Kiste (`chests.combatRoomChance`). Sie **steigt aus dem Boden, wenn der Raum geräumt ist**.
+- **Schatzräume** bekommen `chests.treasureChestsMin` … `treasureChestsMax` Kisten (Standard 1–2), die von Anfang an stehen. Die Stufe folgt `treasureShare` bzw. hinter dem Schloss `lockedTreasureShare` – dort ist es besser.
 - **Stufe:** Beggar's, Guard's, King's oder Vampire's Chest. Im nächsten Kampfraum gelten die `combatShareNear`-Anteile, im entferntesten die `combatShareFar`-Anteile, dazwischen gleitend. Weiter hinten wird es also etwas besser.
 - **Verschluss und Inhalt** (Silber, vielleicht eine Blutphiole) werden je Stufe gleich beim Bauen der Ebene gewürfelt: **gleicher Seed = gleiche Kisten**, egal wie man spielt.
 - **Öffnen** mit F (aus der Nähe auf die Kiste schauen). Eine verschlossene Kiste braucht einen Schlüssel. Der Inhalt springt zum Spieler heraus und wird durch Drüberlaufen aufgenommen; die offene Kiste bleibt leer stehen.

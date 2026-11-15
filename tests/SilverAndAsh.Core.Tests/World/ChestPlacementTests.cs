@@ -16,9 +16,16 @@ public class ChestPlacementTests
     /// <summary>Every combat room gets a chest - to look at many chests.</summary>
     private static readonly ChestsBalance InEveryRoom = Standard with { CombatRoomChance = 1f };
 
+    /// <summary>The chests of combat rooms over all levels (treasure rooms are looked at further down).</summary>
     private static List<(GeneratedLevel Level, ChestPlan Chest)> AllChests(ChestsBalance chests) =>
+        AllChestsIn(chests, RoomKind.Combat);
+
+    private static List<ChestPlan> CombatChests(GeneratedLevel level) =>
+        level.Chests!.Where(chest => level.Rooms[chest.Room].Kind == RoomKind.Combat).ToList();
+
+    private static List<(GeneratedLevel Level, ChestPlan Chest)> AllChestsIn(ChestsBalance chests, RoomKind kind) =>
         Levels.Value.Select(level => ChestPlacement.Place(level, chests))
-            .SelectMany(level => level.Chests!.Select(chest => (level, chest)))
+            .SelectMany(level => level.Chests!.Where(chest => level.Rooms[chest.Room].Kind == kind).Select(chest => (level, chest)))
             .ToList();
 
     /// <summary>Only <paramref name="tier"/> can come up in combat rooms.</summary>
@@ -54,8 +61,9 @@ public class ChestPlacementTests
 
         Assert.All(Levels.Value.Select(level => ChestPlacement.Place(level, InEveryRoom)), level =>
         {
-            Assert.Equal(level.Rooms.Count(room => room.Kind == RoomKind.Combat), level.Chests!.Count);
-            Assert.Equal(level.Chests.Count, level.Chests.Select(chest => chest.Room).Distinct().Count());
+            var combatChests = CombatChests(level);
+            Assert.Equal(level.Rooms.Count(room => room.Kind == RoomKind.Combat), combatChests.Count);
+            Assert.Equal(combatChests.Count, combatChests.Select(chest => chest.Room).Distinct().Count());
         });
     }
 
@@ -100,9 +108,10 @@ public class ChestPlacementTests
 
         foreach (var level in Levels.Value.Select(level => ChestPlacement.Place(level, chests)))
         {
-            var distances = level.Chests!.Select(chest => level.Rooms[chest.Room].DistanceFromStart).ToList();
-            var nearest = level.Chests![distances.IndexOf(distances.Min())];
-            var farthest = level.Chests![distances.IndexOf(distances.Max())];
+            var combatChests = CombatChests(level);
+            var distances = combatChests.Select(chest => level.Rooms[chest.Room].DistanceFromStart).ToList();
+            var nearest = combatChests[distances.IndexOf(distances.Min())];
+            var farthest = combatChests[distances.IndexOf(distances.Max())];
             Assert.Equal(ChestTier.Beggar, nearest.Tier);
             Assert.Equal(ChestTier.King, farthest.Tier);
         }

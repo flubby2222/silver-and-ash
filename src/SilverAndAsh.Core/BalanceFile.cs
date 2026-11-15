@@ -46,11 +46,11 @@ public static class BalanceFile
         "blade.damage", "blade.chargeStaminaSegments", "blade.coneStartBehind",
         "pistol.damage", "ghoul.attackDamage", "bat.biteDamage", "bat.spitAimBelowEyes", "bloodBolt.damage",
         "drops.ghoulChance", "drops.batChance", "drops.consecratedAmmoShare", "bloodVial.heal",
-        "keys.roomChance", "keys.enemyChance", "chests.combatRoomChance",
-        "chests.beggar.combatShareNear", "chests.beggar.combatShareFar", "chests.beggar.lockedChance", "chests.beggar.silverMin", "chests.beggar.silverMax", "chests.beggar.bloodVialChance", "chests.guard.combatShareNear", "chests.guard.combatShareFar", "chests.guard.lockedChance", "chests.guard.silverMin", "chests.guard.silverMax", "chests.guard.bloodVialChance", "chests.king.combatShareNear", "chests.king.combatShareFar", "chests.king.lockedChance", "chests.king.silverMin", "chests.king.silverMax", "chests.king.bloodVialChance", "chests.vampire.combatShareNear", "chests.vampire.combatShareFar", "chests.vampire.lockedChance", "chests.vampire.silverMin", "chests.vampire.silverMax", "chests.vampire.bloodVialChance", "silver.ghoulChance", "silver.batChance", "silver.ghoulMin", "silver.ghoulMax", "silver.batMin", "silver.batMax",
+        "keys.roomChance", "keys.enemyChance", "chests.combatRoomChance", "chests.treasureChestsMin", "chests.treasureChestsMax",
+        "chests.beggar.combatShareNear", "chests.beggar.combatShareFar", "chests.beggar.treasureShare", "chests.beggar.lockedTreasureShare", "chests.beggar.lockedChance", "chests.beggar.silverMin", "chests.beggar.silverMax", "chests.beggar.bloodVialChance", "chests.guard.combatShareNear", "chests.guard.combatShareFar", "chests.guard.treasureShare", "chests.guard.lockedTreasureShare", "chests.guard.lockedChance", "chests.guard.silverMin", "chests.guard.silverMax", "chests.guard.bloodVialChance", "chests.king.combatShareNear", "chests.king.combatShareFar", "chests.king.treasureShare", "chests.king.lockedTreasureShare", "chests.king.lockedChance", "chests.king.silverMin", "chests.king.silverMax", "chests.king.bloodVialChance", "chests.vampire.combatShareNear", "chests.vampire.combatShareFar", "chests.vampire.treasureShare", "chests.vampire.lockedTreasureShare", "chests.vampire.lockedChance", "chests.vampire.silverMin", "chests.vampire.silverMax", "chests.vampire.bloodVialChance", "silver.ghoulChance", "silver.batChance", "silver.ghoulMin", "silver.ghoulMax", "silver.batMin", "silver.batMax",
         "experience.ghoul", "experience.bat",
         "boons.staminaRegen", "boons.health", "boons.damage", "boons.experience",
-        "layout.corridorChance", "layout.maxLoops",
+        "layout.corridorChance", "layout.maxLoops", "layout.treasureRooms", "layout.lockedTreasureRooms",
         "difficulty.ghoulShareNear", "difficulty.ghoulShareFar", "difficulty.batShareNear", "difficulty.batShareFar",
     };
 
@@ -99,6 +99,7 @@ public static class BalanceFile
         ("layout", "combatRoomsMin", "combatRoomsMax"),
         ("silver", "ghoulMin", "ghoulMax"),
         ("silver", "batMin", "batMax"),
+        ("chests", "treasureChestsMin", "treasureChestsMax"),
         ("chests.beggar", "silverMin", "silverMax"),
         ("chests.guard", "silverMin", "silverMax"),
         ("chests.king", "silverMin", "silverMax"),
