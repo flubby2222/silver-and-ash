@@ -120,6 +120,22 @@ public sealed class GameWorld
     /// <summary>True when every player is dead before the run was won.</summary>
     public bool IsLost => !IsWon && Players.All(player => player.IsDead);
 
+    /// <summary>The numbers of this run so far (a new world starts at 0).</summary>
+    public RunStatistics Statistics { get; } = new();
+
+    /// <summary>The run so far in one record - for the end screen and the run log.</summary>
+    public RunSummary Summary() => new(
+        Seed,
+        IsWon ? RunOutcome.Won : IsLost ? RunOutcome.Lost : RunOutcome.Running,
+        Statistics.Seconds,
+        Statistics.GhoulsKilled,
+        Statistics.BatsKilled,
+        Statistics.DamageDealt,
+        Statistics.DamageTaken,
+        Player.Level,
+        Statistics.RoomsCleared,
+        _rooms.Count(room => room.IsArena));
+
     /// <summary>The rooms of a generated level and what happened in them (empty for hand-made levels).</summary>
     public IReadOnlyList<RoomState> Rooms => _rooms;
 
@@ -683,7 +699,15 @@ public sealed class GameWorld
         DropFromTheDead();
         MovePickups();
         ClearRooms();
+
+        // The clock of the run stops with victory or defeat; this tick still counts.
+        var wasOver = IsWon || _lossReported;
         ReportLoss();
+        Statistics.Count(_events);
+        if (!wasOver)
+        {
+            Statistics.AddTick();
+        }
 
         _ticksAllPlayersDead = Players.All(player => player.IsDead) ? _ticksAllPlayersDead + 1 : 0;
     }

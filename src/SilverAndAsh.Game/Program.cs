@@ -14,6 +14,9 @@ using SilverAndAsh.Game.Rendering;
 const int WindowWidth = 1280;
 const int WindowHeight = 720;
 
+// Seconds between clearing the boss room and the victory screen.
+const float VictoryScreenDelay = 2f;
+
 var version = typeof(Program).Assembly
     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
 
@@ -114,6 +117,10 @@ static void RunGame(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "settings.json");
         var settings = SettingsFile.Load(settingsPath);
 
+        // One line per finished run, also local: %LOCALAPPDATA%\SilverAndAsh\runs.log.
+        var runLogPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "runs.log");
+
         // The whole simulation: level, player, enemies. "Start" on the title screen begins a run with a new seed
         // (unless --seed is given), so every run looks different; it goes into the log, so a strange run can be
         // repeated. Until then this world only stands in.
@@ -144,12 +151,20 @@ static void RunGame(
         // The level name ("THE CATACOMBS") shows for a few seconds whenever a run starts.
         var levelNameSeconds = 0f;
 
+        // The end of a run: its numbers while "YOU DIED" / "VICTORY" is shown (null while the run is on), and how long
+        // the victory is already there (the screen waits a moment, so the rising grates can be seen).
+        RunSummary? endSummary = null;
+        var wonSeconds = 0f;
+        var endMenu = new MenuView();
+
         // A new world (restart or reloaded values) gets fresh views, so no flash, corpse or impact mark of the
         // old run is left over.
         void StartFresh(GameWorld world)
         {
             gameWorld = world;
             levelNameSeconds = gameWorld.LevelName is null ? 0f : LevelBanner.Duration;
+            endSummary = null;
+            wonSeconds = 0f;
             LogRun(gameWorld, log);
             player = gameWorld.Player;
             dummyView = new PlaceholderDummyView();
@@ -211,9 +226,13 @@ static void RunGame(
                 continue;
             }
 
-            // Esc opens and closes the menu; leaving the window (Alt+Tab) opens it, too.
+            // Esc opens and closes the menu; leaving the window (Alt+Tab) opens it, too. Not on the end screen.
             var wasMenuOpen = menuOpen;
-            if (Raylib.IsKeyPressed(KeyboardKey.Escape))
+            if (endSummary is not null)
+            {
+                menuOpen = false;
+            }
+            else if (Raylib.IsKeyPressed(KeyboardKey.Escape))
             {
                 menuOpen = !menuOpen;
             }
@@ -254,9 +273,25 @@ static void RunGame(
                 }
             }
 
-            // The mouse is captured only while playing: free in the menu and while a bonus is chosen.
+            if (endSummary is { } summary)
+            {
+                switch (EndScreen.Update(endMenu, summary))
+                {
+                    case EndScreen.NewRun:
+                        StartFresh(nextWorld(gameWorld));
+                        break;
+                    case EndScreen.Title:
+                        onTitle = true;
+                        endSummary = null;
+                        titleMenu.Open();
+                        break;
+                }
+            }
+
+            // The mouse is captured only while playing: free in the menu, on the end screen and while a bonus is chosen.
             var choosing = player.PendingBoons > 0;
-            var capture = !menuOpen && !onTitle && !choosing;
+            var frozen = menuOpen || endSummary is not null;
+            var capture = !frozen && !onTitle && !choosing;
             if (capture && !input.IsMouseCaptured)
             {
                 input.CaptureMouse();
@@ -266,13 +301,13 @@ static void RunGame(
                 input.ReleaseMouse();
             }
 
-            choosingSeconds = choosing && !menuOpen ? choosingSeconds + Raylib.GetFrameTime() : 0f;
+            choosingSeconds = choosing && !frozen ? choosingSeconds + Raylib.GetFrameTime() : 0f;
 
             // 1. Input: looking around happens every frame, so it feels immediate.
             var playerInput = input.Read();
             player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
-            if (choosing && !menuOpen)
+            if (choosing && !frozen)
             {
                 chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, choosingSeconds);
             }
@@ -282,7 +317,7 @@ static void RunGame(
             var ticks = accumulator.Advance(Raylib.GetFrameTime());
             for (var i = 0; i < ticks; i++)
             {
-                gameWorld.Tick(playerInput with { ChooseBoon = chosenBoon, Interact = interactPressed, Paused = menuOpen });
+                gameWorld.Tick(playerInput with { ChooseBoon = chosenBoon, Interact = interactPressed, Paused = frozen });
                 chosenBoon = null;
                 interactPressed = false;
 
@@ -299,10 +334,20 @@ static void RunGame(
                 }
             }
 
-            // Dead long enough: the next run (on level 0 a new layout, on hand-made levels the same one again).
-            if (gameWorld.ShouldRestart)
+            // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
+            // the local run log (one line) and the technical log.
+            wonSeconds = gameWorld.IsWon ? wonSeconds + Raylib.GetFrameTime() : 0f;
+            if (endSummary is null && (gameWorld.ShouldRestart || wonSeconds >= VictoryScreenDelay))
             {
-                StartFresh(nextWorld(gameWorld));
+                endSummary = gameWorld.Summary();
+                var line = endSummary.ToLogLine(DateTimeOffset.Now);
+                log?.Info($"Run ended: {line}");
+                if (!RunLog.Append(runLogPath, line))
+                {
+                    log?.Warning($"Could not write the run log '{runLogPath}'.");
+                }
+
+                endMenu.Open();
             }
 
 #if DEBUG
@@ -389,24 +434,23 @@ static void RunGame(
             Raylib.BeginDrawing();
             Raylib.ClearBackground(LookSettings.BarColor);
             picture.DrawToScreen();
-            damageFeedback.Draw();
+            if (endSummary is null)
+            {
+                damageFeedback.Draw();
+            }
+
             DrawHud(displayVersion);
             DrawStaminaBar(player);
             CombatHud.Draw(player);
-            if (!choosing && !menuOpen)
+            if (!choosing && !frozen)
             {
                 InteractionPrompt.Draw(gameWorld.InteractionTarget(player));
             }
 
             levelNameSeconds = MathF.Max(0f, levelNameSeconds - Raylib.GetFrameTime());
-            if (!menuOpen)
+            if (!frozen)
             {
                 LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
-            }
-            if (gameWorld.IsWon)
-            {
-                // Placeholder until the victory screen (#125).
-                LevelBanner.DrawVictory();
             }
 
             if (choosing)
@@ -417,6 +461,11 @@ static void RunGame(
             if (menuOpen)
             {
                 EscMenu.Draw(escMenu, settings);
+            }
+
+            if (endSummary is not null)
+            {
+                EndScreen.Draw(endMenu, endSummary);
             }
 #if DEBUG
             DrawDebugInfo(player);
