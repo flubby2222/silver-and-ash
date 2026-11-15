@@ -87,12 +87,14 @@ public sealed class Player
     /// Applies the look part of the input. Called once per drawn frame (not per tick),
     /// so turning the view feels immediate even at high frame rates.
     /// </summary>
-    public void Look(PlayerInput input)
+    /// <param name="input">The mouse movement of this frame.</param>
+    /// <param name="sensitivity">The player's own factor from the settings (1 = standard, 2 = twice as fast).</param>
+    public void Look(PlayerInput input, float sensitivity = 1f)
     {
         // The dead do not look around - and while a bonus is being chosen, the view stays still.
         if (!IsDead && PendingBoons == 0)
         {
-            View.ApplyMouse(input.Look);
+            View.ApplyMouse(input.Look, ControlSettings.MouseSensitivity * sensitivity);
         }
     }
 

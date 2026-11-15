@@ -100,7 +100,7 @@ static void RunGame(
     Raylib.InitWindow(WindowWidth, WindowHeight, "Silver & Ash");
     BringWindowOnScreen(log);
 
-    // Esc must not close the game any more - it releases the mouse (later: opens the pause menu).
+    // Esc must not close the game - it opens the Esc menu.
     Raylib.SetExitKey(KeyboardKey.Null);
 
     try
@@ -109,10 +109,15 @@ static void RunGame(
         var balancePath = Path.Combine(AppContext.BaseDirectory, "assets", "balance.json");
         var balance = LoadBalance(balancePath, log);
 
-        // The whole simulation: level, player, enemies. A new seed every game (unless --seed is given), so every run
-        // looks different; it goes into the log, so a strange run can be repeated.
+        // The player's own settings (mouse sensitivity), kept locally: %LOCALAPPDATA%\SilverAndAsh\settings.json.
+        var settingsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "settings.json");
+        var settings = SettingsFile.Load(settingsPath);
+
+        // The whole simulation: level, player, enemies. "Start" on the title screen begins a run with a new seed
+        // (unless --seed is given), so every run looks different; it goes into the log, so a strange run can be
+        // repeated. Until then this world only stands in.
         var gameWorld = newWorld(seed ?? Random.Shared.Next(), balance);
-        LogRun(gameWorld, log);
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
         IGhoulView ghoulView = new PlaceholderGhoulView();
@@ -123,14 +128,21 @@ static void RunGame(
         IWeaponView weaponView = new PlaceholderWeaponView();
         var damageFeedback = new DamageFeedback();
         var input = new RaylibInput();
-        input.CaptureMouse();
+
+        // Title screen first; during a run Esc opens the menu (the world stands still - alone).
+        var onTitle = true;
+        var menuOpen = false;
+        var quit = false;
+        var titleMenu = new MenuView();
+        titleMenu.Open();
+        var escMenu = new MenuView();
 
 #if DEBUG
         var reloadedNoticeSeconds = 0f;
 #endif
 
         // The level name ("THE CATACOMBS") shows for a few seconds whenever a run starts.
-        var levelNameSeconds = gameWorld.LevelName is null ? 0f : LevelBanner.Duration;
+        var levelNameSeconds = 0f;
 
         // A new world (restart or reloaded values) gets fresh views, so no flash, corpse or impact mark of the
         // old run is left over.
@@ -150,8 +162,7 @@ static void RunGame(
             damageFeedback = new DamageFeedback();
         }
 
-        // Choosing a level-up bonus: was the window open last frame, and which boon is waiting for the next tick?
-        var wasChoosing = false;
+        // Choosing a level-up bonus: how long the window is open, and which boon is waiting for the next tick?
         var choosingSeconds = 0f;
         Boon? chosenBoon = null;
 
@@ -169,29 +180,99 @@ static void RunGame(
         using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, levelShader.Shader);
         var renderedLevel = gameWorld.LevelAsBuilt;
 
-        // Game loop: runs once per drawn frame until the window is closed (X button).
-        while (!Raylib.WindowShouldClose())
+        // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.
+        while (!Raylib.WindowShouldClose() && !quit)
         {
-            // A level up waits for a bonus: show the cursor so the boxes can be clicked; capture it again afterwards.
-            var choosing = player.PendingBoons > 0;
-            if (choosing && !wasChoosing && input.IsMouseCaptured)
+            seconds += Raylib.GetFrameTime();
+
+            // Title screen: no world runs, the mouse is free.
+            if (onTitle)
             {
-                input.ReleaseMouse();
+                if (input.IsMouseCaptured)
+                {
+                    input.ReleaseMouse();
+                }
+
+                switch (TitleScreen.Update(titleMenu))
+                {
+                    case TitleScreen.Start:
+                        StartFresh(newWorld(seed ?? Random.Shared.Next(), balance));
+                        onTitle = false;
+                        menuOpen = false;
+                        break;
+                    case TitleScreen.Quit:
+                        quit = true;
+                        break;
+                }
+
+                Raylib.BeginDrawing();
+                TitleScreen.Draw(titleMenu, displayVersion);
+                Raylib.EndDrawing();
+                continue;
             }
-            else if (!choosing && wasChoosing)
+
+            // Esc opens and closes the menu; leaving the window (Alt+Tab) opens it, too.
+            var wasMenuOpen = menuOpen;
+            if (Raylib.IsKeyPressed(KeyboardKey.Escape))
+            {
+                menuOpen = !menuOpen;
+            }
+            else if (!Raylib.IsWindowFocused())
+            {
+                menuOpen = true;
+            }
+
+            if (menuOpen && !wasMenuOpen)
+            {
+                escMenu.Open();
+            }
+
+            if (menuOpen)
+            {
+                switch (EscMenu.Update(escMenu, settings, out var changed))
+                {
+                    case EscMenu.Resume:
+                        menuOpen = false;
+                        break;
+                    case EscMenu.Title:
+                        onTitle = true;
+                        menuOpen = false;
+                        titleMenu.Open();
+                        break;
+                    case EscMenu.Quit:
+                        quit = true;
+                        break;
+                }
+
+                if (changed != settings)
+                {
+                    settings = changed;
+                    if (!SettingsFile.Save(settings, settingsPath))
+                    {
+                        log?.Warning($"Could not save the settings to '{settingsPath}'.");
+                    }
+                }
+            }
+
+            // The mouse is captured only while playing: free in the menu and while a bonus is chosen.
+            var choosing = player.PendingBoons > 0;
+            var capture = !menuOpen && !onTitle && !choosing;
+            if (capture && !input.IsMouseCaptured)
             {
                 input.CaptureMouse();
             }
+            else if (!capture && input.IsMouseCaptured)
+            {
+                input.ReleaseMouse();
+            }
 
-            wasChoosing = choosing;
-            choosingSeconds = choosing ? choosingSeconds + Raylib.GetFrameTime() : 0f;
+            choosingSeconds = choosing && !menuOpen ? choosingSeconds + Raylib.GetFrameTime() : 0f;
 
             // 1. Input: looking around happens every frame, so it feels immediate.
-            var playerInput = input.Read(choosing);
-            player.Look(playerInput);
+            var playerInput = input.Read();
+            player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
-            seconds += Raylib.GetFrameTime();
-            if (choosing)
+            if (choosing && !menuOpen)
             {
                 chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, choosingSeconds);
             }
@@ -201,7 +282,7 @@ static void RunGame(
             var ticks = accumulator.Advance(Raylib.GetFrameTime());
             for (var i = 0; i < ticks; i++)
             {
-                gameWorld.Tick(playerInput with { ChooseBoon = chosenBoon, Interact = interactPressed });
+                gameWorld.Tick(playerInput with { ChooseBoon = chosenBoon, Interact = interactPressed, Paused = menuOpen });
                 chosenBoon = null;
                 interactPressed = false;
 
@@ -309,16 +390,19 @@ static void RunGame(
             Raylib.ClearBackground(LookSettings.BarColor);
             picture.DrawToScreen();
             damageFeedback.Draw();
-            DrawHud(input.IsMouseCaptured || choosing, displayVersion);
+            DrawHud(displayVersion);
             DrawStaminaBar(player);
             CombatHud.Draw(player);
-            if (!choosing)
+            if (!choosing && !menuOpen)
             {
                 InteractionPrompt.Draw(gameWorld.InteractionTarget(player));
             }
 
             levelNameSeconds = MathF.Max(0f, levelNameSeconds - Raylib.GetFrameTime());
-            LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
+            if (!menuOpen)
+            {
+                LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
+            }
             if (gameWorld.IsWon)
             {
                 // Placeholder until the victory screen (#125).
@@ -328,6 +412,11 @@ static void RunGame(
             if (choosing)
             {
                 BoonWindow.Draw(player, gameWorld.Balance.Boons);
+            }
+
+            if (menuOpen)
+            {
+                EscMenu.Draw(escMenu, settings);
             }
 #if DEBUG
             DrawDebugInfo(player);
@@ -373,7 +462,7 @@ static void BringWindowOnScreen(FileLog? log)
 }
 
 // Texts on top of the 3D world, in full window resolution - always sharp, whatever the window size.
-static void DrawHud(bool isMouseCaptured, string displayVersion)
+static void DrawHud(string displayVersion)
 {
     var screenWidth = Raylib.GetScreenWidth();
     var screenHeight = Raylib.GetScreenHeight();
@@ -381,13 +470,6 @@ static void DrawHud(bool isMouseCaptured, string displayVersion)
 
     Raylib.DrawText("Silver & Ash", 20, 20, 30, textColor);
     Raylib.DrawFPS(20, screenHeight - 30);
-
-    if (!isMouseCaptured)
-    {
-        const string Hint = "Click to look around";
-        var hintWidth = Raylib.MeasureText(Hint, 24);
-        Raylib.DrawText(Hint, (screenWidth - hintWidth) / 2, screenHeight / 2 + 40, 24, textColor);
-    }
 
     var versionText = $"v{displayVersion}";
     var versionWidth = Raylib.MeasureText(versionText, 20);

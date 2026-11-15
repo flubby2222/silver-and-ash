@@ -7,12 +7,15 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- Titelbildschirm mit „Start“ und „Quit“
+- Esc-Menü: weiterspielen, Mausempfindlichkeit einstellen (bleibt gespeichert), zurück zum Titel, beenden. Solange es offen ist, steht das Spiel still
 - **Durchläufe auf Ebene 0 „The Catacombs“:** Das Spiel startet auf einer zufällig erzeugten Ebene aus handgebauten Räumen, mit Gängen und Schleifen, der Bossraum am weitesten vom Start. Beim Start erscheint kurz der Name der Ebene. Nach dem Tod beginnt ein neuer Durchlauf mit neuem Grundriss. Ist der Bossraum geräumt, ist der Durchlauf gewonnen („VICTORY“, vorläufig). Mit `--seed <Zahl>` immer derselbe Grundriss; die alten Testlevel gibt es weiter mit `--level test` / `--level heights`
 - Türen zwischen den Räumen der erzeugten Ebenen: Alle sind zu und halten Spieler, Gegner, Sicht und Schüsse auf. Mit **F** öffnet man die Tür, auf die man aus der Nähe schaut („[F] Open“); offen bleibt offen. Die Tür zum Bossraum ist dunkel, mit Schädeln und rotem Schimmer
 - Kampfräume werden zur Arena: Beim ersten Betreten fallen an allen Türen Gitter, die schlafenden Gegner erwachen. Sind alle tot, heben sich die Gitter und die Tür, durch die man kam, öffnet sich
 - Je weiter ein Kampfraum vom Start entfernt ist, desto mehr Ghule und Fledermäuse warten darin; der Bossraum ist voll besetzt. Einstellbar in `balance.json` unter `difficulty`
 
 ### Geändert
+- Esc gibt nicht mehr nur die Maus frei, sondern öffnet das Menü; ein Klick ins Bild fängt die Maus nicht mehr ein (das macht „Resume“). Auch wenn das Fenster den Fokus verliert, öffnet sich das Menü
 - Ist die Silberklinge voll aufgeladen, füllt sich die Ausdauer wieder auf, auch wenn man die Taste weiter hält. Während des Ladens selbst füllt sie sich weiterhin nicht
 
 ## [0.7.0] – 2026-11-15 – Stufen & Beute
