@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Geändert
+- Der **Startraum hat nur noch eine Tür**. Der Ausgang liegt je Durchlauf in einer anderen Richtung, und der Weg zum Boss wird etwas länger
+
 ## [0.9.0] – 2026-11-15 – Schatz & Wirtschaft
 
 Erkunden lohnt sich jetzt: Gegner lassen Silber und Schlüssel fallen, Kisten in vier Stufen warten in Kampfräumen, Schatzräumen und einem versteckten Raum hinter einer rissigen Wand. Dazu die erste Balancing-Runde mit eigenem Werkzeug.

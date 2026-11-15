@@ -1,7 +1,8 @@
 namespace SilverAndAsh.Core.World;
 
 /// <summary>
-/// Builds a level from room templates with a seed (ADR 0005). The start room is placed first; combat rooms are
+/// Builds a level from room templates with a seed (ADR 0005). The start room is placed first and gets exactly one
+/// door (its other door slots stay wall, so the way out lies in another direction per seed); combat rooms are
 /// joined to free door slots - directly through a shared wall or through a corridor - until the number from
 /// <see cref="LayoutBalance"/> is reached; while loops are wanted, places are sought where a new room (or a room
 /// and a corridor) joins two free door slots, so there is a second way round. Then the boss room, behind one of the
@@ -612,6 +613,12 @@ public static class LevelGenerator
                 ? DoorKind.Boss
                 : DoorKind.Normal;
             _doors.Add(new LevelDoor(from.X, from.Z, from.Room, toRoom, from.Side, kind));
+
+            // The start room has one way out: once its first door is set, its other door slots stay wall.
+            if (_rooms[from.Room].Variant.Kind == RoomKind.Start || _rooms[toRoom].Variant.Kind == RoomKind.Start)
+            {
+                _open.RemoveAll(slot => _rooms[slot.Room].Variant.Kind == RoomKind.Start);
+            }
         }
 
         // True if two rooms share a door or are both joined to the same corridor.

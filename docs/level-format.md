@@ -130,7 +130,7 @@ Im Code: [`RoomTemplateParser.cs`](../src/SilverAndAsh.Core/World/RoomTemplatePa
 
 Der [`LevelGenerator`](../src/SilverAndAsh.Core/World/LevelGenerator.cs) setzt aus den Vorlagen per Seed eine Ebene zusammen:
 
-1. **Startraum** hinlegen (zufällige Vorlage, gedreht/gespiegelt).
+1. **Startraum** hinlegen (zufällige Vorlage, gedreht/gespiegelt). Er bekommt **genau eine Tür**: Sobald der erste Raum an ihm hängt, bleiben seine übrigen Türplätze Wand. So liegt der Ausgang je Seed in einer anderen Richtung, und durch den Startraum führt keine Schleife.
 2. **Kampfräume** an freie Türplätze anhängen, bis die Zahl aus `balance.json` (`layout.combatRoomsMin` … `combatRoomsMax`) erreicht ist. Mit der Chance `layout.corridorChance` liegt ein **Gang** dazwischen, sonst teilen sich die Räume eine Wand mit Tür. Bei `0` gibt es gar keine Gänge.
 3. **Schleifen** (höchstens `layout.maxLoops`): Der Generator sucht gezielt Stellen, an denen ein neuer Raum – oder ein Raum plus Gang, oder nur ein Gang – zwei freie Türplätze verbindet. So gibt es einen zweiten Weg herum. Zwei Räume, die schon verbunden sind (Tür oder Gang), werden nicht ein zweites Mal verbunden.
 4. **Bossraum** hinter einem der Räume, die am weitesten vom Start liegen. Er ist damit **immer der entfernteste Raum** und hat **genau einen Eingang**.
