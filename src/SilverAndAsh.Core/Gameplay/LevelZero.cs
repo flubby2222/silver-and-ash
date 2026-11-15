@@ -23,10 +23,19 @@ public sealed class LevelZero
     /// <summary>A new run: level and world both start from <paramref name="seed"/>; the player stands in the start room.</summary>
     public GameWorld NewRun(int seed, Balance balance)
     {
+        var generated = Build(seed, balance);
+        return new GameWorld(generated.Level, seed, balance, generated.Doors, generated.Rooms, generated.Chests) { LevelName = Name };
+    }
+
+    /// <summary>
+    /// The level of a run with <paramref name="seed"/>, exactly as <see cref="NewRun"/> uses it: rooms, then enemies,
+    /// then chests. The balance report builds its levels with this, too.
+    /// </summary>
+    public GeneratedLevel Build(int seed, Balance balance)
+    {
         ArgumentNullException.ThrowIfNull(balance);
         var built = LevelGenerator.Generate(_templates, seed, balance.Layout);
-        var generated = ChestPlacement.Place(EnemyPlacement.Populate(built, balance.Difficulty), balance.Chests);
-        return new GameWorld(generated.Level, seed, balance, generated.Doors, generated.Rooms, generated.Chests) { LevelName = Name };
+        return ChestPlacement.Place(EnemyPlacement.Populate(built, balance.Difficulty), balance.Chests);
     }
 
     /// <summary>The run after <paramref name="finished"/>: a new seed taken from its seed, the same balancing values.</summary>
