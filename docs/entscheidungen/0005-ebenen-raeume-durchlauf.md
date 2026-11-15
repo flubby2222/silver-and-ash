@@ -1,6 +1,6 @@
 # 0005 – Ebenen, Räume und Durchlauf
 
-- **Status:** angenommen
+- **Status:** angenommen, teilweise abgelöst durch [0006](0006-kisten-beute-rarity.md) (Kisten: Stufen, Verschluss, Inhalt)
 - **Datum:** 2026-11-15
 - **Löst ab:** in [0001](0001-projektgrundlagen.md) Ablauf, Pause, Bosse („nicht in 1.0“) und den Meilensteinplan ab v0.8; in [0004](0004-fortschritt-stufen-beute-skills.md) „Kisten, Händler, Items, Waffen, Altare kommen danach“ und die anhaltende Bonus-Wahl
 
@@ -49,11 +49,11 @@ Leitlinie dabei: **Online-Coop bleibt möglich** ([0003](https://github.com/flub
 
 ### Schlüssel, Kisten, Secret Room
 - **Schlüssel** passen in jedes Schloss und werden verbraucht. Ein **geräumter Kampfraum** gibt einen mit **15 %**, ein **Gegner** mit **5 %**; fehlt einer, gibt es ihn beim Händler. Ziel: im Schnitt etwa so viele Schlüssel wie Schlösser.
-- **Kisten** sind mit **33 %** verschlossen (unabhängig vom Raum).
+- **Kisten** sind mit **33 %** verschlossen (unabhängig vom Raum). *(Abgelöst durch [0006](0006-kisten-beute-rarity.md): vier Kisten-Stufen, Verschluss je nach Stufe.)*
 - Der **Secret Room** liegt hinter einer **rissigen Wand**, die man mit einem **aufgeladenen Klingenhieb** einschlägt.
 
 ### Wirtschaft und Ausrüstung
-- Währung **Silber**: 1–3 pro Gegner, 15–25 pro Kiste.
+- Währung **Silber**: 1–3 pro Gegner, 15–25 pro Kiste. *(Silber pro Kiste: siehe [0006](0006-kisten-beute-rarity.md).)*
 - **Händler** verkauft Blutphiole (20), Schlüssel (40), vereinzelt Items/Waffen (100) – **keine Geweihte Munition** (würde sofort wirken). Er **kauft** Items und Inventar-Waffen für **25 %** des Preises; ein verkauftes Item verliert seine Wirkung.
 - **Items** (Proof of Concept, passiv für den Durchlauf): **Klingenparade** (Klinge zerschlägt Blutgeschosse, #90), **Rosenkranz aus Silber** (jeder Kill heilt 3).
 - **Waffen:** linke Maus = **eine Nahkampfwaffe**; rechte Maus = Fernwaffe, **bis zu 3**, gewechselt mit dem **Mausrad**. **Inventar** (Tab, 6 Plätze) zeigt alle Waffen; ausgerüstete stehen in eigenen, nicht verkäuflichen Slots; die Nahkampfwaffe wird dort getauscht.
