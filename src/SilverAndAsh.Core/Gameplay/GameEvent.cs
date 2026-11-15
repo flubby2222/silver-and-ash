@@ -93,6 +93,12 @@ public sealed record GhoulStruck(int GhoulId, bool Hit) : GameEvent;
 /// <summary>Door <paramref name="DoorId"/> was opened.</summary>
 public sealed record DoorOpened(int DoorId) : GameEvent;
 
+/// <summary>Room <paramref name="RoomIndex"/> became an arena: grates fell at all its doors, its enemies woke up.</summary>
+public sealed record RoomSealed(int RoomIndex) : GameEvent;
+
+/// <summary>All enemies of room <paramref name="RoomIndex"/> are dead: its grates rise.</summary>
+public sealed record RoomCleared(int RoomIndex) : GameEvent;
+
 /// <summary>Player <paramref name="PlayerId"/> took <paramref name="Damage"/>.</summary>
 public sealed record PlayerHit(int PlayerId, int Damage) : GameEvent;
 

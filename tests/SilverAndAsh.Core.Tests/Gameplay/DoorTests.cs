@@ -145,10 +145,10 @@ public class DoorTests
         Assert.False(world.Doors[1].IsOpen);
     }
 
+    // The arena grate is no kind of door any more but a state of every door (IsBarred) - see ArenaTests.
     [Theory]
     [InlineData(DoorKind.Locked)]
-    [InlineData(DoorKind.ArenaGate)]
-    public void Locked_doors_and_arena_grates_do_not_open_with_F(DoorKind kind)
+    public void Locked_doors_do_not_open_with_F(DoorKind kind)
     {
         var world = new GameWorld(LevelParser.Parse(Hall), 1, Balance.Default, [new LevelDoor(1, 1, 0, 1, RoomSide.South, kind)]);
 

@@ -30,15 +30,23 @@ public sealed class GameWorld
     private readonly Level _levelWithOpenDoors;
     private readonly IReadOnlyList<LevelDoor> _doorPlan;
     private readonly List<Door> _doors;
+    private readonly IReadOnlyList<PlacedRoom> _roomPlan;
+    private readonly List<RoomState> _rooms;
+    private readonly Dictionary<(int X, int Z), RoomState> _roomOfCell = [];
+    private readonly HashSet<int> _asleep = [];
 
     /// <summary>
     /// Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.
     /// <paramref name="seed"/> starts the world's random numbers: the same seed always gives the same game.
     /// <paramref name="balance"/> holds all balancing values; every figure of this world gets them (the standard
     /// values if none is given). <paramref name="doors"/> (optional) are the doors of a generated level; they all
-    /// start closed. Their cells must be walkable in <paramref name="level"/>.
+    /// start closed. Their cells must be walkable in <paramref name="level"/>. <paramref name="rooms"/> (optional) are
+    /// the rooms of a generated level: enemies in combat and boss rooms sleep until a player enters, then the room
+    /// becomes an arena (see <see cref="RoomState"/>).
     /// </summary>
-    public GameWorld(Level level, int seed = 0, Balance? balance = null, IReadOnlyList<LevelDoor>? doors = null)
+    public GameWorld(
+        Level level, int seed = 0, Balance? balance = null, IReadOnlyList<LevelDoor>? doors = null,
+        IReadOnlyList<PlacedRoom>? rooms = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         _levelWithOpenDoors = level;
@@ -69,6 +77,44 @@ public sealed class GameWorld
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
         Player = new Player(Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random);
+
+        _roomPlan = rooms ?? [];
+        _rooms = _roomPlan.Select(room => new RoomState(room, _doorPlan
+                .Select((door, index) => (door, index))
+                .Where(pair => pair.door.RoomA == room.Index || pair.door.RoomB == room.Index)
+                .Select(pair => pair.index)))
+            .ToList();
+        foreach (var room in _rooms)
+        {
+            foreach (var cell in room.Cells)
+            {
+                _roomOfCell[cell] = room;
+            }
+        }
+
+        // Every enemy belongs to the room it starts in; in an arena it sleeps until the room is entered.
+        foreach (var enemy in _ghouls.Cast<ITarget>().Concat(_bats))
+        {
+            var position = enemy.Body.Position;
+            if (_roomOfCell.TryGetValue(Level.ToGrid(position.X, position.Z), out var room))
+            {
+                room.Enemies.Add(enemy);
+                if (room.IsArena)
+                {
+                    _asleep.Add(enemy.Id);
+                }
+            }
+        }
+    }
+
+    /// <summary>The rooms of a generated level and what happened in them (empty for hand-made levels).</summary>
+    public IReadOnlyList<RoomState> Rooms => _rooms;
+
+    /// <summary>True while <paramref name="enemy"/> sleeps: it waits motionless until its room is entered (or it is hit).</summary>
+    public bool IsAsleep(ITarget enemy)
+    {
+        ArgumentNullException.ThrowIfNull(enemy);
+        return _asleep.Contains(enemy.Id);
     }
 
     /// <summary>
@@ -98,7 +144,7 @@ public sealed class GameWorld
     /// A fresh world for the same level: full health, every enemy back at its start - but with a new seed (taken
     /// from this one), so the bats fly differently than last time. The balancing values stay the same.
     /// </summary>
-    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan);
+    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan, _roomPlan);
 
     /// <summary>
     /// What <paramref name="player"/> would use with F right now: the nearest usable thing they look at, within
@@ -149,18 +195,107 @@ public sealed class GameWorld
     private void OpenDoor(Door door)
     {
         door.Open();
+        UpdateLevel();
+        _events.Add(new DoorOpened(door.Id));
+    }
+
+    // After doors changed: a new level in which exactly the blocking doors are walls, for everybody.
+    private void UpdateLevel()
+    {
         Level = WithClosedDoors();
         foreach (var player in Players)
         {
             player.ChangeLevel(Level);
         }
-
-        _events.Add(new DoorOpened(door.Id));
     }
 
     private Level WithClosedDoors() => _doors.Count == 0
         ? _levelWithOpenDoors
-        : _levelWithOpenDoors.WithCells(_doors.Where(door => !door.IsOpen).Select(door => (door.X, door.Z, Cell.Wall)));
+        : _levelWithOpenDoors.WithCells(_doors.Where(door => door.Blocks).Select(door => (door.X, door.Z, Cell.Wall)));
+
+    // A player who stands in a room with the whole body enters it. A combat or boss room with living enemies
+    // becomes an arena: grates fall at all its doors and the enemies wake up.
+    private void EnterRooms(Player player)
+    {
+        var cell = Level.ToGrid(player.Position.X, player.Position.Z);
+        if (!_roomOfCell.TryGetValue(cell, out var room) || room.IsEntered || TouchesDoorOf(room, player))
+        {
+            return;
+        }
+
+        room.Enter();
+        if (!room.IsArena)
+        {
+            return;
+        }
+
+        WakeUp(room);
+        if (room.Enemies.All(IsDead))
+        {
+            room.Clear();
+            _events.Add(new RoomCleared(room.Index));
+            return;
+        }
+
+        foreach (var id in room.DoorIds)
+        {
+            _doors[id].Bar();
+        }
+
+        room.Seal();
+        UpdateLevel();
+        _events.Add(new RoomSealed(room.Index));
+    }
+
+    // When the last enemy of an arena is dead, its grates rise. The door the player came through is open (they walked
+    // through it), so it is free again at once; the others open with F as before.
+    private void ClearRooms()
+    {
+        foreach (var room in _rooms.Where(room => room.IsSealed && room.Enemies.All(IsDead)))
+        {
+            foreach (var id in room.DoorIds)
+            {
+                _doors[id].Lift();
+            }
+
+            room.Clear();
+            UpdateLevel();
+            _events.Add(new RoomCleared(room.Index));
+        }
+    }
+
+    private void WakeUp(RoomState room)
+    {
+        foreach (var enemy in room.Enemies)
+        {
+            _asleep.Remove(enemy.Id);
+        }
+    }
+
+    private bool TouchesDoorOf(RoomState room, Player player)
+    {
+        foreach (var id in room.DoorIds)
+        {
+            var door = _doors[id];
+            var nearestX = Math.Clamp(player.Position.X, door.BoxMin.X, door.BoxMax.X);
+            var nearestZ = Math.Clamp(player.Position.Z, door.BoxMin.Z, door.BoxMax.Z);
+            var dx = player.Position.X - nearestX;
+            var dz = player.Position.Z - nearestZ;
+            if (dx * dx + dz * dz < BodySizes.Player.Radius * BodySizes.Player.Radius)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsDead(ITarget enemy) => enemy switch
+    {
+        Ghoul ghoul => ghoul.IsDead,
+        Bat bat => bat.IsDead,
+        _ => !enemy.IsHittable,
+    };
 
     public IReadOnlyList<TrainingDummy> Dummies => _dummies;
 
@@ -408,6 +543,15 @@ public sealed class GameWorld
         var wasAlive = target.IsHittable;
         target.TakeDamage(result.Amount, _events, result.IsCritical);
 
+        // A sleeping enemy that is hit wakes up - together with its whole room (the room is not sealed by that).
+        if (_asleep.Contains(target.Id))
+        {
+            foreach (var room in _rooms.Where(room => room.Enemies.Contains(target)))
+            {
+                WakeUp(room);
+            }
+        }
+
         var experience = target switch
         {
             Ghoul { IsDead: true } => Balance.Experience.Ghoul,
@@ -446,6 +590,8 @@ public sealed class GameWorld
             Interact(Player);
         }
 
+        EnterRooms(Player);
+
         foreach (var swing in Player.Events.OfType<BladeSwung>())
         {
             StrikeWithBlade(swing, Player);
@@ -467,14 +613,22 @@ public sealed class GameWorld
             var obstacles = Players.Select(player => player.Body)
                 .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, ghoul)).Select(target => target.Body))
                 .ToList();
-            ghoul.Act(Level, Players, obstacles, _events);
+            if (!_asleep.Contains(ghoul.Id))
+            {
+                ghoul.Act(Level, Players, obstacles, _events);
+            }
+
             ghoul.Tick(_events);
         }
 
         var batEventsFrom = _events.Count;
         foreach (var bat in _bats)
         {
-            bat.Act(Level, Players, _events);
+            if (!_asleep.Contains(bat.Id))
+            {
+                bat.Act(Level, Players, _events);
+            }
+
             bat.Tick(Level, _events);
         }
 
@@ -487,6 +641,7 @@ public sealed class GameWorld
         MoveProjectiles();
         DropFromTheDead();
         MovePickups();
+        ClearRooms();
 
         _ticksAllPlayersDead = Players.All(player => player.IsDead) ? _ticksAllPlayersDead + 1 : 0;
     }

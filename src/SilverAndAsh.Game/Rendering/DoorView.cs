@@ -8,7 +8,8 @@ namespace SilverAndAsh.Game.Rendering;
 /// <summary>
 /// Placeholder doors: a closed door fills its whole doorway cell (exactly what blocks you), an open one is gone.
 /// Wooden doors are brown planks with dark bands; the boss door is almost black with bone-white skulls and a red
-/// glow. Pure presentation - real models come later.
+/// glow. The grate of an arena shows as iron bars on both faces of the doorway. Pure presentation - real models
+/// come later.
 /// </summary>
 internal static class DoorView
 {
@@ -17,11 +18,12 @@ internal static class DoorView
     private static readonly Color BossDoor = new(38, 22, 24, 255);
     private static readonly Color Bone = new(214, 204, 180, 255);
     private static readonly Color RedGlow = new(200, 30, 30, 255);
+    private static readonly Color Iron = new(70, 72, 80, 255);
 
     /// <summary>Draws all closed doors. Call between BeginMode3D and EndMode3D.</summary>
     public static void Draw(IReadOnlyList<Door> doors, float seconds)
     {
-        foreach (var door in doors.Where(door => !door.IsOpen))
+        foreach (var door in doors.Where(door => door.Blocks))
         {
             var size = door.BoxMax - door.BoxMin;
             var centre = (door.BoxMin + door.BoxMax) / 2f;
@@ -32,13 +34,38 @@ internal static class DoorView
             var width = alongX ? size.Z : size.X;
             var place = turn * Matrix4x4.CreateTranslation(centre);
 
-            if (door.Kind == DoorKind.Boss)
+            var depth = alongX ? size.X : size.Z;
+            if (!door.IsOpen && door.Kind == DoorKind.Boss)
             {
-                DrawBossDoor(place, width, size.Y, alongX ? size.X : size.Z, seconds);
+                DrawBossDoor(place, width, size.Y, depth, seconds);
             }
-            else
+            else if (!door.IsOpen)
             {
-                DrawWoodenDoor(place, width, size.Y, alongX ? size.X : size.Z);
+                DrawWoodenDoor(place, width, size.Y, depth);
+            }
+
+            if (door.IsBarred)
+            {
+                DrawGrate(place, width, size.Y, depth);
+            }
+        }
+    }
+
+    // Iron bars just in front of both faces of the doorway - where the blocking actually starts.
+    private static void DrawGrate(Matrix4x4 place, float width, float height, float depth)
+    {
+        foreach (var face in new[] { -1f, 1f })
+        {
+            var z = face * (depth / 2f + 0.06f);
+            for (var i = 0; i < 6; i++)
+            {
+                var x = -width / 2f + width * (i + 0.5f) / 6f;
+                ShadedBox.Draw(Matrix4x4.CreateTranslation(x, 0f, z) * place, new Vector3(0.08f, height, 0.08f), Iron);
+            }
+
+            foreach (var y in new[] { -0.25f, 0.25f })
+            {
+                ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, y * height, z) * place, new Vector3(width, 0.1f, 0.1f), Iron);
             }
         }
     }
