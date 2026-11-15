@@ -98,13 +98,16 @@
     "ghoul": 30,                        // experience for killing a ghoul (the killing hit counts)
     "bat": 20,                          // for a bat
     "firstLevel": 100,                  // needed from level 1 to 2 ...
-    "perLevel": 50                      // ... and this much more for every further level (100, 150, 200 ...)
+    "growth": 1.25                      // ... and every further level x1.25 (100, 125, 156, 195, 244 ...)
   },
 
+  // After a level up: some boons drawn from the pool, each counted from the base value (3 x 5 % = 15 %).
   "boons": {
-    "vitalityHealth": 20,               // Vitality: +20 maximum health, healed at once
-    "strengthDamage": 0.15,             // Strength: +15 % damage with every weapon (chosen twice: +30 %)
-    "enduranceSegments": 1              // Endurance: +1 stamina segment
+    "offered": 3,                       // how many different boons a level up offers
+    "staminaRegen": 0.05,               // stamina refills 5 % faster
+    "health": 5,                        // +5 maximum health, healed at once
+    "damage": 0.05,                     // +5 % damage with every weapon
+    "experience": 0.025                 // +2.5 % experience per kill
   },
 
   "drops": {

@@ -61,7 +61,7 @@ public sealed class GameWorld
             .ToList();
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
-        Player = new Player(level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance);
+        Player = new Player(level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random);
     }
 
     public Level Level { get; }
@@ -328,7 +328,7 @@ public sealed class GameWorld
     /// </summary>
     private void Damage(ITarget target, Hit hit, Player attacker)
     {
-        var result = DamageRules.Calculate(hit with { Strength = attacker.StrengthStacks });
+        var result = DamageRules.Calculate(hit with { DamageBoons = attacker.BoonCount(Boon.Damage) });
         var wasAlive = target.IsHittable;
         target.TakeDamage(result.Amount, _events, result.IsCritical);
 

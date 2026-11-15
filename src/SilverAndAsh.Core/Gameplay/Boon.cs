@@ -1,25 +1,32 @@
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// The bonuses a player chooses from after a level up (decision record 0004). Each can be chosen again and again;
-/// they last for the run and are gone after death. Values in <see cref="BoonBalance"/>.
+/// The pool of bonuses a level up offers (decision record 0004): small steps, each counted from the base value and
+/// chosen again and again. They last for the run and are gone after death. Values in <see cref="BoonBalance"/>.
+/// A new boon only needs a name here and its effect in <see cref="Player.Choose"/> - it joins the pool by itself.
 /// </summary>
 public enum Boon
 {
-    /// <summary>More maximum health - and the same amount healed at once.</summary>
-    Vitality,
+    /// <summary>The stamina bar refills a bit faster.</summary>
+    StaminaRegen,
 
-    /// <summary>More damage with every weapon (a damage rule; chosen twice, it adds up).</summary>
-    Strength,
+    /// <summary>A bit more maximum health - and the same amount healed at once.</summary>
+    Health,
 
-    /// <summary>One more stamina segment - one more jump, dash or a bigger part of a dodge.</summary>
-    Endurance,
+    /// <summary>A bit more damage with every weapon (a damage rule).</summary>
+    Damage,
+
+    /// <summary>A bit more experience for every kill.</summary>
+    Experience,
 }
 
-/// <summary>Damage rule: every chosen <see cref="Boon.Strength"/> adds <paramref name="PerStack"/> to the damage (0.15 = +15 %).</summary>
-public sealed record StrengthBonus(float PerStack) : IDamageRule
+/// <summary>
+/// Damage rule: every chosen <see cref="Boon.Damage"/> adds <paramref name="PerBoon"/> of the base damage
+/// (0.05 = +5 %; three times = +15 %, not 1.05³).
+/// </summary>
+public sealed record DamageBoonBonus(float PerBoon) : IDamageRule
 {
     public bool IsCritical => false;
 
-    public float Multiplier(Hit hit) => 1f + PerStack * hit.Strength;
+    public float Multiplier(Hit hit) => 1f + PerBoon * hit.DamageBoons;
 }

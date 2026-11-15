@@ -104,17 +104,22 @@ public class ExperienceTests
     }
 
     [Fact]
-    public void Each_level_needs_more_than_the_last()
+    public void Each_level_needs_a_quarter_more_than_the_last()
     {
+        // 100, 125, 156.25 -> 156, 195.3 -> 195: every level x 1.25, rounded.
         var player = new Player(LevelParser.Parse("P"));
 
         player.AddExperience(100, []);
         Assert.Equal(2, player.Level);
-        Assert.Equal(150, player.ExperienceToNextLevel);
+        Assert.Equal(125, player.ExperienceToNextLevel);
 
-        player.AddExperience(150, []);
+        player.AddExperience(125, []);
         Assert.Equal(3, player.Level);
-        Assert.Equal(200, player.ExperienceToNextLevel);
+        Assert.Equal(156, player.ExperienceToNextLevel);
+
+        player.AddExperience(156, []);
+        Assert.Equal(4, player.Level);
+        Assert.Equal(195, player.ExperienceToNextLevel);
     }
 
     [Fact]
@@ -134,7 +139,7 @@ public class ExperienceTests
         var player = new Player(LevelParser.Parse("P"));
         var events = new List<GameEvent>();
 
-        player.AddExperience(260, events);
+        player.AddExperience(235, events);      // 100 + 125, 10 left
 
         Assert.Equal(3, player.Level);
         Assert.Equal(10, player.Experience);
@@ -159,7 +164,7 @@ public class ExperienceTests
         // The balancing file refuses such values, but code could still set them.
         var player = new Player(LevelParser.Parse("P"), balance: Balance.Default with
         {
-            Experience = new ExperienceBalance { FirstLevel = 0, PerLevel = 0 },
+            Experience = new ExperienceBalance { FirstLevel = 0 },
         });
 
         player.AddExperience(10, []);
@@ -196,16 +201,16 @@ public class ExperienceTests
     {
         var balance = Frail with
         {
-            Experience = new ExperienceBalance { Ghoul = 70, Bat = 5, FirstLevel = 60, PerLevel = 20 },
+            Experience = new ExperienceBalance { Ghoul = 70, Bat = 5, FirstLevel = 60, Growth = 1.5f },
         };
         var world = new GameWorld(LevelParser.Parse("P\n.\nG"), balance: balance);
 
         Shoot(world, world.Ghouls[0].Position + new Vector3(0f, 0.5f, 0f));
 
-        // 70 experience: level 2 needs 60, then 10 are left of the 80 for level 3.
+        // 70 experience: level 2 needs 60, then 10 are left of the 90 (60 x 1.5) for level 3.
         Assert.Equal(2, world.Player.Level);
         Assert.Equal(10, world.Player.Experience);
-        Assert.Equal(80, world.Player.ExperienceToNextLevel);
+        Assert.Equal(90, world.Player.ExperienceToNextLevel);
     }
 
     private static void Shoot(GameWorld world, Vector3 point)

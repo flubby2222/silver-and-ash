@@ -162,7 +162,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             player.Look(playerInput);
             if (choosing)
             {
-                chosenBoon ??= BoonWindow.Pick(choosingSeconds);
+                chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, choosingSeconds);
             }
 
             // 2. Simulation: as many fixed ticks as fit into the real time of the last frame.
@@ -275,7 +275,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             CombatHud.Draw(player);
             if (choosing)
             {
-                BoonWindow.Draw(player.PendingBoons, gameWorld.Balance.Boons);
+                BoonWindow.Draw(player, gameWorld.Balance.Boons);
             }
 #if DEBUG
             DrawDebugInfo(player);
