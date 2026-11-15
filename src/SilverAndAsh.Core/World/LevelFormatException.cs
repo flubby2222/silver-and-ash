@@ -10,6 +10,16 @@ public sealed class LevelFormatException : FormatException
         LineNumber = lineNumber;
     }
 
+    /// <summary>
+    /// Creates the exception for a problem in the file or room <paramref name="source"/>,
+    /// e.g. "combat/pillars.txt, line 3: ...". Line 0 means the whole file.
+    /// </summary>
+    public LevelFormatException(string source, int lineNumber, string problem)
+        : base(lineNumber > 0 ? $"{source}, line {lineNumber}: {problem}" : $"{source}: {problem}")
+    {
+        LineNumber = lineNumber;
+    }
+
     /// <summary>The line (1-based) where the problem is, or 0 if it concerns the whole file.</summary>
     public int LineNumber { get; }
 }

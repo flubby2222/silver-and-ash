@@ -4,7 +4,7 @@ namespace SilverAndAsh.Core.Tests;
 internal static class RepositoryFiles
 {
     /// <summary>
-    /// Returns the full path of <paramref name="relativePath"/> (e.g. "assets/levels/test.txt"),
+    /// Returns the full path of the file or folder <paramref name="relativePath"/> (e.g. "assets/levels/test.txt"),
     /// searching upwards from the test output directory until the repository root is found.
     /// </summary>
     public static string Find(string relativePath)
@@ -15,7 +15,7 @@ internal static class RepositoryFiles
         while (directory is not null)
         {
             var candidate = Path.Combine([directory.FullName, .. parts]);
-            if (File.Exists(candidate))
+            if (File.Exists(candidate) || Directory.Exists(candidate))
             {
                 return candidate;
             }

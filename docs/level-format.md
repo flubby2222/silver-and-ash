@@ -59,3 +59,44 @@ Die beiden `--` trennen die Optionen für `dotnet` von denen für das Spiel. Erl
 
 - Einlesen: [`src/SilverAndAsh.Core/World/LevelParser.cs`](../src/SilverAndAsh.Core/World/LevelParser.cs)
 - Datenmodell: [`Level.cs`](../src/SilverAndAsh.Core/World/Level.cs), [`Cell.cs`](../src/SilverAndAsh.Core/World/Cell.cs)
+
+## Raum-Vorlagen
+
+Ab v0.8 werden Ebenen aus **Raum-Vorlagen** zusammengesetzt (siehe [Entscheidung 0005](entscheidungen/0005-ebenen-raeume-durchlauf.md)). Eine Vorlage ist eine Textdatei im selben Format wie oben, abgelegt in `assets/rooms/<raumart>/`, z. B. `assets/rooms/combat/pillars.txt`. **Der Ordner bestimmt die Raumart:**
+
+| Ordner | Raumart | Decke | Besonderheit |
+|---|---|---|---|
+| `start` | Startraum | 6 m | genau ein `P` |
+| `combat` | Kampfraum | 6 m | groß und verwinkelt (10–18 Zellen je Richtung), mind. 3 Gegnerplätze |
+| `corridor` | Gang | 3,5 m | schmal, gern mit Knick |
+| `boss` | Bossraum | 6 m | **genau ein** Türplatz |
+
+Zusätzlich zu den Zeichen oben gibt es:
+
+| Zeichen | Bedeutung |
+|---|---|
+| `+` | **Türplatz** in der Außenwand. Der Generator setzt hier eine Tür, wenn er einen Raum anschließt; ungenutzte Türplätze bleiben Wand. |
+
+Regeln für Vorlagen:
+
+- Jede Vorlage hat **mindestens einen Türplatz**. Ein Türplatz liegt **am Rand**, **nicht in einer Ecke**, und **dahinter (nach innen) ist Boden**.
+- `G` und `B` sind **Plätze für Gegner** – wie viele davon wirklich besetzt werden, entscheidet später die Schwierigkeit.
+- `P` gibt es **nur im Startraum**, Trainingspuppen (`D`) gar nicht.
+- Der Boden muss **zusammenhängen** – kein Bodenfeld darf abgeschnitten sein.
+- Auf Ebene 0 gibt es noch **keine Höhenunterschiede** (keine `1`/`2`/`3`/`_`), auch wenn der Parser sie schon versteht.
+- Der Generator darf Vorlagen **drehen** (in Vierteldrehungen) und **spiegeln** – Türplätze drehen sich mit. Eine Vorlage muss also nicht in jeder Ausrichtung angelegt werden.
+- Fehler werden mit **Datei, Zeile und Spalte** gemeldet, z. B. `combat/pillars.txt, line 3: Door slot '+' in column 1 sits in a corner; a door needs a side.`
+- Ein Test liest **alle** mitgelieferten Vorlagen ein – eine kaputte Vorlage fällt also schon in der CI auf.
+
+Beispiel (Gang mit Knick, `assets/rooms/corridor/bend.txt`):
+
+```
+#+####
+#.####
+#.####
+#.####
+#....+
+######
+```
+
+Im Code: [`RoomTemplateParser.cs`](../src/SilverAndAsh.Core/World/RoomTemplateParser.cs), [`RoomTemplate.cs`](../src/SilverAndAsh.Core/World/RoomTemplate.cs).
