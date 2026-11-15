@@ -21,6 +21,8 @@ internal static class CombatHud
     private static readonly Color Blood = new(150, 24, 34, 255);
     private static readonly Color TextColor = new(200, 200, 210, 255);
     private static readonly Color Consecrated = new(220, 235, 255, 255);
+    private static readonly Color SilverCoin = new(196, 202, 214, 255);
+    private static readonly Color SilverRim = new(110, 114, 128, 255);
 
     public static void Draw(Player player)
     {
@@ -45,6 +47,7 @@ internal static class CombatHud
 
         DrawHealth(player.Health, player.MaxHealth);
         DrawLevel(player.Level, player.Experience, player.ExperienceToNextLevel);
+        DrawSilver(player.Silver);
 
         if (player.IsConsecrated)
         {
@@ -65,6 +68,23 @@ internal static class CombatHud
         Raylib.DrawRectangle(19, barTop - 1, Width + 2, Height + 2, Outline);
         Raylib.DrawRectangle(20, barTop, Width, Height, Track);
         Raylib.DrawRectangle(20, barTop, (int)MathF.Round(Width * fraction), Height, Charged);
+    }
+
+    /// <summary>The silver of this run at the top right: a small coin and "SILVER 42".</summary>
+    private static void DrawSilver(int silver)
+    {
+        const int FontSize = 20;
+        const int Top = 20;
+        var text = string.Create(CultureInfo.InvariantCulture, $"SILVER {silver}");
+        var right = Raylib.GetScreenWidth() - 20;
+        var left = right - Raylib.MeasureText(text, FontSize);
+        Raylib.DrawText(text, left, Top, FontSize, SilverCoin);
+
+        var coinX = left - 14;
+        var coinY = Top + FontSize / 2;
+        Raylib.DrawCircle(coinX, coinY, 8f, SilverRim);
+        Raylib.DrawCircle(coinX, coinY, 6f, SilverCoin);
+        Raylib.DrawCircle(coinX - 2, coinY - 2, 2f, Light);
     }
 
     /// <summary>Consecrated ammunition: its time left, above the health - pale and holy, blinking in the last 3 s.</summary>

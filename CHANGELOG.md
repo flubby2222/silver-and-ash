@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Silber**, die Währung des Durchlaufs: Jeder getötete Ghul und jede Fledermaus lässt 1–3 Silber fallen, als kleinen Münzstapel am Boden. Drüberlaufen sammelt es ein. Oben rechts zeigt der Zähler „SILVER“; der Endbildschirm und `runs.log` nennen das gesammelte Silber. Ein neuer Durchlauf beginnt bei 0. Einstellbar in `balance.json` unter `silver`. Ausgeben kann man es ab v0.11 beim Händler
+
 ## [0.8.0] – 2026-11-15 – Run-Grundgerüst
 
 Aus dem Testlevel wird ein Durchlauf: Jede Runde baut eine neue Ebene aus handgebauten Räumen, Kampfräume schließen sich zur Arena, je weiter man kommt, desto mehr wartet – mit Titel, Pause, Karte und einer Statistik am Ende.

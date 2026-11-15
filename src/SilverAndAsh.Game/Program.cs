@@ -420,6 +420,7 @@ static void RunGame(
 
             projectileView.Draw(gameWorld.Projectiles, accumulator.Alpha);
             pickupView.Draw(gameWorld.Pickups, accumulator.Alpha);
+            pickupView.DrawSilver(gameWorld.SilverPiles, accumulator.Alpha);
 
             impactMarks.Draw();
 

@@ -41,6 +41,7 @@ public static class BalanceFile
         "blade.damage", "blade.chargeStaminaSegments", "blade.coneStartBehind",
         "pistol.damage", "ghoul.attackDamage", "bat.biteDamage", "bat.spitAimBelowEyes", "bloodBolt.damage",
         "drops.ghoulChance", "drops.batChance", "drops.consecratedAmmoShare", "bloodVial.heal",
+        "silver.ghoulMin", "silver.ghoulMax", "silver.batMin", "silver.batMax",
         "experience.ghoul", "experience.bat",
         "boons.staminaRegen", "boons.health", "boons.damage", "boons.experience",
         "layout.corridorChance", "layout.maxLoops",
@@ -77,6 +78,8 @@ public static class BalanceFile
         ("bat", "turnRoundMin", "turnRoundMax"),
         ("bat", "circleHeightMin", "circleHeightMax"),
         ("layout", "combatRoomsMin", "combatRoomsMax"),
+        ("silver", "ghoulMin", "ghoulMax"),
+        ("silver", "batMin", "batMax"),
     ];
 
     /// <summary>Reads the file at <paramref name="path"/>. A missing or unreadable file gives the standard values.</summary>

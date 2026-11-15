@@ -62,6 +62,7 @@ internal static class EndScreen
             ("Damage dealt", Number(summary.DamageDealt)),
             ("Damage taken", Number(summary.DamageTaken)),
             ("Level reached", Number(summary.Level)),
+            ("Silver collected", Number(summary.Silver)),
         };
         if (summary.ArenaRooms > 0)
         {

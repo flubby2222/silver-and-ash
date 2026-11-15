@@ -42,6 +42,9 @@ public sealed record Balance
     /// <summary>What killed enemies leave behind.</summary>
     public DropsBalance Drops { get; init; } = new();
 
+    /// <summary>How much silver killed enemies leave behind.</summary>
+    public SilverBalance Silver { get; init; } = new();
+
     /// <summary>The blood vial: a consumable that heals.</summary>
     public BloodVialBalance BloodVial { get; init; } = new();
 
@@ -107,6 +110,25 @@ public sealed record DropsBalance
 
     /// <summary>Of all drops, this share is consecrated ammunition (0.3 = 30 %); the rest are blood vials.</summary>
     public float ConsecratedAmmoShare { get; init; } = 0.3f;
+}
+
+/// <summary>
+/// Silver, the currency of a run: every killed enemy drops an amount between its minimum and maximum (both included).
+/// 0 to 0 = no silver from that kind of enemy.
+/// </summary>
+public sealed record SilverBalance
+{
+    /// <summary>Least silver a killed ghoul drops.</summary>
+    public int GhoulMin { get; init; } = 1;
+
+    /// <summary>Most silver a killed ghoul drops.</summary>
+    public int GhoulMax { get; init; } = 3;
+
+    /// <summary>Least silver a killed bat drops.</summary>
+    public int BatMin { get; init; } = 1;
+
+    /// <summary>Most silver a killed bat drops.</summary>
+    public int BatMax { get; init; } = 3;
 }
 
 /// <summary>Balancing values of consecrated ammunition.</summary>

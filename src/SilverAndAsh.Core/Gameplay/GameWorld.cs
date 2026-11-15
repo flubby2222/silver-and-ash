@@ -18,6 +18,7 @@ public sealed class GameWorld
     private readonly int _restartTicks;
     private readonly List<GameEvent> _events = [];
     private readonly Random _random;
+    private readonly Random _lootRandom;
     private int _ticksAllPlayersDead;
     private readonly List<TrainingDummy> _dummies;
     private readonly List<Ghoul> _ghouls;
@@ -26,6 +27,8 @@ public sealed class GameWorld
     private readonly List<Pickup> _pickups = [];
     private readonly HashSet<int> _dropsRolled = [];
     private int _nextPickupId;
+    private readonly List<SilverPile> _silverPiles = [];
+    private int _nextSilverPileId;
     private int _nextProjectileId;
     private readonly Level _levelWithOpenDoors;
     private readonly IReadOnlyList<LevelDoor> _doorPlan;
@@ -59,8 +62,10 @@ public sealed class GameWorld
         _restartTicks = SimulationClock.SecondsToTicks(Balance.RestartDelay);
         DamageRules = DamageRules.Standard(Balance);
 
-        // Online co-op rule 3: all chance comes from this one generator, started from the seed.
+        // Online co-op rule 3: all chance comes from the seed. Loot (silver) has a generator of its own, so the
+        // amounts never shift what the fights roll - and the fights never shift the loot.
         _random = new Random(seed);
+        _lootRandom = new Random(unchecked((seed * 397) ^ 0x5117E2));
         _dummies = level.DummyPositions.Select((position, index) => new TrainingDummy(index, position, Balance)).ToList();
 
         // Ghoul numbers continue after the dummies': every target has its own number.
@@ -134,7 +139,8 @@ public sealed class GameWorld
         Statistics.DamageTaken,
         Player.Level,
         Statistics.RoomsCleared,
-        _rooms.Count(room => room.IsArena));
+        _rooms.Count(room => room.IsArena),
+        Statistics.SilverCollected);
 
     /// <summary>The rooms of a generated level and what happened in them (empty for hand-made levels).</summary>
     public IReadOnlyList<RoomState> Rooms => _rooms;
@@ -371,21 +377,61 @@ public sealed class GameWorld
     /// <summary>Consumables lying in the level (taken ones are removed after each tick).</summary>
     public IReadOnlyList<Pickup> Pickups => _pickups;
 
+    /// <summary>Silver lying in the level (taken piles are removed after each tick).</summary>
+    public IReadOnlyList<SilverPile> SilverPiles => _silverPiles;
+
     /// <summary>
     /// Every enemy that died since the last tick gets exactly one chance to drop a consumable (its own chance from
-    /// <see cref="DropsBalance"/>, rolled with the world's random generator). The drop appears where it died.
+    /// <see cref="DropsBalance"/>, rolled with the world's random generator) and drops its silver
+    /// (<see cref="SilverBalance"/>). Both appear where it died.
     /// </summary>
     private void DropFromTheDead()
     {
         foreach (var ghoul in _ghouls.Where(ghoul => ghoul.IsDead && _dropsRolled.Add(ghoul.Id)))
         {
             MaybeDrop(Balance.Drops.GhoulChance, ghoul.Position);
+            DropSilver(Balance.Silver.GhoulMin, Balance.Silver.GhoulMax, ghoul.Position);
         }
 
         foreach (var bat in _bats.Where(bat => bat.IsDead && _dropsRolled.Add(bat.Id)))
         {
             MaybeDrop(Balance.Drops.BatChance, bat.Position);
+            DropSilver(Balance.Silver.BatMin, Balance.Silver.BatMax, bat.Position);
         }
+    }
+
+    /// <summary>Drops a pile worth between <paramref name="min"/> and <paramref name="max"/> (both included) - nothing for 0.</summary>
+    private void DropSilver(int min, int max, Vector3 position)
+    {
+        var amount = _lootRandom.Next(min, max + 1);
+        if (amount <= 0)
+        {
+            return;
+        }
+
+        var pile = new SilverPile(_nextSilverPileId++, amount, position);
+        _silverPiles.Add(pile);
+        _events.Add(new SilverDropped(pile.Id, amount, position));
+    }
+
+    /// <summary>Silver falls to the floor; a living player who touches a pile takes it (always - silver is never wasted).</summary>
+    private void MoveSilver()
+    {
+        foreach (var pile in _silverPiles)
+        {
+            pile.Fall(Level, Balance.Player.Gravity);
+            var taker = Players.FirstOrDefault(player => !player.IsDead && BodiesTouch(player.Body, pile.Body));
+            if (taker is null)
+            {
+                continue;
+            }
+
+            pile.IsTaken = true;
+            taker.AddSilver(pile.Amount);
+            _events.Add(new SilverTaken(pile.Id, taker.Id, pile.Amount));
+        }
+
+        _silverPiles.RemoveAll(pile => pile.IsTaken);
     }
 
     private void MaybeDrop(float chance, Vector3 position)
@@ -714,6 +760,7 @@ public sealed class GameWorld
         MoveProjectiles();
         DropFromTheDead();
         MovePickups();
+        MoveSilver();
         ClearRooms();
 
         // The clock of the run stops with victory or defeat; this tick still counts.
