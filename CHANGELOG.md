@@ -6,6 +6,10 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.7.0] – 2026-11-15 – Stufen & Beute
+
+Kämpfen lohnt sich: Gegner lassen Blutphiolen und Geweihte Munition fallen, Kills bringen Erfahrung, und jeder Aufstieg bietet eine Wahl – dazu alle Werte in einer Datei zum Nachjustieren.
+
 ### Hinzugefügt
 - Balancing-Datei `assets/balance.json`: Leben, Schaden, Abklingzeiten, Geschwindigkeiten und Zeiten lassen sich ändern, ohne das Spiel neu zu bauen – mit Kommentaren zu jedem Wert. Fehler in der Datei halten das Spiel nicht auf: Es nimmt dann die Standardwerte und schreibt eine Warnung ins Log. In der Testversion lädt F5 die Datei neu. Anleitung: `docs/balancing.md`
 - Blutphiolen: Getötete Ghule lassen in 30 % der Fälle, Fledermäuse in 15 % eine Blutphiole fallen – eine kleine, rot pulsierende Flasche, die über dem Boden schwebt. Drüberlaufen heilt 50 Leben (nie über das Maximum), neben der Lebensanzeige steigt „+50“ auf. Bei vollem Leben bleibt sie liegen
@@ -112,7 +116,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.6.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.2...v0.4.0
