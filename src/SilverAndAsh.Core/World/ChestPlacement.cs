@@ -2,7 +2,7 @@ namespace SilverAndAsh.Core.World;
 
 /// <summary>
 /// Puts chests on the chest places ('C') of a generated level (decision record 0006). Treasure rooms get 1-2 chests
-/// (better ones behind a locked door) that stand from the start. About every fourth combat room
+/// (better ones behind a locked door) that stand from the start, secret rooms one. About every fourth combat room
 /// (<see cref="ChestsBalance.CombatRoomChance"/>) gets one, on one of its chest places; it rises from the floor once the
 /// room is cleared. Its tier follows the combat shares of <see cref="ChestTierBalance"/> - "near" in the combat room
 /// nearest to the start, "far" in the farthest, rising evenly in between. Lock and contents are rolled at once, so the
@@ -51,6 +51,20 @@ public static class ChestPlacement
                 var tier = PickTier(chests, values => locked ? values.LockedTreasureShare : values.TreasureShare, random);
                 plans.Add(Roll(chests, tier, x, z, room.Index, risesWhenCleared: false, random));
             }
+        }
+
+        // Secret rooms: one chest each, never a Beggar's by standard. Rolled last.
+        foreach (var room in generated.Rooms.Where(room => room.Kind == RoomKind.Secret))
+        {
+            var places = room.ChestSlots ?? [];
+            if (places.Count == 0)
+            {
+                continue;
+            }
+
+            var (x, z) = places[random.Next(places.Count)];
+            var tier = PickTier(chests, values => values.SecretShare, random);
+            plans.Add(Roll(chests, tier, x, z, room.Index, risesWhenCleared: false, random));
         }
 
         return generated with { Chests = plans };

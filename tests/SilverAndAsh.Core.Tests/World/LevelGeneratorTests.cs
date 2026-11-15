@@ -151,12 +151,12 @@ public class LevelGeneratorTests
     }
 
     [Fact]
-    public void The_door_of_the_boss_room_is_a_boss_door_one_treasure_room_is_locked_and_all_others_are_normal()
+    public void Boss_door_one_locked_treasure_door_one_cracked_secret_wall_and_all_others_normal()
     {
         Assert.All(ManyLevels.Value, generated =>
         {
             var boss = generated.Rooms.Single(room => room.Kind == RoomKind.Boss).Index;
-            bool IsTreasure(int room) => generated.Rooms[room].Kind == RoomKind.Treasure;
+            bool Is(int room, RoomKind kind) => generated.Rooms[room].Kind == kind;
 
             Assert.All(generated.Doors, door =>
             {
@@ -166,7 +166,11 @@ public class LevelGeneratorTests
                 }
                 else if (door.Kind == DoorKind.Locked)
                 {
-                    Assert.True(IsTreasure(door.RoomA) || IsTreasure(door.RoomB), $"Seed {generated.Seed}: a lock not at a treasure room.");
+                    Assert.True(Is(door.RoomA, RoomKind.Treasure) || Is(door.RoomB, RoomKind.Treasure), $"Seed {generated.Seed}: a lock not at a treasure room.");
+                }
+                else if (door.Kind == DoorKind.Cracked)
+                {
+                    Assert.True(Is(door.RoomB, RoomKind.Secret), $"Seed {generated.Seed}: a cracked wall not at a secret room.");
                 }
                 else
                 {
@@ -174,6 +178,7 @@ public class LevelGeneratorTests
                 }
             });
             Assert.Single(generated.Doors, door => door.Kind == DoorKind.Locked);
+            Assert.Single(generated.Doors, door => door.Kind == DoorKind.Cracked);
         });
     }
 
@@ -340,11 +345,12 @@ public class LevelGeneratorTests
     [Fact]
     public void With_corridors_always_every_room_is_reached_through_a_corridor()
     {
+        // Except the secret room: it always lies directly behind a combat room's wall (its cracked wall).
         var layout = Layout with { CorridorChance = 1f, MaxLoops = 0 };
 
         var generated = LevelGenerator.Generate(Rooms, 11, layout);
 
-        Assert.All(generated.Doors, door =>
+        Assert.All(generated.Doors.Where(door => door.Kind != DoorKind.Cracked), door =>
             Assert.Contains(RoomKind.Corridor, new[] { generated.Rooms[door.RoomA].Kind, generated.Rooms[door.RoomB].Kind }));
     }
 
@@ -389,6 +395,7 @@ public class LevelGeneratorTests
     [Theory]
     [InlineData(RoomKind.Boss, true)]
     [InlineData(RoomKind.Treasure, true)]
+    [InlineData(RoomKind.Secret, true)]
     [InlineData(RoomKind.Start, false)]
     [InlineData(RoomKind.Combat, false)]
     [InlineData(RoomKind.Corridor, false)]

@@ -9,8 +9,8 @@ namespace SilverAndAsh.Core.World;
 /// </list>
 /// The outer ring of a template is always wall or door slot. Rooms with a single entrance (the boss room) have
 /// exactly one door slot.
-/// 'G' and 'B' mark places for enemies (not in treasure rooms), 'C' places for a chest (only in combat and treasure
-/// rooms; a treasure room needs at least one), 'P' the player start (only in the start room).
+/// 'G' and 'B' mark places for enemies (not in treasure and secret rooms), 'C' places for a chest (only in combat,
+/// treasure and secret rooms; treasure and secret rooms need at least one), 'P' the player start (only in the start room).
 /// Training dummies ('D') are not allowed in rooms. The ceiling height comes from the kind of room.
 /// Full description: docs/level-format.md.
 /// </summary>
@@ -104,16 +104,16 @@ public static class RoomTemplateParser
                     case '+':
                         doorCells.Add((x, z));
                         break;
-                    case 'G' or 'B' when kind == RoomKind.Treasure:
-                        throw Error(name, x, z, $"A treasure room has no enemies - no '{symbol}' (column {x + 1}).");
+                    case 'G' or 'B' when kind.IsHoard():
+                        throw Error(name, x, z, $"A {kind.ToString().ToLowerInvariant()} room has no enemies - no '{symbol}' (column {x + 1}).");
                     case 'G':
                         ghoulSlots.Add((x, z));
                         break;
                     case 'B':
                         batSlots.Add((x, z));
                         break;
-                    case 'C' when kind is not (RoomKind.Combat or RoomKind.Treasure):
-                        throw Error(name, x, z, $"Only combat and treasure rooms may have a chest place 'C' (column {x + 1}).");
+                    case 'C' when kind != RoomKind.Combat && !kind.IsHoard():
+                        throw Error(name, x, z, $"Only combat, treasure and secret rooms may have a chest place 'C' (column {x + 1}).");
                     case 'C':
                         chestSlots.Add((x, z));
                         break;
@@ -128,9 +128,9 @@ public static class RoomTemplateParser
             }
         }
 
-        if (kind == RoomKind.Treasure && chestSlots.Count == 0)
+        if (kind.IsHoard() && chestSlots.Count == 0)
         {
-            throw new LevelFormatException(name, 0, "A treasure room needs at least one chest place 'C'.");
+            throw new LevelFormatException(name, 0, $"A {kind.ToString().ToLowerInvariant()} room needs at least one chest place 'C'.");
         }
 
         if (kind == RoomKind.Start && playerStart is null)

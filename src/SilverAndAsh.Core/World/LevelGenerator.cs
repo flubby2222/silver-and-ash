@@ -8,7 +8,8 @@ namespace SilverAndAsh.Core.World;
 /// rooms farthest from the start, so it is always the farthest room and has one entrance. Last the treasure rooms
 /// (<see cref="LayoutBalance.TreasureRooms"/>, <see cref="LayoutBalance.LockedTreasureRooms"/>): dead ends, never at the
 /// start room, never as far as the boss; a locked one gets a <see cref="DoorKind.Locked"/> door - so nothing important
-/// ever lies behind a lock.
+/// ever lies behind a lock. Before them the secret rooms (<see cref="LayoutBalance.SecretRooms"/>): each sits
+/// directly at a combat room, behind a <see cref="DoorKind.Cracked"/> wall.
 /// <para>Same seed and same templates = same level. If a try gets stuck (no room fits anywhere), the generator
 /// starts again with the next random numbers of the same seed.</para>
 /// </summary>
@@ -152,7 +153,7 @@ public static class LevelGenerator
             {
             }
 
-            return TryJoinBoss() && TryJoinTreasures();
+            return TryJoinBoss() && TryJoinSecrets() && TryJoinTreasures();
         }
 
         public GeneratedLevel ToLevel(int seed)
@@ -259,6 +260,35 @@ public static class LevelGenerator
             }
 
             return false;
+        }
+
+        // A secret room lies directly at a combat room (never through a corridor), nearer to the start than the boss;
+        // its only way in is a cracked wall.
+        private bool TryJoinSecrets()
+        {
+            if (!catalog.ContainsKey(RoomKind.Secret))
+            {
+                return true;
+            }
+
+            for (var i = 0; i < layout.SecretRooms; i++)
+            {
+                var distances = Distances();
+                var boss = distances[_rooms.FindIndex(room => room.Variant.Kind == RoomKind.Boss)];
+                var slots = _open
+                    .Where(slot => _rooms[slot.Room].Variant.Kind == RoomKind.Combat && distances[slot.Room] + 1 < boss)
+                    .OrderBy(_ => random.Next())
+                    .ToList();
+                if (!slots.Any(slot => TryJoin(RoomKind.Secret, slot, useCorridor: false)))
+                {
+                    return false;
+                }
+
+                var entrance = _doors.FindIndex(door => door.RoomB == _rooms.Count - 1);
+                _doors[entrance] = _doors[entrance] with { Kind = DoorKind.Cracked };
+            }
+
+            return true;
         }
 
         // Treasure rooms come after the boss: they must stay nearer to the start than the boss room.
