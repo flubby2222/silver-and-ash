@@ -23,6 +23,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Ghul-Köpfe** zählen nur noch dort als Kopftreffer, wo der Kopf gezeichnet ist, nicht mehr in der ganzen vorderen Körperhälfte.
 
 ### Behoben
+- Gegner konnten dem Spieler in Schatz- und Secret-Räume folgen, z. B. nachdem man sie durch eine offene Tür angeschossen hatte. Diese Räume sind jetzt **Schutzräume**: Ghule und Fledermäuse betreten sie nie und greifen niemanden darin an
 - Ein Durchlauf stand doppelt in `runs.log`, wenn man vom Endbildschirm zum Titel ging. Jetzt steht er genau einmal darin
 
 ## [0.8.0] – 2026-11-15 – Run-Grundgerüst

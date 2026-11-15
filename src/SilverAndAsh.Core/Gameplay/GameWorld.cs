@@ -38,6 +38,8 @@ public sealed class GameWorld
     private readonly Dictionary<(int X, int Z), RoomState> _roomOfCell = [];
     private readonly HashSet<int> _asleep = [];
     private readonly IReadOnlyList<ChestPlan> _chestPlan;
+    private readonly List<(int X, int Z)> _safeCells = [];
+    private Level _enemyLevel;
     private readonly List<Chest> _chests;
     private bool _lossReported;
     private bool _endSummaryTaken;
@@ -93,6 +95,12 @@ public sealed class GameWorld
         _chests = _chestPlan.Select((plan, index) => new Chest(index, plan, level)).ToList();
 
         _roomPlan = rooms ?? [];
+
+        // Treasure and secret rooms are safe: their floor and doorways are wall for enemies (see EnemyLevel).
+        var safeRooms = _roomPlan.Where(room => room.Kind.IsHoard()).Select(room => room.Index).ToHashSet();
+        _safeCells.AddRange(_roomPlan.Where(room => safeRooms.Contains(room.Index)).SelectMany(room => room.FloorCells));
+        _safeCells.AddRange(_doorPlan.Where(door => safeRooms.Contains(door.RoomA) || safeRooms.Contains(door.RoomB)).Select(door => (door.X, door.Z)));
+        _enemyLevel = WithSafeRoomsWalled();
         _rooms = _roomPlan.Select(room => new RoomState(room, _doorPlan
                 .Select((door, index) => (door, index))
                 .Where(pair => pair.door.RoomA == room.Index || pair.door.RoomB == room.Index)
@@ -329,11 +337,23 @@ public sealed class GameWorld
     private void UpdateLevel()
     {
         Level = WithClosedDoors();
+        _enemyLevel = WithSafeRoomsWalled();
         foreach (var player in Players)
         {
             player.ChangeLevel(Level);
         }
     }
+
+    /// <summary>
+    /// The level as enemies know it: <see cref="Level"/>, but the floor and doorways of treasure and secret rooms are
+    /// wall. Enemies walk, fly, look and find their way in this one - so they never go into a safe room, nor see (or
+    /// spit at) a player inside, however they were woken.
+    /// </summary>
+    public Level EnemyLevel => _enemyLevel;
+
+    private Level WithSafeRoomsWalled() => _safeCells.Count == 0
+        ? Level
+        : Level.WithCells(_safeCells.Select(cell => (cell.X, cell.Z, Cell.Wall)));
 
     private Level WithUnbrokenWalls() => _doors.Any(IsUnbrokenWall)
         ? _levelWithOpenDoors.WithCells(_doors.Where(IsUnbrokenWall).Select(door => (door.X, door.Z, Cell.Wall)))
@@ -901,7 +921,7 @@ public sealed class GameWorld
                 .ToList();
             if (!_asleep.Contains(ghoul.Id))
             {
-                ghoul.Act(Level, Players, obstacles, _events);
+                ghoul.Act(_enemyLevel, Players, obstacles, _events);
             }
 
             ghoul.Tick(_events);
@@ -912,10 +932,10 @@ public sealed class GameWorld
         {
             if (!_asleep.Contains(bat.Id))
             {
-                bat.Act(Level, Players, _events);
+                bat.Act(_enemyLevel, Players, _events);
             }
 
-            bat.Tick(Level, _events);
+            bat.Tick(_enemyLevel, _events);
         }
 
         // Every spit of this tick becomes a blood bolt.

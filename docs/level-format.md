@@ -105,6 +105,7 @@ Regeln für Vorlagen:
 - `G` und `B` sind **Plätze für Gegner** – wie viele davon wirklich besetzt werden, entscheidet später die Schwierigkeit.
 - `C` ist ein **Kistenplatz** (Boden), nur in Kampf-, Schatz- und Secret-Räumen. Ob dort wirklich eine Kiste steht, entscheidet der Seed (siehe „Kisten“). Jede Kampf-Vorlage hat einen, jede Schatz-Vorlage einen oder zwei.
 - **Schatzräume** (`assets/rooms/treasure/`) und **Secret Rooms** (`assets/rooms/secret/`) haben **genau einen** Türplatz, **keine** Gegnerplätze und **mindestens einen** Kistenplatz.
+- Sie sind **Schutzräume**: Gegner betreten sie nie, auch nicht ihre Tür, und sehen keinen Spieler darin. Für Bewegung, Sicht und Wegsuche der Gegner sind diese Felder Wand (`GameWorld.EnemyLevel`).
 - `P` gibt es **nur im Startraum**, Trainingspuppen (`D`) gar nicht.
 - Der Boden muss **zusammenhängen** – kein Bodenfeld darf abgeschnitten sein.
 - Auf Ebene 0 gibt es noch **keine Höhenunterschiede** (keine `1`/`2`/`3`/`_`), auch wenn der Parser sie schon versteht.
