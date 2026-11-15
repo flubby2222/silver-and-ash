@@ -9,9 +9,9 @@ public class PlayerBladeChargeTests
     private const float Tolerance = 0.001f;
 
     private static readonly PlayerInput Melee = PlayerInput.None with { Melee = true };
-    private static readonly int FullTicks = SimulationClock.SecondsToTicks(Tuning.Combat.BladeChargeTime);
-    private static readonly int BladeTicks = SimulationClock.SecondsToTicks(Tuning.Combat.BladeCooldown);
-    private static float SegmentFraction => 1f / Tuning.Player.StaminaJumps;
+    private static readonly int FullTicks = SimulationClock.SecondsToTicks(Balance.Default.Blade.ChargeTime);
+    private static readonly int BladeTicks = SimulationClock.SecondsToTicks(Balance.Default.Blade.Cooldown);
+    private static float SegmentFraction => 1f / Balance.Default.Player.StaminaJumps;
 
     [Fact]
     public void A_quick_click_swings_uncharged_when_the_button_is_let_go()
@@ -54,7 +54,7 @@ public class PlayerBladeChargeTests
 
         HoldAndRelease(player, (int)(part * FullTicks));
 
-        var cost = part * Tuning.Combat.BladeChargeStaminaSegments * SegmentFraction;
+        var cost = part * Balance.Default.Blade.ChargeStaminaSegments * SegmentFraction;
         Assert.Equal(1f - cost, player.Stamina.Fraction, Tolerance);
     }
 
@@ -62,7 +62,7 @@ public class PlayerBladeChargeTests
     public void Charging_stops_when_the_stamina_runs_out()
     {
         // Half a segment left, in the air (so nothing refills): the blade charges only half way.
-        var player = InTheAirWithStamina(Stamina.CostPerSegment / 2);
+        var player = InTheAirWithStamina(new Stamina().CostPerSegment / 2);
 
         Assert.Equal(0.5f, HoldAndRelease(player, FullTicks).Charge, Tolerance);
         Assert.Equal(0f, player.Stamina.Fraction);
@@ -137,7 +137,7 @@ public class PlayerBladeChargeTests
     {
         var player = RunningPlayer();
         player.Tick(ForwardJump);
-        var left = (int)MathF.Round(player.Stamina.Fraction * Stamina.Capacity);
+        var left = (int)MathF.Round(player.Stamina.Fraction * new Stamina().Capacity);
         Assert.True(player.Stamina.TryPayPart(left - amount));
         return player;
     }

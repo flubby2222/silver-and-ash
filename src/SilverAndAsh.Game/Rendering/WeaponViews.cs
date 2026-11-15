@@ -101,7 +101,7 @@ internal sealed class PlaceholderWeaponView : IWeaponView
         _flash = MathF.Max(0f, _flash - frameSeconds / FlashSeconds);
 
         // Bob only while walking on the ground; fades in and out instead of switching on and off.
-        var walking = player.IsGrounded ? Math.Clamp(player.HorizontalSpeed / Tuning.Player.MaxSpeed, 0f, 1f) : 0f;
+        var walking = player.IsGrounded ? Math.Clamp(player.HorizontalSpeed / player.WalkSpeed, 0f, 1f) : 0f;
         _bobStrength += (walking - _bobStrength) * MathF.Min(1f, frameSeconds * 8f);
         _bobPhase += player.HorizontalSpeed * frameSeconds * BobCyclesPerMetre * 2f * MathF.PI;
 

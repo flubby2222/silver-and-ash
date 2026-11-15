@@ -16,7 +16,7 @@ public static class Pathfinder
     /// Diagonal steps never cut across a wall's corner.
     /// </summary>
     public static IReadOnlyList<(int X, int Z)>? FindPath(
-        Level level, (int X, int Z) start, (int X, int Z) goal, float stepHeight = Tuning.Player.StepHeight)
+        Level level, (int X, int Z) start, (int X, int Z) goal, float stepHeight = BodySizes.Player.StepHeight)
     {
         ArgumentNullException.ThrowIfNull(level);
         if (!IsWalkable(level, start) || !IsWalkable(level, goal))
@@ -59,7 +59,7 @@ public static class Pathfinder
     /// <paramref name="radius"/>. Returns the world positions to walk to (the start itself is not included).
     /// </summary>
     public static IReadOnlyList<Vector3> Smooth(
-        Level level, IReadOnlyList<(int X, int Z)> path, float radius, float stepHeight = Tuning.Player.StepHeight)
+        Level level, IReadOnlyList<(int X, int Z)> path, float radius, float stepHeight = BodySizes.Player.StepHeight)
     {
         ArgumentNullException.ThrowIfNull(level);
         ArgumentNullException.ThrowIfNull(path);
@@ -101,7 +101,7 @@ public static class Pathfinder
     /// <paramref name="to"/>: no wall in the way and never a floor rising more than <paramref name="stepHeight"/>.
     /// </summary>
     public static bool CanWalkStraight(
-        Level level, Vector3 from, Vector3 to, float radius, float stepHeight = Tuning.Player.StepHeight)
+        Level level, Vector3 from, Vector3 to, float radius, float stepHeight = BodySizes.Player.StepHeight)
     {
         ArgumentNullException.ThrowIfNull(level);
         const float SampleStep = 0.1f;

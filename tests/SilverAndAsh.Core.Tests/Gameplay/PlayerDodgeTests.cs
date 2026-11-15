@@ -10,13 +10,13 @@ public class PlayerDodgeTests
 {
     private const float Tolerance = 0.01f;
 
-    private static readonly int DodgeTicks = SimulationClock.SecondsToTicks(Tuning.Player.DodgeDuration);
+    private static readonly int DodgeTicks = SimulationClock.SecondsToTicks(Balance.Default.Player.DodgeDuration);
 
     private static readonly PlayerInput Shift = PlayerInput.None with { Dash = true };
 
     private static readonly PlayerInput JumpOnly = PlayerInput.None with { Jump = true };
 
-    private static float SegmentFraction => 1f / Tuning.Player.StaminaJumps;
+    private static float SegmentFraction => 1f / Balance.Default.Player.StaminaJumps;
 
     [Fact]
     public void Shift_on_the_ground_starts_a_dodge_that_costs_two_segments()
@@ -27,7 +27,7 @@ public class PlayerDodgeTests
 
         Assert.True(player.IsDodging);
         Assert.False(player.IsDashing);
-        Assert.Equal(1f - Tuning.Player.DodgeStaminaSegments * SegmentFraction, player.Stamina.Fraction, Tolerance);
+        Assert.Equal(1f - Balance.Default.Player.DodgeStaminaSegments * SegmentFraction, player.Stamina.Fraction, Tolerance);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class PlayerDodgeTests
         RunTicks(player, PlayerInput.None, DodgeTicks - 1);
 
         Assert.False(player.IsDodging);
-        var expected = Tuning.Player.DodgeDuration * Tuning.Player.DodgeSpeed;
+        var expected = Balance.Default.Player.DodgeDuration * Balance.Default.Player.DodgeSpeed;
         Assert.Equal(expected, Vector3.Distance(start, player.Position), Tolerance);
     }
 
@@ -82,7 +82,7 @@ public class PlayerDodgeTests
         player.Tick(Shift);
         player.Tick(right);
         Assert.Equal(1f, Vector3.Dot(FlatVelocityDirection(player), player.View.FlatRight), Tolerance);
-        Assert.Equal(Tuning.Player.DodgeSpeed, HorizontalSpeed(player), Tolerance);
+        Assert.Equal(Balance.Default.Player.DodgeSpeed, HorizontalSpeed(player), Tolerance);
 
         player.Tick(back);
         Assert.Equal(-1f, Vector3.Dot(FlatVelocityDirection(player), player.View.FlatForward), Tolerance);
@@ -100,7 +100,7 @@ public class PlayerDodgeTests
         player.Tick(PlayerInput.None);
 
         Assert.Equal(1f, Vector3.Dot(FlatVelocityDirection(player), player.View.FlatRight), Tolerance);
-        Assert.Equal(Tuning.Player.DodgeSpeed, HorizontalSpeed(player), Tolerance);
+        Assert.Equal(Balance.Default.Player.DodgeSpeed, HorizontalSpeed(player), Tolerance);
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class PlayerDodgeTests
     {
         var player = RunningPlayer();
         player.Tick(ForwardJump);
-        ChainTimedJumps(player, Tuning.Player.StaminaJumps - 2);   // one segment left
+        ChainTimedJumps(player, Balance.Default.Player.StaminaJumps - 2);   // one segment left
         RunUntilLanded(player);
         Assert.Equal(SegmentFraction, player.Stamina.Fraction, Tolerance);
 
@@ -148,13 +148,13 @@ public class PlayerDodgeTests
     public void The_hitbox_is_smaller_during_a_dodge_and_back_afterwards()
     {
         var player = StandingPlayer();
-        Assert.Equal(Tuning.Player.Height, player.CollisionHeight);
+        Assert.Equal(BodySizes.Player.Height, player.CollisionHeight);
 
         player.Tick(Shift);
-        Assert.Equal(Tuning.Player.DodgeHeight, player.CollisionHeight);
+        Assert.Equal(BodySizes.Player.DodgeHeight, player.CollisionHeight);
 
         RunTicks(player, PlayerInput.None, DodgeTicks);
-        Assert.Equal(Tuning.Player.Height, player.CollisionHeight);
+        Assert.Equal(BodySizes.Player.Height, player.CollisionHeight);
     }
 
     [Fact]
@@ -170,10 +170,10 @@ public class PlayerDodgeTests
         RunTicks(player, PlayerInput.None, DodgeTicks);
         var standingAgain = player.EyePosition.Y - player.Position.Y;
 
-        Assert.Equal(Tuning.Player.EyeHeight, standingEyes, Tolerance);
-        Assert.InRange(afterOneTick, Tuning.Player.DodgeEyeHeight + 0.1f, Tuning.Player.EyeHeight - 0.01f);   // no jump
-        Assert.Equal(Tuning.Player.DodgeEyeHeight, ducked, Tolerance);
-        Assert.Equal(Tuning.Player.EyeHeight, standingAgain, Tolerance);
+        Assert.Equal(BodySizes.Player.EyeHeight, standingEyes, Tolerance);
+        Assert.InRange(afterOneTick, BodySizes.Player.DodgeEyeHeight + 0.1f, BodySizes.Player.EyeHeight - 0.01f);   // no jump
+        Assert.Equal(BodySizes.Player.DodgeEyeHeight, ducked, Tolerance);
+        Assert.Equal(BodySizes.Player.EyeHeight, standingAgain, Tolerance);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class PlayerDodgeTests
         RunTicks(player, Forward, DodgeTicks - 1);
 
         Assert.False(player.IsDodging);
-        Assert.Equal(Tuning.Player.MaxSpeed, HorizontalSpeed(player), Tolerance);
+        Assert.Equal(Balance.Default.Player.MaxSpeed, HorizontalSpeed(player), Tolerance);
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public class PlayerDodgeTests
         // Exactly two segments left: the dodge takes both, and the jump out of it has nothing to pay with.
         var player = RunningPlayer();
         player.Tick(ForwardJump);
-        ChainTimedJumps(player, Tuning.Player.StaminaJumps - 3);   // two segments left
+        ChainTimedJumps(player, Balance.Default.Player.StaminaJumps - 3);   // two segments left
         RunUntilLanded(player);
         Assert.Equal(2 * SegmentFraction, player.Stamina.Fraction, Tolerance);
 

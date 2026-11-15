@@ -27,11 +27,13 @@ public enum GhoulState
 /// </summary>
 public sealed class Ghoul : ITarget
 {
-    private static readonly int CorpseTicks = SimulationClock.SecondsToTicks(Tuning.Ghoul.CorpseTime);
-    private static readonly int WindUpTicks = SimulationClock.SecondsToTicks(Tuning.Ghoul.WindUpTime);
-    private static readonly int RecoverTicks = SimulationClock.SecondsToTicks(Tuning.Ghoul.RecoverTime);
-    private static readonly int RepathTicks = SimulationClock.SecondsToTicks(Tuning.Ghoul.RepathTime);
-    private static readonly float AttackCosine = MathF.Cos(Tuning.Ghoul.AttackHalfAngle * MathF.PI / 180f);
+    private readonly GhoulBalance _ghoul;
+    private readonly float _gravity;
+    private readonly int _corpseTicks;
+    private readonly int _windUpTicks;
+    private readonly int _recoverTicks;
+    private readonly int _repathTicks;
+    private readonly float _attackCosine;
 
     private int _corpseTicksLeft;
     private int _stateTicksLeft;
@@ -41,12 +43,25 @@ public sealed class Ghoul : ITarget
     private int _repathTicksLeft;
     private (int X, int Z) _pathGoal;
 
-    /// <summary>Creates a ghoul at <paramref name="position"/> (centre of its feet), looking along <paramref name="facing"/>.</summary>
-    public Ghoul(int id, Vector3 position, Vector3? facing = null)
+    /// <summary>
+    /// Creates a ghoul at <paramref name="position"/> (centre of its feet), looking along <paramref name="facing"/>,
+    /// as strong and fast as <paramref name="balance"/> says (the standard values if none is given).
+    /// </summary>
+    public Ghoul(int id, Vector3 position, Vector3? facing = null, Balance? balance = null)
     {
         Id = id;
         Position = position;
         Facing = facing ?? Vector3.UnitZ;
+
+        balance ??= Balance.Default;
+        _ghoul = balance.Ghoul;
+        _gravity = balance.Player.Gravity;
+        _corpseTicks = SimulationClock.SecondsToTicks(_ghoul.CorpseTime);
+        _windUpTicks = SimulationClock.SecondsToTicks(_ghoul.WindUpTime);
+        _recoverTicks = SimulationClock.SecondsToTicks(_ghoul.RecoverTime);
+        _repathTicks = SimulationClock.SecondsToTicks(_ghoul.RepathTime);
+        _attackCosine = MathF.Cos(_ghoul.AttackHalfAngle * MathF.PI / 180f);
+        Health = _ghoul.MaxHealth;
     }
 
     public int Id { get; }
@@ -57,6 +72,9 @@ public sealed class Ghoul : ITarget
     /// <summary>Its movement in metres per second.</summary>
     public Vector3 Velocity { get; private set; }
 
+    /// <summary>Its crawling speed in m/s (for drawing: how fast the arms move).</summary>
+    public float Speed => _ghoul.Speed;
+
     /// <summary>The flat direction it looks in (length 1). Its head is at the front.</summary>
     public Vector3 Facing { get; private set; }
 
@@ -64,10 +82,10 @@ public sealed class Ghoul : ITarget
     public GhoulState State { get; private set; } = GhoulState.Lurking;
 
     /// <summary>How far the wind-up has come: 0 at its start, 1 at the blow. 0 in every other state. For drawing.</summary>
-    public float WindUpProgress => State == GhoulState.WindingUp ? 1f - (float)_stateTicksLeft / WindUpTicks : 0f;
+    public float WindUpProgress => State == GhoulState.WindingUp ? 1f - (float)_stateTicksLeft / _windUpTicks : 0f;
 
     /// <summary>Current health; 0 when dead.</summary>
-    public int Health { get; private set; } = Tuning.Ghoul.MaxHealth;
+    public int Health { get; private set; }
 
     /// <summary>True once its health reached 0.</summary>
     public bool IsDead => Health == 0;
@@ -77,12 +95,12 @@ public sealed class Ghoul : ITarget
 
     public bool IsHittable => !IsDead;
 
-    public CylinderBody Body => new(Position, Tuning.Ghoul.Radius, Tuning.Ghoul.Height);
+    public CylinderBody Body => new(Position, BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height);
 
     /// <summary>The head: the top part of the body, in its front half.</summary>
     public HitZone ZoneAt(Vector3 point)
     {
-        var high = point.Y >= Position.Y + Tuning.Ghoul.Height - Tuning.Ghoul.HeadHeight;
+        var high = point.Y >= Position.Y + BodySizes.Ghoul.Height - BodySizes.Ghoul.HeadHeight;
         var flatOffset = (point - Position) with { Y = 0f };
         var inFront = Vector3.Dot(flatOffset, Facing) > 0f;
         return high && inFront ? HitZone.Head : HitZone.Body;
@@ -104,7 +122,7 @@ public sealed class Ghoul : ITarget
         _alerted = true;
         if (IsDead)
         {
-            _corpseTicksLeft = CorpseTicks;
+            _corpseTicksLeft = _corpseTicks;
             events.Add(new GhoulDied(Id));
         }
     }
@@ -156,7 +174,7 @@ public sealed class Ghoul : ITarget
                     // Commit to a direction: the blow goes where it faces now. Stepping aside or away helps.
                     FaceTowards(target.Position);
                     State = GhoulState.WindingUp;
-                    _stateTicksLeft = WindUpTicks;
+                    _stateTicksLeft = _windUpTicks;
                     events.Add(new GhoulWindUp(Id));
                     Stand(level, obstacles);
                 }
@@ -174,12 +192,12 @@ public sealed class Ghoul : ITarget
                     var hit = InHitReach(target) && InFront(target);
                     if (hit)
                     {
-                        target.TakeDamage(Tuning.Ghoul.AttackDamage, events);
+                        target.TakeDamage(_ghoul.AttackDamage, events);
                     }
 
                     events.Add(new GhoulStruck(Id, hit));
                     State = GhoulState.Recovering;
-                    _stateTicksLeft = RecoverTicks;
+                    _stateTicksLeft = _recoverTicks;
                 }
 
                 break;
@@ -200,8 +218,8 @@ public sealed class Ghoul : ITarget
     /// <summary>A player it can see: closer than its sight range and nothing in between (from eye to eye).</summary>
     private bool CanSee(Level level, Player player)
     {
-        var eye = Position + new Vector3(0f, Tuning.Ghoul.EyeHeight, 0f);
-        return FlatDistance(Position, player.Position) <= Tuning.Ghoul.SightRange
+        var eye = Position + new Vector3(0f, BodySizes.Ghoul.EyeHeight, 0f);
+        return FlatDistance(Position, player.Position) <= _ghoul.SightRange
             && LineOfSight.IsClear(level, eye, player.EyePosition);
     }
 
@@ -209,19 +227,19 @@ public sealed class Ghoul : ITarget
         players.Where(player => !player.IsDead).OrderBy(player => FlatDistance(Position, player.Position)).FirstOrDefault();
 
     /// <summary>Close enough to start a blow.</summary>
-    private bool InReach(Player player) => IsWithin(player, Tuning.Ghoul.AttackReach);
+    private bool InReach(Player player) => IsWithin(player, _ghoul.AttackReach);
 
     /// <summary>Close enough to be hit by the blow - a bit farther than where it starts.</summary>
-    private bool InHitReach(Player player) => IsWithin(player, Tuning.Ghoul.HitReach);
+    private bool InHitReach(Player player) => IsWithin(player, _ghoul.HitReach);
 
     private bool IsWithin(Player player, float reach) =>
         FlatDistance(Position, player.Position) <= reach
-        && MathF.Abs(player.Position.Y - Position.Y) < Tuning.Ghoul.Height;
+        && MathF.Abs(player.Position.Y - Position.Y) < BodySizes.Ghoul.Height;
 
     private bool InFront(Player player)
     {
         var toPlayer = (player.Position - Position) with { Y = 0f };
-        return toPlayer.LengthSquared() < 0.0001f || Vector3.Dot(Vector3.Normalize(toPlayer), Facing) >= AttackCosine;
+        return toPlayer.LengthSquared() < 0.0001f || Vector3.Dot(Vector3.Normalize(toPlayer), Facing) >= _attackCosine;
     }
 
     /// <summary>
@@ -231,7 +249,7 @@ public sealed class Ghoul : ITarget
     private void Crawl(Level level, Player target, IReadOnlyList<CylinderBody> obstacles)
     {
         Vector3? next = null;
-        if (Pathfinder.CanWalkStraight(level, Position, target.Position, Tuning.Ghoul.Radius))
+        if (Pathfinder.CanWalkStraight(level, Position, target.Position, BodySizes.Ghoul.Radius))
         {
             next = target.Position;
             _waypoints.Clear();
@@ -243,8 +261,8 @@ public sealed class Ghoul : ITarget
             {
                 var start = Level.ToGrid(Position.X, Position.Z);
                 var path = Pathfinder.FindPath(level, start, goal);
-                _waypoints = path is null ? [] : Pathfinder.Smooth(level, path, Tuning.Ghoul.Radius).ToList();
-                _repathTicksLeft = RepathTicks;
+                _waypoints = path is null ? [] : Pathfinder.Smooth(level, path, BodySizes.Ghoul.Radius).ToList();
+                _repathTicksLeft = _repathTicks;
                 _pathGoal = goal;
             }
 
@@ -266,7 +284,7 @@ public sealed class Ghoul : ITarget
         }
 
         FaceTowards(point);
-        Move(level, Facing * Tuning.Ghoul.Speed, obstacles);
+        Move(level, Facing * _ghoul.Speed, obstacles);
     }
 
     private void Stand(Level level, IReadOnlyList<CylinderBody> obstacles) => Move(level, Vector3.Zero, obstacles);
@@ -277,9 +295,9 @@ public sealed class Ghoul : ITarget
         const float Dt = SimulationClock.SecondsPerTick;
         var velocity = flatVelocity with { Y = Velocity.Y };
         (var position, velocity) = CharacterCollision.Move(
-            level, Position, velocity, Tuning.Ghoul.Radius, Dt, Tuning.Ghoul.Height, bodies: obstacles);
+            level, Position, velocity, BodySizes.Ghoul.Radius, Dt, BodySizes.Ghoul.Height, bodies: obstacles);
         (position, velocity, _) = CharacterCollision.MoveVertically(
-            level, position, velocity, Tuning.Ghoul.Radius, Tuning.Ghoul.Height, Tuning.Player.Gravity, Dt);
+            level, position, velocity, BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height, _gravity, Dt);
         Position = position;
         Velocity = velocity;
     }

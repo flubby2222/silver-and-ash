@@ -13,17 +13,17 @@ internal static class JumpTestKit
     public static readonly PlayerInput ForwardDash = Forward with { Dash = true };
 
     /// <summary>The perfect window in ticks.</summary>
-    public static readonly int Window = SimulationClock.SecondsToTicks(Tuning.Player.PerfectJumpWindow);
+    public static readonly int Window = SimulationClock.SecondsToTicks(Balance.Default.Player.PerfectJumpWindow);
 
     /// <summary>Ticks from pressing jump until the player is on the ground again (same for every jump on flat ground).</summary>
     public static readonly int AirTicks = MeasureAirTicks();
 
-    public static float NormalAirSpeed => Tuning.Player.MaxSpeed * Tuning.Player.AirSpeedMultiplier;
+    public static float NormalAirSpeed => Balance.Default.Player.MaxSpeed * Balance.Default.Player.AirSpeedMultiplier;
 
-    public static float BonusAirSpeed => NormalAirSpeed * (1f + Tuning.Player.PerfectJumpSpeedBonus);
+    public static float BonusAirSpeed => NormalAirSpeed * (1f + Balance.Default.Player.PerfectJumpSpeedBonus);
 
     // Exhausted: no air boost, the penalty applies to the walking speed.
-    public static float ExhaustedAirSpeed => Tuning.Player.MaxSpeed * (1f - Tuning.Player.ExhaustedJumpSpeedPenalty);
+    public static float ExhaustedAirSpeed => Balance.Default.Player.MaxSpeed * (1f - Balance.Default.Player.ExhaustedJumpSpeedPenalty);
 
     /// <summary>A player at full running speed in a long corridor (no walls in the way).</summary>
     public static Player RunningPlayer()

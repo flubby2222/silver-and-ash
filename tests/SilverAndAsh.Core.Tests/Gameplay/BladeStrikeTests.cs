@@ -13,7 +13,7 @@ public class BladeStrikeTests
     private static readonly Level Field = LevelParser.Parse(string.Join('\n',
         Enumerable.Range(0, 11).Select(row => row == 5 ? ".....P....." : "...........")));
 
-    private static readonly Vector3 Eye = new(11f, Tuning.Player.EyeHeight, 11f);
+    private static readonly Vector3 Eye = new(11f, BodySizes.Player.EyeHeight, 11f);
     private static readonly Vector3 Ahead = Vector3.UnitZ;
 
     [Fact]
@@ -25,7 +25,7 @@ public class BladeStrikeTests
     [Fact]
     public void The_range_counts_to_the_surface_of_the_body()
     {
-        var range = Tuning.Combat.BladeRange;
+        var range = Balance.Default.Blade.Range;
 
         Assert.True(Hits(At(0f, range + BodyRadius - 0.05f)));
         Assert.False(Hits(At(0f, range + BodyRadius + 0.1f)));
@@ -35,7 +35,7 @@ public class BladeStrikeTests
     public void The_cone_is_as_wide_as_the_blade_angle_seen_from_its_tip()
     {
         // The tip lies behind the eyes; 2.1 m from the tip is 1.5 m in front of the eyes - well within reach.
-        var half = Tuning.Combat.BladeAngle / 2f;
+        var half = Balance.Default.Blade.Angle / 2f;
 
         Assert.True(Hits(FromTip(half - 5f, 2.1f)));
         Assert.True(Hits(FromTip(-(half - 5f), 2.1f)));
@@ -47,7 +47,7 @@ public class BladeStrikeTests
     {
         // 0.8 m to the side, 0.5 m ahead: 58 degrees seen from the eyes - outside a cone starting there.
         // Seen from the tip behind the eyes it is well inside.
-        var body = new CylinderBody(new Vector3(Eye.X + 0.8f, 0f, Eye.Z + 0.5f), BodyRadius, Tuning.Combat.DummyHeight);
+        var body = new CylinderBody(new Vector3(Eye.X + 0.8f, 0f, Eye.Z + 0.5f), BodyRadius, BodySizes.Dummy.Height);
 
         Assert.True(Hits(body));
     }
@@ -76,8 +76,8 @@ public class BladeStrikeTests
     {
         // The player stands in the corner of cell (0, 0) next to the wall cell (1, 0); the body stands diagonally
         // behind the wall's corner, close enough for the blade - but the straight line runs through the wall.
-        var body = new CylinderBody(new Vector3(3f, 0f, 3f), BodyRadius, Tuning.Combat.DummyHeight);
-        var eye = new Vector3(1.65f, Tuning.Player.EyeHeight, 1.3f);
+        var body = new CylinderBody(new Vector3(3f, 0f, 3f), BodyRadius, BodySizes.Dummy.Height);
+        var eye = new Vector3(1.65f, BodySizes.Player.EyeHeight, 1.3f);
         var direction = Vector3.Normalize(new Vector3(body.Position.X, eye.Y, body.Position.Z) - eye);
 
         Assert.False(BladeStrike.Hits(LevelParser.Parse("P#\n.D"), eye, direction, body));
@@ -90,9 +90,9 @@ public class BladeStrikeTests
     private static CylinderBody FromTip(float degrees, float distance)
     {
         var radians = degrees * MathF.PI / 180f;
-        var tip = Eye - Ahead * Tuning.Combat.BladeConeStartBehind;
+        var tip = Eye - Ahead * Balance.Default.Blade.ConeStartBehind;
         var position = new Vector3(tip.X + MathF.Sin(radians) * distance, 0f, tip.Z + MathF.Cos(radians) * distance);
-        return new CylinderBody(position, BodyRadius, Tuning.Combat.DummyHeight);
+        return new CylinderBody(position, BodyRadius, BodySizes.Dummy.Height);
     }
 
     /// <summary>A dummy-sized body on the floor, <paramref name="degrees"/> to the side of straight ahead.</summary>
@@ -100,6 +100,6 @@ public class BladeStrikeTests
     {
         var radians = degrees * MathF.PI / 180f;
         var position = new Vector3(Eye.X + MathF.Sin(radians) * distance, 0f, Eye.Z + MathF.Cos(radians) * distance);
-        return new CylinderBody(position, BodyRadius, Tuning.Combat.DummyHeight);
+        return new CylinderBody(position, BodyRadius, BodySizes.Dummy.Height);
     }
 }

@@ -177,7 +177,7 @@ public class PerfectJumpTests
         RunTicks(perfect, Forward, Window / 2 - 1);
         var perfectDip = DeepestDip(perfect);
 
-        Assert.InRange(perfectDip / normalDip, Tuning.Player.PerfectJumpDipFactor - 0.08f, Tuning.Player.PerfectJumpDipFactor + 0.08f);
+        Assert.InRange(perfectDip / normalDip, Balance.Default.Player.PerfectJumpDipFactor - 0.08f, Balance.Default.Player.PerfectJumpDipFactor + 0.08f);
     }
 
     [Fact]

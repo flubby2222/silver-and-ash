@@ -31,7 +31,7 @@ public class GameWorldTests
 
         RunTicks(world, Forward, 3 * SimulationClock.TicksPerSecond);
 
-        var closest = dummy.Position.Z - Tuning.Combat.DummyRadius - Tuning.Player.Radius;
+        var closest = dummy.Position.Z - BodySizes.Dummy.Radius - BodySizes.Player.Radius;
         Assert.InRange(world.Player.Position.Z, closest - 0.05f, closest + 0.01f);
 
         // Standing still at the dummy - like at a wall, no speed "into" it is left over.
@@ -42,7 +42,7 @@ public class GameWorldTests
     public void A_dummy_on_the_ground_does_not_block_the_way()
     {
         var world = new GameWorld(Corridor);
-        world.Dummies[0].TakeDamage(Tuning.Combat.DummyMaxHealth, []);
+        world.Dummies[0].TakeDamage(Balance.Default.Dummy.MaxHealth, []);
 
         RunTicks(world, Forward, SimulationClock.TicksPerSecond);
 
@@ -68,7 +68,7 @@ public class GameWorldTests
     public void The_world_reports_the_events_of_player_and_dummies()
     {
         var world = new GameWorld(Corridor);
-        world.Dummies[0].TakeDamage(Tuning.Combat.DummyMaxHealth, []);
+        world.Dummies[0].TakeDamage(Balance.Default.Dummy.MaxHealth, []);
 
         var seen = new List<GameEvent>();
         world.Tick(PlayerInput.None with { Melee = true });

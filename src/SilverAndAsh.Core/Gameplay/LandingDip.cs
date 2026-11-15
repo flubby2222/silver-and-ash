@@ -12,10 +12,22 @@ namespace SilverAndAsh.Core.Gameplay;
 /// </summary>
 public sealed class LandingDip
 {
-    private const float Duration = Tuning.Player.LandingDipDuration;
+    private readonly float _duration;
+    private readonly float _depthPerSpeed;
+    private readonly float _maxDepth;
 
     private float _amplitude;
-    private float _elapsed = Duration;
+    private float _elapsed;
+
+    /// <summary>No dip playing; shaped by <paramref name="balance"/> (the standard values if none is given).</summary>
+    public LandingDip(PlayerBalance? balance = null)
+    {
+        balance ??= Balance.Default.Player;
+        _duration = balance.LandingDipDuration;
+        _depthPerSpeed = balance.LandingDipPerSpeed;
+        _maxDepth = balance.LandingDipMax;
+        _elapsed = _duration;
+    }
 
     /// <summary>How far the eyes are currently lowered, in metres (0 = not at all).</summary>
     public float Depth { get; private set; }
@@ -24,7 +36,7 @@ public sealed class LandingDip
     public float PreviousDepth { get; private set; }
 
     /// <summary>True while a dip is playing.</summary>
-    public bool IsActive => _elapsed < Duration;
+    public bool IsActive => _elapsed < _duration;
 
     /// <summary>Advances the wave by one tick.</summary>
     public void Tick()
@@ -36,8 +48,8 @@ public sealed class LandingDip
             return;
         }
 
-        _elapsed = MathF.Min(_elapsed + SimulationClock.SecondsPerTick, Duration);
-        var wave = MathF.Sin(MathF.PI * _elapsed / Duration);
+        _elapsed = MathF.Min(_elapsed + SimulationClock.SecondsPerTick, _duration);
+        var wave = MathF.Sin(MathF.PI * _elapsed / _duration);
         Depth = IsActive ? _amplitude * wave * wave : 0f;
     }
 
@@ -50,7 +62,7 @@ public sealed class LandingDip
             return;
         }
 
-        _amplitude = Math.Min(Math.Max(0f, fallSpeed) * Tuning.Player.LandingDipPerSpeed, Tuning.Player.LandingDipMax);
+        _amplitude = Math.Min(Math.Max(0f, fallSpeed) * _depthPerSpeed, _maxDepth);
         _elapsed = 0f;
     }
 

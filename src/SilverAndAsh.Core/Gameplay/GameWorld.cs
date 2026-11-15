@@ -15,8 +15,7 @@ namespace SilverAndAsh.Core.Gameplay;
 /// </summary>
 public sealed class GameWorld
 {
-    private static readonly int RestartTicks = SimulationClock.SecondsToTicks(Tuning.Combat.RestartDelay);
-
+    private readonly int _restartTicks;
     private readonly List<GameEvent> _events = [];
     private readonly Random _random;
     private int _ticksAllPlayersDead;
@@ -29,33 +28,43 @@ public sealed class GameWorld
     /// <summary>
     /// Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.
     /// <paramref name="seed"/> starts the world's random numbers: the same seed always gives the same game.
+    /// <paramref name="balance"/> holds all balancing values; every figure of this world gets them (the standard
+    /// values if none is given).
     /// </summary>
-    public GameWorld(Level level, int seed = 0)
+    public GameWorld(Level level, int seed = 0, Balance? balance = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         Level = level;
         Seed = seed;
+        Balance = balance ?? Balance.Default;
+        _restartTicks = SimulationClock.SecondsToTicks(Balance.RestartDelay);
+        DamageRules = DamageRules.Standard(Balance);
 
         // Online co-op rule 3: all chance comes from this one generator, started from the seed.
         _random = new Random(seed);
-        _dummies = level.DummyPositions.Select((position, index) => new TrainingDummy(index, position)).ToList();
+        _dummies = level.DummyPositions.Select((position, index) => new TrainingDummy(index, position, Balance)).ToList();
 
         // Ghoul numbers continue after the dummies': every target has its own number.
         // They start looking towards the player's start (their head is at the front).
         _ghouls = level.GhoulPositions
-            .Select((position, index) => new Ghoul(_dummies.Count + index, position, FacingTowards(position, level.PlayerStartPosition)))
+            .Select((position, index) => new Ghoul(
+                _dummies.Count + index, position, FacingTowards(position, level.PlayerStartPosition), Balance))
             .ToList();
 
         // Bat numbers continue after the ghouls'. They start hovering above their cells.
         _bats = level.BatPositions
-            .Select((position, index) => new Bat(_dummies.Count + _ghouls.Count + index, Bat.HoverPosition(level, position), _random))
+            .Select((position, index) => new Bat(
+                _dummies.Count + _ghouls.Count + index, Bat.HoverPosition(level, position), _random, Balance))
             .ToList();
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
-        Player = new Player(level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body));
+        Player = new Player(level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance);
     }
 
     public Level Level { get; }
+
+    /// <summary>All balancing values of this world. They never change while it runs.</summary>
+    public Balance Balance { get; }
 
     public Player Player { get; }
 
@@ -63,16 +72,16 @@ public sealed class GameWorld
     public IReadOnlyList<Player> Players => [Player];
 
     /// <summary>True when every player is dead and the restart delay has passed: time to start the level again.</summary>
-    public bool ShouldRestart => _ticksAllPlayersDead >= RestartTicks;
+    public bool ShouldRestart => _ticksAllPlayersDead >= _restartTicks;
 
     /// <summary>The start value of this world's random numbers.</summary>
     public int Seed { get; }
 
     /// <summary>
     /// A fresh world for the same level: full health, every enemy back at its start - but with a new seed (taken
-    /// from this one), so the bats fly differently than last time.
+    /// from this one), so the bats fly differently than last time. The balancing values stay the same.
     /// </summary>
-    public GameWorld Restarted() => new(Level, new Random(Seed).Next());
+    public GameWorld Restarted() => new(Level, new Random(Seed).Next(), Balance);
 
     public IReadOnlyList<TrainingDummy> Dummies => _dummies;
 
@@ -81,6 +90,16 @@ public sealed class GameWorld
 
     /// <summary>The projectiles in flight (gone ones are removed after each tick).</summary>
     public IReadOnlyList<Projectile> Projectiles => _projectiles;
+
+    /// <summary>
+    /// Fires a blood bolt (speed, damage, size and lifetime from this world's <see cref="Balance"/>) from
+    /// <paramref name="origin"/> in <paramref name="direction"/>. It hits only players, never other enemies or dummies.
+    /// </summary>
+    public Projectile Fire(Vector3 origin, Vector3 direction)
+    {
+        var bolt = Balance.BloodBolt;
+        return Fire(origin, direction, bolt.Speed, bolt.Damage, bolt.Radius, bolt.LifeTime);
+    }
 
     /// <summary>
     /// Fires a projectile from <paramref name="origin"/> in <paramref name="direction"/> - for enemies (and tests).
@@ -161,7 +180,7 @@ public sealed class GameWorld
     /// The rules that turn a hit into damage (headshots, later items, ...). Part of the world, not static:
     /// adding a rule here changes every following hit.
     /// </summary>
-    public DamageRules DamageRules { get; } = DamageRules.Standard();
+    public DamageRules DamageRules { get; }
 
     /// <summary>Everything that happened in the latest tick (player and dummies). Read it after every tick.</summary>
     public IReadOnlyList<GameEvent> Events => _events;
@@ -171,10 +190,10 @@ public sealed class GameWorld
     {
         foreach (var target in Targets.Where(target => target.IsHittable).ToList())
         {
-            if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body))
+            if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, Balance.Blade))
             {
                 // The blade hits the whole body at once - it has no hit zone (and so no headshot bonus).
-                Damage(target, new Hit(Weapon.Blade, HitZone.Body, Tuning.Combat.BladeDamage, swing.Charge));
+                Damage(target, new Hit(Weapon.Blade, HitZone.Body, Balance.Blade.Damage, swing.Charge));
             }
         }
     }
@@ -186,8 +205,8 @@ public sealed class GameWorld
     private void FirePistol(ShotFired shot)
     {
         var direction = Vector3.Normalize(shot.Direction);
-        var wall = Raycast.AgainstLevel(Level, shot.Origin, direction, Tuning.Combat.PistolRange);
-        var nearest = wall?.Distance ?? Tuning.Combat.PistolRange;
+        var wall = Raycast.AgainstLevel(Level, shot.Origin, direction, Balance.Pistol.Range);
+        var nearest = wall?.Distance ?? Balance.Pistol.Range;
 
         ITarget? target = null;
         foreach (var candidate in Targets.Where(candidate => candidate.IsHittable))
@@ -202,7 +221,7 @@ public sealed class GameWorld
         if (target is not null)
         {
             var zone = target.ZoneAt(shot.Origin + direction * nearest);
-            Damage(target, new Hit(Weapon.Pistol, zone, Tuning.Combat.PistolDamage));
+            Damage(target, new Hit(Weapon.Pistol, zone, Balance.Pistol.Damage));
         }
         else if (wall is { } impact)
         {
@@ -266,7 +285,7 @@ public sealed class GameWorld
         // Every spit of this tick becomes a blood bolt.
         foreach (var spit in _events.Skip(batEventsFrom).OfType<BatSpat>().ToList())
         {
-            Fire(spit.Origin, spit.Direction, Tuning.BloodBolt.Speed, Tuning.BloodBolt.Damage, Tuning.BloodBolt.Radius, Tuning.BloodBolt.LifeTime);
+            Fire(spit.Origin, spit.Direction);
         }
 
         MoveProjectiles();

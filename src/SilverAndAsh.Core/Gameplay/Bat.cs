@@ -37,21 +37,23 @@ public sealed class Bat : ITarget
     /// <summary>Flying: any floor height can be passed, only walls block.</summary>
     private const float FlyingStepHeight = float.PositiveInfinity;
 
-    private const float HalfHeight = Tuning.Bat.Height / 2f;
+    private const float HalfHeight = BodySizes.Bat.Height / 2f;
 
-    private static readonly int CorpseTicks = SimulationClock.SecondsToTicks(Tuning.Bat.CorpseTime);
-    private static readonly int SpitTicks = SimulationClock.SecondsToTicks(Tuning.Bat.SpitInterval);
-    private static readonly int SpitWindUpTicks = SimulationClock.SecondsToTicks(Tuning.Bat.SpitWindUpTime);
-    private static readonly int DiveTicks = SimulationClock.SecondsToTicks(Tuning.Bat.DiveInterval);
-    private static readonly int ScreechTicks = SimulationClock.SecondsToTicks(Tuning.Bat.ScreechTime);
-    private static readonly int RepathTicks = SimulationClock.SecondsToTicks(Tuning.Bat.RepathTime);
-    private static readonly int BobTicks = SimulationClock.SecondsToTicks(Tuning.Bat.BobTime);
+    private readonly BatBalance _bat;
+    private readonly float _gravity;
+    private readonly int _corpseTicks;
+    private readonly int _spitTicks;
+    private readonly int _spitWindUpTicks;
+    private readonly int _diveTicks;
+    private readonly int _screechTicks;
+    private readonly int _repathTicks;
+    private readonly int _bobTicks;
 
     /// <summary>Pressed against a wall for this many ticks, it turns round and circles the other way.</summary>
     private static readonly int TurnRoundTicks = SimulationClock.SecondsToTicks(0.25f);
 
-    private static readonly int TurnRoundMinTicks = SimulationClock.SecondsToTicks(Tuning.Bat.TurnRoundMin);
-    private static readonly int TurnRoundMaxTicks = SimulationClock.SecondsToTicks(Tuning.Bat.TurnRoundMax);
+    private readonly int _turnRoundMinTicks;
+    private readonly int _turnRoundMaxTicks;
 
     private readonly Random _random;
     private int _corpseTicksLeft;
@@ -77,15 +79,32 @@ public sealed class Bat : ITarget
     /// <paramref name="random"/> is the world's random generator (online co-op rule 3: no chance of its own); from it
     /// every bat gets its own circle - distance, direction and the beat of its rising and sinking - and the moments
     /// it turns round. Without one (single bats in tests) it uses a generator started from its number.
+    /// <paramref name="balance"/> sets its health, speeds and attack rhythm (the standard values if none is given).
     /// </summary>
-    public Bat(int id, Vector3 position, Random? random = null)
+    public Bat(int id, Vector3 position, Random? random = null, Balance? balance = null)
     {
         Id = id;
         Position = position;
+
+        balance ??= Balance.Default;
+        _bat = balance.Bat;
+        _gravity = balance.Player.Gravity;
+        _corpseTicks = SimulationClock.SecondsToTicks(_bat.CorpseTime);
+        _spitTicks = SimulationClock.SecondsToTicks(_bat.SpitInterval);
+        _spitWindUpTicks = SimulationClock.SecondsToTicks(_bat.SpitWindUpTime);
+        _diveTicks = SimulationClock.SecondsToTicks(_bat.DiveInterval);
+        _screechTicks = SimulationClock.SecondsToTicks(_bat.ScreechTime);
+        _repathTicks = SimulationClock.SecondsToTicks(_bat.RepathTime);
+        _bobTicks = SimulationClock.SecondsToTicks(_bat.BobTime);
+        _turnRoundMinTicks = SimulationClock.SecondsToTicks(_bat.TurnRoundMin);
+        _turnRoundMaxTicks = SimulationClock.SecondsToTicks(_bat.TurnRoundMax);
+        Health = _bat.MaxHealth;
+
+        // Always drawn in this order - the same seed must give the same bats.
         _random = random ?? new Random(id);
-        CircleRadius = Tuning.Bat.CircleRadiusMin + (float)_random.NextDouble() * (Tuning.Bat.CircleRadiusMax - Tuning.Bat.CircleRadiusMin);
+        CircleRadius = _bat.CircleRadiusMin + (float)_random.NextDouble() * (_bat.CircleRadiusMax - _bat.CircleRadiusMin);
         _circleDirection = _random.Next(2) == 0 ? 1f : -1f;
-        _bobTick = _random.Next(BobTicks);
+        _bobTick = _random.Next(_bobTicks);
         _turnTicksLeft = NextTurnTicks();
     }
 
@@ -101,10 +120,10 @@ public sealed class Bat : ITarget
     public float CircleDirection => _circleDirection;
 
     /// <summary>How far the spit warning has come: 0 before it, 1 at the spit. For drawing.</summary>
-    public float SpitWindUpProgress => _spitWarned ? 1f - (float)_spitTicksLeft / SpitWindUpTicks : 0f;
+    public float SpitWindUpProgress => _spitWarned ? 1f - (float)_spitTicksLeft / _spitWindUpTicks : 0f;
 
     /// <summary>How far the screech has come: 0 at its start, 1 at the dive. 0 in every other state. For drawing.</summary>
-    public float ScreechProgress => State == BatState.Screeching ? 1f - (float)_stateTicksLeft / ScreechTicks : 0f;
+    public float ScreechProgress => State == BatState.Screeching ? 1f - (float)_stateTicksLeft / _screechTicks : 0f;
 
     /// <summary>Bottom centre of its body in world coordinates (it flies, so this is in the air).</summary>
     public Vector3 Position { get; private set; }
@@ -113,7 +132,7 @@ public sealed class Bat : ITarget
     public Vector3 Centre => Position + new Vector3(0f, HalfHeight, 0f);
 
     /// <summary>Current health; 0 when dead.</summary>
-    public int Health { get; private set; } = Tuning.Bat.MaxHealth;
+    public int Health { get; private set; }
 
     /// <summary>True once its health reached 0.</summary>
     public bool IsDead => Health == 0;
@@ -123,7 +142,7 @@ public sealed class Bat : ITarget
 
     public bool IsHittable => !IsDead;
 
-    public CylinderBody Body => new(Position, Tuning.Bat.Radius, Tuning.Bat.Height);
+    public CylinderBody Body => new(Position, BodySizes.Bat.Radius, BodySizes.Bat.Height);
 
     /// <summary>A bat is too small for a head zone: everything is body.</summary>
     public HitZone ZoneAt(Vector3 point) => HitZone.Body;
@@ -145,7 +164,7 @@ public sealed class Bat : ITarget
         _alerted = true;
         if (IsDead)
         {
-            _corpseTicksLeft = CorpseTicks;
+            _corpseTicksLeft = _corpseTicks;
             events.Add(new BatDied(Id));
         }
     }
@@ -184,8 +203,8 @@ public sealed class Bat : ITarget
             }
 
             State = BatState.Circling;
-            _spitTicksLeft = SpitTicks;
-            _diveTicksLeft = DiveTicks;
+            _spitTicksLeft = _spitTicks;
+            _diveTicksLeft = _diveTicks;
         }
 
         var target = _target!;
@@ -211,11 +230,11 @@ public sealed class Bat : ITarget
 
             case BatState.Rising:
                 var height = CircleHeight(level);
-                Position = Position with { Y = MathF.Min(height, Position.Y + Tuning.Bat.ClimbSpeed * SimulationClock.SecondsPerTick) };
+                Position = Position with { Y = MathF.Min(height, Position.Y + _bat.ClimbSpeed * SimulationClock.SecondsPerTick) };
                 if (Position.Y >= height)
                 {
                     State = BatState.Circling;
-                    _diveTicksLeft = DiveTicks;
+                    _diveTicksLeft = _diveTicks;
                 }
 
                 break;
@@ -230,12 +249,12 @@ public sealed class Bat : ITarget
     {
         if (!_spitWarned)
         {
-            if (_spitTicksLeft > SpitWindUpTicks)
+            if (_spitTicksLeft > _spitWindUpTicks)
             {
                 _spitTicksLeft--;
             }
 
-            if (_spitTicksLeft <= SpitWindUpTicks && CanSee(level, target))
+            if (_spitTicksLeft <= _spitWindUpTicks && CanSee(level, target))
             {
                 _spitWarned = true;
                 events.Add(new BatSpitWindUp(Id));
@@ -249,10 +268,10 @@ public sealed class Bat : ITarget
             return;
         }
 
-        var aim = target.EyePosition - new Vector3(0f, Tuning.Bat.SpitAimBelowEyes, 0f);
+        var aim = target.EyePosition - new Vector3(0f, _bat.SpitAimBelowEyes, 0f);
         events.Add(new BatSpat(Id, Centre, Vector3.Normalize(aim - Centre)));
         _spitWarned = false;
-        _spitTicksLeft = SpitTicks;
+        _spitTicksLeft = _spitTicks;
     }
 
     /// <summary>
@@ -273,7 +292,7 @@ public sealed class Bat : ITarget
         }
 
         State = BatState.Screeching;
-        _stateTicksLeft = ScreechTicks;
+        _stateTicksLeft = _screechTicks;
         _diveGoal = target.Position + new Vector3(0f, target.Body.Height / 2f, 0f);
         events.Add(new BatScreeched(Id));
     }
@@ -286,12 +305,12 @@ public sealed class Bat : ITarget
     {
         var toGoal = _diveGoal - Centre;
         var distance = toGoal.Length();
-        var step = MathF.Min(Tuning.Bat.DiveSpeed * SimulationClock.SecondsPerTick, distance);
+        var step = MathF.Min(_bat.DiveSpeed * SimulationClock.SecondsPerTick, distance);
         var next = distance > 0.0001f ? Position + toGoal / distance * step : Position;
 
         var floor = level.CellAt(next).FloorHeight;
         var blocked = next.Y < floor
-            || CharacterCollision.Overlaps(level, next, Tuning.Bat.Radius, Tuning.Bat.Height, FlyingStepHeight);
+            || CharacterCollision.Overlaps(level, next, BodySizes.Bat.Radius, BodySizes.Bat.Height, FlyingStepHeight);
         if (!blocked)
         {
             Position = next;
@@ -300,7 +319,7 @@ public sealed class Bat : ITarget
         var victim = players.FirstOrDefault(player => !player.IsDead && Touches(player.Body));
         if (victim is not null)
         {
-            victim.TakeDamage(Tuning.Bat.BiteDamage, events);
+            victim.TakeDamage(_bat.BiteDamage, events);
             events.Add(new BatBit(Id, victim.Id));
             State = BatState.Rising;
         }
@@ -326,7 +345,7 @@ public sealed class Bat : ITarget
         }
 
         Vector3 velocity;
-        if (Pathfinder.CanWalkStraight(level, Position, target.Position, Tuning.Bat.Radius, FlyingStepHeight))
+        if (Pathfinder.CanWalkStraight(level, Position, target.Position, BodySizes.Bat.Radius, FlyingStepHeight))
         {
             _waypoints.Clear();
             var offset = (Position - target.Position) with { Y = 0f };
@@ -335,20 +354,20 @@ public sealed class Bat : ITarget
             var along = new Vector3(-outward.Z, 0f, outward.X) * _circleDirection;
 
             // Along the circle, plus a pull back onto it when too close or too far.
-            velocity = along * Tuning.Bat.CircleSpeed + outward * ((CircleRadius - distance) * 2f);
+            velocity = along * _bat.CircleSpeed + outward * ((CircleRadius - distance) * 2f);
         }
         else
         {
             velocity = AlongPath(level, target);
         }
 
-        if (velocity.Length() > Tuning.Bat.FlySpeed)
+        if (velocity.Length() > _bat.FlySpeed)
         {
-            velocity = Vector3.Normalize(velocity) * Tuning.Bat.FlySpeed;
+            velocity = Vector3.Normalize(velocity) * _bat.FlySpeed;
         }
 
         var (position, slid) = CharacterCollision.Move(
-            level, Position, velocity, Tuning.Bat.Radius, SimulationClock.SecondsPerTick, Tuning.Bat.Height, FlyingStepHeight);
+            level, Position, velocity, BodySizes.Bat.Radius, SimulationClock.SecondsPerTick, BodySizes.Bat.Height, FlyingStepHeight);
 
         // A wall took most of the movement away for a while: circle the other way round.
         _blockedTicks = velocity.Length() > 0.5f && slid.Length() < velocity.Length() / 2f ? _blockedTicks + 1 : 0;
@@ -361,12 +380,12 @@ public sealed class Bat : ITarget
         // Up and down: a slow wave between the lowest and the highest circling height.
         _bobTick++;
         var height = CircleHeight(level);
-        var maxClimb = Tuning.Bat.ClimbSpeed * SimulationClock.SecondsPerTick;
+        var maxClimb = _bat.ClimbSpeed * SimulationClock.SecondsPerTick;
         Position = position with { Y = Position.Y + Math.Clamp(height - Position.Y, -maxClimb, maxClimb) };
     }
 
-    /// <summary>A random time until it turns round next, between <see cref="Tuning.Bat.TurnRoundMin"/> and <see cref="Tuning.Bat.TurnRoundMax"/>.</summary>
-    private int NextTurnTicks() => _random.Next(TurnRoundMinTicks, TurnRoundMaxTicks + 1);
+    /// <summary>A random time until it turns round next, between <see cref="BatBalance.TurnRoundMin"/> and <see cref="BatBalance.TurnRoundMax"/>.</summary>
+    private int NextTurnTicks() => _random.Next(_turnRoundMinTicks, _turnRoundMaxTicks + 1);
 
     /// <summary>The velocity towards the next point of the way round the walls (searched again now and then).</summary>
     private Vector3 AlongPath(Level level, Player target)
@@ -376,8 +395,8 @@ public sealed class Bat : ITarget
         {
             var start = Level.ToGrid(Position.X, Position.Z);
             var path = Pathfinder.FindPath(level, start, goal, FlyingStepHeight);
-            _waypoints = path is null ? [] : Pathfinder.Smooth(level, path, Tuning.Bat.Radius, FlyingStepHeight).ToList();
-            _repathTicksLeft = RepathTicks;
+            _waypoints = path is null ? [] : Pathfinder.Smooth(level, path, BodySizes.Bat.Radius, FlyingStepHeight).ToList();
+            _repathTicksLeft = _repathTicks;
             _pathGoal = goal;
         }
 
@@ -392,26 +411,26 @@ public sealed class Bat : ITarget
         }
 
         var toNext = (_waypoints[0] - Position) with { Y = 0f };
-        return Vector3.Normalize(toNext) * Tuning.Bat.FlySpeed;
+        return Vector3.Normalize(toNext) * _bat.FlySpeed;
     }
 
     /// <summary>
-    /// The height it wants to be at while circling: a slow wave between <see cref="Tuning.Bat.CircleHeightMin"/> and
-    /// <see cref="Tuning.Bat.CircleHeightMax"/> above the floor below it - but never too close to the ceiling.
+    /// The height it wants to be at while circling: a slow wave between <see cref="BatBalance.CircleHeightMin"/> and
+    /// <see cref="BatBalance.CircleHeightMax"/> above the floor below it - but never too close to the ceiling.
     /// </summary>
     private float CircleHeight(Level level)
     {
         var cell = level.CellAt(Position);
-        var middle = (Tuning.Bat.CircleHeightMin + Tuning.Bat.CircleHeightMax) / 2f;
-        var swing = (Tuning.Bat.CircleHeightMax - Tuning.Bat.CircleHeightMin) / 2f;
-        var wave = MathF.Sin(2f * MathF.PI * _bobTick / BobTicks);
-        var highest = cell.CeilingHeight - Tuning.Bat.CeilingGap - Tuning.Bat.Height;
+        var middle = (_bat.CircleHeightMin + _bat.CircleHeightMax) / 2f;
+        var swing = (_bat.CircleHeightMax - _bat.CircleHeightMin) / 2f;
+        var wave = MathF.Sin(2f * MathF.PI * _bobTick / _bobTicks);
+        var highest = cell.CeilingHeight - BodySizes.Bat.CeilingGap - BodySizes.Bat.Height;
         return MathF.Min(cell.FloorHeight + middle + swing * wave, highest);
     }
 
     /// <summary>A player it can see: closer than its sight range and nothing in between (from its body to their eyes).</summary>
     private bool CanSee(Level level, Player player) =>
-        Vector3.Distance(Centre, player.EyePosition) <= Tuning.Bat.SightRange
+        Vector3.Distance(Centre, player.EyePosition) <= _bat.SightRange
         && LineOfSight.IsClear(level, Centre, player.EyePosition);
 
     private Player? Nearest(IReadOnlyList<Player> players) =>
@@ -419,9 +438,9 @@ public sealed class Bat : ITarget
 
     /// <summary>Does its body touch <paramref name="body"/>? (Two upright cylinders.)</summary>
     private bool Touches(CylinderBody body) =>
-        FlatDistance(Position, body.Position) <= Tuning.Bat.Radius + body.Radius
+        FlatDistance(Position, body.Position) <= BodySizes.Bat.Radius + body.Radius
         && Position.Y < body.Position.Y + body.Height
-        && body.Position.Y < Position.Y + Tuning.Bat.Height;
+        && body.Position.Y < Position.Y + BodySizes.Bat.Height;
 
     private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
@@ -437,7 +456,7 @@ public sealed class Bat : ITarget
 
         // Dead: gravity takes over until it lies on the floor.
         (Position, _velocity, _) = CharacterCollision.MoveVertically(
-            level, Position, _velocity, Tuning.Bat.Radius, Tuning.Bat.Height, Tuning.Player.Gravity, SimulationClock.SecondsPerTick);
+            level, Position, _velocity, BodySizes.Bat.Radius, BodySizes.Bat.Height, _gravity, SimulationClock.SecondsPerTick);
 
         if (_corpseTicksLeft > 0)
         {
@@ -446,14 +465,14 @@ public sealed class Bat : ITarget
     }
 
     /// <summary>
-    /// Where a bat starting in a cell hovers: <see cref="Tuning.Bat.HoverHeight"/> above the floor, but always
+    /// Where a bat starting in a cell hovers: <see cref="BodySizes.Bat.HoverHeight"/> above the floor, but always
     /// with some room below the ceiling.
     /// </summary>
     public static Vector3 HoverPosition(Level level, Vector3 floorPosition)
     {
         ArgumentNullException.ThrowIfNull(level);
         var ceiling = level.CellAt(floorPosition).CeilingHeight;
-        var highest = ceiling - Tuning.Bat.CeilingGap - Tuning.Bat.Height;
-        return floorPosition with { Y = MathF.Min(floorPosition.Y + Tuning.Bat.HoverHeight, highest) };
+        var highest = ceiling - BodySizes.Bat.CeilingGap - BodySizes.Bat.Height;
+        return floorPosition with { Y = MathF.Min(floorPosition.Y + BodySizes.Bat.HoverHeight, highest) };
     }
 }

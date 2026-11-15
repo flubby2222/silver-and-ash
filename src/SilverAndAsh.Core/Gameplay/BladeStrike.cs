@@ -6,18 +6,20 @@ namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
 /// Which bodies a swing of the silver blade hits: everything inside a cone in front of the eyes -
-/// <see cref="Tuning.Combat.BladeRange"/> long (from the eyes), <see cref="Tuning.Combat.BladeAngle"/> wide, up and
+/// <see cref="BladeBalance.Range"/> long (from the eyes), <see cref="BladeBalance.Angle"/> wide, up and
 /// down as well as left and right - and not behind a wall. The cone's tip lies
-/// <see cref="Tuning.Combat.BladeConeStartBehind"/> behind the eyes, so close to you it is already wide.
+/// <see cref="BladeBalance.ConeStartBehind"/> behind the eyes, so close to you it is already wide.
 /// </summary>
 public static class BladeStrike
 {
     /// <summary>
-    /// True if a swing from <paramref name="eye"/> in <paramref name="direction"/> (length 1) hits <paramref name="body"/>.
+    /// True if a swing from <paramref name="eye"/> in <paramref name="direction"/> (length 1) hits <paramref name="body"/> -
+    /// with the reach and cone of <paramref name="blade"/> (the standard values if none is given).
     /// </summary>
-    public static bool Hits(Level level, Vector3 eye, Vector3 direction, CylinderBody body)
+    public static bool Hits(Level level, Vector3 eye, Vector3 direction, CylinderBody body, BladeBalance? blade = null)
     {
         ArgumentNullException.ThrowIfNull(level);
+        blade ??= Balance.Default.Blade;
 
         // The point of the body's middle line (its axis) that is closest to the eye: at eye height if the body
         // is that tall, otherwise its top or bottom end.
@@ -26,7 +28,7 @@ public static class BladeStrike
         var distance = toBody.Length();
 
         // Range counts to the body's surface, not its middle.
-        if (distance - body.Radius > Tuning.Combat.BladeRange)
+        if (distance - body.Radius > blade.Range)
         {
             return false;
         }
@@ -35,12 +37,12 @@ public static class BladeStrike
         // half the blade angle - in any direction, so up and down count as well as left and right. The angle is
         // measured from the cone's tip BEHIND the eyes: so the cone is already wide right in front of you.
         var forward = Vector3.Normalize(direction);
-        var tip = eye - forward * Tuning.Combat.BladeConeStartBehind;
+        var tip = eye - forward * blade.ConeStartBehind;
         var fromTip = axisPoint - tip;
         if (fromTip.Length() > 0.0001f)
         {
             var cosine = Vector3.Dot(forward, Vector3.Normalize(fromTip));
-            if (cosine < MathF.Cos(Tuning.Combat.BladeAngle / 2f * MathF.PI / 180f))
+            if (cosine < MathF.Cos(blade.Angle / 2f * MathF.PI / 180f))
             {
                 return false;
             }

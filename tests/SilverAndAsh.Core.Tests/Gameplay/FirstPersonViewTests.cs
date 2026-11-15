@@ -60,7 +60,7 @@ public class FirstPersonViewTests
 
         view.ApplyMouse(new Vector2(0f, mouseY));
 
-        Assert.Equal(Tuning.Controls.MaxPitchRadians, MathF.Abs(view.PitchRadians), Tolerance);
+        Assert.Equal(ControlSettings.MaxPitchRadians, MathF.Abs(view.PitchRadians), Tolerance);
         Assert.True(MathF.Abs(view.PitchRadians) < MathF.PI / 2f);
     }
 

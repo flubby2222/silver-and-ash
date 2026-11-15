@@ -18,7 +18,7 @@ public class ProjectileTests
 
         Run(world, PlayerInput.None, Second / 2);
 
-        Assert.Equal(new Vector3(1f, 1.4f, 10f + Tuning.BloodBolt.Speed / 2f), bolt.Position, new Vector3Comparer(0.01f));
+        Assert.Equal(new Vector3(1f, 1.4f, 10f + Balance.Default.BloodBolt.Speed / 2f), bolt.Position, new Vector3Comparer(0.01f));
         Assert.Contains(bolt, world.Projectiles);
     }
 
@@ -30,9 +30,9 @@ public class ProjectileTests
 
         var seen = Run(world, PlayerInput.None, Second);
 
-        Assert.Contains(new PlayerHit(world.Player.Id, Tuning.BloodBolt.Damage), seen);
+        Assert.Contains(new PlayerHit(world.Player.Id, Balance.Default.BloodBolt.Damage), seen);
         Assert.Contains(seen, e => e is ProjectileHitPlayer hit && hit.ProjectileId == bolt.Id);
-        Assert.Equal(Tuning.Combat.PlayerMaxHealth - Tuning.BloodBolt.Damage, world.Player.Health);
+        Assert.Equal(Balance.Default.Player.MaxHealth - Balance.Default.BloodBolt.Damage, world.Player.Health);
         Assert.True(bolt.IsGone);
         Assert.Empty(world.Projectiles);
     }
@@ -88,7 +88,7 @@ public class ProjectileTests
     {
         // 150 m/s = 2.5 m per tick, more than the player is wide (about 1 m with the ball): it moves in small steps.
         var world = new GameWorld(Corridor(6));
-        world.Fire(new Vector3(1f, 1.2f, 12f), -Vector3.UnitZ, 150f, Tuning.BloodBolt.Damage, Tuning.BloodBolt.Radius, Tuning.BloodBolt.LifeTime);
+        world.Fire(new Vector3(1f, 1.2f, 12f), -Vector3.UnitZ, 150f, Balance.Default.BloodBolt.Damage, Balance.Default.BloodBolt.Radius, Balance.Default.BloodBolt.LifeTime);
 
         var seen = Run(world, PlayerInput.None, Second / 4);
 
@@ -99,7 +99,7 @@ public class ProjectileTests
     public void A_dead_player_is_not_hit_any_more()
     {
         var world = new GameWorld(Corridor(4));
-        world.Player.TakeDamage(Tuning.Combat.PlayerMaxHealth, []);
+        world.Player.TakeDamage(Balance.Default.Player.MaxHealth, []);
         Fire(world, new Vector3(1f, 1.2f, 7f), -Vector3.UnitZ);
 
         var seen = Run(world, PlayerInput.None, Second);
@@ -115,7 +115,7 @@ public class ProjectileTests
         var world = new GameWorld(Corridor(70));
         var bolt = Fire(world, new Vector3(1f, 1.4f, 5f), Vector3.UnitZ);
 
-        var seen = Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Tuning.BloodBolt.LifeTime) + 1);
+        var seen = Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.BloodBolt.LifeTime) + 1);
 
         Assert.True(bolt.IsGone);
         Assert.Empty(world.Projectiles);
@@ -135,7 +135,7 @@ public class ProjectileTests
     }
 
     private static Projectile Fire(GameWorld world, Vector3 origin, Vector3 direction) =>
-        world.Fire(origin, direction, Tuning.BloodBolt.Speed, Tuning.BloodBolt.Damage, Tuning.BloodBolt.Radius, Tuning.BloodBolt.LifeTime);
+        world.Fire(origin, direction, Balance.Default.BloodBolt.Speed, Balance.Default.BloodBolt.Damage, Balance.Default.BloodBolt.Radius, Balance.Default.BloodBolt.LifeTime);
 
     /// <summary>A corridor along +Z: the player in row 0, then <paramref name="rows"/> more rows, closed by the outer wall.</summary>
     private static Level Corridor(int rows) => LevelParser.Parse(string.Join('\n', Enumerable.Repeat(".", rows).Prepend("P")));

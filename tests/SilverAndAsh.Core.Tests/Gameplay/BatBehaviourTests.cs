@@ -9,9 +9,9 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 public class BatBehaviourTests
 {
     private static readonly int Second = SimulationClock.TicksPerSecond;
-    private static readonly int SpitTicks = SimulationClock.SecondsToTicks(Tuning.Bat.SpitInterval);
-    private static readonly int SpitWindUpTicks = SimulationClock.SecondsToTicks(Tuning.Bat.SpitWindUpTime);
-    private static readonly int ScreechTicks = SimulationClock.SecondsToTicks(Tuning.Bat.ScreechTime);
+    private static readonly int SpitTicks = SimulationClock.SecondsToTicks(Balance.Default.Bat.SpitInterval);
+    private static readonly int SpitWindUpTicks = SimulationClock.SecondsToTicks(Balance.Default.Bat.SpitWindUpTime);
+    private static readonly int ScreechTicks = SimulationClock.SecondsToTicks(Balance.Default.Bat.ScreechTime);
 
     /// <summary>A 14 x 14 m room: the player in the middle (7, 7), the bat in a corner above (1, 1) - 8.5 m away, in sight.</summary>
     private static readonly Level BigRoom = LevelParser.Parse(string.Join('\n',
@@ -87,7 +87,7 @@ public class BatBehaviourTests
             world.Tick(PlayerInput.None);
             var distance = FlatDistance(centre, bat.Position);
             Assert.InRange(distance, bat.CircleRadius - 0.6f, bat.CircleRadius + 0.6f);
-            Assert.InRange(bat.Position.Y, Tuning.Bat.CircleHeightMin - 0.05f, Tuning.Bat.CircleHeightMax + 0.05f);
+            Assert.InRange(bat.Position.Y, Balance.Default.Bat.CircleHeightMin - 0.05f, Balance.Default.Bat.CircleHeightMax + 0.05f);
             heights.Add(bat.Position.Y);
 
             var angle = AngleAround(centre, bat.Position);
@@ -104,8 +104,8 @@ public class BatBehaviourTests
     {
         var world = new GameWorld(BigRoom, seed: 3);
         var bat = world.Bats[0];
-        var minTicks = SimulationClock.SecondsToTicks(Tuning.Bat.TurnRoundMin);
-        var maxTicks = SimulationClock.SecondsToTicks(Tuning.Bat.TurnRoundMax);
+        var minTicks = SimulationClock.SecondsToTicks(Balance.Default.Bat.TurnRoundMin);
+        var maxTicks = SimulationClock.SecondsToTicks(Balance.Default.Bat.TurnRoundMax);
 
         // Count only the ticks spent circling: screech, dive and rise pause the turning.
         var circlingTicks = 0;
@@ -135,7 +135,7 @@ public class BatBehaviourTests
     {
         var bats = Enumerable.Range(0, 20).Select(seed => new GameWorld(BigRoom, seed).Bats[0]).ToList();
 
-        Assert.All(bats, bat => Assert.InRange(bat.CircleRadius, Tuning.Bat.CircleRadiusMin, Tuning.Bat.CircleRadiusMax));
+        Assert.All(bats, bat => Assert.InRange(bat.CircleRadius, Balance.Default.Bat.CircleRadiusMin, Balance.Default.Bat.CircleRadiusMax));
         Assert.True(bats.Select(bat => bat.CircleRadius).Distinct().Count() > 10, "The distances hardly differ.");
         Assert.Contains(bats, bat => bat.CircleDirection > 0);
         Assert.Contains(bats, bat => bat.CircleDirection < 0);
@@ -231,7 +231,7 @@ public class BatBehaviourTests
 
         Run(world, PlayerInput.None, 5 * Second);
 
-        Assert.Equal(Tuning.Combat.PlayerMaxHealth - 2 * Tuning.BloodBolt.Damage, world.Player.Health);
+        Assert.Equal(Balance.Default.Player.MaxHealth - 2 * Balance.Default.BloodBolt.Damage, world.Player.Health);
     }
 
     [Fact]
@@ -248,9 +248,9 @@ public class BatBehaviourTests
 
         var bite = Assert.Single(after, e => e.Event is BatBit);
         Assert.Equal(new BatBit(bat.Id, world.Player.Id), bite.Event);
-        Assert.Contains(after, e => e.Tick == bite.Tick && e.Event == new PlayerHit(world.Player.Id, Tuning.Bat.BiteDamage));
+        Assert.Contains(after, e => e.Tick == bite.Tick && e.Event == new PlayerHit(world.Player.Id, Balance.Default.Bat.BiteDamage));
         Assert.True(bite.Tick >= ScreechTicks, $"It bit {bite.Tick} ticks after the screech, before the screech was over.");
-        Assert.True(screech >= SimulationClock.SecondsToTicks(Tuning.Bat.DiveInterval) - 1, $"First dive already after {screech} ticks.");
+        Assert.True(screech >= SimulationClock.SecondsToTicks(Balance.Default.Bat.DiveInterval) - 1, $"First dive already after {screech} ticks.");
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public class BatBehaviourTests
         RunUntil(world, PlayerInput.None, e => e is BatBit, 2 * Second);
 
         // Below the player's head: in the blade's reach.
-        Assert.True(bat.Position.Y < Tuning.Player.Height, $"Its body starts at {bat.Position.Y} m.");
+        Assert.True(bat.Position.Y < BodySizes.Player.Height, $"Its body starts at {bat.Position.Y} m.");
     }
 
     [Fact]
@@ -293,7 +293,7 @@ public class BatBehaviourTests
         Run(world, PlayerInput.None, 5 * Second / 2);
 
         Assert.Equal(BatState.Circling, bat.State);
-        Assert.True(bat.Position.Y >= Tuning.Bat.CircleHeightMin - 0.05f, $"Still down at {bat.Position.Y} m.");
+        Assert.True(bat.Position.Y >= Balance.Default.Bat.CircleHeightMin - 0.05f, $"Still down at {bat.Position.Y} m.");
     }
 
     [Fact]
@@ -315,7 +315,7 @@ public class BatBehaviourTests
             world.Tick(PlayerInput.None);
             seen.AddRange(world.Events.Select(e => (tick, e)));
             Assert.False(world.Level.CellAt(bat.Position).IsSolid, $"Inside a wall at {bat.Position}.");
-            var centre = bat.Position + new Vector3(0f, Tuning.Bat.Height / 2f, 0f);
+            var centre = bat.Position + new Vector3(0f, BodySizes.Bat.Height / 2f, 0f);
             if (firstSight is null && LineOfSight.IsClear(world.Level, centre, player.EyePosition))
             {
                 firstSight = tick;
@@ -333,7 +333,7 @@ public class BatBehaviourTests
         var bat = world.Bats[0];
         Run(world, PlayerInput.None, Second);
 
-        world.Player.TakeDamage(Tuning.Combat.PlayerMaxHealth, []);
+        world.Player.TakeDamage(Balance.Default.Player.MaxHealth, []);
         var seen = Run(world, PlayerInput.None, 3 * Second);
 
         Assert.Equal(BatState.Lurking, bat.State);
@@ -347,7 +347,7 @@ public class BatBehaviourTests
         var bat = world.Bats[0];
         Run(world, PlayerInput.None, Second);
 
-        bat.TakeDamage(Tuning.Bat.MaxHealth, []);
+        bat.TakeDamage(Balance.Default.Bat.MaxHealth, []);
         var seen = Run(world, PlayerInput.None, 7 * Second);
 
         Assert.DoesNotContain(seen, e => e.Event is BatSpitWindUp or BatSpat or BatScreeched or BatBit);
@@ -358,7 +358,7 @@ public class BatBehaviourTests
         var yaw = MathF.Atan2(direction.X, direction.Z);
         player.Look(PlayerInput.None with
         {
-            Look = new Vector2(-(yaw - player.View.YawRadians) / Tuning.Controls.MouseSensitivity, 0f),
+            Look = new Vector2(-(yaw - player.View.YawRadians) / ControlSettings.MouseSensitivity, 0f),
         });
     }
 

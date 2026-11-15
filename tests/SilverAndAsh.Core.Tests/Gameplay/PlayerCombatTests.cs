@@ -9,13 +9,13 @@ public class PlayerCombatTests
     private static readonly PlayerInput Melee = PlayerInput.None with { Melee = true };
     private static readonly PlayerInput Shoot = PlayerInput.None with { Shoot = true };
 
-    private static readonly int BladeTicks = SimulationClock.SecondsToTicks(Tuning.Combat.BladeCooldown);
-    private static readonly int PistolTicks = SimulationClock.SecondsToTicks(Tuning.Combat.PistolCooldown);
+    private static readonly int BladeTicks = SimulationClock.SecondsToTicks(Balance.Default.Blade.Cooldown);
+    private static readonly int PistolTicks = SimulationClock.SecondsToTicks(Balance.Default.Pistol.Cooldown);
 
     [Fact]
     public void The_player_starts_with_full_health()
     {
-        Assert.Equal(Tuning.Combat.PlayerMaxHealth, RunningPlayer().Health);
+        Assert.Equal(Balance.Default.Player.MaxHealth, RunningPlayer().Health);
     }
 
     [Fact]

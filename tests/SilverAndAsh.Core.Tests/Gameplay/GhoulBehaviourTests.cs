@@ -7,8 +7,8 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 
 public class GhoulBehaviourTests
 {
-    private static readonly int WindUpTicks = SimulationClock.SecondsToTicks(Tuning.Ghoul.WindUpTime);
-    private static readonly int RecoverTicks = SimulationClock.SecondsToTicks(Tuning.Ghoul.RecoverTime);
+    private static readonly int WindUpTicks = SimulationClock.SecondsToTicks(Balance.Default.Ghoul.WindUpTime);
+    private static readonly int RecoverTicks = SimulationClock.SecondsToTicks(Balance.Default.Ghoul.RecoverTime);
     private static readonly int Second = SimulationClock.TicksPerSecond;
 
     [Fact]
@@ -44,7 +44,7 @@ public class GhoulBehaviourTests
         Run(world, PlayerInput.None, Second / 2);
 
         Assert.Equal(GhoulState.Chasing, world.Ghouls[0].State);
-        Assert.Equal(startDistance - Tuning.Ghoul.Speed / 2f, Distance(world), 0.3f);
+        Assert.Equal(startDistance - Balance.Default.Ghoul.Speed / 2f, Distance(world), 0.3f);
     }
 
     [Fact]
@@ -79,12 +79,12 @@ public class GhoulBehaviourTests
         Assert.Equal(GhoulState.WindingUp, world.Ghouls[0].State);
 
         Run(world, PlayerInput.None, WindUpTicks - 1);
-        Assert.Equal(Tuning.Combat.PlayerMaxHealth, world.Player.Health);
+        Assert.Equal(Balance.Default.Player.MaxHealth, world.Player.Health);
 
         world.Tick(PlayerInput.None);
 
-        Assert.Equal(Tuning.Combat.PlayerMaxHealth - Tuning.Ghoul.AttackDamage, world.Player.Health);
-        Assert.Contains(new PlayerHit(world.Player.Id, Tuning.Ghoul.AttackDamage), world.Events);
+        Assert.Equal(Balance.Default.Player.MaxHealth - Balance.Default.Ghoul.AttackDamage, world.Player.Health);
+        Assert.Contains(new PlayerHit(world.Player.Id, Balance.Default.Ghoul.AttackDamage), world.Events);
         Assert.Contains(new GhoulStruck(world.Ghouls[0].Id, Hit: true), world.Events);
     }
 
@@ -104,7 +104,7 @@ public class GhoulBehaviourTests
         }
 
         Assert.Contains(new GhoulStruck(world.Ghouls[0].Id, Hit: false), seen);
-        Assert.Equal(Tuning.Combat.PlayerMaxHealth, world.Player.Health);
+        Assert.Equal(Balance.Default.Player.MaxHealth, world.Player.Health);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class GhoulBehaviourTests
         Run(world, PlayerInput.None with { Move = new Vector2(1f, 0f) }, 6);    // a short step away
         Run(world, PlayerInput.None, WindUpTicks - 7);
         var distance = Distance(world);
-        Assert.InRange(distance, Tuning.Ghoul.AttackReach, Tuning.Ghoul.HitReach);   // the test only means something here
+        Assert.InRange(distance, Balance.Default.Ghoul.AttackReach, Balance.Default.Ghoul.HitReach);   // the test only means something here
 
         world.Tick(PlayerInput.None);
 
@@ -152,7 +152,7 @@ public class GhoulBehaviourTests
         world.Ghouls[0].TakeDamage(10, []);
         Run(world, PlayerInput.None, WindUpTicks);
 
-        Assert.Equal(Tuning.Combat.PlayerMaxHealth - Tuning.Ghoul.AttackDamage, world.Player.Health);
+        Assert.Equal(Balance.Default.Player.MaxHealth - Balance.Default.Ghoul.AttackDamage, world.Player.Health);
     }
 
     [Fact]
@@ -169,14 +169,14 @@ public class GhoulBehaviourTests
             closest = MathF.Min(closest, new Vector2(a.X - b.X, a.Z - b.Z).Length());
         }
 
-        Assert.True(closest >= 2f * Tuning.Ghoul.Radius - 0.05f, $"Came as close as {closest:0.00} m.");
+        Assert.True(closest >= 2f * BodySizes.Ghoul.Radius - 0.05f, $"Came as close as {closest:0.00} m.");
     }
 
     [Fact]
     public void A_dead_ghoul_does_nothing()
     {
         var world = new GameWorld(LevelParser.Parse("P..G"));
-        world.Ghouls[0].TakeDamage(Tuning.Ghoul.MaxHealth, []);
+        world.Ghouls[0].TakeDamage(Balance.Default.Ghoul.MaxHealth, []);
         var position = world.Ghouls[0].Position;
 
         var anything = RunUntil(world, PlayerInput.None, 3 * Second, w => w.Events.Any(e => e is GhoulWindUp or PlayerHit));

@@ -38,7 +38,7 @@ public class PlayerJumpTests
 
         var (maxHeight, _) = JumpAndMeasure(player);
 
-        Assert.InRange(maxHeight, 0.95f * Tuning.Player.JumpHeight, 1.05f * Tuning.Player.JumpHeight);
+        Assert.InRange(maxHeight, 0.95f * Balance.Default.Player.JumpHeight, 1.05f * Balance.Default.Player.JumpHeight);
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class PlayerJumpTests
 
         var (_, airTicks) = JumpAndMeasure(player);
 
-        var expected = SimulationClock.SecondsToTicks(Tuning.Player.JumpDuration);
+        var expected = SimulationClock.SecondsToTicks(Balance.Default.Player.JumpDuration);
         Assert.InRange(airTicks, expected - 2, expected + 2);
     }
 
@@ -112,7 +112,7 @@ public class PlayerJumpTests
 
         var (maxHeight, _) = JumpAndMeasure(player);
 
-        Assert.Equal(2.2f - Tuning.Player.Height, maxHeight, 0.001f);
+        Assert.Equal(2.2f - BodySizes.Player.Height, maxHeight, 0.001f);
         Assert.True(player.IsGrounded);
     }
 
@@ -159,15 +159,15 @@ public class PlayerJumpTests
         var airSpeed = new Vector2(player.Velocity.X, player.Velocity.Z).Length();
 
         Assert.False(player.IsGrounded);
-        Assert.Equal(Tuning.Player.MaxSpeed, groundSpeed, 0.001f);
-        Assert.Equal(Tuning.Player.MaxSpeed * Tuning.Player.AirSpeedMultiplier, airSpeed, 0.001f);
+        Assert.Equal(Balance.Default.Player.MaxSpeed, groundSpeed, 0.001f);
+        Assert.Equal(Balance.Default.Player.MaxSpeed * Balance.Default.Player.AirSpeedMultiplier, airSpeed, 0.001f);
     }
 
     [Fact]
     public void A_full_jump_fits_under_the_standard_ceiling()
     {
         // Otherwise every jump in a normal room would bump the head.
-        Assert.True(Tuning.Player.Height + Tuning.Player.JumpHeight < Cell.DefaultCeilingHeight);
+        Assert.True(BodySizes.Player.Height + Balance.Default.Player.JumpHeight < Cell.DefaultCeilingHeight);
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public class PlayerJumpTests
 
         var (maxHeight, _) = JumpAndMeasure(player);
 
-        Assert.Equal(Tuning.Player.JumpHeight, maxHeight, 0.05f);
+        Assert.Equal(Balance.Default.Player.JumpHeight, maxHeight, 0.05f);
     }
 
     /// <summary>Presses jump once, then waits until the player has landed.</summary>

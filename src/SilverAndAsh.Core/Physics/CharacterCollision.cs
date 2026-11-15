@@ -53,7 +53,7 @@ public static class CharacterCollision
     /// </summary>
     public static (Vector3 Position, Vector3 Velocity) Move(
         Level level, Vector3 position, Vector3 velocity, float radius, float seconds,
-        float height = Tuning.Player.Height, float stepHeight = Tuning.Player.StepHeight,
+        float height = BodySizes.Player.Height, float stepHeight = BodySizes.Player.StepHeight,
         IReadOnlyList<CylinderBody>? bodies = null)
     {
         ArgumentNullException.ThrowIfNull(level);
@@ -122,7 +122,7 @@ public static class CharacterCollision
     /// <summary>Highest floor and lowest ceiling of all walkable (non-blocking) cells that the circle touches.</summary>
     public static (float Floor, float Ceiling) FloorAndCeiling(
         Level level, Vector3 position, float radius,
-        float height = Tuning.Player.Height, float stepHeight = Tuning.Player.StepHeight)
+        float height = BodySizes.Player.Height, float stepHeight = BodySizes.Player.StepHeight)
     {
         var floor = float.NegativeInfinity;
         var ceiling = float.PositiveInfinity;
@@ -152,7 +152,7 @@ public static class CharacterCollision
     /// <summary>True if a circle at <paramref name="position"/> overlaps any blocking cell.</summary>
     public static bool Overlaps(
         Level level, Vector3 position, float radius,
-        float height = Tuning.Player.Height, float stepHeight = Tuning.Player.StepHeight)
+        float height = BodySizes.Player.Height, float stepHeight = BodySizes.Player.StepHeight)
     {
         foreach (var (x, z) in CellsAround(position, radius))
         {

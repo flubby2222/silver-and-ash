@@ -9,7 +9,7 @@ public class GameWorldBladeTests
 {
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
     private static readonly PlayerInput Melee = PlayerInput.None with { Melee = true };
-    private static readonly int BladeTicks = SimulationClock.SecondsToTicks(Tuning.Combat.BladeCooldown);
+    private static readonly int BladeTicks = SimulationClock.SecondsToTicks(Balance.Default.Blade.Cooldown);
 
     [Fact]
     public void A_swing_at_a_dummy_in_front_does_the_blade_damage()
@@ -18,8 +18,8 @@ public class GameWorldBladeTests
 
         Swing(world);
 
-        Assert.Equal(Tuning.Combat.DummyMaxHealth - Tuning.Combat.BladeDamage, world.Dummies[0].Health);
-        Assert.Contains(new DummyHit(0, Tuning.Combat.BladeDamage), world.Events);
+        Assert.Equal(Balance.Default.Dummy.MaxHealth - Balance.Default.Blade.Damage, world.Dummies[0].Health);
+        Assert.Contains(new DummyHit(0, Balance.Default.Blade.Damage), world.Events);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class GameWorldBladeTests
 
         Swing(world);
 
-        Assert.Equal(Tuning.Combat.DummyMaxHealth, world.Dummies[0].Health);
+        Assert.Equal(Balance.Default.Dummy.MaxHealth, world.Dummies[0].Health);
         Assert.DoesNotContain(world.Events, e => e is DummyHit);
     }
 
@@ -65,7 +65,7 @@ public class GameWorldBladeTests
         RunTicks(world, PlayerInput.None, 10);
         Swing(world);
 
-        Assert.All(world.Dummies, dummy => Assert.Equal(Tuning.Combat.DummyMaxHealth - Tuning.Combat.BladeDamage, dummy.Health));
+        Assert.All(world.Dummies, dummy => Assert.Equal(Balance.Default.Dummy.MaxHealth - Balance.Default.Blade.Damage, dummy.Health));
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class GameWorldBladeTests
 
         Swing(world);
 
-        Assert.Equal(Tuning.Combat.DummyMaxHealth - Tuning.Combat.BladeDamage, world.Dummies[0].Health);
+        Assert.Equal(Balance.Default.Dummy.MaxHealth - Balance.Default.Blade.Damage, world.Dummies[0].Health);
     }
 
     [Fact]
@@ -85,13 +85,13 @@ public class GameWorldBladeTests
     {
         // Full charge: 200 % of the blade damage (80); the dummy (100) falls with the second swing.
         var world = InFrontOfADummy();
-        var fullTicks = SimulationClock.SecondsToTicks(Tuning.Combat.BladeChargeTime);
+        var fullTicks = SimulationClock.SecondsToTicks(Balance.Default.Blade.ChargeTime);
 
         world.Tick(Melee);
         RunTicks(world, Melee, fullTicks);
         world.Tick(PlayerInput.None);
 
-        var charged = (int)(Tuning.Combat.BladeDamage * Tuning.Combat.BladeChargeMaxMultiplier);
+        var charged = (int)(Balance.Default.Blade.Damage * Balance.Default.Blade.ChargeMaxMultiplier);
         Assert.Contains(new DummyHit(0, charged), world.Events);
         Assert.False(world.Dummies[0].IsDown);
 

@@ -33,7 +33,7 @@ public class PlayerHeightTests
         RunTicks(player, Forward, 2 * SimulationClock.TicksPerSecond);
 
         Assert.Equal(0f, player.Position.Y, Tolerance);
-        Assert.Equal(4f - Tuning.Player.Radius, player.Position.Z, Tolerance);
+        Assert.Equal(4f - BodySizes.Player.Radius, player.Position.Z, Tolerance);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class PlayerHeightTests
         RunTicks(player, Forward, 3 * SimulationClock.TicksPerSecond);
 
         Assert.Equal(LevelParser.PitFloorHeight, player.Position.Y, Tolerance);
-        Assert.Equal(6f - Tuning.Player.Radius, player.Position.Z, Tolerance);
+        Assert.Equal(6f - BodySizes.Player.Radius, player.Position.Z, Tolerance);
     }
 
     [Fact]
