@@ -335,11 +335,13 @@ static void RunGame(
             }
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
-            // the local run log (one line) and the technical log.
+            // the local run log (one line) and the technical log. The world hands its summary out only once, so
+            // going back to the title (which clears the end screen) never logs the same run again.
             wonSeconds = gameWorld.IsWon ? wonSeconds + Raylib.GetFrameTime() : 0f;
-            if (endSummary is null && (gameWorld.ShouldRestart || wonSeconds >= VictoryScreenDelay))
+            if (endSummary is null && (gameWorld.ShouldRestart || wonSeconds >= VictoryScreenDelay)
+                && gameWorld.TakeEndSummary() is { } finished)
             {
-                endSummary = gameWorld.Summary();
+                endSummary = finished;
                 var line = endSummary.ToLogLine(DateTimeOffset.Now);
                 log?.Info($"Run ended: {line}");
                 if (!RunLog.Append(runLogPath, line))

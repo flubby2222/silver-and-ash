@@ -40,6 +40,7 @@ public sealed class GameWorld
     private readonly IReadOnlyList<ChestPlan> _chestPlan;
     private readonly List<Chest> _chests;
     private bool _lossReported;
+    private bool _endSummaryTaken;
 
     /// <summary>
     /// Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.
@@ -137,6 +138,21 @@ public sealed class GameWorld
 
     /// <summary>The numbers of this run so far (a new world starts at 0).</summary>
     public RunStatistics Statistics { get; } = new();
+
+    /// <summary>
+    /// The summary of the finished run (won or lost) - handed out exactly once, for the end screen and the run log.
+    /// Null while the run is still on and every time after it was taken, so a run is never logged twice.
+    /// </summary>
+    public RunSummary? TakeEndSummary()
+    {
+        if (_endSummaryTaken || !(IsWon || IsLost))
+        {
+            return null;
+        }
+
+        _endSummaryTaken = true;
+        return Summary();
+    }
 
     /// <summary>The run so far in one record - for the end screen and the run log.</summary>
     public RunSummary Summary() => new(
