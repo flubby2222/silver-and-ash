@@ -345,7 +345,7 @@ public sealed class Player
 
     private readonly List<GameEvent> _events = [];
 
-    /// <summary>True during a dash: fast, flat, no gravity, no jumping.</summary>
+    /// <summary>True during a dash: fast, no gravity, no jumping - flat, or in the looking direction with W.</summary>
     public bool IsDashing => _dashTicksLeft > 0;
 
     // Dash and dodge timing, from the balance (see the constructor).
@@ -496,8 +496,9 @@ public sealed class Player
 
         if (IsDashing)
         {
-            horizontal = _dashDirection * _dashSpeed;
-            vertical = 0f;
+            // Flat dashes have no Y; a dash in the looking direction also rises or sinks (no gravity meanwhile).
+            horizontal = (_dashDirection with { Y = 0f }) * _dashSpeed;
+            vertical = _dashDirection.Y * _dashSpeed;
         }
 
         if (IsDodging)
@@ -564,6 +565,12 @@ public sealed class Player
             _level, Position, Velocity, BodySizes.Player.Radius, CollisionHeight, gravity, Dt);
         IsGrounded = grounded;
         _ticksInAir = grounded ? 0 : _ticksInAir + 1;
+
+        // A dash up or down ends where ceiling or floor stop it.
+        if (IsDashing && _dashDirection.Y != 0f && Velocity.Y == 0f)
+        {
+            _dashTicksLeft = 1;
+        }
         _ticksOnGround = grounded ? _ticksOnGround + 1 : 0;
 
         // Back on the ground (and not in the middle of a dash or dodge): the air dash is available again.
@@ -578,6 +585,8 @@ public sealed class Player
             _dashTicksLeft--;
             if (!IsDashing)
             {
+                // The dash's own climb ends with it: from here on gravity alone decides (no shooting on upwards).
+                Velocity = Velocity with { Y = MathF.Min(Velocity.Y, 0f) };
                 FallBackToTopSpeed();
             }
         }
@@ -688,7 +697,8 @@ public sealed class Player
     /// <summary>
     /// Starts a dash if allowed: only in the air (on the ground the bar refills - dashing there could be
     /// repeated again and again, found while playing), once per stay in the air, not already dashing, and the
-    /// stamina pays one segment (empty bar = no dash). Direction: where the player walks, or forward if not walking.
+    /// stamina pays one segment (empty bar = no dash). Direction: with only forward held (W), where the player
+    /// looks - also up or down (decision record 0007); otherwise flat where the player walks, or forward if not walking.
     /// </summary>
     private void TryStartDash(PlayerInput input)
     {
@@ -699,7 +709,9 @@ public sealed class Player
         }
 
         var wish = WishDirection(input);
-        _dashDirection = wish.LengthSquared() > 0f ? Vector3.Normalize(wish) : View.FlatForward;
+        var onlyForward = input.Move.Y > 0f && input.Move.X == 0f;
+        _dashDirection = onlyForward ? Vector3.Normalize(View.Forward)
+            : wish.LengthSquared() > 0f ? Vector3.Normalize(wish) : View.FlatForward;
         _dashTicksLeft = _dashTicks;
         _perfectJumpQueued = false;
         _ticksSinceJumpPressedInAir = Never;

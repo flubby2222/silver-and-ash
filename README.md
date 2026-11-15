@@ -30,9 +30,11 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | WASD | Laufen |
 | Maus | Umsehen / Zielen |
 | Leertaste | Springen |
+| Shift | am Boden: Ausweichrolle (Dodge, geduckt) · in der Luft: Dash in Laufrichtung |
+| W + Shift (in der Luft) | Dash in Blickrichtung, auch schräg nach oben |
 | Linke Maustaste | Silberklinge |
 | Rechte Maustaste | Pistole |
-| F | Interagieren (Tür öffnen) |
+| F | Interagieren (Türen, Kisten) |
 | M (halten) | Karte: betretene Räume, ihre Türen, eigene Position |
 | Q | Blutrausch |
 | Esc | Menü: weiter, Mausempfindlichkeit, zum Titel, beenden (allein steht das Spiel solange still) |
