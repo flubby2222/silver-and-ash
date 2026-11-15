@@ -6,12 +6,14 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// What the player sees when hurt: a red flash at the screen's edges and a short jolt of the camera.
-/// At death the picture turns red and "YOU DIED" appears. When healed, "+50" rises next to the health bar.
-/// Pure presentation - Core reports <see cref="PlayerHit"/>, <see cref="PlayerDied"/> and <see cref="PlayerHealed"/>.
+/// At death the picture turns red and "YOU DIED" appears. When healed, "+50" rises next to the health bar; on a new
+/// level, "LEVEL UP" shines above the crosshair. Pure presentation - Core reports <see cref="PlayerHit"/>,
+/// <see cref="PlayerDied"/>, <see cref="PlayerHealed"/> and <see cref="LevelUp"/>.
 /// </summary>
 internal sealed class DamageFeedback
 {
     private const float HealSeconds = 1.2f;
+    private const float LevelUpSeconds = 2f;
     private const float FlashSeconds = 0.4f;
     private const float JoltSeconds = 0.25f;
     private const float DeathFadeSeconds = 1f;
@@ -24,6 +26,7 @@ internal sealed class DamageFeedback
     private float _time;
     private float _heal;
     private int _healAmount;
+    private float _levelUp;
 
     public void OnEvent(GameEvent gameEvent)
     {
@@ -37,6 +40,9 @@ internal sealed class DamageFeedback
                 _heal = 1f;
                 _healAmount = healed.Amount;
                 break;
+            case LevelUp:
+                _levelUp = 1f;
+                break;
             case PlayerDied:
                 _isDead = true;
                 break;
@@ -49,6 +55,7 @@ internal sealed class DamageFeedback
         _flash = MathF.Max(0f, _flash - frameSeconds / FlashSeconds);
         _jolt = MathF.Max(0f, _jolt - frameSeconds / JoltSeconds);
         _heal = MathF.Max(0f, _heal - frameSeconds / HealSeconds);
+        _levelUp = MathF.Max(0f, _levelUp - frameSeconds / LevelUpSeconds);
         if (_isDead)
         {
             _deathFade = MathF.Min(1f, _deathFade + frameSeconds / DeathFadeSeconds);
@@ -86,6 +93,17 @@ internal sealed class DamageFeedback
             var text = $"+{_healAmount}";
             var rise = (int)(18 * (1f - _heal));
             Raylib.DrawText(text, 250, height - 70 - rise, 24, new Color(235, 205, 120, (int)(255 * MathF.Min(1f, _heal * 2f))));
+        }
+
+        if (_levelUp > 0f)
+        {
+            // "LEVEL UP" in gold above the crosshair, rising a little and fading out in the second half.
+            const string Text = "LEVEL UP";
+            const int Size = 40;
+            var textWidth = Raylib.MeasureText(Text, Size);
+            var rise = (int)(24 * (1f - _levelUp));
+            var alpha = (int)(255 * MathF.Min(1f, _levelUp * 2f));
+            Raylib.DrawText(Text, (width - textWidth) / 2, height / 3 - rise, Size, new Color(232, 196, 96, alpha));
         }
 
         if (_deathFade > 0f)

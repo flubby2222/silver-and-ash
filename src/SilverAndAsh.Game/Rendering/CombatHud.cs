@@ -44,11 +44,27 @@ internal static class CombatHud
         }
 
         DrawHealth(player.Health, player.MaxHealth);
+        DrawLevel(player.Level, player.Experience, player.ExperienceToNextLevel);
 
         if (player.IsConsecrated)
         {
             DrawConsecrated(player.ConsecratedSecondsLeft);
         }
+    }
+
+    /// <summary>The level and a thin golden bar of the experience towards the next one, above the health.</summary>
+    private static void DrawLevel(int level, int experience, int toNext)
+    {
+        const int Width = 180;
+        const int Height = 4;
+        var top = Raylib.GetScreenHeight() - 136;
+        var fraction = toNext > 0 ? Math.Clamp((float)experience / toNext, 0f, 1f) : 0f;
+
+        Raylib.DrawText(string.Create(CultureInfo.InvariantCulture, $"LV {level}"), 20, top, 16, Charged);
+        var barTop = top + 20;
+        Raylib.DrawRectangle(19, barTop - 1, Width + 2, Height + 2, Outline);
+        Raylib.DrawRectangle(20, barTop, Width, Height, Track);
+        Raylib.DrawRectangle(20, barTop, (int)MathF.Round(Width * fraction), Height, Charged);
     }
 
     /// <summary>Consecrated ammunition: its time left, above the health - pale and holy, blinking in the last 3 s.</summary>

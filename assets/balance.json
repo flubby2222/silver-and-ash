@@ -94,6 +94,13 @@
     "repathTime": 0.5                   // s between path searches
   },
 
+  "experience": {
+    "ghoul": 30,                        // experience for killing a ghoul (the killing hit counts)
+    "bat": 20,                          // for a bat
+    "firstLevel": 100,                  // needed from level 1 to 2 ...
+    "perLevel": 50                      // ... and this much more for every further level (100, 150, 200 ...)
+  },
+
   "drops": {
     "ghoulChance": 0.3,                 // a killed ghoul drops something in 30 % of cases (0 = never, 1 = always)
     "batChance": 0.15,                  // a killed bat in 15 %

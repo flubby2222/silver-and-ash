@@ -33,6 +33,9 @@ public sealed record Balance
     /// <summary>The bat's blood bolt: a flying projectile you can dodge.</summary>
     public BloodBoltBalance BloodBolt { get; init; } = new();
 
+    /// <summary>Experience for kills and how much each level needs.</summary>
+    public ExperienceBalance Experience { get; init; } = new();
+
     /// <summary>What killed enemies leave behind.</summary>
     public DropsBalance Drops { get; init; } = new();
 
@@ -44,6 +47,22 @@ public sealed record Balance
 
     /// <summary>Seconds between the death of all players and the restart of the level.</summary>
     public float RestartDelay { get; init; } = 2f;
+}
+
+/// <summary>Experience: what a kill is worth and how much each level needs.</summary>
+public sealed record ExperienceBalance
+{
+    /// <summary>Experience for killing a ghoul (the player who lands the killing hit gets it).</summary>
+    public int Ghoul { get; init; } = 30;
+
+    /// <summary>Experience for killing a bat.</summary>
+    public int Bat { get; init; } = 20;
+
+    /// <summary>Experience needed from level 1 to level 2.</summary>
+    public int FirstLevel { get; init; } = 100;
+
+    /// <summary>Every further level needs this much more than the one before (100, 150, 200 ...).</summary>
+    public int PerLevel { get; init; } = 50;
 }
 
 /// <summary>How often killed enemies drop a consumable.</summary>
