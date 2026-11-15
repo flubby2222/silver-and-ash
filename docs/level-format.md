@@ -178,3 +178,7 @@ Jede Tür des Generators wird im Spiel zu einer echten Tür ([`Door.cs`](../src/
 3. Beim **ersten Betreten** eines Kampf- oder Bossraums mit lebenden Gegnern fallen an **allen** seinen Türen Gitter herunter, die Gegner erwachen (Ereignis `RoomSealed`).
 4. Sind alle Gegner des Raums tot, ist er **geräumt** (`RoomCleared`). Die Gitter heben sich, die Tür, durch die man kam, **öffnet sich von selbst**, die anderen lassen sich mit F öffnen.
 5. Ein geräumter Raum versiegelt sich **nie wieder**. Ein Kampfraum ohne Gegner gilt beim Betreten sofort als geräumt.
+
+## Karte
+
+Ein Raum (auch ein Gang) gilt als **entdeckt**, sobald ein Spieler auf einem seiner Bodenfelder steht – die Türzelle allein reicht nicht. Die **Karte auf M** zeigt nur entdeckte Räume, dazu die Türen, die an einen entdeckten Raum grenzen, und die eigene Position mit Blickrichtung. Ein neuer Durchlauf beginnt ohne Entdeckungen. Handgebaute Level haben keine Räume, also auch keine Karte.

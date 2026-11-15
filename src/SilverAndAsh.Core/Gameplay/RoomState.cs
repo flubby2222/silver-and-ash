@@ -27,6 +27,9 @@ public sealed class RoomState
     /// <summary>The doors of this room (numbers in <see cref="GameWorld.Doors"/>).</summary>
     public IReadOnlyList<int> DoorIds { get; }
 
+    /// <summary>True once a player stood on one of its floor cells - from then on it shows on the map.</summary>
+    public bool IsDiscovered { get; private set; }
+
     /// <summary>True once a player stood in it with the whole body.</summary>
     public bool IsEntered { get; private set; }
 
@@ -41,6 +44,8 @@ public sealed class RoomState
 
     /// <summary>The enemies that started in this room.</summary>
     internal List<ITarget> Enemies { get; } = [];
+
+    internal void Discover() => IsDiscovered = true;
 
     internal void Enter() => IsEntered = true;
 

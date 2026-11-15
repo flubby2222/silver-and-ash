@@ -7,6 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- Karte auf **M** (halten): zeigt von oben die schon betretenen Räume und Gänge, ihre Türen (zu, offen, vergittert, Boss) und wo man steht und hinschaut. Das Spiel läuft dabei weiter
 - Endbildschirm „YOU DIED“ bzw. „VICTORY“ mit der Statistik des Durchlaufs (Zeit, getötete Ghule und Fledermäuse, Schaden ausgeteilt und genommen, erreichte Stufe, geräumte Räume, Seed) und der Wahl „New run“ / „Title“. Jeder Durchlauf wird außerdem als Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log` festgehalten
 - Titelbildschirm mit „Start“ und „Quit“
 - Esc-Menü: weiterspielen, Mausempfindlichkeit einstellen (bleibt gespeichert), zurück zum Titel, beenden. Solange es offen ist, steht das Spiel still

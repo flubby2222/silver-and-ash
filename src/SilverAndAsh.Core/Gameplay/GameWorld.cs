@@ -139,6 +139,15 @@ public sealed class GameWorld
     /// <summary>The rooms of a generated level and what happened in them (empty for hand-made levels).</summary>
     public IReadOnlyList<RoomState> Rooms => _rooms;
 
+    /// <summary>True if <paramref name="door"/> belongs to a discovered room - then it shows on the map.</summary>
+    public bool IsKnown(Door door)
+    {
+        ArgumentNullException.ThrowIfNull(door);
+
+        // Doors without rooms (a hand-made test level) never show on a map.
+        return _rooms.Count > 0 && (_rooms[door.RoomA].IsDiscovered || _rooms[door.RoomB].IsDiscovered);
+    }
+
     /// <summary>True while <paramref name="enemy"/> sleeps: it waits motionless until its room is entered (or it is hit).</summary>
     public bool IsAsleep(ITarget enemy)
     {
@@ -247,7 +256,14 @@ public sealed class GameWorld
     private void EnterRooms(Player player)
     {
         var cell = Level.ToGrid(player.Position.X, player.Position.Z);
-        if (!_roomOfCell.TryGetValue(cell, out var room) || room.IsEntered || TouchesDoorOf(room, player))
+        if (!_roomOfCell.TryGetValue(cell, out var room))
+        {
+            return;
+        }
+
+        // On the map from the first step onto its floor; entered (and maybe sealed) only with the whole body inside.
+        room.Discover();
+        if (room.IsEntered || TouchesDoorOf(room, player))
         {
             return;
         }
