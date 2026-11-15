@@ -25,6 +25,7 @@ public sealed class Player
         _bodies = bodies ?? (() => []);
         _player = balance.Player;
         _experience = balance.Experience;
+        _boons = balance.Boons;
         _consecratedFireRate = balance.ConsecratedAmmo.FireRateMultiplier;
         Position = level.PlayerStartPosition;
         PreviousPosition = Position;
@@ -79,8 +80,8 @@ public sealed class Player
     /// </summary>
     public void Look(PlayerInput input)
     {
-        // The dead do not look around.
-        if (!IsDead)
+        // The dead do not look around - and while a bonus is being chosen, the view stays still.
+        if (!IsDead && PendingBoons == 0)
         {
             View.ApplyMouse(input.Look);
         }
@@ -160,14 +161,57 @@ public sealed class Player
         {
             Experience -= ExperienceToNextLevel;
             Level++;
+            PendingBoons++;
             events.Add(new LevelUp(Id, Level));
         }
     }
 
     private readonly ExperienceBalance _experience;
 
+    /// <summary>Level ups whose bonus has not been chosen yet. While above 0, the world waits.</summary>
+    public int PendingBoons { get; private set; }
+
+    /// <summary>How often <see cref="Boon.Strength"/> was chosen - for the damage rule.</summary>
+    public int StrengthStacks { get; private set; }
+
+    /// <summary>
+    /// Takes one waiting bonus: applies <paramref name="boon"/> and reports <see cref="BoonChosen"/>. Returns false
+    /// (and does nothing) if no level up is waiting for a choice.
+    /// </summary>
+    public bool Choose(Boon boon, ICollection<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        if (PendingBoons == 0)
+        {
+            return false;
+        }
+
+        switch (boon)
+        {
+            case Boon.Vitality:
+                _bonusMaxHealth += _boons.VitalityHealth;
+                Health += _boons.VitalityHealth;
+                break;
+            case Boon.Strength:
+                StrengthStacks++;
+                break;
+            case Boon.Endurance:
+                Stamina.AddSegments(_boons.EnduranceSegments);
+                break;
+            default:
+                return false;
+        }
+
+        PendingBoons--;
+        events.Add(new BoonChosen(Id, boon));
+        return true;
+    }
+
+    private readonly BoonBalance _boons;
+    private int _bonusMaxHealth;
+
     /// <summary>The most health the player can have.</summary>
-    public int MaxHealth => _player.MaxHealth;
+    public int MaxHealth => _player.MaxHealth + _bonusMaxHealth;
 
     /// <summary>Top walking speed on the ground in m/s (for drawing, e.g. how much the weapons bob).</summary>
     public float WalkSpeed => _player.MaxSpeed;

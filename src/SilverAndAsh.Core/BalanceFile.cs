@@ -42,6 +42,7 @@ public static class BalanceFile
         "pistol.damage", "ghoul.attackDamage", "bat.biteDamage", "bat.spitAimBelowEyes", "bloodBolt.damage",
         "drops.ghoulChance", "drops.batChance", "drops.consecratedAmmoShare", "bloodVial.heal",
         "experience.ghoul", "experience.bat", "experience.perLevel",
+        "boons.vitalityHealth", "boons.strengthDamage", "boons.enduranceSegments",
     };
 
     /// <summary>Highest sensible values. A jump may at most bring the head up to the ceiling.</summary>

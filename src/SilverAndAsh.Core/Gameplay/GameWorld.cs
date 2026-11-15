@@ -328,7 +328,7 @@ public sealed class GameWorld
     /// </summary>
     private void Damage(ITarget target, Hit hit, Player attacker)
     {
-        var result = DamageRules.Calculate(hit);
+        var result = DamageRules.Calculate(hit with { Strength = attacker.StrengthStacks });
         var wasAlive = target.IsHittable;
         target.TakeDamage(result.Amount, _events, result.IsCritical);
 
@@ -348,6 +348,20 @@ public sealed class GameWorld
     public void Tick(PlayerInput input)
     {
         _events.Clear();
+
+        // A level up waits for its bonus: the world stands still until the choice comes in as input
+        // (online co-op rule 2 - everything that changes the game is tick input).
+        var choosing = Players.FirstOrDefault(player => player.PendingBoons > 0);
+        if (choosing is not null)
+        {
+            if (input.ChooseBoon is { } boon)
+            {
+                choosing.Choose(boon, _events);
+            }
+
+            return;
+        }
+
         Player.Tick(input);
         _events.AddRange(Player.Events);
 

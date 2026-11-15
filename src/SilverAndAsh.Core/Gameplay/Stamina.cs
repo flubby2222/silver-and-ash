@@ -23,13 +23,21 @@ public sealed class Stamina
     }
 
     /// <summary>Recharge ticks from empty to full - also the size of a full bar.</summary>
-    public int Capacity { get; }
+    public int Capacity { get; private set; }
 
     /// <summary>What one segment is worth: the cost of one jump or one dash.</summary>
     public int CostPerSegment { get; }
 
     /// <summary>How many segments a full bar has (for drawing).</summary>
     public int Segments => Capacity / CostPerSegment;
+
+    /// <summary>Makes the bar <paramref name="segments"/> segments longer - and fills them (a level-up bonus).</summary>
+    public void AddSegments(int segments)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(segments);
+        Capacity += segments * CostPerSegment;
+        _amount += segments * CostPerSegment;
+    }
 
     /// <summary>How full the bar is: 0 = empty, 1 = full.</summary>
     public float Fraction => (float)_amount / Capacity;

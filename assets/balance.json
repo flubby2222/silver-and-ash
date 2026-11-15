@@ -101,6 +101,12 @@
     "perLevel": 50                      // ... and this much more for every further level (100, 150, 200 ...)
   },
 
+  "boons": {
+    "vitalityHealth": 20,               // Vitality: +20 maximum health, healed at once
+    "strengthDamage": 0.15,             // Strength: +15 % damage with every weapon (chosen twice: +30 %)
+    "enduranceSegments": 1              // Endurance: +1 stamina segment
+  },
+
   "drops": {
     "ghoulChance": 0.3,                 // a killed ghoul drops something in 30 % of cases (0 = never, 1 = always)
     "batChance": 0.15,                  // a killed bat in 15 %

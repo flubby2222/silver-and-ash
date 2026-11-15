@@ -41,15 +41,16 @@ internal sealed class RaylibInput
 
     /// <summary>
     /// Reads the input of the current frame. Esc releases the mouse, a left click captures it again;
-    /// losing the window focus (e.g. Alt+Tab) releases it, too.
+    /// losing the window focus (e.g. Alt+Tab) releases it, too. While a level-up bonus is being chosen
+    /// (<paramref name="choosing"/>), a click belongs to the choice window and does not capture the mouse.
     /// </summary>
-    public PlayerInput Read()
+    public PlayerInput Read(bool choosing = false)
     {
         if (IsMouseCaptured && (Raylib.IsKeyPressed(KeyboardKey.Escape) || !Raylib.IsWindowFocused()))
         {
             ReleaseMouse();
         }
-        else if (!IsMouseCaptured && Raylib.IsMouseButtonPressed(MouseButton.Left))
+        else if (!IsMouseCaptured && !choosing && Raylib.IsMouseButtonPressed(MouseButton.Left))
         {
             CaptureMouse();
         }

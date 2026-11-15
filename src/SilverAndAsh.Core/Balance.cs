@@ -36,6 +36,9 @@ public sealed record Balance
     /// <summary>Experience for kills and how much each level needs.</summary>
     public ExperienceBalance Experience { get; init; } = new();
 
+    /// <summary>What the bonuses chosen after a level up give.</summary>
+    public BoonBalance Boons { get; init; } = new();
+
     /// <summary>What killed enemies leave behind.</summary>
     public DropsBalance Drops { get; init; } = new();
 
@@ -63,6 +66,19 @@ public sealed record ExperienceBalance
 
     /// <summary>Every further level needs this much more than the one before (100, 150, 200 ...).</summary>
     public int PerLevel { get; init; } = 50;
+}
+
+/// <summary>What each bonus chosen after a level up gives.</summary>
+public sealed record BoonBalance
+{
+    /// <summary>Vitality: this much more maximum health - and healed at once.</summary>
+    public int VitalityHealth { get; init; } = 20;
+
+    /// <summary>Strength: this much more damage with every weapon per choice (0.15 = +15 %; twice = +30 %).</summary>
+    public float StrengthDamage { get; init; } = 0.15f;
+
+    /// <summary>Endurance: this many more stamina segments (full ones).</summary>
+    public int EnduranceSegments { get; init; } = 1;
 }
 
 /// <summary>How often killed enemies drop a consumable.</summary>
