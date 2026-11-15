@@ -26,6 +26,8 @@ internal static class MapView
     private static readonly Color DoorBoss = new(210, 40, 44, 255);
     private static readonly Color DoorLocked = new(220, 180, 70, 255);
     private static readonly Color PlayerColor = new(230, 190, 90, 255);
+    private static readonly Color Vial = new(220, 40, 50, 255);
+    private static readonly Color VialRim = new(40, 8, 12, 255);
     private static readonly Color Heading = new(214, 204, 180, 255);
     private static readonly Color Hint = new(150, 150, 160, 255);
 
@@ -85,6 +87,15 @@ internal static class MapView
             var corner = ToScreen(door.X, door.Z);
             var inset = size * 0.15f;
             Raylib.DrawRectangleV(corner + new Vector2(inset, inset), new Vector2(size - 2 * inset, size - 2 * inset), color);
+        }
+
+        // Blood vials left behind: a small red drop with a dark rim.
+        foreach (var vial in world.KnownBloodVials)
+        {
+            var place = ToScreen(vial.Position.X / Level.CellSize, vial.Position.Z / Level.CellSize);
+            var radius = MathF.Max(size * 0.28f, 3f);
+            Raylib.DrawCircleV(place, radius + 1f, VialRim);
+            Raylib.DrawCircleV(place, radius, Vial);
         }
 
         DrawPlayer(player, ToScreen, size);

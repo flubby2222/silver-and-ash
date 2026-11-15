@@ -199,4 +199,4 @@ Kisten setzt [`ChestPlacement`](../src/SilverAndAsh.Core/World/ChestPlacement.cs
 
 ## Karte
 
-Ein Raum (auch ein Gang) gilt als **entdeckt**, sobald ein Spieler auf einem seiner Bodenfelder steht – die Türzelle allein reicht nicht. Die **Karte auf M** zeigt nur entdeckte Räume, dazu die Türen, die an einen entdeckten Raum grenzen, und die eigene Position mit Blickrichtung. Ein neuer Durchlauf beginnt ohne Entdeckungen. Handgebaute Level haben keine Räume, also auch keine Karte.
+Ein Raum (auch ein Gang) gilt als **entdeckt**, sobald ein Spieler auf einem seiner Bodenfelder steht – die Türzelle allein reicht nicht. Die **Karte auf M** zeigt nur entdeckte Räume, dazu die Türen, die an einen entdeckten Raum grenzen, **liegen gelassene Blutphiolen** in entdeckten Räumen (roter Punkt, `GameWorld.KnownBloodVials`) und die eigene Position mit Blickrichtung. Ein neuer Durchlauf beginnt ohne Entdeckungen. Handgebaute Level haben keine Räume, also auch keine Karte.

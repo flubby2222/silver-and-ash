@@ -36,6 +36,90 @@ public class MapDiscoveryTests
         }
     }
 
+    // ---- Blood vials lying around ----------------------------------------------------------------------------------
+
+    /// <summary>The same rooms with a ghoul in room 1 that always drops a blood vial (or, with <c>ammo</c>, ammunition).</summary>
+    private static GameWorld WorldWithDrop(bool ammo = false)
+    {
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, Rows(0, 0), [], []),
+            new(1, RoomKind.Combat, "arena", 0, 2, 5, 4, 1, Rows(2, 5), [(2, 4)], []),
+            new(2, RoomKind.Corridor, "corridor", 0, 7, 5, 2, 2, Rows(7, 8), [], []),
+        ];
+        LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
+        var balance = Balance.Default with
+        {
+            Drops = new DropsBalance { GhoulChance = 1f, BatChance = 1f, ConsecratedAmmoShare = ammo ? 1f : 0f },
+        };
+        var map = "#.P.#\n##.##\n#...#\n#...#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
+        return new GameWorld(LevelParser.Parse(map), 1, balance, doors, rooms);
+    }
+
+    [Fact]
+    public void A_blood_vial_in_a_room_not_yet_discovered_is_not_on_the_map()
+    {
+        var world = WorldWithDrop();
+        world.Ghouls[0].TakeDamage(10_000, []);
+
+        Run(world, PlayerInput.None, 5);
+
+        Assert.Single(world.Pickups);
+        Assert.Empty(world.KnownBloodVials);
+    }
+
+    [Fact]
+    public void A_blood_vial_in_a_discovered_room_is_on_the_map()
+    {
+        var world = WorldWithDrop();
+        world.Ghouls[0].TakeDamage(10_000, []);
+        Run(world, PressF, 1);
+
+        Run(world, Forward, 120, () => world.Rooms[1].IsDiscovered);
+
+        Assert.True(world.Rooms[1].IsDiscovered);
+        Assert.Same(world.Pickups[0], Assert.Single(world.KnownBloodVials));
+    }
+
+    [Fact]
+    public void A_blood_vial_taken_is_gone_from_the_map()
+    {
+        var world = WorldWithDrop();
+        world.Player.TakeDamage(50, []);
+        world.Ghouls[0].TakeDamage(10_000, []);
+        Run(world, PressF, 1);
+
+        Run(world, Forward, 3 * SimulationClock.TicksPerSecond, () => world.Pickups.Count == 0);
+
+        Assert.Empty(world.Pickups);
+        Assert.Empty(world.KnownBloodVials);
+    }
+
+    [Fact]
+    public void Consecrated_ammunition_is_not_on_the_map()
+    {
+        var world = WorldWithDrop(ammo: true);
+        world.Ghouls[0].TakeDamage(10_000, []);
+        Run(world, PressF, 1);
+
+        Run(world, Forward, 120, () => world.Rooms[1].IsDiscovered);
+
+        Assert.Equal(ConsumableKind.ConsecratedAmmo, Assert.Single(world.Pickups).Kind);
+        Assert.Empty(world.KnownBloodVials);
+    }
+
+    [Fact]
+    public void Hand_made_levels_show_no_vials()
+    {
+        var world = new GameWorld(LevelParser.Parse("P\n.\nG"), balance: Balance.Default with { Drops = new DropsBalance { GhoulChance = 1f, ConsecratedAmmoShare = 0f } });
+        world.Ghouls[0].TakeDamage(10_000, []);
+
+        Run(world, PlayerInput.None, 2);
+
+        Assert.Single(world.Pickups);
+        Assert.Empty(world.KnownBloodVials);
+    }
+
     [Fact]
     public void Before_the_first_tick_nothing_is_discovered()
     {

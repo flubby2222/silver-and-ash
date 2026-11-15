@@ -489,6 +489,15 @@ public sealed class GameWorld
     /// <summary>Consumables lying in the level (taken ones are removed after each tick).</summary>
     public IReadOnlyList<Pickup> Pickups => _pickups;
 
+    /// <summary>
+    /// Blood vials lying in rooms already discovered - the map shows them, so a vial left behind is easy to find again.
+    /// Hand-made levels have no rooms and so no map.
+    /// </summary>
+    public IEnumerable<Pickup> KnownBloodVials => _pickups.Where(pickup =>
+        pickup.Kind == ConsumableKind.BloodVial
+        && _roomOfCell.TryGetValue(Level.ToGrid(pickup.Position.X, pickup.Position.Z), out var room)
+        && room.IsDiscovered);
+
     /// <summary>Silver and keys lying in the level (taken ones are removed after each tick).</summary>
     public IReadOnlyList<Loot> Loot => _loot;
 
