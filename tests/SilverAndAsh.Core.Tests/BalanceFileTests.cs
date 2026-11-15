@@ -186,6 +186,50 @@ public class BalanceFileTests
     }
 
     [Fact]
+    public void A_chest_tier_written_in_part_keeps_the_other_standards_of_its_own_tier()
+    {
+        var result = BalanceFile.Parse("""{ "chests": { "guard": { "lockedChance": 0.5 } } }""");
+
+        Assert.Equal(Balance.Default.Chests.Guard with { LockedChance = 0.5f }, result.Balance.Chests.Guard);
+        Assert.Equal(Balance.Default.Chests.King, result.Balance.Chests.King);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Theory]
+    [InlineData("""{ "chests": { "combatRoomChance": 1.5 } }""", "chests.combatRoomChance")]
+    [InlineData("""{ "chests": { "king": { "lockedChance": 2 } } }""", "chests.king.lockedChance")]
+    [InlineData("""{ "chests": { "beggar": { "bloodVialChance": 1.1 } } }""", "chests.beggar.bloodVialChance")]
+    [InlineData("""{ "chests": { "guard": { "silverMin": -5 } } }""", "chests.guard.silverMin")]
+    public void Wrong_chest_values_fall_back_to_their_tiers_standard(string json, string name)
+    {
+        var result = BalanceFile.Parse(json);
+
+        Assert.Equal(Balance.Default.Chests, result.Balance.Chests);
+        Assert.Contains(result.Warnings, w => w.Contains(name));
+    }
+
+    [Fact]
+    public void More_minimum_than_maximum_chest_silver_falls_back_to_both_standards_of_that_tier()
+    {
+        var result = BalanceFile.Parse("""{ "chests": { "king": { "silverMin": 90, "silverMax": 50, "lockedChance": 0.2 } } }""");
+
+        Assert.Equal(Balance.Default.Chests.King with { LockedChance = 0.2f }, result.Balance.Chests.King);
+        Assert.Contains(result.Warnings, w => w.Contains("chests.king.silverMin") && w.Contains("chests.king.silverMax"));
+    }
+
+    [Fact]
+    public void Chests_may_hold_nothing_and_never_stand_in_combat_rooms()
+    {
+        var result = BalanceFile.Parse("""
+            { "chests": { "combatRoomChance": 0, "vampire": { "lockedChance": 0, "silverMin": 0, "silverMax": 0, "bloodVialChance": 0 } } }
+            """);
+
+        Assert.Equal(0f, result.Balance.Chests.CombatRoomChance);
+        Assert.Equal(new ChestTierBalance(), result.Balance.Chests.Vampire);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
     public void Keys_may_never_drop()
     {
         var result = BalanceFile.Parse("""{ "keys": { "roomChance": 0, "enemyChance": 0 } }""");

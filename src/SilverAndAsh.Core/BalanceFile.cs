@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core;
@@ -25,6 +26,10 @@ public static class BalanceFile
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
+
+        // Fill the objects the standard values already made instead of making new ones: so a chest tier written with
+        // only some of its values keeps the other standards of its own tier (each tier has different ones).
+        PreferredObjectCreationHandling = JsonObjectCreationHandling.Populate,
     };
 
     private static readonly JsonDocumentOptions DocumentOptions = new()
@@ -41,7 +46,8 @@ public static class BalanceFile
         "blade.damage", "blade.chargeStaminaSegments", "blade.coneStartBehind",
         "pistol.damage", "ghoul.attackDamage", "bat.biteDamage", "bat.spitAimBelowEyes", "bloodBolt.damage",
         "drops.ghoulChance", "drops.batChance", "drops.consecratedAmmoShare", "bloodVial.heal",
-        "keys.roomChance", "keys.enemyChance", "silver.ghoulChance", "silver.batChance", "silver.ghoulMin", "silver.ghoulMax", "silver.batMin", "silver.batMax",
+        "keys.roomChance", "keys.enemyChance", "chests.combatRoomChance",
+        "chests.beggar.combatShareNear", "chests.beggar.combatShareFar", "chests.beggar.lockedChance", "chests.beggar.silverMin", "chests.beggar.silverMax", "chests.beggar.bloodVialChance", "chests.guard.combatShareNear", "chests.guard.combatShareFar", "chests.guard.lockedChance", "chests.guard.silverMin", "chests.guard.silverMax", "chests.guard.bloodVialChance", "chests.king.combatShareNear", "chests.king.combatShareFar", "chests.king.lockedChance", "chests.king.silverMin", "chests.king.silverMax", "chests.king.bloodVialChance", "chests.vampire.combatShareNear", "chests.vampire.combatShareFar", "chests.vampire.lockedChance", "chests.vampire.silverMin", "chests.vampire.silverMax", "chests.vampire.bloodVialChance", "silver.ghoulChance", "silver.batChance", "silver.ghoulMin", "silver.ghoulMax", "silver.batMin", "silver.batMax",
         "experience.ghoul", "experience.bat",
         "boons.staminaRegen", "boons.health", "boons.damage", "boons.experience",
         "layout.corridorChance", "layout.maxLoops",
@@ -61,6 +67,15 @@ public static class BalanceFile
         ["silver.ghoulChance"] = 1,
         ["keys.roomChance"] = 1,
         ["keys.enemyChance"] = 1,
+        ["chests.combatRoomChance"] = 1,
+        ["chests.beggar.lockedChance"] = 1,
+        ["chests.beggar.bloodVialChance"] = 1,
+        ["chests.guard.lockedChance"] = 1,
+        ["chests.guard.bloodVialChance"] = 1,
+        ["chests.king.lockedChance"] = 1,
+        ["chests.king.bloodVialChance"] = 1,
+        ["chests.vampire.lockedChance"] = 1,
+        ["chests.vampire.bloodVialChance"] = 1,
         ["silver.batChance"] = 1,
         ["layout.corridorChance"] = 1,
         ["difficulty.ghoulShareNear"] = 1,
@@ -84,6 +99,10 @@ public static class BalanceFile
         ("layout", "combatRoomsMin", "combatRoomsMax"),
         ("silver", "ghoulMin", "ghoulMax"),
         ("silver", "batMin", "batMax"),
+        ("chests.beggar", "silverMin", "silverMax"),
+        ("chests.guard", "silverMin", "silverMax"),
+        ("chests.king", "silverMin", "silverMax"),
+        ("chests.vampire", "silverMin", "silverMax"),
     ];
 
     /// <summary>Reads the file at <paramref name="path"/>. A missing or unreadable file gives the standard values.</summary>
@@ -214,9 +233,16 @@ public static class BalanceFile
     {
         foreach (var (sectionName, minName, maxName) in Ranges)
         {
-            var sectionProperty = SettableProperties(typeof(Balance)).First(p => JsonName(p) == sectionName);
-            var section = sectionProperty.GetValue(balance)!;
-            var standard = sectionProperty.GetValue(Balance.Default)!;
+            // The section may lie deeper, e.g. "chests.guard".
+            object section = balance;
+            object standard = Balance.Default;
+            foreach (var part in sectionName.Split('.'))
+            {
+                var property = SettableProperties(section.GetType()).First(p => JsonName(p) == part);
+                section = property.GetValue(section)!;
+                standard = property.GetValue(standard)!;
+            }
+
             var min = SettableProperties(section.GetType()).First(p => JsonName(p) == minName);
             var max = SettableProperties(section.GetType()).First(p => JsonName(p) == maxName);
             if (Convert.ToDouble(min.GetValue(section), CultureInfo.InvariantCulture) > Convert.ToDouble(max.GetValue(section), CultureInfo.InvariantCulture))

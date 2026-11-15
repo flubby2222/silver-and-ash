@@ -9,13 +9,14 @@ namespace SilverAndAsh.Core.World;
 /// </list>
 /// The outer ring of a template is always wall or door slot. Rooms with a single entrance (the boss room) have
 /// exactly one door slot.
-/// 'G' and 'B' mark places for enemies, 'P' the player start (only in the start room).
+/// 'G' and 'B' mark places for enemies, 'C' places for a chest (only in combat rooms), 'P' the player start (only in
+/// the start room).
 /// Training dummies ('D') are not allowed in rooms. The ceiling height comes from the kind of room.
 /// Full description: docs/level-format.md.
 /// </summary>
 public static class RoomTemplateParser
 {
-    private const string AllowedSymbols = "'#', ' ', '.', '+', 'P', '1', '2', '3', '_', 'G', 'B'";
+    private const string AllowedSymbols = "'#', ' ', '.', '+', 'P', '1', '2', '3', '_', 'G', 'B', 'C'";
 
     /// <summary>
     /// Reads every template below <paramref name="directory"/>. Each sub-folder names the kind of room
@@ -70,6 +71,7 @@ public static class RoomTemplateParser
         var doorCells = new List<(int X, int Z)>();
         var ghoulSlots = new List<(int X, int Z)>();
         var batSlots = new List<(int X, int Z)>();
+        var chestSlots = new List<(int X, int Z)>();
         (int X, int Z)? playerStart = null;
 
         for (var z = 0; z < depth; z++)
@@ -77,7 +79,12 @@ public static class RoomTemplateParser
             for (var x = 0; x < width; x++)
             {
                 var symbol = x < lines[z].Length ? lines[z][x] : '#';
-                var floor = symbol == 'D' ? null : LevelParser.FloorHeightOf(symbol);
+                var floor = symbol switch
+                {
+                    'D' => null,
+                    'C' => Cell.DefaultFloorHeight,
+                    _ => LevelParser.FloorHeightOf(symbol),
+                };
 
                 if (symbol is '#' or ' ' or '+')
                 {
@@ -102,6 +109,11 @@ public static class RoomTemplateParser
                         break;
                     case 'B':
                         batSlots.Add((x, z));
+                        break;
+                    case 'C' when kind != RoomKind.Combat:
+                        throw Error(name, x, z, $"Only combat rooms may have a chest place 'C' (column {x + 1}).");
+                    case 'C':
+                        chestSlots.Add((x, z));
                         break;
                     case 'P' when kind != RoomKind.Start:
                         throw Error(name, x, z, $"Only the start room may have a player start 'P' (column {x + 1}).");
@@ -136,7 +148,7 @@ public static class RoomTemplateParser
 
         CheckFloorIsConnected(cells, name);
 
-        return new RoomTemplate(name, kind, cells, doorSlots, ghoulSlots, batSlots, playerStart);
+        return new RoomTemplate(name, kind, cells, doorSlots, ghoulSlots, batSlots, chestSlots, playerStart);
     }
 
     private static DoorSlot ToDoorSlot(Cell[,] cells, (int X, int Z) cell, RoomKind kind, string name)

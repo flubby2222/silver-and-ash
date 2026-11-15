@@ -103,6 +103,7 @@ Regeln für Vorlagen:
   #.....#    #.....#
   ```
 - `G` und `B` sind **Plätze für Gegner** – wie viele davon wirklich besetzt werden, entscheidet später die Schwierigkeit.
+- `C` ist ein **Kistenplatz** (Boden), nur in Kampfräumen (später auch Schatzräume). Ob dort wirklich eine Kiste steht, entscheidet der Seed (siehe „Kisten“). Jede Kampf-Vorlage hat einen.
 - `P` gibt es **nur im Startraum**, Trainingspuppen (`D`) gar nicht.
 - Der Boden muss **zusammenhängen** – kein Bodenfeld darf abgeschnitten sein.
 - Auf Ebene 0 gibt es noch **keine Höhenunterschiede** (keine `1`/`2`/`3`/`_`), auch wenn der Parser sie schon versteht.
@@ -150,9 +151,19 @@ Jede Tür des Generators wird im Spiel zu einer echten Tür ([`Door.cs`](../src/
 
 - **Alle Türen starten geschlossen.** Eine geschlossene Tür füllt ihre Türzelle aus. Die Welt behandelt diese Zelle dann als Wand, deshalb blockiert sie Laufen, Sicht der Gegner, Schüsse, Blutgeschosse und die Wegsuche der Gegner, ganz ohne Sonderregeln.
 - **F** öffnet die Tür, auf die man schaut, aus höchstens 2 m (von den Augen bis zur Türfläche). Dafür erscheint der Hinweis „[F] Open“. Offen bleibt offen; ein neuer Durchlauf beginnt wieder mit geschlossenen Türen.
-- **Arten:** normal (Holz) und Boss (die Tür zum Bossraum). Verschlossen (Schlüssel, v0.9) ist schon vorgesehen.
+- **Arten:** normal (Holz), Boss (die Tür zum Bossraum) und verschlossen (Eisen mit Vorhängeschloss: F öffnet sie nur mit Schlüssel und verbraucht einen).
 - **Gitter:** Jede Tür kann zusätzlich **vergittert** sein (Arena, siehe unten). Dann blockiert sie, auch wenn sie offen ist, und F wirkt nicht.
-- F ist die **eine** Interaktionstaste. Alles, womit man interagieren kann, ist ein `IInteractable` (heute nur Türen, später Kisten, Schlösser, Personen).
+- F ist die **eine** Interaktionstaste. Alles, womit man interagieren kann, ist ein `IInteractable` (heute Türen und Kisten, später Personen).
+
+## Kisten
+
+Kisten setzt [`ChestPlacement`](../src/SilverAndAsh.Core/World/ChestPlacement.cs) nach den Gegnern auf die Kistenplätze `C` (ADR 0006):
+
+- Etwa **jeder 4. Kampfraum** bekommt eine Kiste (`chests.combatRoomChance`). Sie **steigt aus dem Boden, wenn der Raum geräumt ist**.
+- **Stufe:** Beggar's, Guard's, King's oder Vampire's Chest. Im nächsten Kampfraum gelten die `combatShareNear`-Anteile, im entferntesten die `combatShareFar`-Anteile, dazwischen gleitend. Weiter hinten wird es also etwas besser.
+- **Verschluss und Inhalt** (Silber, vielleicht eine Blutphiole) werden je Stufe gleich beim Bauen der Ebene gewürfelt: **gleicher Seed = gleiche Kisten**, egal wie man spielt.
+- **Öffnen** mit F (aus der Nähe auf die Kiste schauen). Eine verschlossene Kiste braucht einen Schlüssel. Der Inhalt springt zum Spieler heraus und wird durch Drüberlaufen aufgenommen; die offene Kiste bleibt leer stehen.
+- Alle Werte stehen in `balance.json` unter `chests`, pro Stufe ein eigener Block.
 
 ## Arenen und Schwierigkeit
 
