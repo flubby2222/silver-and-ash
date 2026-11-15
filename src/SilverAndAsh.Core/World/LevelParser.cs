@@ -61,16 +61,12 @@ public static class LevelParser
             for (var x = 0; x < width; x++)
             {
                 var symbol = x < line.Length ? line[x] : '#';
-                cells[x, z] = symbol switch
-                {
-                    '#' or ' ' => Cell.Wall,
-                    '.' => Cell.Floor,
-                    'P' or 'D' or 'G' or 'B' => Cell.Floor,
-                    '1' or '2' or '3' => FloorAt((symbol - '0') * PlatformStep),
-                    '_' => FloorAt(PitFloorHeight),
-                    _ => throw new LevelFormatException(
-                        lineNumber, $"Unknown symbol '{symbol}' in column {x + 1}. Allowed: {AllowedSymbols}."),
-                };
+                cells[x, z] = symbol is '#' or ' '
+                    ? Cell.Wall
+                    : FloorHeightOf(symbol) is { } floor
+                        ? new Cell(false, floor, Cell.DefaultCeilingHeight)
+                        : throw new LevelFormatException(
+                            lineNumber, $"Unknown symbol '{symbol}' in column {x + 1}. Allowed: {AllowedSymbols}.");
 
                 if (symbol == 'D')
                 {
@@ -108,6 +104,15 @@ public static class LevelParser
         return new Level(cells, playerStart.X, playerStart.Z, dummyCells, ghoulCells, batCells);
     }
 
-    /// <summary>A walkable cell with its floor at <paramref name="floorHeight"/> and the standard ceiling.</summary>
-    private static Cell FloorAt(float floorHeight) => new(false, floorHeight, Cell.DefaultCeilingHeight);
+    /// <summary>
+    /// The floor height of a walkable symbol ('.', 'P', 'D', 'G', 'B', platforms, pit),
+    /// or null if the symbol is not a walkable cell. Shared with <see cref="RoomTemplateParser"/>.
+    /// </summary>
+    internal static float? FloorHeightOf(char symbol) => symbol switch
+    {
+        '.' or 'P' or 'D' or 'G' or 'B' => Cell.DefaultFloorHeight,
+        '1' or '2' or '3' => (symbol - '0') * PlatformStep,
+        '_' => PitFloorHeight,
+        _ => null,
+    };
 }
