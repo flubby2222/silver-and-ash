@@ -61,7 +61,8 @@ public static class BalanceReport
         var floorCells = rooms.Sum(room => room.FloorCells.Count);
 
         var experience = (ghouls * balance.Experience.Ghoul) + (bats * balance.Experience.Bat);
-        var enemyHealth = (ghouls * balance.Ghoul.MaxHealth) + (bats * balance.Bat.MaxHealth);
+        var gorms = level.Level.BossPositions.Count;
+        var enemyHealth = (ghouls * balance.Ghoul.MaxHealth) + (bats * balance.Bat.MaxHealth) + (gorms * balance.Gorm.MaxHealth);
 
         static double Average(int min, int max) => (min + max) / 2.0;
         var silverFromEnemies = (ghouls * (double)balance.Silver.GhoulChance * Average(balance.Silver.GhoulMin, balance.Silver.GhoulMax))
@@ -96,7 +97,8 @@ public static class BalanceReport
             new(Enemies, "Enemies", enemies),
             new(Enemies, "Budget per combat room", combatRooms.Count == 0 ? 0 : combatRooms.Average(room => EnemyPlacement.BudgetOf(room, rooms, balance.Difficulty))),
             new(Enemies, "Enemies per combat room", combatRooms.Count == 0 ? 0 : combatRooms.Average(room => enemyCells.Count(room.FloorCells.Contains))),
-            new(Enemies, "Enemy health", enemyHealth),
+            new(Enemies, "Gorm", gorms),
+            new(Enemies, "Enemy health (with Gorm)", enemyHealth),
             new(Enemies, "Experience", experience),
             new(Enemies, "Player level reached", LevelReached(experience, balance.Experience)),
 

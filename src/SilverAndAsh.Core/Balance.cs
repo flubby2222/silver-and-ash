@@ -27,6 +27,9 @@ public sealed record Balance
     /// <summary>The ghoul: a crawling enemy.</summary>
     public GhoulBalance Ghoul { get; init; } = new();
 
+    /// <summary>Gorm, the Chained: the troll, boss of level 0 (decision record 0007).</summary>
+    public GormBalance Gorm { get; init; } = new();
+
     /// <summary>The vampire bat: a small flying enemy.</summary>
     public BatBalance Bat { get; init; } = new();
 
@@ -288,8 +291,8 @@ public sealed record DifficultyBalance
     /// <summary>Budget of the farthest combat room.</summary>
     public int BudgetFar { get; init; } = 20;
 
-    /// <summary>Budget of the boss room.</summary>
-    public int BudgetBoss { get; init; } = 22;
+    /// <summary>Budget of the boss room for enemies besides the boss (0 = the boss fights alone).</summary>
+    public int BudgetBoss { get; init; }
 
     /// <summary>What a ghoul costs.</summary>
     public int GhoulCost { get; init; } = 2;
@@ -473,6 +476,34 @@ public sealed record DummyBalance
 
     /// <summary>Seconds it lies on the ground before it stands up again.</summary>
     public float DownTime { get; init; } = 3f;
+}
+
+/// <summary>Balancing values of Gorm, the Chained (decision record 0007). His attacks come with issue #165.</summary>
+public sealed record GormBalance
+{
+    /// <summary>His health.</summary>
+    public int MaxHealth { get; init; } = 1600;
+
+    /// <summary>Walking speed in m/s - slower than the player.</summary>
+    public float Speed { get; init; } = 2.5f;
+
+    /// <summary>He stops walking this close to the player (metres, middle to middle).</summary>
+    public float StopDistance { get; init; } = 3f;
+
+    /// <summary>A pistol shot at his head does this many times the damage.</summary>
+    public float HeadMultiplier { get; init; } = 1.5f;
+
+    /// <summary>Seconds between path searches.</summary>
+    public float RepathTime { get; init; } = 0.5f;
+
+    /// <summary>Least silver he leaves behind.</summary>
+    public int SilverMin { get; init; } = 100;
+
+    /// <summary>Most silver he leaves behind.</summary>
+    public int SilverMax { get; init; } = 150;
+
+    /// <summary>Seconds the spiral staircase takes to rise after his death.</summary>
+    public float StairsRiseTime { get; init; } = 3f;
 }
 
 /// <summary>Balancing values of the ghoul.</summary>

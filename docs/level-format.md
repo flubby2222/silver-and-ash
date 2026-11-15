@@ -17,6 +17,7 @@ Level sind einfache Textdateien in `assets/levels/`. **Ein Zeichen = eine Zelle*
 | `D` | Boden mit **Trainingspuppe** in der Mitte (beliebig oft) | 0 m | 3,5 m |
 | `G` | Boden, auf dem ein **Ghul** startet (beliebig oft); er schaut zum Spielerstart | 0 m | 3,5 m |
 | `B` | Boden, über dem eine **Vampirfledermaus** schwebt (beliebig oft), ca. 2,2 m hoch und immer mit Abstand zur Decke | 0 m | 3,5 m |
+| `T` | Boden, auf dem **Gorm** (der Troll, Boss) startet; er schaut zum Spielerstart | 0 m | 3,5 m |
 
 ## Regeln
 
@@ -53,7 +54,7 @@ Eine kleine Treppe nach oben (`123`) und eine Grube (`___`).
 dotnet run --project src/SilverAndAsh.Game -- --seed 123
 ```
 
-**Sieg (vorläufig):** Ist der Bossraum geräumt, ist der Durchlauf gewonnen. Troll und Wendeltreppe kommen in v0.10.
+**Sieg:** Im Bossraum wartet **Gorm, the Chained** (ADR 0007). Ist er tot, ist der Bossraum geräumt: In seiner Mitte fährt in 3 s eine **Wendeltreppe** aus dem Boden. **„[F] Climb the stairs“** gewinnt den Durchlauf.
 
 **Ende eines Durchlaufs:** Nach dem Tod (2 s später) bzw. dem Sieg (2 s später) erscheint „YOU DIED“ / „VICTORY“ mit der Statistik des Durchlaufs und der Wahl „New run“ / „Title“. Die Statistik wird außerdem als Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log` geschrieben.
 
@@ -107,6 +108,7 @@ Regeln für Vorlagen:
 - **Schatzräume** (`assets/rooms/treasure/`) und **Secret Rooms** (`assets/rooms/secret/`) haben **genau einen** Türplatz, **keine** Gegnerplätze und **mindestens einen** Kistenplatz.
 - Sie sind **Schutzräume**: Gegner betreten sie nie, auch nicht ihre Tür, und sehen keinen Spieler darin. Für Bewegung, Sicht und Wegsuche der Gegner sind diese Felder Wand (`GameWorld.EnemyLevel`).
 - `P` gibt es **nur im Startraum**, Trainingspuppen (`D`) gar nicht.
+- `T` ist **Gorms Platz** und nur im Bossraum erlaubt, höchstens einmal. Fehlt er, steht Gorm auf dem Feld nahe der Raummitte. Die Raummitte selbst bleibt frei für die Treppe.
 - Der Boden muss **zusammenhängen** – kein Bodenfeld darf abgeschnitten sein.
 - Auf Ebene 0 gibt es noch **keine Höhenunterschiede** (keine `1`/`2`/`3`/`_`), auch wenn der Parser sie schon versteht.
 - Der Generator darf Vorlagen **drehen** (in Vierteldrehungen) und **spiegeln** – Türplätze drehen sich mit. Eine Vorlage muss also nicht in jeder Ausrichtung angelegt werden.
@@ -177,7 +179,7 @@ Kisten setzt [`ChestPlacement`](../src/SilverAndAsh.Core/World/ChestPlacement.cs
 **Gegner aufstellen** ([`EnemyPlacement`](../src/SilverAndAsh.Core/World/EnemyPlacement.cs)):
 
 - Nur **Kampf-** und **Bossräume** bekommen Gegner. Startraum, Gänge, Schatz- und Secret-Räume bleiben leer.
-- **Spawn-Budget:** Jeder Kampfraum bekommt ein Budget. Es steigt mit dem **Abstand zum Start**: `budgetNear` im nächsten Kampfraum, `budgetFar` im entferntesten, dazwischen gleichmäßig. Der Bossraum hat sein eigenes (`budgetBoss`).
+- **Spawn-Budget:** Jeder Kampfraum bekommt ein Budget. Es steigt mit dem **Abstand zum Start**: `budgetNear` im nächsten Kampfraum, `budgetFar` im entferntesten, dazwischen gleichmäßig. Der Bossraum hat sein eigenes (`budgetBoss`, Standard 0: Gorm kämpft allein).
 - Der Raum **kauft** davon Gegner: Ein Ghul kostet `ghoulCost`, eine Fledermaus `batCost`. Welche Art als Nächstes kommt, entscheiden **Gewichte**, die ebenfalls von „near“ nach „far“ gleiten; weiter hinten gibt es mehr Fledermäuse.
 - **Freie Plätze:** Jeder Gegner steht auf einem zufälligen Bodenfeld des Raums, mindestens `doorDistance` (4 m) von seinen Türen und `spacing` (2,5 m) von anderen Gegnern entfernt. Gibt es keinen freien Platz mehr, endet der Einkauf.
 - So sieht derselbe Raum in jedem Durchlauf anders aus. Jeder Kampfraum bekommt **mindestens einen** Gegner. **Gleicher Seed = gleiche Gegner.**

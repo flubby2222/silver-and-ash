@@ -8,7 +8,8 @@ namespace SilverAndAsh.Core.World;
 /// boss room has its own. The room buys enemies with it - each kind has a cost - and the kind is drawn by weights that
 /// also go from "near" to "far". Every enemy stands on a random free floor cell of the room, keeping away from its
 /// doors and from the other enemies. So the same room looks different every run. Every combat room gets at least one
-/// enemy; start rooms, corridors, treasure and secret rooms stay empty. Same seed = same enemies.
+/// enemy; start rooms, corridors, treasure and secret rooms stay empty. The boss room holds its boss (Gorm) on his
+/// place 'T' and - only if its budget is above 0 - more enemies. Same seed = same enemies.
 /// </summary>
 public static class EnemyPlacement
 {
@@ -27,6 +28,7 @@ public static class EnemyPlacement
         var random = new Random(generated.Seed);
         var ghouls = new List<(int X, int Z)>();
         var bats = new List<(int X, int Z)>();
+        var bosses = new List<(int X, int Z)>();
         foreach (var room in generated.Rooms.Where(room => room.Kind is RoomKind.Combat or RoomKind.Boss))
         {
             var far = FarShare(room, generated.Rooms);
@@ -34,12 +36,19 @@ public static class EnemyPlacement
             var ghoulWeight = Lerp(difficulty.GhoulWeightNear, difficulty.GhoulWeightFar, far);
             var batWeight = Lerp(difficulty.BatWeightNear, difficulty.BatWeightFar, far);
 
+            // The boss stands on his place ('T') - or, without one, on the floor cell nearest to the room's middle.
+            if (room.Kind == RoomKind.Boss)
+            {
+                bosses.Add(room.BossSlots is { Count: > 0 } slots ? slots[0] : Middle(room));
+            }
+
             var doors = generated.Doors
                 .Where(door => door.RoomA == room.Index || door.RoomB == room.Index)
                 .Select(door => (door.X, door.Z))
                 .ToList();
             var free = Shuffled(room.FloorCells, random)
                 .Where(cell => doors.All(door => Metres(cell, door) >= difficulty.DoorDistance))
+                .Where(cell => !bosses.Contains(cell))
                 .ToList();
             var placed = new List<((int X, int Z) Cell, Kind Kind)>();
 
@@ -73,7 +82,7 @@ public static class EnemyPlacement
             bats.AddRange(placed.Where(enemy => enemy.Kind == Kind.Bat).Select(enemy => enemy.Cell));
         }
 
-        return generated with { Level = generated.Level.WithEnemies(ghouls, bats) };
+        return generated with { Level = generated.Level.WithEnemies(ghouls, bats, bosses) };
     }
 
     /// <summary>
@@ -119,6 +128,19 @@ public static class EnemyPlacement
         }
 
         return random.NextDouble() * (ghoul + bat) < ghoul ? Kind.Ghoul : Kind.Bat;
+    }
+
+    /// <summary>The floor cell of <paramref name="room"/> nearest to its middle.</summary>
+    public static (int X, int Z) Middle(PlacedRoom room)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+        var x = room.FloorCells.Average(cell => cell.X);
+        var z = room.FloorCells.Average(cell => cell.Z);
+        return room.FloorCells
+            .OrderBy(cell => ((cell.X - x) * (cell.X - x)) + ((cell.Z - z) * (cell.Z - z)))
+            .ThenBy(cell => cell.Z)
+            .ThenBy(cell => cell.X)
+            .First();
     }
 
     private static float Lerp(float near, float far, float share) => near + ((far - near) * share);

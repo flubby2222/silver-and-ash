@@ -12,6 +12,9 @@ public enum HitZone
 {
     Body,
     Head,
+
+    /// <summary>A boss's head - its own weak spot with its own multiplier (Gorm: x1.5, not the ghouls' x3).</summary>
+    BossHead,
 }
 
 /// <summary>
@@ -63,6 +66,7 @@ public sealed class DamageRules
         balance ??= Balance.Default;
         var rules = new DamageRules();
         rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.Head, balance.Pistol.HeadshotMultiplier));
+        rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.BossHead, balance.Gorm.HeadMultiplier));
         rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
         rules.Add(new DamageBoonBonus(balance.Boons.Damage));
         return rules;

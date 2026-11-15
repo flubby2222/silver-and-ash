@@ -23,6 +23,9 @@ public sealed class GameWorld
     private readonly List<TrainingDummy> _dummies;
     private readonly List<Ghoul> _ghouls;
     private readonly List<Bat> _bats;
+    private readonly Gorm? _gorm;
+    private bool _gormLootDropped;
+    private Stairs? _stairs;
     private readonly List<Projectile> _projectiles = [];
     private readonly List<Pickup> _pickups = [];
     private readonly HashSet<int> _dropsRolled = [];
@@ -88,6 +91,12 @@ public sealed class GameWorld
                 _dummies.Count + _ghouls.Count + index, Bat.HoverPosition(level, position), _random, Balance))
             .ToList();
 
+        // Gorm (at most one, 'T') comes after the bats; he starts looking towards the player's start.
+        _gorm = level.BossPositions
+            .Select(position => new Gorm(
+                _dummies.Count + _ghouls.Count + _bats.Count, position, FacingTowards(position, level.PlayerStartPosition), Balance))
+            .FirstOrDefault();
+
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
         Player = new Player(Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random);
 
@@ -115,7 +124,7 @@ public sealed class GameWorld
         }
 
         // Every enemy belongs to the room it starts in; in an arena it sleeps until the room is entered.
-        foreach (var enemy in _ghouls.Cast<ITarget>().Concat(_bats))
+        foreach (var enemy in _ghouls.Cast<ITarget>().Concat(_bats).Concat(_gorm is null ? [] : [_gorm]))
         {
             var position = enemy.Body.Position;
             if (_roomOfCell.TryGetValue(Level.ToGrid(position.X, position.Z), out var room))
@@ -138,7 +147,7 @@ public sealed class GameWorld
     /// </summary>
     public Level LevelAsBuilt { get; private set; }
 
-    /// <summary>True once the boss room is cleared: the run is won (for now; the troll and the stairs come in v0.10).</summary>
+    /// <summary>True once a player climbed the spiral staircase that rises after the boss room is cleared: the run is won.</summary>
     public bool IsWon { get; private set; }
 
     /// <summary>True when every player is dead before the run was won.</summary>
@@ -174,7 +183,9 @@ public sealed class GameWorld
         Player.Level,
         Statistics.RoomsCleared,
         _rooms.Count(room => room.IsArena),
-        Statistics.SilverCollected);
+        Statistics.SilverCollected,
+        Statistics.GormSlain,
+        Statistics.BossFightSeconds);
 
     /// <summary>The rooms of a generated level and what happened in them (empty for hand-made levels).</summary>
     public IReadOnlyList<RoomState> Rooms => _rooms;
@@ -203,6 +214,15 @@ public sealed class GameWorld
 
     /// <summary>The doors of the level, in the order they were given.</summary>
     public IReadOnlyList<Door> Doors => _doors;
+
+    /// <summary>Gorm, the Chained - the boss of the level ('T'), or null in a level without one.</summary>
+    public Gorm? Gorm => _gorm;
+
+    /// <summary>The spiral staircase - null until the boss room is cleared, then rising in its middle.</summary>
+    public Stairs? Stairs => _stairs;
+
+    /// <summary>True while the boss room is sealed and Gorm lives: his health bar shows.</summary>
+    public bool IsBossFightOn => _gorm is { IsDead: false } && _rooms.Any(room => room.Kind == RoomKind.Boss && room.IsSealed);
 
     /// <summary>The chests of the level, in the order they were given (hidden ones included).</summary>
     public IReadOnlyList<Chest> Chests => _chests;
@@ -261,7 +281,7 @@ public sealed class GameWorld
     }
 
     /// <summary>Everything that can be used with F: doors and chests today, people later.</summary>
-    private IEnumerable<IInteractable> Interactables => _doors.Concat<IInteractable>(_chests);
+    private IEnumerable<IInteractable> Interactables => _doors.Concat<IInteractable>(_chests).Concat(_stairs is null ? [] : [_stairs]);
 
     private void Interact(Player player)
     {
@@ -275,6 +295,11 @@ public sealed class GameWorld
                 }
 
                 OpenDoor(door);
+                break;
+            case Stairs stairs when stairs.CanInteract && !IsWon:
+                IsWon = true;
+                _events.Add(new StairsClimbed(player.Id));
+                _events.Add(new RunWon());
                 break;
             case Chest chest when chest.OfferFor(player).IsPossible:
                 if (chest.IsLocked)
@@ -395,7 +420,7 @@ public sealed class GameWorld
             _events.Add(new RoomCleared(room.Index));
             MaybeDropKeyIn(room);
             RaiseChestsIn(room);
-            WinIfBoss(room);
+            RaiseStairsIfBoss(room);
             return;
         }
 
@@ -407,6 +432,10 @@ public sealed class GameWorld
         room.Seal();
         UpdateLevel();
         _events.Add(new RoomSealed(room.Index));
+        if (room.Kind == RoomKind.Boss && _gorm is { IsDead: false })
+        {
+            _events.Add(new BossFightStarted());
+        }
     }
 
     // When the last enemy of an arena is dead, its grates rise. The door the player came through is open (they walked
@@ -425,18 +454,28 @@ public sealed class GameWorld
             _events.Add(new RoomCleared(room.Index));
             MaybeDropKeyIn(room);
             RaiseChestsIn(room);
-            WinIfBoss(room);
+            RaiseStairsIfBoss(room);
         }
     }
 
-    // A room is cleared only once, and there is one boss room - so the run is won only once.
-    private void WinIfBoss(RoomState room)
+    // A cleared boss room lets the spiral staircase rise in its middle (decision record 0007). A room is cleared only
+    // once, and there is one boss room - so it rises only once. Climbing it (F) wins the run.
+    private void RaiseStairsIfBoss(RoomState room)
     {
-        if (room.Kind == RoomKind.Boss)
+        if (room.Kind != RoomKind.Boss)
         {
-            IsWon = true;
-            _events.Add(new RunWon());
+            return;
         }
+
+        var x = room.Cells.Average(cell => cell.X);
+        var z = room.Cells.Average(cell => cell.Z);
+        var (cellX, cellZ) = room.Cells
+            .OrderBy(cell => ((cell.X - x) * (cell.X - x)) + ((cell.Z - z) * (cell.Z - z)))
+            .ThenBy(cell => cell.Z)
+            .ThenBy(cell => cell.X)
+            .First();
+        _stairs = new Stairs(Level.CellCenter(cellX, cellZ), Balance.Gorm.StairsRiseTime);
+        _events.Add(new StairsRose());
     }
 
     private void ReportLoss()
@@ -525,6 +564,29 @@ public sealed class GameWorld
             DropSilver(Balance.Silver.BatChance, Balance.Silver.BatMin, Balance.Silver.BatMax, bat.Position);
             MaybeDropKey(Balance.Keys.EnemyChance, bat.Position);
         }
+    }
+
+    /// <summary>Once Gorm is dead: a big silver pile and a blood vial where he fell (decision record 0007).</summary>
+    private void DropGormsLoot()
+    {
+        if (_gorm is not { IsDead: true } || _gormLootDropped)
+        {
+            return;
+        }
+
+        _gormLootDropped = true;
+        var silver = _lootRandom.Next(Balance.Gorm.SilverMin, Balance.Gorm.SilverMax + 1);
+        if (silver > 0)
+        {
+            var pile = new Loot(_nextLootId++, LootKind.Silver, silver, _gorm.Position);
+            _loot.Add(pile);
+            _events.Add(new SilverDropped(pile.Id, silver, _gorm.Position));
+        }
+
+        var vialPlace = _gorm.Position + (_gorm.Facing * 1.2f);
+        var vial = new Pickup(_nextPickupId++, ConsumableKind.BloodVial, vialPlace);
+        _pickups.Add(vial);
+        _events.Add(new PickupDropped(vial.Id, vial.Kind, vialPlace));
     }
 
     /// <summary>
@@ -753,7 +815,7 @@ public sealed class GameWorld
     public IReadOnlyList<Bat> Bats => _bats;
 
     /// <summary>Everything the weapons can hit: dummies and ghouls.</summary>
-    public IEnumerable<ITarget> Targets => _dummies.Cast<ITarget>().Concat(_ghouls).Concat(_bats);
+    public IEnumerable<ITarget> Targets => _dummies.Cast<ITarget>().Concat(_ghouls).Concat(_bats).Concat(_gorm is null ? [] : [_gorm]);
 
     /// <summary>
     /// The rules that turn a hit into damage (headshots, later items, ...). Part of the world, not static:
@@ -936,6 +998,14 @@ public sealed class GameWorld
             ghoul.Tick(_events);
         }
 
+        if (_gorm is not null && !_asleep.Contains(_gorm.Id))
+        {
+            var obstacles = Players.Select(player => player.Body)
+                .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, _gorm)).Select(target => target.Body))
+                .ToList();
+            _gorm.Act(_enemyLevel, Players, obstacles);
+        }
+
         var batEventsFrom = _events.Count;
         foreach (var bat in _bats)
         {
@@ -955,12 +1025,15 @@ public sealed class GameWorld
 
         MoveProjectiles();
         DropFromTheDead();
+        DropGormsLoot();
         MovePickups();
         MoveLoot();
         foreach (var chest in _chests)
         {
             chest.Tick();
         }
+
+        _stairs?.Tick();
         ClearRooms();
 
         // The clock of the run stops with victory or defeat; this tick still counts.

@@ -22,6 +22,7 @@ public sealed record GeneratedLevel(
 /// <param name="GhoulSlots">Places where a ghoul may start.</param>
 /// <param name="BatSlots">Places above which a bat may hover.</param>
 /// <param name="ChestSlots">Places where a chest may stand ('C'); none if not given.</param>
+/// <param name="BossSlots">The boss's place ('T'), only in the boss room; none if not given.</param>
 public sealed record PlacedRoom(
     int Index,
     RoomKind Kind,
@@ -34,7 +35,8 @@ public sealed record PlacedRoom(
     IReadOnlyList<(int X, int Z)> FloorCells,
     IReadOnlyList<(int X, int Z)> GhoulSlots,
     IReadOnlyList<(int X, int Z)> BatSlots,
-    IReadOnlyList<(int X, int Z)>? ChestSlots = null);
+    IReadOnlyList<(int X, int Z)>? ChestSlots = null,
+    IReadOnlyList<(int X, int Z)>? BossSlots = null);
 
 /// <summary>A door between two rooms of a generated level.</summary>
 /// <param name="X">Column of the door cell.</param>

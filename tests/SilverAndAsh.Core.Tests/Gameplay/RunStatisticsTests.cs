@@ -35,9 +35,9 @@ public sealed class RunStatisticsTests : IDisposable
     {
         var statistics = new RunStatistics();
 
-        statistics.Count([new GhoulHit(1, 30), new BatHit(2, 20), new DummyHit(3, 50)]);
+        statistics.Count([new GhoulHit(1, 30), new BatHit(2, 20), new DummyHit(3, 50), new GormHit(4, 15)]);
 
-        Assert.Equal(50, statistics.DamageDealt);
+        Assert.Equal(65, statistics.DamageDealt);
     }
 
     [Fact]
@@ -225,10 +225,18 @@ public sealed class RunStatisticsTests : IDisposable
             [new LevelDoor(2, 1, 0, 1, RoomSide.South, DoorKind.Boss)], rooms);
 
         world.Tick(PlayerInput.None with { Interact = true });
-        for (var i = 0; i < 3 * SimulationClock.TicksPerSecond && !world.IsWon; i++)
+        for (var i = 0; i < 3 * SimulationClock.TicksPerSecond && !world.Rooms[1].IsCleared; i++)
         {
             world.Tick(PlayerInput.None with { Move = new Vector2(0f, 1f) });
         }
+
+        // The cleared boss room raises the stairs; climbing them wins.
+        for (var i = 0; i < SimulationClock.SecondsToTicks(Balance.Default.Gorm.StairsRiseTime) + 1; i++)
+        {
+            world.Tick(PlayerInput.None);
+        }
+
+        world.Tick(PlayerInput.None with { Interact = true });
 
         Assert.True(world.IsWon, "The run was not won - the test would prove nothing.");
         Assert.Equal(RunOutcome.Won, world.TakeEndSummary()?.Outcome);
@@ -254,7 +262,7 @@ public sealed class RunStatisticsTests : IDisposable
 
     private static readonly RunSummary Example = new(
         Seed: 123, Outcome: RunOutcome.Won, Seconds: 754.4f, GhoulsKilled: 31, BatsKilled: 9, DamageDealt: 4210,
-        DamageTaken: 380, Level: 6, RoomsCleared: 9, ArenaRooms: 9, Silver: 142);
+        DamageTaken: 380, Level: 6, RoomsCleared: 9, ArenaRooms: 9, Silver: 142, GormSlain: true, GormFightSeconds: 83.6f);
 
     [Fact]
     public void A_summary_becomes_one_readable_line()
@@ -262,7 +270,7 @@ public sealed class RunStatisticsTests : IDisposable
         var line = Example.ToLogLine(new DateTimeOffset(2026, 11, 15, 18, 40, 12, TimeSpan.FromHours(1)));
 
         Assert.Equal(
-            "2026-11-15 18:40:12 | won | seed 123 | 12:34 | ghouls 31 | bats 9 | dealt 4210 | taken 380 | level 6 | rooms 9/9 | silver 142",
+            "2026-11-15 18:40:12 | won | seed 123 | 12:34 | ghouls 31 | bats 9 | dealt 4210 | taken 380 | level 6 | rooms 9/9 | silver 142 | gorm slain 1:23",
             line);
         Assert.DoesNotContain('\n', line);
     }

@@ -70,6 +70,18 @@
     "repathTime": 0.5                   // s between path searches
   },
 
+  // Gorm, the Chained - the troll, boss of level 0 (decision record 0007).
+  "gorm": {
+    "maxHealth": 1600,
+    "speed": 2.5,                       // m/s walking, slower than the player
+    "stopDistance": 3,                  // m: he stops walking this close
+    "headMultiplier": 1.5,              // a pistol shot at his head: 150 %
+    "repathTime": 0.5,                  // s between path searches
+    "silverMin": 100,                   // silver he leaves behind ...
+    "silverMax": 150,
+    "stairsRiseTime": 3                 // s the spiral staircase takes to rise after his death
+  },
+
   "bat": {
     "maxHealth": 40,
     "corpseTime": 2.5,                  // s the body lies there
@@ -171,7 +183,7 @@
   "difficulty": {
     "budgetNear": 10,                   // budget of the combat room nearest to the start ...
     "budgetFar": 20,                    // ... and of the farthest one
-    "budgetBoss": 22,                   // the boss room
+    "budgetBoss": 0,                    // the boss room besides Gorm (0 = Gorm fights alone)
     "ghoulCost": 2,
     "batCost": 3,
     "ghoulWeightNear": 0.85,            // near the start mostly ghouls ...

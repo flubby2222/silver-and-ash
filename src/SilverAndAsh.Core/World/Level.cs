@@ -17,6 +17,7 @@ public sealed class Level
     private readonly List<(int X, int Z)> _dummyCells;
     private readonly List<(int X, int Z)> _ghoulCells;
     private readonly List<(int X, int Z)> _batCells;
+    private readonly List<(int X, int Z)> _bossCells;
 
     /// <summary>
     /// Creates a level. <paramref name="cells"/> is indexed as [x, z]. <paramref name="dummyCells"/> are the grid
@@ -25,7 +26,7 @@ public sealed class Level
     public Level(
         Cell[,] cells, int playerStartX, int playerStartZ,
         IEnumerable<(int X, int Z)>? dummyCells = null, IEnumerable<(int X, int Z)>? ghoulCells = null,
-        IEnumerable<(int X, int Z)>? batCells = null)
+        IEnumerable<(int X, int Z)>? batCells = null, IEnumerable<(int X, int Z)>? bossCells = null)
     {
         ArgumentNullException.ThrowIfNull(cells);
         _cells = (Cell[,])cells.Clone();
@@ -80,7 +81,19 @@ public sealed class Level
                 throw new ArgumentException("Bats must start above walkable cells inside the level.", nameof(batCells));
             }
         }
+
+        _bossCells = bossCells?.ToList() ?? [];
+        foreach (var (x, z) in _bossCells)
+        {
+            if (!IsInside(x, z) || this[x, z].IsSolid)
+            {
+                throw new ArgumentException("A boss must start on a walkable cell inside the level.", nameof(bossCells));
+            }
+        }
     }
+
+    /// <summary>World positions where bosses start (Gorm, 'T'): centres of their cells, on the floor.</summary>
+    public IReadOnlyList<System.Numerics.Vector3> BossPositions => _bossCells.Select(cell => CellCenter(cell.X, cell.Z)).ToList();
 
     /// <summary>World positions where the ghouls start: centres of their cells, on the floor.</summary>
     /// <summary>Floor positions of the cells where bats start (they hover above them).</summary>
@@ -130,12 +143,16 @@ public sealed class Level
             cells[x, z] = cell;
         }
 
-        return new Level(cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells);
+        return new Level(cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells);
     }
 
-    /// <summary>A copy of this level with these ghouls and bats instead of its own (cells, start and dummies stay).</summary>
-    public Level WithEnemies(IEnumerable<(int X, int Z)> ghoulCells, IEnumerable<(int X, int Z)> batCells) =>
-        new(_cells, PlayerStartX, PlayerStartZ, _dummyCells, ghoulCells, batCells);
+    /// <summary>
+    /// A copy of this level with these ghouls, bats and bosses instead of its own (cells, start and dummies stay).
+    /// Without <paramref name="bossCells"/> it has no boss.
+    /// </summary>
+    public Level WithEnemies(
+        IEnumerable<(int X, int Z)> ghoulCells, IEnumerable<(int X, int Z)> batCells, IEnumerable<(int X, int Z)>? bossCells = null) =>
+        new(_cells, PlayerStartX, PlayerStartZ, _dummyCells, ghoulCells, batCells, bossCells);
 
     /// <summary>True if (x, z) is a grid position inside the level.</summary>
     public bool IsInside(int x, int z) => x >= 0 && x < Width && z >= 0 && z < Depth;
