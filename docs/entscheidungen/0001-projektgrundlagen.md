@@ -1,6 +1,6 @@
 # 0001 – Projektgrundlagen
 
-- **Status:** angenommen
+- **Status:** angenommen, teilweise abgelöst durch [0004](0004-fortschritt-stufen-beute-skills.md) (Blutrausch, Items, Meilenstein v0.7)
 - **Datum:** 2026-11-10
 
 ## Kontext
