@@ -6,12 +6,17 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.9.0] – 2026-11-15 – Schatz & Wirtschaft
+
+Erkunden lohnt sich jetzt: Gegner lassen Silber und Schlüssel fallen, Kisten in vier Stufen warten in Kampfräumen, Schatzräumen und einem versteckten Raum hinter einer rissigen Wand. Dazu die erste Balancing-Runde mit eigenem Werkzeug.
+
 ### Hinzugefügt
 - **Silber**, die Währung des Durchlaufs: Getötete Ghule und Fledermäuse lassen in der Hälfte der Fälle 1–3 Silber fallen, als kleinen Münzstapel am Boden. Drüberlaufen sammelt es ein. Oben rechts zeigt der Zähler „SILVER“; der Endbildschirm und `runs.log` nennen das gesammelte Silber. Ein neuer Durchlauf beginnt bei 0. Einstellbar in `balance.json` unter `silver`. Ausgeben kann man es ab v0.11 beim Händler
-- **Schlüssel und verschlossene Türen:** Ein geräumter Kampfraum lässt mit 15 % einen goldenen Schlüssel in seiner Mitte liegen, ein getöteter Gegner mit 5 %. Drüberlaufen sammelt ihn ein, der Zähler „KEYS“ steht unter dem Silber. Verschlossene Türen sind aus dunklem Eisen mit Vorhängeschloss (auf der Karte golden): Mit Schlüssel öffnet **F** sie („[F] Unlock (1 key)“) und verbraucht einen, ohne Schlüssel steht dort „Locked - needs a key“. Schlüssel gelten nur für den Durchlauf. Einstellbar in `balance.json` unter `keys`. Die verschlossenen Türen setzt der Generator mit den Schatzräumen ein
+- **Schlüssel und verschlossene Türen:** Ein geräumter Kampfraum lässt mit 10 % einen goldenen Schlüssel in seiner Mitte liegen, ein getöteter Gegner mit 2,5 %. Drüberlaufen sammelt ihn ein, der Zähler „KEYS“ steht unter dem Silber. Verschlossene Türen sind aus dunklem Eisen mit Vorhängeschloss (auf der Karte golden): Mit Schlüssel öffnet **F** sie („[F] Unlock (1 key)“) und verbraucht einen, ohne Schlüssel steht dort „Locked - needs a key“. Schlüssel gelten nur für den Durchlauf. Einstellbar in `balance.json` unter `keys`. Die verschlossenen Türen setzt der Generator mit den Schatzräumen ein
 - **Kisten mit vier Stufen:** Beggar's (Holz), Guard's (stahlblau), King's (gold) und Vampire's Chest (blutrot), schon von weitem zu unterscheiden. Etwa jeder vierte Kampfraum hat eine; sie steigt aus dem Boden, sobald der Raum geräumt ist, und wird weiter vom Start entfernt etwas besser. **F** öffnet sie („[F] Open King's Chest“); höhere Stufen sind öfter verschlossen und brauchen dann einen Schlüssel. Heraus springen Silber (Beggar's 10–20 bis Vampire's 80–120) und mit etwas Glück eine Blutphiole. Alle Werte in `balance.json` unter `chests`
 - **Schatzräume:** Jede Ebene hat einen Schatzraum und einen zweiten hinter einer **verschlossenen Tür**. Beide sind gegnerfreie Sackgassen mit 1–2 Kisten, hinter dem Schloss eher King's und Vampire's Chests. Sie liegen nie direkt am Start und nie hinter dem Boss; der Boss ist immer ohne Schlüssel erreichbar. Auf der Karte sind Schatzräume golden. Anzahl und Kisten-Anteile stehen in `balance.json` (`layout`, `chests`)
 - **Secret Room:** Jede Ebene versteckt einen Raum hinter einer Wand mit feinen Rissen an einem Kampfraum. Nur ein **voll aufgeladener Klingenhieb** bricht sie auf; normale Hiebe, Schüsse und F tun nichts. Bis dahin verrät auch die Karte nichts. Drinnen steht eine Kiste: Guard's, King's oder mit Glück Vampire's Chest. Auf der Karte ist der Secret Room violett
+- **Für die Entwicklung:** Balance-Report (`tools/SilverAndAsh.BalanceReport`) baut 500 Ebenen aus `balance.json` und zeigt Erwartungswerte (Räume, Gegner, Silber, Schlüssel, Kisten, Heilung, grobe Spielzeit), auch als Vorher/Nachher-Vergleich. Siehe `docs/balancing.md`
 
 ### Geändert
 - **Balancing-Runde 1:** Eine Ebene ist länger und schwerer.
@@ -155,7 +160,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.8.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.5.0...v0.6.0
