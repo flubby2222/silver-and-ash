@@ -18,24 +18,32 @@ public sealed class Cooldown
 
     private int _ticksLeft;
 
+    // The length of the wait that is running now - shorter than DurationTicks after a faster use.
+    private int _startedTicks = 1;
+
     /// <summary>True when the weapon can be used.</summary>
     public bool IsReady => _ticksLeft == 0;
 
     /// <summary>How much of the waiting time is left: 1 = just used, 0 = ready. For the HUD.</summary>
-    public float RemainingFraction => (float)_ticksLeft / DurationTicks;
+    public float RemainingFraction => (float)_ticksLeft / _startedTicks;
 
     /// <summary>Seconds left until the weapon is ready again (0 = ready).</summary>
     public float RemainingSeconds => _ticksLeft * SimulationClock.SecondsPerTick;
 
-    /// <summary>Starts the cooldown if the weapon is ready. Returns false (and changes nothing) otherwise.</summary>
-    public bool TryUse()
+    /// <summary>
+    /// Starts the cooldown if the weapon is ready - <paramref name="speed"/> times as fast as normal (2 = half the wait,
+    /// e.g. with consecrated ammunition). Returns false (and changes nothing) if it is not ready.
+    /// </summary>
+    public bool TryUse(float speed = 1f)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(speed);
         if (!IsReady)
         {
             return false;
         }
 
-        _ticksLeft = DurationTicks;
+        _startedTicks = Math.Max(1, (int)MathF.Round(DurationTicks / speed));
+        _ticksLeft = _startedTicks;
         return true;
     }
 

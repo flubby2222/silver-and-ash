@@ -118,14 +118,16 @@ public sealed class GameWorld
             return;
         }
 
-        var pickup = new Pickup(_nextPickupId++, ConsumableKind.BloodVial, position);
+        // Which consumable: a second roll, only for a drop (so a kill without a drop costs one number, as before).
+        var kind = _random.NextDouble() < Balance.Drops.ConsecratedAmmoShare ? ConsumableKind.ConsecratedAmmo : ConsumableKind.BloodVial;
+        var pickup = new Pickup(_nextPickupId++, kind, position);
         _pickups.Add(pickup);
         _events.Add(new PickupDropped(pickup.Id, pickup.Kind, position));
     }
 
     /// <summary>
     /// Pickups fall to the floor; a living player who touches one takes it - if it does them any good
-    /// (a blood vial stays lying while the player's health is full).
+    /// (a blood vial stays lying while the player's health is full; consecrated ammunition is always taken).
     /// </summary>
     private void MovePickups()
     {
@@ -158,6 +160,9 @@ public sealed class GameWorld
         {
             case ConsumableKind.BloodVial:
                 player.Heal(Balance.BloodVial.Heal, _events);
+                break;
+            case ConsumableKind.ConsecratedAmmo:
+                player.Consecrate(Balance.ConsecratedAmmo.Duration);
                 break;
         }
     }

@@ -24,6 +24,7 @@ public sealed class Player
         _level = level;
         _bodies = bodies ?? (() => []);
         _player = balance.Player;
+        _consecratedFireRate = balance.ConsecratedAmmo.FireRateMultiplier;
         Position = level.PlayerStartPosition;
         PreviousPosition = Position;
 
@@ -107,6 +108,28 @@ public sealed class Player
     /// <summary>Health of the player.</summary>
     public int Health { get; private set; }
 
+    /// <summary>True while consecrated ammunition makes the pistol fire faster.</summary>
+    public bool IsConsecrated => _consecratedTicksLeft > 0;
+
+    /// <summary>Seconds of consecrated ammunition left (0 if none).</summary>
+    public float ConsecratedSecondsLeft => _consecratedTicksLeft * SimulationClock.SecondsPerTick;
+
+    /// <summary>
+    /// Loads consecrated ammunition for <paramref name="seconds"/> - starting now. Any time left is replaced, not added:
+    /// a second pickup restarts the time, it does not make the pistol any faster.
+    /// </summary>
+    public void Consecrate(float seconds)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(seconds);
+        if (!IsDead)
+        {
+            _consecratedTicksLeft = SimulationClock.SecondsToTicks(seconds);
+        }
+    }
+
+    private int _consecratedTicksLeft;
+    private readonly float _consecratedFireRate;
+
     /// <summary>The most health the player can have.</summary>
     public int MaxHealth => _player.MaxHealth;
 
@@ -153,6 +176,7 @@ public sealed class Player
         if (IsDead)
         {
             events.Add(new PlayerDied(Id));
+            _consecratedTicksLeft = 0;
         }
     }
 
@@ -241,6 +265,7 @@ public sealed class Player
 
         _events.Clear();
         BladeCooldown.Tick();
+        _consecratedTicksLeft = Math.Max(0, _consecratedTicksLeft - 1);
         PistolCooldown.Tick();
         LandingDip.Tick();
         var wasGrounded = IsGrounded;
@@ -502,9 +527,10 @@ public sealed class Player
             _events.Add(new BladeSwung(EyePosition, View.Forward, charge));
         }
 
-        if (shootPressed && PistolCooldown.TryUse())
+        // Consecrated ammunition: the pistol is ready again sooner.
+        if (shootPressed && PistolCooldown.TryUse(IsConsecrated ? _consecratedFireRate : 1f))
         {
-            _events.Add(new ShotFired(EyePosition, View.Forward));
+            _events.Add(new ShotFired(EyePosition, View.Forward, IsConsecrated));
         }
     }
 

@@ -11,6 +11,9 @@ public enum ConsumableKind
 {
     /// <summary>Heals (<see cref="BloodVialBalance.Heal"/>).</summary>
     BloodVial,
+
+    /// <summary>Makes the pistol stronger for a while (<see cref="ConsecratedAmmoBalance"/>).</summary>
+    ConsecratedAmmo,
 }
 
 /// <summary>

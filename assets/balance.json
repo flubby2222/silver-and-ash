@@ -96,11 +96,17 @@
 
   "drops": {
     "ghoulChance": 0.3,                 // a killed ghoul drops something in 30 % of cases (0 = never, 1 = always)
-    "batChance": 0.15                   // a killed bat in 15 %
+    "batChance": 0.15,                  // a killed bat in 15 %
+    "consecratedAmmoShare": 0.3         // of all drops, 30 % are consecrated ammunition, the rest blood vials
   },
 
   "bloodVial": {
     "heal": 50                          // health it gives back (never above the maximum)
+  },
+
+  "consecratedAmmo": {
+    "fireRateMultiplier": 2,            // the pistol fires twice as fast (damage stays) ...
+    "duration": 10                      // ... for 10 s, starting at once when picked up
   },
 
   "bloodBolt": {

@@ -111,6 +111,7 @@ public class BalanceFileTests
     [InlineData("""{ "ghoul": { "attackHalfAngle": 200 } }""", "ghoul.attackHalfAngle")]
     [InlineData("""{ "drops": { "ghoulChance": 1.5 } }""", "drops.ghoulChance")]
     [InlineData("""{ "drops": { "batChance": 2 } }""", "drops.batChance")]
+    [InlineData("""{ "drops": { "consecratedAmmoShare": 1.2 } }""", "drops.consecratedAmmoShare")]
     public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);

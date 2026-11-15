@@ -59,6 +59,38 @@ public class CooldownTests
     }
 
     [Fact]
+    public void Used_twice_as_fast_it_waits_half_as_long()
+    {
+        var cooldown = new Cooldown(0.4f);
+
+        Assert.True(cooldown.TryUse(speed: 2f));
+        for (var tick = 0; tick < 11; tick++)
+        {
+            cooldown.Tick();
+        }
+
+        Assert.False(cooldown.IsReady);
+        cooldown.Tick();
+        Assert.True(cooldown.IsReady);
+    }
+
+    [Fact]
+    public void A_faster_wait_still_shows_its_fraction_from_one_to_zero()
+    {
+        // The HUD bar must start full, not half full, even when the wait is only half as long.
+        var cooldown = new Cooldown(0.4f);
+        cooldown.TryUse(speed: 2f);
+        Assert.Equal(1f, cooldown.RemainingFraction);
+
+        for (var i = 0; i < 6; i++)
+        {
+            cooldown.Tick();
+        }
+
+        Assert.Equal(0.5f, cooldown.RemainingFraction, 0.001f);
+    }
+
+    [Fact]
     public void Ticking_a_ready_cooldown_keeps_it_ready()
     {
         var cooldown = new Cooldown(0.4f);

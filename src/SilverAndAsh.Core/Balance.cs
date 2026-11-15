@@ -39,6 +39,9 @@ public sealed record Balance
     /// <summary>The blood vial: a consumable that heals.</summary>
     public BloodVialBalance BloodVial { get; init; } = new();
 
+    /// <summary>Consecrated ammunition: a consumable that makes the pistol fire faster for a while.</summary>
+    public ConsecratedAmmoBalance ConsecratedAmmo { get; init; } = new();
+
     /// <summary>Seconds between the death of all players and the restart of the level.</summary>
     public float RestartDelay { get; init; } = 2f;
 }
@@ -51,6 +54,19 @@ public sealed record DropsBalance
 
     /// <summary>Chance that a killed bat drops something: 0 = never, 1 = always.</summary>
     public float BatChance { get; init; } = 0.15f;
+
+    /// <summary>Of all drops, this share is consecrated ammunition (0.3 = 30 %); the rest are blood vials.</summary>
+    public float ConsecratedAmmoShare { get; init; } = 0.3f;
+}
+
+/// <summary>Balancing values of consecrated ammunition.</summary>
+public sealed record ConsecratedAmmoBalance
+{
+    /// <summary>The pistol fires this many times as fast while it lasts (2 = half the cooldown). The damage stays.</summary>
+    public float FireRateMultiplier { get; init; } = 2f;
+
+    /// <summary>Seconds it lasts - starting at once when picked up. Picking up another starts the time again.</summary>
+    public float Duration { get; init; } = 10f;
 }
 
 /// <summary>Balancing values of the blood vial.</summary>
