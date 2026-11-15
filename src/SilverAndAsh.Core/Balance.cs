@@ -113,11 +113,17 @@ public sealed record DropsBalance
 }
 
 /// <summary>
-/// Silver, the currency of a run: every killed enemy drops an amount between its minimum and maximum (both included).
-/// 0 to 0 = no silver from that kind of enemy.
+/// Silver, the currency of a run: a killed enemy drops silver with its chance, an amount between its minimum and
+/// maximum (both included). 0 to 0 = no silver from that kind of enemy.
 /// </summary>
 public sealed record SilverBalance
 {
+    /// <summary>Chance that a killed ghoul drops silver: 0 = never, 1 = always.</summary>
+    public float GhoulChance { get; init; } = 0.5f;
+
+    /// <summary>Chance that a killed bat drops silver: 0 = never, 1 = always.</summary>
+    public float BatChance { get; init; } = 0.5f;
+
     /// <summary>Least silver a killed ghoul drops.</summary>
     public int GhoulMin { get; init; } = 1;
 

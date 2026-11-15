@@ -26,7 +26,7 @@ Zum **Ausprobieren** die Kopie neben dem Spiel ändern. Ein Wert, der **bleiben*
   "experience": { "ghoul": 30, "bat": 20, "firstLevel": 100, "growth": 1.25 },
   "boons":  { "offered": 3, "staminaRegen": 0.05, "health": 5, "damage": 0.05, "experience": 0.025 },
   "drops":  { "ghoulChance": 0.3, "batChance": 0.15, "consecratedAmmoShare": 0.3 },   // 0 = nie, 1 = immer
-  "silver": { "ghoulMin": 1, "ghoulMax": 3, "batMin": 1, "batMax": 3 },             // Silber pro Kill, beide Grenzen inklusive
+  "silver": { "ghoulChance": 0.5, "batChance": 0.5, "ghoulMin": 1, "ghoulMax": 3, "batMin": 1, "batMax": 3 },   // Chance und Silber pro Kill
   "bloodVial": { "heal": 50 },
   "consecratedAmmo": { "fireRateMultiplier": 2, "duration": 10 },
   "bloodBolt": { ... }

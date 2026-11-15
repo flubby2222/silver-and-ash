@@ -13,15 +13,24 @@ public class SilverTests
     /// <summary>A corridor along +Z: the player in row 0, a ghoul 4 m ahead, room to walk on.</summary>
     private static readonly Level GhoulAhead = LevelParser.Parse("P\n.\nG\n.\n.");
 
+    /// <summary>Every kill drops silver (to test what happens with a drop).</summary>
+    private static readonly Balance AlwaysSilver = Balance.Default with
+    {
+        Silver = Balance.Default.Silver with { GhoulChance = 1f, BatChance = 1f },
+    };
+
     private static Balance SilverPerKill(int ghoulMin, int ghoulMax, int batMin = 1, int batMax = 3) => Balance.Default with
     {
-        Silver = new SilverBalance { GhoulMin = ghoulMin, GhoulMax = ghoulMax, BatMin = batMin, BatMax = batMax },
+        Silver = new SilverBalance
+        {
+            GhoulChance = 1f, BatChance = 1f, GhoulMin = ghoulMin, GhoulMax = ghoulMax, BatMin = batMin, BatMax = batMax,
+        },
     };
 
     [Fact]
     public void A_killed_ghoul_drops_silver_where_it_died()
     {
-        var world = new GameWorld(GhoulAhead);
+        var world = new GameWorld(GhoulAhead, balance: AlwaysSilver);
         var ghoul = world.Ghouls[0];
 
         Kill(ghoul);
@@ -37,7 +46,7 @@ public class SilverTests
     [Fact]
     public void A_killed_bat_drops_silver_too_and_it_falls_to_the_floor()
     {
-        var world = new GameWorld(LevelParser.Parse("P\n.\nB"));
+        var world = new GameWorld(LevelParser.Parse("P\n.\nB"), balance: AlwaysSilver);
         Kill(world.Bats[0]);
 
         Run(world, PlayerInput.None, Second);
@@ -50,7 +59,7 @@ public class SilverTests
     [Fact]
     public void A_kill_drops_silver_only_once()
     {
-        var world = new GameWorld(GhoulAhead);
+        var world = new GameWorld(GhoulAhead, balance: AlwaysSilver);
         Kill(world.Ghouls[0]);
 
         Run(world, PlayerInput.None, Second);
@@ -61,7 +70,7 @@ public class SilverTests
     [Fact]
     public void Dummies_drop_no_silver()
     {
-        var world = new GameWorld(LevelParser.Parse("P\n.\nD"));
+        var world = new GameWorld(LevelParser.Parse("P\n.\nD"), balance: AlwaysSilver);
         world.Dummies[0].TakeDamage(Balance.Default.Dummy.MaxHealth, []);
 
         Run(world, PlayerInput.None, Second);
@@ -75,7 +84,7 @@ public class SilverTests
         var amounts = new HashSet<int>();
         for (var seed = 0; seed < 60; seed++)
         {
-            var world = new GameWorld(LevelParser.Parse("P#G\n.#.\n.#B"), seed);
+            var world = new GameWorld(LevelParser.Parse("P#G\n.#.\n.#B"), seed, AlwaysSilver);
             Kill(world.Ghouls[0]);
             Kill(world.Bats[0]);
             world.Tick(PlayerInput.None);
@@ -96,6 +105,53 @@ public class SilverTests
 
         Assert.Equal(5, world.SilverPiles.Single(pile => pile.Position.Z < 3 * Level.CellSize).Amount);
         Assert.Equal(9, world.SilverPiles.Single(pile => pile.Position.Z > 3 * Level.CellSize).Amount);
+    }
+
+    [Fact]
+    public void Without_a_chance_no_silver_drops()
+    {
+        var never = AlwaysSilver with { Silver = AlwaysSilver.Silver with { GhoulChance = 0f, BatChance = 0f } };
+        var world = new GameWorld(LevelParser.Parse("P\n.\nG\n.\nB"), balance: never);
+        Kill(world.Ghouls[0]);
+        Kill(world.Bats[0]);
+
+        Run(world, PlayerInput.None, Second);
+
+        Assert.Empty(world.SilverPiles);
+    }
+
+    [Fact]
+    public void Each_kind_of_enemy_has_its_own_silver_chance()
+    {
+        var onlyBats = AlwaysSilver with { Silver = AlwaysSilver.Silver with { GhoulChance = 0f } };
+        var world = new GameWorld(LevelParser.Parse("P\n.\nG\n.\nB"), balance: onlyBats);
+        Kill(world.Ghouls[0]);
+        Kill(world.Bats[0]);
+
+        world.Tick(PlayerInput.None);
+
+        var pile = Assert.Single(world.SilverPiles);
+        Assert.Equal(world.Bats[0].Position.Z, pile.Position.Z, 0.01f);
+    }
+
+    [Fact]
+    public void About_half_of_the_kills_drop_silver_by_standard()
+    {
+        // 200 worlds, one ghoul and one bat each: about 50 % of each drop silver.
+        var ghoulDrops = 0;
+        var batDrops = 0;
+        for (var seed = 0; seed < 200; seed++)
+        {
+            var world = new GameWorld(LevelParser.Parse("P#G\n.#.\n.#B"), seed);
+            Kill(world.Ghouls[0]);
+            Kill(world.Bats[0]);
+            world.Tick(PlayerInput.None);
+            ghoulDrops += world.SilverPiles.Count(pile => pile.Position.Z < Level.CellSize);
+            batDrops += world.SilverPiles.Count(pile => pile.Position.Z > Level.CellSize);
+        }
+
+        Assert.InRange(ghoulDrops, 75, 125);
+        Assert.InRange(batDrops, 75, 125);
     }
 
     [Fact]
@@ -174,7 +230,7 @@ public class SilverTests
     [Fact]
     public void Silver_lies_still_until_someone_comes()
     {
-        var world = new GameWorld(GhoulAhead);
+        var world = new GameWorld(GhoulAhead, balance: AlwaysSilver);
         Kill(world.Ghouls[0]);
 
         Run(world, PlayerInput.None, 3 * Second);
@@ -188,7 +244,7 @@ public class SilverTests
     {
         // The player runs at the silver and dies just before it (0.8 m). The body still slides on over it
         // (about 0.3 m: close enough to touch it) - but the dead take nothing.
-        var world = new GameWorld(GhoulAhead);
+        var world = new GameWorld(GhoulAhead, balance: AlwaysSilver);
         var player = world.Player;
         Kill(world.Ghouls[0]);
         world.Tick(PlayerInput.None);
@@ -237,7 +293,7 @@ public class SilverTests
     [Fact]
     public void Silver_lying_around_is_not_counted()
     {
-        var world = new GameWorld(GhoulAhead);
+        var world = new GameWorld(GhoulAhead, balance: AlwaysSilver);
         Kill(world.Ghouls[0]);
 
         Run(world, PlayerInput.None, Second);

@@ -382,27 +382,35 @@ public sealed class GameWorld
 
     /// <summary>
     /// Every enemy that died since the last tick gets exactly one chance to drop a consumable (its own chance from
-    /// <see cref="DropsBalance"/>, rolled with the world's random generator) and drops its silver
-    /// (<see cref="SilverBalance"/>). Both appear where it died.
+    /// <see cref="DropsBalance"/>, rolled with the world's random generator) and may drop silver
+    /// (<see cref="SilverBalance"/>, rolled with the loot's own random generator). Both appear where it died.
     /// </summary>
     private void DropFromTheDead()
     {
         foreach (var ghoul in _ghouls.Where(ghoul => ghoul.IsDead && _dropsRolled.Add(ghoul.Id)))
         {
             MaybeDrop(Balance.Drops.GhoulChance, ghoul.Position);
-            DropSilver(Balance.Silver.GhoulMin, Balance.Silver.GhoulMax, ghoul.Position);
+            DropSilver(Balance.Silver.GhoulChance, Balance.Silver.GhoulMin, Balance.Silver.GhoulMax, ghoul.Position);
         }
 
         foreach (var bat in _bats.Where(bat => bat.IsDead && _dropsRolled.Add(bat.Id)))
         {
             MaybeDrop(Balance.Drops.BatChance, bat.Position);
-            DropSilver(Balance.Silver.BatMin, Balance.Silver.BatMax, bat.Position);
+            DropSilver(Balance.Silver.BatChance, Balance.Silver.BatMin, Balance.Silver.BatMax, bat.Position);
         }
     }
 
-    /// <summary>Drops a pile worth between <paramref name="min"/> and <paramref name="max"/> (both included) - nothing for 0.</summary>
-    private void DropSilver(int min, int max, Vector3 position)
+    /// <summary>
+    /// With <paramref name="chance"/>, drops a pile worth between <paramref name="min"/> and <paramref name="max"/>
+    /// (both included) - nothing for 0.
+    /// </summary>
+    private void DropSilver(float chance, int min, int max, Vector3 position)
     {
+        if (_lootRandom.NextDouble() >= chance)
+        {
+            return;
+        }
+
         var amount = _lootRandom.Next(min, max + 1);
         if (amount <= 0)
         {

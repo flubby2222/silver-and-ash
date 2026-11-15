@@ -7,7 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
-- **Silber**, die Währung des Durchlaufs: Jeder getötete Ghul und jede Fledermaus lässt 1–3 Silber fallen, als kleinen Münzstapel am Boden. Drüberlaufen sammelt es ein. Oben rechts zeigt der Zähler „SILVER“; der Endbildschirm und `runs.log` nennen das gesammelte Silber. Ein neuer Durchlauf beginnt bei 0. Einstellbar in `balance.json` unter `silver`. Ausgeben kann man es ab v0.11 beim Händler
+- **Silber**, die Währung des Durchlaufs: Getötete Ghule und Fledermäuse lassen in der Hälfte der Fälle 1–3 Silber fallen, als kleinen Münzstapel am Boden. Drüberlaufen sammelt es ein. Oben rechts zeigt der Zähler „SILVER“; der Endbildschirm und `runs.log` nennen das gesammelte Silber. Ein neuer Durchlauf beginnt bei 0. Einstellbar in `balance.json` unter `silver`. Ausgeben kann man es ab v0.11 beim Händler
 
 ## [0.8.0] – 2026-11-15 – Run-Grundgerüst
 
