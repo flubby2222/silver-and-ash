@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Blutphiolen auf der Karte:** Eine liegen gelassene Blutphiole in einem schon entdeckten Raum erscheint auf der Karte (M) als roter Punkt. Hebt man sie auf, verschwindet der Punkt
+
 ### Geändert
 - Der **Startraum hat nur noch eine Tür**. Der Ausgang liegt je Durchlauf in einer anderen Richtung, und der Weg zum Boss wird etwas länger
 
