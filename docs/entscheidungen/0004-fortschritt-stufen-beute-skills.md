@@ -26,6 +26,12 @@ Zur Wahl standen u. a.: Items fest im Level oder als Gegner-Drops; Blutrausch al
 
 Bosse lassen später **sicher** ein Item oder eine Waffe fallen.
 
+### Kisten und Schlüssel (später)
+- **Kisten** stehen in den Leveln und enthalten Beute. Beute hat eine **Seltenheit** (*Rarity*).
+- Es gibt ein **Schlüsselsystem**: **verschlossene Kisten** und **verschlossene Räume**. Manche Kisten sind offen.
+- **Je seltener der Inhalt, desto wahrscheinlicher ist die Kiste verschlossen.**
+- Kisten kommen zusammen mit Items und Waffen – vorher hätten sie kaum etwas Besonderes zu bieten.
+
 ### Skills, Altare, Händler (später)
 - **Blutrausch** wird ein **Skill** statt einer festen Fähigkeit.
 - **Altare** in den Leveln schalten Skills frei – planbar statt Zufall, das schwächt den Zufall der Drops ab.
@@ -37,7 +43,7 @@ Die Werte kommen aus einer **JSON-Datei** und werden zu einem **unveränderliche
 ### Neuer Plan für v0.7
 **Balancing-Datei, Consumable-Drops, Charakter-Stufen.**
 
-Skills (mit Blutrausch), Altare, Händler, Items, Waffen und Bosse kommen **danach**. Ob sie noch zu 1.0 gehören oder später, entscheiden wir beim Planen von v0.8.
+Skills (mit Blutrausch), Altare, Händler, Items, Waffen, Kisten mit Schlüsseln und Bosse kommen **danach**. Ob sie noch zu 1.0 gehören oder später, entscheiden wir beim Planen von v0.8.
 
 ## Konsequenzen
 
