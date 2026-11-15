@@ -76,10 +76,11 @@ public class PickupTests
     [Fact]
     public void The_standard_chances_hold_over_many_kills()
     {
-        // 200 worlds, one ghoul and one bat each: about 30 % and 15 % drop something.
+        // 600 worlds, one ghoul and one bat each, each with its standard chance.
+        const int Worlds = 600;
         var ghoulDrops = 0;
         var batDrops = 0;
-        for (var seed = 0; seed < 200; seed++)
+        for (var seed = 0; seed < Worlds; seed++)
         {
             var world = new GameWorld(LevelParser.Parse("P#G\n.#.\n.#B"), seed);
             Kill(world.Ghouls[0]);
@@ -89,8 +90,18 @@ public class PickupTests
             batDrops += world.Pickups.Count(p => p.Position.Z > Level.CellSize);
         }
 
-        Assert.InRange(ghoulDrops, 40, 80);
-        Assert.InRange(batDrops, 15, 45);
+        var (ghoulLow, ghoulHigh) = Band(Worlds, Balance.Default.Drops.GhoulChance);
+        var (batLow, batHigh) = Band(Worlds, Balance.Default.Drops.BatChance);
+        Assert.InRange(ghoulDrops, ghoulLow, ghoulHigh);
+        Assert.InRange(batDrops, batLow, batHigh);
+    }
+
+    /// <summary>Where a count of hits out of <paramref name="tries"/> with <paramref name="chance"/> lies: expected value +- 3.5 standard deviations.</summary>
+    private static (double Low, double High) Band(int tries, float chance)
+    {
+        var expected = tries * (double)chance;
+        var deviation = Math.Sqrt(tries * chance * (1.0 - chance));
+        return (expected - (3.5 * deviation), expected + (3.5 * deviation));
     }
 
     [Fact]

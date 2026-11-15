@@ -97,13 +97,18 @@ public sealed class Ghoul : ITarget
 
     public CylinderBody Body => new(Position, BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height);
 
-    /// <summary>The head: the top part of the body, in its front half.</summary>
+    /// <summary>
+    /// The head: where it is drawn - pushed forward, in the top part of the body, narrow
+    /// (<see cref="BodySizes.Ghoul"/>). The rest of the body, also its upper front beside the head, is body.
+    /// </summary>
     public HitZone ZoneAt(Vector3 point)
     {
         var high = point.Y >= Position.Y + BodySizes.Ghoul.Height - BodySizes.Ghoul.HeadHeight;
         var flatOffset = (point - Position) with { Y = 0f };
-        var inFront = Vector3.Dot(flatOffset, Facing) > 0f;
-        return high && inFront ? HitZone.Head : HitZone.Body;
+        var forward = Vector3.Dot(flatOffset, Facing);
+        var side = MathF.Abs(Vector3.Dot(flatOffset, new Vector3(Facing.Z, 0f, -Facing.X)));
+        var onHead = forward >= BodySizes.Ghoul.HeadFrontStart && side <= BodySizes.Ghoul.HeadWidth / 2f;
+        return high && onHead ? HitZone.Head : HitZone.Body;
     }
 
     public void TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)

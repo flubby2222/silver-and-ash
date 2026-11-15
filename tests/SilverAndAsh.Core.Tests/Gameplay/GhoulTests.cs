@@ -98,4 +98,29 @@ public class GhoulTests
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0f, headHeight, r)));                    // side, high
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(r, 0.7f, 0f)));                          // front, low
     }
+
+    [Fact]
+    public void Beside_the_head_is_body_even_high_at_the_front()
+    {
+        // Looking along +X. The drawn head is 0.26 m wide; a hit 0.2 m to its side, high at the front, is body.
+        var ghoul = new Ghoul(7, Vector3.Zero, Vector3.UnitX);
+        var high = BodySizes.Ghoul.Height - 0.05f;
+
+        Assert.Equal(HitZone.Head, ghoul.ZoneAt(new Vector3(0.35f, high, 0.1f)));
+        Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0.3f, high, 0.2f)));
+        Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0.3f, high, -0.2f)));
+        Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0.12f, high, 0f)));                      // still above the neck
+    }
+
+    [Fact]
+    public void The_head_zone_follows_where_the_ghoul_looks()
+    {
+        // Looking along +Z now: the head lies in +Z, sideways is X.
+        var ghoul = new Ghoul(7, Vector3.Zero, Vector3.UnitZ);
+        var high = BodySizes.Ghoul.Height - 0.05f;
+
+        Assert.Equal(HitZone.Head, ghoul.ZoneAt(new Vector3(0.1f, high, 0.35f)));
+        Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0.2f, high, 0.3f)));
+        Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0f, high, -0.35f)));
+    }
 }

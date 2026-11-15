@@ -57,7 +57,7 @@
   },
 
   "ghoul": {
-    "maxHealth": 80,
+    "maxHealth": 100,
     "corpseTime": 2,                    // s the body lies there
     "sightRange": 12,                   // m
     "speed": 4.5,                       // m/s crawling
@@ -65,13 +65,13 @@
     "hitReach": 2.4,                    // m: the blow still hits this far
     "windUpTime": 0.5,                  // s of warning before the blow
     "attackHalfAngle": 60,              // degrees to the side it still hits
-    "attackDamage": 20,
+    "attackDamage": 25,
     "recoverTime": 0.8,                 // s of rest after a blow
     "repathTime": 0.5                   // s between path searches
   },
 
   "bat": {
-    "maxHealth": 30,
+    "maxHealth": 40,
     "corpseTime": 2.5,                  // s the body lies there
     "sightRange": 15,                   // m
     "circleRadiusMin": 4,               // m, each bat gets its own distance ...
@@ -111,8 +111,8 @@
   },
 
   "drops": {
-    "ghoulChance": 0.3,                 // a killed ghoul drops something in 30 % of cases (0 = never, 1 = always)
-    "batChance": 0.15,                  // a killed bat in 15 %
+    "ghoulChance": 0.12,                // a killed ghoul drops something in 12 % of cases (0 = never, 1 = always)
+    "batChance": 0.08,                  // a killed bat in 8 %
     "consecratedAmmoShare": 0.3         // of all drops, 30 % are consecrated ammunition, the rest blood vials
   },
 
@@ -128,8 +128,8 @@
 
   // Keys open locked doors (each fits every lock and is used up). Lost with the run.
   "keys": {
-    "roomChance": 0.15,                 // a cleared combat room leaves a key in its middle in 15 % of cases
-    "enemyChance": 0.05                 // a killed enemy drops one in 5 %
+    "roomChance": 0.1,                  // a cleared combat room leaves a key in its middle in 10 % of cases
+    "enemyChance": 0.025                // a killed enemy drops one in 2.5 %
   },
 
   // Chests (decision record 0006). About every fourth combat room gets one; it rises from the floor once the room is cleared.
@@ -140,14 +140,14 @@
     "combatRoomChance": 0.25,
     "treasureChestsMin": 1,             // a treasure room holds 1 to 2 chests
     "treasureChestsMax": 2,
-    "beggar":  { "combatShareNear": 0.7,  "combatShareFar": 0.55, "treasureShare": 0.2, "lockedTreasureShare": 0.15, "secretShare": 0, "lockedChance": 0.1,  "silverMin": 10, "silverMax": 20,  "bloodVialChance": 0.2 },
-    "guard":   { "combatShareNear": 0.27, "combatShareFar": 0.37, "treasureShare": 0.45, "lockedTreasureShare": 0.3, "secretShare": 0.35, "lockedChance": 0.35, "silverMin": 20, "silverMax": 35,  "bloodVialChance": 0.35 },
-    "king":    { "combatShareNear": 0.03, "combatShareFar": 0.08, "treasureShare": 0.3, "lockedTreasureShare": 0.45, "secretShare": 0.5, "lockedChance": 0.7,  "silverMin": 40, "silverMax": 60,  "bloodVialChance": 0.6 },
+    "beggar":  { "combatShareNear": 0.7,  "combatShareFar": 0.55, "treasureShare": 0.2, "lockedTreasureShare": 0.15, "secretShare": 0, "lockedChance": 0.1,  "silverMin": 10, "silverMax": 20,  "bloodVialChance": 0.1 },
+    "guard":   { "combatShareNear": 0.27, "combatShareFar": 0.37, "treasureShare": 0.45, "lockedTreasureShare": 0.3, "secretShare": 0.35, "lockedChance": 0.35, "silverMin": 20, "silverMax": 35,  "bloodVialChance": 0.25 },
+    "king":    { "combatShareNear": 0.03, "combatShareFar": 0.08, "treasureShare": 0.3, "lockedTreasureShare": 0.45, "secretShare": 0.5, "lockedChance": 0.7,  "silverMin": 40, "silverMax": 60,  "bloodVialChance": 0.5 },
     "vampire": { "combatShareNear": 0,    "combatShareFar": 0,    "treasureShare": 0.05, "lockedTreasureShare": 0.1, "secretShare": 0.15, "lockedChance": 1,    "silverMin": 80, "silverMax": 120, "bloodVialChance": 1 }
   },
 
   "bloodVial": {
-    "heal": 50                          // health it gives back (never above the maximum)
+    "heal": 30                          // health it gives back (never above the maximum)
   },
 
   "consecratedAmmo": {
@@ -156,8 +156,8 @@
   },
 
   "layout": {
-    "combatRoomsMin": 7,                // a level has 7 to 9 combat rooms (with start and boss: about 20 minutes)
-    "combatRoomsMax": 9,
+    "combatRoomsMin": 12,               // a level has 12 to 14 combat rooms (aim: about 20 minutes, see docs/balancing.md)
+    "combatRoomsMax": 14,
     "corridorChance": 0.6,              // 60 % of rooms are reached through a corridor, the rest through a shared wall
     "maxLoops": 2,                      // at most 2 extra connections that make a second way round
     "treasureRooms": 1,                 // treasure rooms per level with an ordinary door ...
@@ -166,9 +166,9 @@
   },
 
   "difficulty": {
-    "ghoulShareNear": 0.5,              // the combat room nearest to the start fills half of its ghoul places ...
+    "ghoulShareNear": 0.7,              // the combat room nearest to the start fills 70 % of its ghoul places ...
     "ghoulShareFar": 1,                 // ... the farthest one (and the boss room) all of them; in between it rises evenly
-    "batShareNear": 0,                  // bats: none near the start ...
+    "batShareNear": 0.25,               // bats: a quarter of the places near the start ...
     "batShareFar": 1                    // ... all places far away. Every combat room gets at least one enemy
   },
 

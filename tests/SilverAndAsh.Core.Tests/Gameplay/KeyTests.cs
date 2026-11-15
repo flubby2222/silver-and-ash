@@ -66,11 +66,12 @@ public class KeyTests
     }
 
     [Fact]
-    public void About_one_kill_in_twenty_drops_a_key_by_standard()
+    public void Keys_drop_as_often_as_the_standard_chance_says()
     {
-        // 400 worlds, one ghoul and one bat each: 800 kills, about 5 % = 40 keys.
+        // 1000 worlds, one ghoul and one bat each: 2000 kills, each with the standard chance.
+        const int Kills = 2000;
         var keys = 0;
-        for (var seed = 0; seed < 400; seed++)
+        for (var seed = 0; seed < Kills / 2; seed++)
         {
             var world = new GameWorld(LevelParser.Parse("P#G\n.#.\n.#B"), seed);
             Kill(world.Ghouls[0]);
@@ -79,7 +80,8 @@ public class KeyTests
             keys += world.Loot.Count(loot => loot.Kind == LootKind.Key);
         }
 
-        Assert.InRange(keys, 22, 60);
+        var (low, high) = Band(Kills, Balance.Default.Keys.EnemyChance);
+        Assert.InRange(keys, low, high);
     }
 
     [Fact]
@@ -340,6 +342,14 @@ public class KeyTests
 
         Assert.True(world.Doors[0].IsOpen);
         Assert.Equal(1, world.Player.Keys);
+    }
+
+    /// <summary>Where a count of hits out of <paramref name="tries"/> with <paramref name="chance"/> lies: expected value +- 3.5 standard deviations.</summary>
+    private static (double Low, double High) Band(int tries, float chance)
+    {
+        var expected = tries * (double)chance;
+        var deviation = Math.Sqrt(tries * chance * (1.0 - chance));
+        return (expected - (3.5 * deviation), expected + (3.5 * deviation));
     }
 
     private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();

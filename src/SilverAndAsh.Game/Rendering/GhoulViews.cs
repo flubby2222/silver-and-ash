@@ -46,7 +46,7 @@ internal sealed class PlaceholderGhoulView : IGhoulView
     [
         (new(0.46f, 0.34f, 0.40f), new(0f, 0.30f, -0.24f), 0f, Rags),       // hips and bent legs
         (new(0.50f, 0.34f, 0.66f), new(0f, 0.62f, 0.02f), 18f, Rags),       // hunched torso
-        (new(0.26f, 0.24f, 0.30f), new(0f, 0.82f, 0.36f), 0f, Skin),        // head, pushed forward
+        (new(0.26f, 0.24f, 0.30f), new(0f, 0.82f, 0.36f), 0f, Skin),        // head, pushed forward (= its hit zone, BodySizes.Ghoul)
     ];
 
     // Arms hang from the shoulders (pivot) and are turned around it: x of the shoulder, arm size.

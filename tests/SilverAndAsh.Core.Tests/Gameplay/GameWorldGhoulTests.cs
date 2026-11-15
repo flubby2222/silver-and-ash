@@ -36,12 +36,19 @@ public class GameWorldGhoulTests
     }
 
     [Fact]
-    public void Two_blade_swings_kill_a_ghoul()
+    public void As_many_blade_swings_as_its_health_needs_kill_a_ghoul()
     {
+        // With the standard values: 100 health, 40 per swing - the third swing kills.
         var world = InFrontOfAGhoul();
+        var swings = (int)Math.Ceiling(Balance.Default.Ghoul.MaxHealth / (double)Balance.Default.Blade.Damage);
 
-        Swing(world);
-        RunTicks(world, PlayerInput.None, BladeTicks);
+        for (var swing = 1; swing < swings; swing++)
+        {
+            Swing(world);
+            RunTicks(world, PlayerInput.None, BladeTicks);
+        }
+
+        Assert.False(world.Ghouls[0].IsDead, "One swing short of its health the ghoul must still live.");
         var seen = new List<GameEvent>();
         world.Tick(Melee);
         world.Tick(PlayerInput.None);

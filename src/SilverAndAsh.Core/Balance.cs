@@ -109,10 +109,10 @@ public sealed record BoonBalance
 public sealed record DropsBalance
 {
     /// <summary>Chance that a killed ghoul drops something: 0 = never, 1 = always.</summary>
-    public float GhoulChance { get; init; } = 0.3f;
+    public float GhoulChance { get; init; } = 0.12f;
 
     /// <summary>Chance that a killed bat drops something: 0 = never, 1 = always.</summary>
-    public float BatChance { get; init; } = 0.15f;
+    public float BatChance { get; init; } = 0.08f;
 
     /// <summary>Of all drops, this share is consecrated ammunition (0.3 = 30 %); the rest are blood vials.</summary>
     public float ConsecratedAmmoShare { get; init; } = 0.3f;
@@ -147,10 +147,10 @@ public sealed record SilverBalance
 public sealed record KeysBalance
 {
     /// <summary>Chance that a cleared combat (or boss) room leaves a key in its middle.</summary>
-    public float RoomChance { get; init; } = 0.15f;
+    public float RoomChance { get; init; } = 0.1f;
 
     /// <summary>Chance that a killed enemy drops a key.</summary>
-    public float EnemyChance { get; init; } = 0.05f;
+    public float EnemyChance { get; init; } = 0.025f;
 }
 
 /// <summary>Chests (decision record 0006). Each tier has its own values - see <see cref="ChestTierBalance"/>.</summary>
@@ -169,21 +169,21 @@ public sealed record ChestsBalance
     public ChestTierBalance Beggar { get; init; } = new()
     {
         CombatShareNear = 0.7f, CombatShareFar = 0.55f, TreasureShare = 0.2f, LockedTreasureShare = 0.15f, SecretShare = 0f,
-        LockedChance = 0.1f, SilverMin = 10, SilverMax = 20, BloodVialChance = 0.2f,
+        LockedChance = 0.1f, SilverMin = 10, SilverMax = 20, BloodVialChance = 0.1f,
     };
 
     /// <summary>Guard's Chest (metal).</summary>
     public ChestTierBalance Guard { get; init; } = new()
     {
         CombatShareNear = 0.27f, CombatShareFar = 0.37f, TreasureShare = 0.45f, LockedTreasureShare = 0.3f, SecretShare = 0.35f,
-        LockedChance = 0.35f, SilverMin = 20, SilverMax = 35, BloodVialChance = 0.35f,
+        LockedChance = 0.35f, SilverMin = 20, SilverMax = 35, BloodVialChance = 0.25f,
     };
 
     /// <summary>King's Chest (gold).</summary>
     public ChestTierBalance King { get; init; } = new()
     {
         CombatShareNear = 0.03f, CombatShareFar = 0.08f, TreasureShare = 0.3f, LockedTreasureShare = 0.45f, SecretShare = 0.5f,
-        LockedChance = 0.7f, SilverMin = 40, SilverMax = 60, BloodVialChance = 0.6f,
+        LockedChance = 0.7f, SilverMin = 40, SilverMax = 60, BloodVialChance = 0.5f,
     };
 
     /// <summary>Vampire's Chest (red).</summary>
@@ -253,10 +253,10 @@ public sealed record ConsecratedAmmoBalance
 public sealed record LayoutBalance
 {
     /// <summary>Fewest combat rooms in a level. The generator picks a number between this and the maximum.</summary>
-    public int CombatRoomsMin { get; init; } = 7;
+    public int CombatRoomsMin { get; init; } = 12;
 
     /// <summary>Most combat rooms in a level.</summary>
-    public int CombatRoomsMax { get; init; } = 9;
+    public int CombatRoomsMax { get; init; } = 14;
 
     /// <summary>Chance that a room is reached through a corridor instead of a door in a shared wall: 0 = never, 1 = always.</summary>
     public float CorridorChance { get; init; } = 0.6f;
@@ -282,13 +282,13 @@ public sealed record LayoutBalance
 public sealed record DifficultyBalance
 {
     /// <summary>Share of ghoul places taken in the nearest combat room.</summary>
-    public float GhoulShareNear { get; init; } = 0.5f;
+    public float GhoulShareNear { get; init; } = 0.7f;
 
     /// <summary>Share of ghoul places taken in the farthest combat room and the boss room.</summary>
     public float GhoulShareFar { get; init; } = 1f;
 
     /// <summary>Share of bat places taken in the nearest combat room.</summary>
-    public float BatShareNear { get; init; } = 0f;
+    public float BatShareNear { get; init; } = 0.25f;
 
     /// <summary>Share of bat places taken in the farthest combat room and the boss room.</summary>
     public float BatShareFar { get; init; } = 1f;
@@ -298,7 +298,7 @@ public sealed record DifficultyBalance
 public sealed record BloodVialBalance
 {
     /// <summary>Health it gives back - never above the maximum.</summary>
-    public int Heal { get; init; } = 50;
+    public int Heal { get; init; } = 30;
 }
 
 /// <summary>Balancing values of the player character.</summary>
@@ -457,7 +457,7 @@ public sealed record DummyBalance
 public sealed record GhoulBalance
 {
     /// <summary>Health (2 blade hits, 1 pistol headshot, 3 pistol body shots).</summary>
-    public int MaxHealth { get; init; } = 80;
+    public int MaxHealth { get; init; } = 100;
 
     /// <summary>Seconds the dead body lies on the ground before it disappears.</summary>
     public float CorpseTime { get; init; } = 2f;
@@ -484,7 +484,7 @@ public sealed record GhoulBalance
     public float AttackHalfAngle { get; init; } = 60f;
 
     /// <summary>Damage of a blow.</summary>
-    public int AttackDamage { get; init; } = 20;
+    public int AttackDamage { get; init; } = 25;
 
     /// <summary>Seconds of rest after a blow.</summary>
     public float RecoverTime { get; init; } = 0.8f;
@@ -497,7 +497,7 @@ public sealed record GhoulBalance
 public sealed record BatBalance
 {
     /// <summary>Health: one blade hit or one pistol shot.</summary>
-    public int MaxHealth { get; init; } = 30;
+    public int MaxHealth { get; init; } = 40;
 
     /// <summary>Seconds the dead body lies on the floor before it disappears (counted from its death).</summary>
     public float CorpseTime { get; init; } = 2.5f;

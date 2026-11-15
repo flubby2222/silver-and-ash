@@ -65,9 +65,9 @@ public class EnemyPlacementTests
             var nearest = combat[0];
             var farthest = combat[^1];
 
-            // With the standard values: the nearest room gets half of its ghouls and no bat, the farthest all of them.
+            // With the standard values: the nearest room gets its "near" shares, the farthest all of them.
             Assert.Equal((int)MathF.Round(nearest.GhoulSlots.Count * Difficulty.GhoulShareNear, MidpointRounding.AwayFromZero), Ghouls(generated, nearest));
-            Assert.Equal(0, Bats(generated, nearest));
+            Assert.Equal((int)MathF.Round(nearest.BatSlots.Count * Difficulty.BatShareNear, MidpointRounding.AwayFromZero), Bats(generated, nearest));
             Assert.Equal(farthest.GhoulSlots.Count, Ghouls(generated, farthest));
             Assert.Equal(farthest.BatSlots.Count, Bats(generated, farthest));
 

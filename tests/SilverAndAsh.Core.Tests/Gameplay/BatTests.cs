@@ -72,14 +72,15 @@ public class BatTests
     public void Damage_kills_it_once_and_is_reported()
     {
         var bat = new Bat(5, new Vector3(1f, 2.2f, 1f));
+        var health = Balance.Default.Bat.MaxHealth;
 
-        bat.TakeDamage(20, _events);
-        bat.TakeDamage(20, _events);
+        bat.TakeDamage(health - 10, _events);
+        bat.TakeDamage(20, _events);                        // only 10 left: the hit counts 10
         bat.TakeDamage(20, _events);                        // already dead: ignored
 
         Assert.True(bat.IsDead);
         Assert.False(bat.IsHittable);
-        Assert.Equal([new BatHit(5, 20), new BatHit(5, 10), new BatDied(5)], _events);
+        Assert.Equal([new BatHit(5, health - 10), new BatHit(5, 10), new BatDied(5)], _events);
     }
 
     [Fact]
@@ -100,7 +101,9 @@ public class BatTests
     [Fact]
     public void The_pistol_shoots_it_out_of_the_air()
     {
-        var world = new GameWorld(LevelParser.Parse("P\n.\n.\nB"));
+        // A bat no tougher than one shot (with the standard values it takes two).
+        var balance = Balance.Default with { Bat = Balance.Default.Bat with { MaxHealth = Balance.Default.Pistol.Damage } };
+        var world = new GameWorld(LevelParser.Parse("P\n.\n.\nB"), balance: balance);
         var bat = world.Bats[0];
         AimAt(world.Player, bat.Position + new Vector3(0f, BodySizes.Bat.Height / 2f, 0f));
 

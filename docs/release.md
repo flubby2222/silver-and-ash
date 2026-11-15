@@ -19,6 +19,7 @@ Eine Endung wie `-beta` (z. B. `v0.3.0-beta`) markiert das Release auf GitHub al
 ## Ablauf
 
 1. **Alles für den Meilenstein ist gemergt**, die CI auf `main` ist grün.
+   - Dazu gehört eine **Balancing-Runde**: Balance-Report laufen lassen, einen ganzen Durchlauf spielen, `runs.log` ansehen und Werte anpassen (siehe [balancing.md](balancing.md#balancing-runden)). Ihr Ergebnis steht im Protokoll dort.
 2. **CHANGELOG abschließen** – per Pull Request (`main` ist geschützt). Weil jeder PR seine Änderung schon unter *Unveröffentlicht* eingetragen hat, ist das nur noch Umbenennen: *Unveröffentlicht* wird zu `## [0.1.0] – 2026-11-22 – Name des Meilensteins`, darüber kommt ein neuer, leerer *Unveröffentlicht*-Abschnitt, unten die Vergleichs-Links.
 3. **Lokal auf den neuesten Stand:**
    ```
