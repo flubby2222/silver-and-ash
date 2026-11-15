@@ -36,6 +36,9 @@ public sealed record Balance
     /// <summary>Experience for kills and how much each level needs.</summary>
     public ExperienceBalance Experience { get; init; } = new();
 
+    /// <summary>What the bonuses chosen after a level up give.</summary>
+    public BoonBalance Boons { get; init; } = new();
+
     /// <summary>What killed enemies leave behind.</summary>
     public DropsBalance Drops { get; init; } = new();
 
@@ -61,8 +64,30 @@ public sealed record ExperienceBalance
     /// <summary>Experience needed from level 1 to level 2.</summary>
     public int FirstLevel { get; init; } = 100;
 
-    /// <summary>Every further level needs this much more than the one before (100, 150, 200 ...).</summary>
-    public int PerLevel { get; init; } = 50;
+    /// <summary>Every further level needs this many times as much as the one before (1.25: 100, 125, 156, 195 ...).</summary>
+    public float Growth { get; init; } = 1.25f;
+}
+
+/// <summary>
+/// The bonuses after a level up: small steps, each counted from the base value - so choosing one three times gives
+/// three times its value (not compound interest). A level up offers some of them at random.
+/// </summary>
+public sealed record BoonBalance
+{
+    /// <summary>How many different boons a level up offers, drawn at random from the pool.</summary>
+    public int Offered { get; init; } = 3;
+
+    /// <summary>Stamina regeneration: the bar refills this much faster per choice (0.05 = +5 % of the base speed).</summary>
+    public float StaminaRegen { get; init; } = 0.05f;
+
+    /// <summary>Health: this much more maximum health per choice - and healed at once.</summary>
+    public int Health { get; init; } = 5;
+
+    /// <summary>Damage: this much more damage with every weapon per choice (0.05 = +5 % of the base damage).</summary>
+    public float Damage { get; init; } = 0.05f;
+
+    /// <summary>Experience: this much more experience per kill per choice (0.025 = +2.5 % of the base experience).</summary>
+    public float Experience { get; init; } = 0.025f;
 }
 
 /// <summary>How often killed enemies drop a consumable.</summary>

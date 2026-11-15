@@ -16,15 +16,19 @@ public sealed class Player
     /// Creates the player standing on the start cell of <paramref name="level"/>. <paramref name="bodies"/> gives the
     /// bodies the player cannot walk through (training dummies, later enemies); asked anew every tick.
     /// <paramref name="balance"/> sets health, speeds, stamina and weapons (the standard values if none is given).
+    /// <paramref name="random"/> is the world's random generator - it draws the boons a level up offers (online co-op
+    /// rule 3). Without one (a player alone in a test) it uses one started from 0.
     /// </summary>
-    public Player(Level level, Func<IEnumerable<CylinderBody>>? bodies = null, Balance? balance = null)
+    public Player(Level level, Func<IEnumerable<CylinderBody>>? bodies = null, Balance? balance = null, Random? random = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         balance ??= Balance.Default;
+        _random = random ?? new Random(0);
         _level = level;
         _bodies = bodies ?? (() => []);
         _player = balance.Player;
         _experience = balance.Experience;
+        _boons = balance.Boons;
         _consecratedFireRate = balance.ConsecratedAmmo.FireRateMultiplier;
         Position = level.PlayerStartPosition;
         PreviousPosition = Position;
@@ -79,8 +83,8 @@ public sealed class Player
     /// </summary>
     public void Look(PlayerInput input)
     {
-        // The dead do not look around.
-        if (!IsDead)
+        // The dead do not look around - and while a bonus is being chosen, the view stays still.
+        if (!IsDead && PendingBoons == 0)
         {
             View.ApplyMouse(input.Look);
         }
@@ -137,12 +141,18 @@ public sealed class Player
     /// <summary>Experience gathered towards the next level.</summary>
     public int Experience { get; private set; }
 
-    /// <summary>Experience needed for the next level: the first level's amount, then more each level.</summary>
-    public int ExperienceToNextLevel => _experience.FirstLevel + (Level - 1) * _experience.PerLevel;
+    /// <summary>
+    /// Experience needed for the next level: the first level's amount, then <see cref="ExperienceBalance.Growth"/>
+    /// times as much for each level (100, 125, 156, 195 ...), rounded.
+    /// </summary>
+    public int ExperienceToNextLevel =>
+        (int)MathF.Round(_experience.FirstLevel * MathF.Pow(_experience.Growth, Level - 1), MidpointRounding.AwayFromZero);
 
     /// <summary>
-    /// Adds <paramref name="amount"/> experience and climbs as many levels as it pays for; what is left over counts
-    /// towards the next. Reports <see cref="ExperienceGained"/> and every <see cref="LevelUp"/>. The dead gain nothing.
+    /// Adds <paramref name="amount"/> experience - plus the <see cref="Boon.Experience"/> bonus, counted from
+    /// <paramref name="amount"/> - and climbs as many levels as it pays for; what is left over counts towards the next.
+    /// Every level up draws an offer of boons. Reports <see cref="ExperienceGained"/> and every <see cref="LevelUp"/>.
+    /// The dead gain nothing.
     /// </summary>
     public void AddExperience(int amount, ICollection<GameEvent> events)
     {
@@ -153,21 +163,92 @@ public sealed class Player
             return;
         }
 
-        Experience += amount;
-        events.Add(new ExperienceGained(Id, amount));
+        var gained = (int)MathF.Round(amount * (1f + _boons.Experience * BoonCount(Boon.Experience)), MidpointRounding.AwayFromZero);
+        Experience += gained;
+        events.Add(new ExperienceGained(Id, gained));
+
         // A level that needs nothing (values set to 0 in code) would be climbed forever - stop there.
         while (ExperienceToNextLevel > 0 && Experience >= ExperienceToNextLevel)
         {
             Experience -= ExperienceToNextLevel;
             Level++;
+            // An empty offer (0 boons offered, set in code) would leave the world waiting forever - skip it.
+            var offer = DrawOffer();
+            if (offer.Count > 0)
+            {
+                _offers.Enqueue(offer);
+            }
+
             events.Add(new LevelUp(Id, Level));
         }
     }
 
     private readonly ExperienceBalance _experience;
 
+    /// <summary>Level ups whose bonus has not been chosen yet. While above 0, the world waits.</summary>
+    public int PendingBoons => _offers.Count;
+
+    /// <summary>The boons offered for the next waiting level up (empty if none is waiting).</summary>
+    public IReadOnlyList<Boon> CurrentOffer => _offers.Count > 0 ? _offers.Peek() : [];
+
+    /// <summary>How often <paramref name="boon"/> was chosen in this run.</summary>
+    public int BoonCount(Boon boon) => _boonCounts.GetValueOrDefault(boon);
+
+    /// <summary>
+    /// Takes the waiting bonus: applies <paramref name="boon"/> and reports <see cref="BoonChosen"/>. Returns false
+    /// (and does nothing) if no level up is waiting or <paramref name="boon"/> is not in its offer.
+    /// </summary>
+    public bool Choose(Boon boon, ICollection<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        if (!CurrentOffer.Contains(boon))
+        {
+            return false;
+        }
+
+        _offers.Dequeue();
+        _boonCounts[boon] = BoonCount(boon) + 1;
+        switch (boon)
+        {
+            case Boon.Health:
+                Health += _boons.Health;
+                break;
+            case Boon.StaminaRegen:
+                Stamina.RegenMultiplier = 1f + _boons.StaminaRegen * BoonCount(Boon.StaminaRegen);
+                break;
+        }
+
+        // Damage and experience work through their counts (the damage rule, AddExperience).
+        events.Add(new BoonChosen(Id, boon));
+        return true;
+    }
+
+    /// <summary>
+    /// Draws <see cref="BoonBalance.Offered"/> different boons from the pool (every <see cref="Boon"/>) with the
+    /// world's random generator - the same seed always offers the same.
+    /// </summary>
+    private List<Boon> DrawOffer()
+    {
+        var pool = Enum.GetValues<Boon>().ToList();
+        var offer = new List<Boon>();
+        while (offer.Count < _boons.Offered && pool.Count > 0)
+        {
+            var index = _random.Next(pool.Count);
+            offer.Add(pool[index]);
+            pool.RemoveAt(index);
+        }
+
+        return offer;
+    }
+
+    private readonly BoonBalance _boons;
+    private readonly Random _random;
+    private readonly Queue<List<Boon>> _offers = new();
+    private readonly Dictionary<Boon, int> _boonCounts = [];
+    private int BonusMaxHealth => BoonCount(Boon.Health) * _boons.Health;
+
     /// <summary>The most health the player can have.</summary>
-    public int MaxHealth => _player.MaxHealth;
+    public int MaxHealth => _player.MaxHealth + BonusMaxHealth;
 
     /// <summary>Top walking speed on the ground in m/s (for drawing, e.g. how much the weapons bob).</summary>
     public float WalkSpeed => _player.MaxSpeed;

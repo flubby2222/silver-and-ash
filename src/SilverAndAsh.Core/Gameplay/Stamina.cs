@@ -31,6 +31,14 @@ public sealed class Stamina
     /// <summary>How many segments a full bar has (for drawing).</summary>
     public int Segments => Capacity / CostPerSegment;
 
+    /// <summary>
+    /// How fast the bar refills: 1 = normal, 1.05 = 5 % faster (the <see cref="Boon.StaminaRegen"/> bonus).
+    /// The bar counts in whole units, so the part beyond them is carried over from tick to tick.
+    /// </summary>
+    public float RegenMultiplier { get; set; } = 1f;
+
+    private float _regenCarry;
+
     /// <summary>How full the bar is: 0 = empty, 1 = full.</summary>
     public float Fraction => (float)_amount / Capacity;
 
@@ -82,7 +90,11 @@ public sealed class Stamina
     {
         if (IsRecharging && _amount < Capacity)
         {
-            _amount++;
+            // Normally one unit per tick; faster regeneration adds the extra bit up until it is a whole unit.
+            _regenCarry += RegenMultiplier;
+            var units = (int)_regenCarry;
+            _regenCarry -= units;
+            _amount = Math.Min(Capacity, _amount + units);
         }
     }
 }

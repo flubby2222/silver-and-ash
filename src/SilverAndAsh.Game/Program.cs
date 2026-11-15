@@ -126,6 +126,11 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             damageFeedback = new DamageFeedback();
         }
 
+        // Choosing a level-up bonus: was the window open last frame, and which boon is waiting for the next tick?
+        var wasChoosing = false;
+        var choosingSeconds = 0f;
+        Boon? chosenBoon = null;
+
         var accumulator = new TickAccumulator();
         using var picture = new LowResolutionTarget(LookSettings.RenderWidth, LookSettings.RenderHeight);
 
@@ -138,15 +143,35 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
         // Game loop: runs once per drawn frame until the window is closed (X button).
         while (!Raylib.WindowShouldClose())
         {
+            // A level up waits for a bonus: show the cursor so the boxes can be clicked; capture it again afterwards.
+            var choosing = player.PendingBoons > 0;
+            if (choosing && !wasChoosing && input.IsMouseCaptured)
+            {
+                input.ReleaseMouse();
+            }
+            else if (!choosing && wasChoosing)
+            {
+                input.CaptureMouse();
+            }
+
+            wasChoosing = choosing;
+            choosingSeconds = choosing ? choosingSeconds + Raylib.GetFrameTime() : 0f;
+
             // 1. Input: looking around happens every frame, so it feels immediate.
-            var playerInput = input.Read();
+            var playerInput = input.Read(choosing);
             player.Look(playerInput);
+            if (choosing)
+            {
+                chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, choosingSeconds);
+            }
 
             // 2. Simulation: as many fixed ticks as fit into the real time of the last frame.
+            //    A chosen bonus is kept until a tick has taken it - not every frame has a tick.
             var ticks = accumulator.Advance(Raylib.GetFrameTime());
             for (var i = 0; i < ticks; i++)
             {
-                gameWorld.Tick(playerInput);
+                gameWorld.Tick(playerInput with { ChooseBoon = chosenBoon });
+                chosenBoon = null;
 
                 // Events must be read after EVERY tick - the next tick clears them.
                 foreach (var gameEvent in gameWorld.Events)
@@ -245,9 +270,13 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             Raylib.ClearBackground(LookSettings.BarColor);
             picture.DrawToScreen();
             damageFeedback.Draw();
-            DrawHud(input.IsMouseCaptured, displayVersion);
+            DrawHud(input.IsMouseCaptured || choosing, displayVersion);
             DrawStaminaBar(player);
             CombatHud.Draw(player);
+            if (choosing)
+            {
+                BoonWindow.Draw(player, gameWorld.Balance.Boons);
+            }
 #if DEBUG
             DrawDebugInfo(player);
             if (reloadedNoticeSeconds > 0f)

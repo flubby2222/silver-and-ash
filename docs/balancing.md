@@ -23,7 +23,8 @@ Zum **Ausprobieren** die Kopie neben dem Spiel ändern. Ein Wert, der **bleiben*
   "dummy":  { ... },
   "ghoul":  { "speed": 4.5, ... },
   "bat":    { ... },
-  "experience": { "ghoul": 30, "bat": 20, "firstLevel": 100, "perLevel": 50 },
+  "experience": { "ghoul": 30, "bat": 20, "firstLevel": 100, "growth": 1.25 },
+  "boons":  { "offered": 3, "staminaRegen": 0.05, "health": 5, "damage": 0.05, "experience": 0.025 },
   "drops":  { "ghoulChance": 0.3, "batChance": 0.15, "consecratedAmmoShare": 0.3 },   // 0 = nie, 1 = immer
   "bloodVial": { "heal": 50 },
   "consecratedAmmo": { "fireRateMultiplier": 2, "duration": 10 },

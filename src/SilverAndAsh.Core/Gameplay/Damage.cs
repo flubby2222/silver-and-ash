@@ -15,10 +15,11 @@ public enum HitZone
 }
 
 /// <summary>
-/// Everything about one hit that decides its damage: which weapon, which zone, its base damage and - for a charged
-/// blade - how far it was charged (0 = not at all, 1 = fully).
+/// Everything about one hit that decides its damage: which weapon, which zone, its base damage, - for a charged
+/// blade - how far it was charged (0 = not at all, 1 = fully), and how often the attacker chose
+/// <see cref="Boon.Damage"/>.
 /// </summary>
-public sealed record Hit(Weapon Weapon, HitZone Zone, int BaseDamage, float Charge = 0f);
+public sealed record Hit(Weapon Weapon, HitZone Zone, int BaseDamage, float Charge = 0f, int DamageBoons = 0);
 
 /// <summary>The damage a hit really does, and whether it counts as a critical hit (shown differently).</summary>
 public readonly record struct DamageResult(int Amount, bool IsCritical);
@@ -53,8 +54,9 @@ public sealed class DamageRules
     private readonly List<IDamageRule> _rules = [];
 
     /// <summary>
-    /// The rules of a normal game: headshots with the pistol do triple damage, a charged blade up to double -
-    /// with the multipliers from <paramref name="balance"/> (the standard values if none is given).
+    /// The rules of a normal game: headshots with the pistol do triple damage, a charged blade up to double, every
+    /// chosen Damage boon a bit more - with the values from <paramref name="balance"/> (the standard values if none
+    /// is given).
     /// </summary>
     public static DamageRules Standard(Balance? balance = null)
     {
@@ -62,6 +64,7 @@ public sealed class DamageRules
         var rules = new DamageRules();
         rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.Head, balance.Pistol.HeadshotMultiplier));
         rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
+        rules.Add(new DamageBoonBonus(balance.Boons.Damage));
         return rules;
     }
 
