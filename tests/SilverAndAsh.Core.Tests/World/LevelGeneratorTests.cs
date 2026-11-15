@@ -137,6 +137,42 @@ public class LevelGeneratorTests
     }
 
     [Fact]
+    public void The_start_room_has_exactly_one_door()
+    {
+        Assert.All(ManyLevels.Value, generated =>
+            Assert.Single(generated.Doors, door => door.RoomA == 0 || door.RoomB == 0));
+    }
+
+    [Fact]
+    public void A_start_template_with_several_door_slots_still_gets_one_door_and_no_loop()
+    {
+        // Four door slots and as many loops as wanted: still only one way out of the start room.
+        RoomTemplate[] rooms =
+        [
+            RoomTemplateParser.Parse("###+###\n#.....#\n+..P..+\n#.....#\n###+###", RoomKind.Start, "four-ways"),
+            .. Rooms.Where(room => room.Kind != RoomKind.Start),
+        ];
+        var layout = Layout with { MaxLoops = 6 };
+
+        Assert.All(Enumerable.Range(0, 30), seed =>
+        {
+            var generated = LevelGenerator.Generate(rooms, seed, layout);
+            Assert.Single(generated.Doors, door => door.RoomA == 0 || door.RoomB == 0);
+        });
+    }
+
+    [Fact]
+    public void The_way_out_of_the_start_room_lies_in_different_directions()
+    {
+        var sides = ManyLevels.Value
+            .Select(generated => generated.Doors.Single(door => door.RoomA == 0 || door.RoomB == 0).Side)
+            .Distinct()
+            .Count();
+
+        Assert.Equal(4, sides);
+    }
+
+    [Fact]
     public void The_boss_room_has_one_entrance_and_lies_farthest_from_the_start()
     {
         Assert.All(ManyLevels.Value, generated =>
