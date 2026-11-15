@@ -6,15 +6,19 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.8.0] – 2026-11-15 – Run-Grundgerüst
+
+Aus dem Testlevel wird ein Durchlauf: Jede Runde baut eine neue Ebene aus handgebauten Räumen, Kampfräume schließen sich zur Arena, je weiter man kommt, desto mehr wartet – mit Titel, Pause, Karte und einer Statistik am Ende.
+
 ### Hinzugefügt
-- Karte auf **M** (halten): zeigt von oben die schon betretenen Räume und Gänge, ihre Türen (zu, offen, vergittert, Boss) und wo man steht und hinschaut. Das Spiel läuft dabei weiter
-- Endbildschirm „YOU DIED“ bzw. „VICTORY“ mit der Statistik des Durchlaufs (Zeit, getötete Ghule und Fledermäuse, Schaden ausgeteilt und genommen, erreichte Stufe, geräumte Räume, Seed) und der Wahl „New run“ / „Title“. Jeder Durchlauf wird außerdem als Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log` festgehalten
-- Titelbildschirm mit „Start“ und „Quit“
-- Esc-Menü: weiterspielen, Mausempfindlichkeit einstellen (bleibt gespeichert), zurück zum Titel, beenden. Solange es offen ist, steht das Spiel still
 - **Durchläufe auf Ebene 0 „The Catacombs“:** Das Spiel startet auf einer zufällig erzeugten Ebene aus handgebauten Räumen, mit Gängen und Schleifen, der Bossraum am weitesten vom Start. Beim Start erscheint kurz der Name der Ebene. Nach dem Tod beginnt ein neuer Durchlauf mit neuem Grundriss. Ist der Bossraum geräumt, ist der Durchlauf gewonnen. Mit `--seed <Zahl>` immer derselbe Grundriss; die alten Testlevel gibt es weiter mit `--level test` / `--level heights`
 - Türen zwischen den Räumen der erzeugten Ebenen: Alle sind zu und halten Spieler, Gegner, Sicht und Schüsse auf. Mit **F** öffnet man die Tür, auf die man aus der Nähe schaut („[F] Open“); offen bleibt offen. Die Tür zum Bossraum ist dunkel, mit Schädeln und rotem Schimmer
 - Kampfräume werden zur Arena: Beim ersten Betreten fallen an allen Türen Gitter, die schlafenden Gegner erwachen. Sind alle tot, heben sich die Gitter und die Tür, durch die man kam, öffnet sich
 - Je weiter ein Kampfraum vom Start entfernt ist, desto mehr Ghule und Fledermäuse warten darin; der Bossraum ist voll besetzt. Einstellbar in `balance.json` unter `difficulty`
+- Karte auf **M** (halten): zeigt von oben die schon betretenen Räume und Gänge, ihre Türen (zu, offen, vergittert, Boss) und wo man steht und hinschaut. Das Spiel läuft dabei weiter
+- Titelbildschirm mit „Start“ und „Quit“
+- Esc-Menü: weiterspielen, Mausempfindlichkeit einstellen (bleibt gespeichert), zurück zum Titel, beenden. Solange es offen ist, steht das Spiel still
+- Endbildschirm „YOU DIED“ bzw. „VICTORY“ mit der Statistik des Durchlaufs (Zeit, getötete Ghule und Fledermäuse, Schaden ausgeteilt und genommen, erreichte Stufe, geräumte Räume, Seed) und der Wahl „New run“ / „Title“. Jeder Durchlauf wird außerdem als Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log` festgehalten
 
 ### Geändert
 - Nach dem Tod startet der nächste Durchlauf nicht mehr von selbst – erst der Endbildschirm, dann „New run“. Das große „YOU DIED“ mitten im Bild entfällt, nur das Bild färbt sich rot
@@ -131,7 +135,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.7.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.4.0...v0.5.0
