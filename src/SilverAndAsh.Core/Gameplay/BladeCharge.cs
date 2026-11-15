@@ -32,6 +32,9 @@ public sealed class BladeCharge
     /// <summary>How far the blade is charged: 0 = not at all, 1 = fully.</summary>
     public float Fraction => (float)_ticks / _fullTicks;
 
+    /// <summary>True once the blade is fully charged - holding on costs nothing more.</summary>
+    public bool IsFull => _ticks >= _fullTicks;
+
     /// <summary>Starts charging (the button was just pressed).</summary>
     public void Start()
     {
