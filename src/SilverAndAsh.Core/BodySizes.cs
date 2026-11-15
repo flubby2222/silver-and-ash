@@ -57,6 +57,16 @@ public static class BodySizes
         public const float EyeHeight = 0.8f;
     }
 
+    /// <summary>Something lying on the floor to pick up (a blood vial ...).</summary>
+    public static class Pickup
+    {
+        /// <summary>Radius in metres - walking this close (body to body) picks it up.</summary>
+        public const float Radius = 0.25f;
+
+        /// <summary>Height in metres.</summary>
+        public const float Height = 0.3f;
+    }
+
     /// <summary>The vampire bat.</summary>
     public static class Bat
     {

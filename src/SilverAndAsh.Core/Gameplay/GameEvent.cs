@@ -48,6 +48,15 @@ public sealed record BatHit(int BatId, int Damage) : GameEvent;
 /// <summary>Bat <paramref name="BatId"/> reached 0 health and tumbles to the floor.</summary>
 public sealed record BatDied(int BatId) : GameEvent;
 
+/// <summary>A killed enemy dropped pickup <paramref name="PickupId"/> of <paramref name="Kind"/> at <paramref name="Position"/>.</summary>
+public sealed record PickupDropped(int PickupId, ConsumableKind Kind, Vector3 Position) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> picked up pickup <paramref name="PickupId"/> of <paramref name="Kind"/>.</summary>
+public sealed record PickupTaken(int PickupId, int PlayerId, ConsumableKind Kind) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> got <paramref name="Amount"/> health back.</summary>
+public sealed record PlayerHealed(int PlayerId, int Amount) : GameEvent;
+
 /// <summary>Bat <paramref name="BatId"/> starts glowing: it will spit a blood bolt shortly.</summary>
 public sealed record BatSpitWindUp(int BatId) : GameEvent;
 

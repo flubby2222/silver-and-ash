@@ -23,6 +23,9 @@ public sealed class GameWorld
     private readonly List<Ghoul> _ghouls;
     private readonly List<Bat> _bats;
     private readonly List<Projectile> _projectiles = [];
+    private readonly List<Pickup> _pickups = [];
+    private readonly HashSet<int> _dropsRolled = [];
+    private int _nextPickupId;
     private int _nextProjectileId;
 
     /// <summary>
@@ -87,6 +90,83 @@ public sealed class GameWorld
 
     /// <summary>The ghouls, dead ones included (until the end of the level).</summary>
     public IReadOnlyList<Ghoul> Ghouls => _ghouls;
+
+    /// <summary>Consumables lying in the level (taken ones are removed after each tick).</summary>
+    public IReadOnlyList<Pickup> Pickups => _pickups;
+
+    /// <summary>
+    /// Every enemy that died since the last tick gets exactly one chance to drop a consumable (its own chance from
+    /// <see cref="DropsBalance"/>, rolled with the world's random generator). The drop appears where it died.
+    /// </summary>
+    private void DropFromTheDead()
+    {
+        foreach (var ghoul in _ghouls.Where(ghoul => ghoul.IsDead && _dropsRolled.Add(ghoul.Id)))
+        {
+            MaybeDrop(Balance.Drops.GhoulChance, ghoul.Position);
+        }
+
+        foreach (var bat in _bats.Where(bat => bat.IsDead && _dropsRolled.Add(bat.Id)))
+        {
+            MaybeDrop(Balance.Drops.BatChance, bat.Position);
+        }
+    }
+
+    private void MaybeDrop(float chance, Vector3 position)
+    {
+        if (_random.NextDouble() >= chance)
+        {
+            return;
+        }
+
+        var pickup = new Pickup(_nextPickupId++, ConsumableKind.BloodVial, position);
+        _pickups.Add(pickup);
+        _events.Add(new PickupDropped(pickup.Id, pickup.Kind, position));
+    }
+
+    /// <summary>
+    /// Pickups fall to the floor; a living player who touches one takes it - if it does them any good
+    /// (a blood vial stays lying while the player's health is full).
+    /// </summary>
+    private void MovePickups()
+    {
+        foreach (var pickup in _pickups)
+        {
+            pickup.Fall(Level, Balance.Player.Gravity);
+            var taker = Players.FirstOrDefault(player => !player.IsDead && BodiesTouch(player.Body, pickup.Body) && CanUse(player, pickup));
+            if (taker is null)
+            {
+                continue;
+            }
+
+            pickup.IsTaken = true;
+            _events.Add(new PickupTaken(pickup.Id, taker.Id, pickup.Kind));
+            Use(taker, pickup);
+        }
+
+        _pickups.RemoveAll(pickup => pickup.IsTaken);
+    }
+
+    private static bool CanUse(Player player, Pickup pickup) => pickup.Kind switch
+    {
+        ConsumableKind.BloodVial => player.Health < player.MaxHealth,
+        _ => true,
+    };
+
+    private void Use(Player player, Pickup pickup)
+    {
+        switch (pickup.Kind)
+        {
+            case ConsumableKind.BloodVial:
+                player.Heal(Balance.BloodVial.Heal, _events);
+                break;
+        }
+    }
+
+    /// <summary>Do two upright cylinders touch? (Close enough on the ground and overlapping in height.)</summary>
+    private static bool BodiesTouch(CylinderBody a, CylinderBody b) =>
+        new Vector2(a.Position.X - b.Position.X, a.Position.Z - b.Position.Z).Length() <= a.Radius + b.Radius
+        && a.Position.Y <= b.Position.Y + b.Height
+        && b.Position.Y <= a.Position.Y + a.Height;
 
     /// <summary>The projectiles in flight (gone ones are removed after each tick).</summary>
     public IReadOnlyList<Projectile> Projectiles => _projectiles;
@@ -289,6 +369,8 @@ public sealed class GameWorld
         }
 
         MoveProjectiles();
+        DropFromTheDead();
+        MovePickups();
 
         _ticksAllPlayersDead = Players.All(player => player.IsDead) ? _ticksAllPlayersDead + 1 : 0;
     }

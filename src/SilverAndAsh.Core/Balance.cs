@@ -33,8 +33,31 @@ public sealed record Balance
     /// <summary>The bat's blood bolt: a flying projectile you can dodge.</summary>
     public BloodBoltBalance BloodBolt { get; init; } = new();
 
+    /// <summary>What killed enemies leave behind.</summary>
+    public DropsBalance Drops { get; init; } = new();
+
+    /// <summary>The blood vial: a consumable that heals.</summary>
+    public BloodVialBalance BloodVial { get; init; } = new();
+
     /// <summary>Seconds between the death of all players and the restart of the level.</summary>
     public float RestartDelay { get; init; } = 2f;
+}
+
+/// <summary>How often killed enemies drop a consumable.</summary>
+public sealed record DropsBalance
+{
+    /// <summary>Chance that a killed ghoul drops something: 0 = never, 1 = always.</summary>
+    public float GhoulChance { get; init; } = 0.3f;
+
+    /// <summary>Chance that a killed bat drops something: 0 = never, 1 = always.</summary>
+    public float BatChance { get; init; } = 0.15f;
+}
+
+/// <summary>Balancing values of the blood vial.</summary>
+public sealed record BloodVialBalance
+{
+    /// <summary>Health it gives back - never above the maximum.</summary>
+    public int Heal { get; init; } = 50;
 }
 
 /// <summary>Balancing values of the player character.</summary>

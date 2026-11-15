@@ -81,8 +81,9 @@ public class BalanceFileTests
     [Fact]
     public void Zero_is_fine_where_it_makes_sense()
     {
-        var result = BalanceFile.Parse("""{ "player": { "airControl": 0, "perfectJumpSpeedBonus": 0 }, "blade": { "coneStartBehind": 0 } }""");
+        var result = BalanceFile.Parse("""{ "player": { "airControl": 0, "perfectJumpSpeedBonus": 0 }, "blade": { "coneStartBehind": 0 }, "drops": { "ghoulChance": 0 } }""");
 
+        Assert.Equal(0f, result.Balance.Drops.GhoulChance);
         Assert.Equal(0f, result.Balance.Player.AirControl);
         Assert.Equal(0f, result.Balance.Player.PerfectJumpSpeedBonus);
         Assert.Equal(0f, result.Balance.Blade.ConeStartBehind);
@@ -108,6 +109,8 @@ public class BalanceFileTests
     [InlineData("""{ "player": { "exhaustedJumpSpeedPenalty": 1 } }""", "player.exhaustedJumpSpeedPenalty")]
     [InlineData("""{ "blade": { "angle": 200 } }""", "blade.angle")]
     [InlineData("""{ "ghoul": { "attackHalfAngle": 200 } }""", "ghoul.attackHalfAngle")]
+    [InlineData("""{ "drops": { "ghoulChance": 1.5 } }""", "drops.ghoulChance")]
+    [InlineData("""{ "drops": { "batChance": 2 } }""", "drops.batChance")]
     public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);

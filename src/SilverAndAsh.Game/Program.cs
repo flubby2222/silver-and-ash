@@ -99,6 +99,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
         IGhoulView ghoulView = new PlaceholderGhoulView();
         IBatView batView = new PlaceholderBatView();
         var projectileView = new ProjectileView();
+        var pickupView = new PickupView();
         var impactMarks = new ImpactMarks();
         IWeaponView weaponView = new PlaceholderWeaponView();
         var damageFeedback = new DamageFeedback();
@@ -119,6 +120,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             ghoulView = new PlaceholderGhoulView();
             batView = new PlaceholderBatView();
             projectileView = new ProjectileView();
+            pickupView = new PickupView();
             impactMarks = new ImpactMarks();
             weaponView = new PlaceholderWeaponView();
             damageFeedback = new DamageFeedback();
@@ -182,6 +184,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             ghoulView.Update(Raylib.GetFrameTime());
             batView.Update(Raylib.GetFrameTime());
             projectileView.Update(Raylib.GetFrameTime());
+            pickupView.Update(Raylib.GetFrameTime());
             impactMarks.Update(Raylib.GetFrameTime());
             weaponView.Update(Raylib.GetFrameTime(), player);
             damageFeedback.Update(Raylib.GetFrameTime());
@@ -226,6 +229,7 @@ static void RunGame(Level level, string displayVersion, FileLog? log)
             }
 
             projectileView.Draw(gameWorld.Projectiles, accumulator.Alpha);
+            pickupView.Draw(gameWorld.Pickups, accumulator.Alpha);
 
             impactMarks.Draw();
 
