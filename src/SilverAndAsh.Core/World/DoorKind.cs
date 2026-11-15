@@ -14,4 +14,10 @@ public enum DoorKind
 
     /// <summary>An iron door with a padlock - needs a key, which is used up. Once unlocked it stays open.</summary>
     Locked,
+
+    /// <summary>
+    /// No door at all but a wall with fine cracks, hiding a secret room. A fully charged blade strike breaks it open;
+    /// until then it is wall in every way and does not show on the map.
+    /// </summary>
+    Cracked,
 }

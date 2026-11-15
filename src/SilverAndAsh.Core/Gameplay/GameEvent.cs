@@ -115,6 +115,9 @@ public sealed record GhoulWindUp(int GhoulId) : GameEvent;
 /// <summary>Ghoul <paramref name="GhoulId"/> strikes; <paramref name="Hit"/> tells whether the blow landed.</summary>
 public sealed record GhoulStruck(int GhoulId, bool Hit) : GameEvent;
 
+/// <summary>The cracked wall <paramref name="DoorId"/> was broken open by player <paramref name="PlayerId"/>'s charged blade strike.</summary>
+public sealed record WallBroken(int DoorId, int PlayerId) : GameEvent;
+
 /// <summary>Door <paramref name="DoorId"/> was opened.</summary>
 public sealed record DoorOpened(int DoorId) : GameEvent;
 

@@ -57,8 +57,11 @@ public sealed class Door : IInteractable
     /// <summary>True if nothing can pass: closed, or barred.</summary>
     public bool Blocks => !IsOpen || IsBarred;
 
-    /// <summary>Every closed door that is not barred is offered - a locked one too, to say that it needs a key.</summary>
-    public bool CanInteract => !IsOpen && !IsBarred;
+    /// <summary>
+    /// Every closed door that is not barred is offered - a locked one too, to say that it needs a key. A cracked wall
+    /// never is: it is a secret, and F does not open it.
+    /// </summary>
+    public bool CanInteract => !IsOpen && !IsBarred && Kind != DoorKind.Cracked;
 
     /// <summary>Wooden and boss doors open with F. A locked door opens with F only for a player with a key, and uses it up.</summary>
     public InteractionOffer OfferFor(Player player)
@@ -78,7 +81,11 @@ public sealed class Door : IInteractable
 
     internal void Open() => IsOpen = true;
 
-    internal void Bar() => IsBarred = true;
+    /// <summary>A cracked wall breaks open (see <see cref="DoorKind.Cracked"/>).</summary>
+    internal void Break() => IsOpen = true;
+
+    /// <summary>An arena's grate falls - never at an unbroken cracked wall, which would give the secret away.</summary>
+    internal void Bar() => IsBarred = Kind != DoorKind.Cracked || IsOpen;
 
     internal void Lift() => IsBarred = false;
 }

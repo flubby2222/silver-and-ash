@@ -216,7 +216,7 @@ public class TreasureRoomTests
         var noTreasureChests = Balance.Default.Chests with { TreasureChestsMin = 0, TreasureChestsMax = 0 };
 
         var with = ChestPlacement.Place(level, Balance.Default.Chests).Chests!.Where(chest => level.Rooms[chest.Room].Kind == RoomKind.Combat);
-        var without = ChestPlacement.Place(level, noTreasureChests).Chests!;
+        var without = ChestPlacement.Place(level, noTreasureChests).Chests!.Where(chest => level.Rooms[chest.Room].Kind == RoomKind.Combat);
 
         Assert.Equal(without, with);
     }

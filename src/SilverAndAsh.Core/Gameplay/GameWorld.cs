@@ -60,6 +60,7 @@ public sealed class GameWorld
         _doorPlan = doors ?? [];
         _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level)).ToList();
         Level = WithClosedDoors();
+        LevelAsBuilt = WithUnbrokenWalls();
         Seed = seed;
         Balance = balance ?? Balance.Default;
         _restartTicks = SimulationClock.SecondsToTicks(Balance.RestartDelay);
@@ -122,8 +123,11 @@ public sealed class GameWorld
     /// <summary>Name of the level, shown briefly at the start (e.g. "THE CATACOMBS"), or null for hand-made levels.</summary>
     public string? LevelName { get; init; }
 
-    /// <summary>The level as it was built, all doors open - for drawing. <see cref="Level"/> is what blocks.</summary>
-    public Level LevelAsBuilt => _levelWithOpenDoors;
+    /// <summary>
+    /// The level as it was built, all doors open - for drawing - except unbroken cracked walls, which are drawn as
+    /// wall. A new object once a wall breaks (so the picture is rebuilt). <see cref="Level"/> is what blocks.
+    /// </summary>
+    public Level LevelAsBuilt { get; private set; }
 
     /// <summary>True once the boss room is cleared: the run is won (for now; the troll and the stairs come in v0.10).</summary>
     public bool IsWon { get; private set; }
@@ -151,13 +155,13 @@ public sealed class GameWorld
     /// <summary>The rooms of a generated level and what happened in them (empty for hand-made levels).</summary>
     public IReadOnlyList<RoomState> Rooms => _rooms;
 
-    /// <summary>True if <paramref name="door"/> belongs to a discovered room - then it shows on the map.</summary>
+    /// <summary>True if <paramref name="door"/> belongs to a discovered room - then it shows on the map (a cracked wall only once broken).</summary>
     public bool IsKnown(Door door)
     {
         ArgumentNullException.ThrowIfNull(door);
 
-        // Doors without rooms (a hand-made test level) never show on a map.
-        return _rooms.Count > 0 && (_rooms[door.RoomA].IsDiscovered || _rooms[door.RoomB].IsDiscovered);
+        // Doors without rooms (a hand-made test level) never show on a map, an unbroken cracked wall neither.
+        return _rooms.Count > 0 && !IsUnbrokenWall(door) && (_rooms[door.RoomA].IsDiscovered || _rooms[door.RoomB].IsDiscovered);
     }
 
     /// <summary>True while <paramref name="enemy"/> sleeps: it waits motionless until its room is entered (or it is hit).</summary>
@@ -314,6 +318,12 @@ public sealed class GameWorld
             player.ChangeLevel(Level);
         }
     }
+
+    private Level WithUnbrokenWalls() => _doors.Any(IsUnbrokenWall)
+        ? _levelWithOpenDoors.WithCells(_doors.Where(IsUnbrokenWall).Select(door => (door.X, door.Z, Cell.Wall)))
+        : _levelWithOpenDoors;
+
+    private static bool IsUnbrokenWall(Door door) => door.Kind == DoorKind.Cracked && !door.IsOpen;
 
     private Level WithClosedDoors() => _doors.Count == 0
         ? _levelWithOpenDoors
@@ -712,12 +722,37 @@ public sealed class GameWorld
     /// <summary>A swing of <paramref name="attacker"/> hits every target in the blade's cone (see <see cref="BladeStrike"/>).</summary>
     private void StrikeWithBlade(BladeSwung swing, Player attacker)
     {
+        BreakWalls(swing, attacker);
+
         foreach (var target in Targets.Where(target => target.IsHittable).ToList())
         {
             if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, Balance.Blade))
             {
                 // The blade hits the whole body at once - it has no hit zone (and so no headshot bonus).
                 Damage(target, new Hit(Weapon.Blade, HitZone.Body, Balance.Blade.Damage, swing.Charge), attacker);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A fully charged swing breaks the cracked wall it is aimed at, within the blade's range. Uncharged swings and
+    /// shots leave it as it is.
+    /// </summary>
+    private void BreakWalls(BladeSwung swing, Player attacker)
+    {
+        if (swing.Charge < 1f)
+        {
+            return;
+        }
+
+        foreach (var wall in _doors.Where(IsUnbrokenWall))
+        {
+            if (Raycast.AgainstBox(swing.Origin, swing.Direction, wall.BoxMin, wall.BoxMax) is { } distance && distance <= Balance.Blade.Range)
+            {
+                wall.Break();
+                UpdateLevel();
+                LevelAsBuilt = WithUnbrokenWalls();
+                _events.Add(new WallBroken(wall.Id, attacker.Id));
             }
         }
     }

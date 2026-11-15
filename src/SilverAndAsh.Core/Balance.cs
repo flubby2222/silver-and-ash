@@ -168,28 +168,28 @@ public sealed record ChestsBalance
     /// <summary>Beggar's Chest (wood).</summary>
     public ChestTierBalance Beggar { get; init; } = new()
     {
-        CombatShareNear = 0.7f, CombatShareFar = 0.55f, TreasureShare = 0.2f, LockedTreasureShare = 0.15f,
+        CombatShareNear = 0.7f, CombatShareFar = 0.55f, TreasureShare = 0.2f, LockedTreasureShare = 0.15f, SecretShare = 0f,
         LockedChance = 0.1f, SilverMin = 10, SilverMax = 20, BloodVialChance = 0.2f,
     };
 
     /// <summary>Guard's Chest (metal).</summary>
     public ChestTierBalance Guard { get; init; } = new()
     {
-        CombatShareNear = 0.27f, CombatShareFar = 0.37f, TreasureShare = 0.45f, LockedTreasureShare = 0.3f,
+        CombatShareNear = 0.27f, CombatShareFar = 0.37f, TreasureShare = 0.45f, LockedTreasureShare = 0.3f, SecretShare = 0.35f,
         LockedChance = 0.35f, SilverMin = 20, SilverMax = 35, BloodVialChance = 0.35f,
     };
 
     /// <summary>King's Chest (gold).</summary>
     public ChestTierBalance King { get; init; } = new()
     {
-        CombatShareNear = 0.03f, CombatShareFar = 0.08f, TreasureShare = 0.3f, LockedTreasureShare = 0.45f,
+        CombatShareNear = 0.03f, CombatShareFar = 0.08f, TreasureShare = 0.3f, LockedTreasureShare = 0.45f, SecretShare = 0.5f,
         LockedChance = 0.7f, SilverMin = 40, SilverMax = 60, BloodVialChance = 0.6f,
     };
 
     /// <summary>Vampire's Chest (red).</summary>
     public ChestTierBalance Vampire { get; init; } = new()
     {
-        CombatShareNear = 0f, CombatShareFar = 0f, TreasureShare = 0.05f, LockedTreasureShare = 0.1f,
+        CombatShareNear = 0f, CombatShareFar = 0f, TreasureShare = 0.05f, LockedTreasureShare = 0.1f, SecretShare = 0.15f,
         LockedChance = 1f, SilverMin = 80, SilverMax = 120, BloodVialChance = 1f,
     };
 
@@ -222,6 +222,9 @@ public sealed record ChestTierBalance
 
     /// <summary>Share of this tier among the chests of a treasure room behind a locked door.</summary>
     public float LockedTreasureShare { get; init; }
+
+    /// <summary>Share of this tier for the chest of a secret room.</summary>
+    public float SecretShare { get; init; }
 
     /// <summary>Chance that a chest of this tier is locked: 0 = never, 1 = always.</summary>
     public float LockedChance { get; init; }
@@ -266,6 +269,9 @@ public sealed record LayoutBalance
 
     /// <summary>Treasure rooms behind a locked door (it needs a key), per level.</summary>
     public int LockedTreasureRooms { get; init; } = 1;
+
+    /// <summary>Secret rooms per level, each behind a cracked wall of a combat room.</summary>
+    public int SecretRooms { get; init; } = 1;
 }
 
 /// <summary>

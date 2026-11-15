@@ -221,7 +221,7 @@ public class BalanceFileTests
     public void Chests_may_hold_nothing_and_never_stand_in_combat_rooms()
     {
         var result = BalanceFile.Parse("""
-            { "chests": { "combatRoomChance": 0, "vampire": { "treasureShare": 0, "lockedTreasureShare": 0, "lockedChance": 0, "silverMin": 0, "silverMax": 0, "bloodVialChance": 0 } } }
+            { "chests": { "combatRoomChance": 0, "vampire": { "treasureShare": 0, "lockedTreasureShare": 0, "secretShare": 0, "lockedChance": 0, "silverMin": 0, "silverMax": 0, "bloodVialChance": 0 } } }
             """);
 
         Assert.Equal(0f, result.Balance.Chests.CombatRoomChance);
@@ -238,6 +238,15 @@ public class BalanceFileTests
 
         Assert.Equal(0, result.Balance.Layout.TreasureRooms + result.Balance.Layout.LockedTreasureRooms);
         Assert.Equal(0, result.Balance.Chests.TreasureChestsMax);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void Levels_may_have_no_secret_room()
+    {
+        var result = BalanceFile.Parse("""{ "layout": { "secretRooms": 0 } }""");
+
+        Assert.Equal(0, result.Balance.Layout.SecretRooms);
         Assert.Empty(result.Warnings);
     }
 
