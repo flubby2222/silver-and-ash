@@ -4,7 +4,8 @@ namespace SilverAndAsh.Core.World;
 /// Reads room templates. The symbols are those of the level format (see <see cref="LevelParser"/>) plus:
 /// <list type="bullet">
 ///   <item><c>+</c> – door slot: a place on the outer wall where the generator may put a door.
-///   Must sit on a side (not in a corner) with floor right behind it. Unused slots stay walls.</item>
+///   Must sit on a side (not in a corner) with floor right behind it - in rooms (not corridors) also to the
+///   left and right of that cell, so a door never sits flush with a side wall. Unused slots stay walls.</item>
 /// </list>
 /// The outer ring of a template is always wall or door slot. Rooms with a single entrance (the boss room) have
 /// exactly one door slot.
@@ -120,7 +121,7 @@ public static class RoomTemplateParser
 
         CheckEdgeIsClosed(cells, name);
 
-        var doorSlots = doorCells.Select(cell => ToDoorSlot(cells, cell, name)).ToList();
+        var doorSlots = doorCells.Select(cell => ToDoorSlot(cells, cell, kind, name)).ToList();
 
         if (doorSlots.Count == 0)
         {
@@ -138,7 +139,7 @@ public static class RoomTemplateParser
         return new RoomTemplate(name, kind, cells, doorSlots, ghoulSlots, batSlots, playerStart);
     }
 
-    private static DoorSlot ToDoorSlot(Cell[,] cells, (int X, int Z) cell, string name)
+    private static DoorSlot ToDoorSlot(Cell[,] cells, (int X, int Z) cell, RoomKind kind, string name)
     {
         var (x, z) = cell;
         var lastX = cells.GetLength(0) - 1;
@@ -165,6 +166,15 @@ public static class RoomTemplateParser
         if (cells[behindX, behindZ].IsSolid)
         {
             throw Error(name, x, z, $"The cell behind door slot '+' in column {x + 1} must be floor.");
+        }
+
+        // In a room you never walk in right along a side wall: the cells left and right behind the door are floor
+        // too. Corridors are one cell wide, there the door sits between the corridor walls.
+        var (besideX, besideZ) = side is RoomSide.North or RoomSide.South ? (1, 0) : (0, 1);
+        if (kind != RoomKind.Corridor
+            && (cells[behindX - besideX, behindZ - besideZ].IsSolid || cells[behindX + besideX, behindZ + besideZ].IsSolid))
+        {
+            throw Error(name, x, z, $"The cells beside the floor behind door slot '+' in column {x + 1} must be floor, too - a door may not sit flush with a side wall.");
         }
 
         return new DoorSlot(x, z, side);

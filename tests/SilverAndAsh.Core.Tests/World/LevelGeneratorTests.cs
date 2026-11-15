@@ -227,8 +227,8 @@ public class LevelGeneratorTests
         // would fit right next to it - a "loop" that leads nowhere new.
         RoomTemplate[] rooms =
         [
-            RoomTemplateParser.Parse("#+#+#\n#.P.#\n#####", RoomKind.Start, "start"),
-            RoomTemplateParser.Parse("##+##\n#...#\n#+#+#", RoomKind.Combat, "two-below"),
+            RoomTemplateParser.Parse("##+#+##\n#.....#\n#..P..#\n#######", RoomKind.Start, "start"),
+            RoomTemplateParser.Parse("###+###\n#.....#\n#.....#\n##+#+##", RoomKind.Combat, "two-below"),
             RoomTemplateParser.Parse("#+#\n#.#\n#+#", RoomKind.Corridor, "short"),
             RoomTemplateParser.Parse("##+##\n#...#\n#####", RoomKind.Boss, "boss"),
         ];

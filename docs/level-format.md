@@ -87,6 +87,13 @@ Regeln für Vorlagen:
 
 - Der **äußere Rand** einer Vorlage ist immer **Wand oder Türplatz** – nie Boden. So grenzt ein Raum nie offen nach außen, und zwei verbundene Räume treffen sich immer Wand an Wand.
 - Jede Vorlage hat **mindestens einen Türplatz**. Ein Türplatz liegt **am Rand**, **nicht in einer Ecke**, und **dahinter (nach innen) ist Boden**.
+- In **Räumen** (nicht in Gängen) ist auch **links und rechts** dieses Bodenfelds Boden: Eine Tür sitzt nie bündig an einer Seitenwand, man läuft also nie direkt an einer Wand entlang hinein.
+
+  ```
+  erlaubt:   verboten:
+  ###+###    #####+#
+  #.....#    #.....#
+  ```
 - `G` und `B` sind **Plätze für Gegner** – wie viele davon wirklich besetzt werden, entscheidet später die Schwierigkeit.
 - `P` gibt es **nur im Startraum**, Trainingspuppen (`D`) gar nicht.
 - Der Boden muss **zusammenhängen** – kein Bodenfeld darf abgeschnitten sein.

@@ -81,10 +81,14 @@ public class RoomTemplateTests
     [InlineData("#####\n#.+.+\n#####", RoomKind.Combat, "edge")]
     [InlineData("+####\n#...#\n#####", RoomKind.Combat, "corner")]
     [InlineData("##+##\n#.#.#\n#...#\n#####", RoomKind.Combat, "behind")]
-    [InlineData("##+##\n#...+\n#####", RoomKind.Boss, "exactly one door slot")]
+    [InlineData("###+#\n#...#\n#...#\n#####", RoomKind.Combat, "beside")]
+    [InlineData("#+###\n#...#\n#...#\n#####", RoomKind.Combat, "beside")]
+    [InlineData("#####\n#...#\n#...+\n#####", RoomKind.Combat, "beside")]
+    [InlineData("#####\n#...#\n#.###\n#.###\n+...#\n#####", RoomKind.Combat, "beside")]
+    [InlineData("##+##\n#...#\n#...+\n#...#\n#####", RoomKind.Boss, "exactly one door slot")]
     [InlineData("##+##\n#...#\n#####", RoomKind.Start, "player start")]
     [InlineData("##+##\n#.P.#\n#####", RoomKind.Combat, "player start")]
-    [InlineData("#+###\n#.#.#\n###.#\n#####", RoomKind.Combat, "connected")]
+    [InlineData("##+####\n#...#.#\n#...#.#\n#######", RoomKind.Combat, "connected")]
     [InlineData("##+##\n#.D.#\n#####", RoomKind.Combat, "Unknown symbol 'D'")]
     [InlineData("##+##\n#....\n#####", RoomKind.Combat, "edge must be wall")]
     [InlineData("##+#\n#...\n#..", RoomKind.Combat, "edge must be wall")]
@@ -95,6 +99,14 @@ public class RoomTemplateTests
 
         Assert.Contains("broken", error.Message);
         Assert.Contains(problem, error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void A_corridor_door_may_sit_between_the_corridor_walls()
+    {
+        var corridor = RoomTemplateParser.Parse("#+###\n#.###\n#...+\n#####", RoomKind.Corridor, "bend");
+
+        Assert.Equal(2, corridor.DoorSlots.Count);
     }
 
     [Fact]
@@ -151,11 +163,11 @@ public class RoomTemplateTests
     [Fact]
     public void Mirroring_swaps_east_and_west()
     {
-        var room = RoomTemplateParser.Parse("#####\n#G..+\n#####", RoomKind.Combat, "east");
+        var room = RoomTemplateParser.Parse("#####\n#G..#\n#...+\n#...#\n#####", RoomKind.Combat, "east");
 
         var mirrored = room.Mirrored();
 
-        Assert.Equal([new DoorSlot(0, 1, RoomSide.West)], mirrored.DoorSlots);
+        Assert.Equal([new DoorSlot(0, 2, RoomSide.West)], mirrored.DoorSlots);
         Assert.Equal([(3, 1)], mirrored.GhoulSlots);
     }
 
