@@ -87,6 +87,56 @@ Das zeigt `assets/balance.json` (A) neben der Kopie (B) und den Unterschied B - 
 
 Die Berechnung steht in [`BalanceReport.cs`](../src/SilverAndAsh.Core/Balancing/BalanceReport.cs), das Tool in [`tools/SilverAndAsh.BalanceReport`](../tools/SilverAndAsh.BalanceReport/Program.cs). Das Tool gehört nicht zum Release.
 
+## Balancing-Runden
+
+Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
+1. Report laufen lassen, Ausgangswerte festhalten.
+2. Neue Werte begründet vorschlagen und mit `--compare` prüfen.
+3. Einen ganzen Durchlauf spielen und `runs.log` ansehen.
+4. Nachjustieren.
+
+Ergebnis hier eintragen, neueste Runde oben.
+
+### Runde 1 – 15.11.2026 (vor 0.9.0)
+
+**Anlass:** Durchlauf in 6:11, nur 115 Schaden genommen, „zu leicht und zu kurz“. Ghul-Köpfe zu leicht zu treffen; Blutphiolen zu häufig und zu stark.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `layout.combatRoomsMin`/`Max` | 7 / 9 | 12 / 14 | länger: Schritt Richtung 20 Minuten |
+| `difficulty.ghoulShareNear` | 0,5 | 0,7 | schon am Anfang mehr Gegner |
+| `difficulty.batShareNear` | 0 | 0,25 | Fledermäuse schon früh |
+| `ghoul.maxHealth` | 80 | 100 | drei statt zwei Klingenhiebe |
+| `ghoul.attackDamage` | 20 | 25 | Fehler kosten mehr |
+| `bat.maxHealth` | 30 | 40 | zwei statt ein Pistolenschuss |
+| `drops.ghoulChance` / `batChance` | 0,3 / 0,15 | 0,12 / 0,08 | weniger Phiolen |
+| `bloodVial.heal` | 50 | 30 | eine Phiole heilt weniger |
+| `chests.*.bloodVialChance` | 0,2 / 0,35 / 0,6 / 1 | 0,1 / 0,25 / 0,5 / 1 | weniger Phiolen aus Kisten |
+| `keys.roomChance` / `enemyChance` | 0,15 / 0,05 | 0,1 / 0,025 | mehr Räume und Gegner würden sonst 2 Schlüssel pro Schloss bringen |
+| Ghul-Kopf (Code, `BodySizes.Ghoul`) | ganze vordere Körperhälfte (80 cm breit) | nur der gezeichnete Kopf (30 cm) | Kopftreffer nur noch auf den Kopf |
+
+**Report (500 Ebenen, Durchschnitt):**
+
+| Kennzahl | vorher | nachher |
+|---|---|---|
+| Kampfräume | 8,0 | 13,0 |
+| Gegner | 50 | 88 |
+| Gegner-HP | 3271 | 7223 |
+| erreichte Stufe | 7,1 | 9,1 |
+| Silber | 254 | 313 |
+| Schlüssel pro Schloss | 1,32 | 1,17 |
+| Heilung (× maximales Leben) | 5,7 | 2,6 |
+| Zeit (grobe Schätzung) | 6,5 min | 9,8 min |
+
+**Gespielt (15.11., drei Durchläufe):**
+- 4:38 verloren (6/15 Räume);
+- 5:21 verloren (8/14 Räume);
+- 4:26 gewonnen (9/14 Räume, Stufe 8, 90 Schaden genommen).
+
+Eindruck: „passt“. Man kann Räume überspringen; der Sieg kam schon nach 9 von 14 Räumen, deshalb liegt die gespielte Zeit unter der Schätzung des Reports, die von *allen* Räumen ausgeht.
+
+**Noch offen:** Die 20 Minuten aus ADR 0005 sind bewusst noch nicht erreicht. Erst spielen, dann in der nächsten Runde weiter (mehr Räume, Boss in v0.10).
+
 ## Wenn etwas nicht stimmt
 
 Das Spiel startet **immer**. Was nicht passt, landet als Warnung im Log (`%LOCALAPPDATA%\SilverAndAsh\logs\`):

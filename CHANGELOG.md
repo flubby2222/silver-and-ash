@@ -13,6 +13,15 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Schatzräume:** Jede Ebene hat einen Schatzraum und einen zweiten hinter einer **verschlossenen Tür**. Beide sind gegnerfreie Sackgassen mit 1–2 Kisten, hinter dem Schloss eher King's und Vampire's Chests. Sie liegen nie direkt am Start und nie hinter dem Boss; der Boss ist immer ohne Schlüssel erreichbar. Auf der Karte sind Schatzräume golden. Anzahl und Kisten-Anteile stehen in `balance.json` (`layout`, `chests`)
 - **Secret Room:** Jede Ebene versteckt einen Raum hinter einer Wand mit feinen Rissen an einem Kampfraum. Nur ein **voll aufgeladener Klingenhieb** bricht sie auf; normale Hiebe, Schüsse und F tun nichts. Bis dahin verrät auch die Karte nichts. Drinnen steht eine Kiste: Guard's, King's oder mit Glück Vampire's Chest. Auf der Karte ist der Secret Room violett
 
+### Geändert
+- **Balancing-Runde 1:** Eine Ebene ist länger und schwerer.
+  - 12–14 statt 7–9 Kampfräume, schon nahe am Start mehr Gegner und erste Fledermäuse.
+  - Ghule halten drei statt zwei Klingenhiebe aus und schlagen härter zu; Fledermäuse überstehen einen Pistolenschuss.
+  - Blutphiolen fallen seltener und heilen 30 statt 50.
+  - Schlüssel sind an die größeren Ebenen angepasst.
+  - Alle Werte und Gründe stehen in `docs/balancing.md`.
+- **Ghul-Köpfe** zählen nur noch dort als Kopftreffer, wo der Kopf gezeichnet ist, nicht mehr in der ganzen vorderen Körperhälfte.
+
 ### Behoben
 - Ein Durchlauf stand doppelt in `runs.log`, wenn man vom Endbildschirm zum Titel ging. Jetzt steht er genau einmal darin
 

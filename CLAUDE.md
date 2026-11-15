@@ -22,7 +22,11 @@ Diese Datei liest Claude bei jeder Aufgabe. Sie beschreibt, wie wir arbeiten. Di
 9. **Nach jedem Merge mit neuem Konzept:** eine Konzept-Notiz im Obsidian-Vault `D:\Obsidian\Gamedev` anlegen (`Konzepte/` oder `Werkzeuge/`, Frontmatter `autor: claude`, auf Deutsch, mit Links zum Code).
 10. **Retro am Ende jedes Meilensteins:** Claude schreibt sie als Doku in `Retros/` (fertig, Zahlen, gut/schlecht, neue Begriffe, Änderungen für die nächste Woche) und lässt einen kurzen optionalen Abschnitt „Meine Sicht“ frei. Zum Abschluss gehört auch: Meilenstein schließen.
 11. **Alles aufs Kanban-Board:** Pull Requests ohne eigenes Issue (z. B. kleine Doku-Änderungen) kommen direkt als Karte aufs Board in die Spalte *Review*.
-12. **Merge immer selbst prüfen** (`gh pr view`), bevor lokal aufgeräumt wird. **Jedes Issue sagt, wie es abgeschlossen wird** – per PR-Merge oder durch Schließen des Issues (bei reinen Einstellungen).
+12. **Balancing-Runde vor jedem Release:**
+    - Ablauf: Balance-Report (`tools/SilverAndAsh.BalanceReport`) mit Vorher/Nachher-Vergleich, ein gespielter Durchlauf des Menschen, `runs.log` ansehen, Werte in `balance.json` anpassen.
+    - Das Ergebnis kommt ins Protokoll in [docs/balancing.md](docs/balancing.md).
+    - Tests prüfen Mechanik und rechnen mit `Balance.Default`; keine Balancing-Zahlen fest in Tests schreiben.
+13. **Merge immer selbst prüfen** (`gh pr view`), bevor lokal aufgeräumt wird. **Jedes Issue sagt, wie es abgeschlossen wird** – per PR-Merge oder durch Schließen des Issues (bei reinen Einstellungen).
 
 ## Definition of Done
 

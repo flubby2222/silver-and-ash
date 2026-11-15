@@ -146,13 +146,14 @@ public class ChestPlacementTests
     }
 
     [Theory]
-    [InlineData(ChestTier.Beggar, 10, 20, 0.2f)]
-    [InlineData(ChestTier.Guard, 20, 35, 0.35f)]
-    [InlineData(ChestTier.King, 40, 60, 0.6f)]
-    [InlineData(ChestTier.Vampire, 80, 120, 1f)]
-    public void Each_tier_holds_its_silver_and_maybe_a_blood_vial(ChestTier tier, int min, int max, float vialChance)
+    [InlineData(ChestTier.Beggar, 10, 20)]
+    [InlineData(ChestTier.Guard, 20, 35)]
+    [InlineData(ChestTier.King, 40, 60)]
+    [InlineData(ChestTier.Vampire, 80, 120)]
+    public void Each_tier_holds_its_silver_and_maybe_a_blood_vial(ChestTier tier, int min, int max)
     {
         var chests = AllChests(Only(tier)).Select(pair => pair.Chest).ToList();
+        var vialChance = Standard.Of(tier).BloodVialChance;
 
         Assert.All(chests, chest => Assert.InRange(chest.Silver, min, max));
         Assert.Contains(chests, chest => chest.Silver == min);

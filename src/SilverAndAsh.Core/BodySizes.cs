@@ -50,8 +50,17 @@ public static class BodySizes
         /// <summary>Height of its body in metres - crawling, so much lower than the player.</summary>
         public const float Height = 1f;
 
-        /// <summary>The top part of this height (in metres), in its front half, counts as the head.</summary>
-        public const float HeadHeight = 0.35f;
+        /// <summary>
+        /// The top part of this height (in metres) can be the head - where the drawn head is (2 cm to spare): from
+        /// 0.68 m above the feet up.
+        /// </summary>
+        public const float HeadHeight = 0.32f;
+
+        /// <summary>Width of the head (side to side), in metres: the drawn head is 0.26 m wide.</summary>
+        public const float HeadWidth = 0.3f;
+
+        /// <summary>How far in front of the body's middle the head begins, in metres (the drawn head: 0.21 m).</summary>
+        public const float HeadFrontStart = 0.19f;
 
         /// <summary>Height of its eyes above its feet (for seeing players), in metres.</summary>
         public const float EyeHeight = 0.8f;
