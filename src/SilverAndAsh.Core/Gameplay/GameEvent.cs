@@ -130,6 +130,21 @@ public sealed record RoomCleared(int RoomIndex) : GameEvent;
 /// <summary>The boss room is cleared: the run is won.</summary>
 public sealed record RunWon : GameEvent;
 
+/// <summary>Gorm <paramref name="GormId"/> took <paramref name="Damage"/> (critical: a shot at his head).</summary>
+public sealed record GormHit(int GormId, int Damage, bool Critical = false) : GameEvent;
+
+/// <summary>Gorm <paramref name="GormId"/> is dead.</summary>
+public sealed record GormDied(int GormId) : GameEvent;
+
+/// <summary>A player entered the boss room while Gorm lives: the boss fight begins (his health bar shows).</summary>
+public sealed record BossFightStarted : GameEvent;
+
+/// <summary>The spiral staircase starts rising in the middle of the boss room.</summary>
+public sealed record StairsRose : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> climbed the stairs: the run is won.</summary>
+public sealed record StairsClimbed(int PlayerId) : GameEvent;
+
 /// <summary>Every player is dead before the run was won.</summary>
 public sealed record RunLost : GameEvent;
 

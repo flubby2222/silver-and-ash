@@ -111,29 +111,79 @@ public class RunTests
         Assert.Null(new GameWorld(LevelParser.Parse(Map)).LevelName);
     }
 
+    /// <summary>Waits until the stairs stand and presses F (the player looks at them from the boss room's entrance).</summary>
+    private static List<GameEvent> ClimbStairs(GameWorld world)
+    {
+        var events = Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Gorm.StairsRiseTime) + 1);
+        events.AddRange(Run(world, PressF, 1));
+        return events;
+    }
+
     [Fact]
-    public void Clearing_the_boss_room_wins_the_run()
+    public void Clearing_the_boss_room_raises_the_stairs_but_does_not_win_yet()
     {
         var world = World(RoomKind.Boss);
         EnterMiddleRoom(world);
-        Assert.False(world.IsWon);
+        Assert.Null(world.Stairs);
 
         world.Ghouls[0].TakeDamage(10_000, []);
         var events = Run(world, PlayerInput.None, 1);
 
-        Assert.True(world.IsWon);
-        Assert.Contains(events, e => e is RunWon);
+        Assert.Contains(events, e => e is StairsRose);
+        Assert.NotNull(world.Stairs);
+        Assert.False(world.IsWon);
+        Assert.DoesNotContain(events, e => e is RunWon);
     }
 
     [Fact]
-    public void An_empty_boss_room_wins_the_run_on_entering()
+    public void The_stairs_rise_in_the_middle_of_the_boss_room()
     {
         var world = World(RoomKind.Boss, withGhoul: false);
 
-        var events = EnterMiddleRoom(world);
+        EnterMiddleRoom(world);
+
+        // The boss room is rows 2-5, columns 1-3: its middle lies between rows 3 and 4 - the earlier row wins.
+        var stairs = Assert.IsType<Stairs>(world.Stairs);
+        Assert.Equal(2.5f * Level.CellSize, stairs.Position.X, 0.01f);
+        Assert.Equal(3.5f * Level.CellSize, stairs.Position.Z, 0.01f);
+    }
+
+    [Fact]
+    public void Climbing_the_risen_stairs_wins_the_run()
+    {
+        var world = World(RoomKind.Boss, withGhoul: false);
+        EnterMiddleRoom(world);
+
+        var events = ClimbStairs(world);
 
         Assert.True(world.IsWon);
+        Assert.Contains(new StairsClimbed(world.Player.Id), events);
         Assert.Single(events, e => e is RunWon);
+    }
+
+    [Fact]
+    public void The_stairs_cannot_be_climbed_while_they_rise()
+    {
+        var world = World(RoomKind.Boss, withGhoul: false);
+        EnterMiddleRoom(world);
+
+        Run(world, PressF, 5);
+
+        Assert.False(world.Stairs!.CanInteract);
+        Assert.False(world.IsWon);
+    }
+
+    [Fact]
+    public void The_stairs_say_what_F_does()
+    {
+        var world = World(RoomKind.Boss, withGhoul: false);
+        EnterMiddleRoom(world);
+        Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Gorm.StairsRiseTime) + 1);
+
+        var target = world.InteractionTarget(world.Player);
+
+        Assert.Same(world.Stairs, target);
+        Assert.Equal(new InteractionOffer("Climb the stairs", true), target!.OfferFor(world.Player));
     }
 
     [Fact]
@@ -147,16 +197,19 @@ public class RunTests
 
         Assert.False(world.IsWon);
         Assert.DoesNotContain(events, e => e is RunWon);
+        Assert.Null(world.Stairs);
+        Assert.DoesNotContain(events, e => e is StairsRose);
     }
 
     [Fact]
     public void A_won_run_is_reported_once()
     {
-        var world = World(RoomKind.Boss);
+        var world = World(RoomKind.Boss, withGhoul: false);
         EnterMiddleRoom(world);
-        world.Ghouls[0].TakeDamage(10_000, []);
 
-        var events = Run(world, PlayerInput.None, 60);
+        var events = ClimbStairs(world);
+        events.AddRange(Run(world, PressF, 5));
+        events.AddRange(Run(world, PlayerInput.None, 60));
 
         Assert.Single(events, e => e is RunWon);
     }
@@ -189,6 +242,7 @@ public class RunTests
     {
         var world = World(RoomKind.Boss, withGhoul: false);
         EnterMiddleRoom(world);
+        ClimbStairs(world);
 
         world.Player.TakeDamage(world.Player.MaxHealth, []);
         var events = Run(world, PlayerInput.None, 10);

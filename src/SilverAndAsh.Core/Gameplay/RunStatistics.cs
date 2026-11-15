@@ -38,8 +38,26 @@ public sealed class RunStatistics
     /// <summary>Silver the players picked up (silver still lying around does not count).</summary>
     public int SilverCollected { get; private set; }
 
-    /// <summary>One more tick of the run.</summary>
-    public void AddTick() => Ticks++;
+    /// <summary>True once Gorm is dead.</summary>
+    public bool GormSlain { get; private set; }
+
+    /// <summary>Ticks of the fight against Gorm: from entering the boss room until he died (or the run ended).</summary>
+    public int BossFightTicks { get; private set; }
+
+    /// <summary>The fight against Gorm in seconds.</summary>
+    public float BossFightSeconds => BossFightTicks / (float)SimulationClock.TicksPerSecond;
+
+    private bool _bossFightOn;
+
+    /// <summary>One more tick of the run (and of the boss fight, while it is on).</summary>
+    public void AddTick()
+    {
+        Ticks++;
+        if (_bossFightOn)
+        {
+            BossFightTicks++;
+        }
+    }
 
     /// <summary>Counts what <paramref name="events"/> (one tick's events) tell.</summary>
     public void Count(IEnumerable<GameEvent> events)
@@ -61,6 +79,9 @@ public sealed class RunStatistics
                 case BatHit hit:
                     DamageDealt += hit.Damage;
                     break;
+                case GormHit hit:
+                    DamageDealt += hit.Damage;
+                    break;
                 case PlayerHit hit:
                     DamageTaken += hit.Damage;
                     break;
@@ -69,6 +90,13 @@ public sealed class RunStatistics
                     break;
                 case SilverTaken taken:
                     SilverCollected += taken.Amount;
+                    break;
+                case BossFightStarted:
+                    _bossFightOn = true;
+                    break;
+                case GormDied:
+                    GormSlain = true;
+                    _bossFightOn = false;
                     break;
             }
         }
@@ -87,7 +115,9 @@ public sealed record RunSummary(
     int Level,
     int RoomsCleared,
     int ArenaRooms,
-    int Silver)
+    int Silver,
+    bool GormSlain = false,
+    float GormFightSeconds = 0f)
 {
     /// <summary>The run time as minutes:seconds, e.g. "12:34".</summary>
     public string Time
@@ -103,7 +133,16 @@ public sealed record RunSummary(
     public string ToLogLine(DateTimeOffset when) => string.Create(
         CultureInfo.InvariantCulture,
         $"{when:yyyy-MM-dd HH:mm:ss} | {Outcome.ToString().ToLowerInvariant()} | seed {Seed} | {Time} | ghouls {GhoulsKilled} | "
-        + $"bats {BatsKilled} | dealt {DamageDealt} | taken {DamageTaken} | level {Level} | rooms {RoomsCleared}/{ArenaRooms} | silver {Silver}");
+        + $"bats {BatsKilled} | dealt {DamageDealt} | taken {DamageTaken} | level {Level} | rooms {RoomsCleared}/{ArenaRooms} | silver {Silver} | gorm {(GormSlain ? "slain" : "alive")} {MinutesAndSeconds(GormFightSeconds)}");
+
+    /// <summary>The fight against Gorm as minutes:seconds, e.g. "1:23" (0:00 if it never began).</summary>
+    public string GormFightTime => MinutesAndSeconds(GormFightSeconds);
+
+    private static string MinutesAndSeconds(float seconds)
+    {
+        var whole = (int)seconds;
+        return string.Create(CultureInfo.InvariantCulture, $"{whole / 60}:{whole % 60:00}");
+    }
 }
 
 /// <summary>

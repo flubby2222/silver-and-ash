@@ -9,14 +9,15 @@ namespace SilverAndAsh.Core.World;
 /// </list>
 /// The outer ring of a template is always wall or door slot. Rooms with a single entrance (the boss room) have
 /// exactly one door slot.
-/// 'G' and 'B' mark places for enemies (not in treasure and secret rooms), 'C' places for a chest (only in combat,
+/// 'T' is the boss's place (only in the boss room, at most one). 'G' and 'B' mark places for enemies (not in treasure
+/// and secret rooms; no longer used for spawning), 'C' places for a chest (only in combat,
 /// treasure and secret rooms; treasure and secret rooms need at least one), 'P' the player start (only in the start room).
 /// Training dummies ('D') are not allowed in rooms. The ceiling height comes from the kind of room.
 /// Full description: docs/level-format.md.
 /// </summary>
 public static class RoomTemplateParser
 {
-    private const string AllowedSymbols = "'#', ' ', '.', '+', 'P', '1', '2', '3', '_', 'G', 'B', 'C'";
+    private const string AllowedSymbols = "'#', ' ', '.', '+', 'P', '1', '2', '3', '_', 'G', 'B', 'C', 'T'";
 
     /// <summary>
     /// Reads every template below <paramref name="directory"/>. Each sub-folder names the kind of room
@@ -72,6 +73,7 @@ public static class RoomTemplateParser
         var ghoulSlots = new List<(int X, int Z)>();
         var batSlots = new List<(int X, int Z)>();
         var chestSlots = new List<(int X, int Z)>();
+        var bossSlots = new List<(int X, int Z)>();
         (int X, int Z)? playerStart = null;
 
         for (var z = 0; z < depth; z++)
@@ -117,6 +119,13 @@ public static class RoomTemplateParser
                     case 'C':
                         chestSlots.Add((x, z));
                         break;
+                    case 'T' when kind != RoomKind.Boss:
+                        throw Error(name, x, z, $"Only the boss room may have a place for the boss 'T' (column {x + 1}).");
+                    case 'T' when bossSlots.Count > 0:
+                        throw Error(name, x, z, $"Second boss place 'T' in column {x + 1}.");
+                    case 'T':
+                        bossSlots.Add((x, z));
+                        break;
                     case 'P' when kind != RoomKind.Start:
                         throw Error(name, x, z, $"Only the start room may have a player start 'P' (column {x + 1}).");
                     case 'P' when playerStart is not null:
@@ -155,7 +164,7 @@ public static class RoomTemplateParser
 
         CheckFloorIsConnected(cells, name);
 
-        return new RoomTemplate(name, kind, cells, doorSlots, ghoulSlots, batSlots, chestSlots, playerStart);
+        return new RoomTemplate(name, kind, cells, doorSlots, ghoulSlots, batSlots, chestSlots, playerStart, bossSlots);
     }
 
     private static DoorSlot ToDoorSlot(Cell[,] cells, (int X, int Z) cell, RoomKind kind, string name)

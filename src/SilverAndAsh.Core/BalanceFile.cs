@@ -98,6 +98,7 @@ public static class BalanceFile
         ("silver", "ghoulMin", "ghoulMax"),
         ("silver", "batMin", "batMax"),
         ("chests", "treasureChestsMin", "treasureChestsMax"),
+        ("gorm", "silverMin", "silverMax"),
         ("chests.beggar", "silverMin", "silverMax"),
         ("chests.guard", "silverMin", "silverMax"),
         ("chests.king", "silverMin", "silverMax"),

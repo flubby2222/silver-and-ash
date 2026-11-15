@@ -67,6 +67,8 @@ internal static class EndScreen
         if (summary.ArenaRooms > 0)
         {
             lines.Add(("Rooms cleared", $"{Number(summary.RoomsCleared)}/{Number(summary.ArenaRooms)}"));
+            lines.Add(("Gorm slain", summary.GormSlain ? "yes" : "no"));
+            lines.Add(("Fight against Gorm", summary.GormFightTime));
         }
 
         lines.Add(("Seed", Number(summary.Seed)));

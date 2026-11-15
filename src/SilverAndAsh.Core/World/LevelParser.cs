@@ -24,7 +24,7 @@ public static class LevelParser
     /// <summary>Floor height of a pit ('_'), in metres.</summary>
     public const float PitFloorHeight = -1f;
 
-    private const string AllowedSymbols = "'#', ' ', '.', 'P', '1', '2', '3', '_', 'D', 'G', 'B'";
+    private const string AllowedSymbols = "'#', ' ', '.', 'P', '1', '2', '3', '_', 'D', 'G', 'B', 'T'";
 
     /// <summary>Reads the level file at <paramref name="path"/>.</summary>
     public static Level ParseFile(string path) => Parse(File.ReadAllText(path));
@@ -52,6 +52,7 @@ public static class LevelParser
         var dummyCells = new List<(int X, int Z)>();
         var ghoulCells = new List<(int X, int Z)>();
         var batCells = new List<(int X, int Z)>();
+        var bossCells = new List<(int X, int Z)>();
 
         for (var z = 0; z < depth; z++)
         {
@@ -83,6 +84,11 @@ public static class LevelParser
                     batCells.Add((x, z));
                 }
 
+                if (symbol == 'T')
+                {
+                    bossCells.Add((x, z));
+                }
+
                 if (symbol == 'P')
                 {
                     if (start is { } first)
@@ -101,7 +107,7 @@ public static class LevelParser
             throw new LevelFormatException(0, "The level has no player start 'P'.");
         }
 
-        return new Level(cells, playerStart.X, playerStart.Z, dummyCells, ghoulCells, batCells);
+        return new Level(cells, playerStart.X, playerStart.Z, dummyCells, ghoulCells, batCells, bossCells);
     }
 
     /// <summary>
@@ -110,7 +116,7 @@ public static class LevelParser
     /// </summary>
     internal static float? FloorHeightOf(char symbol) => symbol switch
     {
-        '.' or 'P' or 'D' or 'G' or 'B' => Cell.DefaultFloorHeight,
+        '.' or 'P' or 'D' or 'G' or 'B' or 'T' => Cell.DefaultFloorHeight,
         '1' or '2' or '3' => (symbol - '0') * PlatformStep,
         '_' => PitFloorHeight,
         _ => null,

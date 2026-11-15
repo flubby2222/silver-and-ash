@@ -128,6 +128,7 @@ static void RunGame(
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
         IGhoulView ghoulView = new PlaceholderGhoulView();
+        var gormView = new GormView();
         IBatView batView = new PlaceholderBatView();
         var projectileView = new ProjectileView();
         var pickupView = new PickupView();
@@ -169,6 +170,7 @@ static void RunGame(
             player = gameWorld.Player;
             dummyView = new PlaceholderDummyView();
             ghoulView = new PlaceholderGhoulView();
+            gormView = new GormView();
             batView = new PlaceholderBatView();
             projectileView = new ProjectileView();
             pickupView = new PickupView();
@@ -326,6 +328,7 @@ static void RunGame(
                 {
                     dummyView.OnEvent(gameEvent, player.Position);
                     ghoulView.OnEvent(gameEvent);
+                    gormView.OnEvent(gameEvent);
                     batView.OnEvent(gameEvent);
                     projectileView.OnEvent(gameEvent);
                     impactMarks.OnEvent(gameEvent);
@@ -406,6 +409,7 @@ static void RunGame(
             levelShader.BeginFigures();
             DoorView.Draw(gameWorld.Doors, seconds);
             ChestView.Draw(gameWorld.Chests, seconds, camera.Position);
+            StairsView.Draw(gameWorld.Stairs, seconds);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
@@ -414,6 +418,11 @@ static void RunGame(
             foreach (var ghoul in gameWorld.Ghouls)
             {
                 ghoulView.Draw(ghoul);
+            }
+
+            if (gameWorld.Gorm is { } gorm)
+            {
+                gormView.Draw(gorm, Raylib.GetFrameTime());
             }
 
             foreach (var bat in gameWorld.Bats)
@@ -446,6 +455,7 @@ static void RunGame(
             DrawHud(displayVersion);
             DrawStaminaBar(player);
             CombatHud.Draw(player);
+            BossBar.Draw(gameWorld);
             if (!choosing && !frozen)
             {
                 InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);

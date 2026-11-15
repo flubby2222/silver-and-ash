@@ -41,6 +41,22 @@ public static class BodySizes
         public const float HeadHeight = 0.35f;
     }
 
+    /// <summary>Gorm, the Chained - the troll (decision record 0007).</summary>
+    public static class Gorm
+    {
+        /// <summary>Radius of his body in metres.</summary>
+        public const float Radius = 0.9f;
+
+        /// <summary>Height of his body in metres - almost twice the player.</summary>
+        public const float Height = 3.2f;
+
+        /// <summary>The top part of this height (metres) is his head ...</summary>
+        public const float HeadHeight = 0.6f;
+
+        /// <summary>... this wide (metres, side to side), at the front.</summary>
+        public const float HeadWidth = 0.7f;
+    }
+
     /// <summary>The ghoul.</summary>
     public static class Ghoul
     {

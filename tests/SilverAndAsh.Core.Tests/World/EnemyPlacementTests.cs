@@ -58,7 +58,7 @@ public class EnemyPlacementTests
         {
             var budget = EnemyPlacement.BudgetOf(room, generated.Rooms, Difficulty);
             var spent = Spent(generated, room, Difficulty);
-            Assert.InRange(spent, 1, budget);
+            Assert.InRange(spent, room.Kind == RoomKind.Combat ? 1 : 0, budget);
         }));
     }
 
@@ -178,7 +178,7 @@ public class EnemyPlacementTests
     {
         // Near: only ghouls. Far: only bats. So the nearest combat room has only ghouls, the farthest and the boss
         // room only bats.
-        var split = Difficulty with { GhoulWeightNear = 1f, GhoulWeightFar = 0f, BatWeightNear = 0f, BatWeightFar = 1f };
+        var split = Difficulty with { GhoulWeightNear = 1f, GhoulWeightFar = 0f, BatWeightNear = 0f, BatWeightFar = 1f, BudgetBoss = 12 };
 
         Assert.All(Enumerable.Range(0, 20), seed =>
         {
@@ -208,6 +208,36 @@ public class EnemyPlacementTests
             .Count();
 
         Assert.True(cellSets >= 8, $"Only {cellSets} different sets of places in ten seeds.");
+    }
+
+    [Fact]
+    public void Gorm_stands_alone_on_his_place_in_the_boss_room()
+    {
+        Assert.All(ManyLevels.Value, generated =>
+        {
+            var boss = generated.Rooms.Single(room => room.Kind == RoomKind.Boss);
+            var gorm = Assert.Single(generated.Level.BossPositions);
+
+            Assert.Equal(boss.BossSlots![0], Level.ToGrid(gorm.X, gorm.Z));
+            Assert.Empty(Ghouls(generated, boss));
+            Assert.Empty(Bats(generated, boss));
+        });
+    }
+
+    [Fact]
+    public void A_boss_room_without_a_place_puts_gorm_in_its_middle()
+    {
+        var layout = LevelGenerator.Generate(Templates, 4, Balance.Default.Layout);
+        var withoutPlace = layout with
+        {
+            Rooms = layout.Rooms.Select(room => room.Kind == RoomKind.Boss ? room with { BossSlots = null } : room).ToList(),
+        };
+        var boss = withoutPlace.Rooms.Single(room => room.Kind == RoomKind.Boss);
+
+        var generated = EnemyPlacement.Populate(withoutPlace, Difficulty);
+
+        var gorm = Assert.Single(generated.Level.BossPositions);
+        Assert.Equal(EnemyPlacement.Middle(boss), Level.ToGrid(gorm.X, gorm.Z));
     }
 
     [Fact]
