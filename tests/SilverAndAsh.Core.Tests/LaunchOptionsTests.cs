@@ -46,6 +46,41 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public void The_generated_level_is_chosen_by_name_and_takes_a_seed()
+    {
+        var options = LaunchOptions.Parse(["--level", "generated", "--seed", "123"]);
+
+        Assert.True(options.IsGenerated);
+        Assert.Equal(123, options.Seed);
+        Assert.False(LaunchOptions.Parse(["--level", "heights"]).IsGenerated);
+    }
+
+    [Fact]
+    public void Without_seed_there_is_none_chosen()
+    {
+        Assert.Null(LaunchOptions.Parse(["--level", "generated"]).Seed);
+    }
+
+    [Theory]
+    [InlineData("abc")]
+    [InlineData("1.5")]
+    [InlineData("99999999999")]
+    public void A_seed_must_be_a_whole_number(string seed)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--seed", seed]));
+
+        Assert.Contains("seed", error.Message);
+    }
+
+    [Fact]
+    public void Seed_option_without_a_number_is_rejected()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--seed"]));
+
+        Assert.Contains("needs a number", error.Message);
+    }
+
+    [Fact]
     public void Unknown_options_are_rejected()
     {
         var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--levle", "heights"]));

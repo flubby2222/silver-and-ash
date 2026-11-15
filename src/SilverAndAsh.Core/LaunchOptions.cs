@@ -1,15 +1,23 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace SilverAndAsh.Core;
 
 /// <summary>
-/// Options given when starting the game, e.g. <c>--level heights</c>.
+/// Options given when starting the game, e.g. <c>--level heights</c> or <c>--level generated --seed 123</c>.
 /// </summary>
-/// <param name="LevelName">Name of the level file in assets/levels/ without ".txt".</param>
-public sealed partial record LaunchOptions(string LevelName)
+/// <param name="LevelName">Name of the level file in assets/levels/ without ".txt", or <see cref="GeneratedLevelName"/>.</param>
+/// <param name="Seed">Seed chosen with <c>--seed</c>, or null for a new one every game.</param>
+public sealed partial record LaunchOptions(string LevelName, int? Seed = null)
 {
     /// <summary>Level that is loaded when no <c>--level</c> is given.</summary>
     public const string DefaultLevelName = "test";
+
+    /// <summary>This "level name" builds a level from the room templates instead of loading a file.</summary>
+    public const string GeneratedLevelName = "generated";
+
+    /// <summary>True if the level is built by the level generator.</summary>
+    public bool IsGenerated => LevelName == GeneratedLevelName;
 
     /// <summary>
     /// Reads the command line. Unknown options are errors - better a clear message than silently ignoring a typo.
@@ -19,6 +27,7 @@ public sealed partial record LaunchOptions(string LevelName)
     {
         ArgumentNullException.ThrowIfNull(args);
         var levelName = DefaultLevelName;
+        int? seed = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -47,12 +56,27 @@ public sealed partial record LaunchOptions(string LevelName)
 
                     break;
 
+                case "--seed":
+                    if (i + 1 >= args.Count)
+                    {
+                        throw new ArgumentException("'--seed' needs a number, e.g. '--seed 123'.");
+                    }
+
+                    var text = args[++i];
+                    if (!int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number))
+                    {
+                        throw new ArgumentException($"Invalid seed '{text}'. A seed is a whole number, e.g. '--seed 123'.");
+                    }
+
+                    seed = number;
+                    break;
+
                 default:
-                    throw new ArgumentException($"Unknown option '{args[i]}'. Known: --level <name>.");
+                    throw new ArgumentException($"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>.");
             }
         }
 
-        return new LaunchOptions(levelName);
+        return new LaunchOptions(levelName, seed);
     }
 
     /// <summary>The level file for these options inside <paramref name="levelDirectory"/>.</summary>

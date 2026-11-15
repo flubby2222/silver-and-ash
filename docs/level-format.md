@@ -55,6 +55,12 @@ dotnet run --project src/SilverAndAsh.Game -- --level heights
 
 Die beiden `--` trennen die Optionen für `dotnet` von denen für das Spiel. Erlaubt sind Namen aus Kleinbuchstaben, Ziffern und `-`.
 
+Eine **erzeugte Ebene** (aus den Raum-Vorlagen, siehe unten) startet man mit dem Namen `generated`. Mit `--seed` wählt man den Startwert. Gleicher Seed = gleicher Grundriss; ohne `--seed` gibt es bei jedem Start einen neuen (er steht im Log):
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --level generated --seed 123
+```
+
 ## Im Code
 
 - Einlesen: [`src/SilverAndAsh.Core/World/LevelParser.cs`](../src/SilverAndAsh.Core/World/LevelParser.cs)
@@ -69,7 +75,7 @@ Ab v0.8 werden Ebenen aus **Raum-Vorlagen** zusammengesetzt (siehe [Entscheidung
 | `start` | Startraum | 6 m | genau ein `P` |
 | `combat` | Kampfraum | 6 m | groß und verwinkelt (10–18 Zellen je Richtung), mind. 3 Gegnerplätze |
 | `corridor` | Gang | 3,5 m | schmal, gern mit Knick |
-| `boss` | Bossraum | 6 m | **genau ein** Türplatz |
+| `boss` | Bossraum | 6 m | **genau ein** Türplatz (gilt später für alle Räume mit nur einem Eingang) |
 
 Zusätzlich zu den Zeichen oben gibt es:
 
@@ -79,7 +85,15 @@ Zusätzlich zu den Zeichen oben gibt es:
 
 Regeln für Vorlagen:
 
+- Der **äußere Rand** einer Vorlage ist immer **Wand oder Türplatz** – nie Boden. So grenzt ein Raum nie offen nach außen, und zwei verbundene Räume treffen sich immer Wand an Wand.
 - Jede Vorlage hat **mindestens einen Türplatz**. Ein Türplatz liegt **am Rand**, **nicht in einer Ecke**, und **dahinter (nach innen) ist Boden**.
+- In **Räumen** (nicht in Gängen) ist auch **links und rechts** dieses Bodenfelds Boden: Eine Tür sitzt nie bündig an einer Seitenwand, man läuft also nie direkt an einer Wand entlang hinein.
+
+  ```
+  erlaubt:   verboten:
+  ###+###    #####+#
+  #.....#    #.....#
+  ```
 - `G` und `B` sind **Plätze für Gegner** – wie viele davon wirklich besetzt werden, entscheidet später die Schwierigkeit.
 - `P` gibt es **nur im Startraum**, Trainingspuppen (`D`) gar nicht.
 - Der Boden muss **zusammenhängen** – kein Bodenfeld darf abgeschnitten sein.
@@ -100,3 +114,24 @@ Beispiel (Gang mit Knick, `assets/rooms/corridor/bend.txt`):
 ```
 
 Im Code: [`RoomTemplateParser.cs`](../src/SilverAndAsh.Core/World/RoomTemplateParser.cs), [`RoomTemplate.cs`](../src/SilverAndAsh.Core/World/RoomTemplate.cs).
+
+## Wie der Generator eine Ebene baut
+
+Der [`LevelGenerator`](../src/SilverAndAsh.Core/World/LevelGenerator.cs) setzt aus den Vorlagen per Seed eine Ebene zusammen:
+
+1. **Startraum** hinlegen (zufällige Vorlage, gedreht/gespiegelt).
+2. **Kampfräume** an freie Türplätze anhängen, bis die Zahl aus `balance.json` (`layout.combatRoomsMin` … `combatRoomsMax`) erreicht ist. Mit der Chance `layout.corridorChance` liegt ein **Gang** dazwischen, sonst teilen sich die Räume eine Wand mit Tür. Bei `0` gibt es gar keine Gänge.
+3. **Schleifen** (höchstens `layout.maxLoops`): Der Generator sucht gezielt Stellen, an denen ein neuer Raum – oder ein Raum plus Gang, oder nur ein Gang – zwei freie Türplätze verbindet. So gibt es einen zweiten Weg herum. Zwei Räume, die schon verbunden sind (Tür oder Gang), werden nicht ein zweites Mal verbunden.
+4. **Bossraum** zuletzt, hinter einem der Räume, die am weitesten vom Start liegen. Er ist damit **immer der entfernteste Raum** und hat **genau einen Eingang**.
+
+Regeln, die immer gelten (und über viele Seeds getestet werden):
+
+- Räume **überlappen nicht**. Sie dürfen sich eine Wand teilen, aber Boden berührt nie Boden eines anderen Raums – auch nicht über Eck.
+- Räume sind **nur über Türen** verbunden; jede Tür verbindet **genau zwei Räume**.
+- **Alles ist erreichbar.**
+- Ein **Gang** führt immer von einem Raum zu einem anderen, nie ins Leere und nie direkt in einen weiteren Gang.
+- Räume mit **nur einem Eingang** (heute der Boss, später Schatz, Händler, Altar) bekommen nie eine zweite Tür.
+- Ungenutzte Türplätze bleiben Wand. Türen sind 3,5 m hoch, auch in hohen Räumen.
+- Bleibt der Generator stecken (kein Raum passt mehr), versucht er es mit den nächsten Zufallszahlen **desselben** Seeds noch einmal – das Ergebnis bleibt also gleich.
+
+Zu jeder erzeugten Ebene gibt es neben den Zellen eine Liste der **Räume** (Art, Fläche, Abstand zum Start in Räumen, Gegnerplätze) und der **Türen** (Lage, welche zwei Räume). Gegner werden noch nicht aufgestellt – das kommt mit den Arenen (#122).

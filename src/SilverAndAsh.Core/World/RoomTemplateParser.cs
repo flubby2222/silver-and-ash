@@ -4,8 +4,11 @@ namespace SilverAndAsh.Core.World;
 /// Reads room templates. The symbols are those of the level format (see <see cref="LevelParser"/>) plus:
 /// <list type="bullet">
 ///   <item><c>+</c> – door slot: a place on the outer wall where the generator may put a door.
-///   Must sit on a side (not in a corner) with floor right behind it. Unused slots stay walls.</item>
+///   Must sit on a side (not in a corner) with floor right behind it - in rooms (not corridors) also to the
+///   left and right of that cell, so a door never sits flush with a side wall. Unused slots stay walls.</item>
 /// </list>
+/// The outer ring of a template is always wall or door slot. Rooms with a single entrance (the boss room) have
+/// exactly one door slot.
 /// 'G' and 'B' mark places for enemies, 'P' the player start (only in the start room).
 /// Training dummies ('D') are not allowed in rooms. The ceiling height comes from the kind of room.
 /// Full description: docs/level-format.md.
@@ -116,17 +119,19 @@ public static class RoomTemplateParser
             throw new LevelFormatException(name, 0, "A start room needs a player start 'P'.");
         }
 
-        var doorSlots = doorCells.Select(cell => ToDoorSlot(cells, cell, name)).ToList();
+        CheckEdgeIsClosed(cells, name);
+
+        var doorSlots = doorCells.Select(cell => ToDoorSlot(cells, cell, kind, name)).ToList();
 
         if (doorSlots.Count == 0)
         {
             throw new LevelFormatException(name, 0, "The room has no door slot '+'.");
         }
 
-        if (kind == RoomKind.Boss && doorSlots.Count != 1)
+        if (kind.HasSingleEntrance() && doorSlots.Count != 1)
         {
             throw new LevelFormatException(
-                name, 0, $"A boss room needs exactly one door slot '+', but this one has {doorSlots.Count}.");
+                name, 0, $"A {kind.ToString().ToLowerInvariant()} room needs exactly one door slot '+', but this one has {doorSlots.Count}.");
         }
 
         CheckFloorIsConnected(cells, name);
@@ -134,7 +139,7 @@ public static class RoomTemplateParser
         return new RoomTemplate(name, kind, cells, doorSlots, ghoulSlots, batSlots, playerStart);
     }
 
-    private static DoorSlot ToDoorSlot(Cell[,] cells, (int X, int Z) cell, string name)
+    private static DoorSlot ToDoorSlot(Cell[,] cells, (int X, int Z) cell, RoomKind kind, string name)
     {
         var (x, z) = cell;
         var lastX = cells.GetLength(0) - 1;
@@ -163,7 +168,33 @@ public static class RoomTemplateParser
             throw Error(name, x, z, $"The cell behind door slot '+' in column {x + 1} must be floor.");
         }
 
+        // In a room you never walk in right along a side wall: the cells left and right behind the door are floor
+        // too. Corridors are one cell wide, there the door sits between the corridor walls.
+        var (besideX, besideZ) = side is RoomSide.North or RoomSide.South ? (1, 0) : (0, 1);
+        if (kind != RoomKind.Corridor
+            && (cells[behindX - besideX, behindZ - besideZ].IsSolid || cells[behindX + besideX, behindZ + besideZ].IsSolid))
+        {
+            throw Error(name, x, z, $"The cells beside the floor behind door slot '+' in column {x + 1} must be floor, too - a door may not sit flush with a side wall.");
+        }
+
         return new DoorSlot(x, z, side);
+    }
+
+    // The outer ring is wall or door slot: rooms never open onto the outside, and joined rooms meet wall on wall.
+    private static void CheckEdgeIsClosed(Cell[,] cells, string name)
+    {
+        var lastX = cells.GetLength(0) - 1;
+        var lastZ = cells.GetLength(1) - 1;
+        for (var z = 0; z <= lastZ; z++)
+        {
+            for (var x = 0; x <= lastX; x++)
+            {
+                if ((x == 0 || x == lastX || z == 0 || z == lastZ) && !cells[x, z].IsSolid)
+                {
+                    throw Error(name, x, z, $"Floor on the edge of the room in column {x + 1}; the edge must be wall or a door slot '+'.");
+                }
+            }
+        }
     }
 
     // Every walkable cell must be reachable from every other one, or enemies and loot could end up out of reach.
