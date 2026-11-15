@@ -128,6 +128,13 @@ Ergebnis hier eintragen, neueste Runde oben.
 | Heilung (× maximales Leben) | 5,7 | 2,6 |
 | Zeit (grobe Schätzung) | 6,5 min | 9,8 min |
 
+**Gespielt (15.11., drei Durchläufe):**
+- 4:38 verloren (6/15 Räume);
+- 5:21 verloren (8/14 Räume);
+- 4:26 gewonnen (9/14 Räume, Stufe 8, 90 Schaden genommen).
+
+Eindruck: „passt“. Man kann Räume überspringen; der Sieg kam schon nach 9 von 14 Räumen, deshalb liegt die gespielte Zeit unter der Schätzung des Reports, die von *allen* Räumen ausgeht.
+
 **Noch offen:** Die 20 Minuten aus ADR 0005 sind bewusst noch nicht erreicht. Erst spielen, dann in der nächsten Runde weiter (mehr Räume, Boss in v0.10).
 
 ## Wenn etwas nicht stimmt
