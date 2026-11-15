@@ -15,10 +15,10 @@ public enum HitZone
 }
 
 /// <summary>
-/// Everything about one hit that decides its damage: which weapon, which zone, its base damage and - for a charged
-/// blade - how far it was charged (0 = not at all, 1 = fully).
+/// Everything about one hit that decides its damage: which weapon, which zone, its base damage, - for a charged
+/// blade - how far it was charged (0 = not at all, 1 = fully), and whether the shot was consecrated.
 /// </summary>
-public sealed record Hit(Weapon Weapon, HitZone Zone, int BaseDamage, float Charge = 0f);
+public sealed record Hit(Weapon Weapon, HitZone Zone, int BaseDamage, float Charge = 0f, bool Consecrated = false);
 
 /// <summary>The damage a hit really does, and whether it counts as a critical hit (shown differently).</summary>
 public readonly record struct DamageResult(int Amount, bool IsCritical);
@@ -44,6 +44,14 @@ public sealed record ZoneBonus(Weapon Weapon, HitZone Zone, float Factor) : IDam
     public float Multiplier(Hit hit) => hit.Weapon == Weapon && hit.Zone == Zone ? Factor : 1f;
 }
 
+/// <summary>Consecrated ammunition: a consecrated pistol shot does <paramref name="Factor"/> times the damage.</summary>
+public sealed record ConsecratedBonus(float Factor) : IDamageRule
+{
+    public bool IsCritical => false;
+
+    public float Multiplier(Hit hit) => hit.Weapon == Weapon.Pistol && hit.Consecrated ? Factor : 1f;
+}
+
 /// <summary>
 /// The list of damage rules that apply in a game. Damage = base damage x all multipliers, rounded.
 /// Part of the game state (not static), so every game - and later every player - can have its own rules.
@@ -53,8 +61,9 @@ public sealed class DamageRules
     private readonly List<IDamageRule> _rules = [];
 
     /// <summary>
-    /// The rules of a normal game: headshots with the pistol do triple damage, a charged blade up to double -
-    /// with the multipliers from <paramref name="balance"/> (the standard values if none is given).
+    /// The rules of a normal game: headshots with the pistol do triple damage, a charged blade up to double,
+    /// consecrated pistol shots double - with the multipliers from <paramref name="balance"/> (the standard values if
+    /// none is given).
     /// </summary>
     public static DamageRules Standard(Balance? balance = null)
     {
@@ -62,6 +71,7 @@ public sealed class DamageRules
         var rules = new DamageRules();
         rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.Head, balance.Pistol.HeadshotMultiplier));
         rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
+        rules.Add(new ConsecratedBonus(balance.ConsecratedAmmo.DamageMultiplier));
         return rules;
     }
 

@@ -16,8 +16,11 @@ public abstract record GameEvent;
 /// </summary>
 public sealed record BladeSwung(Vector3 Origin, Vector3 Direction, float Charge = 0f) : GameEvent;
 
-/// <summary>The pistol was fired from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/>.</summary>
-public sealed record ShotFired(Vector3 Origin, Vector3 Direction) : GameEvent;
+/// <summary>
+/// The pistol was fired from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/> - with consecrated
+/// ammunition if <paramref name="Consecrated"/>.
+/// </summary>
+public sealed record ShotFired(Vector3 Origin, Vector3 Direction, bool Consecrated = false) : GameEvent;
 
 /// <summary>
 /// A shot hit a wall, floor or ceiling at <paramref name="Point"/>; <paramref name="Normal"/> points out of the surface.

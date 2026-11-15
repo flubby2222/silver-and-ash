@@ -23,8 +23,9 @@ Zum **Ausprobieren** die Kopie neben dem Spiel ändern. Ein Wert, der **bleiben*
   "dummy":  { ... },
   "ghoul":  { "speed": 4.5, ... },
   "bat":    { ... },
-  "drops":  { "ghoulChance": 0.3, "batChance": 0.15 },   // 0 = nie, 1 = immer
+  "drops":  { "ghoulChance": 0.3, "batChance": 0.15, "consecratedAmmoShare": 0.3 },   // 0 = nie, 1 = immer
   "bloodVial": { "heal": 50 },
+  "consecratedAmmo": { "damageMultiplier": 2, "duration": 15 },
   "bloodBolt": { ... }
 }
 ```

@@ -107,6 +107,27 @@ public sealed class Player
     /// <summary>Health of the player.</summary>
     public int Health { get; private set; }
 
+    /// <summary>True while consecrated ammunition makes the pistol stronger.</summary>
+    public bool IsConsecrated => _consecratedTicksLeft > 0;
+
+    /// <summary>Seconds of consecrated ammunition left (0 if none).</summary>
+    public float ConsecratedSecondsLeft => _consecratedTicksLeft * SimulationClock.SecondsPerTick;
+
+    /// <summary>
+    /// Loads consecrated ammunition for <paramref name="seconds"/> - starting now. Any time left is replaced, not added:
+    /// a second pickup restarts the time, it does not make the shots any stronger.
+    /// </summary>
+    public void Consecrate(float seconds)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(seconds);
+        if (!IsDead)
+        {
+            _consecratedTicksLeft = SimulationClock.SecondsToTicks(seconds);
+        }
+    }
+
+    private int _consecratedTicksLeft;
+
     /// <summary>The most health the player can have.</summary>
     public int MaxHealth => _player.MaxHealth;
 
@@ -153,6 +174,7 @@ public sealed class Player
         if (IsDead)
         {
             events.Add(new PlayerDied(Id));
+            _consecratedTicksLeft = 0;
         }
     }
 
@@ -241,6 +263,7 @@ public sealed class Player
 
         _events.Clear();
         BladeCooldown.Tick();
+        _consecratedTicksLeft = Math.Max(0, _consecratedTicksLeft - 1);
         PistolCooldown.Tick();
         LandingDip.Tick();
         var wasGrounded = IsGrounded;
@@ -504,7 +527,7 @@ public sealed class Player
 
         if (shootPressed && PistolCooldown.TryUse())
         {
-            _events.Add(new ShotFired(EyePosition, View.Forward));
+            _events.Add(new ShotFired(EyePosition, View.Forward, IsConsecrated));
         }
     }
 

@@ -20,6 +20,7 @@ internal static class CombatHud
     private static readonly Color Charged = new(232, 196, 96, 255);
     private static readonly Color Blood = new(150, 24, 34, 255);
     private static readonly Color TextColor = new(200, 200, 210, 255);
+    private static readonly Color Consecrated = new(220, 235, 255, 255);
 
     public static void Draw(Player player)
     {
@@ -43,6 +44,24 @@ internal static class CombatHud
         }
 
         DrawHealth(player.Health, player.MaxHealth);
+
+        if (player.IsConsecrated)
+        {
+            DrawConsecrated(player.ConsecratedSecondsLeft);
+        }
+    }
+
+    /// <summary>Consecrated ammunition: its time left, above the health - pale and holy, blinking in the last 3 s.</summary>
+    private static void DrawConsecrated(float secondsLeft)
+    {
+        var blinkOff = secondsLeft < 3f && (int)(secondsLeft * 4f) % 2 == 1;
+        if (blinkOff)
+        {
+            return;
+        }
+
+        var text = string.Create(CultureInfo.InvariantCulture, $"CONSECRATED {MathF.Ceiling(secondsLeft):0}s");
+        Raylib.DrawText(text, 20, Raylib.GetScreenHeight() - 104, 16, Consecrated);
     }
 
     /// <summary>Four short lines with a gap in the middle and a dot, with a dark outline so it shows on any wall.</summary>
