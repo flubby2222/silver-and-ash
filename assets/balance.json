@@ -106,7 +106,7 @@
 
   "consecratedAmmo": {
     "fireRateMultiplier": 2,            // the pistol fires twice as fast (damage stays) ...
-    "duration": 15                      // ... for 15 s, starting at once when picked up
+    "duration": 10                      // ... for 10 s, starting at once when picked up
   },
 
   "bloodBolt": {

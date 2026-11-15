@@ -9,7 +9,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ### Hinzugefügt
 - Balancing-Datei `assets/balance.json`: Leben, Schaden, Abklingzeiten, Geschwindigkeiten und Zeiten lassen sich ändern, ohne das Spiel neu zu bauen – mit Kommentaren zu jedem Wert. Fehler in der Datei halten das Spiel nicht auf: Es nimmt dann die Standardwerte und schreibt eine Warnung ins Log. In der Testversion lädt F5 die Datei neu. Anleitung: `docs/balancing.md`
 - Blutphiolen: Getötete Ghule lassen in 30 % der Fälle, Fledermäuse in 15 % eine Blutphiole fallen – eine kleine, rot pulsierende Flasche, die über dem Boden schwebt. Drüberlaufen heilt 50 Leben (nie über das Maximum), neben der Lebensanzeige steigt „+50“ auf. Bei vollem Leben bleibt sie liegen
-- Geweihte Munition: Etwa jeder dritte Drop sind statt einer Blutphiole drei Patronen mit silbern leuchtenden Spitzen. Aufheben (auch mit vollem Leben) lädt sie sofort: 15 s lang schießt die Pistole doppelt so schnell (alle 0,4 statt 0,8 s), der Schaden bleibt gleich. Der Lauf schimmert hell, der Mündungsblitz wird weiß-blau, über der Lebensanzeige läuft „CONSECRATED 15s“ ab (blinkt in den letzten 3 s). Nochmal aufheben startet die Zeit neu; der Tod beendet sie
+- Geweihte Munition: Etwa jeder dritte Drop sind statt einer Blutphiole drei Patronen mit silbern leuchtenden Spitzen. Aufheben (auch mit vollem Leben) lädt sie sofort: 10 s lang schießt die Pistole doppelt so schnell (alle 0,4 statt 0,8 s), der Schaden bleibt gleich. Der Lauf schimmert hell, der Mündungsblitz wird weiß-blau, über der Lebensanzeige läuft „CONSECRATED 10s“ ab (blinkt in den letzten 3 s). Nochmal aufheben startet die Zeit neu; der Tod beendet sie
 
 ## [0.6.0] – 2026-11-14 – Vampirfledermaus
 

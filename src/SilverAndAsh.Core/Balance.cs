@@ -66,7 +66,7 @@ public sealed record ConsecratedAmmoBalance
     public float FireRateMultiplier { get; init; } = 2f;
 
     /// <summary>Seconds it lasts - starting at once when picked up. Picking up another starts the time again.</summary>
-    public float Duration { get; init; } = 15f;
+    public float Duration { get; init; } = 10f;
 }
 
 /// <summary>Balancing values of the blood vial.</summary>
