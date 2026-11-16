@@ -10,7 +10,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Wandbruch mit Wucht:** Bricht die rissige Wand zum Geheimraum, fliegen Steinbrocken heraus (die meisten von dir weg), poltern zu Boden und versinken; eine Staubwolke steigt auf, und das Bild ruckt kurz
 
 ### Geändert
-- **Nachladen:** Die Pistole hat ein Magazin mit **6 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („5 / 6“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
+- **Nachladen:** Die Pistole hat ein Magazin mit **7 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („6 / 7“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
 - **Bonus-Wahl ohne Stillstand:** Ein Stufenaufstieg hält das Spiel nicht mehr an. Unter der Stufenanzeige blinkt „[X] Choose boon“ (bei mehreren mit Anzahl). **X** öffnet die Wahl, **1–4** oder ein **Klick** wählt, das Spiel läuft weiter, und du kannst dabei laufen. Mehrere Aufstiege kommen nacheinander. Nur ein Treffer schließt die Wahl, der Bonus wartet weiter
 - **Kisten sind fest:** Man läuft nicht mehr durch Kisten hindurch, kann aber auf sie springen (0,7 m). Steigt eine Kiste unter dir aus dem Boden, hebt sie dich an. Ghule und Gorm laufen um Kisten herum; Fledermäuse fliegen darüber. Noch versteckte Kisten blockieren nicht
 
@@ -35,7 +35,6 @@ Jede Ebene hat jetzt ihren Höhepunkt: Gorm, the Chained, ein Troll mit Keule un
 - **Kisten und Symbole auf der Karte:** Ungeöffnete Kisten in entdeckten Räumen erscheinen in der Farbe ihrer Stufe, verschlossene mit Schloss; geöffnete verschwinden. Verschlossene Türen tragen ein Schloss, die Bossraum-Tür einen Totenkopf
 
 ### Geändert
-- **Nachladen:** Die Pistole hat ein Magazin mit **6 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („5 / 6“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
 - **Sieg:** Der Durchlauf ist nicht mehr gewonnen, sobald der Bossraum geräumt ist, sondern erst, wenn man die Treppe nimmt. Im Bossraum gibt es keine Ghule und Fledermäuse mehr (Gorm kämpft allein)
 - **Gegner stehen jedes Mal anders:** Statt fester Plätze bekommt jeder Kampfraum ein Gegner-Budget, das weiter vom Start wächst. Davon kauft er Ghule und Fledermäuse (hinten mehr Fledermäuse) und stellt sie auf zufällige freie Felder, mit Abstand zu den Türen und zueinander. Insgesamt etwa so viele Gegner wie bisher. Einstellbar in `balance.json` unter `difficulty`
 - Der **Startraum hat nur noch eine Tür**. Der Ausgang liegt je Durchlauf in einer anderen Richtung, und der Weg zum Boss wird etwas länger
@@ -55,7 +54,6 @@ Erkunden lohnt sich jetzt: Gegner lassen Silber und Schlüssel fallen, Kisten in
 - **Für die Entwicklung:** Balance-Report (`tools/SilverAndAsh.BalanceReport`) baut 500 Ebenen aus `balance.json` und zeigt Erwartungswerte (Räume, Gegner, Silber, Schlüssel, Kisten, Heilung, grobe Spielzeit), auch als Vorher/Nachher-Vergleich. Siehe `docs/balancing.md`
 
 ### Geändert
-- **Nachladen:** Die Pistole hat ein Magazin mit **6 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („5 / 6“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
 - **Balancing-Runde 1:** Eine Ebene ist länger und schwerer.
   - 12–14 statt 7–9 Kampfräume, schon nahe am Start mehr Gegner und erste Fledermäuse.
   - Ghule halten drei statt zwei Klingenhiebe aus und schlagen härter zu; Fledermäuse überstehen einen Pistolenschuss.
@@ -83,7 +81,6 @@ Aus dem Testlevel wird ein Durchlauf: Jede Runde baut eine neue Ebene aus handge
 - Endbildschirm „YOU DIED“ bzw. „VICTORY“ mit der Statistik des Durchlaufs (Zeit, getötete Ghule und Fledermäuse, Schaden ausgeteilt und genommen, erreichte Stufe, geräumte Räume, Seed) und der Wahl „New run“ / „Title“. Jeder Durchlauf wird außerdem als Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log` festgehalten
 
 ### Geändert
-- **Nachladen:** Die Pistole hat ein Magazin mit **6 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („5 / 6“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
 - Nach dem Tod startet der nächste Durchlauf nicht mehr von selbst – erst der Endbildschirm, dann „New run“. Das große „YOU DIED“ mitten im Bild entfällt, nur das Bild färbt sich rot
 - Esc gibt nicht mehr nur die Maus frei, sondern öffnet das Menü; ein Klick ins Bild fängt die Maus nicht mehr ein (das macht „Resume“). Auch wenn das Fenster den Fokus verliert, öffnet sich das Menü
 - Ist die Silberklinge voll aufgeladen, füllt sich die Ausdauer wieder auf, auch wenn man die Taste weiter hält. Während des Ladens selbst füllt sie sich weiterhin nicht
@@ -109,7 +106,6 @@ Der Angriff kommt von oben: Vampirfledermäuse kreisen um dich, spucken Blutgesc
 - Fledermäuse greifen an: Sie hängen still, bis sie dich sehen (bis 15 m) oder getroffen werden. Dann kreisen sie um dich – jede mit eigenem Abstand (4–6 m), eigener Richtung und eigenem Auf und Ab –, wechseln alle 2–4 s zufällig die Richtung und finden im Flug ihren Weg um Ecken. Jedes Spiel und jeder Neustart fliegt anders. Etwa alle 2 s spucken sie ein Blutgeschoss – vorher leuchten sie kurz rot auf. Etwa alle 6 s kreischen sie (Flügel hoch) und stoßen dann auf die Stelle herab, an der du beim Kreischen standest: Wer jetzt zur Seite geht oder dodged, lässt sie ins Leere stoßen, sonst beißen sie für 15 Leben. Im Sturzflug sind sie tief – ein guter Moment für die Klinge
 
 ### Geändert
-- **Nachladen:** Die Pistole hat ein Magazin mit **6 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („5 / 6“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
 - Die Silberklinge trifft nahe Gegner leichter: Ihr Treffkegel beginnt jetzt etwas hinter dir und ist dadurch direkt vor dir schon gut einen Meter breit – auch Gegner seitlich vor dir werden getroffen. Reichweite (2 m) und Winkel (90°) bleiben
 
 ## [0.5.0] – 2026-11-11 – Ghul
@@ -149,7 +145,6 @@ Versehentlich auf dem Stand von 0.3.0 veröffentlicht – enthält den Fenster-F
 Das Schloss bekommt Stimmung: grobe Pixel, Licht wie von einer Laterne, Dunkelheit in der Ferne – und erstmals Höhenunterschiede. Dazu wird die Bewegung zum Können: Perfect Jump, Stamina, Dash in der Luft und Dodge am Boden.
 
 ### Geändert
-- **Nachladen:** Die Pistole hat ein Magazin mit **6 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („5 / 6“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
 - Retro-Look: Die 3D-Welt wird in 854 × 480 gezeichnet und mit harten Pixelkanten hochskaliert; Texte bleiben scharf
 - Das Fenster lässt sich in der Größe ändern; das Bild behält sein Seitenverhältnis (schwarze Balken bei abweichender Form)
 - Flat Shading: Wände, Boden und Decke haben je nach Ausrichtung eine eigene Helligkeit; Ecken sind ohne Kantenlinien erkennbar
@@ -181,7 +176,6 @@ Zum ersten Mal ein begehbarer Ort: Du stehst in einem Level, siehst dich um, lä
 - Esc gibt die Maus frei, ein Klick ins Fenster fängt sie wieder ein
 
 ### Geändert
-- **Nachladen:** Die Pistole hat ein Magazin mit **6 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („5 / 6“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
 - Esc beendet das Spiel nicht mehr – Beenden über das X des Fensters
 - Kein Konsolenfenster mehr hinter dem Spiel
 - Texte im Spiel sind englisch

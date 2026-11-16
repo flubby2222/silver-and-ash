@@ -468,7 +468,7 @@ public sealed record PistolBalance
     public float Cooldown { get; init; } = 0.7f;
 
     /// <summary>Rounds in a full magazine (decision record 0008) ...</summary>
-    public int MagazineSize { get; init; } = 6;
+    public int MagazineSize { get; init; } = 7;
 
     /// <summary>... and the seconds a reload takes. The supply is unlimited.</summary>
     public float ReloadTime { get; init; } = 1.5f;
