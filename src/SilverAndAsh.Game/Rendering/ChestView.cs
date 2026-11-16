@@ -64,7 +64,7 @@ internal static class ChestView
         }
     }
 
-    private static (Color Body, Color Band) Colours(ChestTier tier, float seconds) => tier switch
+    internal static (Color Body, Color Band) Colours(ChestTier tier, float seconds) => tier switch
     {
         ChestTier.Beggar => (new Color(110, 76, 46, 255), new Color(56, 44, 36, 255)),
         ChestTier.Guard => (new Color(92, 112, 140, 255), new Color(52, 58, 70, 255)),

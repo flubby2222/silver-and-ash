@@ -538,6 +538,15 @@ public sealed class GameWorld
         && _roomOfCell.TryGetValue(Level.ToGrid(pickup.Position.X, pickup.Position.Z), out var room)
         && room.IsDiscovered);
 
+    /// <summary>
+    /// Chests in rooms already discovered that are there to see - one that still waits under the floor for its room
+    /// to be cleared is not (yet). The map shows them with their tier, lock and whether they are open.
+    /// </summary>
+    public IEnumerable<Chest> KnownChests => _chests.Where(chest =>
+        chest.RiseFraction > 0f
+        && _roomOfCell.TryGetValue(Level.ToGrid(chest.Position.X, chest.Position.Z), out var room)
+        && room.IsDiscovered);
+
     /// <summary>Silver and keys lying in the level (taken ones are removed after each tick).</summary>
     public IReadOnlyList<Loot> Loot => _loot;
 
