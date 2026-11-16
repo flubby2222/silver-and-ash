@@ -6,6 +6,8 @@ Dieses Dokument liest der Audiodesigner vor jeder Aufgabe. Es hat zwei Teile: de
 
 ## Leitbild
 
+*Dieses Leitbild ist eine Setzung der Leitung und gilt als Vermutung bis zur ersten Hörprobe.*
+
 Unter der Erde ist es still. Man hört den eigenen Schritt auf Stein, das Tropfen von Wasser, weit weg etwas, das sich bewegt. Geräusche sind **trocken, nah und körperlich**; der Raum antwortet mit kurzem, kaltem Hall. Wenn etwas laut wird, ist es gefährlich.
 
 Passend zum Bild im PS2-Stil darf der Klang **etwas rau und einfach** sein. Er soll nicht nach Filmorchester klingen.
@@ -29,13 +31,13 @@ Jede Familie soll man an ihrem Charakter erkennen, auch mit geschlossenen Augen:
 
 | Familie | Charakter (Hypothese) | Erste Stücke |
 |---|---|---|
-| Jäger: Fernwaffen | hart, kurz, metallisch, mit kurzem Nachhall im Stein | Pistolenschuss |
-| Jäger: Nahkampf | scharf und hell beim Schwung, dumpf beim Treffer | Klingentreffer |
-| Jäger: Körper | trocken, unaufdringlich | Schritte auf Stein |
+| Jäger: Fernwaffen | hart, kurz, metallisch, mit kurzem Nachhall im Stein | Pistolenschuss; Rifle und Blunderbuss folgen als Varianten derselben Familie, dazu Nachladen |
+| Jäger: Nahkampf | scharf und hell beim Schwung, dumpf beim Treffer | Klingentreffer; Club und Aufladen später |
+| Jäger: Körper | trocken, unaufdringlich | Schritte auf Stein; Sprung, Landung, Dodge und Dash später |
 | Untote | tief, kehlig, feucht, unregelmäßig | Ghul-Laut |
 | Fliegendes | hoch, dünn, schneidend | *(später)* |
 | Boss | schwer, tief, Metall auf Stein | *(später)* |
-| Beute und Bedienung | klein, hell, kurz | *(später)* |
+| Beute und Bedienung | klein, hell, kurz | *(später: Kisten, Türen, Aufheben, Menü)* |
 | Ambiente | leise Fläche, weit, mit einzelnen fernen Ereignissen | Katakomben |
 
 ## Technischer Rahmen
@@ -44,19 +46,28 @@ Vorläufig, bis die erste Hörprobe und die Einbindung zeigen, was trägt:
 
 | Was | Wert |
 |---|---|
-| Format | WAV (16 Bit) für kurze Geräusche, OGG für Ambiente |
+| Format | WAV (16 Bit) für kurze Geräusche; Ambiente als OGG, aus der WAV-Datei mit `ffmpeg` umgewandelt |
 | Abtastrate | 44 100 Hz |
-| Kanäle | mono für alles, was im Raum einen Ort hat; Ambiente darf stereo sein |
+| Kanäle | mono für alles, was im Raum einen Ort hat; Ambiente darf stereo sein. Lautstärke und Richtung berechnet das Spiel aus der Position ([#225](https://github.com/flubby2222/silver-and-ash/issues/225)) – keine Stereo-Effekte in die Datei einbauen |
 | Länge | Schuss und Treffer unter 0,6 s, Gegnerlaut unter 1,5 s, Schritt unter 0,3 s, Ambiente 20–40 s als nahtlose Schleife |
 | Spitzenpegel | höchstens −1 dBFS, nie übersteuert |
 | Anfang und Ende | bei Stille, ohne Knacken |
 | Varianten | Schritte und Treffer in mindestens drei Varianten, damit Wiederholung nicht auffällt |
 
-Erzeugt wird **nur per Synthese-Skript**. Keine Aufnahmen, keine heruntergeladenen Dateien, keine KI-Generatoren. Kein neues Paket oder Werkzeug ohne Rückfrage.
+Erzeugt wird **nur per Synthese-Skript**. Keine Aufnahmen, keine heruntergeladenen Dateien, keine KI-Generatoren.
+
+### Erlaubte Werkzeuge
+
+Genau diese zwei, beide sind auf dem Rechner vorhanden:
+
+- **Python 3.12, nur die Standardbibliothek** (`wave`, `math`, `random`, `struct`, `array`) für die Synthese. Kein `pip install`, also auch kein NumPy.
+- **`ffmpeg`** für alles Weitere: Umwandeln nach OGG (`-c:a libvorbis`), Spitzenpegel und mittlere Lautstärke (`-af volumedetect`), Spektrogramm als Bild (`-lavfi showspectrumpic`).
+
+Reicht das für ein Geräusch nicht, ist das ein Fall für die Leitung, nicht für ein weiteres Werkzeug. Die CI braucht keines von beiden: Im Repo liegen die erzeugten Dateien und die Skripte.
 
 ## Was eine Hörprobe enthält
 
-Pro Geräusch **zwei bis drei deutlich verschiedene Varianten**, dazu `messwerte.md` mit Länge, Spitzenpegel, mittlerer Lautstärke und einem Spektrogramm je Variante. Die Leitung prüft die Messwerte gegen den technischen Rahmen und stellt dem Menschen die Probe mit einer kurzen Frage je Geräusch vor („Welche Variante? Was stört?“).
+Pro Geräusch **zwei bis drei deutlich verschiedene Varianten**, dazu `messwerte.md` mit Länge, Spitzenpegel, mittlerer Lautstärke und einem Spektrogramm je Variante (alles mit `ffmpeg`, siehe „Erlaubte Werkzeuge“). Die Leitung prüft die Messwerte gegen den technischen Rahmen und stellt dem Menschen die Probe mit einer kurzen Frage je Geräusch vor („Welche Variante? Was stört?“).
 
 ## Gelernte Regeln
 
