@@ -193,3 +193,17 @@ Ausgewertete Quellen mit den übernommenen Rezepten. Die Seiten zu Farnells Buch
 **[Schluss] Was die Tutorials an meiner bisherigen Arbeit bestätigen:** Alle Quellen bauen aus wenigen Bausteinen (Rauschen, ein Oszillator, Filter, Hüllkurve) und steuern sie mit **einer** Kurve – genau das verlangen Regel 1 und 2. **Was neu ist:** Bewegung entsteht bei ihnen durch Filter, die sich mit der Hüllkurve bewegen (fallender Tiefpass beim Aufprall, aufgehender Tiefpass beim Maul). Meine Geräusche in Hörprobe 2 hatten meist feste Filter; das dürfte sie statischer gemacht haben.
 
 **[Schluss] Eine Folge, die der Mensch kennen sollte:** Der neue Ghul hat fast keine Energie über 2 kHz (gemessen −85 dBFS im Band 2–8 kHz bei −18 dBFS gesamt). Er ist also sehr dunkel. Durch die PS1-Kette kommt in diesem Band sogar etwas hinzu (−82,5 dBFS): das Rauschen der ADPCM-Kodierung.
+
+---
+
+# Nachtrag nach Hörprobe 3 (2026-11-16)
+
+**Urteil des Menschen (wörtlich, über die Leitung):** „Hörprobe 3 klingt besser. Allerdings hat das Tropfen einen sehr intensiven Ringing-Effekt und die Klinge klingt sehr stumpf. Die Qualität hat sich aber stark verbessert. Die PS1-Versionen sind's, werden aber in Zukunft auch kuratiert werden müssen.“
+
+**Was daraus folgt:**
+
+- **Die PS1-Färbung ist die Richtung.** Ab Hörprobe 4 geht jede Datei durch `ps1_klang.py`; die saubere Fassung bleibt im Skript erzeugbar.
+- **Tropfen – Ursache gemessen ([Messwerte Hörprobe 4](../proben/audio/hoerprobe-4/messwerte.md)):** Der Tropfen war ein einzelner reiner Sinus; der Höhlenhall nach Farnell warf ihn als vier deutlich getrennte Echos (62, 100, 162, 262 ms, je etwa −11 dB) zurück und ließ ihn über 1 s kreisen. Ein Tropfen brauchte 1,2 s, bis er 60 dB leiser war. **[Schluss]** Ein reiner Ton plus wenige dünne Echos ergibt Klingeln. Regel-Vorschlag: *Kein reiner Ton in einen Hall mit wenigen, getrennten Echos; Tropfen kurz (unter 0,25 s bis −60 dB), breit oder geräuschhaft, Raum dicht und gedämpft.* Hörprobe 4 hat drei solche Tropfen (65–230 ms bis −60 dB).
+- **Klinge – Ursache gemessen:** Im Band 2–8 kHz lag der Treffer 18 dB unter seinem Gesamtpegel, über 8 kHz 36 dB darunter; die PS1-Kette nahm über 8 kHz noch einmal 12 dB weg. **[Schluss]** Mein Treffer hatte nur den Körper (Farnells „Blast“), nicht den hellen Anteil, den die Audio Bible für Nahkampf verlangt („scharf und hell“). Regel-Vorschlag: *Treffer mit Waffe = dumpfer Körper plus kurzer heller Anteil (Schneide oder Metall), beide setzen zugleich ein; vor der PS1-Kette die Höhen über 3 kHz anheben.* Hörprobe 4: 2–8 kHz jetzt 6–9 dB heller als die PS1-Fassung aus Hörprobe 3; der Ausgleich holt den Verlust der Kette in diesem Band zurück, über 11 kHz kann er nichts zurückholen.
+- **Kuratieren:** Vorschlag im [Konzept Klangbibliothek](konzept-klangbibliothek.md), Abschnitt 4 – PS1-Einstellung einmal je Kategorie festlegen, danach kurze Abnahme-Hörproben.
+- **Neue Grundregel in Arbeit:** Echte Aufnahmen aus seriösen, kostenfreien Quellen sollen erlaubt werden (Änderung an ADR 0009, Freigabe durch den Menschen steht aus). Bis dahin wird nichts heruntergeladen. Konzept: [konzept-klangbibliothek.md](konzept-klangbibliothek.md).
