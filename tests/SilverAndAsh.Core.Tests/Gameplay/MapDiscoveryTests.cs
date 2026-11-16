@@ -123,6 +123,31 @@ public class MapDiscoveryTests
     }
 
     [Fact]
+    public void An_opened_chest_is_gone_from_the_map()
+    {
+        // Room 1 without enemies; an unlocked chest in its middle, straight ahead of the player.
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, Rows(0, 0), [], []),
+            new(1, RoomKind.Combat, "arena", 0, 2, 5, 4, 1, Rows(2, 5), [], []),
+            new(2, RoomKind.Corridor, "corridor", 0, 7, 5, 2, 2, Rows(7, 8), [], []),
+        ];
+        LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
+        ChestPlan[] chests = [new(2, 4, 1, ChestTier.Beggar, IsLocked: false, Silver: 5, HasBloodVial: false, RisesWhenCleared: false)];
+        var world = new GameWorld(LevelParser.Parse(Map), 1, Balance.Default, doors, rooms, chests);
+        Run(world, PressF, 1);
+        Run(world, Forward, 3 * SimulationClock.TicksPerSecond, () => world.Player.Position.Z >= 7f);
+        Run(world, PlayerInput.None, SimulationClock.TicksPerSecond / 2);
+        world.Player.Look(PlayerInput.None with { Look = new Vector2(0f, 35f * MathF.PI / 180f / ControlSettings.MouseSensitivity) });
+        Assert.Contains(world.Chests[0], world.KnownChests);
+
+        Run(world, PressF, 1);
+
+        Assert.True(world.Chests[0].IsOpen, "The chest never opened - the test would prove nothing.");
+        Assert.Empty(world.KnownChests);
+    }
+
+    [Fact]
     public void A_blood_vial_in_a_room_not_yet_discovered_is_not_on_the_map()
     {
         var world = WorldWithDrop();
