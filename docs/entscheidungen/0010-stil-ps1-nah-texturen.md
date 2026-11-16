@@ -1,6 +1,6 @@
 # 0010 – Stil: PS1-nah, mit Texturen und weicher Schattierung
 
-- **Status:** angenommen; der Abschnitt „Noch offen“ wird nach dem Vergleich im Spiel entschieden
+- **Status:** angenommen; Bild und Sichtgrenze am 2026-11-16 nachgetragen
 - **Datum:** 2026-11-16
 - **Löst ab:**
   - in [0001](0001-projektgrundlagen.md): „3D im Low-Poly-Stil der PS2-Ära“, „Flat Shading mit Vertex-Farben“ und **Texturen** in der Liste „Nicht in 1.0“;
@@ -44,21 +44,19 @@ Nicht PS2. Gründe aus der Recherche:
 
 Der Ghul aus Probestück 3 ist der Maßstab für alle weiteren Figuren.
 
-### Noch offen: Bild und Sichtgrenze
+### Bild und Sichtgrenze (entschieden am 2026-11-16)
 
-Drei Fragen hängen zusammen und werden **gemeinsam** entschieden, an Bildern aus dem echten Spiel (Foto-Skript, #224), nicht an Probebildern aus Blender:
+Drei Fragen hingen zusammen: Farbtiefe und Körnung, Sichtgrenze, Bildauflösung. Der Mensch hat sie an Vergleichsbildern aus dem echten Spiel entschieden (vier Varianten, PR #235) und **Variante 2** gewählt:
 
-1. **Farbtiefe und Körnung:** Das ganze 3D-Bild auf 15 Bit mit festem 4 × 4-Punktmuster rastern, ja oder nein.
-2. **Sichtgrenze:** dunkler Nebel wie heute, oder Ausblenden über das Punktmuster. Wenn Punktmuster, dann für alles: Level, Figuren, Beute, Effekte, weiche Verläufe im HUD.
-3. **Bildauflösung:** 854 × 480 wie heute, oder niedriger (z. B. 640 × 360), damit das Muster sichtbar wird. Niedriger heißt auch: Ziele werden kleiner.
+| Frage | Entscheidung |
+|---|---|
+| Farbtiefe und Körnung | Das ganze 3D-Bild wird auf **15 Bit** (5 je Kanal) mit festem **4 × 4-Punktmuster** gerastert, am Ende des Shaders, für alles in der 3D-Welt |
+| Sichtgrenze | **Der Nebel bleibt.** Kein Ausblenden über das Punktmuster |
+| Bildauflösung | bleibt **854 × 480** |
 
-Bekannte Risiken, die der Vergleich zeigen muss:
+Was die Vergleichsbilder gegen die anderen Varianten zeigten: Das Ausblenden über das Punktmuster machte das Bild bis 9 m heller und ferne Gegner besser sichtbar, erzeugte aber an der Sichtgrenze ein unruhiges Punktband mit hartem Dunkel dahinter. Die niedrigere Auflösung machte das Raster deutlich, ferne Gegner aber nur noch wenige Pixel groß.
 
-- Mit der heutigen Nebelkurve fehlen beim Ausblenden aus 10 m schon gut 40 % der Pixel; dünne Glieder zerfallen. Die Kurve muss später beginnen.
-- Nahe Wände zeigen das Muster deutlich; das ist Unruhe im Bild.
-- Die Fledermaus ist schon heute aus 10 m praktisch unsichtbar. Eine neue Sichtgrenze darf Ankündigungen von Angriffen nicht verschlucken.
-
-Bis zur Entscheidung gilt der heutige Nebel.
+Offen bleibt, was davon unabhängig ist: Die Fledermaus ist aus 10 m praktisch unsichtbar. Das löst das Modell, nicht die Sichtgrenze. Wie das Bild mit Stein-Texturen und in Bewegung wirkt, zeigt sich erst im Spiel; fällt es dort durch, wird die Entscheidung in einer Retro neu aufgemacht.
 
 ## Konsequenzen
 
