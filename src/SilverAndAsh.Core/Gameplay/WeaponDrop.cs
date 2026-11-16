@@ -11,10 +11,16 @@ public sealed class WeaponDrop
 {
     private Vector3 _velocity;
 
-    /// <summary>Creates <paramref name="kind"/> lying at <paramref name="position"/> (the bottom of its body; it falls from there).</summary>
-    public WeaponDrop(int id, WeaponKind kind, Vector3 position)
+    /// <summary>Creates <paramref name="kind"/> lying at <paramref name="position"/> (the bottom of its body; it falls from there); a ranged one as <paramref name="ranged"/>, with its magazine.</summary>
+    public WeaponDrop(int id, WeaponKind kind, Vector3 position, RangedWeapon? ranged = null)
     {
+        if (ranged is not null && ranged.Kind != kind)
+        {
+            throw new ArgumentException($"The weapon {ranged.Kind} is no {kind}.", nameof(ranged));
+        }
+
         _ = Weapons.Info(kind);
+        Ranged = ranged;
         Id = id;
         Kind = kind;
         Position = position;
@@ -24,6 +30,9 @@ public sealed class WeaponDrop
     public int Id { get; }
 
     public WeaponKind Kind { get; }
+
+    /// <summary>A ranged weapon as it was dropped, with its magazine (null for a melee weapon) - taken up again with #194.</summary>
+    public RangedWeapon? Ranged { get; }
 
     /// <summary>Its name, hand and tier.</summary>
     public WeaponInfo Info => Weapons.Info(Kind);

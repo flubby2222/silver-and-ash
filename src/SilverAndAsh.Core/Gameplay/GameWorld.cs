@@ -1074,7 +1074,7 @@ public sealed class GameWorld
         // A weapon dropped from the inventory lies where the player stood.
         foreach (var dropped in Player.Events.OfType<WeaponDropped>())
         {
-            _weaponDrops.Add(new WeaponDrop(_nextWeaponDropId++, dropped.Kind, dropped.Position));
+            _weaponDrops.Add(new WeaponDrop(_nextWeaponDropId++, dropped.Kind, dropped.Position, dropped.Ranged));
         }
 
         if (input.Interact)

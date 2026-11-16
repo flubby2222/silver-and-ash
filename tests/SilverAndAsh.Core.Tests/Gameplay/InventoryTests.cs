@@ -191,8 +191,131 @@ public class InventoryTests
         Assert.Null(player.RangedSlots[0]);
         Assert.Equal(2, player.SelectedSlot);
         Assert.Equal(WeaponKind.Rifle, player.Ranged.Kind);
-        Assert.Contains(new WeaponDropped(player.Id, WeaponKind.Pistol, player.Position), events);
+        Assert.Contains(events, gameEvent => gameEvent is WeaponDropped { Kind: WeaponKind.Pistol } dropped
+            && dropped.PlayerId == player.Id && dropped.Position == player.Position);
         Assert.Contains(new WeaponSwitched(player.Id, 2, WeaponKind.Rifle), events);
+    }
+
+    private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
+
+    [Fact]
+    public void Opening_while_running_keeps_the_inventory_open()
+    {
+        var player = NewPlayer();
+
+        player.Tick(Forward with { ToggleInventory = true });
+        for (var tick = 0; tick < 30; tick++)
+        {
+            player.Tick(Forward);
+        }
+
+        Assert.True(player.IsInventoryOpen);
+    }
+
+    [Fact]
+    public void A_held_move_closes_the_inventory_once_let_go_and_pressed_anew()
+    {
+        var player = NewPlayer();
+        player.Tick(Forward with { ToggleInventory = true });
+        player.Tick(Forward);
+
+        player.Tick(PlayerInput.None);
+        Assert.True(player.IsInventoryOpen);
+
+        player.Tick(Forward);
+        Assert.False(player.IsInventoryOpen);
+    }
+
+    [Fact]
+    public void Pressing_another_direction_while_running_closes_the_inventory()
+    {
+        var player = NewPlayer();
+        player.Tick(Forward with { ToggleInventory = true });
+        player.Tick(Forward);
+
+        player.Tick(Forward with { Move = new Vector2(1f, 1f) });
+
+        Assert.False(player.IsInventoryOpen);
+    }
+
+    [Fact]
+    public void Jump_or_Shift_held_while_opening_close_it_only_when_pressed_anew()
+    {
+        var player = NewPlayer();
+        player.Tick(PlayerInput.None with { Jump = true, Dash = true, ToggleInventory = true });
+        player.Tick(PlayerInput.None with { Jump = true, Dash = true });
+        Assert.True(player.IsInventoryOpen);
+
+        player.Tick(PlayerInput.None with { Dash = true });
+        Assert.True(player.IsInventoryOpen);
+
+        player.Tick(PlayerInput.None with { Jump = true, Dash = true });
+        Assert.False(player.IsInventoryOpen);
+    }
+
+    /// <summary>All three ranged places taken (pistol in the hand), the rifle in the bag.</summary>
+    private static Player FullHandsWithRifleInTheBag()
+    {
+        var player = OpenPlayer();
+        player.Equip(1, WeaponKind.Blunderbuss);
+        player.Equip(2, WeaponKind.Blunderbuss);
+        player.Stow(WeaponKind.Rifle);
+        return player;
+    }
+
+    [Fact]
+    public void A_ranged_weapon_keeps_its_magazine_in_the_bag()
+    {
+        var player = FullHandsWithRifleInTheBag();
+        var pistol = player.Ranged;
+        while (pistol.Magazine.TryTake())
+        {
+        }
+
+        Click(player, InventoryPlace.Bag, 0);
+        Assert.Same(pistol, player.BagRanged(0));
+        Assert.Equal(WeaponKind.Rifle, player.Ranged.Kind);
+
+        Click(player, InventoryPlace.Bag, 0);
+
+        Assert.Same(pistol, player.Ranged);
+        Assert.Equal(0, player.Ranged.Magazine.Rounds);
+        Assert.Equal(WeaponKind.Rifle, player.Bag[0]);
+    }
+
+    [Fact]
+    public void Putting_a_weapon_into_the_bag_breaks_its_reload_off()
+    {
+        var player = FullHandsWithRifleInTheBag();
+        var pistol = player.Ranged;
+        pistol.Magazine.TryTake();
+        var rounds = pistol.Magazine.Rounds;
+        Assert.True(pistol.Magazine.StartReload());
+
+        Click(player, InventoryPlace.Bag, 0);
+        for (var tick = 0; tick < SimulationClock.SecondsToTicks(Balance.Default.Pistol.ReloadTime) + 10; tick++)
+        {
+            player.Tick(PlayerInput.None);
+        }
+
+        Assert.False(pistol.Magazine.IsReloading);
+        Assert.Equal(rounds, player.BagRanged(0)!.Magazine.Rounds);
+    }
+
+    [Fact]
+    public void A_dropped_ranged_weapon_keeps_its_magazine()
+    {
+        var world = new GameWorld(LevelParser.Parse("P"), 1);
+        world.Player.Equip(1, WeaponKind.Rifle);
+        var rifle = world.Player.RangedSlots[1]!;
+        rifle.Magazine.TryTake();
+        world.Tick(Toggle);
+
+        world.Tick(PlayerInput.None with { InventoryClick = new InventoryClick(InventoryPlace.Ranged, 1, Drop: true) });
+
+        var lying = Assert.Single(world.WeaponDrops);
+        Assert.Same(rifle, lying.Ranged);
+        Assert.Equal(rifle.Magazine.Size - 1, lying.Ranged!.Magazine.Rounds);
     }
 
     [Fact]

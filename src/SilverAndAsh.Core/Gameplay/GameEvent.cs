@@ -36,8 +36,11 @@ public sealed record ReloadFinished(int PlayerId) : GameEvent;
 /// <summary>Player <paramref name="PlayerId"/> took the ranged weapon <paramref name="Kind"/> from place <paramref name="Slot"/> into the hand.</summary>
 public sealed record WeaponSwitched(int PlayerId, int Slot, WeaponKind Kind) : GameEvent;
 
-/// <summary>Player <paramref name="PlayerId"/> dropped <paramref name="Kind"/> from the inventory at <paramref name="Position"/> (#193).</summary>
-public sealed record WeaponDropped(int PlayerId, WeaponKind Kind, Vector3 Position) : GameEvent;
+/// <summary>
+/// Player <paramref name="PlayerId"/> dropped <paramref name="Kind"/> from the inventory at <paramref name="Position"/> (#193);
+/// a ranged one comes as <paramref name="Ranged"/>, with its magazine.
+/// </summary>
+public sealed record WeaponDropped(int PlayerId, WeaponKind Kind, Vector3 Position, RangedWeapon? Ranged = null) : GameEvent;
 
 /// <summary>
 /// A shot hit a wall, floor or ceiling at <paramref name="Point"/>; <paramref name="Normal"/> points out of the surface.

@@ -26,36 +26,60 @@ public sealed partial class Player
     /// <summary>Places for weapons that are carried but not equipped (decision record 0008).</summary>
     public const int InventorySlotCount = 6;
 
-    private readonly WeaponKind?[] _bag = new WeaponKind?[InventorySlotCount];
+    // A place of the bag: the kind, and for a ranged weapon the weapon itself - it keeps its magazine in the bag.
+    private readonly record struct BagEntry(WeaponKind Kind, RangedWeapon? Ranged);
+
+    private readonly BagEntry?[] _bag = new BagEntry?[InventorySlotCount];
+
+    // The moves (walking directions, jump, Shift) held when the window opened: they close it only once let go and
+    // pressed anew - so opening it while running away keeps it open.
+    private MoveKeys _movesHeldAtOpen;
+
+    [Flags]
+    private enum MoveKeys
+    {
+        None = 0,
+        Forward = 1,
+        Back = 2,
+        Right = 4,
+        Left = 8,
+        Jump = 16,
+        Shift = 32,
+    }
 
     /// <summary>The weapons carried but not equipped: <see cref="InventorySlotCount"/> places, empty ones null.</summary>
-    public IReadOnlyList<WeaponKind?> Bag => _bag;
+    public IReadOnlyList<WeaponKind?> Bag => _bag.Select(entry => entry?.Kind).ToList();
+
+    /// <summary>The ranged weapon in bag place <paramref name="index"/> with its magazine, or null (empty, or a melee weapon).</summary>
+    public RangedWeapon? BagRanged(int index) => _bag[index]?.Ranged;
 
     /// <summary>
-    /// True while the inventory window is open (G). The world goes on meanwhile; walking, jumping, Shift or a hit close it.
+    /// True while the inventory window is open (G). The world goes on meanwhile; a move begun after opening (walking,
+    /// jumping, Shift) or a hit close it.
     /// </summary>
     public bool IsInventoryOpen { get; private set; }
 
     /// <summary>
-    /// Puts <paramref name="kind"/> into the first free place of the <see cref="Bag"/>. Returns false (and keeps nothing)
-    /// if all places are taken - loot (#194) then leaves the weapon lying ("Inventory full"). Tests use this, too.
+    /// Puts <paramref name="kind"/> (a ranged one ready and full) into the first free place of the <see cref="Bag"/>.
+    /// Returns false (and keeps nothing) if all places are taken - loot (#194) then leaves the weapon lying
+    /// ("Inventory full"). Tests use this, too.
     /// </summary>
     public bool Stow(WeaponKind kind)
     {
-        _ = Weapons.Info(kind);
+        var ranged = Weapons.Info(kind).Hand == WeaponHand.Ranged ? new RangedWeapon(kind, _balance) : null;
         var free = Array.IndexOf(_bag, null);
         if (free < 0)
         {
             return false;
         }
 
-        _bag[free] = kind;
+        _bag[free] = new BagEntry(kind, ranged);
         return true;
     }
 
     /// <summary>
-    /// Opens and closes the window (G), closes it when the player moves, and carries out a click while it is open. Comes
-    /// first in every tick, so a click acts on the weapons before this tick's attacks.
+    /// Opens and closes the window (G), closes it on a new move, and carries out a click while it is open. Comes first in
+    /// every tick, so a click acts on the weapons before this tick's attacks.
     /// </summary>
     private void UseInventory(Input.PlayerInput input)
     {
@@ -65,13 +89,17 @@ public sealed partial class Player
             return;
         }
 
+        var held = MovesHeld(input);
         if (input.ToggleInventory)
         {
             IsInventoryOpen = !IsInventoryOpen;
+            _movesHeldAtOpen = held;
         }
 
-        // Moving closes it (decision record 0008): walking, jumping, Shift. Being pulled by Gorm's chain is no own move.
-        if (input.Move != System.Numerics.Vector2.Zero || input.Jump || input.Dash)
+        // Moving closes it (decision record 0008) - but only a move begun after opening: one already held then counts
+        // again once it was let go. Being pulled by Gorm's chain is no own move.
+        _movesHeldAtOpen &= held;
+        if ((held & ~_movesHeldAtOpen) != MoveKeys.None)
         {
             IsInventoryOpen = false;
         }
@@ -82,6 +110,18 @@ public sealed partial class Player
         }
     }
 
+    private static MoveKeys MovesHeld(Input.PlayerInput input)
+    {
+        var keys = MoveKeys.None;
+        keys |= input.Move.Y > 0f ? MoveKeys.Forward : MoveKeys.None;
+        keys |= input.Move.Y < 0f ? MoveKeys.Back : MoveKeys.None;
+        keys |= input.Move.X > 0f ? MoveKeys.Right : MoveKeys.None;
+        keys |= input.Move.X < 0f ? MoveKeys.Left : MoveKeys.None;
+        keys |= input.Jump ? MoveKeys.Jump : MoveKeys.None;
+        keys |= input.Dash ? MoveKeys.Shift : MoveKeys.None;
+        return keys;
+    }
+
     /// <summary>A hit closes the window (decision record 0008).</summary>
     private void CloseInventoryOnHit() => IsInventoryOpen = false;
 
@@ -89,15 +129,15 @@ public sealed partial class Player
     {
         switch (click.Place)
         {
-            case InventoryPlace.Bag when click.Index >= 0 && click.Index < InventorySlotCount && _bag[click.Index] is { } kind:
+            case InventoryPlace.Bag when click.Index >= 0 && click.Index < InventorySlotCount && _bag[click.Index] is { } entry:
                 if (click.Drop)
                 {
                     _bag[click.Index] = null;
-                    _events.Add(new WeaponDropped(Id, kind, Position));
+                    _events.Add(new WeaponDropped(Id, entry.Kind, Position, entry.Ranged));
                 }
                 else
                 {
-                    EquipFromBag(click.Index, kind);
+                    EquipFromBag(click.Index, entry);
                 }
 
                 break;
@@ -111,14 +151,15 @@ public sealed partial class Player
 
     /// <summary>
     /// Left click on a weapon in the bag: a melee weapon swaps with the one in the hand; a ranged one goes into the first
-    /// free ranged place, or - all taken - swaps with the one in the hand.
+    /// free ranged place, or - all taken - swaps with the one in the hand. Ranged weapons keep their magazine; the one put
+    /// away stops reloading, like on a weapon switch.
     /// </summary>
-    private void EquipFromBag(int index, WeaponKind kind)
+    private void EquipFromBag(int index, BagEntry entry)
     {
-        if (Weapons.Info(kind).Hand == WeaponHand.Melee)
+        if (entry.Ranged is not { } weapon)
         {
-            _bag[index] = Melee;
-            EquipMelee(kind);
+            _bag[index] = new BagEntry(Melee, null);
+            EquipMelee(entry.Kind);
             return;
         }
 
@@ -126,17 +167,18 @@ public sealed partial class Player
         if (free >= 0)
         {
             _bag[index] = null;
-            Equip(free, kind);
+            _rangedSlots[free] = weapon;
             return;
         }
 
-        // The weapon put away keeps only its kind: taken out again later it comes full (see the pull request of #193).
-        _bag[index] = Ranged.Kind;
-        Equip(SelectedSlot, kind);
-        _events.Add(new WeaponSwitched(Id, SelectedSlot, kind));
+        var putAway = Ranged;
+        putAway.Magazine.CancelReload();
+        _bag[index] = new BagEntry(putAway.Kind, putAway);
+        _rangedSlots[SelectedSlot] = weapon;
+        _events.Add(new WeaponSwitched(Id, SelectedSlot, weapon.Kind));
     }
 
-    /// <summary>Right click on a ranged place: drops that weapon - never the last one (decision record 0008).</summary>
+    /// <summary>Right click on a ranged place: drops that weapon with its magazine - never the last one (decision record 0008).</summary>
     private void DropRanged(int slot)
     {
         if (_rangedSlots[slot] is not { } weapon || _rangedSlots.Count(place => place is not null) <= 1)
@@ -144,8 +186,9 @@ public sealed partial class Player
             return;
         }
 
+        weapon.Magazine.CancelReload();
         _rangedSlots[slot] = null;
-        _events.Add(new WeaponDropped(Id, weapon.Kind, Position));
+        _events.Add(new WeaponDropped(Id, weapon.Kind, Position, weapon));
         if (slot != SelectedSlot)
         {
             return;
