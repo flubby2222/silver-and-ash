@@ -20,10 +20,12 @@ public sealed record MeleeSwung(
     Vector3 Origin, Vector3 Direction, float Charge = 0f, WeaponKind Weapon = WeaponKind.SilverBlade) : GameEvent;
 
 /// <summary>
-/// The pistol was fired from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/> - with consecrated
-/// ammunition if <paramref name="Consecrated"/>.
+/// The ranged weapon <paramref name="Weapon"/> (the pistol unless said otherwise) was fired from
+/// <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/> - with consecrated ammunition if
+/// <paramref name="Consecrated"/>.
 /// </summary>
-public sealed record ShotFired(Vector3 Origin, Vector3 Direction, bool Consecrated = false) : GameEvent;
+public sealed record ShotFired(
+    Vector3 Origin, Vector3 Direction, bool Consecrated = false, WeaponKind Weapon = WeaponKind.Pistol) : GameEvent;
 
 /// <summary>Player <paramref name="PlayerId"/> started reloading (R, or a shot with an empty magazine).</summary>
 public sealed record ReloadStarted(int PlayerId) : GameEvent;

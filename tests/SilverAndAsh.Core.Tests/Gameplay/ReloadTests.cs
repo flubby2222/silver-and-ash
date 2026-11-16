@@ -7,7 +7,7 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 /// <summary>Magazines and reloading (decision record 0008, issue #188).</summary>
 public class ReloadTests
 {
-    private static readonly PistolBalance Pistol = Balance.Default.Pistol;
+    private static readonly RangedBalance Pistol = Balance.Default.Pistol;
     private static readonly int ReloadTicks = SimulationClock.SecondsToTicks(Pistol.ReloadTime);
     private static readonly int CooldownTicks = SimulationClock.SecondsToTicks(Pistol.Cooldown);
     private static readonly PlayerInput Shoot = PlayerInput.None with { Shoot = true };

@@ -35,7 +35,26 @@ public sealed record Balance
     };
 
     /// <summary>The pistol with silver bullets.</summary>
-    public PistolBalance Pistol { get; init; } = new();
+    public RangedBalance Pistol { get; init; } = new();
+
+    /// <summary>The rifle (Forged, decision record 0008): heavy, aimed shots that go through one enemy into the next.</summary>
+    public RangedBalance Rifle { get; init; } = new()
+    {
+        Damage = 80,
+        HeadshotMultiplier = 3f,
+        Range = 80f,
+        Cooldown = 1.4f,
+        MagazineSize = 4,
+        ReloadTime = 2.5f,
+        Pierce = 1,
+    };
+
+    /// <summary>The values of ranged weapon <paramref name="kind"/>.</summary>
+    public RangedBalance Ranged(Gameplay.WeaponKind kind) => kind switch
+    {
+        Gameplay.WeaponKind.Rifle => Rifle,
+        _ => Pistol,
+    };
 
     /// <summary>The training dummy.</summary>
     public DummyBalance Dummy { get; init; } = new();
@@ -480,8 +499,11 @@ public sealed record MeleeBalance
     public float KnockbackTime { get; init; } = 0.25f;
 }
 
-/// <summary>Balancing values of the pistol.</summary>
-public sealed record PistolBalance
+/// <summary>
+/// Balancing values of a ranged weapon - the pistol (<see cref="Balance.Pistol"/>) and the rifle
+/// (<see cref="Balance.Rifle"/>) have the same kind of values (decision record 0008).
+/// </summary>
+public sealed record RangedBalance
 {
     /// <summary>Damage per hit. A bit less than the blade, but with its slow rate every shot must count.</summary>
     public int Damage { get; init; } = 35;
@@ -500,6 +522,9 @@ public sealed record PistolBalance
 
     /// <summary>... and the seconds a reload takes. The supply is unlimited.</summary>
     public float ReloadTime { get; init; } = 1.5f;
+
+    /// <summary>How many enemies a shot goes on through after the first (0 = it stops in the first). Walls stop it.</summary>
+    public int Pierce { get; init; }
 }
 
 /// <summary>Balancing values of the training dummy.</summary>

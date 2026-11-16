@@ -76,6 +76,7 @@ internal sealed class PlaceholderWeaponView : IWeaponView
     private bool _holyFlash;        // the last shot was consecrated: white-blue flash
     private bool _consecrated;      // consecrated ammunition loaded: the barrel shimmers
     private WeaponKind _melee;      // which melee weapon is in the left hand
+    private WeaponKind _ranged;     // which ranged weapon is in the right hand
     private float _bobPhase;
     private float _bobStrength;
     private Vector2 _turnSway;      // x = right, y = up, in metres
@@ -107,6 +108,7 @@ internal sealed class PlaceholderWeaponView : IWeaponView
         _flash = MathF.Max(0f, _flash - frameSeconds / FlashSeconds);
         _consecrated = player.IsConsecrated;
         _melee = player.Melee;
+        _ranged = player.Ranged.Kind;
 
         // Bob only while walking on the ground; fades in and out instead of switching on and off.
         var walking = player.IsGrounded ? Math.Clamp(player.HorizontalSpeed / player.WalkSpeed, 0f, 1f) : 0f;
@@ -215,20 +217,32 @@ internal sealed class PlaceholderWeaponView : IWeaponView
             Matrix4x4.CreateTranslation(PistolHand + new Vector3(0f, 0.012f * kick, -0.035f * kick)) *
             motion;
 
-        // Grip, frame and barrel.
-        ShadedBox.Draw(
-            Matrix4x4.CreateRotationX(Deg(15f)) * Matrix4x4.CreateTranslation(0f, -0.035f, -0.01f) * hand,
-            new Vector3(0.024f, 0.06f, 0.03f), Wood);
-        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.02f) * hand, new Vector3(0.028f, 0.03f, 0.08f), Iron);
         // Consecrated ammunition loaded: the barrel shimmers pale and holy.
         var barrel = _consecrated ? Blend(DarkSilver, HolyGlow, 0.45f + 0.35f * MathF.Sin(_time * 6f)) : DarkSilver;
-        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.005f, 0.09f) * hand, new Vector3(0.016f, 0.016f, 0.07f), barrel);
+        var muzzle = 0.14f;
+        if (_ranged == WeaponKind.Rifle)
+        {
+            // The rifle: a wooden stock back towards the shoulder, a long barrel far forward.
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, -0.02f, -0.07f) * hand, new Vector3(0.03f, 0.045f, 0.14f), Wood);
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.05f) * hand, new Vector3(0.03f, 0.032f, 0.12f), Iron);
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.006f, 0.2f) * hand, new Vector3(0.014f, 0.014f, 0.2f), barrel);
+            muzzle = 0.31f;
+        }
+        else
+        {
+            // Grip, frame and barrel.
+            ShadedBox.Draw(
+                Matrix4x4.CreateRotationX(Deg(15f)) * Matrix4x4.CreateTranslation(0f, -0.035f, -0.01f) * hand,
+                new Vector3(0.024f, 0.06f, 0.03f), Wood);
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.02f) * hand, new Vector3(0.028f, 0.03f, 0.08f), Iron);
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.005f, 0.09f) * hand, new Vector3(0.016f, 0.016f, 0.07f), barrel);
+        }
 
         if (_flash > 0f)
         {
             var size = 0.03f + 0.02f * _flash;
             ShadedBox.Draw(
-                Matrix4x4.CreateTranslation(0f, 0.005f, 0.14f) * hand, new Vector3(size, size, size), _holyFlash ? HolyFlash : MuzzleFlash);
+                Matrix4x4.CreateTranslation(0f, 0.005f, muzzle) * hand, new Vector3(size, size, size), _holyFlash ? HolyFlash : MuzzleFlash);
         }
     }
 
