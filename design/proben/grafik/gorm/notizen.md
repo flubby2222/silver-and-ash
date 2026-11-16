@@ -160,3 +160,55 @@ Durch die gebückte Haltung liegt der Kopf weiter vorn als beim Platzhalter (dor
 - **Blutspuren als Streifen:** Sie sind zu regelmäßig, fast wie ein Muster. Mehr Zufall in Breite und Länge würde sie glaubhafter machen.
 - **Viele Kettenglieder:** Die Zahl beim Schwung ist eine Frage an den Einbau (siehe Zahlen).
 - **Bossraum:** Ich habe eine Halle von 16 × 16 m mit 6 m Decke und vier Säulen gebaut, angelehnt an `great-hall`. Die echte Vorlage hat andere Maße.
+
+---
+
+# Kopf-Runde: drei Gesichter zur Auswahl (2026-11-16)
+
+**Urteil des Menschen:** „Der Körper ist ok, das Gesicht soll nochmal überarbeitet werden.“
+
+**Was neu ist:** Der Körper kommt unverändert aus `gorm.py`; nur Kopf, Unterkiefer und die Kopftextur sind ersetzt. Keine Hauer, keine spitzen Ohren.
+
+**Skript:** [`gorm_koepfe.py`](gorm_koepfe.py). `gorm.py` ist dafür nur importierbar gemacht (`main()` läuft nur beim direkten Aufruf).
+
+| Variante | Gesicht | Kopf und Kiefer |
+|---|---|---|
+| **a) Mensch** | entstellter, massiger Mensch: schwerer Schädel, tief eingefallene, ungleiche Augen, platte gebrochene Nase, Narben, zugenähter, nach unten gezogener Mund, ein Ohr abgerissen. Phase 2: Nähte aufgerissen, dunkles Blut | 240 Dreiecke |
+| **b) Eisen** | Gefangener in Eisen: angeschmiedeter Helm mit Nieten, waagerechte Sehschlitze mit den Augen dahinter, Stirnplatte, zwei Bolzen durch die Schläfen, Gitter-Maulkorb vor dem Mund, dahinter schiefe helle Zähne, Kette vom Kinnring zum Halsring. Phase 2: Blut quillt unter dem Helm hervor | 324 Dreiecke |
+| **c) Sack** (mein Vorschlag) | ein grober Kerkersack über dem Kopf, am Hals unter dem Eisenring zugezogen, Naht über den Scheitel, gerissene, ungleiche Augenlöcher. Vor dem Mund ist der Stoff durchnässt, ein dunkler Fleck, der wie ein offener Mund wirkt. Phase 2: Blut sickert durch | 196 Dreiecke |
+
+**Warum Variante c:** „The Chained“ als namenloser Gefangener, dem man nicht einmal ein Gesicht lässt – Kerker statt Stammeskrieger. Der helle Sack ist dazu das beste Ziel: aus 10 m der hellste Punkt am Körper.
+
+**Textur:** Je Variante eine eigene Rumpftextur, weil der Kopf darin liegt, plus die Phase-2-Variante; je 128 × 128, 32 Farben. Die Gliedertextur bleibt.
+
+**Dreiecke:** Körper und Waffen sind gleich geblieben; ganz Gorm liegt je nach Kopf zwischen 1 940 und 2 070.
+
+## Bilder
+
+| Bild | Was |
+|---|---|
+| `vergleich_koepfe_4m_ruhe.png`, `vergleich_koepfe_4m_phase2.png` | **zum Auswählen:** alle drei Köpfe aus 4 m, dreifach vergrößert; von links a, b, c |
+| `vergleich_koepfe_10m_ruhe.png`, `vergleich_koepfe_10m_phase2.png` | ganzer Gorm aus 10 m, dreifach vergrößert; von links a, b, c |
+| `kopf_<variante>_vorn.png`, `kopf_<variante>_unten.png` | Kopf groß von vorn und von schräg unten, ohne Nebel |
+| `kopf_<variante>_ruhe_4m.png`, `kopf_<variante>_ruhe_10m.png`, `kopf_<variante>_phase2_4m.png`, `kopf_<variante>_phase2_10m.png` | im Bossraum, Nebel mit Körnung |
+| `kopf_<variante>_textur_rumpf.png`, `kopf_<variante>_textur_rumpf_phase2.png` | die Texturen |
+
+## Wie sie sich als Ziel lesen
+
+| Variante | aus 4 m | aus 10 m | Schwäche |
+|---|---|---|---|
+| a) Mensch | Gesicht lesbar | heller Fleck über dem dunklen Halsring | Die Naht über dem Mund ist zu fein; man liest eher einen schmalen, schiefen Mund. Der Kopf wirkt etwas weich und rund |
+| b) Eisen | am deutlichsten Gefangener, Zähne hinter dem Gitter gut zu sehen | **am schwächsten**: Das mittlere Eisengrau liegt nah am dunklen Raum, nur Nieten und Zähne leuchten | Wenn gewählt, sollte das Eisen heller und blanker werden, oder die Zähne größer |
+| c) Sack | klar als Kopf und Ziel | **am stärksten**: der hellste Punkt am Körper | Der nasse Fleck wirkt wie ein großer offener Mund; das kann je nach Geschmack eher unheimlich oder eher komisch wirken |
+
+## Kette sichtbarer machen (Vorschlag, noch nicht umgesetzt)
+
+Heute zieht die Keule das Auge: hell, groß, warm-braun mit hellen Bändern. Die Kette ist rostbraun, dünn (Glieder 10 × 16 cm) und hängt in der Faust am Körper. So würde ich das ändern:
+
+1. **Glieder größer und kantiger:** etwa 18 × 28 cm statt 10 × 16 cm, im Umriss deutlich größer. Das sind Ketten eines Riesen, keine Ankerkette. Ein Glied als achteckiger Ring kostet nicht mehr Dreiecke als heute.
+2. **Hellere Glieder:** blank geriebenes Eisen an den Berührungsflächen (hellgrau), Rost nur in den Innenseiten. Dann blitzt die Kette im Laternenlicht, die Keule nicht.
+3. **Länger und am Körper:** in Ruhe zwei- bis dreimal um den linken Unterarm gewickelt, dann bis zum Boden hängend und ein Stück am Boden schleifend. So ist sie in jedem Bild als langes, helles Band da.
+4. **Keule zurücknehmen:** dunkleres, älteres Holz, die Eisenbänder dunkel statt hell. Die Keule bleibt groß; nur die Helligkeit wandert zur Kette.
+5. **Haken größer:** etwa 40 cm, mit einem hellen, geschliffenen Spitzenrand, damit das rote Aufglühen vor dem Wurf auf einer großen Fläche liegt.
+
+Umsetzen erst, wenn ein Gesicht gewählt ist.
