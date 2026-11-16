@@ -140,6 +140,7 @@ static void RunGame(
         // Title screen first; during a run Esc opens the menu (the world stands still - alone).
         var onTitle = true;
         var menuOpen = false;
+        var mapKeptOpen = false;
         var quit = false;
         var titleMenu = new MenuView();
         titleMenu.Open();
@@ -468,10 +469,16 @@ static void RunGame(
                 LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
             }
 
-            // The map while M is held - the game goes on meanwhile (no pause: online co-op).
-            if (!frozen && !choosing && Raylib.IsKeyDown(KeyboardKey.M))
+            // The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
+            // (no pause: online co-op).
+            if (!frozen && !choosing && Raylib.IsKeyPressed(KeyboardKey.M))
             {
-                MapView.Draw(gameWorld, player);
+                mapKeptOpen = !mapKeptOpen;
+            }
+
+            if (!frozen && !choosing && (mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab)))
+            {
+                MapView.Draw(gameWorld, player, mapKeptOpen, (float)Raylib.GetTime());
             }
 
             if (choosing)

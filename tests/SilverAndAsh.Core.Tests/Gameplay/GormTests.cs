@@ -223,4 +223,18 @@ public class GormTests
         Run(world, PlayerInput.None, 2);
         Assert.Contains(world.Loot, loot => loot.Kind == LootKind.Silver && loot.Amount == 7);
     }
+
+    [Fact]
+    public void For_drawing_he_tells_how_far_and_how_high_his_swing_and_his_wave_reach()
+    {
+        var balance = Balance.Default with
+        {
+            Gorm = Balance.Default.Gorm with { SwingReach = 5.5f, SwingLow = 0.9f, SwingHigh = 1.7f, ShockwaveRadius = 9f },
+        };
+
+        var gorm = new Gorm(9, Vector3.Zero, balance: balance);
+
+        Assert.Equal((5.5f, 0.9f, 1.7f), gorm.SwingArea);
+        Assert.Equal(9f, gorm.ShockwaveReach);
+    }
 }

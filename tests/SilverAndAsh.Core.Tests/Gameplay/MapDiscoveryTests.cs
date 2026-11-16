@@ -56,6 +56,72 @@ public class MapDiscoveryTests
         return new GameWorld(LevelParser.Parse(map), 1, balance, doors, rooms);
     }
 
+    // ---- Chests -----------------------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The same rooms with a sleeping ghoul in room 1 and two chests there: a locked King's chest that stands from the
+    /// start, and a Guard's chest that rises only once the room is cleared.
+    /// </summary>
+    private static GameWorld WorldWithChests()
+    {
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, Rows(0, 0), [], []),
+            new(1, RoomKind.Combat, "arena", 0, 2, 5, 4, 1, Rows(2, 5), [(2, 4)], []),
+            new(2, RoomKind.Corridor, "corridor", 0, 7, 5, 2, 2, Rows(7, 8), [], []),
+        ];
+        LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
+        ChestPlan[] chests =
+        [
+            new(1, 5, 1, ChestTier.King, IsLocked: true, Silver: 20, HasBloodVial: false, RisesWhenCleared: false),
+            new(3, 5, 1, ChestTier.Guard, IsLocked: false, Silver: 10, HasBloodVial: false, RisesWhenCleared: true),
+        ];
+        var map = "#.P.#\n##.##\n#...#\n#...#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
+        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms, chests);
+    }
+
+    [Fact]
+    public void A_chest_in_a_room_not_yet_discovered_is_not_on_the_map()
+    {
+        var world = WorldWithChests();
+
+        Run(world, PlayerInput.None, 5);
+
+        Assert.Empty(world.KnownChests);
+    }
+
+    [Fact]
+    public void A_standing_chest_in_a_discovered_room_is_on_the_map_with_its_tier_and_lock()
+    {
+        var world = WorldWithChests();
+        Run(world, PressF, 1);
+
+        Run(world, Forward, 120, () => world.Rooms[1].IsDiscovered);
+
+        Assert.True(world.Rooms[1].IsDiscovered);
+        var chest = Assert.Single(world.KnownChests);
+        Assert.Same(world.Chests[0], chest);
+        Assert.Equal(ChestTier.King, chest.Tier);
+        Assert.True(chest.IsLocked);
+        Assert.False(chest.IsOpen);
+    }
+
+    [Fact]
+    public void A_chest_still_under_the_floor_shows_once_it_rises()
+    {
+        var world = WorldWithChests();
+        Run(world, PressF, 1);
+        Run(world, Forward, 120, () => world.Rooms[1].IsSealed);
+        Assert.True(world.Rooms[1].IsSealed, "The room never sealed - the test would prove nothing.");
+        Assert.DoesNotContain(world.Chests[1], world.KnownChests);
+
+        world.Ghouls[0].TakeDamage(10_000, []);
+        Run(world, PlayerInput.None, 3);
+
+        Assert.True(world.Chests[1].IsRising || world.Chests[1].RiseFraction >= 1f, "The cleared room's chest never started to rise.");
+        Assert.Contains(world.Chests[1], world.KnownChests);
+    }
+
     [Fact]
     public void A_blood_vial_in_a_room_not_yet_discovered_is_not_on_the_map()
     {

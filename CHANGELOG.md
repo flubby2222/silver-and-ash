@@ -11,7 +11,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
   - Betrittst du den Bossraum, erscheint oben sein Lebensbalken (1600 Leben).
   - Er geht langsam auf dich zu und **greift an**, jeder Angriff mit deutlicher Ankündigung und einer Antwort:
     - **Hammerschlag** (Keule hoch, roter Kreis am Boden): Eine Schockwelle läuft über den Boden → **springen**. Verfehlt er, steckt die Keule 2 s fest: Er beugt sich vor und nimmt doppelten Schaden.
-    - **Rundumschwung** (Kette wird angedreht): Kette auf Brusthöhe → **Dodge** (geduckt); Springen hilft nicht.
+    - **Rundumschwung** (Kette wird über dem Kopf angedreht, so lang, wie sie reicht): Kette auf Brusthöhe rundherum, kurz als rostiges Band zu sehen → **Dodge** (geduckt); Springen hilft nicht.
     - **Kettenwurf** (Haken glüht rot): Der Haken fliegt dorthin, wo du standest → **zur Seite** oder hinter eine Säule. Trifft er, zieht er dich heran.
     - Nach jedem Angriff ruht er kurz; nie zweimal hintereinander derselbe Angriff.
   - **Phase 2:** Bei halbem Leben brüllt er 1,5 s lang (Kopf in den Nacken, der Boden bebt) und greift solange nicht an. Danach läuft, kündigt an und ruht er 30 % schneller. Jeder Hammerschlag löst dann **4 Steine von der Decke**: Ihr dunkler Schatten wächst 1 s lang am Boden um dich herum, dann schlägt der Stein ein (20 Schaden) → **aus dem Schatten gehen**.
@@ -19,12 +19,14 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
   - Er hinterlässt 100–150 Silber und eine Blutphiole.
 - **Wendeltreppe und neuer Sieg:** Nach Gorms Tod fährt in der Mitte des Bossraums eine Wendeltreppe aus dem Boden. „[F] Climb the stairs“ gewinnt den Durchlauf. Der Endbildschirm und `runs.log` zeigen, ob Gorm besiegt wurde und wie lange der Kampf dauerte
 - **Luft-Dash in Blickrichtung:** W + Shift in der Luft dasht dorthin, wohin man schaut, auch schräg nach oben, z. B. auf höhere Stellen in den 6 m hohen Räumen. Andere Richtungen dashen wie bisher flach. Gleiche Strecke und Ausdauer, einmal pro Sprung; an Decke und Boden endet der Dash
-- **Blutphiolen auf der Karte:** Eine liegen gelassene Blutphiole in einem schon entdeckten Raum erscheint auf der Karte (M) als roter Punkt. Hebt man sie auf, verschwindet der Punkt
+- **Blutphiolen auf der Karte:** Eine liegen gelassene Blutphiole in einem schon entdeckten Raum erscheint auf der Karte als roter Punkt. Hebt man sie auf, verschwindet der Punkt
+- **Kisten und Symbole auf der Karte:** Kisten in entdeckten Räumen erscheinen in der Farbe ihrer Stufe, verschlossene mit Schloss, geöffnete grau. Verschlossene Türen tragen ein Schloss, die Bossraum-Tür einen Totenkopf
 
 ### Geändert
 - **Sieg:** Der Durchlauf ist nicht mehr gewonnen, sobald der Bossraum geräumt ist, sondern erst, wenn man die Treppe nimmt. Im Bossraum gibt es keine Ghule und Fledermäuse mehr (Gorm kämpft allein)
 - **Gegner stehen jedes Mal anders:** Statt fester Plätze bekommt jeder Kampfraum ein Gegner-Budget, das weiter vom Start wächst. Davon kauft er Ghule und Fledermäuse (hinten mehr Fledermäuse) und stellt sie auf zufällige freie Felder, mit Abstand zu den Türen und zueinander. Insgesamt etwa so viele Gegner wie bisher. Einstellbar in `balance.json` unter `difficulty`
 - Der **Startraum hat nur noch eine Tür**. Der Ausgang liegt je Durchlauf in einer anderen Richtung, und der Weg zum Boss wird etwas länger
+- **Karte:** **Tab halten** zeigt sie, **M** schaltet sie an und aus, damit sie beim Laufen offen bleiben kann. Sie ist jetzt durchsichtiger, sodass man das Spiel dahinter gut sieht
 
 ## [0.9.0] – 2026-11-15 – Schatz & Wirtschaft
 
