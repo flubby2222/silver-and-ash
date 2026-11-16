@@ -6,6 +6,10 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.10.0] – 2026-11-16 – Boss & Bewegung
+
+Jede Ebene hat jetzt ihren Höhepunkt: Gorm, the Chained, ein Troll mit Keule und Kette, drei angekündigten Angriffen und einer zweiten Phase. Nach seinem Sieg führt eine Wendeltreppe hinaus. Dazu ein Luft-Dash in Blickrichtung, Gegner, die jedes Mal anders stehen, eine Karte mit Symbolen und die zweite Balancing-Runde.
+
 ### Hinzugefügt
 - **Gorm, the Chained:** Im Bossraum wartet jetzt ein Troll, 3,2 m groß, mit Keule und Kette (Platzhalter aus Kästen).
   - Betrittst du den Bossraum, erscheint oben sein Lebensbalken (3600 Leben).
@@ -183,7 +187,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.9.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.6.0...v0.7.0
