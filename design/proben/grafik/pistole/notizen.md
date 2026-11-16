@@ -67,3 +67,65 @@ Das Silber folgt der Art Bible: Silber gehört dem Jäger. Warmes Licht gibt es 
 - **Hahn und Batterie zu wenig verbunden:** In den freien Ansichten wirken sie etwas lose über dem Schloss. Bei den Größen (wenige Millimeter) sieht man das in der Ich-Sicht kaum, aber ein Verbindungsstück wäre sauberer.
 - **Keine Hand:** Der Platzhalter hat auch keine. Ohne Hand schwebt der Griff im Bild. Ein Ärmel mit Handschuh wäre ein eigenes Probestück.
 - **Gouraud am Griff:** Mit nur 8 Seiten sieht man die Kanten des Griffs in der Nahsicht trotz weicher Schattierung. Hier würden 10 bis 12 Seiten helfen; das Budget ist da.
+
+---
+
+# Fassung 2: Ich-Sicht neu (2026-11-16)
+
+**Urteil der Leitung:** Das Modell trägt, die Ich-Sicht nicht – klein, schräg, fast von der Seite, „wie ein Stock mit Metallteilen“.
+
+**Neue Regel:** Die Waffe zeigt mit dem Lauf in die Tiefe auf die Bildmitte, stark verkürzt, von schräg hinten oben gesehen. Sie nimmt unten rechts ein Fünftel bis ein Viertel der Bildbreite ein und wird von einer Hand gehalten.
+
+```bash
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python design/proben/grafik/pistole/pistole_v2.py
+```
+
+Fassung 1 (`pistole.py` und ihre Bilder) bleibt unverändert.
+
+## Was sich geändert hat
+
+1. **Größe:**
+   - **Was ich gemacht habe:** Das Modell ist 1,8-mal so groß.
+   - **Warum:** Ich hatte es auf die Maße der Platzhalter-Quader gebaut (Lauf 2 cm dick, Griff 7 cm). Eine echte Reiterpistole mit Hand ist etwa doppelt so groß. In der ersten Fassung war die Waffe deshalb klein im Bild.
+   - **Was gleich bleibt:** Der Griffpunkt bleibt bei (0,095, −0,08, 0,18) aus `WeaponViews.cs`.
+   - **Ergebnis:** Pistole und Hand nehmen jetzt etwa ein Viertel der Bildbreite ein. Der Griff reicht aus dem unteren Bildrand.
+2. **Richtung:**
+   - Der Lauf liegt parallel zur Blickachse und läuft im Bild deshalb auf die Bildmitte zu, wo das Fadenkreuz sitzt.
+   - Die Waffe ist um 15° zum Auge hin gekippt; man blickt auf Hahn, Batterie, Schloss und Laufrücken.
+   - Einen Konvergenzpunkt 1,5 m voraus habe ich erst probiert; im Bild lief der Lauf damit links an der Mitte vorbei.
+3. **Hand und Ärmel (neu):** Ein gemeinsamer Baustein [`../gemeinsam/arm.py`](../gemeinsam/arm.py), auch für die Klinge.
+   - Faust um den Griff, Daumen über der linken Griffseite, Zeigefinger am Abzug.
+   - Handrücken, Stulpe und Ärmel bis zum Ellbogen außerhalb des Bildes.
+   - 248 Dreiecke.
+   - Handschuh dunkel und kühl (44, 40, 44), damit er sich vom Nussbaum abhebt; ein erster, brauner Handschuh verschwamm mit dem Schaft.
+   - Ärmel aus dunklem Mantelstoff mit zwei Silberknöpfen.
+4. **Zeichnung auf Rücken und Oberseite:**
+   - Neu ist eine silberne Griffplatte oben hinter dem Lauf.
+   - Die Silberlinien oben auf dem Lauf und der gerippte Ring am Pulversack waren schon da; aus der Ich-Sicht sind sie jetzt das, was man vom Lauf sieht.
+   - Geprüft in `ansicht_hinten_oben_v2.png`: Laufrücken, Griffplatte, Hahn und Batterie haben Zeichnung. Die Textur trägt aus diesem Blickwinkel.
+5. **Schloss- und Seitenplatte:** kleiner und dünner. In der ersten Ich-Sicht standen sie als helle Flügel im Bild.
+
+## Bilder der Fassung 2
+
+| Bild | Was |
+|---|---|
+| `ich_sicht_ruhig_nebel_v2.png`, `ich_sicht_ruhig_dither_v2.png` | ruhig |
+| `ich_sicht_rueckstoss_nebel_v2.png`, `ich_sicht_rueckstoss_dither_v2.png` | Rückstoß |
+| `vergleich_ich_sicht.png` | links Fassung 1, rechts Fassung 2, ruhig mit Nebel |
+| `ansicht_hinten_oben_v2.png` | freie Ansicht aus der Blickrichtung des Spielers, mit Hand |
+
+## Zahlen
+
+- **Dreiecke:** Pistole 494 (12 mehr für die Griffplatte), Hand und Ärmel 248, Mündungsfeuer 42.
+- **Textur:** 128 × 128, 32 Farben. Neu darin sind Handschuh (64 × 48) und Ärmel (64 × 48).
+
+## Für den Einbau
+
+- **Lage:** Die Ich-Sicht nutzt Lage und Rückstoß des Platzhalters, aber die Waffe ist 1,8-mal so groß und um 15° gekippt. Im Spiel wären das zwei Konstanten in der neuen `IWeaponView`.
+- **Hand und Ärmel** sind ein eigenes Teil (`arm`), hängen aber in diesem Probestück an der Waffe und machen den Rückstoß mit. Für Klinge und Pistole wäre dieselbe Hand richtig; die glb der Pistole enthält sie nicht, sie wäre eine eigene Datei.
+- **Spiegelung:** Der Hinweis aus Fassung 1 gilt weiter.
+
+## Unsicher
+
+- **Silber dominiert:** Aus der Nähe ist das Silber an Schloss und Lauf sehr hell, und die Waffe wirkt silberner als in den freien Ansichten. Das passt zur Regel „Silber gehört dem Jäger“, lenkt aber vom Bild ab. Eine stärker angelaufene Silberfarbe wäre ruhiger.
+- **Die Hand ist eine Faust ohne Finger:** Das liest sich als Handschuh, nicht als Hand mit Fingern. Für PS1-nah reicht das, meine ich.
