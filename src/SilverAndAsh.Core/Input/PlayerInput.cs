@@ -15,7 +15,7 @@ namespace SilverAndAsh.Core.Input;
 /// <param name="Dash">True while the dash button is held (Shift): dash in the air, dodge on the ground.</param>
 /// <param name="Melee">True while the button for the silver blade is held (left mouse button).</param>
 /// <param name="Shoot">True while the button for the pistol is held (right mouse button).</param>
-/// <param name="ChooseBoon">The boon chosen for a waiting level up (X, then 1 - 4), or null for none.</param>
+/// <param name="ChooseBoon">The boon chosen for a waiting level up (X, then 1 - 4 or a click), or null for none.</param>
 /// <param name="Interact">
 /// True in the one tick after the interaction key (F) was pressed: open the door (later: chest, lock, person) in front.
 /// </param>

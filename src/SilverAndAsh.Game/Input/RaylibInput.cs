@@ -42,8 +42,10 @@ internal sealed class RaylibInput
     /// <summary>
     /// Reads the input of the current frame. Whether the mouse is captured decides the game (captured while
     /// playing; free on the title screen, in the Esc menu and while a bonus is chosen).
+    /// <paramref name="keysWithFreeMouse"/>: the mouse is free for a window in the running game (the bonus choice) -
+    /// keys still count (walking closes the window), the mouse neither turns the view nor attacks.
     /// </summary>
-    public PlayerInput Read()
+    public PlayerInput Read(bool keysWithFreeMouse = false)
     {
         var look = Vector2.Zero;
         if (IsMouseCaptured && !_ignoreNextMouseDelta)
@@ -52,6 +54,15 @@ internal sealed class RaylibInput
         }
 
         _ignoreNextMouseDelta = false;
+
+        if (!IsMouseCaptured && keysWithFreeMouse)
+        {
+            return new PlayerInput(
+                ReadMoveKeys(), Vector2.Zero,
+                Jump: Raylib.IsKeyDown(KeyboardKey.Space),
+                Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift),
+                Interact: Raylib.IsKeyPressed(KeyboardKey.F));
+        }
 
         // With the mouse released the player is "away from the game": no walking or jumping either.
         if (!IsMouseCaptured)

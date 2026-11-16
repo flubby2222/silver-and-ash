@@ -184,6 +184,7 @@ static void RunGame(
 
         // Choosing a level-up bonus: is the window open (X), and which boon is waiting for the next tick?
         var boonOpen = false;
+        var boonOpenSeconds = 0f;
         Boon? chosenBoon = null;
 
         // F pressed in a frame without a tick must not get lost: it waits for the next tick, like a chosen bonus.
@@ -293,10 +294,10 @@ static void RunGame(
                 }
             }
 
-            // The mouse is captured only while playing: free in the menu and on the end screen. The bonus choice keeps
-            // it - you look around and fight while choosing.
+            // The mouse is captured only while playing: free in the menu, on the end screen and while the bonus choice
+            // is open (a click chooses; the keys still count, walking closes it).
             var frozen = menuOpen || endSummary is not null;
-            var capture = !frozen && !onTitle;
+            var capture = !frozen && !onTitle && !boonOpen;
             if (capture && !input.IsMouseCaptured)
             {
                 input.CaptureMouse();
@@ -307,7 +308,7 @@ static void RunGame(
             }
 
             // 1. Input: looking around happens every frame, so it feels immediate.
-            var playerInput = input.Read();
+            var playerInput = input.Read(keysWithFreeMouse: boonOpen && !frozen);
             player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
 
@@ -323,9 +324,10 @@ static void RunGame(
                 boonOpen = false;
             }
 
+            boonOpenSeconds = boonOpen ? boonOpenSeconds + Raylib.GetFrameTime() : 0f;
             if (boonOpen && !frozen)
             {
-                chosenBoon ??= BoonWindow.Pick(player.CurrentOffer);
+                chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, boonOpenSeconds);
             }
 
             // 2. Simulation: as many fixed ticks as fit into the real time of the last frame.
@@ -507,7 +509,7 @@ static void RunGame(
             }
             else if (!frozen)
             {
-                BoonWindow.DrawHint(player.PendingBoons);
+                BoonWindow.DrawHint(player.PendingBoons, seconds);
             }
 
             if (menuOpen)

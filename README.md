@@ -37,7 +37,7 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | F | Interagieren (Türen, Kisten) |
 | Tab (halten) | Karte: betretene Räume, ihre Türen (Schloss, Boss-Tür), Kisten, liegen gelassene Blutphiolen, eigene Position |
 | M | Karte an/aus: bleibt offen, auch beim Laufen |
-| X, dann 1–4 | Bonus nach einem Stufenaufstieg wählen – das Spiel läuft weiter; mehrere Aufstiege warten und kommen nacheinander; Bewegen oder ein Treffer schließt die Wahl |
+| X, dann 1–4 oder Klick | Bonus nach einem Stufenaufstieg wählen – das Spiel läuft weiter; mehrere Aufstiege warten und kommen nacheinander; Laufen oder ein Treffer schließt die Wahl |
 | Q | Blutrausch |
 | Esc | Menü: weiter, Mausempfindlichkeit, zum Titel, beenden (allein steht das Spiel solange still) |
 
