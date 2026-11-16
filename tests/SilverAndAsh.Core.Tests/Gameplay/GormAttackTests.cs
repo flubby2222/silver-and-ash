@@ -266,7 +266,7 @@ public class GormAttackTests
         duel.UntilWindUp(GormAttack.Swing);
         var health = duel.Player.Health;
 
-        duel.Run(Second, until: () => duel.Events.OfType<GormSwung>().Any());
+        duel.Run(3 * Second, until: () => duel.Events.OfType<GormSwung>().Any());
 
         Assert.Equal(health - Values.SwingDamage, duel.Player.Health);
         Assert.Contains(new GormSwung(9, true), duel.Events);
@@ -279,12 +279,17 @@ public class GormAttackTests
         duel.UntilWindUp(GormAttack.Swing);
         var health = duel.Player.Health;
 
-        // Jump so the player is at the top of the jump when the chain comes round.
-        duel.Run(Second, until: () => duel.Gorm.StateProgress >= 0.4f);
+        // Jump as the chain starts its sweep: the player is in the air when it comes past in front.
+        duel.Run(2 * Second, until: () => duel.Gorm.State == GormState.Swinging);
         duel.Tick(PlayerInput.None with { Jump = true });
-        duel.Run(Second, until: () => duel.Events.OfType<GormSwung>().Any());
+        var airborneWhenHit = false;
+        duel.Run(2 * Second, until: () =>
+        {
+            airborneWhenHit |= duel.Player.Health < health && !duel.Player.IsGrounded;
+            return duel.Events.OfType<GormSwung>().Any();
+        });
 
-        Assert.False(duel.Player.IsGrounded);
+        Assert.True(airborneWhenHit, "The player was not in the air when the chain hit - the test would prove nothing.");
         Assert.Equal(health - Values.SwingDamage, duel.Player.Health);
     }
 
@@ -295,10 +300,10 @@ public class GormAttackTests
         duel.UntilWindUp(GormAttack.Swing);
         var health = duel.Player.Health;
 
-        // Dodge (sideways, staying in reach) just before the chain comes round.
-        duel.Run(Second, until: () => duel.Gorm.StateProgress >= 0.75f);
-        duel.Tick(PlayerInput.None with { Dash = true, Move = new Vector2(1f, 0f) });
-        duel.Run(Second, until: () => duel.Events.OfType<GormSwung>().Any());
+        // Dodge (backwards, staying in reach and in front of him) as the chain starts its sweep.
+        duel.Run(2 * Second, until: () => duel.Gorm.State == GormState.Swinging);
+        duel.Tick(PlayerInput.None with { Dash = true, Move = new Vector2(0f, -1f) });
+        duel.Run(2 * Second, until: () => duel.Events.OfType<GormSwung>().Any());
 
         Assert.True(FlatDistance(duel.Gorm.Position, duel.Player.Position) <= Values.SwingReach, "The dodge left the chain's reach - the test would prove nothing.");
         Assert.Equal(health, duel.Player.Health);
@@ -313,7 +318,7 @@ public class GormAttackTests
         duel.UntilWindUp(GormAttack.Swing);
         var health = duel.Player.Health;
 
-        duel.Run(Second, until: () => duel.Events.OfType<GormSwung>().Any());
+        duel.Run(3 * Second, until: () => duel.Events.OfType<GormSwung>().Any());
 
         Assert.Equal(health, duel.Player.Health);
     }

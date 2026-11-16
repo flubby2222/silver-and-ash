@@ -11,8 +11,8 @@ namespace SilverAndAsh.Game.Rendering;
 /// wooden club with iron bands in the right hand and a rusty chain in the left. He sways as he walks, flashes when hit
 /// (red for a shot at his head) and falls onto his back when he dies. His head matches his hit zone. Every attack is
 /// announced clearly: hammer = club raised high and a red circle on the floor; chain swing = the chain spun up round
-/// his head, as long as it reaches; chain throw = the hook glows red. Then the swing sweeps round as a rusty band at
-/// chest height, the shock wave runs as a pale ring along the floor, the hook flies
+/// his head, as long as it reaches; chain throw = the hook glows red. Then the stretched chain sweeps at chest height
+/// from his left over the front to his right, the shock wave runs as a pale ring along the floor, the hook flies
 /// on its chain, and a stuck club glows while he bends forward. At half health he roars, head thrown back and arms
 /// raised (phase 2); falling stones cast a dark shadow that grows on the floor until the stone drops into it.
 /// Pure presentation - a real model comes with v0.13.
@@ -21,7 +21,6 @@ internal sealed class GormView
 {
     private const float FlashSeconds = 0.12f;
     private const float FallSeconds = 1.2f;
-    private const float SwingSeconds = 0.3f;
 
     private static readonly Color Skin = new(96, 116, 88, 255);
     private static readonly Color Rags = new(70, 58, 52, 255);
@@ -56,7 +55,6 @@ internal sealed class GormView
     private float _fall;
     private float _walkPhase;
     private float _glowPhase;
-    private float _swing;
 
     public void OnEvent(GameEvent gameEvent)
     {
@@ -69,9 +67,6 @@ internal sealed class GormView
             case GormDied:
                 _dead = true;
                 break;
-            case GormSwung:
-                _swing = 1f;
-                break;
         }
     }
 
@@ -80,7 +75,6 @@ internal sealed class GormView
         ArgumentNullException.ThrowIfNull(gorm);
         _flash = MathF.Max(0f, _flash - frameSeconds / FlashSeconds);
         _glowPhase += frameSeconds;
-        _swing = MathF.Max(0f, _swing - frameSeconds / SwingSeconds);
         if (_dead || gorm.IsDead)
         {
             _fall = MathF.Min(1f, _fall + frameSeconds / FallSeconds);
@@ -166,7 +160,7 @@ internal sealed class GormView
                         ShadedBox.Draw(Matrix4x4.CreateTranslation(spot), new Vector3(0.14f, 0.14f, 0.14f), Rust);
                     }
                 }
-                else if (gorm.Hook is null)
+                else if (gorm.Hook is null && gorm.SwingDirection is null)
                 {
                     for (var link = 0; link < 4; link++)
                     {
@@ -215,11 +209,18 @@ internal sealed class GormView
             Ring(gorm.Position, gorm.ShockwaveReach, Blend(new Color(60, 10, 10, 255), Warning, strength), 0.06f);
         }
 
-        if (_swing > 0f)
+        if (gorm.SwingDirection is { } sweep)
         {
-            // The swing itself: for a moment a band all round him, exactly as far and as high as it hits.
+            // The swing itself: the chain stretched out as far as it reaches, at the height it hits, wandering from
+            // his left over the front to his right.
             var (reach, low, high) = gorm.SwingArea;
-            Ring(gorm.Position + new Vector3(0f, low, 0f), reach, Rust, high - low);
+            var middle = gorm.Position + new Vector3(0f, (low + high) / 2f, 0f);
+            var links = Math.Max(8, (int)(reach / 0.3f));
+            for (var link = 1; link <= links; link++)
+            {
+                var spot = middle + (sweep * (reach * link / links));
+                ShadedBox.Draw(Matrix4x4.CreateTranslation(spot), new Vector3(0.16f, high - low, 0.16f), Rust);
+            }
         }
 
         if (gorm.Shockwave is { } wave)

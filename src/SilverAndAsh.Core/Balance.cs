@@ -550,6 +550,12 @@ public sealed record GormBalance
     /// <summary>... to here: standing or jumping it hits, ducked in a dodge (1 m) not.</summary>
     public float SwingHigh { get; init; } = 1.6f;
 
+    /// <summary>The swing sweeps from his left over the front to his right in this time (seconds) ...</summary>
+    public float SwingTime { get; init; } = 0.6f;
+
+    /// <summary>... along this arc (degrees; 180 = the half in front of him - behind him you are safe).</summary>
+    public float SwingArc { get; init; } = 180f;
+
     /// <summary>Warning before the chain throw (the hook glows red), in seconds.</summary>
     public float ThrowWindUp { get; init; } = 0.5f;
 

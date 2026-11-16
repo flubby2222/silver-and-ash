@@ -119,6 +119,7 @@ public class BalanceFileTests
     [InlineData("""{ "keys": { "enemyChance": 3 } }""", "keys.enemyChance")]
     [InlineData("""{ "layout": { "corridorChance": 1.5 } }""", "layout.corridorChance")]
     [InlineData("""{ "gorm": { "phase2Health": 1.5 } }""", "gorm.phase2Health")]
+    [InlineData("""{ "gorm": { "swingArc": 400 } }""", "gorm.swingArc")]
     [InlineData("""{ "difficulty": { "ghoulShareNear": 1.5 } }""", "difficulty.ghoulShareNear")]
     [InlineData("""{ "difficulty": { "ghoulShareFar": 2 } }""", "difficulty.ghoulShareFar")]
     [InlineData("""{ "difficulty": { "batShareNear": 1.1 } }""", "difficulty.batShareNear")]
