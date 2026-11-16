@@ -43,7 +43,7 @@ internal sealed class RaylibInput
     /// Reads the input of the current frame. Whether the mouse is captured decides the game (captured while
     /// playing; free on the title screen, in the Esc menu and while a bonus is chosen).
     /// <paramref name="keysWithFreeMouse"/>: the mouse is free for a window in the running game (the bonus choice) -
-    /// keys still count (walking closes the window), the mouse neither turns the view nor attacks.
+    /// keys still count (you walk on while choosing), the mouse neither turns the view nor attacks.
     /// </summary>
     public PlayerInput Read(bool keysWithFreeMouse = false)
     {

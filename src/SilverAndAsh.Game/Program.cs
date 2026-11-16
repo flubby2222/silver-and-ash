@@ -295,7 +295,7 @@ static void RunGame(
             }
 
             // The mouse is captured only while playing: free in the menu, on the end screen and while the bonus choice
-            // is open (a click chooses; the keys still count, walking closes it).
+            // is open (a click chooses; you walk on with the keys; a hit closes it).
             var frozen = menuOpen || endSummary is not null;
             var capture = !frozen && !onTitle && !boonOpen;
             if (capture && !input.IsMouseCaptured)
@@ -312,14 +312,14 @@ static void RunGame(
             player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
 
-            // The bonus choice (decision record 0008): X opens and closes it while boons wait; moving closes it (so
-            // does a hit, see the events below). Several level ups come one after the other.
+            // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while
+            // walking - only a hit closes it (see the events below). Several level ups come one after the other.
             if (!frozen && Raylib.IsKeyPressed(KeyboardKey.X) && player.PendingBoons > 0)
             {
                 boonOpen = !boonOpen;
             }
 
-            if (player.PendingBoons == 0 || playerInput.Move != Vector2.Zero)
+            if (player.PendingBoons == 0)
             {
                 boonOpen = false;
             }
