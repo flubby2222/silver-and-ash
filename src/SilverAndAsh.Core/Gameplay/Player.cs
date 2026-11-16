@@ -113,8 +113,8 @@ public sealed class Player
     /// <param name="sensitivity">The player's own factor from the settings (1 = standard, 2 = twice as fast).</param>
     public void Look(PlayerInput input, float sensitivity = 1f)
     {
-        // The dead do not look around - and while a bonus is being chosen, the view stays still.
-        if (!IsDead && PendingBoons == 0)
+        // The dead do not look around. A waiting bonus no longer holds the view (decision record 0008).
+        if (!IsDead)
         {
             View.ApplyMouse(input.Look, ControlSettings.MouseSensitivity * sensitivity);
         }

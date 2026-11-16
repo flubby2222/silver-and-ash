@@ -182,8 +182,8 @@ static void RunGame(
             damageFeedback = new DamageFeedback();
         }
 
-        // Choosing a level-up bonus: how long the window is open, and which boon is waiting for the next tick?
-        var choosingSeconds = 0f;
+        // Choosing a level-up bonus: is the window open (X), and which boon is waiting for the next tick?
+        var boonOpen = false;
         Boon? chosenBoon = null;
 
         // F pressed in a frame without a tick must not get lost: it waits for the next tick, like a chosen bonus.
@@ -293,10 +293,10 @@ static void RunGame(
                 }
             }
 
-            // The mouse is captured only while playing: free in the menu, on the end screen and while a bonus is chosen.
-            var choosing = player.PendingBoons > 0;
+            // The mouse is captured only while playing: free in the menu and on the end screen. The bonus choice keeps
+            // it - you look around and fight while choosing.
             var frozen = menuOpen || endSummary is not null;
-            var capture = !frozen && !onTitle && !choosing;
+            var capture = !frozen && !onTitle;
             if (capture && !input.IsMouseCaptured)
             {
                 input.CaptureMouse();
@@ -306,15 +306,26 @@ static void RunGame(
                 input.ReleaseMouse();
             }
 
-            choosingSeconds = choosing && !frozen ? choosingSeconds + Raylib.GetFrameTime() : 0f;
-
             // 1. Input: looking around happens every frame, so it feels immediate.
             var playerInput = input.Read();
             player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
-            if (choosing && !frozen)
+
+            // The bonus choice (decision record 0008): X opens and closes it while boons wait; moving closes it (so
+            // does a hit, see the events below). Several level ups come one after the other.
+            if (!frozen && Raylib.IsKeyPressed(KeyboardKey.X) && player.PendingBoons > 0)
             {
-                chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, choosingSeconds);
+                boonOpen = !boonOpen;
+            }
+
+            if (player.PendingBoons == 0 || playerInput.Move != Vector2.Zero)
+            {
+                boonOpen = false;
+            }
+
+            if (boonOpen && !frozen)
+            {
+                chosenBoon ??= BoonWindow.Pick(player.CurrentOffer);
             }
 
             // 2. Simulation: as many fixed ticks as fit into the real time of the last frame.
@@ -338,6 +349,10 @@ static void RunGame(
                     wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position);
                     weaponView.OnEvent(gameEvent);
                     damageFeedback.OnEvent(gameEvent);
+                    if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
+                    {
+                        boonOpen = false;
+                    }
                 }
             }
 
@@ -463,7 +478,7 @@ static void RunGame(
             DrawStaminaBar(player);
             CombatHud.Draw(player);
             BossBar.Draw(gameWorld);
-            if (!choosing && !frozen)
+            if (!boonOpen && !frozen)
             {
                 InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);
             }
@@ -476,19 +491,23 @@ static void RunGame(
 
             // The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
             // (no pause: online co-op).
-            if (!frozen && !choosing && Raylib.IsKeyPressed(KeyboardKey.M))
+            if (!frozen && !boonOpen && Raylib.IsKeyPressed(KeyboardKey.M))
             {
                 mapKeptOpen = !mapKeptOpen;
             }
 
-            if (!frozen && !choosing && (mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab)))
+            if (!frozen && !boonOpen && (mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab)))
             {
                 MapView.Draw(gameWorld, player, mapKeptOpen, (float)Raylib.GetTime());
             }
 
-            if (choosing)
+            if (boonOpen && !frozen)
             {
                 BoonWindow.Draw(player, gameWorld.Balance.Boons);
+            }
+            else if (!frozen)
+            {
+                BoonWindow.DrawHint(player.PendingBoons);
             }
 
             if (menuOpen)

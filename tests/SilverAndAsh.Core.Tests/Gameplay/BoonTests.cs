@@ -99,23 +99,62 @@ public class BoonTests
     }
 
     [Fact]
-    public void While_a_choice_is_open_the_world_stands_still()
+    public void While_a_boon_waits_the_world_goes_on()
     {
-        var world = new GameWorld(LevelParser.Parse("P\n.\n.\nG"));
+        // Decision record 0008: no standstill - the player walks, the ghoul crawls, the boon keeps waiting.
+        var world = new GameWorld(LevelParser.Parse("P\n.\n.\n.\n.\n.\nG"));
         var player = world.Player;
         var ghoul = world.Ghouls[0];
-        player.AddExperience(100, []);
+        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
         var playerAt = player.Position;
         var ghoulAt = ghoul.Position;
 
-        for (var tick = 0; tick < Second; tick++)
+        for (var tick = 0; tick < Second / 2; tick++)
         {
             world.Tick(Forward);
         }
 
-        Assert.Equal(playerAt, player.Position);
-        Assert.Equal(ghoulAt, ghoul.Position);
-        Assert.Empty(world.Events);
+        Assert.True(player.Position.Z > playerAt.Z + 0.5f, "The player did not walk.");
+        Assert.NotEqual(ghoulAt, ghoul.Position);
+        Assert.Equal(1, player.PendingBoons);
+    }
+
+    [Fact]
+    public void A_boon_can_be_chosen_long_after_the_level_up()
+    {
+        var world = new GameWorld(LevelParser.Parse("P\n.\n."), balance: OfferAll);
+        var player = world.Player;
+        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
+        for (var tick = 0; tick < 3 * Second; tick++)
+        {
+            world.Tick(PlayerInput.None);
+        }
+
+        world.Tick(PlayerInput.None with { ChooseBoon = Boon.Damage });
+
+        Assert.Equal(0, player.PendingBoons);
+        Assert.Equal(1, player.BoonCount(Boon.Damage));
+    }
+
+    [Fact]
+    public void A_level_up_while_a_boon_waits_queues_up_behind_it()
+    {
+        // The second level up comes later, during play: its offer waits behind the first and comes after it.
+        var world = new GameWorld(LevelParser.Parse("P\n.\n."));
+        var player = world.Player;
+        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
+        var first = player.CurrentOffer.ToList();
+        world.Tick(PlayerInput.None);
+
+        player.AddExperience(10_000, []);
+        var waiting = player.PendingBoons;
+        Assert.True(waiting >= 2, $"Only {waiting} level ups wait.");
+        Assert.Equal(first, player.CurrentOffer);
+
+        world.Tick(PlayerInput.None with { ChooseBoon = first[0] });
+
+        Assert.Equal(waiting - 1, player.PendingBoons);
+        Assert.NotEmpty(player.CurrentOffer);
     }
 
     [Fact]
@@ -136,15 +175,15 @@ public class BoonTests
     }
 
     [Fact]
-    public void The_view_does_not_turn_while_choosing()
+    public void The_view_turns_while_a_boon_waits()
     {
         var player = new Player(LevelParser.Parse("P"));
-        player.AddExperience(100, []);
+        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
         var yaw = player.View.YawRadians;
 
         player.Look(PlayerInput.None with { Look = new Vector2(200f, 0f) });
 
-        Assert.Equal(yaw, player.View.YawRadians);
+        Assert.NotEqual(yaw, player.View.YawRadians);
     }
 
     [Fact]

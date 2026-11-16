@@ -7,25 +7,20 @@ using SilverAndAsh.Core.Gameplay;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The window after a level up: the picture darkens, one box per boon of the offer Core drew from the pool.
-/// Choose with 1 / 2 / 3 or a click. It only reads and shows - the choice goes to Core as input
-/// (<see cref="Core.Input.PlayerInput.ChooseBoon"/>).
+/// The bonus choice (decision record 0008): a level up only shows the hint "[X] Choose boon" - the game goes on.
+/// X opens the window with one box per boon of the offer Core drew; 1 - 4 choose. Several level ups wait in line and
+/// come one after the other. Moving or getting hit closes the window; the boon keeps waiting. It only reads and
+/// shows - the choice goes to Core as input (<see cref="Core.Input.PlayerInput.ChooseBoon"/>).
 /// </summary>
 internal static class BoonWindow
 {
-    /// <summary>
-    /// Seconds after the window opens before a click counts. The cursor appears in the middle - right over a box -
-    /// and attack clicks just after the killing blow must not choose a bonus by accident (found while testing).
-    /// </summary>
-    public const float ClickDelaySeconds = 0.6f;
-
     private const int BoxWidth = 220;
     private const int BoxHeight = 120;
     private const int Gap = 24;
 
-    private static readonly Color Shade = new(10, 6, 12, 170);
-    private static readonly Color Box = new(32, 26, 36, 235);
-    private static readonly Color BoxHovered = new(58, 44, 52, 245);
+    // Barely darker: the game goes on behind it.
+    private static readonly Color Shade = new(10, 6, 12, 60);
+    private static readonly Color Box = new(32, 26, 36, 230);
     private static readonly Color Gold = new(232, 196, 96, 255);
     private static readonly Color Text = new(220, 220, 230, 255);
     private static readonly Color Muted = new(150, 150, 165, 255);
@@ -34,10 +29,10 @@ internal static class BoonWindow
     private static readonly KeyboardKey[] PadKeys = [KeyboardKey.Kp1, KeyboardKey.Kp2, KeyboardKey.Kp3, KeyboardKey.Kp4];
 
     /// <summary>
-    /// The boon chosen in this frame from <paramref name="offer"/> (key 1, 2, 3 ..., or a click on a box once the window
-    /// has been open for <see cref="ClickDelaySeconds"/> - <paramref name="openSeconds"/>), or null.
+    /// The boon chosen in this frame from <paramref name="offer"/> (key 1, 2, 3, 4), or null. No mouse: it keeps
+    /// looking around and fighting while the window is open.
     /// </summary>
-    public static Boon? Pick(IReadOnlyList<Boon> offer, float openSeconds)
+    public static Boon? Pick(IReadOnlyList<Boon> offer)
     {
         ArgumentNullException.ThrowIfNull(offer);
         for (var i = 0; i < offer.Count && i < Keys.Length; i++)
@@ -48,7 +43,23 @@ internal static class BoonWindow
             }
         }
 
-        return openSeconds >= ClickDelaySeconds && Raylib.IsMouseButtonPressed(MouseButton.Left) ? Hovered(offer) : null;
+        return null;
+    }
+
+    /// <summary>The hint while boons wait and the window is closed: "[X] Choose boon", with the number if several.</summary>
+    public static void DrawHint(int pending)
+    {
+        if (pending == 0)
+        {
+            return;
+        }
+
+        var text = pending > 1 ? $"[X] Choose boon ({pending})" : "[X] Choose boon";
+        var width = Raylib.MeasureText(text, 22);
+        var x = (Raylib.GetScreenWidth() - width) / 2;
+        var y = Raylib.GetScreenHeight() - 120;
+        Raylib.DrawRectangle(x - 12, y - 6, width + 24, 34, Box);
+        Raylib.DrawText(text, x, y, 22, Gold);
     }
 
     /// <summary>Draws the window for <paramref name="player"/>'s waiting offer, with the values of <paramref name="boons"/>.</summary>
@@ -66,13 +77,15 @@ internal static class BoonWindow
         var titleWidth = Raylib.MeasureText(title, 32);
         Raylib.DrawText(title, (width - titleWidth) / 2, height / 2 - BoxHeight / 2 - 70, 32, Gold);
 
-        var hovered = Hovered(offer);
+        const string Close = "Move or get hit to close - the boon keeps waiting";
+        Raylib.DrawText(Close, (width - Raylib.MeasureText(Close, 16)) / 2, height / 2 + BoxHeight / 2 + 24, 16, Muted);
+
         for (var i = 0; i < offer.Count; i++)
         {
             var box = BoxAt(i, offer.Count);
             var boon = offer[i];
-            Raylib.DrawRectangleRec(box, boon == hovered ? BoxHovered : Box);
-            Raylib.DrawRectangleLinesEx(box, 2f, boon == hovered ? Gold : Muted);
+            Raylib.DrawRectangleRec(box, Box);
+            Raylib.DrawRectangleLinesEx(box, 2f, Muted);
 
             var x = (int)box.X + 16;
             var y = (int)box.Y + 14;
@@ -113,21 +126,6 @@ internal static class BoonWindow
 
     private static string Total(float value, int count) =>
         string.Create(CultureInfo.InvariantCulture, $"now +{value * count * 100f:0.#} %");
-
-    /// <summary>The boon whose box is under the mouse cursor, or null.</summary>
-    private static Boon? Hovered(IReadOnlyList<Boon> offer)
-    {
-        var mouse = Raylib.GetMousePosition();
-        for (var i = 0; i < offer.Count; i++)
-        {
-            if (Raylib.CheckCollisionPointRec(mouse, BoxAt(i, offer.Count)))
-            {
-                return offer[i];
-            }
-        }
-
-        return null;
-    }
 
     /// <summary>Box <paramref name="index"/> of <paramref name="count"/>, side by side in the middle of the window.</summary>
     private static Rectangle BoxAt(int index, int count)
