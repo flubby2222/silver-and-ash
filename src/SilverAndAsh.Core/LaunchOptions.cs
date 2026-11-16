@@ -12,8 +12,20 @@ namespace SilverAndAsh.Core;
 /// Weapons to start every run with, chosen with <c>--give club</c> (as often as wanted) - for trying weapons out
 /// before they can be found. The game honours it only in its debug version.
 /// </param>
-public sealed partial record LaunchOptions(string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null)
+/// <param name="Photo">
+/// <c>--photo &lt;scene&gt;</c>: take the picture of this photo scene (or <see cref="AllPhotos"/>, or <see cref="ListPhotos"/>
+/// to name them) and quit - for testers and designers (issue #224). Only in the debug version. Null: play.
+/// </param>
+/// <param name="PhotoFolder"><c>--out &lt;folder&gt;</c>: where the pictures go; null for the standard folder.</param>
+public sealed partial record LaunchOptions(
+    string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null, string? Photo = null, string? PhotoFolder = null)
 {
+    /// <summary><c>--photo all</c> takes every photo scene, one after the other.</summary>
+    public const string AllPhotos = "all";
+
+    /// <summary><c>--photo list</c> names the photo scenes instead of taking pictures.</summary>
+    public const string ListPhotos = "list";
+
     /// <summary>Level that is played when no <c>--level</c> is given: a generated level 0.</summary>
     public const string DefaultLevelName = GeneratedLevelName;
 
@@ -33,6 +45,8 @@ public sealed partial record LaunchOptions(string LevelName, int? Seed = null, I
         var levelName = DefaultLevelName;
         int? seed = null;
         var give = new List<Gameplay.WeaponKind>();
+        string? photo = null;
+        string? photoFolder = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -92,12 +106,42 @@ public sealed partial record LaunchOptions(string LevelName, int? Seed = null, I
                     give.Add(weapon);
                     break;
 
+                case "--photo":
+                    var scenes = string.Join(", ", Photos.PhotoScenes.All.Select(scene => scene.Name));
+                    if (i + 1 >= args.Count)
+                    {
+                        throw new ArgumentException($"'--photo' needs a scene, '{AllPhotos}' or '{ListPhotos}'. Scenes: {scenes}.");
+                    }
+
+                    photo = args[++i];
+                    if (photo is not (AllPhotos or ListPhotos) && Photos.PhotoScenes.Find(photo) is null)
+                    {
+                        throw new ArgumentException($"Unknown photo scene '{photo}'. Scenes: {scenes}.");
+                    }
+
+                    break;
+
+                case "--out":
+                    if (i + 1 >= args.Count || string.IsNullOrWhiteSpace(args[i + 1]))
+                    {
+                        throw new ArgumentException("'--out' needs a folder for the pictures, e.g. '--out photos'.");
+                    }
+
+                    photoFolder = args[++i];
+                    break;
+
                 default:
-                    throw new ArgumentException($"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>.");
+                    throw new ArgumentException(
+                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --out <folder>.");
             }
         }
 
-        return new LaunchOptions(levelName, seed, give);
+        if (photoFolder is not null && photo is null)
+        {
+            throw new ArgumentException("'--out' only goes with '--photo'.");
+        }
+
+        return new LaunchOptions(levelName, seed, give, photo, photoFolder);
     }
 
     /// <summary>The level file for these options inside <paramref name="levelDirectory"/>.</summary>

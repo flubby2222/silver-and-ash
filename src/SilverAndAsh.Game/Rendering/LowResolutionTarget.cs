@@ -47,5 +47,16 @@ internal sealed class LowResolutionTarget : IDisposable
         Raylib.DrawTexturePro(_texture.Texture, source, destination, Vector2.Zero, 0f, Color.White);
     }
 
+    /// <summary>Saves the small picture as it is, in game resolution, as a PNG file (photo mode, issue #224).</summary>
+    public void SaveAs(string path)
+    {
+        var image = Raylib.LoadImageFromTexture(_texture.Texture);
+
+        // Stored upside down, like for drawing (see DrawToScreen).
+        Raylib.ImageFlipVertical(ref image);
+        Raylib.ExportImage(image, path);
+        Raylib.UnloadImage(image);
+    }
+
     public void Dispose() => Raylib.UnloadRenderTexture(_texture);
 }
