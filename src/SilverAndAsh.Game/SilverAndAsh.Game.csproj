@@ -6,6 +6,8 @@
     <!-- WinExe: a pure window application - no black console window behind the game.
          Diagnostic output goes to the log file instead (%LOCALAPPDATA%\SilverAndAsh\logs). -->
     <OutputType>WinExe</OutputType>
+    <!-- Raylib hands over a loaded model's arrays and material maps as pointers (TexturedModel). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

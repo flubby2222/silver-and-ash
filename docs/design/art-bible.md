@@ -107,7 +107,7 @@ Vorschlag des Grafikdesigners, von der Leitung angenommen; der Einbau im Code st
 - **Achsen und Einheit:** in der Datei wie im Spiel – x seitlich, y oben, z vorn, eine Einheit ist ein Meter.
 - **Ursprung:** zwischen den Füßen auf dem Boden. Jedes bewegliche Teil trägt seinen Drehpunkt.
 - **Ablage:** `assets/models/<name>.glb`, Erzeuger-Skript `tools/models/<name>.py`, Namen auf Englisch.
-- **Offen für den Einbau:** wie Raylib die Teile eines Modells und ihre Drehpunkte lädt, und wie Farben zwischen Blender und Spiel umgerechnet werden.
+- **Einbau:** wie Raylib die Teile und Drehpunkte lädt und wie die Farben ankommen (sRGB-Werte der Textur unverändert, Licht als Faktor darauf), steht in [`docs/modelle.md`](../modelle.md). Jedes bewegliche Teil ist ein eigener, nicht verschachtelter Knoten mit einem Mesh aus einem Primitiv.
 
 Figuren hängen im Spiel hinter einer austauschbaren Schnittstelle (z. B. `IGhoulView` in [`GhoulViews.cs`](../../src/SilverAndAsh.Game/Rendering/GhoulViews.cs)). Jede Datei unter `assets/` bekommt eine Zeile in `assets/HERKUNFT.md` (Datei, Skript, Datum); die Datei wird mit dem ersten integrierten Stück angelegt.
 

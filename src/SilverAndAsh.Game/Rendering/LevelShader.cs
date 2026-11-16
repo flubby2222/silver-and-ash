@@ -12,6 +12,7 @@ namespace SilverAndAsh.Game.Rendering;
 internal sealed class LevelShader : IDisposable
 {
     private readonly int _viewPositionLocation;
+    private readonly int _flashLocation;
 
     public LevelShader(string shaderDirectory)
     {
@@ -28,6 +29,7 @@ internal sealed class LevelShader : IDisposable
 
         // "Locations" are the slots of the uniform variables in the compiled shader program.
         _viewPositionLocation = Raylib.GetShaderLocation(Shader, "viewPos");
+        _flashLocation = Raylib.GetShaderLocation(Shader, "flash");
 
         // These values do not change while playing - set them once.
         SetFloat("fogStart", LookSettings.FogStart);
@@ -69,6 +71,20 @@ internal sealed class LevelShader : IDisposable
         Raylib.BeginShaderMode(Shader);
         Raylib.SetShaderValueMatrix(Shader, Raylib.GetShaderLocation(Shader, "matModel"), Matrix4x4.Identity);
         Raylib.SetShaderValue(Shader, Raylib.GetShaderLocation(Shader, "colDiffuse"), Vector4.One, ShaderUniformDataType.Vec4);
+    }
+
+    /// <summary>
+    /// Lets what is drawn next flash: its surface is blended toward <paramref name="color"/> by
+    /// <paramref name="amount"/> (0..1, 0 = no flash) before shading, lantern and fog. Used by models, whose colour comes
+    /// from a texture and cannot simply be swapped like the colour of a box.
+    /// </summary>
+    public void SetFlash(Color color, float amount)
+    {
+        // Raylib collects triangles and sends them to the graphics card later; a value set now would also apply to
+        // triangles collected before. So draw those first.
+        Rlgl.DrawRenderBatchActive();
+        var value = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, Math.Clamp(amount, 0f, 1f));
+        Raylib.SetShaderValue(Shader, _flashLocation, value, ShaderUniformDataType.Vec4);
     }
 
     /// <summary>Ends drawing figures.</summary>
