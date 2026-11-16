@@ -59,7 +59,7 @@ dotnet run --project src/SilverAndAsh.Game -- --look 3
 ```
 
 ```
-dotnet run --project src/SilverAndAsh.Game -- --photo compare --out D:otosergleich
+dotnet run --project src/SilverAndAsh.Game -- --photo compare --out D:\fotos\vergleich
 ```
 
 - `--look <1-4>` gilt fürs Spielen und für einzelne Fotos (`--photo ghoul-4m --look 4`).

@@ -159,6 +159,11 @@ public class DitheringTests
         Assert.True(match.Success, "level.fs must define 'const int bayer[16] = int[16](...)'.");
         var numbers = match.Groups[1].Value.Split(',').Select(n => int.Parse(n.Trim(), System.Globalization.CultureInfo.InvariantCulture));
         Assert.Equal(Dithering.BayerMatrix, numbers);
-        Assert.Contains("31.0", shader, StringComparison.Ordinal);
+
+        // The formulas, as written in Dithering: threshold, leaving out, 5-bit steps.
+        var compact = Regex.Replace(shader, @"\s+", string.Empty);
+        Assert.Contains("(float(bayer[cell.y*4+cell.x])+0.5)/16.0", compact, StringComparison.Ordinal);
+        Assert.Contains("smoothstep(fadeStart,fadeEnd,distanceToCamera)>t", compact, StringComparison.Ordinal);
+        Assert.Contains("floor(clamp(color,0.0,1.0)*31.0+t)", compact, StringComparison.Ordinal);
     }
 }

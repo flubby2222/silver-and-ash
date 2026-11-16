@@ -28,6 +28,8 @@ const int bayer[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13,
 
 // The threshold of the pattern at this pixel of the low-resolution picture (Dithering.Threshold). gl_FragCoord is the
 // pixel position in the picture being drawn - it does not move with the camera, so the pattern stays still.
+// gl_FragCoord.y counts from the bottom, and the picture is flipped when shown and saved: picture row y gets pattern
+// row 3 - y % 4. The pattern is mirrored top to bottom against Dithering.Threshold - just as even, same thresholds.
 float threshold()
 {
     ivec2 cell = ivec2(gl_FragCoord.xy) % 4;
@@ -37,6 +39,18 @@ float threshold()
 void main()
 {
     float distanceToCamera = distance(fragPosition, viewPos);
+
+    // Variant 1 (the game as it is): exactly the old way, line by line. The graphics driver rounds a rearranged
+    // calculation differently by 1/255 here and there - this way the pictures stay bit for bit the same.
+    if (quantize == 0 && patternFade == 0)
+    {
+        float lantern = 1.0 - (1.0 - lanternMinimum) * clamp(distanceToCamera / fogEnd, 0.0, 1.0);
+        float fog = smoothstep(fogStart, fogEnd, distanceToCamera);
+        vec3 lit = fragColor.rgb * colDiffuse.rgb * lantern;
+        finalColor = vec4(mix(lit, fogColor, fog), 1.0);
+        return;
+    }
+
     float t = threshold();
 
     // Fading out after the pattern (Dithering.FadeAmount / IsLeftOut): the pixel is not drawn and shows what lies behind.
