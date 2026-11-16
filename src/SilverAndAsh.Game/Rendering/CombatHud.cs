@@ -38,16 +38,12 @@ internal static class CombatHud
             // Blade on the left, pistol on the right - the same sides as the weapons in the hands.
             DrawReadiness(centreX - 22, centreY, player.BladeCooldown);
             DrawReadiness(centreX + 19, centreY, player.PistolCooldown);
-            DrawAmmo(centreX + 28, centreY, player.PistolMagazine);
+            DrawAmmo(player.PistolMagazine);
         }
 
         if (player.BladeCharge.IsCharging)
         {
             DrawCharge(centreX, centreY + 16, player.BladeCharge.Fraction);
-        }
-        else if (player.PistolMagazine.IsReloading && !player.IsDead)
-        {
-            DrawReload(centreX, centreY + 16, player.PistolMagazine.ReloadProgress);
         }
 
         DrawHealth(player.Health, player.MaxHealth);
@@ -150,26 +146,31 @@ internal static class CombatHud
     }
 
     /// <summary>
-    /// Rounds left next to the pistol's bar, e.g. "4/6" - red when empty, with "R" as a reminder; "..." while reloading.
+    /// The pistol's rounds at the bottom right, above the version: "5 / 6"; red "0 / 6 [R]" when empty; while
+    /// reloading "Reloading..." with a bar filling up underneath.
     /// </summary>
-    private static void DrawAmmo(int x, int centreY, Magazine magazine)
+    private static void DrawAmmo(Magazine magazine)
     {
-        var text = magazine.IsReloading ? "..."
-            : magazine.Rounds == 0 ? string.Create(CultureInfo.InvariantCulture, $"0/{magazine.Size} R")
-            : string.Create(CultureInfo.InvariantCulture, $"{magazine.Rounds}/{magazine.Size}");
-        Raylib.DrawText(text, x, centreY - 5, 10, magazine.Rounds == 0 && !magazine.IsReloading ? Blood : TextColor);
-    }
+        const int Size = 24;
+        const int BarWidth = 120;
+        const int BarHeight = 4;
+        var right = Raylib.GetScreenWidth() - 20;
+        var top = Raylib.GetScreenHeight() - 78;
 
-    /// <summary>A thin bar under the crosshair while the pistol is being reloaded.</summary>
-    private static void DrawReload(int centreX, int top, float progress)
-    {
-        const int Width = 40;
-        const int Height = 3;
-        var left = centreX - Width / 2;
+        var text = magazine.IsReloading ? "Reloading..."
+            : magazine.Rounds == 0 ? string.Create(CultureInfo.InvariantCulture, $"0 / {magazine.Size} [R]")
+            : string.Create(CultureInfo.InvariantCulture, $"{magazine.Rounds} / {magazine.Size}");
+        var color = magazine.Rounds == 0 && !magazine.IsReloading ? Blood : TextColor;
+        Raylib.DrawText(text, right - Raylib.MeasureText(text, Size), top, Size, color);
 
-        Raylib.DrawRectangle(left - 1, top - 1, Width + 2, Height + 2, Outline);
-        Raylib.DrawRectangle(left, top, Width, Height, Track);
-        Raylib.DrawRectangle(left, top, (int)MathF.Round(Width * progress), Height, TextColor);
+        if (magazine.IsReloading)
+        {
+            var left = right - BarWidth;
+            var barTop = top + Size + 6;
+            Raylib.DrawRectangle(left - 1, barTop - 1, BarWidth + 2, BarHeight + 2, Outline);
+            Raylib.DrawRectangle(left, barTop, BarWidth, BarHeight, Track);
+            Raylib.DrawRectangle(left, barTop, (int)MathF.Round(BarWidth * magazine.ReloadProgress), BarHeight, TextColor);
+        }
     }
 
     /// <summary>A thin bar under the crosshair while the blade is being charged; golden when full.</summary>
