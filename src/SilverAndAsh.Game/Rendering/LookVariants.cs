@@ -31,7 +31,8 @@ internal sealed record LookVariant(int Number, string Label, int RenderWidth, in
 
 /// <summary>
 /// The picture variants of issue #234, with their values in one place next to <see cref="LookSettings"/>.
-/// The game uses <see cref="Default"/>; the others only with <c>--look</c> or <c>--photo compare</c> (debug version).
+/// The game uses <see cref="Default"/>, in the debug and the release version; the others only with <c>--look</c> or
+/// <c>--photo compare</c> (debug version).
 /// </summary>
 internal static class LookVariants
 {
@@ -53,7 +54,7 @@ internal static class LookVariants
     /// <summary>Variants 1 to 4, in order.</summary>
     public static IReadOnlyList<LookVariant> All { get; } =
     [
-        new(1, "1  today: fog, full colour, 854 x 480",
+        new(1, "1  no grain: fog, full colour, 854 x 480",
             LookSettings.RenderWidth, LookSettings.RenderHeight, Quantize: false, PatternFade: false),
         new(2, "2  15 bit + 4x4 pattern, fog",
             LookSettings.RenderWidth, LookSettings.RenderHeight, Quantize: true, PatternFade: false),
@@ -63,8 +64,11 @@ internal static class LookVariants
             LowRenderWidth, LowRenderHeight, Quantize: true, PatternFade: true),
     ];
 
-    /// <summary>The game as it is: variant 1.</summary>
-    public static LookVariant Default => All[0];
+    /// <summary>
+    /// The game as it is: variant 2, 15-bit colour with the fixed 4 x 4 pattern and fog (issue #237) - chosen by the
+    /// human from comparison pictures (decision record 0010). The one place that decides the standard picture.
+    /// </summary>
+    public static LookVariant Default => All[1];
 
     /// <summary>Variant <paramref name="number"/> (1 to 4), or the default for null.</summary>
     public static LookVariant Get(int? number) => number is { } n ? All[n - 1] : Default;

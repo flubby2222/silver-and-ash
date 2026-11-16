@@ -45,12 +45,12 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 
 ## Bild-Varianten vergleichen (`--look`, `--photo compare`)
 
-ADR 0010 lässt offen, ob das Spiel 15-Bit-Farbe mit Punktmuster, ein Ausblenden über das Muster statt Nebel und eine niedrigere Auflösung bekommt (#234). Dafür gibt es vier Bild-Varianten, nur in der Debug-Version:
+Für ADR 0010 gab es vier Bild-Varianten zum Vergleich (#234). Der Mensch hat Variante 2 gewählt; sie ist seit #237 der Standard in Debug und Release. Die anderen bleiben als Debug-Werkzeug:
 
 | `--look` | Variante |
 |---|---|
-| `1` | heute: Nebel, volle Farbtiefe, 854 × 480 (Standard, auch ohne `--look`) |
-| `2` | 15 Bit (5 je Kanal) mit festem 4 × 4-Bayer-Muster, Nebel bleibt |
+| `1` | ohne Körnung: Nebel, volle Farbtiefe, 854 × 480 (bis #237 der Standard) |
+| `2` | 15 Bit (5 je Kanal) mit festem 4 × 4-Bayer-Muster, Nebel bleibt (**Standard**, auch ohne `--look`) |
 | `3` | wie 2, aber kein Nebel: ab 9 m fallen Pixel nach dem Muster weg (bei 18,2 m alle), die Laterne dunkelt weiter ab |
 | `4` | wie 3 in 640 × 360 |
 

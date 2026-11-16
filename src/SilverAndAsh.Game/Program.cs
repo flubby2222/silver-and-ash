@@ -174,7 +174,7 @@ using (log)
 }
 
 // newWorld builds a world from a seed and balancing values; nextWorld the one after a run ended (new layout on level 0).
-// look: how the 3D world is drawn - variant 1 unless --look chose another (debug version, issue #234).
+// look: how the 3D world is drawn - the standard variant 2 (issue #237) unless --look chose another (debug version, issue #234).
 static void RunGame(
     Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
     PhotoRequest? photos, LookVariant look)
