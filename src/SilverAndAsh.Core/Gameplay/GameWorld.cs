@@ -539,11 +539,12 @@ public sealed class GameWorld
         && room.IsDiscovered);
 
     /// <summary>
-    /// Chests in rooms already discovered that are there to see - one that still waits under the floor for its room
-    /// to be cleared is not (yet). The map shows them with their tier, lock and whether they are open.
+    /// Unopened chests in rooms already discovered that are there to see - one that still waits under the floor for
+    /// its room to be cleared is not (yet), an opened one no longer. The map shows them with their tier and lock.
     /// </summary>
     public IEnumerable<Chest> KnownChests => _chests.Where(chest =>
-        chest.RiseFraction > 0f
+        !chest.IsOpen
+        && chest.RiseFraction > 0f
         && _roomOfCell.TryGetValue(Level.ToGrid(chest.Position.X, chest.Position.Z), out var room)
         && room.IsDiscovered);
 

@@ -7,8 +7,8 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// The map while Tab is held, or kept open with M: the discovered rooms from above, the doors of those rooms
-/// (coloured by state, a padlock on a locked one, a skull on the boss door), the chests there (in their tier's colour,
-/// a padlock if locked, grey once opened), blood vials left behind and an arrow for the player's position and view
+/// (coloured by state, a padlock on a locked one, a skull on the boss door), the unopened chests there (in their tier's
+/// colour, a padlock if locked), blood vials left behind and an arrow for the player's position and view
 /// direction. North is up (the first row of the level). It is see-through, so the game can be played with it open -
 /// the game goes on meanwhile. Pure presentation - what is discovered decides Core.
 /// </summary>
@@ -25,8 +25,6 @@ internal static class MapView
     private static readonly Color Lock = new(240, 200, 80, 255);
     private static readonly Color LockDark = new(60, 44, 16, 255);
     private static readonly Color Bone = new(236, 228, 210, 255);
-    private static readonly Color Opened = new(96, 94, 92, 255);
-    private static readonly Color OpenedBand = new(64, 62, 60, 255);
     private static readonly Color DoorClosed = new(150, 104, 62, 255);
     private static readonly Color DoorOpen = new(210, 200, 180, 255);
     private static readonly Color DoorBarred = new(150, 152, 165, 255);
@@ -108,17 +106,17 @@ internal static class MapView
             }
         }
 
-        // Chests: a small box in the tier's colour with its band, a padlock if locked, grey once opened.
+        // Unopened chests: a small box in the tier's colour with its band, a padlock if locked.
         foreach (var chest in world.KnownChests)
         {
             var place = ToScreen(chest.Position.X / Level.CellSize, chest.Position.Z / Level.CellSize);
             var box = new Vector2(MathF.Max(size * 0.7f, 9f), MathF.Max(size * 0.5f, 7f));
-            var (body, band) = chest.IsOpen ? (Opened, OpenedBand) : ChestView.Colours(chest.Tier, seconds);
+            var (body, band) = ChestView.Colours(chest.Tier, seconds);
             var corner = place - (box / 2f);
             Raylib.DrawRectangleV(corner - Vector2.One, box + (2f * Vector2.One), LockDark);
             Raylib.DrawRectangleV(corner, box, body);
             Raylib.DrawRectangleV(corner + new Vector2(0f, box.Y * 0.35f), new Vector2(box.X, MathF.Max(1f, box.Y * 0.18f)), band);
-            if (chest.IsLocked && !chest.IsOpen)
+            if (chest.IsLocked)
             {
                 DrawPadlock(place + new Vector2(0f, box.Y * 0.1f), box.Y * 0.9f, Lock);
             }
