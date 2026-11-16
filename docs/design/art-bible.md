@@ -44,7 +44,7 @@ Die beiden Formeln aus dem Shader, mit Entfernung `d` in Metern zur Kamera:
 **Figuren und Gegenstände** müssen sich davon abheben, sonst gehen sie im Stein unter:
 
 - Der Platzhalter-Ghul nutzt fahle, grünliche Haut (124, 132, 112) und dunkle Lumpen (62, 52, 54). Diese Richtung – **kränklich, kalt, etwas heller als die Wand** – ist der Ausgangspunkt für Untote.
-- **Rot ist reserviert** für Blut, Treffer, Gefahr (Treffer-Blitz 230, 40, 50) und die höchste Stufe *Vampiric* (blutrot, pulsierend). Kein Rot als bloße Zierde.
+- **Rot ist reserviert** für Blut, Treffer, Gefahr (Blitz bei kritischem Treffer 230, 40, 50; der normale Treffer-Blitz ist fast weiß) und die höchste Stufe *Vampiric* (blutrot, pulsierend). Kein Rot als bloße Zierde.
 - **Warmes Licht** (Gelb, Orange) gehört der Laterne und allem, was der Spieler haben will.
 - **Silber** – hell, kühl, fast weiß – gehört dem Jäger und seinen Waffen.
 - **Die vier Stufen von Ausrüstung und Kisten haben eigene Farben:** *Worn* = Holzbraun, *Forged* = Stahlblau, *Royal* = Gold, *Vampiric* = Blutrot (bei Kisten heißen sie *Beggar*, *Guard*, *King*, *Vampire*). Festgelegt in [`ChestView.cs`](../../src/SilverAndAsh.Game/Rendering/ChestView.cs) und [`TierColours.cs`](../../src/SilverAndAsh.Game/Rendering/TierColours.cs). Sie bedeuten im Spiel „so wertvoll ist das“. Lies sie dort nach, bevor du Kisten oder Beute gestaltest, und verwende sie für nichts anderes.
@@ -54,7 +54,7 @@ Pro Modell **höchstens vier bis fünf Farben**, davon eine als Akzent.
 ## Form
 
 - **Silhouette zuerst.** Jede Figur braucht eine Form, die man als schwarzen Umriss von den anderen unterscheidet: der Ghul geduckt mit langen Armen, die Fledermaus breit und flach, Gorm massig mit Kette.
-- **Lesbarkeit im Kampf geht vor Schönheit.** Der Kopf ist bei Ghul und Gorm eine eigene Trefferzone: Ein Fernwaffen-Treffer dort ist kritisch (Pistole beim Ghul dreifacher, bei Gorm 1,5-facher Schaden; die Werte stehen in `Balance` und können sich ändern). Der Kopf muss deshalb klar abgesetzt und erkennbar sein. Die Fledermaus hat keine Kopfzone. Ein Körperteil, das einen Angriff ankündigt (Arme des Ghuls, Kette von Gorm), muss groß genug sein, um die Bewegung zu zeigen.
+- **Lesbarkeit im Kampf geht vor Schönheit.** Der Kopf ist bei Ghul und Gorm eine eigene Trefferzone: Je nach Fernwaffe macht ein Treffer dort mehr Schaden. Die Faktoren stehen in `Balance` und ändern sich mit dem Balancing; heute sind es beim Ghul dreifach für Pistole und Rifle und kein Bonus für die Blunderbuss, bei Gorm 1,5-fach für alle drei. Der Kopf muss deshalb klar abgesetzt und erkennbar sein. Die Fledermaus hat keine Kopfzone. Ein Körperteil, das einen Angriff ankündigt (Arme des Ghuls, Kette von Gorm), muss groß genug sein, um die Bewegung zu zeigen.
 - **Modell und Trefferkörper passen zusammen.** Die Maße stehen in `BodySizes` im Core. Ein Modell darf nicht deutlich größer oder kleiner aussehen als das, was man treffen kann.
 - **Kantig, nicht rund.** Lieber sechs klare Flächen als sechzehn, die eine Rundung vortäuschen.
 - **Bewegung kommt per Code.** Körperteile, die sich bewegen sollen (Arme, Kiefer, Flügel, Deckel), sind eigene Teile mit einem sinnvollen Drehpunkt. Keine Skelett-Animation.
