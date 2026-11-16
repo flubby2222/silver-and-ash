@@ -6,7 +6,7 @@ Erzeugt nur Modell und Textur nach assets/models/, keine Probebilder; die Bilder
 Aufruf (aus dem Repository-Wurzelverzeichnis):
     "D:\\Program Files\\Blender Foundation\\Blender 5.3\\blender.exe" --background --python tools/models/ghoul.py
 
-Herkunft: alles per Skript, nichts heruntergeladen. Teile, Drehpunkte und Haltungen: design/uebergabe/README.md.
+Herkunft: alles per Skript, nichts heruntergeladen. Teile und Drehpunkte: docs/modelle.md; Haltungen: src/SilverAndAsh.Core/Presentation/GhoulPose.cs.
 """
 
 
