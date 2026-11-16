@@ -155,6 +155,9 @@ public sealed class Gorm : ITarget
     /// <summary>How far his shock wave reaches (metres) - for the warning circle before the hammer.</summary>
     public float ShockwaveReach => _gorm.ShockwaveRadius;
 
+    /// <summary>How far his chain swing reaches (metres) and at which heights above his feet it passes - for drawing.</summary>
+    public (float Reach, float Low, float High) SwingArea => (_gorm.SwingReach, _gorm.SwingLow, _gorm.SwingHigh);
+
     /// <summary>Where the hook is while it flies - null otherwise. The chain runs from his hand to it.</summary>
     public Vector3? Hook { get; private set; }
 
