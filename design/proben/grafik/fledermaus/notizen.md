@@ -137,3 +137,29 @@ Die Höhe (0,4 m) passt: Der Rumpf ist etwa 0,15 m dick, Ohren und Füße reiche
 - **Die helle Flughaut** könnte als „ein heller Vogel“ statt als Vampir gelesen werden. Die dunklen Knochen, Ohren und Fänge sollen das verhindern. Wenn sie zu freundlich wirkt, wäre der nächste Schritt eine fleckigere, kränklichere Haut, nicht eine dunklere.
 - **Der Sturzflug von vorn** zeigt vor allem den Kopf. Bedrohlich, aber kleiner als das Schweben; für eine Angriffsbewegung finde ich das richtig, weil sie schnell näher kommt.
 - **Licht für Figuren über Kopfhöhe:** Die Lichtregel bestraft Unterseiten. Für alle Figuren über Kopfhöhe (Fledermaus, später Gorm) wäre ein eigener Mindestwert für nach unten zeigende Flächen eine Überlegung, statt die Farben dafür hochzumalen. Das ist eine Entscheidung für das Spiel.
+
+## Nachtrag: Vorschlag für eine größere Fledermaus (nach dem Urteil der Leitung)
+
+Die Leitung merkt an: Aus 4 m wirkt die Fledermaus eher wie ein blasses, kleines Tier als wie eine Bedrohung. Das liegt an der Größe.
+
+**Ich meine, sie sollte größer sein.**
+
+| Was | heute | Vorschlag |
+|---|---|---|
+| Spannweite | 1,32 m | etwa 1,8 m (alles mit 1,35 skaliert) |
+| Rumpf | etwa 0,4 m lang | etwa 0,55 m lang, so groß wie ein Hund |
+| Kopf und Fänge | – | mitwachsend; die Fänge werden aus 4 m 3 bis 4 Pixel lang statt 2 bis 3 |
+
+**Aus 10 m** wäre sie nach der Messung etwa 62 statt 46 Pixel breit.
+
+**`BodySizes.Bat`:**
+
+| Wert | heute | Vorschlag |
+|---|---|---|
+| `Radius` | 0,35 | 0,6 (passt dann zu den Flügeln) |
+| `Height` | 0,4 | 0,5 |
+| `HoverHeight` | 2,2 | 2,2 |
+
+**Was zu prüfen wäre:** Bei 3,5 m hohen Räumen bleibt mit `CeilingGap` 0,3 m oben genug Luft; die Unterkante läge bei 2,2 m, knapp über Kopfhöhe. Den Sturzflug, die Treffer und die Kollision mit Wänden müsste eine Code-Sitzung prüfen, weil ein größerer Radius sie verändert.
+
+Am Modell ändert sich nur eine Skalierung im Skript. Die Leitung entscheidet.
