@@ -147,3 +147,12 @@ Items brauchen keinen Platz; beliebig viele sind gleichzeitig aktiv. **Ashen Hea
   - Mit neun Waffen ist der Umfang deutlich größer als geplant.
   - Ein zusätzlicher Meilenstein schiebt Skills und Modelle nach hinten.
 - **Negativ:** Viele neue Zahlen, alle geschätzt. Die Balancing-Runden 3 und 4 müssen sie einstellen.
+
+## Nachtrag (16.11.2026, #187): Bonus-Wahl
+
+Nach dem Anspielen gilt für die Bonus-Wahl:
+- **Laufen schließt sie nicht**, nur ein Treffer.
+- Bei offener Wahl ist die Maus frei: **Klick** oder 1–4 wählt. Umsehen geht dann nicht, laufen schon.
+- Der Hinweis „[X] Choose boon“ blinkt unter der Stufenanzeige.
+
+Für das Inventar (#193) gilt weiter „Bewegen oder ein Treffer schließt es“, bis wir es anspielen.

@@ -991,17 +991,12 @@ public sealed class GameWorld
             return;
         }
 
-        // A level up waits for its bonus: the world stands still until the choice comes in as input
-        // (online co-op rule 2 - everything that changes the game is tick input).
-        var choosing = Players.FirstOrDefault(player => player.PendingBoons > 0);
-        if (choosing is not null)
+        // A level up waits for its bonus - but the world goes on (decision record 0008): the choice comes in as input
+        // whenever the player makes it (online co-op rule 2 - everything that changes the game is tick input).
+        // Several level ups wait in line and are chosen one after the other.
+        if (input.ChooseBoon is { } boon && Players.FirstOrDefault(player => player.PendingBoons > 0) is { } choosing)
         {
-            if (input.ChooseBoon is { } boon)
-            {
-                choosing.Choose(boon, _events);
-            }
-
-            return;
+            choosing.Choose(boon, _events);
         }
 
         Player.Tick(input);

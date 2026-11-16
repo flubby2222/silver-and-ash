@@ -7,24 +7,27 @@ using SilverAndAsh.Core.Gameplay;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The window after a level up: the picture darkens, one box per boon of the offer Core drew from the pool.
-/// Choose with 1 / 2 / 3 or a click. It only reads and shows - the choice goes to Core as input
+/// The bonus choice (decision record 0008): a level up only shows the hint "[X] Choose boon" - the game goes on.
+/// X opens the window with one box per boon of the offer Core drew; 1 - 4 or a click choose (the cursor shows while
+/// it is open). Several level ups wait in line and come one after the other. Walking keeps it open; only a hit closes it;
+/// the boon keeps waiting. It only reads and shows - the choice goes to Core as input
 /// (<see cref="Core.Input.PlayerInput.ChooseBoon"/>).
 /// </summary>
 internal static class BoonWindow
 {
     /// <summary>
-    /// Seconds after the window opens before a click counts. The cursor appears in the middle - right over a box -
-    /// and attack clicks just after the killing blow must not choose a bonus by accident (found while testing).
+    /// Seconds after the window opens before a click counts: the cursor appears in the middle - right over a box - and a
+    /// click meant for the blade a moment earlier must not choose a bonus by accident (found while testing v0.7).
     /// </summary>
-    public const float ClickDelaySeconds = 0.6f;
+    public const float ClickDelaySeconds = 0.25f;
 
     private const int BoxWidth = 220;
     private const int BoxHeight = 120;
     private const int Gap = 24;
 
-    private static readonly Color Shade = new(10, 6, 12, 170);
-    private static readonly Color Box = new(32, 26, 36, 235);
+    // Barely darker: the game goes on behind it.
+    private static readonly Color Shade = new(10, 6, 12, 60);
+    private static readonly Color Box = new(32, 26, 36, 230);
     private static readonly Color BoxHovered = new(58, 44, 52, 245);
     private static readonly Color Gold = new(232, 196, 96, 255);
     private static readonly Color Text = new(220, 220, 230, 255);
@@ -34,8 +37,8 @@ internal static class BoonWindow
     private static readonly KeyboardKey[] PadKeys = [KeyboardKey.Kp1, KeyboardKey.Kp2, KeyboardKey.Kp3, KeyboardKey.Kp4];
 
     /// <summary>
-    /// The boon chosen in this frame from <paramref name="offer"/> (key 1, 2, 3 ..., or a click on a box once the window
-    /// has been open for <see cref="ClickDelaySeconds"/> - <paramref name="openSeconds"/>), or null.
+    /// The boon chosen in this frame from <paramref name="offer"/> (key 1, 2, 3, 4, or a click on a box once the
+    /// window has been open for <see cref="ClickDelaySeconds"/> - <paramref name="openSeconds"/>), or null.
     /// </summary>
     public static Boon? Pick(IReadOnlyList<Boon> offer, float openSeconds)
     {
@@ -49,6 +52,22 @@ internal static class BoonWindow
         }
 
         return openSeconds >= ClickDelaySeconds && Raylib.IsMouseButtonPressed(MouseButton.Left) ? Hovered(offer) : null;
+    }
+
+    /// <summary>
+    /// The hint while boons wait and the window is closed, flashing just below the level and its bar (bottom left):
+    /// "[X] Choose boon", with the number if several.
+    /// </summary>
+    public static void DrawHint(int pending, float seconds)
+    {
+        if (pending == 0)
+        {
+            return;
+        }
+
+        var text = pending > 1 ? $"[X] Choose boon ({pending})" : "[X] Choose boon";
+        var flash = 0.55f + (0.45f * MathF.Sin(seconds * 6f));
+        Raylib.DrawText(text, 20, Raylib.GetScreenHeight() - 104, 16, Gold with { A = (byte)(255 * flash) });
     }
 
     /// <summary>Draws the window for <paramref name="player"/>'s waiting offer, with the values of <paramref name="boons"/>.</summary>
@@ -65,6 +84,9 @@ internal static class BoonWindow
         var title = pending > 1 ? $"LEVEL UP - choose a boon ({pending} left)" : "LEVEL UP - choose a boon";
         var titleWidth = Raylib.MeasureText(title, 32);
         Raylib.DrawText(title, (width - titleWidth) / 2, height / 2 - BoxHeight / 2 - 70, 32, Gold);
+
+        const string Close = "Walk on as you like - a hit closes it, the boon keeps waiting";
+        Raylib.DrawText(Close, (width - Raylib.MeasureText(Close, 16)) / 2, height / 2 + BoxHeight / 2 + 24, 16, Muted);
 
         var hovered = Hovered(offer);
         for (var i = 0; i < offer.Count; i++)
