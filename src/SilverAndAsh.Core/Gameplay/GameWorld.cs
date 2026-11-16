@@ -871,26 +871,45 @@ public sealed class GameWorld
     /// <summary>Everything that happened in the latest tick (player and dummies). Read it after every tick.</summary>
     public IReadOnlyList<GameEvent> Events => _events;
 
-    /// <summary>A swing of <paramref name="attacker"/> hits every target in the blade's cone (see <see cref="BladeStrike"/>).</summary>
+    /// <summary>
+    /// A swing of <paramref name="attacker"/> hits every target in the weapon's cone (see <see cref="BladeStrike"/>).
+    /// A heavy weapon (the club) also knocks living ghouls and bats back - further when charged; Gorm stands firm.
+    /// </summary>
     private void StrikeWithBlade(BladeSwung swing, Player attacker)
     {
-        BreakWalls(swing, attacker);
+        var values = Balance.Melee(swing.Weapon);
+        BreakWalls(swing, attacker, values);
 
         foreach (var target in Targets.Where(target => target.IsHittable).ToList())
         {
-            if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, Balance.Blade))
+            if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, values))
             {
-                // The blade hits the whole body at once - it has no hit zone (and so no headshot bonus).
-                Damage(target, new Hit(Weapon.Blade, HitZone.Body, Balance.Blade.Damage, swing.Charge), attacker);
+                // A melee weapon hits the whole body at once - it has no hit zone (and so no headshot bonus).
+                var weapon = swing.Weapon == WeaponKind.Club ? Weapon.Club : Weapon.Blade;
+                Damage(target, new Hit(weapon, HitZone.Body, values.Damage, swing.Charge), attacker);
+                KnockBack(target, attacker, values, swing.Charge);
             }
         }
     }
 
+    private static void KnockBack(ITarget target, Player attacker, BladeBalance values, float charge)
+    {
+        var distance = values.Knockback + (charge * (values.ChargedKnockback - values.Knockback));
+        var away = target.Body.Position - attacker.Position;
+        var knockback = target switch
+        {
+            Ghoul { IsDead: false } ghoul => ghoul.Knockback,
+            Bat { IsDead: false } bat => bat.Knockback,
+            _ => null,
+        };
+        knockback?.Start(away, distance, values.KnockbackTime);
+    }
+
     /// <summary>
-    /// A fully charged swing breaks the cracked wall it is aimed at, within the blade's range. Uncharged swings and
-    /// shots leave it as it is.
+    /// A fully charged swing of any melee weapon breaks the cracked wall it is aimed at, within the weapon's range.
+    /// Uncharged swings and shots leave it as it is.
     /// </summary>
-    private void BreakWalls(BladeSwung swing, Player attacker)
+    private void BreakWalls(BladeSwung swing, Player attacker, BladeBalance values)
     {
         if (swing.Charge < 1f)
         {
@@ -899,7 +918,7 @@ public sealed class GameWorld
 
         foreach (var wall in _doors.Where(IsUnbrokenWall))
         {
-            if (Raycast.AgainstBox(swing.Origin, swing.Direction, wall.BoxMin, wall.BoxMax) is { } distance && distance <= Balance.Blade.Range)
+            if (Raycast.AgainstBox(swing.Origin, swing.Direction, wall.BoxMin, wall.BoxMax) is { } distance && distance <= values.Range)
             {
                 wall.Break();
                 UpdateLevel();

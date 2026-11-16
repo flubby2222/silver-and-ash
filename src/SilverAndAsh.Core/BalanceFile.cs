@@ -43,7 +43,8 @@ public static class BalanceFile
     {
         "player.airControl", "player.perfectJumpSpeedBonus", "player.exhaustedJumpSpeedPenalty",
         "player.landingDipPerSpeed", "player.landingDipMax", "player.landingTiltPerMetre", "player.dodgeStaminaSegments",
-        "blade.damage", "blade.chargeStaminaSegments", "blade.coneStartBehind",
+        "blade.damage", "blade.chargeStaminaSegments", "blade.coneStartBehind", "blade.knockback", "blade.chargedKnockback",
+        "club.damage", "club.chargeStaminaSegments", "club.coneStartBehind", "club.knockback", "club.chargedKnockback",
         "pistol.damage", "ghoul.attackDamage", "bat.biteDamage", "bat.spitAimBelowEyes", "bloodBolt.damage",
         "drops.ghoulChance", "drops.batChance", "drops.consecratedAmmoShare", "bloodVial.heal",
         "keys.roomChance", "keys.enemyChance", "chests.combatRoomChance", "chests.treasureChestsMin", "chests.treasureChestsMax",
@@ -62,6 +63,7 @@ public static class BalanceFile
         ["player.airControl"] = 1,
         ["player.jumpHeight"] = Cell.DefaultCeilingHeight - BodySizes.Player.Height,
         ["blade.angle"] = 180,
+        ["club.angle"] = 180,
         ["ghoul.attackHalfAngle"] = 180,
         ["drops.ghoulChance"] = 1,
         ["drops.batChance"] = 1,
@@ -93,6 +95,8 @@ public static class BalanceFile
     /// <summary>Pairs where the first may not be above the second.</summary>
     private static readonly (string Section, string Min, string Max)[] Ranges =
     [
+        ("blade", "knockback", "chargedKnockback"),
+        ("club", "knockback", "chargedKnockback"),
         ("bat", "circleRadiusMin", "circleRadiusMax"),
         ("bat", "turnRoundMin", "turnRoundMax"),
         ("bat", "circleHeightMin", "circleHeightMax"),

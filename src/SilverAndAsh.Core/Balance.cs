@@ -18,6 +18,22 @@ public sealed record Balance
     /// <summary>The silver blade.</summary>
     public BladeBalance Blade { get; init; } = new();
 
+    /// <summary>The club (decision record 0008): slower than the blade, harder, and it knocks enemies back.</summary>
+    public BladeBalance Club { get; init; } = new()
+    {
+        Cooldown = 0.55f,
+        Damage = 50,
+        Knockback = 3f,
+        ChargedKnockback = 6f,
+    };
+
+    /// <summary>The values of melee weapon <paramref name="kind"/>.</summary>
+    public BladeBalance Melee(Gameplay.WeaponKind kind) => kind switch
+    {
+        Gameplay.WeaponKind.Club => Club,
+        _ => Blade,
+    };
+
     /// <summary>The pistol with silver bullets.</summary>
     public PistolBalance Pistol { get; init; } = new();
 
@@ -421,7 +437,10 @@ public sealed record PlayerBalance
     public float CrouchTransitionTime { get; init; } = 0.1f;
 }
 
-/// <summary>Balancing values of the silver blade.</summary>
+/// <summary>
+/// Balancing values of a melee weapon - the silver blade (<see cref="Balance.Blade"/>) and the club
+/// (<see cref="Balance.Club"/>) have the same kind of values (decision record 0008).
+/// </summary>
 public sealed record BladeBalance
 {
     /// <summary>Seconds before the next swing.</summary>
@@ -450,6 +469,15 @@ public sealed record BladeBalance
     /// about a metre wide and close enemies at the side are hit. The reach still counts from the eyes.
     /// </summary>
     public float ConeStartBehind { get; init; } = 0.6f;
+
+    /// <summary>A hit pushes ghouls and bats this far away (metres; not Gorm) ...</summary>
+    public float Knockback { get; init; }
+
+    /// <summary>... and this far when fully charged (in between: linear).</summary>
+    public float ChargedKnockback { get; init; }
+
+    /// <summary>The push takes this long (seconds); meanwhile the enemy does nothing else.</summary>
+    public float KnockbackTime { get; init; } = 0.25f;
 }
 
 /// <summary>Balancing values of the pistol.</summary>

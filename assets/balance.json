@@ -41,7 +41,24 @@
     "chargeStaminaSegments": 1,         // a full charge costs this much stamina
     "range": 2,                         // m from the eyes
     "angle": 90,                        // degrees, full width of the cone (at most 180)
-    "coneStartBehind": 0.6              // m the cone's tip lies behind the eyes (wider close up)
+    "coneStartBehind": 0.6,             // m the cone's tip lies behind the eyes (wider close up)
+    "knockback": 0,                     // m the blade pushes enemies away (0 = not at all) ...
+    "chargedKnockback": 0,              // ... and fully charged ...
+    "knockbackTime": 0.25               // ... the push taking this long (s)
+  },
+
+  "club": {                             // the club (Worn): slower and harder than the blade, knocks ghouls and bats back (not Gorm)
+    "cooldown": 0.55,
+    "damage": 50,
+    "chargeTime": 1,
+    "chargeMaxMultiplier": 2,
+    "chargeStaminaSegments": 1,
+    "range": 2,
+    "angle": 90,
+    "coneStartBehind": 0.6,
+    "knockback": 3,                     // m an enemy flies back ...
+    "chargedKnockback": 6,              // ... and when fully charged
+    "knockbackTime": 0.25               // s the push takes
   },
 
   "pistol": {

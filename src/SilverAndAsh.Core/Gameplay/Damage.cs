@@ -1,10 +1,11 @@
 namespace SilverAndAsh.Core.Gameplay;
 
-/// <summary>The player's weapons.</summary>
+/// <summary>The player's weapons, as the damage rules tell them apart.</summary>
 public enum Weapon
 {
     Blade,
     Pistol,
+    Club,
 }
 
 /// <summary>Where a body was hit.</summary>
@@ -68,6 +69,7 @@ public sealed class DamageRules
         rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.Head, balance.Pistol.HeadshotMultiplier));
         rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.BossHead, balance.Gorm.HeadMultiplier));
         rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
+        rules.Add(new ChargeBonus(balance.Club.ChargeMaxMultiplier, Weapon.Club));
         rules.Add(new DamageBoonBonus(balance.Boons.Damage));
         return rules;
     }

@@ -1,3 +1,5 @@
+using SilverAndAsh.Core.Gameplay;
+
 namespace SilverAndAsh.Core.Tests;
 
 public class LaunchOptionsTests
@@ -95,5 +97,39 @@ public class LaunchOptionsTests
         var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--levle", "heights"]));
 
         Assert.Contains("--levle", error.Message);
+    }
+
+    [Fact]
+    public void Without_give_no_weapon_is_given()
+    {
+        Assert.Empty(LaunchOptions.Parse([]).Give!);
+    }
+
+    [Fact]
+    public void Give_names_weapons_in_any_case_and_as_often_as_wanted()
+    {
+        var options = LaunchOptions.Parse(["--give", "club", "--seed", "5", "--give", "PISTOL"]);
+
+        Assert.Equal([WeaponKind.Club, WeaponKind.Pistol], options.Give!);
+        Assert.Equal(5, options.Seed);
+    }
+
+    [Theory]
+    [InlineData("sword")]
+    [InlineData("1")]
+    [InlineData("")]
+    public void An_unknown_weapon_is_rejected_with_the_known_ones(string name)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--give", name]));
+
+        Assert.Contains("club", error.Message);
+    }
+
+    [Fact]
+    public void Give_without_a_weapon_is_rejected()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--give"]));
+
+        Assert.Contains("needs a weapon", error.Message);
     }
 }

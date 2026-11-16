@@ -16,7 +16,7 @@ public class CrackedWallTests
 
     // Room 0 (start) in row 0, the cracked wall in cell (2, 1) - 1 m in front of the player's eyes - and room 1
     // (the secret room) in rows 2-3. With 'far' the wall sits in row 2 instead, 3 m away.
-    private static GameWorld World(bool far = false)
+    private static GameWorld World(bool far = false, Balance? balance = null)
     {
         var map = far ? "#.P.#\n#...#\n##.##\n#...#\n#...#" : "#.P.#\n##.##\n#...#\n#...#";
         var wallRow = far ? 2 : 1;
@@ -27,7 +27,7 @@ public class CrackedWallTests
             new(1, RoomKind.Secret, "nook", 0, wallRow + 1, 5, 2, 1, Row(wallRow + 1).Concat(Row(wallRow + 2)).ToList(), [], []),
         ];
         LevelDoor[] doors = [new(2, wallRow, 0, 1, RoomSide.South, DoorKind.Cracked)];
-        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+        return new GameWorld(LevelParser.Parse(map), 1, balance ?? Balance.Default, doors, rooms);
     }
 
     /// <summary>Holds the blade for <paramref name="ticks"/> ticks and lets go; returns everything that happened.</summary>
@@ -94,6 +94,43 @@ public class CrackedWallTests
         Assert.NotSame(builtBefore, world.LevelAsBuilt);
         Assert.False(world.LevelAsBuilt[2, 1].IsSolid);
         Assert.True(world.Player.Position.Z > 4f, $"The player only got to z = {world.Player.Position.Z}.");
+    }
+
+    [Fact]
+    public void A_fully_charged_club_breaks_it_too()
+    {
+        // Every melee weapon can be charged, and every full charge breaks the wall (decision record 0008).
+        var world = World();
+        world.Player.EquipMelee(WeaponKind.Club);
+
+        var events = Swing(world, SimulationClock.SecondsToTicks(Balance.Default.Club.ChargeTime) + 5);
+
+        Assert.True(world.Doors[0].IsOpen);
+        Assert.Contains(events, e => e is WallBroken);
+    }
+
+    [Fact]
+    public void A_club_s_charged_strike_reaches_as_far_as_the_club()
+    {
+        // The wall is 3 m away - out of the blade's reach, but this club reaches further.
+        var longClub = Balance.Default with { Club = Balance.Default.Club with { Range = 4f } };
+        var world = World(far: true, balance: longClub);
+        world.Player.EquipMelee(WeaponKind.Club);
+
+        Swing(world, SimulationClock.SecondsToTicks(longClub.Club.ChargeTime) + 5);
+
+        Assert.True(world.Doors[0].IsOpen);
+    }
+
+    [Fact]
+    public void A_half_charged_club_leaves_it_whole()
+    {
+        var world = World();
+        world.Player.EquipMelee(WeaponKind.Club);
+
+        Swing(world, SimulationClock.SecondsToTicks(Balance.Default.Club.ChargeTime) / 2);
+
+        Assert.False(world.Doors[0].IsOpen);
     }
 
     [Fact]

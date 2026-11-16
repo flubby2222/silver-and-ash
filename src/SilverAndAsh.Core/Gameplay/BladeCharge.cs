@@ -77,10 +77,13 @@ public sealed class BladeCharge
     }
 }
 
-/// <summary>Damage rule: a charged blade hits harder, linearly up to <see cref="BladeBalance.ChargeMaxMultiplier"/>.</summary>
-public sealed record ChargeBonus(float MaxMultiplier) : IDamageRule
+/// <summary>
+/// Damage rule: a charged melee weapon (<paramref name="Weapon"/>, the blade unless said otherwise) hits harder,
+/// linearly up to <see cref="BladeBalance.ChargeMaxMultiplier"/>.
+/// </summary>
+public sealed record ChargeBonus(float MaxMultiplier, Weapon Weapon = Weapon.Blade) : IDamageRule
 {
     public bool IsCritical => false;
 
-    public float Multiplier(Hit hit) => hit.Weapon == Weapon.Blade ? 1f + hit.Charge * (MaxMultiplier - 1f) : 1f;
+    public float Multiplier(Hit hit) => hit.Weapon == Weapon ? 1f + hit.Charge * (MaxMultiplier - 1f) : 1f;
 }
