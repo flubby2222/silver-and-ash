@@ -168,3 +168,80 @@ Wie angenommen: glb, +Y oben, Ursprung zwischen den Füßen.
 - **Insgesamt dunkler als der alte Ghul:** Gemalte Schatten und Licht je Ecke multiplizieren sich. Das ist stimmungsvoll, aber an der Grenze zu „verschwindet im Boden“. Wenn der Rumpf zu dunkel ist, wäre der erste Schritt, die gemalten Schatten zu schwächen, nicht die Grundfarbe aufzuhellen.
 - **Gefahr Spinne:** Die vier gleich langen, gleich dicken Stangen sind das Bestien-Merkmal, das der Mensch nicht will. Gegenmittel für die nächste Runde: Oberschenkel kürzer und dicker als die Arme, Knie weiter unter dem Bauch; die Oberarme bleiben eng am Körper.
 - **Rückseite:** Das Becken endet in einer runden Kappe, die von hinten wie eine Glatze wirkt. Eine Lumpenfalte darüber würde das beheben.
+
+---
+
+# Fassung 2: Nacharbeit (2026-11-16)
+
+Die Leitung hat die Richtung angenommen und zwei Punkte zurückgegeben: von vorn ein Stelzenwesen statt eines kriechenden Menschen, und aus 10 m fast weg.
+
+- **Skript:** [`ghul2_v2.py`](ghul2_v2.py) mit den gemeinsamen Bausteinen aus [`../gemeinsam/psx.py`](../gemeinsam/psx.py). Kopf, Kiefer, Textur-Maler und Posen sind aus `ghul2.py` übernommen.
+- **Erste Fassung:** `ghul2.py` und ihre Bilder bleiben unverändert.
+- **Neue Dateien:** tragen `_v2` im Namen.
+
+```bash
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python design/proben/grafik/ghul-2/ghul2_v2.py
+```
+
+## Was sich geändert hat
+
+1. **Von vorn ein Mensch** (`ansicht_vorn_v2.png`, `spiel_4m_ruhe_*_v2.png`):
+   - Das Becken liegt jetzt tiefer: Hüfte 0,46 m statt 0,56 m. Der Rücken steigt zu den Schultern an, wie bei einem Menschen auf Händen und Knien.
+   - Die Knie stehen weit auseinander (±0,22 m statt ±0,15 m) und unter dem Bauch. Die Oberschenkel laufen schräg nach außen unten, statt als senkrechte Säulen hinter den Armen zu stehen.
+   - Der Brustkorb ist tiefer und hängt nach unten. Von vorn sieht man Schultern, hängenden Brustkorb mit Rippen und dahinter die angewinkelten Beine.
+2. **Aus 10 m eine Masse:**
+   - Rippenkorb und Schultern sind breiter: Schultern ±0,20 m statt ±0,17 m.
+   - Die Oberarme sind dicker (5,8 cm statt 4,5 cm Halbmesser an der Schulter), ebenso Unterarme und Oberschenkel. Das ist Knochen unter Haut, keine Strichfigur.
+   - Die gemalten Schatten sind schwächer: Unterseite 0,90 statt 0,84, Gelenke 20 % statt 28 %, Rippenzwischenräume 60 % statt 75 %.
+3. **Gang mit Steintextur:**
+   - Wand 64 × 64 im Läuferverband (Blöcke 0,5 × 0,25 m), Boden mit Platten 0,5 × 0,5 m, Decke mit großen Blöcken.
+   - Je 16 Farben, eine Wiederholung pro Meter, keine Filterung.
+   - Die mittlere Helligkeit entspricht den heutigen Flächenfarben des Spiels.
+   - Die Texturen liegen in `../gemeinsam/stein_*.png` und gelten für alle Probestücke.
+
+## Messung
+
+Gemessen mit nur dem Ghul im Bild; gezählt sind gedeckte Pixel je Bildzeile. Vollständig in `messung_v2.txt`.
+
+| Aus | Figur hoch | Rumpf breit | Oberarm, Unterarm, Oberschenkel |
+|---|---|---|---|
+| 10 m | 35 Pixel | 10 bis 18 Pixel | je etwa 3 Pixel |
+| 4 m | 94 Pixel | 24 bis 46 Pixel | 7 bis 8 Pixel |
+
+Erste Fassung aus 10 m zum Vergleich: Glieder 1 bis 2 Pixel. Ein Pixel entspricht dort etwa 3 cm.
+
+**Urteil aus meinen Bildern** (`vergleich_v1_v2_10m.png`): Aus 10 m liest sich jetzt eine geduckte Gestalt mit breiten Schultern und abgestützten Armen. Die Arme sind 3 Pixel breit, also gerade an der Grenze. Mit Dither fällt das Ausblenden erst ab 9 m an; die Arme halten.
+
+## Zahlen
+
+- **Dreiecke:** 1 024, wie Fassung 1. Es haben sich nur Lage und Querschnitte geändert.
+- **Maße:**
+  - Seitlich bis 0,36 m, damit innerhalb von `Radius = 0,4`.
+  - Nach vorn greifen die Krallen bis 0,65 m, nach hinten reichen die Zehen bis 0,44 m.
+  - Kopf mit Kiefer 0,70 bis 0,935 m hoch, 0,14 m breit, ab 0,23 m vor der Mitte: unverändert in der Kopfzone.
+- **Drehpunkte, die sich verschoben haben:**
+
+  | Teil | Fassung 1 | Fassung 2 |
+  |---|---|---|
+  | `torso` | 0, 0,56, −0,24 | 0, 0,46, −0,23 |
+  | Schultern | ±0,165, 0,68, 0,17 | ±0,19, 0,67, 0,16 |
+  | Ellbogen | ±0,30, 0,40, 0,22 | ±0,31, 0,38, 0,22 |
+  | Hüftgelenke | ±0,095, 0,55, −0,24 | ±0,10, 0,44, −0,22 |
+  | Knie | ±0,15, 0,09, 0 | ±0,22, 0,07, −0,04 |
+
+  Kopf und Kiefer sind unverändert.
+
+## Bilder der Fassung 2
+
+| Bild | Was |
+|---|---|
+| `ansicht_vorn_v2.png`, `ansicht_seite_v2.png`, `ansicht_hinten_v2.png`, `ansicht_schraeg_oben_v2.png` | vier Ansichten |
+| `spiel_4m_ruhe_nebel_v2.png`, `spiel_4m_ausholen_nebel_v2.png`, `spiel_10m_ruhe_nebel_v2.png` | im Steingang mit Nebel |
+| `spiel_4m_ruhe_dither_v2.png`, `spiel_4m_ausholen_dither_v2.png`, `spiel_10m_ruhe_dither_v2.png` | im Steingang mit Dither |
+| `vergleich_v1_v2_4m.png`, `vergleich_v1_v2_10m.png` | erste gegen zweite Fassung, Ausschnitt vergrößert. Achtung: Die erste Fassung steht im einfarbigen Gang, die zweite im Steingang |
+| `ghul2_textur_v2.png` | die Textur |
+
+## Unsicher
+
+- **Arme aus 10 m:** Mit 3 Pixeln sind sie gerade an der Grenze. Noch dicker würde aus der Nähe nicht mehr ausgemergelt aussehen.
+- **Steingang:** Er ist hell und unruhig. Der Ghul hebt sich durch den grünlichen Farbton ab, aber das Muster der Wände konkurriert mit der Figur. Wie stark die Steintextur sein darf, wäre eine eigene Probe.
