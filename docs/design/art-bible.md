@@ -6,7 +6,7 @@ Dieses Dokument liest der Grafikdesigner vor jeder Aufgabe. Es hat zwei Teile: d
 
 **Maßstab** für alle weiteren Figuren ist der Ghul aus Probestück 3 (Ordner `design/proben/grafik/ghul-2/` auf dem Branch des Grafikdesigners, `claude/design-probe-ghul-45a8c4`), in der nachgearbeiteten Fassung.
 
-**Die Art Bible hat Vorrang vor der Recherche.** Wo [Grundlagen Grafik](grundlagen-grafik.md) etwas anderes sagt, gilt dieses Dokument. Bekannte Abweichungen dort: Abschnitt 5 rechnet noch ohne Texturen; die Regel „15-Bit-Rasterung am Ende des Shaders“ ist nicht entschieden (ADR 0010, „Noch offen“); „400 Dreiecke am oberen Rand der PS1“ ist falsch gerechnet (400 liegt im unteren Drittel von 250 bis 750); Verweise auf `ghul-2` und einzelne Bilder zeigen auf den Branch des Designers, nicht auf `main`.
+**Die Art Bible hat Vorrang vor der Recherche.** Wo [Grundlagen Grafik](grundlagen-grafik.md) etwas anderes sagt, gilt dieses Dokument. Bekannte Abweichungen dort: Abschnitt 5 rechnet noch ohne Texturen; die Sichtgrenze per Punktmuster aus Nachtrag b ist verworfen (ADR 0010: Körnung ja, Nebel bleibt); „400 Dreiecke am oberen Rand der PS1“ ist falsch gerechnet (400 liegt im unteren Drittel von 250 bis 750); Verweise auf `ghul-2` und einzelne Bilder zeigen auf den Branch des Designers, nicht auf `main`.
 
 ## Leitbild
 
@@ -27,6 +27,7 @@ Wörtlich aus dem Gespräch mit der Leitung (Tippfehler berichtigt); ADR 0010 un
 - Zur Sichtgrenze: Er überlegt, sie „mit einem Dithering-Effekt zu beschränken, statt des schwarzen Mantels … Wenn, dann aber alles im selben Stil.“
 - Zum Ghul: ein ausgemergelter Mensch, kriechend.
 - Zum zweiten Entwurf (Textur, 1 024 Dreiecke): „Ja, Richtung stimmt.“
+- Zum Vergleich der vier Bild-Varianten aus dem Spiel: „2: Körnung mit Nebel“.
 
 ## Technischer Rahmen
 
@@ -48,7 +49,7 @@ Die Formeln aus dem Shader, mit Entfernung `d` in Metern zur Kamera:
 
 **Was das Spiel noch nicht kann:** Es zeichnet heute nur einfarbige Flächen und einfache Körper (Quader, flache Scheiben), meist mit einer Helligkeit je Fläche; es lädt keine Texturen und keine Modelle. Texturierte Modelle laden und weich schattieren muss es erst lernen. Bis dahin entstehen Probebilder in Blender.
 
-**Noch nicht entschieden** (ADR 0010, Abschnitt „Noch offen“): ob das Bild auf 15 Bit mit Punktmuster gerastert wird, ob die Sichtgrenze Nebel bleibt oder ein Ausblenden über das Punktmuster wird, und ob die Bildauflösung sinkt. Probebilder zeigen deshalb **beide** Fassungen der Sichtgrenze. Damit Bilder verschiedener Stücke vergleichbar sind, gelten für die Fassung mit Punktmuster diese **vorläufigen Prüfwerte** (keine Entscheidung): festes 4 × 4-Muster (Bayer) an der Bildschirmposition, Farbe auf 5 Bit je Kanal gerastert, Ausblenden linear von 9 m bis 18,2 m, keine Nebelfarbe beigemischt, die Laterne dunkelt weiter ab.
+**Bild und Sichtgrenze** (ADR 0010, entschieden am 2026-11-16): Das 3D-Bild wird auf 15 Bit (5 je Kanal) mit festem 4 × 4-Punktmuster gerastert; **der Nebel bleibt** die Sichtgrenze; die Auflösung bleibt 854 × 480. Probebilder zeigen deshalb Nebel **mit** dieser Körnung: Muster (Bayer) an der Bildschirmposition, nach Licht, Laterne und Nebel angewendet. Die frühere Fassung „Ausblenden über das Punktmuster“ entfällt.
 
 ## Regeln für Modelle
 
@@ -59,7 +60,7 @@ Die Formeln aus dem Shader, mit Entfernung `d` in Metern zur Kamera:
 | Verteilung der Dreiecke | etwa ein Viertel in Kopf und Hände; Rundungen mit 8 bis 12 Seiten |
 | Filterung | keine, auch keine Mipmaps: Texel bleiben harte Quadrate |
 | Kopf in der Textur | mindestens ein Achtel der Fläche |
-| Dithering in der Textur | keines. Falls gerastert wird, geschieht das am Ende im Bild, sonst doppelt sich das Muster |
+| Dithering in der Textur | keines. Gerastert wird am Ende im Bild, sonst doppelt sich das Muster |
 | Schattierung | weich über die Ecken (Gouraud): Helligkeit je Ecke aus ihrer Richtung, über die Fläche verlaufend |
 | Licht in der Textur | nur gemalte Tiefe (Rippen, Höhlen, Falten) und Licht von oben; nie die Richtung der Laterne |
 | UVs | entstehen beim Bauen im Skript; Nähte auf die Unterseite; spiegelbildliche Teile dürfen sich Textur teilen |
@@ -115,7 +116,7 @@ Figuren hängen im Spiel hinter einer austauschbaren Schnittstelle (z. B. `IGhou
 Alle Bilder entstehen in Blender, mit dem Skript des Probestücks, ohne Fenster:
 
 1. **Vier Ansichten** (vorn, Seite, hinten, schräg oben) vor der Nebelfarbe, mit Textur und Schattierung.
-2. **Bilder unter Spielbedingungen** in 854 × 480 mit 70° vertikalem Blickwinkel aus Augenhöhe 1,6 m: Ruhehaltung aus 2 m, aus 4 m und aus 10 m, bei Gegnern zusätzlich die Ankündigung aus 4 m. Jeweils **einmal mit Nebel und einmal mit Sichtgrenze per Punktmuster**, bis das entschieden ist.
+2. **Bilder unter Spielbedingungen** in 854 × 480 mit 70° vertikalem Blickwinkel aus Augenhöhe 1,6 m: Ruhehaltung aus 2 m, aus 4 m und aus 10 m, bei Gegnern zusätzlich die Ankündigung aus 4 m. Alle mit Nebel und 15-Bit-Körnung (siehe „Technischer Rahmen“).
 3. **Der Gang im Bild ist texturiert**, im selben Stil wie das Stück.
 4. **Die Textur** selbst als Bild.
 5. **Notizen:** Dreiecke je Teil, Texturgröße und wie sie erzeugt ist, Farben, Drehpunkte, angewendete Regeln, und wo der Designer unsicher ist.
