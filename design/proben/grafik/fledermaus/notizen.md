@@ -23,12 +23,12 @@ Alles erzeugt [`fledermaus.py`](fledermaus.py) mit [`../gemeinsam/psx.py`](../ge
 3. **Umriss:** große, spitze Ohren, nach außen gestellt; Daumenkrallen am Handgelenk; hängende Hinterbeine mit Krallenfüßen; ausgebuchtete Hinterkante der Flügel.
 4. **Maul:** lange, weiße obere Fangzähne (222, 218, 196), das Hellste am Tier, dazu eine kleinere Reihe dahinter und untere Fänge. Beim Kreischen ist das Maul weit offen.
 
-**Gemessen aus 10 m**, mit Nebel, im selben Gang, Schwebehaltung; vollständig in `messung.txt`:
+**Gemessen aus 10 m**, mit Nebel und Körnung, im selben Gang, Schwebehaltung; vollständig in `messung.txt`:
 
 | | Größe | gedeckte Pixel | mittlere Helligkeit | Umgebung |
 |---|---|---|---|---|
 | Platzhalter | 28 × 13 Pixel | 76 | 23 | 16 |
-| neu | 46 × 12 Pixel | 212 | 38 (mit Punktmuster 51) | 16 |
+| neu | 46 × 12 Pixel | 212 | 38 | 16 |
 
 Die neue Fledermaus deckt fast dreimal so viele Pixel und hebt sich mehr als doppelt so weit vom Hintergrund ab. Der Unterschied ist in `vergleich_platzhalter_10m.png` deutlich: links ein dunkler Fleck mit zwei roten Punkten, rechts eine helle, breite Fledermaus.
 
@@ -36,17 +36,24 @@ Die neue Fledermaus deckt fast dreimal so viele Pixel und hebt sich mehr als dop
 
 ## Bilder
 
-Alle Spielbilder: 854 × 480, 70° vertikal, Augen auf 1,6 m, Blick auf die Fledermaus. Sie schwebt mit dem Rumpf auf 2,4 m (Schwebehöhe 2,2 m plus halbe Körperhöhe, wie der Platzhalter) und ist zum Spieler gedreht. Der Gang hat die gemeinsame Steintextur. Jedes Spielbild gibt es mit Nebel und mit Punktmuster (vorläufige Prüfwerte der Art Bible).
+Alle Spielbilder: 854 × 480, 70° vertikal, Augen auf 1,6 m, Blick auf die Fledermaus. Sie schwebt mit dem Rumpf auf 2,4 m (Schwebehöhe 2,2 m plus halbe Körperhöhe, wie der Platzhalter) und ist zum Spieler gedreht. Der Gang hat die gemeinsame Steintextur.
+
+**Eine Fassung**, nach der Entscheidung des Menschen vom 2026-11-16 („Körnung mit Nebel“):
+
+- Nebel als Sichtgrenze wie bisher.
+- Danach wird das ganze Bild auf 15 Bit (5 je Kanal) mit festem 4 × 4-Bayer-Muster an der Bildschirmposition gerastert.
+
+Im gemeinsamen Modul ist das `compose(..., "spiel")`. Die erste Abgabe mit `_nebel`- und `_dither`-Bildern ist durch diese ersetzt; sie liegt in Commit `945ac1a`.
 
 | Bild | Was |
 |---|---|
 | `ansicht_vorn.png`, `ansicht_seite.png`, `ansicht_hinten.png`, `ansicht_schraeg_oben.png` | vier Ansichten nach der Art Bible, Schwebehaltung |
 | `ansicht_unten.png` | zusätzlich von unten, so wie sie der Spieler sieht |
-| `spiel_2m_schweben_*.png`, `spiel_4m_schweben_*.png`, `spiel_10m_schweben_*.png` | Ruhehaltung (Mitte des Flügelschlags) aus 2 m, 4 m, 10 m |
-| `spiel_4m_schweben_oben_*.png`, `spiel_4m_schweben_unten_*.png` | Flügel oben, Flügel unten |
-| `spiel_4m_kreischen_*.png` | Kreischen, die Ankündigung des Sturzflugs |
-| `spiel_4m_sturzflug_*.png` | Sturzflug |
-| `platzhalter_10m_nebel.png`, `vergleich_platzhalter_10m.png` | Platzhalter aus `BatViews.cs` im selben Gang aus 10 m; Vergleich vierfach vergrößert, links Platzhalter, rechts neu |
+| `spiel_2m_schweben.png`, `spiel_4m_schweben.png`, `spiel_10m_schweben.png` | Ruhehaltung (Mitte des Flügelschlags) aus 2 m, 4 m, 10 m |
+| `spiel_4m_schweben_oben.png`, `spiel_4m_schweben_unten.png` | Flügel oben, Flügel unten |
+| `spiel_4m_kreischen.png` | Kreischen, die Ankündigung des Sturzflugs |
+| `spiel_4m_sturzflug.png` | Sturzflug |
+| `platzhalter_10m.png`, `vergleich_platzhalter_10m.png` | Platzhalter aus `BatViews.cs` im selben Gang aus 10 m; Vergleich vierfach vergrößert, links Platzhalter, rechts neu |
 | `fledermaus_textur.png` | die Textur, 128 × 128 |
 
 ## Haltungen

@@ -503,7 +503,15 @@ BAYER4 = (np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]
 
 
 def compose(p, mode):
-    """'ansicht' (ohne Nebel und Laterne), 'nebel' (wie das Spiel heute) oder 'dither' (15 Bit, Sichtgrenze)."""
+    """'spiel' (entschieden 2026-11-16: Nebel als Sichtgrenze, danach 15 Bit mit 4x4-Bayer-Koernung),
+    'ansicht' (ohne Nebel und Laterne), sowie fuer aeltere Probestuecke 'nebel' (ohne Koernung) und
+    'dither' (Ausblenden ueber das Punktmuster, verworfen)."""
+    if mode == "spiel":
+        col = compose(p, "nebel")
+        h, w = col.shape[:2]
+        ys, xs = np.mgrid[0:h, 0:w]
+        thr = BAYER4[ys % 4, xs % 4][..., None]
+        return np.clip(np.floor((col + (thr - 0.5) * 8) / 8) * 8 + 4, 0, 255)
     base = p["base"][..., :3] * 255
     light = p["light"][..., :1]
     d = p["dist"][..., :1]

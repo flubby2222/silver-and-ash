@@ -438,14 +438,13 @@ def main():
             write_light(o)
         aim(cam, G(eye), G(HOVER_CENTRE))
         passes = render_passes(f"{name}_{d}", visible=model + room)
-        for mode in ("nebel", "dither"):
-            img = compose(passes, mode)
-            save_png(img, os.path.join(OUT_DIR, f"spiel_{d}m_{name}_{mode}.png"))
-            results[(name, d, mode)] = img
+        # Eine Fassung (Entscheidung des Menschen 2026-11-16): Nebel als Sichtgrenze, 15-Bit-Koernung.
+        img = compose(passes, "spiel")
+        save_png(img, os.path.join(OUT_DIR, f"spiel_{d}m_{name}.png"))
+        results[(name, d)] = img
         if d in (4, 10) and name == "schweben":
             mask = coverage(render_passes(f"mess_{d}", visible=model))
-            report.append(measure(mask, results[(name, d, "nebel")], f"Neu aus {d} m (Nebel)"))
-            report.append(measure(mask, results[(name, d, "dither")], f"Neu aus {d} m (Punktmuster)"))
+            report.append(measure(mask, img, f"Neu aus {d} m"))
 
     # Platzhalter aus 10 m im selben Gang.
     eye = V(0, 1.6, 10)
@@ -454,12 +453,12 @@ def main():
     for o in placeholder:
         write_light(o)
     passes = render_passes("platzhalter_10", visible=placeholder + room)
-    ph = compose(passes, "nebel")
-    save_png(ph, os.path.join(OUT_DIR, "platzhalter_10m_nebel.png"))
-    report.append(measure(coverage(render_passes("mess_ph", visible=placeholder)), ph, "Platzhalter aus 10 m (Nebel)"))
+    ph = compose(passes, "spiel")
+    save_png(ph, os.path.join(OUT_DIR, "platzhalter_10m.png"))
+    report.append(measure(coverage(render_passes("mess_ph", visible=placeholder)), ph, "Platzhalter aus 10 m"))
     # Ausschnitt um die Fledermaus: links Platzhalter, rechts neu, vierfach vergroessert.
     rows, cols = (195, 285), (367, 487)
-    save_png(side_by_side([zoom(ph, rows, cols, 4), zoom(results[("schweben", 10, "nebel")], rows, cols, 4)]),
+    save_png(side_by_side([zoom(ph, rows, cols, 4), zoom(results[("schweben", 10)], rows, cols, 4)]),
              os.path.join(OUT_DIR, "vergleich_platzhalter_10m.png"))
     with open(os.path.join(OUT_DIR, "messung.txt"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(report) + "\n")

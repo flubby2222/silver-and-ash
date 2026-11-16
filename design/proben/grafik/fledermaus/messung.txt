@@ -1,5 +1,3 @@
-Neu aus 4 m (Nebel): 114 x 35 Pixel, 1464 Pixel gedeckt, mittlere Helligkeit 74 gegen Umgebung 20 (hellste 10 %: 95)
-Neu aus 4 m (Punktmuster): 114 x 35 Pixel, 1464 Pixel gedeckt, mittlere Helligkeit 75 gegen Umgebung 22 (hellste 10 %: 97)
-Neu aus 10 m (Nebel): 46 x 12 Pixel, 212 Pixel gedeckt, mittlere Helligkeit 38 gegen Umgebung 16 (hellste 10 %: 48)
-Neu aus 10 m (Punktmuster): 46 x 12 Pixel, 212 Pixel gedeckt, mittlere Helligkeit 51 gegen Umgebung 16 (hellste 10 %: 73)
-Platzhalter aus 10 m (Nebel): 28 x 13 Pixel, 76 Pixel gedeckt, mittlere Helligkeit 23 gegen Umgebung 16 (hellste 10 %: 27)
+Neu aus 4 m: 114 x 35 Pixel, 1464 Pixel gedeckt, mittlere Helligkeit 74 gegen Umgebung 20 (hellste 10 %: 97)
+Neu aus 10 m: 46 x 12 Pixel, 212 Pixel gedeckt, mittlere Helligkeit 38 gegen Umgebung 16 (hellste 10 %: 49)
+Platzhalter aus 10 m: 28 x 13 Pixel, 76 Pixel gedeckt, mittlere Helligkeit 23 gegen Umgebung 16 (hellste 10 %: 28)
