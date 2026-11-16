@@ -19,7 +19,8 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "gemeinsam"))
 import bpy  # noqa: E402
 from mathutils import Matrix  # noqa: E402
-from arm import C, build_arm, paint_glove, paint_sleeve  # noqa: E402
+from arm import C, build_hand as build_glove_hand, paint_glove2, paint_cuff, paint_sleeve  # noqa: E402
+from psx import load_png, side_by_side, zoom  # noqa: E402
 from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
                  export_material, stone_textures, build_room, pass_material, write_light, pose,
                  setup_render, camera, aim, render_passes, compose, save_png)
@@ -37,7 +38,8 @@ RECTS = {
     "blade": (0, 64, 128, 128),
     "silver": (0, 48, 64, 64),
     "grip": (64, 48, 128, 64),
-    "glove": (0, 0, 64, 48),
+    "glove": (0, 16, 64, 48),
+    "cuff": (0, 0, 64, 16),
     "sleeve": (64, 0, 128, 48),
 }
 UV = rects_from_pixels(RECTS, TEX)
@@ -83,7 +85,7 @@ def paint_grip(U, V_):
 
 
 PAINTERS = {"blade": paint_blade, "silver": paint_silver, "grip": paint_grip,
-            "glove": paint_glove, "sleeve": paint_sleeve}
+            "glove": paint_glove2, "cuff": paint_cuff, "sleeve": paint_sleeve}
 
 
 def build_sword():
@@ -109,12 +111,11 @@ def build_sword():
 def build_hand():
     part = Part("arm", (0, 0, 0), UV, parent="sword")
     # Linke Hand: Punkte fuer die rechte Seite angegeben, s = -1 spiegelt sie.
-    build_arm(part, -1,
-              grip=[(0, 0, -0.008), (0, 0, -0.024), (0, 0, -0.04), (0, 0, -0.056)],
-              wrist=(0.01, -0.016, -0.08), elbow=(0.11, -0.16, -0.27),
-              thumb=((0.012, 0.009, -0.04), (0.004, 0.013, -0.012)),
-              index=((-0.012, -0.002, -0.014), (-0.006, -0.006, -0.002)),
-              fist_ref=V(0, 1, 0))
+    # Zweite Fassung der Hand: vier Finger um den Griff, Knoechel oben aussen, Daumen innen oben, Stulpe.
+    build_glove_hand(part, -1, top=(0, 0, -0.008), bottom=(0, 0, -0.058), outer=(0.8, 0.6, 0),
+                     radius=0.0165, finger_ts=(0.006, 0.017, 0.028, 0.039),
+                     wrist=(0.012, -0.004, -0.082), elbow=(0.11, -0.16, -0.27),
+                     thumb=((-0.002, 0.016, -0.05), (-0.012, 0.013, -0.03), (-0.011, 0.009, -0.012)))
     return part
 
 
@@ -131,7 +132,7 @@ def hand_matrix(t=0.0, wind=0.0):
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     tex = paint_atlas(RECTS, PAINTERS, TEX, colors=32, seed=9)
-    image = save_image("blade", tex, os.path.join(OUT_DIR, "klinge_textur.png"))
+    image = save_image("blade", tex, os.path.join(OUT_DIR, "klinge_textur_v2.png"))
     coll = bpy.data.collections.new("Klinge")
     bpy.context.scene.collection.children.link(coll)
     mat = export_material("blade", image)
@@ -143,7 +144,7 @@ def main():
     pose([sword], {})
     bpy.ops.object.select_all(action="DESELECT")
     sword.select_set(True)
-    bpy.ops.export_scene.gltf(filepath=os.path.join(OUT_DIR, "klinge.glb"), export_format="GLB",
+    bpy.ops.export_scene.gltf(filepath=os.path.join(OUT_DIR, "klinge_v2.glb"), export_format="GLB",
                               use_selection=True, export_yup=True, export_normals=True,
                               export_vertex_color="NONE", export_materials="EXPORT", export_texcoords=True)
 
@@ -162,7 +163,7 @@ def main():
     for name, loc in {"ansicht_links": C(-0.55, 0.05, 0.03), "ansicht_hinten_oben": C(0.08, 0.3, -0.42),
                       "ansicht_oben": C(0.0, 0.6, 0.05)}.items():
         aim(cam, G(loc), centre)
-        save_png(compose(render_passes(name, visible=model), "ansicht"), os.path.join(OUT_DIR, name + ".png"))
+        save_png(compose(render_passes(name, visible=model), "ansicht"), os.path.join(OUT_DIR, name + "_v2.png"))
 
     # Ich-Sicht im Gang.
     stone = stone_textures(os.path.join(os.path.dirname(OUT_DIR), "gemeinsam"))
@@ -175,8 +176,12 @@ def main():
         for o in model:
             write_light(o)
         passes = render_passes(f"ich_{state}", visible=model + room)
-        for mode in ("nebel", "dither"):
-            save_png(compose(passes, mode), os.path.join(OUT_DIR, f"ich_sicht_{state}_{mode}.png"))
+        img = compose(passes, "spiel")                   # entschieden: Nebel mit Koernung
+        save_png(img, os.path.join(OUT_DIR, f"ich_sicht_{state}_v2.png"))
+        if state == "ruhe":
+            old = load_png(os.path.join(OUT_DIR, "ich_sicht_ruhe_nebel.png"))
+            save_png(side_by_side([zoom(old, (0, 240), (0, 427), 2), zoom(img, (0, 240), (0, 427), 2)]),
+                     os.path.join(OUT_DIR, "vergleich_hand.png"))
 
 
 main()

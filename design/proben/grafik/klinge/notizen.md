@@ -66,3 +66,30 @@ Alles erzeugt [`klinge.py`](klinge.py) mit [`../gemeinsam/psx.py`](../gemeinsam/
 - **Der Schlag ist sehr nah:** Bei 95° Drehung und 45° Neigung liegt die Klinge quer durchs halbe Bild, und die Faust wird groß und dunkel. Das ist der Höhepunkt eines schnellen Schlags (40 % von 0,28 s), im Spiel nur einen Augenblick zu sehen. Im Standbild wirkt es wuchtig, vielleicht zu sehr.
 - **Ausholen:** Die Spitze dreht nach links und zum Teil aus dem Bild. Das ist die Ankündigung des aufgeladenen Schlags; man sieht vor allem Faust und unteren Teil der Klinge.
 - **Klinge von der Seite:** In `ansicht_links.png` ist die Klinge sehr dünn (Rautenquerschnitt 5 mm). Im Spiel sieht man sie nie so, aber eine etwas dickere Rippe würde aus manchen Drehungen besser lesen.
+
+
+---
+
+# Fassung 2: Waffenhand mit Fingern (2026-11-16)
+
+Nacharbeit wie bei der Pistole, mit derselben Hand aus [`../gemeinsam/arm.py`](../gemeinsam/arm.py) (`build_hand`), hier links.
+
+**Aufbau der Hand:**
+
+- **Finger:** vier Finger umgreifen den waagerechten Griff von oben außen nach unten innen. Die Knöchelreihe liegt oben außen und ist aus der Ich-Sicht zu sehen.
+- **Daumen:** liegt innen oben nach vorn.
+- **Stulpe:** mit Naht und Nieten.
+
+**Dreiecke:** Hand und Ärmel 396 (vorher 248). Die Klinge selbst ist unverändert.
+
+**Bilder:**
+
+| Bild | Was |
+|---|---|
+| `ich_sicht_ruhe_v2.png`, `ich_sicht_ausholen_v2.png`, `ich_sicht_schlag_v2.png` | Ich-Sicht mit Nebel und Körnung |
+| `vergleich_hand.png` | Ausschnitt unten links: links Fassung 1, rechts Fassung 2, doppelt vergrößert |
+| `ansicht_links_v2.png`, `ansicht_hinten_oben_v2.png`, `ansicht_oben_v2.png` | freie Ansichten mit der neuen Hand |
+
+**Für die Übergabe:** `design/uebergabe/assets/models/blade_hand.glb` ist neu erzeugt.
+
+**Unsicher:** In der Ruhe-Ansicht verdeckt die Faust einen guten Teil des Griffs, man sieht vor allem Handrücken und Stulpe. Die Finger erkennt man am deutlichsten beim Schlag, wenn die Hand näher kommt.

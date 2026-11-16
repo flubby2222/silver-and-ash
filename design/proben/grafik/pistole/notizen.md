@@ -129,3 +129,36 @@ Fassung 1 (`pistole.py` und ihre Bilder) bleibt unverändert.
 
 - **Silber dominiert:** Aus der Nähe ist das Silber an Schloss und Lauf sehr hell, und die Waffe wirkt silberner als in den freien Ansichten. Das passt zur Regel „Silber gehört dem Jäger“, lenkt aber vom Bild ab. Eine stärker angelaufene Silberfarbe wäre ruhiger.
 - **Die Hand ist eine Faust ohne Finger:** Das liest sich als Handschuh, nicht als Hand mit Fingern. Für PS1-nah reicht das, meine ich.
+
+
+---
+
+# Fassung 3: Waffenhand mit Fingern (2026-11-16)
+
+Nacharbeit auf Wunsch der Leitung: Die Hand war ein dunkler Block ohne Finger oder Knöchel. Neu ist der gemeinsame Baustein `build_hand` in [`../gemeinsam/arm.py`](../gemeinsam/arm.py), den Pistole und Klinge nutzen.
+
+**Aufbau der Hand:**
+
+- **Finger:** drei Finger einzeln, jeder als gekrümmtes Glied auf einem Bogen um die Griffachse, vom Knöchel außen über vorn nach innen.
+- **Zeigefinger:** gestreckt am Abzug.
+- **Daumen:** über der linken Griffseite nach vorn.
+- **Handrücken:** flach, mit Knöchelreihe.
+- **Stulpe:** aus dickerem Leder, weitet sich zum Unterarm, mit umgeschlagenem Rand, Naht entlang des Randes, Längsnaht oben und zwei Silbernieten.
+- **Ärmel:** wie bisher.
+- **Handschuh:** heller und kühl-grau (74, 66, 66) statt fast schwarz. Er ist oben heller, damit die Knöchel lesen, hat Gelenkfalten und zurückhaltende Seitennähte. Kräftige helle Nähte wirkten im ersten Versuch wie Klebeband.
+
+**Dreiecke:** Hand und Ärmel 376 (vorher 248). Die Pistole selbst ist unverändert.
+
+**Textur:** 128 × 128. Der Handschuh hat jetzt 64 × 32, die Stulpe 64 × 16, der Ärmel 64 × 48.
+
+**Bilder:**
+
+| Bild | Was |
+|---|---|
+| `ich_sicht_ruhig_v3.png`, `ich_sicht_rueckstoss_v3.png` | Ich-Sicht in der entschiedenen Fassung: Nebel mit Körnung |
+| `vergleich_hand.png` | Ausschnitt unten rechts: links Fassung 2, rechts Fassung 3, doppelt vergrößert |
+| `ansicht_hinten_oben_v3.png` | freie Ansicht aus Spielersicht |
+
+**Für die Übergabe:** `design/uebergabe/assets/models/pistol_hand.glb` ist neu erzeugt, Dateiname und Drehpunkt sind gleich geblieben.
+
+**Unsicher:** Die Finger sind fünfeckige Röhren und wirken aus der Nähe wurstig. Im Bild sieht man vor allem Knöchel und Stulpe, das trägt. Mehr Dreiecke würden die Finger runder machen; Budget wäre da.

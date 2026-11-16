@@ -23,10 +23,10 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "gemeinsam"))
 import bpy  # noqa: E402
 from mathutils import Matrix  # noqa: E402
-from arm import build_arm, paint_glove, paint_sleeve  # noqa: E402
+from arm import build_hand as build_glove_hand, paint_glove2, paint_cuff, paint_sleeve  # noqa: E402
 from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
                  export_material, stone_textures, build_room, pass_material, write_light, pose, raise_fwd,
-                 setup_render, camera, aim, render_passes, compose, save_png, load_png, side_by_side)
+                 setup_render, camera, aim, render_passes, compose, save_png, load_png, side_by_side, zoom)
 
 OUT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEX = 128
@@ -46,7 +46,8 @@ RECTS = {
     "bore": (0, 48, 16, 64),
     "steel": (16, 48, 48, 64),
     "flash": (48, 48, 64, 64),
-    "glove": (0, 0, 64, 48),
+    "glove": (0, 16, 64, 48),
+    "cuff": (0, 0, 64, 16),
     "sleeve": (64, 0, 128, 48),
 }
 UV = rects_from_pixels(RECTS, TEX)
@@ -116,7 +117,7 @@ def paint_steel(U, V_):
     return col
 
 
-PAINTERS = {"glove": paint_glove, "sleeve": paint_sleeve, "wood": paint_wood, "iron": paint_iron, "silver": paint_silver, "steel": paint_steel,
+PAINTERS = {"glove": paint_glove2, "cuff": paint_cuff, "sleeve": paint_sleeve, "wood": paint_wood, "iron": paint_iron, "silver": paint_silver, "steel": paint_steel,
             "bore": lambda U, V_: np.broadcast_to(DARK, U.shape + (3,)).copy(),
             "flash": lambda U, V_: mix(np.broadcast_to(FLASH, U.shape + (3,)).copy(), np.array((255, 255, 240.0)),
                                        blob(U, V_, 0.5, 0.5, 0.6, 0.6))}
@@ -203,11 +204,12 @@ def build_cock():
 
 def build_hand():
     part = Part("arm", (0, 0, 0), UV, parent="stock")
-    build_arm(part, +1,
-              grip=[(0, -0.010, 0.007), (0, -0.026, -0.002), (0, -0.042, -0.011), (0, -0.054, -0.016)],
-              wrist=(0.014, -0.05, -0.04), elbow=(0.10, -0.17, -0.26),
-              thumb=((-0.013, -0.006, -0.002), (-0.012, 0.006, 0.022)),
-              index=((0.006, -0.012, 0.012), (-0.001, -0.017, 0.017)))
+    # Zweite Fassung der Hand: Finger einzeln um den Griff, Zeigefinger am Abzug, Daumen links, Stulpe.
+    build_glove_hand(part, +1, top=(0, -0.006, 0.006), bottom=(0, -0.052, -0.015), outer=(1, 0, 0),
+                     radius=0.0185, finger_ts=(0.014, 0.026, 0.037),
+                     wrist=(0.016, -0.046, -0.034), elbow=(0.10, -0.17, -0.26),
+                     thumb=((0.004, -0.014, -0.010), (-0.011, -0.004, 0.0), (-0.0125, 0.004, 0.016)),
+                     index=((0.017, -0.006, 0.002), (0.012, -0.011, 0.016), (0.003, -0.015, 0.018)))
     return part
 
 
@@ -223,7 +225,7 @@ def build_flash():
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     tex = paint_atlas(RECTS, PAINTERS, TEX, colors=32, seed=5)
-    image = save_image("pistol", tex, os.path.join(OUT_DIR, "pistole_textur_v2.png"))
+    image = save_image("pistol", tex, os.path.join(OUT_DIR, "pistole_textur_v3.png"))
     coll = bpy.data.collections.new("Pistole")
     bpy.context.scene.collection.children.link(coll)
     mat = export_material("pistol", image)
@@ -238,7 +240,7 @@ def main():
     bpy.ops.object.select_all(action="DESELECT")
     for o in model:
         o.select_set(True)
-    bpy.ops.export_scene.gltf(filepath=os.path.join(OUT_DIR, "pistole_v2.glb"), export_format="GLB",
+    bpy.ops.export_scene.gltf(filepath=os.path.join(OUT_DIR, "pistole_v3.glb"), export_format="GLB",
                               use_selection=True, export_yup=True, export_normals=True,
                               export_vertex_color="NONE", export_materials="EXPORT", export_texcoords=True)
 
@@ -262,7 +264,7 @@ def main():
     lit(model + [hand])
     aim(cam, G(C(0.05, 0.22, -0.28)), G(C(0, -0.01, 0.05)))
     save_png(compose(render_passes("hinten_oben", visible=model + [hand]), "ansicht"),
-             os.path.join(OUT_DIR, "ansicht_hinten_oben_v2.png"))
+             os.path.join(OUT_DIR, "ansicht_hinten_oben_v3.png"))
 
     # Ich-Sicht im Gang: Augen auf 1,6 m, Blick geradeaus.
     stone = stone_textures(os.path.join(os.path.dirname(OUT_DIR), "gemeinsam"))
@@ -286,11 +288,14 @@ def main():
         pose(everything, angles, root=root)
         lit(everything)
         passes = render_passes(f"ich_{state}", visible=show + room)
-        for mode in ("nebel", "dither"):
+        for mode in ("spiel",):                         # entschieden: Nebel mit Koernung
             shots[(state, mode)] = compose(passes, mode)
-            save_png(shots[(state, mode)], os.path.join(OUT_DIR, f"ich_sicht_{state}_{mode}_v2.png"))
-    old = load_png(os.path.join(OUT_DIR, "ich_sicht_ruhig_nebel.png"))
-    save_png(side_by_side([old, shots[("ruhig", "nebel")]]), os.path.join(OUT_DIR, "vergleich_ich_sicht.png"))
+            save_png(shots[(state, mode)], os.path.join(OUT_DIR, f"ich_sicht_{state}_v3.png"))
+    # Hand alt (Fassung 2) gegen neu: Ausschnitt unten rechts, doppelt vergroessert.
+    old = load_png(os.path.join(OUT_DIR, "ich_sicht_ruhig_nebel_v2.png"))
+    new = shots[("ruhig", "spiel")]
+    save_png(side_by_side([zoom(old, (0, 240), (480, 854), 2), zoom(new, (0, 240), (480, 854), 2)]),
+             os.path.join(OUT_DIR, "vergleich_hand.png"))
 
 
 main()

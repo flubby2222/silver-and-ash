@@ -19,7 +19,8 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 from mathutils import Matrix  # noqa: E402
-from arm import C, build_arm, paint_glove, paint_sleeve  # noqa: E402
+from arm import C, build_hand as build_glove_hand, paint_glove2, paint_cuff, paint_sleeve  # noqa: E402
+from psx import load_png, side_by_side, zoom  # noqa: E402
 from psx import export_glb, report_parts  # noqa: E402
 from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
                  export_material, stone_textures, build_room, pass_material, write_light, pose,
@@ -40,7 +41,8 @@ RECTS = {
     "blade": (0, 64, 128, 128),
     "silver": (0, 48, 64, 64),
     "grip": (64, 48, 128, 64),
-    "glove": (0, 0, 64, 48),
+    "glove": (0, 16, 64, 48),
+    "cuff": (0, 0, 64, 16),
     "sleeve": (64, 0, 128, 48),
 }
 UV = rects_from_pixels(RECTS, TEX)
@@ -86,7 +88,7 @@ def paint_grip(U, V_):
 
 
 PAINTERS = {"blade": paint_blade, "silver": paint_silver, "grip": paint_grip,
-            "glove": paint_glove, "sleeve": paint_sleeve}
+            "glove": paint_glove2, "cuff": paint_cuff, "sleeve": paint_sleeve}
 
 
 def build_sword():
@@ -112,12 +114,11 @@ def build_sword():
 def build_hand():
     part = Part("arm", (0, 0, 0), UV, parent="sword")
     # Linke Hand: Punkte fuer die rechte Seite angegeben, s = -1 spiegelt sie.
-    build_arm(part, -1,
-              grip=[(0, 0, -0.008), (0, 0, -0.024), (0, 0, -0.04), (0, 0, -0.056)],
-              wrist=(0.01, -0.016, -0.08), elbow=(0.11, -0.16, -0.27),
-              thumb=((0.012, 0.009, -0.04), (0.004, 0.013, -0.012)),
-              index=((-0.012, -0.002, -0.014), (-0.006, -0.006, -0.002)),
-              fist_ref=V(0, 1, 0))
+    # Zweite Fassung der Hand: vier Finger um den Griff, Knoechel oben aussen, Daumen innen oben, Stulpe.
+    build_glove_hand(part, -1, top=(0, 0, -0.008), bottom=(0, 0, -0.058), outer=(0.8, 0.6, 0),
+                     radius=0.0165, finger_ts=(0.006, 0.017, 0.028, 0.039),
+                     wrist=(0.012, -0.004, -0.082), elbow=(0.11, -0.16, -0.27),
+                     thumb=((-0.002, 0.016, -0.05), (-0.012, 0.013, -0.03), (-0.011, 0.009, -0.012)))
     return part
 
 

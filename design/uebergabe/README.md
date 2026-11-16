@@ -159,7 +159,7 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | `fittings` (Beschläge, Bügel, Ladestock, Batterie) | 0, 0, 0 | stock | 214 |
 | `flash` (Mündungsfeuer, unbeleuchtet) | 0, 0, 0 | stock | 42 |
 | `stock` | 0, 0, 0 | – | 144 |
-| `arm` (in `pistol_hand.glb`) | 0, 0, 0 | stock | 248 |
+| `arm` (in `pistol_hand.glb`: Handschuh mit Fingern, Stulpe, Ärmel) | 0, 0, 0 | stock | 376 |
 
 **Haltungen:**
 
@@ -179,7 +179,7 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | Teil | Drehpunkt | hängt an | Dreiecke |
 |---|---|---|---|
 | `sword` (Klinge, Parierstange, Griff, Knauf) | 0, 0, 0 | – | 152 |
-| `arm` (in `blade_hand.glb`, linke Hand) | 0, 0, 0 | sword | 248 |
+| `arm` (in `blade_hand.glb`, linke Hand: Handschuh mit Fingern, Stulpe, Ärmel) | 0, 0, 0 | sword | 396 |
 
 **Haltungen** (aus `DrawBlade`; die Hand liegt bei (−0,11, −0,095, 0,19) im Kameraraum):
 
@@ -240,4 +240,4 @@ Erst schwenken, dann heben: `Drehung = Schwenken × Heben`.
 1. Lädt Raylib die Knoten-Verschiebungen in die Ecken ein? Bleibt die Reihenfolge der Meshes erhalten? Lassen sich Namen lesen?
 2. Kamera-Matrix der Waffen ohne Spiegelung (siehe Pistole).
 3. Shader mit Textur, Normale und Licht je Ecke; Point-Filter ohne Mipmaps.
-4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) werden laut Leitung noch überarbeitet: Handschuh mit Fingern, Naht, Stulpe. Dateinamen und Drehpunkte bleiben gleich.
+4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind in der zweiten Fassung: Finger einzeln um den Griff, Knöchel, Daumen, bei der Pistole der Zeigefinger am Abzug, Stulpe mit Naht und zwei Silbernieten. Sie hängen starr an der Waffe; Dateinamen und Drehpunkte sind gleich geblieben.
