@@ -1,0 +1,243 @@
+# Übergabe der Modelle an den Code (Issue #232)
+
+Stand 2026-11-16, Branch `claude/design-probe-ghul-45a8c4`. Angenommene Probestücke, aufbereitet für den Einbau.
+
+```
+design/uebergabe/
+  tools/models/   -> gehört nach tools/models/   (Erzeuger-Skripte)
+  assets/models/  -> gehört nach assets/models/  (Modelle und Texturen)
+```
+
+Die Ordnerstruktur ist dieselbe wie im Repository: Ein Skript in `tools/models/` schreibt nach `../../assets/models/`. Werden beide Ordner nach `tools/models/` und `assets/models/` kopiert, erzeugt jedes Skript dort neu.
+
+```bash
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/ghoul.py
+```
+
+Die Skripte erzeugen nur Modell und Textur, keine Bilder. Die Probebilder entstehen weiter mit den Skripten unter `design/proben/grafik/`.
+
+**Neue Zeilen für `assets/HERKUNFT.md`** (Datei, Skript, Datum):
+
+| Datei | Skript | Datum |
+|---|---|---|
+| `assets/models/ghoul.glb`, `assets/models/ghoul.png` | `tools/models/ghoul.py` | 2026-11-16 |
+| `assets/models/chest_beggar.glb`, `chest_guard.glb`, `chest_king.glb`, `chest_vampire.glb` und je `.png` | `tools/models/chest.py` | 2026-11-16 |
+| `assets/models/pistol.glb`, `assets/models/pistol_hand.glb`, `assets/models/pistol.png` | `tools/models/pistol.py` | 2026-11-16 |
+| `assets/models/blade.glb`, `assets/models/blade_hand.glb`, `assets/models/blade.png` | `tools/models/blade.py` | 2026-11-16 |
+| `assets/models/bat.glb`, `assets/models/bat.png` | `tools/models/bat.py` | 2026-11-16 |
+
+**Hilfsmodule** (keine eigenen Assets):
+
+- `tools/models/psx.py`: Bauteile, UVs, Texturmalerei, Export.
+- `tools/models/arm.py`: Hand im Handschuh mit Ärmel.
+
+Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils, NumPy).
+
+## Für alle Modelle gilt
+
+**Format und Achsen:**
+
+- glTF binär (`.glb`), mit +Y oben exportiert.
+- In der Datei gilt: x seitlich, y oben, z vorn, eine Einheit ist ein Meter.
+- Figuren blicken nach +z.
+
+**Teile:**
+
+- Jedes bewegliche Teil ist ein eigener Knoten mit eigenem Mesh.
+- Die Knoten-Verschiebung ist der Drehpunkt des Teils.
+- Die Ecken liegen in Ruhehaltung, also so, wie sie im Modell stehen.
+
+**Was Raylib beim Laden macht** (`LoadModel`):
+
+- Soweit ich weiß, rechnet Raylib die Knoten-Verschiebung in die Ecken ein. Danach liegt jedes Mesh fertig an seinem Platz, und die Drehpunkte stehen nur noch in dieser Tabelle.
+- Die Meshes kommen in der Reihenfolge der Datei. Blender schreibt sie **alphabetisch nach Namen** (Tabellen unten).
+- Sicherer ist es, die Namen beim Laden mit cgltf zu lesen statt sich auf die Reihenfolge zu verlassen. Das muss die Code-Sitzung prüfen.
+
+**Ein Teil drehen:**
+
+- Formel: `Welt = Eltern-Matrix × Verschiebung(Drehpunkt − Drehpunkt der Eltern) × Drehung`.
+- Für ein Teil ohne Eltern: `Welt = Lage der Figur × Verschiebung(Drehpunkt) × Drehung`.
+- Weil Raylib die Ecken schon an den Drehpunkt gerechnet hat, braucht man pro Teil zusätzlich `Verschiebung(−Drehpunkt)` vor der Drehung.
+- So rechnet `pose()` in `psx.py`; das ist die Referenz.
+
+**Drehrichtung „heben“ (+°):**
+
+- Gemeint ist eine Drehung um die x-Achse des Teils, bei der das vordere Ende nach oben geht.
+- Ein Teil, das nach unten hängt, schwingt dabei erst nach vorn, dann nach oben.
+- Im rechtshändigen Spiel-System mit y oben und z vorn ist das eine Drehung um −x, also `Matrix4x4.CreateRotationX(-Winkel)`. Die Vorzeichen bitte im Spiel am Bild prüfen.
+
+**Textur:**
+
+| Was | Wert |
+|---|---|
+| Format | PNG, sRGB, eingebettet in die glb und zusätzlich als `.png` daneben |
+| Größe | Figuren und Waffen 128 × 128, Kisten 64 × 64; höchstens 32 Farben (Kisten 24) |
+| Filterung | **keine**. Raylib: `TEXTURE_FILTER_POINT`, **keine Mipmaps** erzeugen. Der Exporter schreibt `magFilter NEAREST`, `minFilter NEAREST_MIPMAP_NEAREST`; das Mipmap-Feld bitte ignorieren |
+| Vertex-Farben | **keine**. Die Datei hat nur Position, Normale und UV (`TEXCOORD_0`). Die Umrechnung linear → sRGB, die bei Vertex-Farben nötig gewesen wäre, entfällt |
+
+**Schattierung:**
+
+- **Wie:** Gouraud, also Helligkeit je Ecke aus der Welt-Normale nach dem Drehen, über die Fläche verlaufend.
+- **Formel:** stufenlos aus den sechs Helligkeiten von `FlatShading`, gewichtet mit den Quadraten der Normalen-Anteile: `nx²·(nx>0 ? 1,0 : 0,62) + ny²·(ny>0 ? 0,9 : 0,55) + nz²·(nz>0 ? 0,82 : 0,72)`.
+- **Harte Kanten:** Teile mit harten Kanten (Kisten, Flügelhäute, Lauf, Beschläge, Klinge) haben in der Datei getrennte Ecken je Fläche, dort wird es automatisch flach.
+- **Danach:** mal Textur, dann Laterne und Nebel wie in `level.fs`, dann die 15-Bit-Körnung (Entscheidung des Menschen vom 2026-11-16).
+
+## Ghul – `ghoul.glb`
+
+**Ursprung:** zwischen den Füßen auf dem Boden.
+
+**Größe:**
+
+- 1 024 Dreiecke.
+- Höhe bis 0,935 m.
+- Kopf mit Kiefer 0,70 bis 0,935 m hoch und 0,14 m breit, von 0,23 bis 0,43 m vor der Mitte. Das liegt in der Kopfzone von `BodySizes.Ghoul`.
+
+| Teil (Reihenfolge in der Datei) | Drehpunkt (x, y, z) | hängt an | Dreiecke |
+|---|---|---|---|
+| `forearm_nx` (mit Hand) | −0,31, 0,38, 0,22 (Ellbogen) | upper_arm_nx | 162 |
+| `forearm_px` (mit Hand) | 0,31, 0,38, 0,22 | upper_arm_px | 162 |
+| `head` | 0, 0,68, 0,24 (Halsansatz) | torso | 120 |
+| `jaw` | 0, 0,76, 0,33 (Kiefergelenk) | head | 36 |
+| `shin_nx` (mit Fuß) | −0,22, 0,07, −0,04 (Knie) | thigh_nx | 72 |
+| `shin_px` (mit Fuß) | 0,22, 0,07, −0,04 | thigh_px | 72 |
+| `thigh_nx` | −0,10, 0,44, −0,22 (Hüftgelenk) | – | 36 |
+| `thigh_px` | 0,10, 0,44, −0,22 | – | 36 |
+| `torso` (mit Hals und Lumpen) | 0, 0,46, −0,23 (Hüfte) | – | 256 |
+| `upper_arm_nx` | −0,19, 0,67, 0,16 (Schulter) | torso | 36 |
+| `upper_arm_px` | 0,19, 0,67, 0,16 | torso | 36 |
+
+**Haltungen** (Grad „heben“ um x, relativ zur Datei):
+
+| Haltung | Winkel |
+|---|---|
+| **Ruhe** | `jaw` −12 (Maul hängt offen). Alles andere 0; die Arme greifen in der Datei schon etwa 30° nach vorn auf den Boden |
+| **Ausholen** (`WindUpProgress` = 1) | `torso` +34 (richtet sich um die Hüfte auf), `head` −24 (schaut weiter zum Spieler), `jaw` −38, `upper_arm_px` +120, `upper_arm_nx` +128, `forearm_px` −25, `forearm_nx` −20 |
+
+- **Zwischenstufen:** linear mit `WindUpProgress` mischen.
+- **Kriechen**, nicht im Probestück: Oberarme gegengleich ±20° um die Ruhe, Unterarme dazu −10°/+10°; Oberschenkel gegengleich ±12°. Das ist mein Vorschlag, nicht geprüft.
+- **Schlag** (Ausfallschritt wie im Platzhalter): `torso` −14 und 0,25 m nach vorn, `upper_arm_*` +55. Ebenfalls Vorschlag.
+- **Treffer und Tod** wie im Platzhalter auf die ganze Figur anwenden.
+
+## Kiste – `chest_beggar.glb`, `chest_guard.glb`, `chest_king.glb`, `chest_vampire.glb`
+
+**Aufbau:**
+
+- Je Stufe eine Datei mit eigener Textur. Die Geometrie ist gleich, nur das Formmerkmal oben auf dem Deckel unterscheidet sich (Guard Griff, King Krone, Vampire Dornen).
+- Ursprung in der Mitte am Boden.
+- Die Vorderseite mit dem Schloss blickt nach +z. Laut #209 dreht das Spiel die Kiste nach der Vorderseite aus `ChestPlan`.
+
+| Teil | Drehpunkt | hängt an | Dreiecke (Beggar / Guard / King / Vampire) |
+|---|---|---|---|
+| `base` | 0, 0, 0 | – | 48 / 80 / 80 / 80 |
+| `lid` | 0, 0,455, −0,365 (Scharnier hinten unten am Deckel) | base | 60 / 96 / 84 / 84 |
+| `lock` | 0, 0,47, 0,39 (Oberkante der Schlossplatte) | base | 12 |
+
+**Haltungen:**
+
+- **Deckel offen:** `lid` +110 („heben“, die Vorderkante geht nach oben hinten), wie der Platzhalter mit 1,9 rad.
+- **Schloss bei aufgeschlossener Kiste:** ausblenden. Herunterklappen um `lock` wäre auch möglich.
+- **Aufsteigen aus dem Boden:** ganze Kiste verschieben, wie heute.
+
+**Vampir-Stufe:** Sie pulsiert im Spiel zwischen 150, 20, 30 und 200, 30, 40. In der Textur steht die Mitte. Das Pulsieren also als Tönung beim Zeichnen, zwischen etwa 86 % und 114 % im Rotkanal. Bänder und Schloss pulsieren dann leicht mit.
+
+## Pistole – `pistol.glb` und `pistol_hand.glb`
+
+**Größe:** in echter Größe. Die Skalierung 1,8 der Ich-Sicht ist eingebacken.
+
+**Ursprung:** der Griffpunkt, die Lage `PistolHand` in `WeaponViews.cs`. Der Lauf zeigt nach +z.
+
+**Wichtig – keine Spiegelung:**
+
+- Das Modell ist in einem normalen, rechtshändigen System gebaut. **+x in der Datei ist die linke Seite der Waffe** aus Sicht des Spielers: Schloss und Hahn liegen bei −x, also rechts.
+- `WeaponViews.CameraToWorld` spiegelt dagegen (Determinante −1). Mit dieser Matrix lägen Schloss und Hahn links, und Rückseiten-Culling würde die sichtbaren Flächen wegwerfen.
+- Für echte Modelle braucht es eine echte Drehung als Kamera-Matrix (rechts = −x der Datei), oder die x-Achse wird beim Laden gespiegelt und die Dreiecke werden umgedreht.
+
+| Teil (pistol.glb) | Drehpunkt (Meter) | hängt an | Dreiecke |
+|---|---|---|---|
+| `barrel` | 0, 0, 0 | stock | 96 |
+| `cock` (Hahn) | −0,0126, 0,018, 0,0072 | stock | 40 |
+| `fittings` (Beschläge, Bügel, Ladestock, Batterie) | 0, 0, 0 | stock | 214 |
+| `flash` (Mündungsfeuer, unbeleuchtet) | 0, 0, 0 | stock | 42 |
+| `stock` | 0, 0, 0 | – | 144 |
+| `arm` (in `pistol_hand.glb`) | 0, 0, 0 | stock | 248 |
+
+**Haltungen:**
+
+| Haltung | Lage im Kameraraum | Drehung | Teile |
+|---|---|---|---|
+| **Ruhe** | (0,095, −0,08, 0,18) | Lauf parallel zur Blickachse, 15° gekippt: Drehung um die Laufachse, Oberseite zur Bildmitte | – |
+| **Rückstoß** (voll) | zusätzlich (0, +0,012, −0,035) | +14 „heben“ um den Griffpunkt | `cock` −38 (Hahn fällt nach vorn), `flash` sichtbar |
+
+- **Zurückfedern:** wie im Platzhalter, `EaseOut` über 0,18 s.
+- **Mündungsfeuer:** nur während des Blitzes zeichnen, mit Helligkeit 1 statt der Gouraud-Formel.
+- **Nachladen:** im Platzhalter nicht vorhanden.
+
+## Silberklinge – `blade.glb` und `blade_hand.glb`
+
+**Größe und Ursprung:** in echter Größe (Skalierung 1,8 eingebacken), Ursprung am Griff, Klinge nach +z und 25° nach oben (wie der Platzhalter). Dieselbe Achsen-Regel wie bei der Pistole.
+
+| Teil | Drehpunkt | hängt an | Dreiecke |
+|---|---|---|---|
+| `sword` (Klinge, Parierstange, Griff, Knauf) | 0, 0, 0 | – | 152 |
+| `arm` (in `blade_hand.glb`, linke Hand) | 0, 0, 0 | sword | 248 |
+
+**Haltungen** (aus `DrawBlade`; die Hand liegt bei (−0,11, −0,095, 0,19) im Kameraraum):
+
+| Haltung | Neigung um die Längsachse | Drehung der Spitze um die Hochachse | Versatz der Hand |
+|---|---|---|---|
+| **Ruhe** | 20°, Oberseite zur Bildmitte | 0 | – |
+| **Ausholen** beim Aufladen (voll) | 20° | 35° nach links | (−0,03, +0,015, −0,04) |
+| **Schlag** (Höhepunkt) | 45° | 95° nach rechts | (+0,06, +0,04, 0) |
+
+Zeitverlauf und Zittern bei voller Ladung wie im Platzhalter.
+
+## Fledermaus – `bat.glb`
+
+**Ursprung:** die **Rumpfmitte**, nicht der Boden. Im Spiel bei `Position + (0, Height/2, 0)` zeichnen, wie der Platzhalter mit +0,2 m. Sie blickt nach +z und wird wie heute nur um die Hochachse zum Spieler gedreht.
+
+**Größe:**
+
+- 680 Dreiecke.
+- Spannweite 1,32 m. Das ist größer als `BodySizes.Bat.Radius` = 0,35 m; der Vorschlag dazu steht in den Notizen des Probestücks.
+
+| Teil | Drehpunkt | hängt an | Dreiecke |
+|---|---|---|---|
+| `body` (mit Beinen) | 0, 0, 0 | – | 172 |
+| `head` | 0, 0,03, 0,09 | body | 124 |
+| `jaw` | 0, 0, 0,13 | head | 44 |
+| `wing_in_nx` | −0,06, 0,02, 0,05 (Schulter) | body | 40 |
+| `wing_in_px` | 0,06, 0,02, 0,05 | body | 40 |
+| `wing_out_nx` | −0,30, 0,04, 0,11 (Handgelenk) | wing_in_nx | 130 |
+| `wing_out_px` | 0,30, 0,04, 0,11 | wing_in_px | 130 |
+
+In der Datei stehen die Flügel waagerecht ausgebreitet (alle Winkel 0).
+
+**Drehungen:**
+
+| Teil | Achse und Richtung |
+|---|---|
+| `body`, `head`, `jaw` | „heben“ um x |
+| Flügel „heben“ | um die Längsachse z; positiv = Spitze nach oben, auf beiden Seiten gleich (links also mit umgekehrtem Vorzeichen um z) |
+| Flügel „schwenken“ | um die Hochachse y; positiv = Spitze nach hinten |
+
+Erst schwenken, dann heben: `Drehung = Schwenken × Heben`.
+
+| Haltung | body | head | jaw | Innenflügel heben / schwenken | Außenflügel heben / schwenken |
+|---|---|---|---|---|---|
+| **Schweben** (Mitte des Schlags) | 15 | 0 | −12 | 8 / 0 | 4 / 0 |
+| Flügelschlag oben | 15 | 0 | −10 | 40 / 0 | 20 / 0 |
+| Flügelschlag unten | 15 | 0 | −10 | −35 / 0 | −15 / 0 |
+| **Kreischen** (Ankündigung des Sturzflugs) | 12 | 30 | −55 | 65 / −15 | 25 / −20 |
+| **Sturzflug** | −30 | −5 | −45 | −12 / 32 | −5 / 38 |
+
+- **Flügelschlag:** zwischen „oben“ und „unten“ sinusförmig mit 7 Schlägen pro Sekunde, wie der Platzhalter. Der Außenflügel darf ein wenig nacheilen.
+- **Beim Kreischen:** das Zittern des Platzhalters dazu.
+- **Tod:** Flügel wie beim Sturzflug anlegen und trudeln, wie heute.
+- **Rotes Aufglühen vor dem Spucken:** bleibt eine Tönung im Code (Gefahr). Das Modell selbst hat kein Rot.
+
+## Offene Punkte für die Code-Sitzung
+
+1. Lädt Raylib die Knoten-Verschiebungen in die Ecken ein? Bleibt die Reihenfolge der Meshes erhalten? Lassen sich Namen lesen?
+2. Kamera-Matrix der Waffen ohne Spiegelung (siehe Pistole).
+3. Shader mit Textur, Normale und Licht je Ecke; Point-Filter ohne Mipmaps.
+4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) werden laut Leitung noch überarbeitet: Handschuh mit Fingern, Naht, Stulpe. Dateinamen und Drehpunkte bleiben gleich.

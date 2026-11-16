@@ -583,3 +583,23 @@ def runs(mask_row):
     if n:
         out.append(n)
     return out
+
+
+# --- Uebergabe ------------------------------------------------------------------------------------------------------
+
+def export_glb(objs, path):
+    """Teile als glb: +Y oben (= Spiel-Achsen), Textur eingebettet ohne Filterung, keine Vertex-Farben."""
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in objs:
+        o.select_set(True)
+    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, export_yup=True,
+                              export_normals=True, export_vertex_color="NONE", export_materials="EXPORT",
+                              export_texcoords=True)
+    print("Modell:", path)
+
+
+def report_parts(label, objs):
+    """Je Teil: Drehpunkt in Spiel-Achsen (= Knoten-Verschiebung in der Datei), Eltern-Teil, Dreiecke."""
+    for o in objs:
+        t = to_game(o.matrix_world.translation)
+        print(f"TEIL {label} {o.name} {t.x:.4f} {t.y:.4f} {t.z:.4f} {o['parent'] or '-'} {len(o.data.polygons)}")
