@@ -60,9 +60,23 @@ internal sealed class TexturedModel : IDisposable
     public static TexturedModel? TryLoad(string path, IReadOnlyList<RigPart> parts, FileLog? log)
     {
         ArgumentNullException.ThrowIfNull(parts);
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
         IReadOnlyList<GlbPart> file;
         try
         {
+            // First stage: the file must be byte for byte the one in the repository (size and SHA-256 from the checked-in
+            // list, docs/modelle.md). Raylib crashes in native code on some broken files - those never reach it.
+            var listPath = Path.Combine(Path.GetDirectoryName(path) ?? ".", ModelChecksums.FileName);
+            var mismatch = ModelChecksums.Parse(File.ReadAllText(listPath)).Check(path);
+            if (mismatch is not null)
+            {
+                log?.Warning($"Model '{path}': {mismatch} - the placeholder is drawn instead.");
+                return null;
+            }
+
+            log?.Info($"Model '{path}' matches the checksum list ({System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:0.0} ms).");
+
+            // Second stage, simple: the description of the file (names, pivots, lengths).
             file = GlbScene.Read(File.ReadAllBytes(path));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)

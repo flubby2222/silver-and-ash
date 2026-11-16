@@ -95,6 +95,19 @@ public class GlbSceneTests
         Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(more)));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-12)]
+    public void A_stride_smaller_than_one_corner_is_refused(int stride)
+    {
+        // The reviewer's case: stride 0 and a huge count passed the length check and crashed raylib.
+        var strided = TwoParts
+            .Replace("\"byteOffset\": 0, \"byteLength\": 1032", $"\"byteOffset\": 0, \"byteLength\": 1032, \"byteStride\": {stride}", StringComparison.Ordinal)
+            .Replace("\"count\": 86,", "\"count\": 2000000000,", StringComparison.Ordinal);
+
+        Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(strided)));
+    }
+
     [Fact]
     public void An_accessor_without_data_is_refused()
     {

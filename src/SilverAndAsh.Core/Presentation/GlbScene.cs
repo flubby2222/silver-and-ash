@@ -137,8 +137,13 @@ public static class GlbScene
             var count = accessor.GetProperty("count").GetInt64();
             var element = ComponentSize(accessor.GetProperty("componentType").GetInt32()) * Components(accessor.GetProperty("type").GetString());
             var stride = views[view].TryGetProperty("byteStride", out var s) ? s.GetInt64() : element;
+            if (stride < element || stride > viewLengths[view])
+            {
+                throw new InvalidDataException($"A buffer view has a stride of {stride} bytes, its elements need {element}.");
+            }
+
             var needed = count == 0 ? 0 : offset + (count - 1) * stride + element;
-            if (offset < 0 || count < 0 || needed > viewLengths[view])
+            if (offset < 0 || count < 0 || count > viewLengths[view] || needed > viewLengths[view])
             {
                 throw new InvalidDataException($"An accessor needs {needed} bytes, its buffer view has {viewLengths[view]}.");
             }

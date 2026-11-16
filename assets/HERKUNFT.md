@@ -14,4 +14,10 @@ Modelle mit Blender 5.3 ohne Oberfläche; das Skript schreibt nach `assets/model
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/ghoul.py
 ```
 
+**Danach immer die Prüfsummen-Liste `models/models.sha256` neu schreiben** (normales Python 3). Ohne passenden Eintrag lädt das Spiel das Modell nicht und zeichnet den Platzhalter; ein Test wird rot:
+
+```
+python tools/models/checksums.py
+```
+
 Am 2026-11-16 geprüft: `ghoul.glb` und `ghoul.png` kommen byte-gleich zur eingecheckten Fassung heraus. Wie das Spiel die Modelle lädt, steht in [`docs/modelle.md`](../docs/modelle.md).

@@ -40,11 +40,26 @@ Wie das Spiel ein Modell der Designer lädt, bewegt und zeichnet (Issue #232, St
 
 ## Wenn es nicht klappt
 
-Fehlt die Datei, ist sie abgeschnitten oder kaputt, fehlt ein Teil oder passt Raylibs Ergebnis nicht zur Beschreibung: eine Warnung ins technische Log (`%LOCALAPPDATA%\SilverAndAsh\logs`), und die Figur wird als Platzhalter gezeichnet. Das Spiel läuft weiter. Raylib bekommt die Datei erst, wenn `GlbScene` geprüft hat, dass alle Puffer, Puffer-Ansichten und Zugriffe innerhalb des Binärabschnitts liegen: Auf fehlende Daten stürzt Raylib im nativen Code ab, das kann kein `catch` auffangen.
+Fehlt die Datei, ist sie abgeschnitten oder kaputt, fehlt ein Teil oder passt Raylibs Ergebnis nicht zur Beschreibung: eine Warnung ins technische Log (`%LOCALAPPDATA%\SilverAndAsh\logs`), und die Figur wird als Platzhalter gezeichnet. Das Spiel läuft weiter.
+
+Auf manche kaputte Dateien stürzt Raylib im nativen Code ab, das kann kein `catch` auffangen. Deshalb prüft das Spiel jede Datei, bevor Raylib sie sieht:
+
+1. **Prüfsumme (die eigentliche Sicherung):** [`assets/models/models.sha256`](../assets/models/models.sha256) nennt für jede `.glb` und `.png` Größe und SHA-256. [`ModelChecksums`](../src/SilverAndAsh.Core/Presentation/ModelChecksums.cs) (Core, getestet) vergleicht die Datei auf der Platte damit. Fehlt der Eintrag oder die Liste, oder stimmt Größe oder Summe nicht, wird Raylib für die Datei gar nicht aufgerufen. Dauer beim Ghul: rund 10 ms beim Start.
+2. **Beschreibung (einfache zweite Stufe):** `GlbScene` liest Namen und Drehpunkte und prüft dabei grob Kopf, Abschnitte, Puffer, Puffer-Ansichten und Zugriffe auf ihre Längen.
+
+**Was das abdeckt und was nicht:** Geschützt ist das Spiel gegen eine beschädigte, halb kopierte oder versehentlich geänderte Datei auf der Platte. Eine Datei, deren Prüfsumme stimmt, gilt als heil: Sie ist byte-gleich mit der Fassung im Repository, die getestet und angesehen wurde. Eine böswillig gebaute Datei mit passender Liste fängt das nicht ab, und die zweite Stufe kennt nicht jeden Sonderfall von glTF. Die Modelle kommen nur aus diesem Repository.
+
+**Nach jedem Neu-Erzeugen eines Modells** die Liste neu schreiben (normales Python 3):
+
+```
+python tools/models/checksums.py
+```
+
+Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_model_file`) wird rot, wenn Liste und Dateien nicht zusammenpassen.
 
 ## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus)
 
-1. `.glb`, `.png` und Skript an ihren Platz, Zeile in `assets/HERKUNFT.md`.
+1. `.glb`, `.png` und Skript an ihren Platz, Zeile in `assets/HERKUNFT.md`, `python tools/models/checksums.py`.
 2. Im Core eine Haltungs-Klasse wie `GhoulPose`: Teile mit Eltern (`RigPart`) und die Winkel je Zustand, mit Tests.
 3. Im Game eine Ansicht hinter der Schnittstelle der Figur: `TexturedModel.TryLoad(pfad, Teile, log)` einmal nach dem Shader laden, je Bild `Rig.Pose(...)` und `TexturedModel.Draw(...)`. Fehlt das Modell, bleibt der Platzhalter.
 4. Für die Waffen in der Hand ist noch offen: Ihre Kamera-Matrix spiegelt heute (siehe Übergabe des Designers); für echte Modelle braucht es eine echte Drehung.
