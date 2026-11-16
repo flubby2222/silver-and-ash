@@ -32,6 +32,9 @@ public enum GormState
     /// <summary>The hook flies.</summary>
     Throwing,
 
+    /// <summary>The chain sweeps round in front of him, from his left to his right (<see cref="Gorm.SwingDirection"/>).</summary>
+    Swinging,
+
     /// <summary>A hammer blow hit nobody: the club is stuck, he bends forward and takes double damage.</summary>
     Stuck,
 
@@ -83,6 +86,8 @@ public sealed class Gorm : ITarget
     private readonly HashSet<int> _reachedByWave = [];
     private bool _waveHit;
     private Vector3 _hookDirection;
+    private float _swingAngle;
+    private readonly HashSet<Player> _sweptPlayers = new(ReferenceEqualityComparer.Instance);
     private float _hookTravelled;
 
     private readonly IReadOnlySet<(int X, int Z)>? _arena;
@@ -157,6 +162,18 @@ public sealed class Gorm : ITarget
 
     /// <summary>How far his chain swing reaches (metres) and at which heights above his feet it passes - for drawing.</summary>
     public (float Reach, float Low, float High) SwingArea => (_gorm.SwingReach, _gorm.SwingLow, _gorm.SwingHigh);
+
+    /// <summary>The flat direction the sweeping chain points in right now - null unless he is swinging.</summary>
+    public Vector3? SwingDirection => State == GormState.Swinging ? Turned(_swingAngle) : null;
+
+    // Half the swing's arc in radians: it runs from -half (his left) to +half (his right).
+    private float SwingHalfArc => _gorm.SwingArc * MathF.PI / 360f;
+
+    // His right hand side, flat ("right" of +Z is -X).
+    private Vector3 Right => new(-Facing.Z, 0f, Facing.X);
+
+    // A flat direction turned by `angle` from his facing towards his right (negative = to his left).
+    private Vector3 Turned(float angle) => (Facing * MathF.Cos(angle)) + (Right * MathF.Sin(angle));
 
     /// <summary>Where the hook is while it flies - null otherwise. The chain runs from his hand to it.</summary>
     public Vector3? Hook { get; private set; }
@@ -267,6 +284,11 @@ public sealed class Gorm : ITarget
             case GormState.Throwing:
                 Stand(level, obstacles);
                 FlyHook(level, players, events);
+                break;
+
+            case GormState.Swinging:
+                Stand(level, obstacles);
+                SweepChain(players, events);
                 break;
 
             case GormState.Stuck:
@@ -402,6 +424,39 @@ public sealed class Gorm : ITarget
         return distance <= _gorm.FarRange && _lastAttack != GormAttack.Throw && clear ? GormAttack.Throw : null;
     }
 
+    // One tick of the swing: the chain moves on from where it was. Every living player it passes over (within reach,
+    // at chest height) is hit - once per swing. Behind him the chain never comes.
+    private void SweepChain(IReadOnlyList<Player> players, ICollection<GameEvent> events)
+    {
+        var from = _swingAngle;
+        _stateTicksLeft--;
+        _swingAngle = -SwingHalfArc + (2f * SwingHalfArc * StateProgress);
+
+        var low = Position.Y + _gorm.SwingLow;
+        var high = Position.Y + _gorm.SwingHigh;
+        foreach (var player in players.Where(player => !player.IsDead && !_sweptPlayers.Contains(player)))
+        {
+            var offset = (player.Position - Position) with { Y = 0f };
+            var bearing = MathF.Atan2(Vector3.Dot(offset, Right), Vector3.Dot(offset, Facing));
+            if (bearing < from || bearing > _swingAngle || offset.Length() > _gorm.SwingReach)
+            {
+                continue;
+            }
+
+            if (player.Position.Y < high && player.Position.Y + player.CollisionHeight > low)
+            {
+                _sweptPlayers.Add(player);
+                player.TakeDamage(_gorm.SwingDamage, events);
+            }
+        }
+
+        if (_stateTicksLeft == 0)
+        {
+            events.Add(new GormSwung(Id, _sweptPlayers.Count > 0));
+            Rest();
+        }
+    }
+
     // The end of the wind-up: the blow, the swing or the throw.
     private void Release(Level level, Player? target, IReadOnlyList<Player> players, ICollection<GameEvent> events)
     {
@@ -421,20 +476,10 @@ public sealed class Gorm : ITarget
                 break;
 
             case GormAttack.Swing:
-                var hit = false;
-                foreach (var player in players.Where(player => !player.IsDead && FlatDistance(Position, player.Position) <= _gorm.SwingReach))
-                {
-                    var low = Position.Y + _gorm.SwingLow;
-                    var high = Position.Y + _gorm.SwingHigh;
-                    if (player.Position.Y < high && player.Position.Y + player.CollisionHeight > low)
-                    {
-                        player.TakeDamage(_gorm.SwingDamage, events);
-                        hit = true;
-                    }
-                }
-
-                events.Add(new GormSwung(Id, hit));
-                Rest();
+                // The chain starts at his left and sweeps over the front to his right (see SweepChain).
+                _swingAngle = -SwingHalfArc;
+                _sweptPlayers.Clear();
+                Begin(GormState.Swinging, Quicker(_gorm.SwingTime));
                 break;
 
             default:

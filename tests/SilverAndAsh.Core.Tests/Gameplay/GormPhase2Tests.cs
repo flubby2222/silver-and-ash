@@ -203,9 +203,9 @@ public class GormPhase2Tests
     }
 
     [Fact]
-    public void In_phase_2_his_warnings_and_pauses_are_shorter_by_the_set_factor()
+    public void In_phase_2_his_swing_s_warning_sweep_and_pause_are_shorter_by_the_set_factor()
     {
-        static (int WindUp, int Pause) Durations(bool phase2)
+        static (int WindUp, int Sweep, int Pause) Durations(bool phase2)
         {
             var duel = new Duel(3f);
             if (phase2)
@@ -216,16 +216,21 @@ public class GormPhase2Tests
             duel.Run(60 * Second, until: () => duel.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Swing });
             var windUp = 0;
             duel.Run(10 * Second, until: () => { windUp++; return duel.Gorm.State != GormState.WindingUp; });
+            Assert.Equal(GormState.Swinging, duel.Gorm.State);
+            var sweep = 0;
+            duel.Run(10 * Second, until: () => { sweep++; return duel.Gorm.State != GormState.Swinging; });
             Assert.Equal(GormState.Recovering, duel.Gorm.State);
             var pause = 0;
             duel.Run(10 * Second, until: () => { pause++; return duel.Gorm.State != GormState.Recovering; });
-            return (windUp - 1, pause - 1);
+            return (windUp - 1, sweep - 1, pause - 1);
         }
 
-        Assert.Equal((SimulationClock.SecondsToTicks(Values.SwingWindUp), SimulationClock.SecondsToTicks(Values.PauseTime)), Durations(false));
-        Assert.Equal(
-            (SimulationClock.SecondsToTicks(Values.SwingWindUp / Values.Phase2SpeedUp), SimulationClock.SecondsToTicks(Values.PauseTime / Values.Phase2SpeedUp)),
-            Durations(true));
+        static int Ticks(float seconds, bool phase2) => SimulationClock.SecondsToTicks(phase2 ? seconds / Values.Phase2SpeedUp : seconds);
+
+        foreach (var phase2 in new[] { false, true })
+        {
+            Assert.Equal((Ticks(Values.SwingWindUp, phase2), Ticks(Values.SwingTime, phase2), Ticks(Values.PauseTime, phase2)), Durations(phase2));
+        }
     }
 
     // ---- Stones -----------------------------------------------------------------------------------------------------

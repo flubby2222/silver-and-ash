@@ -80,6 +80,7 @@ public static class BalanceFile
         ["chests.vampire.bloodVialChance"] = 1,
         ["silver.batChance"] = 1,
         ["layout.corridorChance"] = 1,
+        ["gorm.swingArc"] = 360,
         ["gorm.phase2Health"] = 1,
     };
 
