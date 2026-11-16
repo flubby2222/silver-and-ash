@@ -1,0 +1,4 @@
+# sha256 size name - written by tools/models/checksums.py, checked by the game before loading a level texture
+60b041c6faf23e8fab716e5332d2f01b3b9d83d315d2c50fcb63f490c7a4db72 3673 catacomb_ceiling.png
+e38364ee2943d80584bcbc32ae469e0564e1edbfdc50b768652a234cc94d5292 5017 catacomb_floor.png
+34bebba03f83a06456c8da887eea2ab40cbe1c6ef38badcbac65aaf97b0fe108 4842 catacomb_wall.png

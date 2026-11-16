@@ -12,7 +12,7 @@ uniform mat4 mvp;       // model-view-projection: world -> screen (set by raylib
 uniform mat4 matModel;  // model -> world (set by raylib)
 
 out vec3 fragPosition;  // world position, interpolated across the triangle
-out vec2 fragTexCoord;  // where in the texture (models; everything else uses raylib's 1 x 1 white texture)
+out vec2 fragTexCoord;  // where in the texture (models, level stones; the rest uses raylib's 1 x 1 white texture)
 out vec4 fragColor;     // vertex colour (the brightness of the shading is already baked in)
 
 void main()
