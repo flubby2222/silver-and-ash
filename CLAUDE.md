@@ -57,6 +57,7 @@ Mehrere dieser Regeln erzwingen Hooks in [.claude/hooks/](.claude/hooks/). Block
 - **Figuren hinter einer austauschbaren Schnittstelle** dargestellt.
 - **Balancing-Werte** in `assets/balance.json`, nicht im Code.
 - **Logs nur lokal.**
+- **Online-Coop offen halten** (siehe [0003](docs/entscheidungen/0003-online-coop-offenhalten.md)): in `Core` nie „der Spieler“, sondern „ein Spieler“; alles, was das Spiel verändert, kommt als Eingabe in den Tick; Zufall nur mit Seed im Spielzustand; kein veränderlicher `static`-Zustand; Sound und Effekte über Ereignisse aus `Core`.
 
 ## Setting
 
