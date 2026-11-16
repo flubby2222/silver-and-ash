@@ -9,7 +9,7 @@ in vec3 fragPosition;
 in vec2 fragTexCoord;
 in vec4 fragColor;
 
-uniform sampler2D texture0;    // the texture of a model; for everything else raylib's 1 x 1 white texture (no change)
+uniform sampler2D texture0;    // the texture of a model or of the level's stones; else raylib's 1 x 1 white texture (no change)
 uniform vec4 colDiffuse;       // tint from DrawModel (set by raylib)
 uniform vec4 flash;            // a model hit: rgb the flash colour, a how much of it (0: none; issue #232)
 uniform vec3 viewPos;          // camera position, updated every frame

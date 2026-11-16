@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Reflection;
 using Raylib_cs;
 using SilverAndAsh.Core;
+using SilverAndAsh.Core.Diagnostics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
 using SilverAndAsh.Core.Photos;
@@ -118,7 +119,22 @@ using (log)
                 log?.Info($"Photo mode: {scenes.Count} scenes into '{folder}'.");
             }
         }
+
+        // Test option: --bench <scene> measures how long a frame of this photo scene takes, without VSync (issue #233,
+        // docs/foto-skript.md). Only in the debug version, like --photo.
+        if (options.Bench is { } bench)
+        {
+            photos = new PhotoRequest(
+                [PhotoScenes.Find(bench)!], Folder: string.Empty,
+                RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), Compare: false, Bench: true);
+            log?.Info($"Bench mode: scene '{bench}', {PhotoRequest.WarmUpFrames} frames to warm up, {PhotoRequest.MeasuredFrames} measured.");
+        }
 #else
+        if (options.Bench is not null)
+        {
+            throw new ArgumentException("'--bench' works only in the debug version (dotnet run).");
+        }
+
         if (options.Photo is not null)
         {
             throw new ArgumentException("'--photo' works only in the debug version (dotnet run).");
@@ -163,8 +179,9 @@ static void RunGame(
     Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
     PhotoRequest? photos, LookVariant look)
 {
-    // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted.
-    Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
+    // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted. The bench (--bench) draws as
+    // fast as it can: no VSync, and no frame rate limit is set anywhere.
+    Raylib.SetConfigFlags(photos is { Bench: true } ? ConfigFlags.ResizableWindow : ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
     Raylib.InitWindow(WindowWidth, WindowHeight, "Silver & Ash");
     BringWindowOnScreen(log);
 
@@ -285,7 +302,11 @@ static void RunGame(
         }
 
         // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
-        using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, levelShader.Shader);
+        // The stones of walls, floors and ceilings (assets/textures/, issue #233). Only level 0, the catacombs, exists yet.
+        // Missing or broken: a warning in the log and plain surfaces as before.
+        using var levelTextures = LevelTextures.Load(
+            Path.Combine(AppContext.BaseDirectory, "assets", "textures"), LevelTextureSet.For(LevelLayer.Catacombs), log);
+        using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, levelShader.Shader, levelTextures);
         var renderedLevel = gameWorld.LevelAsBuilt;
 
         // Events must be read after EVERY tick - the next tick clears them.
@@ -464,7 +485,10 @@ static void RunGame(
         if (photos is not null)
         {
             var studio = new PhotoStudio(photos.Templates, balance);
-            Directory.CreateDirectory(photos.Folder);
+            if (!photos.Bench)
+            {
+                Directory.CreateDirectory(photos.Folder);
+            }
             IReadOnlyList<LookVariant> looks = photos.Compare ? LookVariants.All : [look];
             foreach (var (variant, scene) in looks.SelectMany(variant => photos.Scenes.Select(scene => (variant, scene))))
             {
@@ -495,6 +519,29 @@ static void RunGame(
 
                 // The cursor in the corner, so no box of the inventory is drawn as "under the mouse".
                 Raylib.SetMousePosition(0, 0);
+                if (photos.Bench)
+                {
+                    // The simulation stands still; every frame is drawn in full, as in the game: world, then screen.
+                    var times = new List<double>(PhotoRequest.MeasuredFrames);
+                    for (var frame = 0; frame < PhotoRequest.WarmUpFrames + PhotoRequest.MeasuredFrames; frame++)
+                    {
+                        var start = System.Diagnostics.Stopwatch.GetTimestamp();
+                        DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
+                        Raylib.BeginDrawing();
+                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
+                        Raylib.EndDrawing();
+                        if (frame >= PhotoRequest.WarmUpFrames)
+                        {
+                            times.Add(System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds);
+                        }
+                    }
+
+                    var statistics = FrameTimeStatistics.From(times);
+                    log?.Info($"Bench '{scene.Name}' after {ticks} ticks, {Raylib.GetScreenWidth()} x {Raylib.GetScreenHeight()}: {statistics}");
+                    Console.WriteLine($"{scene.Name}: {statistics}");
+                    continue;
+                }
+
                 DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
                 Raylib.BeginDrawing();
                 DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
@@ -912,4 +959,13 @@ static string CooldownText(Cooldown cooldown) =>
 
 /// <summary>What the photo mode (--photo) is to take: these scenes, saved into this folder, built from these room templates.</summary>
 /// <remarks>Compare: take every scene in every picture variant and put them together 2 x 2 (--photo compare, issue #234).</remarks>
-internal sealed record PhotoRequest(IReadOnlyList<PhotoScene> Scenes, string Folder, IReadOnlyList<RoomTemplate> Templates, bool Compare);
+/// <remarks>Bench: take no picture but draw the scene again and again and print the frame times (--bench, issue #233).</remarks>
+internal sealed record PhotoRequest(
+    IReadOnlyList<PhotoScene> Scenes, string Folder, IReadOnlyList<RoomTemplate> Templates, bool Compare, bool Bench = false)
+{
+    /// <summary>Frames drawn before measuring (shaders, textures and caches settle).</summary>
+    public const int WarmUpFrames = 100;
+
+    /// <summary>Frames measured by --bench.</summary>
+    public const int MeasuredFrames = 1000;
+}

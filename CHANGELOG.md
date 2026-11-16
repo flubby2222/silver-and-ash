@@ -7,6 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Steinerne Katakomben:** Wände, Böden und Decken zeigen jetzt Bruchsteinmauern, abgetretene Bodenplatten und ein verrußtes Gewölbe statt einfarbiger Flächen – grobe, ungefilterte Pixel wie beim Ghul. Die Steinlagen laufen ohne Naht über den ganzen Raum und liegen ringsum auf gleicher Höhe, auch an Stufen
 - **Der Ghul hat Gestalt:** Statt Quadern kriecht jetzt ein ausgemergelter Mensch mit Textur auf allen vieren auf dich zu, weich schattiert im Licht deiner Laterne. Beim Ausholen richtet er sich auf, reißt die Arme hoch und öffnet das Maul weit; er blitzt bei Treffern (rot bei Kopftreffern), zuckt zurück und sackt beim Tod zur Seite
 - **Wandbruch mit Wucht:** Bricht die rissige Wand zum Geheimraum, fliegen Steinbrocken heraus (die meisten von dir weg), poltern zu Boden und versinken; eine Staubwolke steigt auf, und das Bild ruckt kurz
 - **Waffen-Plätze:** Du trägst eine Nahkampfwaffe und bis zu **drei Fernwaffen**. Wechseln mit dem **Mausrad** oder **1 / 2 / 3**; leere Plätze werden übersprungen, ein Wechsel bricht das Nachladen ab, jede Waffe behält ihr Magazin. Unten rechts stehen die Plätze, umrandet in der Farbe ihrer Stufe. Neue Waffen kommen mit den nächsten Updates
