@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
@@ -65,6 +66,18 @@ public sealed class Chest : IInteractable
     public Vector3 BoxMin => Position - new Vector3(Width / 2f, 0f, Depth / 2f);
 
     public Vector3 BoxMax => Position + new Vector3(Width / 2f, Height, Depth / 2f);
+
+    /// <summary>
+    /// Its solid body for players: as high as it has risen (nothing while still in the floor), so a chest rising under
+    /// someone lifts them instead of pushing them away.
+    /// </summary>
+    public BoxBody Body => new(BoxMin, Position + new Vector3(Width / 2f, Height * RiseFraction, Depth / 2f));
+
+    /// <summary>
+    /// The same for enemies, as a round body around it - they slide round it like round each other. Their way-finding
+    /// (cells) does not know chests; a round body keeps them from getting stuck on its corners.
+    /// </summary>
+    public CylinderBody RoundBody => new(Position, new Vector2(Width / 2f, Depth / 2f).Length(), Height * RiseFraction);
 
     /// <summary>"Open Guard's Chest", or for a locked chest "Unlock (1 key)" / "Locked - needs a key".</summary>
     public InteractionOffer OfferFor(Player player)

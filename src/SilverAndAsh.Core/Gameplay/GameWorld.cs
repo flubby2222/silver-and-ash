@@ -42,6 +42,8 @@ public sealed class GameWorld
     private readonly HashSet<int> _asleep = [];
     private readonly IReadOnlyList<ChestPlan> _chestPlan;
     private readonly List<(int X, int Z)> _safeCells = [];
+    private Level? _enemyPaths;
+    private List<(int X, int Z)> _enemyPathWalls = [];
     private Level _enemyLevel;
     private readonly List<Chest> _chests;
     private bool _lossReported;
@@ -99,7 +101,10 @@ public sealed class GameWorld
             .FirstOrDefault();
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
-        Player = new Player(Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random);
+        // ... nor through chests that stand (or are rising) - but they can jump onto them.
+        Player = new Player(
+            Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random,
+            () => StandingChests.Select(chest => chest.Body));
 
         _chestPlan = chests ?? [];
         _chests = _chestPlan.Select((plan, index) => new Chest(index, plan, level)).ToList();
@@ -227,6 +232,34 @@ public sealed class GameWorld
 
     /// <summary>The chests of the level, in the order they were given (hidden ones included).</summary>
     public IReadOnlyList<Chest> Chests => _chests;
+
+    // The chests that block the way: standing or rising, not those still waiting under the floor (decision record 0008).
+    private IEnumerable<Chest> StandingChests => _chests.Where(chest => chest.RiseFraction > 0f);
+
+    // The level ghouls and Gorm find their way in: EnemyLevel with the cells of standing chests as walls, so they plan
+    // a way round a chest instead of pushing against it. Not the cell a player stands in (on a chest) - the way to
+    // them must stay findable. Built anew only when those cells change. It is only a map for planning: it has no
+    // enemy starts (a chest may stand where an enemy started), and the player's start and the dummies' cells stay open.
+    private Level EnemyPaths()
+    {
+        var open = Players.Select(player => Level.ToGrid(player.Position.X, player.Position.Z))
+            .Append((Level.PlayerStartX, Level.PlayerStartZ))
+            .Concat(Level.DummyPositions.Select(position => Level.ToGrid(position.X, position.Z)))
+            .ToHashSet();
+        var walls = StandingChests
+            .Select(chest => Level.ToGrid(chest.Position.X, chest.Position.Z))
+            .Where(cell => !open.Contains(cell))
+            .ToList();
+        if (_enemyPaths is null || !walls.SequenceEqual(_enemyPathWalls))
+        {
+            _enemyPathWalls = walls;
+            _enemyPaths = walls.Count == 0
+                ? _enemyLevel
+                : _enemyLevel.WithEnemies([], []).WithCells(walls.Select(cell => (cell.X, cell.Z, Cell.Wall)));
+        }
+
+        return _enemyPaths;
+    }
 
     /// <summary>All balancing values of this world. They never change while it runs.</summary>
     public Balance Balance { get; }
@@ -364,6 +397,7 @@ public sealed class GameWorld
     {
         Level = WithClosedDoors();
         _enemyLevel = WithSafeRoomsWalled();
+        _enemyPaths = null;
         foreach (var player in Players)
         {
             player.ChangeLevel(Level);
@@ -997,13 +1031,14 @@ public sealed class GameWorld
 
         foreach (var ghoul in _ghouls)
         {
-            // Every ghoul is blocked by the players, the other living ghouls and the standing dummies.
+            // Every ghoul is blocked by the players, the other living ghouls, the standing dummies and the chests.
             var obstacles = Players.Select(player => player.Body)
                 .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, ghoul)).Select(target => target.Body))
+                .Concat(StandingChests.Select(chest => chest.RoundBody))
                 .ToList();
             if (!_asleep.Contains(ghoul.Id))
             {
-                ghoul.Act(_enemyLevel, Players, obstacles, _events);
+                ghoul.Act(_enemyLevel, Players, obstacles, _events, EnemyPaths());
             }
 
             ghoul.Tick(_events);
@@ -1013,8 +1048,9 @@ public sealed class GameWorld
         {
             var obstacles = Players.Select(player => player.Body)
                 .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, _gorm)).Select(target => target.Body))
+                .Concat(StandingChests.Select(chest => chest.RoundBody))
                 .ToList();
-            _gorm.Act(_enemyLevel, Players, obstacles, _events);
+            _gorm.Act(_enemyLevel, Players, obstacles, _events, EnemyPaths());
         }
 
         var batEventsFrom = _events.Count;

@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Geändert
+- **Kisten sind fest:** Man läuft nicht mehr durch Kisten hindurch, kann aber auf sie springen (0,7 m). Steigt eine Kiste unter dir aus dem Boden, hebt sie dich an. Ghule und Gorm laufen um Kisten herum; Fledermäuse fliegen darüber. Noch versteckte Kisten blockieren nicht
+
 ## [0.10.0] – 2026-11-16 – Boss & Bewegung
 
 Jede Ebene hat jetzt ihren Höhepunkt: Gorm, the Chained, ein Troll mit Keule und Kette, drei angekündigten Angriffen und einer zweiten Phase. Nach seinem Sieg führt eine Wendeltreppe hinaus. Dazu ein Luft-Dash in Blickrichtung, Gegner, die jedes Mal anders stehen, eine Karte mit Symbolen und die zweite Balancing-Runde.
