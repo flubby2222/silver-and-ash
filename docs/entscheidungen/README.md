@@ -13,6 +13,7 @@ Entscheidungen werden nicht gelöscht. Ändert sich etwas, kommt eine neue Notiz
 |---|---|---|
 | [0001](0001-projektgrundlagen.md) | Projektgrundlagen | angenommen, teilweise abgelöst durch 0004, 0005, 0009 und 0010 |
 | [0002](0002-spiellogik-von-anfang-an-3d.md) | Spiellogik von Anfang an in 3D | angenommen |
+| [0003](0003-online-coop-offenhalten.md) | Online-Coop offen halten | angenommen |
 | [0004](0004-fortschritt-stufen-beute-skills.md) | Fortschritt: Stufen, Beute, Skills | angenommen, teilweise abgelöst durch 0005 |
 | [0005](0005-ebenen-raeume-durchlauf.md) | Ebenen, Räume und Durchlauf | angenommen, teilweise abgelöst durch 0006 und 0008, ergänzt durch 0007 |
 | [0006](0006-kisten-beute-rarity.md) | Kisten, Beute und Rarity | angenommen, teilweise abgelöst durch 0008 |
