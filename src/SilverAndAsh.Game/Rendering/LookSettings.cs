@@ -3,7 +3,7 @@ using Raylib_cs;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// All values that shape how the game LOOKS, in one place (the counterpart to Core's Tuning,
+/// All values that shape how the game LOOKS, in one place (the counterpart to Core's Balance,
 /// which shapes how it FEELS). Decided with comparison pictures in milestone v0.3.
 /// </summary>
 internal static class LookSettings

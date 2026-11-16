@@ -4,14 +4,14 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 
 public class StaminaTests
 {
-    private static readonly int RechargeTicks = SimulationClock.SecondsToTicks(Tuning.Player.StaminaRechargeTime);
+    private static readonly int RechargeTicks = SimulationClock.SecondsToTicks(Balance.Default.Player.StaminaRechargeTime);
 
     [Fact]
     public void A_full_bar_pays_for_exactly_the_tuned_number_of_jumps()
     {
         var stamina = new Stamina();
 
-        for (var jump = 0; jump < Tuning.Player.StaminaJumps; jump++)
+        for (var jump = 0; jump < Balance.Default.Player.StaminaJumps; jump++)
         {
             Assert.True(stamina.TryPay(), $"Jump {jump + 1} should be paid.");
         }
@@ -25,8 +25,8 @@ public class StaminaTests
     {
         // Guards against tuning mistakes (code review): with uneven values a rest would stay in the bar,
         // and with a cost of 0 the jumps would be free.
-        Assert.True(Stamina.CostPerSegment > 0);
-        Assert.Equal(Stamina.Capacity, Stamina.CostPerSegment * Tuning.Player.StaminaJumps);
+        Assert.True(new Stamina().CostPerSegment > 0);
+        Assert.Equal(new Stamina().Capacity, new Stamina().CostPerSegment * Balance.Default.Player.StaminaJumps);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class StaminaTests
         stamina.TryPay();
         stamina.SetRecharging(true);
 
-        Tick(stamina, RechargeTicks / Tuning.Player.StaminaJumps);
+        Tick(stamina, RechargeTicks / Balance.Default.Player.StaminaJumps);
 
         Assert.Equal(1f, stamina.Fraction);
     }

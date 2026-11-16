@@ -248,4 +248,34 @@ public class CharacterCollisionTests
 
         return current;
     }
+
+    [Fact]
+    public void A_body_stops_the_movement_into_it_and_lets_the_character_slide()
+    {
+        var body = new CylinderBody(new Vector3(6f, 0f, 5f), 0.3f, 1.8f);
+        var start = new Vector3(5f, 0f, 5f);
+
+        var (position, velocity) = CharacterCollision.Move(
+            Room, start, new Vector3(6f, 0f, 1f), Radius, 0.5f, bodies: [body]);
+
+        // A round body: the character never gets closer than both radii, and glides around it to the side.
+        var distance = new Vector2(position.X - body.Position.X, position.Z - body.Position.Z).Length();
+        Assert.True(distance >= 0.3f + Radius - Tolerance, $"Went into the body: {position}.");
+        Assert.True(position.Z > start.Z + 0.5f, $"Did not glide around the body: {position}.");
+        Assert.True(velocity.Length() < 6.1f, $"Got faster from the push: {velocity}.");
+    }
+
+    [Fact]
+    public void A_body_above_or_below_the_character_does_not_block()
+    {
+        // Later: a bat flying over the player's head must not push the player around.
+        var above = new CylinderBody(new Vector3(6f, 2f, 5f), 0.3f, 1f);
+        var below = new CylinderBody(new Vector3(6f, -2f, 5f), 0.3f, 1f);
+        var start = new Vector3(5f, 0f, 5f);
+
+        var (position, _) = CharacterCollision.Move(
+            Room, start, new Vector3(2f, 0f, 0f), Radius, 1f, bodies: [above, below]);
+
+        Assert.Equal(7f, position.X, Tolerance);
+    }
 }

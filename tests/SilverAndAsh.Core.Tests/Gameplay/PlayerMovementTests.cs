@@ -51,9 +51,9 @@ public class PlayerMovementTests
     {
         var player = NewPlayer();
 
-        RunTicks(player, Forward, SimulationClock.SecondsToTicks(Tuning.Player.AccelerationTime));
+        RunTicks(player, Forward, SimulationClock.SecondsToTicks(Balance.Default.Player.AccelerationTime));
 
-        Assert.Equal(Tuning.Player.MaxSpeed, player.Velocity.Length(), Tolerance);
+        Assert.Equal(Balance.Default.Player.MaxSpeed, player.Velocity.Length(), Tolerance);
     }
 
     [Fact]
@@ -61,9 +61,9 @@ public class PlayerMovementTests
     {
         var player = NewPlayer();
 
-        RunTicks(player, Forward, SimulationClock.SecondsToTicks(Tuning.Player.AccelerationTime) / 2);
+        RunTicks(player, Forward, SimulationClock.SecondsToTicks(Balance.Default.Player.AccelerationTime) / 2);
 
-        Assert.InRange(player.Velocity.Length(), 0.1f, Tuning.Player.MaxSpeed - 0.1f);
+        Assert.InRange(player.Velocity.Length(), 0.1f, Balance.Default.Player.MaxSpeed - 0.1f);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class PlayerMovementTests
 
         RunTicks(player, ForwardRight, 60);
 
-        Assert.Equal(Tuning.Player.MaxSpeed, player.Velocity.Length(), Tolerance);
+        Assert.Equal(Balance.Default.Player.MaxSpeed, player.Velocity.Length(), Tolerance);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class PlayerMovementTests
         var player = NewPlayer();
         RunTicks(player, Forward, 60);
 
-        RunTicks(player, PlayerInput.None, SimulationClock.SecondsToTicks(Tuning.Player.AccelerationTime));
+        RunTicks(player, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Player.AccelerationTime));
 
         Assert.Equal(Vector3.Zero, player.Velocity);
     }
@@ -135,7 +135,7 @@ public class PlayerMovementTests
 
         RunTicks(player, Forward, 60);
 
-        Assert.Equal(Tuning.Player.MaxSpeed, player.Velocity.Length(), Tolerance);
+        Assert.Equal(Balance.Default.Player.MaxSpeed, player.Velocity.Length(), Tolerance);
         Assert.Equal(start.Y, player.Position.Y);
     }
 
@@ -153,7 +153,7 @@ public class PlayerMovementTests
 
         RunTicks(player, Forward, 120);
 
-        Assert.Equal(6f - Tuning.Player.Radius, player.Position.Z, Tolerance);
+        Assert.Equal(6f - BodySizes.Player.Radius, player.Position.Z, Tolerance);
         Assert.Equal(0f, player.Velocity.Z, Tolerance);
 
         // Walk back: the wall must not hold the player.
@@ -172,7 +172,7 @@ public class PlayerMovementTests
         RunTicks(player, Forward, 30);
 
         var expected = Vector3.Lerp(player.PreviousPosition, player.Position, alpha)
-            + new Vector3(0f, Tuning.Player.EyeHeight, 0f);
+            + new Vector3(0f, BodySizes.Player.EyeHeight, 0f);
 
         Assert.Equal(expected, player.InterpolatedEyePosition(alpha));
     }

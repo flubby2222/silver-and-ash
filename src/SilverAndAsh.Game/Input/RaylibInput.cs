@@ -14,6 +14,9 @@ internal sealed class RaylibInput
     // Ignoring the very next frame's delta avoids the view snapping around.
     private bool _ignoreNextMouseDelta = true;
 
+    // The left click that captures the mouse must not also swing the blade.
+    private readonly CaptureClickFilter _captureClick = new();
+
     /// <summary>
     /// True while the mouse is captured: the cursor is hidden and every movement turns the view.
     /// </summary>
@@ -25,6 +28,7 @@ internal sealed class RaylibInput
         Raylib.DisableCursor();
         IsMouseCaptured = true;
         _ignoreNextMouseDelta = true;
+        _captureClick.MouseCaptured();
     }
 
     /// <summary>Releases the mouse (normal cursor again, the view stays still).</summary>
@@ -36,20 +40,13 @@ internal sealed class RaylibInput
     }
 
     /// <summary>
-    /// Reads the input of the current frame. Esc releases the mouse, a left click captures it again;
-    /// losing the window focus (e.g. Alt+Tab) releases it, too.
+    /// Reads the input of the current frame. Whether the mouse is captured decides the game (captured while
+    /// playing; free on the title screen, in the Esc menu and while a bonus is chosen).
+    /// <paramref name="keysWithFreeMouse"/>: the mouse is free for a window in the running game (the bonus choice) -
+    /// keys still count (you walk on while choosing), the mouse neither turns the view nor attacks.
     /// </summary>
-    public PlayerInput Read()
+    public PlayerInput Read(bool keysWithFreeMouse = false)
     {
-        if (IsMouseCaptured && (Raylib.IsKeyPressed(KeyboardKey.Escape) || !Raylib.IsWindowFocused()))
-        {
-            ReleaseMouse();
-        }
-        else if (!IsMouseCaptured && Raylib.IsMouseButtonPressed(MouseButton.Left))
-        {
-            CaptureMouse();
-        }
-
         var look = Vector2.Zero;
         if (IsMouseCaptured && !_ignoreNextMouseDelta)
         {
@@ -58,6 +55,16 @@ internal sealed class RaylibInput
 
         _ignoreNextMouseDelta = false;
 
+        if (!IsMouseCaptured && keysWithFreeMouse)
+        {
+            return new PlayerInput(
+                ReadMoveKeys(), Vector2.Zero,
+                Jump: Raylib.IsKeyDown(KeyboardKey.Space),
+                Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift),
+                Interact: Raylib.IsKeyPressed(KeyboardKey.F),
+                Reload: Raylib.IsKeyDown(KeyboardKey.R));
+        }
+
         // With the mouse released the player is "away from the game": no walking or jumping either.
         if (!IsMouseCaptured)
         {
@@ -65,7 +72,30 @@ internal sealed class RaylibInput
         }
 
         return new PlayerInput(
-            ReadMoveKeys(), look, Jump: Raylib.IsKeyDown(KeyboardKey.Space), Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift));
+            ReadMoveKeys(),
+            look,
+            Jump: Raylib.IsKeyDown(KeyboardKey.Space),
+            Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift),
+            Melee: _captureClick.Filter(Raylib.IsMouseButtonDown(MouseButton.Left)),
+            Shoot: Raylib.IsMouseButtonDown(MouseButton.Right),
+            Interact: Raylib.IsKeyPressed(KeyboardKey.F),
+            Reload: Raylib.IsKeyDown(KeyboardKey.R),
+            SelectSlot: ReadSlotKeys(),
+            CycleSlot: ReadWheel());
+    }
+
+    // 1 / 2 / 3 pressed this frame: that ranged weapon place (0, 1, 2).
+    private static int? ReadSlotKeys() =>
+        Raylib.IsKeyPressed(KeyboardKey.One) ? 0
+        : Raylib.IsKeyPressed(KeyboardKey.Two) ? 1
+        : Raylib.IsKeyPressed(KeyboardKey.Three) ? 2
+        : null;
+
+    // Mouse wheel this frame: towards you (down) = the next weapon, away (up) = the one before.
+    private static int ReadWheel()
+    {
+        var wheel = Raylib.GetMouseWheelMove();
+        return wheel < 0f ? 1 : wheel > 0f ? -1 : 0;
     }
 
     private static Vector2 ReadMoveKeys()

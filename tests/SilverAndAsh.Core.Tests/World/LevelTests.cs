@@ -95,4 +95,15 @@ public class LevelTests
 
         Assert.Equal((2, 1), Level.ToGrid(centre.X, centre.Z));
     }
+
+    [Fact]
+    public void Dummies_must_stand_on_walkable_cells_inside_the_level()
+    {
+        var cells = new Cell[2, 1];
+        cells[0, 0] = Cell.Floor;
+        cells[1, 0] = Cell.Wall;
+
+        Assert.Throws<ArgumentException>(() => new Level(cells, 0, 0, [(1, 0)]));
+        Assert.Throws<ArgumentException>(() => new Level(cells, 0, 0, [(5, 0)]));
+    }
 }

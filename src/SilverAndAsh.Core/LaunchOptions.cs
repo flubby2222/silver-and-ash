@@ -1,15 +1,50 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace SilverAndAsh.Core;
 
 /// <summary>
-/// Options given when starting the game, e.g. <c>--level heights</c>.
+/// Options given when starting the game, e.g. <c>--level heights</c> or <c>--level generated --seed 123</c>.
 /// </summary>
-/// <param name="LevelName">Name of the level file in assets/levels/ without ".txt".</param>
-public sealed partial record LaunchOptions(string LevelName)
+/// <param name="LevelName">Name of the level file in assets/levels/ without ".txt", or <see cref="GeneratedLevelName"/>.</param>
+/// <param name="Seed">Seed chosen with <c>--seed</c>, or null for a new one every game.</param>
+/// <param name="Give">
+/// Weapons to start every run with, chosen with <c>--give club</c> (as often as wanted) - for trying weapons out
+/// before they can be found. The game honours it only in its debug version.
+/// </param>
+/// <param name="Photo">
+/// <c>--photo &lt;scene&gt;</c>: take the picture of this photo scene (or <see cref="AllPhotos"/>, or <see cref="ListPhotos"/>
+/// to name them) and quit - for testers and designers (issue #224). Only in the debug version. Null: play.
+/// </param>
+/// <param name="PhotoFolder"><c>--out &lt;folder&gt;</c>: where the pictures go; null for the standard folder.</param>
+/// <param name="Look">
+/// <c>--look &lt;1-4&gt;</c>: draw the world in this picture variant (issue #234, decision record 0010 - an open question
+/// to be decided with pictures). Only in the debug version. Null: variant 1, the game as it is.
+/// </param>
+public sealed partial record LaunchOptions(
+    string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null, string? Photo = null, string? PhotoFolder = null,
+    int? Look = null)
 {
-    /// <summary>Level that is loaded when no <c>--level</c> is given.</summary>
-    public const string DefaultLevelName = "test";
+    /// <summary><c>--photo compare</c> takes the comparison scenes in every picture variant, plus one 2 x 2 sheet per scene.</summary>
+    public const string ComparePhotos = "compare";
+
+    /// <summary>Number of picture variants <c>--look</c> can choose (1 is the game as it is).</summary>
+    public const int LookVariantCount = 4;
+
+    /// <summary><c>--photo all</c> takes every photo scene, one after the other.</summary>
+    public const string AllPhotos = "all";
+
+    /// <summary><c>--photo list</c> names the photo scenes instead of taking pictures.</summary>
+    public const string ListPhotos = "list";
+
+    /// <summary>Level that is played when no <c>--level</c> is given: a generated level 0.</summary>
+    public const string DefaultLevelName = GeneratedLevelName;
+
+    /// <summary>This "level name" builds a level from the room templates instead of loading a file.</summary>
+    public const string GeneratedLevelName = "generated";
+
+    /// <summary>True if the level is built by the level generator.</summary>
+    public bool IsGenerated => LevelName == GeneratedLevelName;
 
     /// <summary>
     /// Reads the command line. Unknown options are errors - better a clear message than silently ignoring a typo.
@@ -19,6 +54,11 @@ public sealed partial record LaunchOptions(string LevelName)
     {
         ArgumentNullException.ThrowIfNull(args);
         var levelName = DefaultLevelName;
+        int? seed = null;
+        var give = new List<Gameplay.WeaponKind>();
+        string? photo = null;
+        string? photoFolder = null;
+        int? look = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -47,12 +87,91 @@ public sealed partial record LaunchOptions(string LevelName)
 
                     break;
 
+                case "--seed":
+                    if (i + 1 >= args.Count)
+                    {
+                        throw new ArgumentException("'--seed' needs a number, e.g. '--seed 123'.");
+                    }
+
+                    var text = args[++i];
+                    if (!int.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number))
+                    {
+                        throw new ArgumentException($"Invalid seed '{text}'. A seed is a whole number, e.g. '--seed 123'.");
+                    }
+
+                    seed = number;
+                    break;
+
+                case "--give":
+                    var known = string.Join(", ", Enum.GetNames<Gameplay.WeaponKind>()).ToLowerInvariant();
+                    if (i + 1 >= args.Count)
+                    {
+                        throw new ArgumentException($"'--give' needs a weapon, e.g. '--give club'. Known: {known}.");
+                    }
+
+                    var name = args[++i];
+                    if (!Enum.TryParse<Gameplay.WeaponKind>(name, ignoreCase: true, out var weapon) || int.TryParse(name, out _))
+                    {
+                        throw new ArgumentException($"Unknown weapon '{name}'. Known: {known}.");
+                    }
+
+                    give.Add(weapon);
+                    break;
+
+                case "--photo":
+                    var scenes = string.Join(", ", Photos.PhotoScenes.All.Select(scene => scene.Name));
+                    if (i + 1 >= args.Count)
+                    {
+                        throw new ArgumentException(
+                            $"'--photo' needs a scene, '{AllPhotos}', '{ComparePhotos}' or '{ListPhotos}'. Scenes: {scenes}.");
+                    }
+
+                    photo = args[++i];
+                    if (photo is not (AllPhotos or ListPhotos or ComparePhotos) && Photos.PhotoScenes.Find(photo) is null)
+                    {
+                        throw new ArgumentException($"Unknown photo scene '{photo}'. Scenes: {scenes}.");
+                    }
+
+                    break;
+
+                case "--out":
+                    if (i + 1 >= args.Count || string.IsNullOrWhiteSpace(args[i + 1]))
+                    {
+                        throw new ArgumentException("'--out' needs a folder for the pictures, e.g. '--out photos'.");
+                    }
+
+                    photoFolder = args[++i];
+                    break;
+
+                case "--look":
+                    if (i + 1 >= args.Count
+                        || !int.TryParse(args[i + 1], NumberStyles.None, CultureInfo.InvariantCulture, out var variant)
+                        || variant is < 1 or > LookVariantCount)
+                    {
+                        throw new ArgumentException($"'--look' needs a picture variant from 1 to {LookVariantCount}, e.g. '--look 3'.");
+                    }
+
+                    look = variant;
+                    i++;
+                    break;
+
                 default:
-                    throw new ArgumentException($"Unknown option '{args[i]}'. Known: --level <name>.");
+                    throw new ArgumentException(
+                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --out <folder>, --look <1-4>.");
             }
         }
 
-        return new LaunchOptions(levelName);
+        if (photoFolder is not null && photo is null)
+        {
+            throw new ArgumentException("'--out' only goes with '--photo'.");
+        }
+
+        if (look is not null && photo == ComparePhotos)
+        {
+            throw new ArgumentException($"'--photo {ComparePhotos}' takes every picture variant; leave out '--look'.");
+        }
+
+        return new LaunchOptions(levelName, seed, give, photo, photoFolder, look);
     }
 
     /// <summary>The level file for these options inside <paramref name="levelDirectory"/>.</summary>

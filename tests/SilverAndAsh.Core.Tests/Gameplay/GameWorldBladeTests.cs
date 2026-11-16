@@ -1,0 +1,129 @@
+using System.Numerics;
+using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.World;
+
+namespace SilverAndAsh.Core.Tests.Gameplay;
+
+public class GameWorldBladeTests
+{
+    private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
+    private static readonly PlayerInput Melee = PlayerInput.None with { Melee = true };
+    private static readonly int BladeTicks = SimulationClock.SecondsToTicks(Balance.Default.Blade.Cooldown);
+
+    [Fact]
+    public void A_swing_at_a_dummy_in_front_does_the_blade_damage()
+    {
+        var world = InFrontOfADummy();
+
+        Swing(world);
+
+        Assert.Equal(Balance.Default.Dummy.MaxHealth - Balance.Default.Blade.Damage, world.Dummies[0].Health);
+        Assert.Contains(new DummyHit(0, Balance.Default.Blade.Damage), world.Events);
+    }
+
+    [Fact]
+    public void Three_swings_knock_a_dummy_down()
+    {
+        var world = InFrontOfADummy();
+        var seen = new List<GameEvent>();
+
+        for (var swing = 0; swing < 3; swing++)
+        {
+            Swing(world);
+            seen.AddRange(world.Events);
+            RunTicks(world, PlayerInput.None, BladeTicks);
+        }
+
+        Assert.True(world.Dummies[0].IsDown);
+        Assert.Contains(new DummyKnockedDown(0), seen);
+    }
+
+    [Fact]
+    public void A_swing_out_of_reach_does_nothing()
+    {
+        var world = new GameWorld(LevelParser.Parse("P\n.\nD"));   // dummy 4 m ahead
+
+        Swing(world);
+
+        Assert.Equal(Balance.Default.Dummy.MaxHealth, world.Dummies[0].Health);
+        Assert.DoesNotContain(world.Events, e => e is DummyHit);
+    }
+
+    [Fact]
+    public void One_swing_hits_every_dummy_in_the_cone()
+    {
+        // Two dummies side by side ahead; the player steps to the right until it stands between them.
+        var world = new GameWorld(LevelParser.Parse(".P\nDD"));
+        var right = PlayerInput.None with { Move = new Vector2(1f, 0f) };
+        var middle = (world.Dummies[0].Position.X + world.Dummies[1].Position.X) / 2f;
+        for (var i = 0; i < 60 && MathF.Abs(world.Player.Position.X - middle) > 0.3f; i++)
+        {
+            world.Tick(right);
+        }
+
+        RunTicks(world, PlayerInput.None, 10);
+        Swing(world);
+
+        Assert.All(world.Dummies, dummy => Assert.Equal(Balance.Default.Dummy.MaxHealth - Balance.Default.Blade.Damage, dummy.Health));
+    }
+
+    [Fact]
+    public void A_swing_during_the_cooldown_does_no_damage()
+    {
+        var world = InFrontOfADummy();
+        Swing(world);
+        world.Tick(PlayerInput.None);
+
+        Swing(world);
+
+        Assert.Equal(Balance.Default.Dummy.MaxHealth - Balance.Default.Blade.Damage, world.Dummies[0].Health);
+    }
+
+    [Fact]
+    public void Two_fully_charged_swings_knock_a_dummy_down()
+    {
+        // Full charge: 200 % of the blade damage (80); the dummy (100) falls with the second swing.
+        var world = InFrontOfADummy();
+        var fullTicks = SimulationClock.SecondsToTicks(Balance.Default.Blade.ChargeTime);
+
+        world.Tick(Melee);
+        RunTicks(world, Melee, fullTicks);
+        world.Tick(PlayerInput.None);
+
+        var charged = (int)(Balance.Default.Blade.Damage * Balance.Default.Blade.ChargeMaxMultiplier);
+        Assert.Contains(new DummyHit(0, charged), world.Events);
+        Assert.False(world.Dummies[0].IsDown);
+
+        RunTicks(world, PlayerInput.None, BladeTicks);
+        world.Tick(Melee);
+        RunTicks(world, Melee, fullTicks);
+        world.Tick(PlayerInput.None);
+
+        Assert.True(world.Dummies[0].IsDown);
+    }
+
+    /// <summary>A quick (uncharged) swing: button pressed in one tick, let go in the next - the swing happens then.</summary>
+    private static void Swing(GameWorld world)
+    {
+        world.Tick(Melee);
+        world.Tick(PlayerInput.None);
+    }
+
+    /// <summary>The player walked up to a dummy and stands right in front of it.</summary>
+    private static GameWorld InFrontOfADummy()
+    {
+        var world = new GameWorld(LevelParser.Parse("P\n.\nD"));
+        RunTicks(world, Forward, SimulationClock.TicksPerSecond);
+        RunTicks(world, PlayerInput.None, 10);
+        return world;
+    }
+
+    private static void RunTicks(GameWorld world, PlayerInput input, int ticks)
+    {
+        for (var i = 0; i < ticks; i++)
+        {
+            world.Tick(input);
+        }
+    }
+}

@@ -3,6 +3,9 @@
     <Project Path="src/SilverAndAsh.Core/SilverAndAsh.Core.csproj" />
     <Project Path="src/SilverAndAsh.Game/SilverAndAsh.Game.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/SilverAndAsh.BalanceReport/SilverAndAsh.BalanceReport.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SilverAndAsh.Core.Tests/SilverAndAsh.Core.Tests.csproj" />
   </Folder>

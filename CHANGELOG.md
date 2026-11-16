@@ -6,6 +6,150 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Wandbruch mit Wucht:** Bricht die rissige Wand zum Geheimraum, fliegen Steinbrocken heraus (die meisten von dir weg), poltern zu Boden und versinken; eine Staubwolke steigt auf, und das Bild ruckt kurz
+- **Waffen-Plätze:** Du trägst eine Nahkampfwaffe und bis zu **drei Fernwaffen**. Wechseln mit dem **Mausrad** oder **1 / 2 / 3**; leere Plätze werden übersprungen, ein Wechsel bricht das Nachladen ab, jede Waffe behält ihr Magazin. Unten rechts stehen die Plätze, umrandet in der Farbe ihrer Stufe. Neue Waffen kommen mit den nächsten Updates
+- **Club (Keule, Worn):** neue Nahkampfwaffe, langsamer als die Klinge, aber härter (50 Schaden). Er stößt Ghule und Fledermäuse **3 m zurück**, voll aufgeladen **6 m**; Wände halten sie auf, Gorm bleibt stehen. Zu finden ist er mit dem Beute-System; zum Ausprobieren startet die Debug-Version mit `--give club`
+- **Jede Nahkampfwaffe lässt sich aufladen**, und jeder voll aufgeladene Nahkampfschlag bricht die rissige Wand zum Geheimraum
+- **Rifle (Gewehr, Forged):** neue Fernwaffe für schwere, gezielte Schüsse: 80 Schaden, Kopftreffer ×3, 80 m Reichweite, 4 Schuss, 1,4 s zwischen den Schüssen, 2,5 s Nachladen. Ein Schuss **durchschlägt einen Gegner** und trifft den dahinter; Wände halten ihn auf. Zum Ausprobieren startet die Debug-Version mit `--give rifle` (Taste 2 nimmt sie in die Hand)
+- **Blunderbuss (Donnerbüchse, Forged):** neue Fernwaffe für kurze Distanz: Ein Schuss feuert **9 Kugeln** in einem 20°-Kegel, je 12 Schaden, **wirksam bis 12 m**, darüber nichts. 1 Schuss, dann 1,8 s Nachladen. Die Streuung hängt vom Seed ab. Zum Ausprobieren: `--give blunderbuss`
+- **Inventar (G):** **G** öffnet und schließt es; das Spiel läuft weiter, **Bewegen oder ein Treffer schließt es**. Öffnest du es im Laufen, läufst du weiter und es bleibt offen; erst eine neu gedrückte Richtung, Springen oder Shift schließt es. Oben stehen die Waffen in der Hand, darunter **sechs Plätze** für Waffen, die du nicht ausgerüstet hast, rechts die Items (noch leer). Alle Rahmen in der Farbe ihrer Stufe. **Linksklick** rüstet aus (Nahkampf tauscht, Fernwaffe auf einen freien Platz, sonst Tausch mit der in der Hand), **Rechtsklick** lässt fallen – die Waffe liegt dann leuchtend am Boden. Fernwaffen behalten in der Tasche ihr Magazin; ein laufendes Nachladen bricht beim Verstauen ab. Die letzte Fernwaffe kann man nicht fallen lassen. Zum Ausprobieren legt `--give` überzählige Waffen ins Inventar (z. B. `--give club --give rifle --give blunderbuss --give pistol`)
+
+### Geändert
+- **Nachladen:** Die Pistole hat ein Magazin mit **7 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („6 / 7“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
+- **Bonus-Wahl ohne Stillstand:** Ein Stufenaufstieg hält das Spiel nicht mehr an. Unter der Stufenanzeige blinkt „[X] Choose boon“ (bei mehreren mit Anzahl). **X** öffnet die Wahl, **1–4** oder ein **Klick** wählt, das Spiel läuft weiter, und du kannst dabei laufen. Mehrere Aufstiege kommen nacheinander. Nur ein Treffer schließt die Wahl, der Bonus wartet weiter
+- **Kisten sind fest:** Man läuft nicht mehr durch Kisten hindurch, kann aber auf sie springen (0,7 m). Steigt eine Kiste unter dir aus dem Boden, hebt sie dich an. Ghule und Gorm laufen um Kisten herum; Fledermäuse fliegen darüber. Noch versteckte Kisten blockieren nicht
+
+## [0.10.0] – 2026-11-16 – Boss & Bewegung
+
+Jede Ebene hat jetzt ihren Höhepunkt: Gorm, the Chained, ein Troll mit Keule und Kette, drei angekündigten Angriffen und einer zweiten Phase. Nach seinem Sieg führt eine Wendeltreppe hinaus. Dazu ein Luft-Dash in Blickrichtung, Gegner, die jedes Mal anders stehen, eine Karte mit Symbolen und die zweite Balancing-Runde.
+
+### Hinzugefügt
+- **Gorm, the Chained:** Im Bossraum wartet jetzt ein Troll, 3,2 m groß, mit Keule und Kette (Platzhalter aus Kästen).
+  - Betrittst du den Bossraum, erscheint oben sein Lebensbalken (3600 Leben).
+  - Er geht langsam auf dich zu und **greift an**, jeder Angriff mit deutlicher Ankündigung und einer Antwort:
+    - **Hammerschlag** (Keule hoch, roter Kreis am Boden): Eine Schockwelle läuft über den Boden → **springen**. Verfehlt er, steckt die Keule 2 s fest: Er beugt sich vor und nimmt doppelten Schaden.
+    - **Kettenschwung** (Kette wird über dem Kopf angedreht, so lang, wie sie reicht): Die Kette streicht in 0,6 s auf Brusthöhe von seiner Linken über vorne nach rechts → **Dodge** (geduckt), wenn sie ankommt, oder **hinter ihn**; Springen hilft nicht.
+    - **Kettenwurf** (Haken glüht rot): Der Haken fliegt dorthin, wo du standest → **zur Seite** oder hinter eine Säule. Trifft er, zieht er dich heran.
+    - Nach jedem Angriff ruht er kurz; nie zweimal hintereinander derselbe Angriff.
+  - **Phase 2:** Bei halbem Leben brüllt er 1,5 s lang (Kopf in den Nacken, der Boden bebt) und greift solange nicht an. Danach läuft, kündigt an und ruht er 40 % schneller. Jeder Hammerschlag löst dann **6 Steine von der Decke**: Ihr dunkler Schatten wächst 1 s lang am Boden um dich herum, dann schlägt der Stein ein (25 Schaden) → **aus dem Schatten gehen**.
+  - Sein Kopf ist ein Schwachpunkt: Ein Pistolenschuss dorthin macht 150 % Schaden.
+  - Er hinterlässt 100–150 Silber und eine Blutphiole.
+- **Wendeltreppe und neuer Sieg:** Nach Gorms Tod fährt in der Mitte des Bossraums eine Wendeltreppe aus dem Boden. „[F] Climb the stairs“ gewinnt den Durchlauf. Der Endbildschirm und `runs.log` zeigen, ob Gorm besiegt wurde und wie lange der Kampf dauerte
+- **Luft-Dash in Blickrichtung:** W + Shift in der Luft dasht dorthin, wohin man schaut, auch schräg nach oben, z. B. auf höhere Stellen in den 6 m hohen Räumen. Andere Richtungen dashen wie bisher flach. Gleiche Strecke und Ausdauer, einmal pro Sprung; an Decke und Boden endet der Dash
+- **Blutphiolen auf der Karte:** Eine liegen gelassene Blutphiole in einem schon entdeckten Raum erscheint auf der Karte als roter Punkt. Hebt man sie auf, verschwindet der Punkt
+- **Kisten und Symbole auf der Karte:** Ungeöffnete Kisten in entdeckten Räumen erscheinen in der Farbe ihrer Stufe, verschlossene mit Schloss; geöffnete verschwinden. Verschlossene Türen tragen ein Schloss, die Bossraum-Tür einen Totenkopf
+
+### Geändert
+- **Sieg:** Der Durchlauf ist nicht mehr gewonnen, sobald der Bossraum geräumt ist, sondern erst, wenn man die Treppe nimmt. Im Bossraum gibt es keine Ghule und Fledermäuse mehr (Gorm kämpft allein)
+- **Gegner stehen jedes Mal anders:** Statt fester Plätze bekommt jeder Kampfraum ein Gegner-Budget, das weiter vom Start wächst. Davon kauft er Ghule und Fledermäuse (hinten mehr Fledermäuse) und stellt sie auf zufällige freie Felder, mit Abstand zu den Türen und zueinander. Insgesamt etwa so viele Gegner wie bisher. Einstellbar in `balance.json` unter `difficulty`
+- Der **Startraum hat nur noch eine Tür**. Der Ausgang liegt je Durchlauf in einer anderen Richtung, und der Weg zum Boss wird etwas länger
+- **Karte:** **Tab halten** zeigt sie, **M** schaltet sie an und aus, damit sie beim Laufen offen bleiben kann. Sie ist jetzt durchsichtiger, sodass man das Spiel dahinter gut sieht
+- **Balancing-Runde 2:** Gorm ist zäher und härter (3600 Leben, mehr Schaden, kürzere Pausen), Phase 2 schneller und mit mehr Steinen. Ghule und Fledermäuse sind gefährlicher: Ghule kriechen schneller (5 m/s), schlagen härter (30) und erholen sich schneller; Fledermäuse beißen und spucken härter (20) und öfter. Hinten etwas mehr Gegner. Ein Durchlauf mit allen Räumen dauert etwa 12 Minuten, Gorm um 1,5 Minuten. Protokoll in `docs/balancing.md`
+
+## [0.9.0] – 2026-11-15 – Schatz & Wirtschaft
+
+Erkunden lohnt sich jetzt: Gegner lassen Silber und Schlüssel fallen, Kisten in vier Stufen warten in Kampfräumen, Schatzräumen und einem versteckten Raum hinter einer rissigen Wand. Dazu die erste Balancing-Runde mit eigenem Werkzeug.
+
+### Hinzugefügt
+- **Silber**, die Währung des Durchlaufs: Getötete Ghule und Fledermäuse lassen in der Hälfte der Fälle 1–3 Silber fallen, als kleinen Münzstapel am Boden. Drüberlaufen sammelt es ein. Oben rechts zeigt der Zähler „SILVER“; der Endbildschirm und `runs.log` nennen das gesammelte Silber. Ein neuer Durchlauf beginnt bei 0. Einstellbar in `balance.json` unter `silver`. Ausgeben kann man es ab v0.11 beim Händler
+- **Schlüssel und verschlossene Türen:** Ein geräumter Kampfraum lässt mit 10 % einen goldenen Schlüssel in seiner Mitte liegen, ein getöteter Gegner mit 2,5 %. Drüberlaufen sammelt ihn ein, der Zähler „KEYS“ steht unter dem Silber. Verschlossene Türen sind aus dunklem Eisen mit Vorhängeschloss (auf der Karte golden): Mit Schlüssel öffnet **F** sie („[F] Unlock (1 key)“) und verbraucht einen, ohne Schlüssel steht dort „Locked - needs a key“. Schlüssel gelten nur für den Durchlauf. Einstellbar in `balance.json` unter `keys`. Die verschlossenen Türen setzt der Generator mit den Schatzräumen ein
+- **Kisten mit vier Stufen:** Beggar's (Holz), Guard's (stahlblau), King's (gold) und Vampire's Chest (blutrot), schon von weitem zu unterscheiden. Etwa jeder vierte Kampfraum hat eine; sie steigt aus dem Boden, sobald der Raum geräumt ist, und wird weiter vom Start entfernt etwas besser. **F** öffnet sie („[F] Open King's Chest“); höhere Stufen sind öfter verschlossen und brauchen dann einen Schlüssel. Heraus springen Silber (Beggar's 10–20 bis Vampire's 80–120) und mit etwas Glück eine Blutphiole. Alle Werte in `balance.json` unter `chests`
+- **Schatzräume:** Jede Ebene hat einen Schatzraum und einen zweiten hinter einer **verschlossenen Tür**. Beide sind gegnerfreie Sackgassen mit 1–2 Kisten, hinter dem Schloss eher King's und Vampire's Chests. Sie liegen nie direkt am Start und nie hinter dem Boss; der Boss ist immer ohne Schlüssel erreichbar. Auf der Karte sind Schatzräume golden. Anzahl und Kisten-Anteile stehen in `balance.json` (`layout`, `chests`)
+- **Secret Room:** Jede Ebene versteckt einen Raum hinter einer Wand mit feinen Rissen an einem Kampfraum. Nur ein **voll aufgeladener Klingenhieb** bricht sie auf; normale Hiebe, Schüsse und F tun nichts. Bis dahin verrät auch die Karte nichts. Drinnen steht eine Kiste: Guard's, King's oder mit Glück Vampire's Chest. Auf der Karte ist der Secret Room violett
+- **Für die Entwicklung:** Balance-Report (`tools/SilverAndAsh.BalanceReport`) baut 500 Ebenen aus `balance.json` und zeigt Erwartungswerte (Räume, Gegner, Silber, Schlüssel, Kisten, Heilung, grobe Spielzeit), auch als Vorher/Nachher-Vergleich. Siehe `docs/balancing.md`
+
+### Geändert
+- **Balancing-Runde 1:** Eine Ebene ist länger und schwerer.
+  - 12–14 statt 7–9 Kampfräume, schon nahe am Start mehr Gegner und erste Fledermäuse.
+  - Ghule halten drei statt zwei Klingenhiebe aus und schlagen härter zu; Fledermäuse überstehen einen Pistolenschuss.
+  - Blutphiolen fallen seltener und heilen 30 statt 50.
+  - Schlüssel sind an die größeren Ebenen angepasst.
+  - Alle Werte und Gründe stehen in `docs/balancing.md`.
+- **Ghul-Köpfe** zählen nur noch dort als Kopftreffer, wo der Kopf gezeichnet ist, nicht mehr in der ganzen vorderen Körperhälfte.
+
+### Behoben
+- Gegner konnten dem Spieler in Schatz- und Secret-Räume folgen, z. B. nachdem man sie durch eine offene Tür angeschossen hatte. Diese Räume sind jetzt **Schutzräume**: Ghule und Fledermäuse betreten sie nie und greifen niemanden darin an
+- Ein Durchlauf stand doppelt in `runs.log`, wenn man vom Endbildschirm zum Titel ging. Jetzt steht er genau einmal darin
+
+## [0.8.0] – 2026-11-15 – Run-Grundgerüst
+
+Aus dem Testlevel wird ein Durchlauf: Jede Runde baut eine neue Ebene aus handgebauten Räumen, Kampfräume schließen sich zur Arena, je weiter man kommt, desto mehr wartet – mit Titel, Pause, Karte und einer Statistik am Ende.
+
+### Hinzugefügt
+- **Durchläufe auf Ebene 0 „The Catacombs“:** Das Spiel startet auf einer zufällig erzeugten Ebene aus handgebauten Räumen, mit Gängen und Schleifen, der Bossraum am weitesten vom Start. Beim Start erscheint kurz der Name der Ebene. Nach dem Tod beginnt ein neuer Durchlauf mit neuem Grundriss. Ist der Bossraum geräumt, ist der Durchlauf gewonnen. Mit `--seed <Zahl>` immer derselbe Grundriss; die alten Testlevel gibt es weiter mit `--level test` / `--level heights`
+- Türen zwischen den Räumen der erzeugten Ebenen: Alle sind zu und halten Spieler, Gegner, Sicht und Schüsse auf. Mit **F** öffnet man die Tür, auf die man aus der Nähe schaut („[F] Open“); offen bleibt offen. Die Tür zum Bossraum ist dunkel, mit Schädeln und rotem Schimmer
+- Kampfräume werden zur Arena: Beim ersten Betreten fallen an allen Türen Gitter, die schlafenden Gegner erwachen. Sind alle tot, heben sich die Gitter und die Tür, durch die man kam, öffnet sich
+- Je weiter ein Kampfraum vom Start entfernt ist, desto mehr Ghule und Fledermäuse warten darin; der Bossraum ist voll besetzt. Einstellbar in `balance.json` unter `difficulty`
+- Karte auf **M** (halten): zeigt von oben die schon betretenen Räume und Gänge, ihre Türen (zu, offen, vergittert, Boss) und wo man steht und hinschaut. Das Spiel läuft dabei weiter
+- Titelbildschirm mit „Start“ und „Quit“
+- Esc-Menü: weiterspielen, Mausempfindlichkeit einstellen (bleibt gespeichert), zurück zum Titel, beenden. Solange es offen ist, steht das Spiel still
+- Endbildschirm „YOU DIED“ bzw. „VICTORY“ mit der Statistik des Durchlaufs (Zeit, getötete Ghule und Fledermäuse, Schaden ausgeteilt und genommen, erreichte Stufe, geräumte Räume, Seed) und der Wahl „New run“ / „Title“. Jeder Durchlauf wird außerdem als Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log` festgehalten
+
+### Geändert
+- Nach dem Tod startet der nächste Durchlauf nicht mehr von selbst – erst der Endbildschirm, dann „New run“. Das große „YOU DIED“ mitten im Bild entfällt, nur das Bild färbt sich rot
+- Esc gibt nicht mehr nur die Maus frei, sondern öffnet das Menü; ein Klick ins Bild fängt die Maus nicht mehr ein (das macht „Resume“). Auch wenn das Fenster den Fokus verliert, öffnet sich das Menü
+- Ist die Silberklinge voll aufgeladen, füllt sich die Ausdauer wieder auf, auch wenn man die Taste weiter hält. Während des Ladens selbst füllt sie sich weiterhin nicht
+
+## [0.7.0] – 2026-11-15 – Stufen & Beute
+
+Kämpfen lohnt sich: Gegner lassen Blutphiolen und Geweihte Munition fallen, Kills bringen Erfahrung, und jeder Aufstieg bietet eine Wahl – dazu alle Werte in einer Datei zum Nachjustieren.
+
+### Hinzugefügt
+- Balancing-Datei `assets/balance.json`: Leben, Schaden, Abklingzeiten, Geschwindigkeiten und Zeiten lassen sich ändern, ohne das Spiel neu zu bauen – mit Kommentaren zu jedem Wert. Fehler in der Datei halten das Spiel nicht auf: Es nimmt dann die Standardwerte und schreibt eine Warnung ins Log. In der Testversion lädt F5 die Datei neu. Anleitung: `docs/balancing.md`
+- Blutphiolen: Getötete Ghule lassen in 30 % der Fälle, Fledermäuse in 15 % eine Blutphiole fallen – eine kleine, rot pulsierende Flasche, die über dem Boden schwebt. Drüberlaufen heilt 50 Leben (nie über das Maximum), neben der Lebensanzeige steigt „+50“ auf. Bei vollem Leben bleibt sie liegen
+- Geweihte Munition: Etwa jeder dritte Drop sind statt einer Blutphiole drei Patronen mit silbern leuchtenden Spitzen. Aufheben (auch mit vollem Leben) lädt sie sofort: 10 s lang schießt die Pistole doppelt so schnell (alle 0,4 statt 0,8 s), der Schaden bleibt gleich. Der Lauf schimmert hell, der Mündungsblitz wird weiß-blau, über der Lebensanzeige läuft „CONSECRATED 10s“ ab (blinkt in den letzten 3 s). Nochmal aufheben startet die Zeit neu; der Tod beendet sie
+- Erfahrung und Stufen: Wer einen Gegner tötet, bekommt Erfahrung – 30 für einen Ghul, 20 für eine Fledermaus. Stufe 2 braucht 100, jede weitere ein Viertel mehr als die vorige (100, 125, 156, 195, 244 …); was übrig bleibt, zählt für die nächste. Unten links stehen Stufe und ein goldener Erfahrungsbalken. Der Tod setzt wieder auf Stufe 1
+- Stufenaufstieg mit Wahl: Bei jedem Aufstieg hält das Spiel an und „LEVEL UP – choose a boon“ bietet drei zufällige Boni aus einem Pool von vier – kleine Schritte, jeweils vom Grundwert gerechnet und beliebig oft wählbar: Ausdauer-Regeneration +5 %, maximales Leben +5 (sofort geheilt), Schaden +5 % mit allen Waffen, Erfahrung +2,5 %. Jeder Kasten zeigt auch, wie viel man schon hat. Wahl mit 1 / 2 / 3 oder Mausklick (Klicks zählen erst nach einem kurzen Moment, damit ein Angriffsklick nicht aus Versehen wählt). Mehrere Aufstiege auf einmal: nacheinander wählen. Der Tod nimmt alle Boni
+
+## [0.6.0] – 2026-11-14 – Vampirfledermaus
+
+Der Angriff kommt von oben: Vampirfledermäuse kreisen um dich, spucken Blutgeschosse und stoßen herab – alles mit Vorwarnung, alles ausweichbar.
+
+### Hinzugefügt
+- Vampirfledermäuse in beiden Testleveln (im Level-Format: `B`): klein, mit schlagenden Flügeln, schweben sie über deinem Kopf – du läufst unter ihnen durch. 30 Leben: ein Pistolenschuss oder ein Klingenhieb, wenn du zu ihr hochschaust. Getroffen blinken sie, tot trudeln sie zu Boden und verschwinden kurz darauf
+- Blutgeschosse: glühend rote Kugeln, die man fliegen sieht (12 m/s) und denen man ausweichen kann – Seitschritt, Sprung oder Dodge (geduckt fliegen sie über dich hinweg). Ein Treffer kostet 15 Leben; an Wänden zerplatzen sie. Gegner und Puppen treffen sie nicht
+- Fledermäuse greifen an: Sie hängen still, bis sie dich sehen (bis 15 m) oder getroffen werden. Dann kreisen sie um dich – jede mit eigenem Abstand (4–6 m), eigener Richtung und eigenem Auf und Ab –, wechseln alle 2–4 s zufällig die Richtung und finden im Flug ihren Weg um Ecken. Jedes Spiel und jeder Neustart fliegt anders. Etwa alle 2 s spucken sie ein Blutgeschoss – vorher leuchten sie kurz rot auf. Etwa alle 6 s kreischen sie (Flügel hoch) und stoßen dann auf die Stelle herab, an der du beim Kreischen standest: Wer jetzt zur Seite geht oder dodged, lässt sie ins Leere stoßen, sonst beißen sie für 15 Leben. Im Sturzflug sind sie tief – ein guter Moment für die Klinge
+
+### Geändert
+- Die Silberklinge trifft nahe Gegner leichter: Ihr Treffkegel beginnt jetzt etwas hinter dir und ist dadurch direkt vor dir schon gut einen Meter breit – auch Gegner seitlich vor dir werden getroffen. Reichweite (2 m) und Winkel (90°) bleiben
+
+## [0.5.0] – 2026-11-11 – Ghul
+
+Der erste echte Gegner: Ghule lauern in den Gängen, jagen dich um Ecken und schlagen zurück – und zum ersten Mal kannst du sterben.
+
+### Hinzugefügt
+- Ghule in beiden Testleveln (im Level-Format: `G`): kriechende Gestalten, niedriger als du, mit dem Kopf vorn. 80 Leben – zwei Klingenhiebe oder ein Pistolenschuss auf den Kopf. Sie blinken bei Treffern (blutrot bei Kopfschuss), zucken zurück und brechen bei 0 Leben zur Seite zusammen; kurz darauf ist der Körper verschwunden. Sie lauern still, bis sie dich in weniger als 12 m sehen oder getroffen werden. Dann kriechen sie dir nach (4,5 m/s, etwas langsamer als du), finden den Weg um Ecken und durch Türen, richten sich 0,5 s lang drohend auf und schlagen zu: 20 Schaden, bis 2,4 m weit. Ein kleiner Schritt zurück reicht nicht, wer richtig ausweicht oder dodget, wird verfehlt. Danach brauchen sie kurz Erholung
+- Schaden und Tod: Bei jedem Treffer leuchten die Bildränder rot auf und die Kamera zuckt kurz, die Lebensanzeige sinkt. Bei 0 Leben färbt sich das Bild rot, „YOU DIED“ erscheint, und nach 2 s beginnt das Level von vorn – mit vollem Leben und allen Gegnern wie am Anfang
+
+## [0.4.0] – 2026-11-11 – Waffen & HUD
+
+Silber gegen Stroh: Klinge und Pistole treffen Trainingspuppen – mit Kopfschüssen, aufgeladenen Schlägen, Waffen im Bild und einem HUD.
+
+### Hinzugefügt
+- Trainingspuppen aus Holz und Stroh in beiden Testleveln (im Level-Format: `D`). Man läuft nicht durch sie hindurch. Sie haben 100 Leben, blinken bei Treffern hell auf, kippen bei 0 vom Spieler weg um und stehen nach 3 s wieder auf
+- Silberklinge (linke Maustaste): trifft alles in einem Kegel vor dir – 2 m weit, 90° breit, auch nach oben und unten –, aber nicht durch Wände. 40 Schaden, ein Schlag alle 0,4 s; drei Treffer werfen eine Trainingspuppe um
+- Pistole mit Silberkugeln (rechte Maustaste): trifft sofort genau dort, wohin du schaust – das erste Ziel bis 50 m. 35 Schaden, ein Schuss alle 0,8 s; drei Treffer werfen eine Trainingspuppe um. An Wänden, Boden und Decke bleibt ein Einschlag zurück: kurzer Funke, dann einige Sekunden ein dunkler Fleck
+- Silberklinge aufladen: Linke Maustaste halten, beim Loslassen wird zugeschlagen. Der Schaden steigt linear bis 200 % nach 1 s Halten (80 statt 40), das kostet bis zu einem Stamina-Segment. Reicht die Stamina nicht, lädt die Klinge nur so weit wie möglich. Die Klinge holt dabei sichtbar aus und zittert, wenn sie voll ist
+- Kritische Treffer: Ein Pistolenschuss auf den Kopf einer Trainingspuppe macht 300 % Schaden (105) und wirft sie mit einem Schuss um; die Puppe blitzt dabei blutrot statt weiß auf. Die Silberklinge bekommt keinen Zonenbonus
+- HUD für den Kampf: Fadenkreuz in der Bildmitte; links und rechts davon zeigen kleine Balken, ob Klinge und Pistole bereit sind; darunter ein Ladebalken beim Aufladen der Klinge (golden, wenn voll); unten links das Leben
+- Waffen im Bild: links die Silberklinge, rechts die Pistole (Platzhalter aus Grundformen). Sie bewegen sich weich, als würde man durch die Welt gleiten: ruhiges Wippen beim Laufen, Nachziehen beim Umsehen und Seitwärtslaufen, Mitnicken beim Landen. Die Klinge schwingt beim Schlag quer durchs Bild, die Pistole kickt beim Schuss nach oben, vorn blitzt die Mündung
+
+## [0.3.2] – 2026-11-11 – Fenster-Fix
+
+Eine Fehlerkorrektur für 0.3.0.
+
+### Behoben
+- Beim Start auf einem Bildschirm links vom Hauptbildschirm war das Fenster unsichtbar (weit außerhalb aller Bildschirme) und die Maus eingefangen. Liegt das Fenster nach dem Start auf keinem Bildschirm, wird es jetzt auf den Hauptbildschirm geholt
+
+## [0.3.1] – 2026-11-11 – fehlerhaftes Release
+
+Versehentlich auf dem Stand von 0.3.0 veröffentlicht – enthält den Fenster-Fix **nicht**. Bitte 0.3.2 verwenden.
+
+## [0.3.0] – 2026-11-11 – PS2-Look
+
+Das Schloss bekommt Stimmung: grobe Pixel, Licht wie von einer Laterne, Dunkelheit in der Ferne – und erstmals Höhenunterschiede. Dazu wird die Bewegung zum Können: Perfect Jump, Stamina, Dash in der Luft und Dodge am Boden.
+
 ### Geändert
 - Retro-Look: Die 3D-Welt wird in 854 × 480 gezeichnet und mit harten Pixelkanten hochskaliert; Texte bleiben scharf
 - Das Fenster lässt sich in der Größe ändern; das Bild behält sein Seitenverhältnis (schwarze Balken bei abweichender Form)
@@ -57,6 +201,16 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.2.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/flubby2222/silver-and-ash/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/flubby2222/silver-and-ash/releases/tag/v0.1.0

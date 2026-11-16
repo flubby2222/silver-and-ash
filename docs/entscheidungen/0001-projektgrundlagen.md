@@ -1,6 +1,6 @@
 # 0001 – Projektgrundlagen
 
-- **Status:** angenommen
+- **Status:** angenommen, teilweise abgelöst durch [0004](0004-fortschritt-stufen-beute-skills.md) (Blutrausch, Items, Meilenstein v0.7), [0005](0005-ebenen-raeume-durchlauf.md) (Ablauf, Pause, Bosse, Meilensteine ab v0.8) und [0009](0009-leitung-designer-auto-merge.md) (Rollen, Merge, Grafik-Design und Sound in 1.0)
 - **Datum:** 2026-11-10
 
 ## Kontext

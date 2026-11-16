@@ -10,11 +10,11 @@ public class PlayerDashTests
 {
     private const float Tolerance = 0.01f;
 
-    private static readonly int DashTicks = SimulationClock.SecondsToTicks(Tuning.Player.DashDuration);
+    private static readonly int DashTicks = SimulationClock.SecondsToTicks(Balance.Default.Player.DashDuration);
 
     private static readonly PlayerInput DashOnly = PlayerInput.None with { Dash = true };
 
-    private static float SegmentFraction => 1f / Tuning.Player.StaminaJumps;
+    private static float SegmentFraction => 1f / Balance.Default.Player.StaminaJumps;
 
     [Fact]
     public void On_the_ground_there_is_no_dash()
@@ -39,7 +39,7 @@ public class PlayerDashTests
         RunTicks(player, PlayerInput.None, DashTicks - 1);
 
         Assert.False(player.IsDashing);
-        Assert.Equal(Tuning.Player.DashDistance, FlatDistance(start, player.Position), Tolerance);
+        Assert.Equal(Balance.Default.Player.DashDistance, FlatDistance(start, player.Position), Tolerance);
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public class PlayerDashTests
     {
         var player = RunningPlayer();
         player.Tick(ForwardJump);
-        ChainTimedJumps(player, Tuning.Player.StaminaJumps - 1);   // in the air, bar empty
+        ChainTimedJumps(player, Balance.Default.Player.StaminaJumps - 1);   // in the air, bar empty
         Assert.Equal(0f, player.Stamina.Fraction);
 
         player.Tick(ForwardDash);
@@ -300,7 +300,7 @@ public class PlayerDashTests
         RunTicks(player, PlayerInput.None, DashTicks + 5);
 
         var travelled = FlatDistance(start, player.Position);
-        Assert.True(travelled < 3f - Tuning.Player.Radius + Tolerance, $"Travelled {travelled:0.00} m into a wall 3 m away.");
+        Assert.True(travelled < 3f - BodySizes.Player.Radius + Tolerance, $"Travelled {travelled:0.00} m into a wall 3 m away.");
     }
 
     [Fact]

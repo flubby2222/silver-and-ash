@@ -11,21 +11,36 @@ namespace SilverAndAsh.Game.Rendering;
 /// </summary>
 internal sealed class LevelRenderer : IDisposable
 {
+    private readonly Shader _shader;
     private Model _model;
 
     /// <param name="level">The level to draw.</param>
     /// <param name="shader">Shader for lantern light and fog. The renderer uses it but does not own it.</param>
     public LevelRenderer(Level level, Shader shader)
     {
+        _shader = shader;
+        _model = Load(level, shader);
+    }
+
+    /// <summary>Draws <paramref name="level"/> from now on (a new run with a new layout); the old mesh is freed.</summary>
+    public void Rebuild(Level level)
+    {
+        Raylib.UnloadModel(_model);
+        _model = Load(level, _shader);
+    }
+
+    private static Model Load(Level level, Shader shader)
+    {
         var mesh = BuildMesh(LevelGeometry.Build(level));
 
         // Copies the data to the graphics card. From then on drawing costs almost nothing.
         Raylib.UploadMesh(ref mesh, false);
-        _model = Raylib.LoadModelFromMesh(mesh);
+        var model = Raylib.LoadModelFromMesh(mesh);
 
         // The model's material decides HOW it is drawn - here: with our light-and-fog shader.
         // (UnloadModel does not unload shaders, so LevelShader stays responsible for it.)
-        _model.MaterialsAsSpan()[0].Shader = shader;
+        model.MaterialsAsSpan()[0].Shader = shader;
+        return model;
     }
 
     public void Draw() => Raylib.DrawModel(_model, Vector3.Zero, 1f, Color.White);
@@ -91,7 +106,7 @@ internal sealed class LevelRenderer : IDisposable
         {
             SurfaceKind.Floor => (LookSettings.FloorColor, LookSettings.FloorBrightness),
             SurfaceKind.Ceiling => (LookSettings.CeilingColor, LookSettings.CeilingBrightness),
-            _ => (LookSettings.WallColor, WallBrightness(face.Normal)),
+            _ => (LookSettings.WallColor, FlatShading.WallBrightness(face.Normal)),
         };
 
         return new Color(
@@ -100,9 +115,4 @@ internal sealed class LevelRenderer : IDisposable
             (byte)(baseColor.B * brightness),
             (byte)255);
     }
-
-    private static float WallBrightness(Vector3 normal) =>
-        MathF.Abs(normal.X) > MathF.Abs(normal.Z)
-            ? (normal.X > 0f ? LookSettings.WallFacingPlusXBrightness : LookSettings.WallFacingMinusXBrightness)
-            : (normal.Z > 0f ? LookSettings.WallFacingPlusZBrightness : LookSettings.WallFacingMinusZBrightness);
 }

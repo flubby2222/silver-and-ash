@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The balance report: builds many levels from assets/balance.json and prints what a level brings on average.
+    A developer tool - it is not part of the game's release. All the reckoning lives in SilverAndAsh.Core.
+    How to run it: see docs/balancing.md.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SilverAndAsh.Core\SilverAndAsh.Core.csproj" />
+  </ItemGroup>
+
+</Project>

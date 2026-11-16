@@ -9,6 +9,9 @@ namespace SilverAndAsh.Core.World;
 ///   <item><c>P</c> – floor where the player starts (exactly once)</item>
 ///   <item><c>1</c> / <c>2</c> / <c>3</c> – raised floor (platform) at 0.25 / 0.5 / 0.75 m</item>
 ///   <item><c>_</c> – pit, floor 1 m below normal</item>
+///   <item><c>D</c> – floor with a training dummy in the middle</item>
+///   <item><c>G</c> – floor where a ghoul starts</item>
+///   <item><c>B</c> – floor with a bat hovering above it</item>
 /// </list>
 /// The ceiling is always at the standard height. Lines may have different lengths; missing cells are walls.
 /// Empty lines at the end are ignored. Full description: docs/level-format.md.
@@ -21,7 +24,7 @@ public static class LevelParser
     /// <summary>Floor height of a pit ('_'), in metres.</summary>
     public const float PitFloorHeight = -1f;
 
-    private const string AllowedSymbols = "'#', ' ', '.', 'P', '1', '2', '3', '_'";
+    private const string AllowedSymbols = "'#', ' ', '.', 'P', '1', '2', '3', '_', 'D', 'G', 'B', 'T'";
 
     /// <summary>Reads the level file at <paramref name="path"/>.</summary>
     public static Level ParseFile(string path) => Parse(File.ReadAllText(path));
@@ -46,6 +49,10 @@ public static class LevelParser
         var depth = lines.Count;
         var cells = new Cell[width, depth];
         (int X, int Z, int Line)? start = null;
+        var dummyCells = new List<(int X, int Z)>();
+        var ghoulCells = new List<(int X, int Z)>();
+        var batCells = new List<(int X, int Z)>();
+        var bossCells = new List<(int X, int Z)>();
 
         for (var z = 0; z < depth; z++)
         {
@@ -55,16 +62,32 @@ public static class LevelParser
             for (var x = 0; x < width; x++)
             {
                 var symbol = x < line.Length ? line[x] : '#';
-                cells[x, z] = symbol switch
+                cells[x, z] = symbol is '#' or ' '
+                    ? Cell.Wall
+                    : FloorHeightOf(symbol) is { } floor
+                        ? new Cell(false, floor, Cell.DefaultCeilingHeight)
+                        : throw new LevelFormatException(
+                            lineNumber, $"Unknown symbol '{symbol}' in column {x + 1}. Allowed: {AllowedSymbols}.");
+
+                if (symbol == 'D')
                 {
-                    '#' or ' ' => Cell.Wall,
-                    '.' => Cell.Floor,
-                    'P' => Cell.Floor,
-                    '1' or '2' or '3' => FloorAt((symbol - '0') * PlatformStep),
-                    '_' => FloorAt(PitFloorHeight),
-                    _ => throw new LevelFormatException(
-                        lineNumber, $"Unknown symbol '{symbol}' in column {x + 1}. Allowed: {AllowedSymbols}."),
-                };
+                    dummyCells.Add((x, z));
+                }
+
+                if (symbol == 'G')
+                {
+                    ghoulCells.Add((x, z));
+                }
+
+                if (symbol == 'B')
+                {
+                    batCells.Add((x, z));
+                }
+
+                if (symbol == 'T')
+                {
+                    bossCells.Add((x, z));
+                }
 
                 if (symbol == 'P')
                 {
@@ -84,9 +107,18 @@ public static class LevelParser
             throw new LevelFormatException(0, "The level has no player start 'P'.");
         }
 
-        return new Level(cells, playerStart.X, playerStart.Z);
+        return new Level(cells, playerStart.X, playerStart.Z, dummyCells, ghoulCells, batCells, bossCells);
     }
 
-    /// <summary>A walkable cell with its floor at <paramref name="floorHeight"/> and the standard ceiling.</summary>
-    private static Cell FloorAt(float floorHeight) => new(false, floorHeight, Cell.DefaultCeilingHeight);
+    /// <summary>
+    /// The floor height of a walkable symbol ('.', 'P', 'D', 'G', 'B', platforms, pit),
+    /// or null if the symbol is not a walkable cell. Shared with <see cref="RoomTemplateParser"/>.
+    /// </summary>
+    internal static float? FloorHeightOf(char symbol) => symbol switch
+    {
+        '.' or 'P' or 'D' or 'G' or 'B' or 'T' => Cell.DefaultFloorHeight,
+        '1' or '2' or '3' => (symbol - '0') * PlatformStep,
+        '_' => PitFloorHeight,
+        _ => null,
+    };
 }

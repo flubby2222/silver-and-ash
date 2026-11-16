@@ -8,10 +8,10 @@ public class PlayerStaminaTests
 {
     private const float Tolerance = 0.01f;
 
-    private static readonly int RechargeTicks = SimulationClock.SecondsToTicks(Tuning.Player.StaminaRechargeTime);
+    private static readonly int RechargeTicks = SimulationClock.SecondsToTicks(Balance.Default.Player.StaminaRechargeTime);
 
     // Every jump costs one segment - the first (normal) jump of a chain, too.
-    private static readonly int TimedJumpsUntilEmpty = Tuning.Player.StaminaJumps - 1;
+    private static readonly int TimedJumpsUntilEmpty = Balance.Default.Player.StaminaJumps - 1;
 
     [Fact]
     public void A_normal_jump_costs_one_segment()
@@ -20,7 +20,7 @@ public class PlayerStaminaTests
 
         player.Tick(ForwardJump);
 
-        var expected = (Tuning.Player.StaminaJumps - 1f) / Tuning.Player.StaminaJumps;
+        var expected = (Balance.Default.Player.StaminaJumps - 1f) / Balance.Default.Player.StaminaJumps;
         Assert.Equal(expected, player.Stamina.Fraction, Tolerance);
         Assert.False(player.HasPerfectJumpBonus);
         Assert.False(player.IsExhausted);
@@ -74,16 +74,16 @@ public class PlayerStaminaTests
     {
         // Found while playing: the penalty was taken from the air speed (6.9 m/s), so exhausted was
         // 5.87 m/s - only 2 % below walking. It must be the penalty below walking speed.
-        var walking = Tuning.Player.MaxSpeed;
+        var walking = Balance.Default.Player.MaxSpeed;
 
-        Assert.Equal(walking * (1f - Tuning.Player.ExhaustedJumpSpeedPenalty), ExhaustedAirSpeed, Tolerance);
+        Assert.Equal(walking * (1f - Balance.Default.Player.ExhaustedJumpSpeedPenalty), ExhaustedAirSpeed, Tolerance);
 
         var player = RunningPlayer();
         player.Tick(ForwardJump);
         ChainTimedJumps(player, TimedJumpsUntilEmpty + 1);
         RunTicks(player, Forward, 20);
 
-        Assert.Equal(walking * (1f - Tuning.Player.ExhaustedJumpSpeedPenalty), HorizontalSpeed(player), Tolerance);
+        Assert.Equal(walking * (1f - Balance.Default.Player.ExhaustedJumpSpeedPenalty), HorizontalSpeed(player), Tolerance);
     }
 
     [Fact]

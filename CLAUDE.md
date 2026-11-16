@@ -1,67 +1,74 @@
 # CLAUDE.md – Arbeitsregeln für Silver & Ash
 
-Diese Datei liest Claude bei jeder Aufgabe. Sie beschreibt, wie wir arbeiten. Die Hintergründe stehen in [docs/entscheidungen/](docs/entscheidungen/).
+Hier steht nur, was sich nicht aus dem Code ablesen lässt. Die Hintergründe stehen in [docs/entscheidungen/](docs/entscheidungen/), die Arbeitsweise in [ADR 0009](docs/entscheidungen/0009-leitung-designer-auto-merge.md).
 
 ## Rollen
 
-- **Der Mensch** ist Product Owner und Tech Lead: schreibt Anforderungen, plant, reviewt, testet, **merged**. Programmiererfahrung: C#-Grundlagen. Ziel ist **Lernen** – Fachbegriffe beim ersten Auftreten kurz erklären, Git-Befehle immer mitzeigen.
-- **Claude** schreibt den Großteil des Codes, legt Branches, Commits und Pull Requests an.
+- **Der Mensch** ist Auftraggeber. Er gibt die Richtung vor, nimmt Stil und Hörproben ab, bekommt nach jedem Release eine Vorstellung im Chat und merged Leitplanken-PRs. Er will den **professionellen Umgang mit KI** lernen: Fachbegriffe beim ersten Auftreten kurz erklären, Git-Befehle mitzeigen.
+- **Die Leitung** (Claude, Hauptsitzung) plant, schreibt Issues, vergibt Aufgaben, prüft Ergebnisse und trifft Design-Urteile zu Bild. Sie schreibt möglichst keinen Spielcode selbst.
+- **Arbeits-Sitzungen** (Code, Grafikdesigner, Audiodesigner) setzen je ein Issue um. **Tester** und **Reviewer** prüfen als frische Sitzungen. Rollen: [.claude/agents/](.claude/agents/).
 
 ## Arbeitsablauf
 
-1. **Ein Issue = ein Branch = ein kleiner Pull Request.** Branch-Namen: `feat/kurze-beschreibung`, `fix/…`, `docs/…`.
-2. **Commits nach Conventional Commits:** `feat: …`, `fix: …`, `docs: …`, `test: …`, `refactor: …`, `chore: …`, `ci: …`.
-3. **Changelog pro Pull Request:** Jeder PR mit für Spielende sichtbarer Änderung trägt sie in `CHANGELOG.md` unter *Unveröffentlicht* ein (Hinzugefügt / Geändert / Behoben / Entfernt). Beim Release wird der Abschnitt nur noch umbenannt (siehe [docs/release.md](docs/release.md)).
-4. **Pull-Request-Text auf Deutsch** mit den Abschnitten: *Was*, *Warum*, *Wie testen*, *Bitte genauer ansehen*. Verweist mit `Closes #<nr>` auf das Issue.
-5. **Claude merged nie.** Nur der Mensch merged.
-6. **Keine neuen Bibliotheken (NuGet-Pakete) ohne Zustimmung.**
-7. **Bei unklaren Anforderungen fragen statt raten.**
-8. **Prüfschleife vor jedem Pull Request:** Build, Tests und eigene Code-Review wiederholen, bis keine Fehler mehr auftreten.
-   - **Nie Tests verbiegen**, um grün zu werden (nicht löschen, abschwächen, überspringen). Ist ein Test selbst falsch: im Pull Request ausdrücklich begründen.
-   - **Notbremse:** nach ~3 gescheiterten Versuchen am selben Fehler aufhören und fragen.
-9. **Nach jedem Merge mit neuem Konzept:** eine Konzept-Notiz im Obsidian-Vault `D:\Obsidian\Gamedev` anlegen (`Konzepte/` oder `Werkzeuge/`, Frontmatter `autor: claude`, auf Deutsch, mit Links zum Code).
-10. **Retro am Ende jedes Meilensteins:** Claude schreibt sie als Doku in `Retros/` (fertig, Zahlen, gut/schlecht, neue Begriffe, Änderungen für die nächste Woche) und lässt einen kurzen optionalen Abschnitt „Meine Sicht“ frei. Zum Abschluss gehört auch: Meilenstein schließen.
-11. **Alles aufs Kanban-Board:** Pull Requests ohne eigenes Issue (z. B. kleine Doku-Änderungen) kommen direkt als Karte aufs Board in die Spalte *Review*.
-12. **Merge immer selbst prüfen** (`gh pr view`), bevor lokal aufgeräumt wird. **Jedes Issue sagt, wie es abgeschlossen wird** – per PR-Merge oder durch Schließen des Issues (bei reinen Einstellungen).
+1. **Ein Issue = ein Branch = ein kleiner Pull Request.** Branch-Namen: `feat/…`, `fix/…`, `docs/…`, `chore/…`. Commits nach Conventional Commits.
+2. **Jedes Issue nennt Abnahmekriterien** und sagt, wie es abgeschlossen wird (PR-Merge oder Schließen).
+3. **Pull-Request-Text auf Deutsch:** *Was*, *Warum*, *Wie testen*, *Bitte genauer ansehen*, dazu `Closes #<nr>`. PRs ohne Issue kommen als Karte aufs Board in die Spalte *Review*.
+4. **Sichtbare Änderungen** stehen im `CHANGELOG.md` unter *Unveröffentlicht*.
+5. **Merge:** GitHub merged per Auto-Merge nach drei Freigaben – CI grün, Reviewer ohne offene Befunde (Commit-Status `review`), Tester ohne Fehler (Commit-Status `tester`). Wer den PR geschrieben hat, setzt diese Status nie selbst. Einzige Ausnahme ist `tools/pr-nachziehen.ps1`: Es bringt offene PRs nach einem Merge auf den neuesten `main` und überträgt `review` und `tester` auf den neuen Commit, wenn die eigenen Änderungen des PRs dabei gleich geblieben sind. Es vergibt nie eine Freigabe neu.
+6. **Leitplanken-PRs merged nur der Mensch:** alles an `CLAUDE.md`, `.claude/**`, `.github/**`, `docs/entscheidungen/**`. Auch Releases (Tags) löst nur der Mensch aus.
+7. **Tests nie verbiegen** (nicht löschen, abschwächen, überspringen). Ist ein Test selbst falsch: im PR begründen.
+8. **Notbremse:** nach etwa drei gescheiterten Versuchen am selben Fehler aufhören und die Leitung fragen.
+9. **Merge selbst prüfen** (`gh pr view`), bevor lokal aufgeräumt wird.
 
-## Definition of Done
+Mehrere dieser Regeln erzwingen Hooks in [.claude/hooks/](.claude/hooks/). Blockiert ein Hook, die Ursache beheben – nicht den Hook umgehen.
 
-Ein Pull Request darf gemergt werden, wenn:
-- die CI grün ist (Build + Tests),
-- neue Spiellogik eigene Tests hat,
-- der Mensch das Feature selbst gespielt hat,
-- der Mensch jede geänderte Datei grob verstanden hat und Fragen geklärt sind,
-- die Doku angepasst ist, falls nötig,
-- sichtbare Änderungen im `CHANGELOG.md` unter *Unveröffentlicht* stehen.
+## Die Leitung unterbricht den Menschen nur, wenn
+
+- ein neues NuGet-Paket oder Werkzeug nötig wird,
+- eine Entscheidung einem ADR widerspricht oder 1.0 verschiebt,
+- derselbe Fehler dreimal scheitert,
+- eine Hörprobe ansteht,
+- ein Leitplanken-PR auf den Merge wartet.
+
+## Design
+
+- Stil-Dokumente: `docs/design/art-bible.md` und `docs/design/audio-bible.md`. Designer lesen sie vor jeder Aufgabe; jede Ablehnung wird dort zur Regel.
+- **Alles per Skript erzeugt, nichts heruntergeladen** (Modelle mit Blender-Python, Audio per Synthese). Jede Asset-Datei steht mit Skript und Datum in `assets/HERKUNFT.md`.
+- Probestücke entstehen außerhalb des Spiels. Ins Spiel kommt erst, was den Stil dreimal in Folge ohne Nacharbeit trifft.
+- **Ton beurteilt der Mensch:** Die Leitung kann nicht hören. Pro neuer Geräusch-Kategorie eine Hörprobe vor der ersten Integration.
+
+## Nach dem Merge
+
+- **Neues Konzept:** Notiz im Obsidian-Vault `D:\Obsidian\Gamedev` (`Konzepte/`, `Werkzeuge/` oder `Design/`, Frontmatter `autor: claude`, auf Deutsch, mit Links zum Code).
+- **Ende eines Meilensteins:** Retro in `Retros/` mit freiem Abschnitt „Meine Sicht“, Meilenstein schließen, Release-Vorstellung im Chat.
+- **Vor jedem Release eine Balancing-Runde:** Balance-Report mit Vorher/Nachher, Bot-Durchläufe des Testers, `runs.log`, Werte in `balance.json`; Ergebnis in [docs/balancing.md](docs/balancing.md). Tests rechnen mit `Balance.Default`, nie mit festen Balancing-Zahlen.
 
 ## Sprachen
 
-- **Code auf Englisch** (Namen, Kommentare).
-- **Texte im Spiel auf Englisch** (Menüs, Hinweise, HUD).
+- **Code und Texte im Spiel auf Englisch.**
 - **Alles andere auf Deutsch:** Issues, Pull Requests, Doku, Commit-Beschreibungen.
 
 ## Architektur (verbindlich)
 
-- **`SilverAndAsh.Core`**: gesamte Spiellogik und Physik. **Darf Raylib nicht referenzieren.** Mathe über `System.Numerics`.
-- **`SilverAndAsh.Game`**: Fenster, Eingabe, Darstellung mit Raylib-cs. Enthält keine Spielregeln.
-- **`SilverAndAsh.Core.Tests`**: xUnit-Tests für Core.
-- **Feste Zeitschritte** (60 Ticks/s) für die Simulation; Darstellung ist davon getrennt. Tests treiben die Simulation tickweise, ohne Fenster.
-- **Spiellogik ist 3D** (freies Umsehen, vertikales Zielen, Schwerkraft, Springen). Eigene einfache Physik: Spieler = Kapsel, Wände = Quader, Geschosse = Strahl/Kugel. Keine Physik-Engine.
-- **Level = Raster aus Zellen mit eigener Boden- und Deckenhöhe** (in 1.0 alle gleich, später Treppen/Gruben/Emporen).
-- **Darstellung von Figuren hinter einer austauschbaren Schnittstelle** – Bewegungen per Code jetzt, Skelett-Animation später.
-- **Balancing-Werte** (Leben, Schaden, Abklingzeiten, Geschwindigkeiten …) in einer JSON-Konfigurationsdatei, nicht im Code verstreut.
-- **Logs nur lokal:** technisches Log (Fehler/Warnungen); ab v0.8 Run-Statistik pro Durchlauf.
+- **`SilverAndAsh.Core`**: gesamte Spiellogik und Physik, **ohne Raylib**. Mathe über `System.Numerics`.
+- **`SilverAndAsh.Game`**: Fenster, Eingabe, Darstellung, Klang mit Raylib-cs. Keine Spielregeln.
+- **Feste Zeitschritte** (60 Ticks/s); Tests treiben die Simulation tickweise, ohne Fenster.
+- **Eigene einfache 3D-Physik**, keine Physik-Engine. Level = Raster aus Zellen mit Boden- und Deckenhöhe.
+- **Figuren hinter einer austauschbaren Schnittstelle** dargestellt.
+- **Balancing-Werte** in `assets/balance.json`, nicht im Code.
+- **Logs nur lokal.**
 - **Online-Coop offen halten** (siehe [0003](docs/entscheidungen/0003-online-coop-offenhalten.md)): in `Core` nie „der Spieler“, sondern „ein Spieler“; alles, was das Spiel verändert, kommt als Eingabe in den Tick; Zufall nur mit Seed im Spielzustand; kein veränderlicher `static`-Zustand; Sound und Effekte über Ereignisse aus `Core`.
 
 ## Setting
 
-Gothic-Vampirjäger. Inspiration (nur Stimmung): Castlevania, Devil May Cry, Vampire Hunter D, Hellsing. **Eigene Welt, eigene Figuren, eigene Namen** – keine Namen, Figuren oder Elemente aus diesen Werken übernehmen.
+Gothic-Vampirjäger. Inspiration (nur Stimmung): Castlevania, Devil May Cry, Vampire Hunter D, Hellsing. **Eigene Welt, eigene Figuren, eigene Namen** – nichts aus diesen Werken übernehmen.
 
 ## Umfang
 
-Der Umfang von v1.0 und der Meilensteinplan stehen in [docs/entscheidungen/0001-projektgrundlagen.md](docs/entscheidungen/0001-projektgrundlagen.md). Was nicht drinsteht, ist nicht Teil von 1.0 – Vorschläge dafür als Issue mit Label `später` anlegen.
+Was in 1.0 gehört, steht in den ADRs. Alles andere wird ein Issue mit Label `später`.
 
 ## Umgebung
 
-- Windows 10, PowerShell. Git for Windows, .NET SDK 10, GitHub CLI (`gh`), VS Code.
-- Repository: `flubby2222/silver-and-ash` (öffentlich). Commit-E-Mail ist die noreply-Adresse – nie eine andere Adresse eintragen.
+- Windows 10, Windows PowerShell 5.1 (kein `pwsh`). Git for Windows, .NET SDK 10, GitHub CLI, Blender.
+- Die CI baut in **Release**: vor einem PR auch `dotnet build -c Release` ausführen.
+- Repository `flubby2222/silver-and-ash` ist öffentlich. Commit-E-Mail ist die noreply-Adresse und wird nie geändert.
