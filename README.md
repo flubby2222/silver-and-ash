@@ -33,7 +33,8 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | Shift | am Boden: Ausweichrolle (Dodge, geduckt) · in der Luft: Dash in Laufrichtung |
 | W + Shift (in der Luft) | Dash in Blickrichtung, auch schräg nach oben |
 | Linke Maustaste | Silberklinge |
-| Rechte Maustaste | Pistole |
+| Rechte Maustaste | Pistole (6 Schuss) |
+| R | Nachladen (bei leerem Magazin lädt auch ein Schuss nach) |
 | F | Interagieren (Türen, Kisten) |
 | Tab (halten) | Karte: betretene Räume, ihre Türen (Schloss, Boss-Tür), Kisten, liegen gelassene Blutphiolen, eigene Position |
 | M | Karte an/aus: bleibt offen, auch beim Laufen |

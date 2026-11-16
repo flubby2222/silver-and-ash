@@ -61,7 +61,8 @@ internal sealed class RaylibInput
                 ReadMoveKeys(), Vector2.Zero,
                 Jump: Raylib.IsKeyDown(KeyboardKey.Space),
                 Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift),
-                Interact: Raylib.IsKeyPressed(KeyboardKey.F));
+                Interact: Raylib.IsKeyPressed(KeyboardKey.F),
+                Reload: Raylib.IsKeyDown(KeyboardKey.R));
         }
 
         // With the mouse released the player is "away from the game": no walking or jumping either.
@@ -77,7 +78,8 @@ internal sealed class RaylibInput
             Dash: Raylib.IsKeyDown(KeyboardKey.LeftShift),
             Melee: _captureClick.Filter(Raylib.IsMouseButtonDown(MouseButton.Left)),
             Shoot: Raylib.IsMouseButtonDown(MouseButton.Right),
-            Interact: Raylib.IsKeyPressed(KeyboardKey.F));
+            Interact: Raylib.IsKeyPressed(KeyboardKey.F),
+            Reload: Raylib.IsKeyDown(KeyboardKey.R));
     }
 
     private static Vector2 ReadMoveKeys()

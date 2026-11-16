@@ -38,11 +38,16 @@ internal static class CombatHud
             // Blade on the left, pistol on the right - the same sides as the weapons in the hands.
             DrawReadiness(centreX - 22, centreY, player.BladeCooldown);
             DrawReadiness(centreX + 19, centreY, player.PistolCooldown);
+            DrawAmmo(centreX + 28, centreY, player.PistolMagazine);
         }
 
         if (player.BladeCharge.IsCharging)
         {
             DrawCharge(centreX, centreY + 16, player.BladeCharge.Fraction);
+        }
+        else if (player.PistolMagazine.IsReloading && !player.IsDead)
+        {
+            DrawReload(centreX, centreY + 16, player.PistolMagazine.ReloadProgress);
         }
 
         DrawHealth(player.Health, player.MaxHealth);
@@ -142,6 +147,29 @@ internal static class CombatHud
         Raylib.DrawRectangle(x - 1, top - 1, Width + 2, Height + 2, Outline);
         Raylib.DrawRectangle(x, top, Width, Height, Track);
         Raylib.DrawRectangle(x, top + Height - filled, Width, filled, cooldown.IsReady ? Ready : Cooling);
+    }
+
+    /// <summary>
+    /// Rounds left next to the pistol's bar, e.g. "4/6" - red when empty, with "R" as a reminder; "..." while reloading.
+    /// </summary>
+    private static void DrawAmmo(int x, int centreY, Magazine magazine)
+    {
+        var text = magazine.IsReloading ? "..."
+            : magazine.Rounds == 0 ? string.Create(CultureInfo.InvariantCulture, $"0/{magazine.Size} R")
+            : string.Create(CultureInfo.InvariantCulture, $"{magazine.Rounds}/{magazine.Size}");
+        Raylib.DrawText(text, x, centreY - 5, 10, magazine.Rounds == 0 && !magazine.IsReloading ? Blood : TextColor);
+    }
+
+    /// <summary>A thin bar under the crosshair while the pistol is being reloaded.</summary>
+    private static void DrawReload(int centreX, int top, float progress)
+    {
+        const int Width = 40;
+        const int Height = 3;
+        var left = centreX - Width / 2;
+
+        Raylib.DrawRectangle(left - 1, top - 1, Width + 2, Height + 2, Outline);
+        Raylib.DrawRectangle(left, top, Width, Height, Track);
+        Raylib.DrawRectangle(left, top, (int)MathF.Round(Width * progress), Height, TextColor);
     }
 
     /// <summary>A thin bar under the crosshair while the blade is being charged; golden when full.</summary>
