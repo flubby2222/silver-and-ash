@@ -15,10 +15,10 @@ public class GormAttackTests
     /// <summary>A player who survives a lot - to watch many attacks in a row.</summary>
     private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
 
-    /// <summary>An open hall, 15 x 15 cells; the player in column 7, row 3, looking along +Z.</summary>
+    /// <summary>An open hall, 15 cells wide and 25 deep (50 m - farther than his throw); the player in column 7, row 3, looking along +Z.</summary>
     private static Level Hall(params (int X, int Z)[] pillars)
     {
-        var rows = Enumerable.Range(0, 15).Select(z => Enumerable.Range(0, 15).Select(x =>
+        var rows = Enumerable.Range(0, 25).Select(z => Enumerable.Range(0, 15).Select(x =>
             (x, z) == (7, 3) ? 'P' : pillars.Contains((x, z)) ? '#' : '.').ToArray()).Select(row => new string(row));
         return LevelParser.Parse(string.Join('\n', rows));
     }

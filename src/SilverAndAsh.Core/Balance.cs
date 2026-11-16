@@ -506,10 +506,10 @@ public sealed record GormBalance
     public float StairsRiseTime { get; init; } = 3f;
 
     /// <summary>Up to this distance (metres) he attacks with hammer or chain swing ...</summary>
-    public float NearRange { get; init; } = 4f;
+    public float NearRange { get; init; } = 8f;
 
     /// <summary>... beyond it, up to this distance, he throws his chain.</summary>
-    public float FarRange { get; init; } = 15f;
+    public float FarRange { get; init; } = 30f;
 
     /// <summary>Seconds of rest after every attack - the moment to strike back.</summary>
     public float PauseTime { get; init; } = 1.5f;
@@ -524,7 +524,7 @@ public sealed record GormBalance
     public float ShockwaveSpeed { get; init; } = 8f;
 
     /// <summary>... this far (metres) ...</summary>
-    public float ShockwaveRadius { get; init; } = 6f;
+    public float ShockwaveRadius { get; init; } = 12f;
 
     /// <summary>... and this high (metres): whoever is higher in the air stays unhurt.</summary>
     public float ShockwaveHeight { get; init; } = 0.4f;
@@ -542,7 +542,7 @@ public sealed record GormBalance
     public int SwingDamage { get; init; } = 25;
 
     /// <summary>Reach of the chain swing (metres, middle to middle).</summary>
-    public float SwingReach { get; init; } = 4f;
+    public float SwingReach { get; init; } = 8f;
 
     /// <summary>The swinging chain passes this high above his feet (metres) - from here ...</summary>
     public float SwingLow { get; init; } = 1.1f;
