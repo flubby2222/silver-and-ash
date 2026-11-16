@@ -67,6 +67,23 @@ public sealed class Player
     /// From now on the player moves in <paramref name="level"/> - the same level with some cells changed
     /// (a door opened). Called by the world.
     /// </summary>
+    private int _pullTicksLeft;
+    private Vector3 _pullVelocity;
+
+    /// <summary>True while Gorm's chain pulls the player: no control over walking for that time.</summary>
+    public bool IsPulled => _pullTicksLeft > 0;
+
+    /// <summary>
+    /// Pulls the player (flat, walls still stop them) to <paramref name="to"/> within <paramref name="seconds"/>,
+    /// without control - Gorm's chain throw (decision record 0007).
+    /// </summary>
+    internal void PullTo(Vector3 to, float seconds)
+    {
+        _pullTicksLeft = Math.Max(1, SimulationClock.SecondsToTicks(seconds));
+        var flat = (to - Position) with { Y = 0f };
+        _pullVelocity = flat / (_pullTicksLeft * SimulationClock.SecondsPerTick);
+    }
+
     internal void ChangeLevel(Level level) => _level = level ?? throw new ArgumentNullException(nameof(level));
 
     /// <summary>The camera "nod" after landing.</summary>
@@ -411,6 +428,14 @@ public sealed class Player
             input = PlayerInput.None;
         }
 
+        // Pulled by Gorm's chain: no walking, jumping, dashing or dodging - looking and fighting still work.
+        if (IsPulled)
+        {
+            input = input with { Move = Vector2.Zero, Jump = false, Dash = false };
+            _dashTicksLeft = 0;
+            _dodgeTicksLeft = 0;
+        }
+
         _events.Clear();
         BladeCooldown.Tick();
         _consecratedTicksLeft = Math.Max(0, _consecratedTicksLeft - 1);
@@ -548,6 +573,12 @@ public sealed class Player
             {
                 LandingDip.Soften(_player.PerfectJumpDipFactor);
             }
+        }
+
+        if (IsPulled)
+        {
+            horizontal = _pullVelocity;
+            _pullTicksLeft--;
         }
 
         Velocity = horizontal with { Y = vertical };

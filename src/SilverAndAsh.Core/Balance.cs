@@ -504,6 +504,66 @@ public sealed record GormBalance
 
     /// <summary>Seconds the spiral staircase takes to rise after his death.</summary>
     public float StairsRiseTime { get; init; } = 3f;
+
+    /// <summary>Up to this distance (metres) he attacks with hammer or chain swing ...</summary>
+    public float NearRange { get; init; } = 4f;
+
+    /// <summary>... beyond it, up to this distance, he throws his chain.</summary>
+    public float FarRange { get; init; } = 15f;
+
+    /// <summary>Seconds of rest after every attack - the moment to strike back.</summary>
+    public float PauseTime { get; init; } = 1.5f;
+
+    /// <summary>Warning before the hammer blow (club raised, red circle on the floor), in seconds.</summary>
+    public float HammerWindUp { get; init; } = 0.8f;
+
+    /// <summary>Damage of the hammer's shock wave.</summary>
+    public int HammerDamage { get; init; } = 35;
+
+    /// <summary>The shock wave runs along the floor this fast (m/s) ...</summary>
+    public float ShockwaveSpeed { get; init; } = 8f;
+
+    /// <summary>... this far (metres) ...</summary>
+    public float ShockwaveRadius { get; init; } = 6f;
+
+    /// <summary>... and this high (metres): whoever is higher in the air stays unhurt.</summary>
+    public float ShockwaveHeight { get; init; } = 0.4f;
+
+    /// <summary>A hammer blow that hits nobody gets the club stuck for this long (seconds) ...</summary>
+    public float StuckTime { get; init; } = 2f;
+
+    /// <summary>... and meanwhile he takes this many times the damage.</summary>
+    public float StuckDamageMultiplier { get; init; } = 2f;
+
+    /// <summary>Warning before the chain swing (chain spun up), in seconds.</summary>
+    public float SwingWindUp { get; init; } = 0.6f;
+
+    /// <summary>Damage of the chain swing.</summary>
+    public int SwingDamage { get; init; } = 25;
+
+    /// <summary>Reach of the chain swing (metres, middle to middle).</summary>
+    public float SwingReach { get; init; } = 4f;
+
+    /// <summary>The swinging chain passes this high above his feet (metres) - from here ...</summary>
+    public float SwingLow { get; init; } = 1.1f;
+
+    /// <summary>... to here: standing or jumping it hits, ducked in a dodge (1 m) not.</summary>
+    public float SwingHigh { get; init; } = 1.6f;
+
+    /// <summary>Warning before the chain throw (the hook glows red), in seconds.</summary>
+    public float ThrowWindUp { get; init; } = 0.5f;
+
+    /// <summary>The hook flies this fast (m/s), straight to where the player stood when it was thrown.</summary>
+    public float HookSpeed { get; init; } = 18f;
+
+    /// <summary>Damage of the hook.</summary>
+    public int ThrowDamage { get; init; } = 15;
+
+    /// <summary>A hit pulls the player to this distance from him (metres) ...</summary>
+    public float PullDistance { get; init; } = 3f;
+
+    /// <summary>... within this time (seconds), without control.</summary>
+    public float PullTime { get; init; } = 0.4f;
 }
 
 /// <summary>Balancing values of the ghoul.</summary>

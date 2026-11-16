@@ -423,6 +423,7 @@ static void RunGame(
             if (gameWorld.Gorm is { } gorm)
             {
                 gormView.Draw(gorm, Raylib.GetFrameTime());
+                gormView.DrawEffects(gorm);
             }
 
             foreach (var bat in gameWorld.Bats)

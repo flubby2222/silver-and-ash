@@ -94,7 +94,7 @@ public sealed class GameWorld
         // Gorm (at most one, 'T') comes after the bats; he starts looking towards the player's start.
         _gorm = level.BossPositions
             .Select(position => new Gorm(
-                _dummies.Count + _ghouls.Count + _bats.Count, position, FacingTowards(position, level.PlayerStartPosition), Balance))
+                _dummies.Count + _ghouls.Count + _bats.Count, position, FacingTowards(position, level.PlayerStartPosition), Balance, _random))
             .FirstOrDefault();
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
@@ -1003,7 +1003,7 @@ public sealed class GameWorld
             var obstacles = Players.Select(player => player.Body)
                 .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, _gorm)).Select(target => target.Body))
                 .ToList();
-            _gorm.Act(_enemyLevel, Players, obstacles);
+            _gorm.Act(_enemyLevel, Players, obstacles, _events);
         }
 
         var batEventsFrom = _events.Count;
