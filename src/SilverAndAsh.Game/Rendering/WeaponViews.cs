@@ -228,6 +228,14 @@ internal sealed class PlaceholderWeaponView : IWeaponView
             ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.006f, 0.2f) * hand, new Vector3(0.014f, 0.014f, 0.2f), barrel);
             muzzle = 0.31f;
         }
+        else if (_ranged == WeaponKind.Blunderbuss)
+        {
+            // The blunderbuss: a short stock, a thick barrel and a wide bell-shaped mouth.
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, -0.02f, -0.05f) * hand, new Vector3(0.032f, 0.05f, 0.1f), Wood);
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.004f, 0.06f) * hand, new Vector3(0.03f, 0.03f, 0.13f), barrel);
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.004f, 0.135f) * hand, new Vector3(0.05f, 0.05f, 0.025f), Iron);
+            muzzle = 0.16f;
+        }
         else
         {
             // Grip, frame and barrel.

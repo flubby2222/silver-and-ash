@@ -91,18 +91,21 @@ public class BalanceFileTests
     }
 
     [Fact]
-    public void A_ranged_weapon_may_pierce_nothing()
+    public void A_ranged_weapon_may_pierce_nothing_and_shoot_straight()
     {
-        var result = BalanceFile.Parse("""{ "pistol": { "pierce": 0 }, "rifle": { "pierce": 0 } }""");
+        var result = BalanceFile.Parse("""{ "pistol": { "pierce": 0, "spread": 0 }, "rifle": { "pierce": 0 }, "blunderbuss": { "pierce": 0, "spread": 0 } }""");
 
         Assert.Equal(0, result.Balance.Pistol.Pierce);
         Assert.Equal(0, result.Balance.Rifle.Pierce);
+        Assert.Equal(0f, result.Balance.Blunderbuss.Spread);
         Assert.Empty(result.Warnings);
     }
 
     [Theory]
     [InlineData("rifle", "magazineSize")]
     [InlineData("rifle", "reloadTime")]
+    [InlineData("blunderbuss", "pellets")]
+    [InlineData("blunderbuss", "range")]
     [InlineData("blade", "cooldown")]
     [InlineData("player", "maxHealth")]
     [InlineData("player", "jumpDuration")]
@@ -123,6 +126,7 @@ public class BalanceFileTests
     [InlineData("""{ "player": { "airControl": 1.5 } }""", "player.airControl")]
     [InlineData("""{ "player": { "exhaustedJumpSpeedPenalty": 1 } }""", "player.exhaustedJumpSpeedPenalty")]
     [InlineData("""{ "blade": { "angle": 200 } }""", "blade.angle")]
+    [InlineData("""{ "blunderbuss": { "spread": 120 } }""", "blunderbuss.spread")]
     [InlineData("""{ "club": { "angle": 200 } }""", "club.angle")]
     [InlineData("""{ "ghoul": { "attackHalfAngle": 200 } }""", "ghoul.attackHalfAngle")]
     [InlineData("""{ "drops": { "ghoulChance": 1.5 } }""", "drops.ghoulChance")]
