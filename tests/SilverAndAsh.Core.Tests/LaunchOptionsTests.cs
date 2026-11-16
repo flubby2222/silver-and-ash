@@ -112,6 +112,7 @@ public class LaunchOptionsTests
     [InlineData("ghoul-4m")]
     [InlineData("all")]
     [InlineData("list")]
+    [InlineData("compare")]
     public void Photo_takes_a_scene_all_or_list(string photo)
     {
         Assert.Equal(photo, LaunchOptions.Parse(["--photo", photo]).Photo);
@@ -190,5 +191,41 @@ public class LaunchOptionsTests
         var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--give"]));
 
         Assert.Contains("needs a weapon", error.Message);
+    }
+
+    [Fact]
+    public void Without_look_the_game_keeps_its_picture()
+    {
+        Assert.Null(LaunchOptions.Parse([]).Look);
+    }
+
+    [Theory]
+    [InlineData("1", 1)]
+    [InlineData("4", 4)]
+    public void Look_chooses_a_picture_variant(string text, int expected)
+    {
+        Assert.Equal(expected, LaunchOptions.Parse(["--look", text]).Look);
+        Assert.Equal(expected, LaunchOptions.Parse(["--photo", "ghoul-4m", "--look", text]).Look);
+    }
+
+    [Theory]
+    [InlineData]
+    [InlineData("0")]
+    [InlineData("5")]
+    [InlineData("-1")]
+    [InlineData("two")]
+    public void Look_without_a_variant_from_1_to_4_is_rejected(params string[] variant)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--look", .. variant]));
+
+        Assert.Contains("from 1 to 4", error.Message);
+    }
+
+    [Fact]
+    public void Compare_takes_every_variant_itself()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo", "compare", "--look", "2"]));
+
+        Assert.Contains("leave out '--look'", error.Message);
     }
 }

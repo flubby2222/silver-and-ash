@@ -1,10 +1,12 @@
 using System.Numerics;
 using Raylib_cs;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The shader for the level: lantern light and fog, computed by the graphics card for every pixel.
+/// The shader for the whole 3D world (level, figures, loot, effects): lantern light and fog - and in the picture variants
+/// of issue #234 the dot pattern -, computed by the graphics card for every pixel.
 /// The shader programs live in assets/shaders/level.vs and level.fs.
 /// </summary>
 internal sealed class LevelShader : IDisposable
@@ -28,10 +30,28 @@ internal sealed class LevelShader : IDisposable
         _viewPositionLocation = Raylib.GetShaderLocation(Shader, "viewPos");
 
         // These values do not change while playing - set them once.
-        SetVector3("fogColor", ToVector3(LookSettings.FogColor));
         SetFloat("fogStart", LookSettings.FogStart);
         SetFloat("fogEnd", LookSettings.FogEnd);
         SetFloat("lanternMinimum", LookSettings.LanternMinimum);
+        SetFloat("fadeStart", LookVariants.FadeStart);
+        SetFloat("fadeEnd", LookVariants.FadeEnd);
+        Apply(LookVariants.Default);
+    }
+
+    /// <summary>Switches the picture variant (issue #234): 15-bit pattern, fade after the pattern, fog colour.</summary>
+    public void Apply(LookVariant look)
+    {
+        // With the pattern the fog colour lies exactly on a 5-bit step, so fully fogged pixels get no pattern of their
+        // own and match the background (Dithering.SnapToStep).
+        var fog = ToVector3(LookSettings.FogColor);
+        if (look.Quantize)
+        {
+            fog = new Vector3(Dithering.SnapToStep(fog.X), Dithering.SnapToStep(fog.Y), Dithering.SnapToStep(fog.Z));
+        }
+
+        SetVector3("fogColor", fog);
+        SetInt("quantize", look.Quantize ? 1 : 0);
+        SetInt("patternFade", look.PatternFade ? 1 : 0);
     }
 
     public Shader Shader { get; }
@@ -58,6 +78,9 @@ internal sealed class LevelShader : IDisposable
 
     private void SetFloat(string name, float value) =>
         Raylib.SetShaderValue(Shader, Raylib.GetShaderLocation(Shader, name), value, ShaderUniformDataType.Float);
+
+    private void SetInt(string name, int value) =>
+        Raylib.SetShaderValue(Shader, Raylib.GetShaderLocation(Shader, name), value, ShaderUniformDataType.Int);
 
     private void SetVector3(string name, Vector3 value) =>
         Raylib.SetShaderValue(Shader, Raylib.GetShaderLocation(Shader, name), value, ShaderUniformDataType.Vec3);

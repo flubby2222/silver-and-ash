@@ -26,6 +26,14 @@ public class PhotoSceneTests
     }
 
     [Fact]
+    public void The_look_comparison_takes_the_scenes_issue_234_asks_for()
+    {
+        string[] wanted = ["room-corridor", "room-combat", "ghoul-4m", "ghoul-10m", "ghoul-windup", "bat-10m", "gorm"];
+
+        Assert.Equal(wanted, PhotoScenes.LookComparison.Select(scene => scene.Name));
+    }
+
+    [Fact]
     public void Every_scene_the_issue_asks_for_is_there()
     {
         string[] wanted =

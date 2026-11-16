@@ -50,6 +50,7 @@ using (log)
     Func<int, Balance, GameWorld>? newWorld = null;
     Func<GameWorld, GameWorld>? nextWorld = null;
     int? seed = null;
+    int? look = null;
     PhotoRequest? photos = null;
     try
     {
@@ -84,6 +85,13 @@ using (log)
             log?.Info($"Every run starts with: {string.Join(", ", give)}.");
         }
 
+        // Test option: --look 3 draws the world in one of the picture variants of issue #234 (decision record 0010).
+        look = options.Look;
+        if (look is not null)
+        {
+            log?.Info($"Picture variant {look}.");
+        }
+
         // Test option: --photo <scene> takes fixed pictures for testers and designers and quits (issue #224,
         // docs/foto-skript.md). Only in the debug version, like --give.
         if (options.Photo is { } photo)
@@ -101,8 +109,12 @@ using (log)
             {
                 var folder = Path.GetFullPath(options.PhotoFolder ?? Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "photos"));
-                var scenes = photo == LaunchOptions.AllPhotos ? PhotoScenes.All : [PhotoScenes.Find(photo)!];
-                photos = new PhotoRequest(scenes, folder, RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")));
+                var compare = photo == LaunchOptions.ComparePhotos;
+                var scenes = photo == LaunchOptions.AllPhotos ? PhotoScenes.All
+                    : compare ? PhotoScenes.LookComparison
+                    : [PhotoScenes.Find(photo)!];
+                photos = new PhotoRequest(
+                    scenes, folder, RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), compare);
                 log?.Info($"Photo mode: {scenes.Count} scenes into '{folder}'.");
             }
         }
@@ -110,6 +122,11 @@ using (log)
         if (options.Photo is not null)
         {
             throw new ArgumentException("'--photo' works only in the debug version (dotnet run).");
+        }
+
+        if (options.Look is not null)
+        {
+            throw new ArgumentException("'--look' works only in the debug version (dotnet run).");
         }
 #endif
     }
@@ -128,7 +145,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos);
+            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look));
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -141,9 +158,10 @@ using (log)
 }
 
 // newWorld builds a world from a seed and balancing values; nextWorld the one after a run ended (new layout on level 0).
+// look: how the 3D world is drawn - variant 1 unless --look chose another (debug version, issue #234).
 static void RunGame(
     Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
-    PhotoRequest? photos)
+    PhotoRequest? photos, LookVariant look)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted.
     Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
@@ -247,10 +265,11 @@ static void RunGame(
         var seconds = 0f;
 
         var accumulator = new TickAccumulator();
-        using var picture = new LowResolutionTarget(LookSettings.RenderWidth, LookSettings.RenderHeight);
+        using var picture = new LowResolutionTarget(look.RenderWidth, look.RenderHeight);
 
-        // Lantern light and fog: a small program for the graphics card (assets/shaders/).
+        // Lantern light and fog: a small program for the graphics card (assets/shaders/), for everything in the 3D world.
         using var levelShader = new LevelShader(Path.Combine(AppContext.BaseDirectory, "assets", "shaders"));
+        levelShader.Apply(look);
 
         // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
         using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, levelShader.Shader);
@@ -310,7 +329,7 @@ static void RunGame(
 
             levelShader.SetCameraPosition(eye);
             picture.BeginDrawing();
-            Raylib.ClearBackground(LookSettings.BackgroundColor);
+            Raylib.ClearBackground(look.BackgroundColor);
             Raylib.BeginMode3D(camera);
             if (!ReferenceEquals(renderedLevel, gameWorld.LevelAsBuilt))
             {
@@ -428,12 +447,22 @@ static void RunGame(
 
         // Photo mode (--photo, issue #224): every scene is built in Core, ticked like the game ticks, drawn with the
         // same code as above and saved twice - the small picture and the whole window with HUD. Then the game ends.
+        // With --photo compare every scene is taken in every picture variant, then put together 2 x 2 (issue #234).
         if (photos is not null)
         {
             var studio = new PhotoStudio(photos.Templates, balance);
             Directory.CreateDirectory(photos.Folder);
-            foreach (var scene in photos.Scenes)
+            IReadOnlyList<LookVariant> looks = photos.Compare ? LookVariants.All : [look];
+            foreach (var (variant, scene) in looks.SelectMany(variant => photos.Scenes.Select(scene => (variant, scene))))
             {
+                if (variant != look)
+                {
+                    look = variant;
+                    levelShader.Apply(look);
+                    picture.Resize(look.RenderWidth, look.RenderHeight);
+                }
+
+                var suffix = photos.Compare ? $"-look{look.Number}" : string.Empty;
                 var setup = scene.Build(studio);
                 StartFresh(setup.World);
                 if (setup.IsModelProbe)
@@ -456,16 +485,30 @@ static void RunGame(
                 Raylib.BeginDrawing();
                 DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
                 Rlgl.DrawRenderBatchActive();
-                var screenPath = Path.Combine(photos.Folder, $"{scene.Name}-screen.png");
+                var screenPath = Path.Combine(photos.Folder, $"{scene.Name}{suffix}-screen.png");
                 var screen = Raylib.LoadImageFromScreen();
                 Raylib.ExportImage(screen, screenPath);
                 Raylib.UnloadImage(screen);
                 Raylib.EndDrawing();
 
-                var picturePath = Path.Combine(photos.Folder, $"{scene.Name}.png");
+                var picturePath = Path.Combine(photos.Folder, $"{scene.Name}{suffix}.png");
                 picture.SaveAs(picturePath);
                 log?.Info($"Photo '{scene.Name}' after {ticks} ticks: {picturePath}, {screenPath}");
                 Console.WriteLine($"{scene.Name}: {picturePath} ({ticks} ticks)");
+            }
+
+            if (photos.Compare)
+            {
+                foreach (var scene in photos.Scenes)
+                {
+                    var comparePath = Path.Combine(photos.Folder, $"{scene.Name}-compare.png");
+                    ComparisonSheet.Save(
+                        [.. LookVariants.All.Select(variant =>
+                            (Path.Combine(photos.Folder, $"{scene.Name}-look{variant.Number}-screen.png"), variant.Label))],
+                        comparePath);
+                    log?.Info($"Comparison '{scene.Name}': {comparePath}");
+                    Console.WriteLine($"{scene.Name}: {comparePath}");
+                }
             }
 
             return;
@@ -858,4 +901,5 @@ static string CooldownText(Cooldown cooldown) =>
 #endif
 
 /// <summary>What the photo mode (--photo) is to take: these scenes, saved into this folder, built from these room templates.</summary>
-internal sealed record PhotoRequest(IReadOnlyList<PhotoScene> Scenes, string Folder, IReadOnlyList<RoomTemplate> Templates);
+/// <remarks>Compare: take every scene in every picture variant and put them together 2 x 2 (--photo compare, issue #234).</remarks>
+internal sealed record PhotoRequest(IReadOnlyList<PhotoScene> Scenes, string Folder, IReadOnlyList<RoomTemplate> Templates, bool Compare);
