@@ -44,6 +44,7 @@ public sealed class Player
         Stamina = new Stamina(_player);
         BladeCooldown = new Cooldown(balance.Blade.Cooldown);
         PistolCooldown = new Cooldown(balance.Pistol.Cooldown);
+        PistolMagazine = new Magazine(balance.Pistol.MagazineSize, balance.Pistol.ReloadTime);
         BladeCharge = new BladeCharge(balance.Blade);
 
         // Dash speed chosen so that the dash covers exactly DashDistance in its whole number of ticks.
@@ -356,6 +357,9 @@ public sealed class Player
     /// <summary>Waiting time of the pistol.</summary>
     public Cooldown PistolCooldown { get; }
 
+    /// <summary>The pistol's magazine: rounds left, and whether it is being reloaded (decision record 0008).</summary>
+    public Magazine PistolMagazine { get; }
+
     /// <summary>Charging the silver blade (hold the button, swing on release).</summary>
     public BladeCharge BladeCharge { get; }
 
@@ -396,6 +400,7 @@ public sealed class Player
     // Attacks need a fresh press, too: holding the button swings or shoots only once.
     private bool _meleeWasHeld;
     private bool _shootWasHeld;
+    private bool _reloadWasHeld;
 
     // How long the feet have been on the ground without a break.
     private int _ticksOnGround;
@@ -445,6 +450,11 @@ public sealed class Player
         BladeCooldown.Tick();
         _consecratedTicksLeft = Math.Max(0, _consecratedTicksLeft - 1);
         PistolCooldown.Tick();
+        if (PistolMagazine.Tick())
+        {
+            _events.Add(new ReloadFinished(Id));
+        }
+
         LandingDip.Tick();
         var wasGrounded = IsGrounded;
         _ticksSinceLanding = Math.Min(_ticksSinceLanding + 1, Never);
@@ -705,8 +715,10 @@ public sealed class Player
 
         var meleePressed = input.Melee && !_meleeWasHeld;
         var shootPressed = input.Shoot && !_shootWasHeld;
+        var reloadPressed = input.Reload && !_reloadWasHeld;
         _meleeWasHeld = input.Melee;
         _shootWasHeld = input.Shoot;
+        _reloadWasHeld = input.Reload;
 
         // Blade: pressing starts charging (only when the cooldown is over), holding charges, letting go swings.
         if (meleePressed && BladeCooldown.IsReady)
@@ -724,9 +736,18 @@ public sealed class Player
             _events.Add(new BladeSwung(EyePosition, View.Forward, charge));
         }
 
-        // Consecrated ammunition: the pistol is ready again sooner.
-        if (shootPressed && PistolCooldown.TryUse(IsConsecrated ? _consecratedFireRate : 1f))
+        // R reloads; so does a shot with an empty magazine. While reloading the pistol does not fire.
+        if (reloadPressed || (shootPressed && PistolMagazine.Rounds == 0))
         {
+            if (PistolMagazine.StartReload())
+            {
+                _events.Add(new ReloadStarted(Id));
+            }
+        }
+        else if (shootPressed && PistolCooldown.IsReady && PistolMagazine.TryTake())
+        {
+            // Consecrated ammunition: the pistol is ready again sooner.
+            PistolCooldown.TryUse(IsConsecrated ? _consecratedFireRate : 1f);
             _events.Add(new ShotFired(EyePosition, View.Forward, IsConsecrated));
         }
     }

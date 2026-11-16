@@ -96,6 +96,8 @@ public class BalanceFileTests
     [InlineData("player", "jumpDuration")]
     [InlineData("bat", "spitInterval")]
     [InlineData("player", "staminaJumps")]
+    [InlineData("pistol", "magazineSize")]
+    [InlineData("pistol", "reloadTime")]
     [InlineData("experience", "firstLevel")]
     public void Zero_is_refused_where_it_would_break_the_game(string section, string name)
     {

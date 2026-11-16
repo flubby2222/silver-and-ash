@@ -23,6 +23,12 @@ public sealed record BladeSwung(Vector3 Origin, Vector3 Direction, float Charge 
 /// </summary>
 public sealed record ShotFired(Vector3 Origin, Vector3 Direction, bool Consecrated = false) : GameEvent;
 
+/// <summary>Player <paramref name="PlayerId"/> started reloading (R, or a shot with an empty magazine).</summary>
+public sealed record ReloadStarted(int PlayerId) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/>'s magazine is full again.</summary>
+public sealed record ReloadFinished(int PlayerId) : GameEvent;
+
 /// <summary>
 /// A shot hit a wall, floor or ceiling at <paramref name="Point"/>; <paramref name="Normal"/> points out of the surface.
 /// </summary>

@@ -48,7 +48,9 @@
     "damage": 35,
     "headshotMultiplier": 3,            // 300 % on the head
     "range": 50,                        // m
-    "cooldown": 0.8                     // s between shots
+    "cooldown": 0.7,                    // s between shots
+    "magazineSize": 7,                  // rounds, then reload (R) ...
+    "reloadTime": 1.5                   // ... taking this long (s); the supply is unlimited
   },
 
   "dummy": {

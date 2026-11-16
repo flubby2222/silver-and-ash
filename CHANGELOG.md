@@ -10,6 +10,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Wandbruch mit Wucht:** Bricht die rissige Wand zum Geheimraum, fliegen Steinbrocken heraus (die meisten von dir weg), poltern zu Boden und versinken; eine Staubwolke steigt auf, und das Bild ruckt kurz
 
 ### Geändert
+- **Nachladen:** Die Pistole hat ein Magazin mit **7 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („6 / 7“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)
 - **Bonus-Wahl ohne Stillstand:** Ein Stufenaufstieg hält das Spiel nicht mehr an. Unter der Stufenanzeige blinkt „[X] Choose boon“ (bei mehreren mit Anzahl). **X** öffnet die Wahl, **1–4** oder ein **Klick** wählt, das Spiel läuft weiter, und du kannst dabei laufen. Mehrere Aufstiege kommen nacheinander. Nur ein Treffer schließt die Wahl, der Bonus wartet weiter
 - **Kisten sind fest:** Man läuft nicht mehr durch Kisten hindurch, kann aber auf sie springen (0,7 m). Steigt eine Kiste unter dir aus dem Boden, hebt sie dich an. Ghule und Gorm laufen um Kisten herum; Fledermäuse fliegen darüber. Noch versteckte Kisten blockieren nicht
 
