@@ -136,3 +136,60 @@ Die Leitung entscheidet, was davon übernommen wird. Regeln 1–2 folgen direkt 
 - Varianten unterscheiden sich künftig durch den **Charakter einer Geste** (Tonlage, Härte, Länge, Raum), nicht durch zusätzliche Ereignisse.
 - Für den Ghul: genau eine Bewegung, höchstens zwei Schichten, Zufall nur dort, wo er Rauheit erzeugt (Subharmonische), nicht als Bewegung.
 - Messbar machen: In Hörprobe 2 zähle ich je Ghul-Variante die Einsätze (Stellen, an denen der Pegel innerhalb von 50 ms um mehr als 8 dB steigt; der Beginn zählt mit). Ergebnis: Hörprobe 1 hatte 2, 2 und 4 Einsätze, die drei neuen Varianten je 1 (siehe [Messwerte Hörprobe 2](../proben/audio/hoerprobe-2/messwerte.md)). Das zeigt nur die Zahl der Ereignisse, nicht, ob es gut klingt.
+
+---
+
+# Nachtrag nach Hörprobe 2 (2026-11-16)
+
+Urteil des Menschen zu Hörprobe 2: „besser“, aber „nicht optimal“; Einzelheiten stehen noch aus. Er hat zwei Wege vorgeschlagen: den Klang des PS1-Chips nachbilden und Tutorials auswerten. Der Bildstil ist inzwischen PS1-nah ([ADR 0010](../../docs/entscheidungen/0010-stil-ps1-nah-texturen.md)).
+
+## A. Der Sound-Chip der ersten PlayStation (SPU)
+
+**Einordnung:** Die SPU hat aufgenommene Samples abgespielt, keine Klänge erzeugt. Was sie zum Klang beiträgt, ist eine **Färbung** – Sounddesign bleibt unsere Arbeit. **[Beleg]** [psx-spx: Sound Processing Unit](https://psx-spx.consoledev.net/soundprocessingunitspu/)
+
+**Belegt** (psx-spx und der Quelltext des Emulators [DuckStation](https://github.com/stenzek/duckstation), `src/core/spu.cpp`):
+
+- **24 Stimmen, 512 KB Klang-Speicher.** [Beleg] (DuckStation; Wikipedia: [PlayStation technical specifications](https://en.wikipedia.org/wiki/PlayStation_technical_specifications))
+- **ADPCM in Blöcken:** 16 Byte je Block, darin 28 Samples zu je 4 Bit. Byte 0 enthält Verschiebung (Bits 0–3) und Filter (Bits 4–7), Byte 1 Schleifen-Merker. Fünf feste Vorhersage-Filter (in 1/64): 0/0, 60/0, 115/−52, 98/−55, 122/−60. Verschiebung 0–12; die Werte 13–15 wirken wie 9. Jedes Sample = 4-Bit-Wert (nach oben geschoben und um die Verschiebung zurückgeschoben) plus Vorhersage aus den zwei letzten Samples, auf 16 Bit begrenzt, ohne Rundung. [Beleg] (psx-spx; DuckStation)
+- **Abspielrate:** ein Tonhöhen-Register mit 1000h = 44 100 Hz, Höchstwert 4000h; der Mischer läuft immer mit 44,1 kHz. [Beleg] (psx-spx)
+- **Gauß-Interpolation:** Jedes Ausgabe-Sample wird aus den vier letzten Samples mit Gewichten aus einer Tabelle mit 512 Einträgen berechnet; Bits 4–11 des Tonhöhen-Zählers wählen die Gewichte. Die Gewichte ergeben zusammen knapp 1 (7F7Fh–7F81h von 8000h). Diese Interpolation glättet und dämpft die Höhen. [Beleg] (psx-spx)
+- **Typische Raten:** Ein Leitfaden für heutige PS1-Eigenentwicklungen nennt 11 025 Hz für kurze Effekte und 22 050 Hz für Stimme und Musik; 44 100 Hz braucht doppelt so viel Speicher wie 22 050 Hz. [Beleg, aber Quelle aus der Homebrew-Szene, nicht von damals] [psxsplash: Audio](https://psxsplash.github.io/docs/components/audio)
+- **Hall in Hardware:** läuft mit 22 050 Hz in einem Ringspeicher; das Hall-Signal wird mit einem 39-Punkt-Filter herunter- und hochgerechnet. Aufbau: zwei Reflexionen „gleiche Seite“ und zwei „andere Seite“ mit Dämpfung, vier Kammfilter, zwei Allpässe. Voreinstellungen mit allen Registerwerten: Room, Studio Small/Medium/Large, Hall, Half Echo, Space Echo, Chaos Echo, Delay. [Beleg] (psx-spx). Die PS2 hat fast denselben Hall. [Beleg] ([PCSX2-Doku](https://wiki.pcsx2.net/PCSX2_Documentation/Reverb_Engine))
+- **Lautstärke-Hüllkurve (ADSR):** Anstieg linear oder „exponentiell“ (in Wahrheit ab 6000h nur langsamer linear), Abfall und Ausklang exponentiell, Haltepegel in 16 Stufen. [Beleg] (psx-spx)
+
+**Warum es „nach PS1“ klingt – [Schluss]:** Kurze Effekte lagen oft mit 11 oder 22 kHz im Speicher, also fehlt alles über 5,5 bzw. 11 kHz. Die Gauß-Interpolation dämpft zusätzlich schon darunter (gemessen bei 22 050 Hz: −1,7 dB bei 4 kHz, −6,9 dB bei 8 kHz). ADPCM fügt ein leises, signalabhängiges Rauschen hinzu (gemessen: 30–50 dB Abstand statt 98 dB bei 16 Bit). Dazu kommt bei vielen Spielen der Hardware-Hall.
+
+**Nachbildung:** [`ps1_klang.py`](../proben/audio/hoerprobe-3/ps1_klang.py). Genau nach Quelle: ADPCM-Dekoder, Tonhöhen-Zähler, Interpolationsformel, Hall-Formeln und -Voreinstellungen. **Annäherungen**, im Skript gekennzeichnet: das Herunterrechnen (heute mit `ffmpeg`; womit damals gerechnet wurde, ist unbekannt), der Kodierer (Sonys Werkzeug ist nicht dokumentiert; meiner probiert Filter und Verschiebung je Block aus), die Gauß-Tabelle (mit einer Näherungsformel aus dem [NESdev-Forum](https://nesdev.nes.science/f12/t10586.xhtml) berechnet; an 18 belegten Stützstellen höchstens 1 von 22 963 daneben) sowie die Reihenfolge von linkem und rechtem Kanal im Hall. Nicht nachgebildet: ADSR (unsere Dateien tragen ihre Hüllkurve schon), Rauschquelle, Ausgangsstufe. Prüfung: [`ps1_pruefung.md`](../proben/audio/hoerprobe-3/ps1_pruefung.md).
+
+## B. Tutorials
+
+**Videos:** Mit dem Werkzeug `watch` habe ich drei Lehrvideos versucht. „Quick Gun Shot Sounds From Scratch“ ([YouTube](https://www.youtube.com/watch?v=wUI59pnJHqo)) hat keine gesprochene Erklärung (die Untertitel enthalten nur Musik). „Distant Gunshot Sound Design“ ([YouTube](https://www.youtube.com/watch?v=YpSmVXro16w)) und „Explosion Sound Design Tutorial“ ([YouTube](https://www.youtube.com/watch?v=qpcuSbM9hb4)) scheiterten auch beim zweiten Versuch an der Drosselung durch YouTube (Fehler 429). Ich bin daher auf Artikel ausgewichen; aus Videos stammt in diesem Nachtrag nichts.
+
+Ausgewertete Quellen mit den übernommenen Rezepten. Die Seiten zu Farnells Buch enthalten Pure-Data-Patches mit wenig Text; die Rezepte habe ich aus der Verschaltung gelesen (**[Beleg]** für die Bausteine, **[Schluss]** für meine Deutung).
+
+1. **Andy Farnell, *Designing Sound* (MIT Press), Begleitseiten:**
+   - [Practical 30: Guns](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical30.html): Knall als Rauschen durch Hochpass, dann Bandpass, mit kurzer Hüllkurve; weiche Sättigung (tanh); Raum über Verzögerungen. Nur teilweise gelesen.
+   - [Practical 26: Footsteps](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical26.html): Ein Schritt ist eine Bodenreaktions-Kurve (Ferse, Abrollen, Ballen) mal einem für den Untergrund typischen gefilterten Rauschen; das Tempo verschiebt Ferse und Ballen.
+   - [Practical 29: Mammals](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical29.html): Stimmquelle als Impulszug mit erhöhter Kosinusform, Rachen als Bandpass-Bank; Vokal-Formanten als Zahlentripel (z. B. „U“ 450/1030/2380 Hz); eine Artikulationskurve mit Anstieg und Abfall steuert alles.
+   - [Practical 12: Bubbles](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical12.html): Tropfen = Sinus mit exponentiell steigender Tonhöhe, etwa 10 ms Einsatz und etwa 80 ms Ausklang; Höhlenhall aus vier Verzögerungen im goldenen Schnitt (61,8 / 100 / 161,8 / 261,8 ms) mit Summen-/Differenz-Mischung.
+   - [Practical 31: Explosions](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical31.html) und [Practical 7: Bouncing Ball](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical07.html): Aufprall als Rauschen durch einen resonanten Tiefpass mit schnell fallender Grenzfrequenz; Ton mit fallender Tonhöhe.
+   - [Practical 18: Wind](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/8375/designing_sound.zip/practical18.html): Böen als zweifach mit 0,5 Hz tiefpassgefiltertes Rauschen, das die Grenzfrequenz eines Resonanzfilters steuert. (Noch nicht übernommen: Die Grundfläche hat dem Menschen gefallen und bleibt.)
+2. **Piotr Goj, [„Shoot SFX – Procedural Audio“](https://www.gamedeveloper.com/audio/shoot-sfx-procedural-audio)** (Game Developer, 2018): ein Schuss aus einer einzigen Rauschquelle in zwei Bändern (Band um 500–600 Hz, Tiefpass um 200–300 Hz) mit eigener Lautstärke je Band und einem Ausklang-Wert von 90–120; Varianten nur über Filter, Streuung und Ausklang. [Beleg; Einheiten nennt der Artikel nicht]
+3. **Bryce Matsumori, [„Springbound Devlog 4: Making critters talk“](https://brycetown.substack.com/p/springbound-devlog-4-making-critters-talk)** (2025): Ein geschlossener Mund ist ein Tiefpass um 280 Hz, Öffnen hebt ihn an; dazu zwei Formant-Filter. Absichtlich nur zwei Vokale und zwei Regler, damit es lesbar bleibt. [Beleg]
+4. **Violet Recording, [„How to Design a Creature or Monster Sound“](https://violetrecording.com/how-to-design-a-creature-sound/)**: Schichten nach Aufgabe (tief = Größe, Mitte = Charakter, hoch = Detail); ein Sub-Sinus unter dem Knurren gibt Gewicht; Sättigung parallel beimischen; Schichten stapeln, bis es matschig wird, ist ein typischer Fehler. [Beleg; ohne Zahlen]
+5. **Ronny Mraz, [„How to design a weapon sound for video games“](https://splice.com/blog/design-weapon-sound-video-games/)** (Splice, 2021): Schichten Mechanik, Tiefe, Körper, Ferne, Ausklang; Tiefe als eigenes Element; je Abspielen Tonhöhe und Lautstärke leicht streuen; fremde Waffen mit weniger Schichten, damit die eigene Platz hat. [Beleg; ohne Zahlen]
+
+## Was ich deshalb an meinen Skripten ändere
+
+| Geräusch | Änderung gegenüber Hörprobe 2 | Quelle |
+|---|---|---|
+| Ghul | Eine Steuerkurve „Maul offen“ treibt Lautstärke **und** einen Tiefpass von 280 Hz auf 2,5 kHz – eine Bewegung statt zweier. Formanten aus Farnells Vokaltabelle („U“). Zweite Schicht ist ein Sub-Sinus statt Atem. Leise parallele Sättigung. | Springbound, Farnell 29, Violet |
+| Pistole | Körper aus einer Rauschquelle in zwei Bändern (Band 550 Hz, Tiefpass 250 Hz, etwa 120 ms) statt Tiefpass 1,4 kHz; Knall-Rauschen Hochpass → Bandpass; weiche Sättigung des trockenen Schusses. Raum unverändert. | Goj, Farnell 30, Splice |
+| Klinge | Resonanter Tiefpass mit fallender Grenzfrequenz (1,8 kHz → 180 Hz in etwa 50 ms) statt festem Tiefpass; drei Varianten mit Streuung (die Audio Bible verlangt drei je Treffer). | Farnell 31 und 7, Splice |
+| Schritt | Bodenreaktions-Kurve (Ferse – Abrollen – weicher Ballen ohne Lücke) trägt das Rauschen statt eines einzelnen Abklingens. Bleibt ein Aufsatz (Regel 1). | Farnell 26 |
+| Tropfen | Exponentiell steigende Tonhöhe, 2 ms Einsatz, 20 ms Abklingzeit statt 6 ms, Höhlenhall statt zweier fester Echos; tiefste Stufe aus Hörprobe 2. | Farnell 12 |
+| alle | Jede Datei zusätzlich durch die PS1-Kette (22 050 Hz, ohne Hall), damit der Mensch die Färbung beurteilt. | Teil A |
+
+**[Schluss] Was die Tutorials an meiner bisherigen Arbeit bestätigen:** Alle Quellen bauen aus wenigen Bausteinen (Rauschen, ein Oszillator, Filter, Hüllkurve) und steuern sie mit **einer** Kurve – genau das verlangen Regel 1 und 2. **Was neu ist:** Bewegung entsteht bei ihnen durch Filter, die sich mit der Hüllkurve bewegen (fallender Tiefpass beim Aufprall, aufgehender Tiefpass beim Maul). Meine Geräusche in Hörprobe 2 hatten meist feste Filter; das dürfte sie statischer gemacht haben.
+
+**[Schluss] Eine Folge, die der Mensch kennen sollte:** Der neue Ghul hat fast keine Energie über 2 kHz (gemessen −85 dBFS im Band 2–8 kHz bei −18 dBFS gesamt). Er ist also sehr dunkel. Durch die PS1-Kette kommt in diesem Band sogar etwas hinzu (−82,5 dBFS): das Rauschen der ADPCM-Kodierung.
