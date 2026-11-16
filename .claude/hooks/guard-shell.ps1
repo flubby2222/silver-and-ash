@@ -19,8 +19,12 @@ $command = [string]$data.tool_input.command
 if (-not $command) { exit 0 }
 if ($data.cwd -and (Test-Path -LiteralPath $data.cwd)) { Set-Location -LiteralPath $data.cwd }
 
-# Text inside quotes (commit messages, PR bodies) is not a command: blank it out first.
-$bare = $command -replace '"[^"]*"', '""' -replace "'[^']*'", "''"
+# Text inside heredocs, here-strings and quotes (commit messages, PR bodies) is not a command:
+# blank it out first, so a description that mentions a blocked command is not blocked itself.
+$bare = $command
+$bare = [regex]::Replace($bare, '(?s)<<-?\s*[''"]?(\w+)[''"]?.*?\r?\n\s*\1\b', '')
+$bare = [regex]::Replace($bare, '(?s)@''.*?''@|@".*?"@', '')
+$bare = $bare -replace '"[^"]*"', '""' -replace "'[^']*'", "''"
 $git = '(?i)\bgit\b[^|;&\r\n]*'
 
 # --- 1. Irreversible commands -------------------------------------------------
