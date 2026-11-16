@@ -138,14 +138,17 @@ public class GormTests
         var gorm = new Gorm(9, Vector3.Zero);
         var events = new List<GameEvent>();
 
-        gorm.TakeDamage(1000, events);
-        gorm.TakeDamage(1000, events);
-        gorm.TakeDamage(1000, events);
+        // Three blows of 60 % of his health: the second one only takes what is left.
+        var blow = Balance.Default.Gorm.MaxHealth * 6 / 10;
+        gorm.TakeDamage(blow, events);
+        gorm.TakeDamage(blow, events);
+        gorm.TakeDamage(blow, events);
 
         Assert.True(gorm.IsDead);
         Assert.False(gorm.IsHittable);
         // The first blow takes him past half his health: he roars (phase 2, issue #166).
-        Assert.Equal([new GormHit(9, 1000), new GormRoared(9), new GormHit(9, 600), new GormDied(9)], events);
+        var rest = Balance.Default.Gorm.MaxHealth - blow;
+        Assert.Equal([new GormHit(9, blow), new GormRoared(9), new GormHit(9, rest), new GormDied(9)], events);
     }
 
     [Fact]

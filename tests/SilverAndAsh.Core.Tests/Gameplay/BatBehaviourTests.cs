@@ -190,7 +190,7 @@ public class BatBehaviourTests
     }
 
     [Fact]
-    public void It_spits_every_two_seconds_after_a_warning()
+    public void It_spits_at_its_interval_after_a_warning()
     {
         var world = new GameWorld(BigRoom);
 
@@ -198,11 +198,12 @@ public class BatBehaviourTests
 
         var windUps = seen.Where(e => e.Event is BatSpitWindUp).Select(e => e.Tick).ToList();
         var spits = seen.Where(e => e.Event is BatSpat).Select(e => e.Tick).ToList();
-        Assert.Equal(2, spits.Count);
-        Assert.Equal(2, windUps.Count);
-        Assert.Equal(SpitTicks, spits[1] - spits[0]);
-        Assert.Equal(SpitWindUpTicks, spits[0] - windUps[0]);
-        Assert.Equal(SpitWindUpTicks, spits[1] - windUps[1]);
+        Assert.True(spits.Count >= 2, $"Only {spits.Count} spits in five seconds.");
+        Assert.All(spits.Zip(spits.Skip(1)), pair => Assert.Equal(SpitTicks, pair.Second - pair.First));
+
+        // Every spit is announced: its warning starts exactly the warning time before it.
+        Assert.All(spits, spit => Assert.Contains(spit - SpitWindUpTicks, windUps));
+        Assert.All(windUps.Where(windUp => windUp + SpitWindUpTicks < 5 * Second), windUp => Assert.Contains(windUp + SpitWindUpTicks, spits));
 
         // Every spit is a blood bolt that flies off in the same tick.
         Assert.All(spits, tick => Assert.Contains(seen, e => e.Tick == tick && e.Event is ProjectileFired));
@@ -285,7 +286,8 @@ public class BatBehaviourTests
     [Fact]
     public void After_the_dive_it_rises_and_circles_again()
     {
-        var world = new GameWorld(BigRoom);
+        // A tough player: this is about the flight, and a dead player would leave the bat lurking.
+        var world = new GameWorld(BigRoom, balance: Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } });
         var bat = world.Bats[0];
         RunUntil(world, PlayerInput.None, e => e is BatScreeched, 7 * Second);
         RunUntil(world, PlayerInput.None, e => e is BatBit, 2 * Second);
