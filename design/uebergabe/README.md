@@ -285,7 +285,7 @@ Die Dateien sind pixelgleich mit dem angenommenen Probestück 8, Fassung 2 (`des
 
 Damit liegt jede Steinlage auf gleicher Höhe ringsum. Das v der Wände mit der Höhe über dem Boden (y) beginnen, nicht mit der Unterkante der Fläche. So passen Stufen und unterschiedliche Bodenhöhen aneinander.
 
-**Ausrichtung:** Bei v = 0 liegt die Unterkante einer Steinlage. Die Wandtextur ist oben nicht anders als unten, aber das Licht von oben (Oberkante der Steine heller) ist eingemalt. Deshalb muss v mit der Höhe zunehmen, sonst steht das Licht auf dem Kopf.
+**Ausrichtung:** Bei v = 0 liegt die Unterkante einer Steinlage, und v soll mit der Höhe zunehmen. Die feuchten Laufspuren der Wand sind senkrecht; auf dem Kopf stehend fällt das nicht auf, quer gelegt schon. Wände also nie um 90° gedreht abbilden.
 
 **Helligkeit:**
 
