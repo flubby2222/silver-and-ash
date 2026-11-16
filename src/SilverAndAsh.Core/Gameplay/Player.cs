@@ -10,22 +10,27 @@ public sealed class Player
 {
     private Level _level;
     private readonly Func<IEnumerable<CylinderBody>> _bodies;
+    private readonly Func<IEnumerable<BoxBody>> _boxes;
     private readonly PlayerBalance _player;
 
     /// <summary>
     /// Creates the player standing on the start cell of <paramref name="level"/>. <paramref name="bodies"/> gives the
-    /// bodies the player cannot walk through (training dummies, later enemies); asked anew every tick.
+    /// bodies the player cannot walk through (training dummies, enemies), <paramref name="boxes"/> the solid boxes
+    /// (chests) they cannot walk through but can jump onto; both asked anew every tick.
     /// <paramref name="balance"/> sets health, speeds, stamina and weapons (the standard values if none is given).
     /// <paramref name="random"/> is the world's random generator - it draws the boons a level up offers (online co-op
     /// rule 3). Without one (a player alone in a test) it uses one started from 0.
     /// </summary>
-    public Player(Level level, Func<IEnumerable<CylinderBody>>? bodies = null, Balance? balance = null, Random? random = null)
+    public Player(
+        Level level, Func<IEnumerable<CylinderBody>>? bodies = null, Balance? balance = null, Random? random = null,
+        Func<IEnumerable<BoxBody>>? boxes = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         balance ??= Balance.Default;
         _random = random ?? new Random(0);
         _level = level;
         _bodies = bodies ?? (() => []);
+        _boxes = boxes ?? (() => []);
         _player = balance.Player;
         _experience = balance.Experience;
         _boons = balance.Boons;
@@ -584,8 +589,9 @@ public sealed class Player
         Velocity = horizontal with { Y = vertical };
 
         // Walls first (sideways), then gravity, floor and ceiling (up and down).
+        var boxes = _boxes().ToList();
         (Position, Velocity) = CharacterCollision.Move(
-            _level, Position, Velocity, BodySizes.Player.Radius, Dt, CollisionHeight, bodies: _bodies().ToList());
+            _level, Position, Velocity, BodySizes.Player.Radius, Dt, CollisionHeight, bodies: _bodies().ToList(), boxes: boxes);
 
         // Falling speed at the end of this tick - needed for the landing dip, because landing sets it to 0.
         var fallSpeed = -(Velocity.Y - _player.Gravity * Dt);
@@ -593,7 +599,7 @@ public sealed class Player
         var airTicksBeforeLanding = _ticksInAir;
         var gravity = IsDashing ? 0f : _player.Gravity;
         (Position, Velocity, var grounded) = CharacterCollision.MoveVertically(
-            _level, Position, Velocity, BodySizes.Player.Radius, CollisionHeight, gravity, Dt);
+            _level, Position, Velocity, BodySizes.Player.Radius, CollisionHeight, gravity, Dt, boxes);
         IsGrounded = grounded;
         _ticksInAir = grounded ? 0 : _ticksInAir + 1;
 

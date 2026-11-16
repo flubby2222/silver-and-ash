@@ -54,7 +54,7 @@ public static class CharacterCollision
     public static (Vector3 Position, Vector3 Velocity) Move(
         Level level, Vector3 position, Vector3 velocity, float radius, float seconds,
         float height = BodySizes.Player.Height, float stepHeight = BodySizes.Player.StepHeight,
-        IReadOnlyList<CylinderBody>? bodies = null)
+        IReadOnlyList<CylinderBody>? bodies = null, IReadOnlyList<BoxBody>? boxes = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(radius);
@@ -72,8 +72,9 @@ public static class CharacterCollision
         {
             position += new Vector3(velocity.X, 0f, velocity.Z) * stepSeconds;
 
-            // Bodies first, walls last: walls always win, so nobody is ever pushed into a wall.
+            // Bodies and boxes first, walls last: walls always win, so nobody is ever pushed into a wall.
             (position, velocity) = ResolveBodyOverlaps(position, velocity, radius, height, bodies);
+            (position, velocity) = ResolveBoxOverlaps(position, velocity, radius, height, stepHeight, boxes);
             (position, velocity) = ResolveOverlaps(level, position, velocity, radius, height, stepHeight);
         }
 
@@ -87,11 +88,22 @@ public static class CharacterCollision
     /// </summary>
     /// <returns>New position and velocity, and whether the character stands on the ground.</returns>
     public static (Vector3 Position, Vector3 Velocity, bool IsGrounded) MoveVertically(
-        Level level, Vector3 position, Vector3 velocity, float radius, float height, float gravity, float seconds)
+        Level level, Vector3 position, Vector3 velocity, float radius, float height, float gravity, float seconds,
+        IReadOnlyList<BoxBody>? boxes = null, float stepHeight = BodySizes.Player.StepHeight)
     {
         ArgumentNullException.ThrowIfNull(level);
 
         var (floor, ceiling) = FloorAndCeiling(level, position, radius, height);
+
+        // A box the circle stands over, whose top is not above the feet (by more than a step), is floor too - so a
+        // character lands on a chest, and a chest rising under someone lifts them up.
+        foreach (var box in boxes ?? [])
+        {
+            if (box.Max.Y <= position.Y + stepHeight && BoxPenetration(position, radius, box, out _) > 0f)
+            {
+                floor = MathF.Max(floor, box.Max.Y);
+            }
+        }
 
         // Move with the AVERAGE speed of this tick (start speed and end speed, halved).
         // Moving with only the start or only the end speed would make every jump slightly too high or too low;
@@ -255,6 +267,40 @@ public static class CharacterCollision
     }
 
     /// <summary>
+    /// Pushes the character out of solid boxes on the ground plane - like walls, with sliding. A box whose top is
+    /// at most a step above the feet does not stop it (it stands on it or steps up), nor does one above its head.
+    /// </summary>
+    private static (Vector3 Position, Vector3 Velocity) ResolveBoxOverlaps(
+        Vector3 position, Vector3 velocity, float radius, float height, float stepHeight, IReadOnlyList<BoxBody>? boxes)
+    {
+        foreach (var box in boxes ?? [])
+        {
+            if (box.Max.Y <= position.Y + stepHeight || box.Min.Y >= position.Y + height)
+            {
+                continue;
+            }
+
+            var depth = BoxPenetration(position, radius, box, out var normal);
+            if (depth <= 0f)
+            {
+                continue;
+            }
+
+            position += new Vector3(normal.X, 0f, normal.Y) * depth;
+            var into = (velocity.X * normal.X) + (velocity.Z * normal.Y);
+            if (into < 0f)
+            {
+                velocity -= new Vector3(normal.X, 0f, normal.Y) * into;
+            }
+        }
+
+        return (position, velocity);
+    }
+
+    private static float BoxPenetration(Vector3 position, float radius, BoxBody box, out Vector2 normal) =>
+        RectanglePenetration(position, radius, box.Min.X, box.Min.Z, box.Max.X, box.Max.Z, out normal);
+
+    /// <summary>
     /// How deep the circle reaches into the square of cell (x, z), and in which direction (the normal)
     /// it has to be pushed to get out. Returns 0 or less if there is no overlap.
     /// </summary>
@@ -262,8 +308,13 @@ public static class CharacterCollision
     {
         var minX = x * Level.CellSize;
         var minZ = z * Level.CellSize;
-        var maxX = minX + Level.CellSize;
-        var maxZ = minZ + Level.CellSize;
+        return RectanglePenetration(position, radius, minX, minZ, minX + Level.CellSize, minZ + Level.CellSize, out normal);
+    }
+
+    // The same for any rectangle on the ground plane.
+    private static float RectanglePenetration(
+        Vector3 position, float radius, float minX, float minZ, float maxX, float maxZ, out Vector2 normal)
+    {
         var centre = new Vector2(position.X, position.Z);
 
         // Detection: the point of the square that is closest to the circle's centre.

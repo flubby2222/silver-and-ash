@@ -77,6 +77,7 @@ public sealed class Gorm : ITarget
     private readonly int _repathTicks;
     private readonly Random _random;
     private List<Vector3> _waypoints = [];
+    private Level? _paths;
     private int _repathTicksLeft;
     private (int X, int Z) _pathGoal;
 
@@ -240,10 +241,14 @@ public sealed class Gorm : ITarget
 
     /// <summary>
     /// One tick of behaviour: walk, choose and carry out an attack, rest. <paramref name="obstacles"/> are the bodies
-    /// he cannot walk through.
+    /// he cannot walk through. <paramref name="paths"/> is the level he finds his way in, if that differs (chest cells
+    /// are wall there, so he plans a way round them).
     /// </summary>
-    public void Act(Level level, IReadOnlyList<Player> players, IReadOnlyList<CylinderBody> obstacles, ICollection<GameEvent> events)
+    public void Act(
+        Level level, IReadOnlyList<Player> players, IReadOnlyList<CylinderBody> obstacles, ICollection<GameEvent> events,
+        Level? paths = null)
     {
+        _paths = paths;
         ArgumentNullException.ThrowIfNull(level);
         ArgumentNullException.ThrowIfNull(players);
         ArgumentNullException.ThrowIfNull(obstacles);
@@ -586,6 +591,9 @@ public sealed class Gorm : ITarget
     // Straight at the target if nothing is in the way, otherwise along the smoothed path of the grid search.
     private Vector3? NextPoint(Level level, Player target)
     {
+        // With chests as walls. He never stands in a chest's cell himself (his body and the chest's are too wide for
+        // that), so the search can always start.
+        level = _paths ?? level;
         if (Pathfinder.CanWalkStraight(level, Position, target.Position, BodySizes.Gorm.Radius))
         {
             _waypoints.Clear();

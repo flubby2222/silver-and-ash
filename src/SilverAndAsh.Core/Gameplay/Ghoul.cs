@@ -40,6 +40,7 @@ public sealed class Ghoul : ITarget
     private bool _alerted;
     private Player? _target;
     private List<Vector3> _waypoints = [];
+    private Level? _paths;
     private int _repathTicksLeft;
     private (int X, int Z) _pathGoal;
 
@@ -134,10 +135,14 @@ public sealed class Ghoul : ITarget
 
     /// <summary>
     /// One tick of behaviour: notice players, crawl, wind up, strike. <paramref name="obstacles"/> are the bodies it
-    /// cannot crawl through (players, other ghouls, standing dummies - not itself).
+    /// cannot crawl through (players, other ghouls, standing dummies, chests - not itself). <paramref name="paths"/>
+    /// is the level it finds its way in, if that differs (chest cells are wall there, so it plans a way round them).
     /// </summary>
-    public void Act(Level level, IReadOnlyList<Player> players, IReadOnlyList<CylinderBody> obstacles, ICollection<GameEvent> events)
+    public void Act(
+        Level level, IReadOnlyList<Player> players, IReadOnlyList<CylinderBody> obstacles, ICollection<GameEvent> events,
+        Level? paths = null)
     {
+        _paths = paths;
         ArgumentNullException.ThrowIfNull(level);
         ArgumentNullException.ThrowIfNull(players);
         ArgumentNullException.ThrowIfNull(obstacles);
@@ -247,14 +252,19 @@ public sealed class Ghoul : ITarget
         return toPlayer.LengthSquared() < 0.0001f || Vector3.Dot(Vector3.Normalize(toPlayer), Facing) >= _attackCosine;
     }
 
+    // The level to find its way in: the one with chests as walls - unless it stands in such a cell itself (sliding
+    // round a chest), where a search could not even start.
+    private Level WaysIn(Level level) => _paths is { } paths && !paths.CellAt(Position).IsSolid ? paths : level;
+
     /// <summary>
     /// One tick of crawling towards the target: straight at them if nothing is in the way, otherwise along the
     /// smoothed path from the grid search - searched again now and then, or when the target changed its cell.
     /// </summary>
     private void Crawl(Level level, Player target, IReadOnlyList<CylinderBody> obstacles)
     {
+        var ways = WaysIn(level);
         Vector3? next = null;
-        if (Pathfinder.CanWalkStraight(level, Position, target.Position, BodySizes.Ghoul.Radius))
+        if (Pathfinder.CanWalkStraight(ways, Position, target.Position, BodySizes.Ghoul.Radius))
         {
             next = target.Position;
             _waypoints.Clear();
@@ -265,8 +275,8 @@ public sealed class Ghoul : ITarget
             if (--_repathTicksLeft <= 0 || goal != _pathGoal || _waypoints.Count == 0)
             {
                 var start = Level.ToGrid(Position.X, Position.Z);
-                var path = Pathfinder.FindPath(level, start, goal);
-                _waypoints = path is null ? [] : Pathfinder.Smooth(level, path, BodySizes.Ghoul.Radius).ToList();
+                var path = Pathfinder.FindPath(ways, start, goal);
+                _waypoints = path is null ? [] : Pathfinder.Smooth(ways, path, BodySizes.Ghoul.Radius).ToList();
                 _repathTicksLeft = _repathTicks;
                 _pathGoal = goal;
             }
