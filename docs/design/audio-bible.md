@@ -2,7 +2,7 @@
 
 Dieses Dokument liest der Audiodesigner vor jeder Aufgabe. Es hat zwei Teile: den **gewünschten Klang** und die **gelernten Regeln** aus den Hörproben des Menschen (siehe [ADR 0009](../entscheidungen/0009-leitung-designer-auto-merge.md)).
 
-**Stand:** erste Fassung der Leitung vom 2026-11-16. Sie ist eine Arbeitshypothese: Weder die Leitung noch der Audiodesigner können hören. Was hier über Klang steht, gilt erst, wenn der Mensch es in einer Hörprobe bestätigt hat.
+**Stand:** 2026-11-16, nach Hörprobe 1 und der Recherche des Audiodesigners ([Grundlagen Sounddesign](grundlagen-audio.md)). Weder die Leitung noch der Audiodesigner können hören. Was hier über Klang steht, gilt erst, wenn der Mensch es in einer Hörprobe bestätigt hat; bestätigt ist bisher nur, was unter „Gelernte Regeln“ steht. Hörprobe 2 liegt vor, sein Urteil dazu steht noch aus.
 
 ## Leitbild
 
@@ -34,11 +34,24 @@ Jede Familie soll man an ihrem Charakter erkennen, auch mit geschlossenen Augen:
 | Jäger: Fernwaffen | hart, kurz, metallisch, mit kurzem Nachhall im Stein | Pistolenschuss; Rifle und Blunderbuss folgen als Varianten derselben Familie, dazu Nachladen |
 | Jäger: Nahkampf | scharf und hell beim Schwung, dumpf beim Treffer | Klingentreffer; Club und Aufladen später |
 | Jäger: Körper | trocken, unaufdringlich | Schritte auf Stein; Sprung, Landung, Dodge und Dash später |
-| Untote | tief, kehlig, feucht, unregelmäßig | Ghul-Laut |
+| Untote | tief, kehlig, rau – **einfach** (siehe Regel 2 unten) | Ghul-Laut |
 | Fliegendes | hoch, dünn, schneidend | *(später)* |
 | Boss | schwer, tief, Metall auf Stein | *(später)* |
 | Beute und Bedienung | klein, hell, kurz | *(später: Kisten, Türen, Aufheben, Menü)* |
 | Ambiente | leise Fläche, weit, mit einzelnen fernen Ereignissen | Katakomben |
+
+## Regeln für jedes Geräusch
+
+Aus dem Urteil des Menschen zu Hörprobe 1 und aus der Recherche. Die Regeln 1 und 2 folgen direkt aus seinem Urteil, die übrigen sind Vorschläge des Audiodesigners, die die Leitung übernommen hat und die eine Hörprobe noch bestätigen muss:
+
+1. **Ein Geräusch ist eine Geste.** Jede Datei ist *ein* hörbares Ereignis aus höchstens drei Schichten (Anschlag, Körper, Ausklang), die zu einem Ereignis verschmelzen. Kein Vorlauf, keine Nachschläge.
+2. **Eine Ankündigung ist eine Uhr.** Der Laut vor einem Angriff besteht aus einer gleichförmigen Bewegung (Anschwellen, Tonhöhenfahrt oder schneller werdender Puls), die beim Schlag ihr Ende oder ihren Gipfel erreicht. Höchstens zwei Schichten, keine Pausen oder Stöße mittendrin. Messbar: genau ein Einsatz (eine Stelle, an der der Pegel innerhalb von 50 ms um mehr als 8 dB steigt).
+3. **Varianten unterscheiden sich im Charakter** einer Geste (Tonlage, Härte, Länge, Raum), nicht durch zusätzliche Ereignisse.
+4. **Bedrohung durch Tiefe und Rauheit, nicht durch Menge.** Nur eine Modulation gleichzeitig.
+5. **Kurze Ausklänge.** Hall in der Datei nur so lang, wie das Geräusch es braucht.
+6. **Ambiente: Mitte frei, messbar.** Die Fläche liegt im Band 300 bis 3 000 Hz mindestens 25 dB unter ihrem Gesamtpegel.
+
+Noch nicht entschieden, Vorschlag aus der Recherche: erkennbare Einzelereignisse (Tropfen, Poltern) nicht fest in die Ambiente-Schleife einbauen, sondern vom Spiel einzeln abspielen lassen. Das ist eine Code-Aufgabe und gehört zu v0.15.
 
 ## Technischer Rahmen
 
@@ -75,4 +88,7 @@ Hier trägt die Leitung nach jeder Hörprobe ein, was der Mensch gesagt hat – 
 
 | Nr. | Datum | Geräusch | Urteil des Menschen | Regel |
 |---|---|---|---|---|
-| – | – | – | – | *noch keine* |
+| 1 | 2026-11-16 | Hörprobe 1 insgesamt | „Die Hörproben klingen ganz interessant.“ | Die Richtung (Synthese per Skript, trocken, kurz) wird weiterverfolgt |
+| 2 | 2026-11-16 | Katakomben-Ambiente | „Ambience klingt ganz gut. Das Tropfen könnte etwas lower pitch sein.“ | Ambiente mit Tropfen bleibt die Grundlage; Tropfen tiefer. Wie viel tiefer, entscheidet Hörprobe 2 (Quinte, Oktave, anderthalb Oktaven) |
+| 3 | 2026-11-16 | Ghul-Laut | „Der Ghoul gefällt mir nicht. Da ist zu viel los. Das kann ruhig etwas simpler sein.“ | Regeln 1 bis 4 oben: eine Geste, ein Einsatz, höchstens zwei Schichten |
+| – | 2026-11-16 | Pistole, Klinge, Schritte | kein Urteil | Schweigen ist keine Zustimmung; Hörprobe 2 fragt ausdrücklich danach |
