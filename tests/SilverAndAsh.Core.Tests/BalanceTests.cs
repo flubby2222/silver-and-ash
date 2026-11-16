@@ -166,7 +166,7 @@ public class BalanceTests
             Pistol = Balance.Default.Pistol with { Cooldown = 2f },
         });
 
-        Assert.Equal(Second, world.Player.BladeCooldown.DurationTicks);
+        Assert.Equal(Second, world.Player.MeleeCooldown.DurationTicks);
         Assert.Equal(2 * Second, world.Player.Ranged.Cooldown.DurationTicks);
     }
 
@@ -184,7 +184,7 @@ public class BalanceTests
             world.Tick(hold);
         }
 
-        Assert.Equal(1f, world.Player.BladeCharge.Fraction, 0.001f);
+        Assert.Equal(1f, world.Player.MeleeCharge.Fraction, 0.001f);
     }
 
     [Fact]

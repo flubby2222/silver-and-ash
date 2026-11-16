@@ -9,7 +9,7 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 public class ClubTests
 {
     private static readonly int Second = SimulationClock.TicksPerSecond;
-    private static readonly BladeBalance Club = Balance.Default.Club;
+    private static readonly MeleeBalance Club = Balance.Default.Club;
     private static readonly int FullCharge = SimulationClock.SecondsToTicks(Club.ChargeTime);
     private static readonly int KnockTicks = SimulationClock.SecondsToTicks(Club.KnockbackTime);
     private static readonly PlayerInput Melee = PlayerInput.None with { Melee = true };
@@ -62,8 +62,8 @@ public class ClubTests
         player.EquipMelee(WeaponKind.Club);
 
         Assert.Equal(WeaponKind.Club, player.Melee);
-        Assert.Equal(SimulationClock.SecondsToTicks(Club.Cooldown), player.BladeCooldown.DurationTicks);
-        Assert.False(player.BladeCharge.IsCharging);
+        Assert.Equal(SimulationClock.SecondsToTicks(Club.Cooldown), player.MeleeCooldown.DurationTicks);
+        Assert.False(player.MeleeCharge.IsCharging);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class ClubTests
 
         var events = Swing(world, FullCharge + 2);
 
-        var swing = Assert.Single(events.OfType<BladeSwung>());
+        var swing = Assert.Single(events.OfType<MeleeSwung>());
         Assert.Equal(WeaponKind.Club, swing.Weapon);
         Assert.Equal(1f, swing.Charge);
     }

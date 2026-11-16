@@ -79,7 +79,7 @@ public class GameWorldTests
             seen.AddRange(world.Events);
         }
 
-        Assert.Contains(seen, e => e is BladeSwung);
+        Assert.Contains(seen, e => e is MeleeSwung);
         Assert.Contains(new DummyStoodUp(0), seen);
     }
 

@@ -36,15 +36,15 @@ internal static class CombatHud
             DrawCrosshair(centreX, centreY);
 
             // Blade on the left, pistol on the right - the same sides as the weapons in the hands.
-            DrawReadiness(centreX - 22, centreY, player.BladeCooldown);
+            DrawReadiness(centreX - 22, centreY, player.MeleeCooldown);
             DrawReadiness(centreX + 19, centreY, player.Ranged.Cooldown);
             DrawAmmo(player.Ranged.Magazine);
             DrawWeapons(player);
         }
 
-        if (player.BladeCharge.IsCharging)
+        if (player.MeleeCharge.IsCharging)
         {
-            DrawCharge(centreX, centreY + 16, player.BladeCharge.Fraction);
+            DrawCharge(centreX, centreY + 16, player.MeleeCharge.Fraction);
         }
 
         DrawHealth(player.Health, player.MaxHealth);

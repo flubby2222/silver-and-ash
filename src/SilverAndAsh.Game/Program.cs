@@ -688,10 +688,10 @@ static void DrawDebugInfo(Player player)
         Raylib.DrawText("EXHAUSTED", 20, 85, 20, exhaustedColor);
     }
 
-    var chargeText = player.BladeCharge.IsCharging
-        ? string.Create(CultureInfo.InvariantCulture, $"   Charge {player.BladeCharge.Fraction * 100f:0} %")
+    var chargeText = player.MeleeCharge.IsCharging
+        ? string.Create(CultureInfo.InvariantCulture, $"   Charge {player.MeleeCharge.Fraction * 100f:0} %")
         : string.Empty;
-    var weaponsText = $"{Weapons.Info(player.Melee).Name} {CooldownText(player.BladeCooldown)}   {player.Ranged.Info.Name} {CooldownText(player.Ranged.Cooldown)}{chargeText}";
+    var weaponsText = $"{Weapons.Info(player.Melee).Name} {CooldownText(player.MeleeCooldown)}   {player.Ranged.Info.Name} {CooldownText(player.Ranged.Cooldown)}{chargeText}";
     Raylib.DrawText(weaponsText, 20, 135, 20, new Color(200, 200, 210, 255));
 
     if (player.IsDashing)

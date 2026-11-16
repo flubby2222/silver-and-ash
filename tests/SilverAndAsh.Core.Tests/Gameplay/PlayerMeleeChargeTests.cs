@@ -4,7 +4,7 @@ using static SilverAndAsh.Core.Tests.Gameplay.JumpTestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
-public class PlayerBladeChargeTests
+public class PlayerMeleeChargeTests
 {
     private const float Tolerance = 0.001f;
 
@@ -20,13 +20,13 @@ public class PlayerBladeChargeTests
 
         player.Tick(Melee);
         Assert.Empty(player.Events);
-        Assert.True(player.BladeCharge.IsCharging);
+        Assert.True(player.MeleeCharge.IsCharging);
 
         player.Tick(PlayerInput.None);
 
-        var swing = Assert.IsType<BladeSwung>(Assert.Single(player.Events));
+        var swing = Assert.IsType<MeleeSwung>(Assert.Single(player.Events));
         Assert.Equal(0f, swing.Charge);
-        Assert.False(player.BladeCharge.IsCharging);
+        Assert.False(player.MeleeCharge.IsCharging);
     }
 
     [Theory]
@@ -110,13 +110,13 @@ public class PlayerBladeChargeTests
         RunTicks(player, PlayerInput.None, 60);
         player.Tick(Melee);
         RunTicks(player, Melee, FullTicks);
-        Assert.Equal(1f, player.BladeCharge.Fraction);
+        Assert.Equal(1f, player.MeleeCharge.Fraction);
         var full = player.Stamina.Fraction;
 
         RunTicks(player, Melee, SimulationClock.TicksPerSecond / 2);
 
         // Half a second of refilling: a sixth of the bar (3 s from empty to full).
-        Assert.True(player.BladeCharge.IsCharging);
+        Assert.True(player.MeleeCharge.IsCharging);
         Assert.Equal(full + 1f / 6f, player.Stamina.Fraction, Tolerance);
     }
 
@@ -125,13 +125,13 @@ public class PlayerBladeChargeTests
     {
         var player = RunningPlayer();
         player.Tick(Melee);
-        Assert.True(player.BladeCooldown.IsReady, "The cooldown must not start when the button is pressed.");
+        Assert.True(player.MeleeCooldown.IsReady, "The cooldown must not start when the button is pressed.");
         RunTicks(player, Melee, FullTicks / 2);
-        Assert.True(player.BladeCooldown.IsReady);
+        Assert.True(player.MeleeCooldown.IsReady);
 
         player.Tick(PlayerInput.None);
 
-        Assert.False(player.BladeCooldown.IsReady);
+        Assert.False(player.MeleeCooldown.IsReady);
     }
 
     [Fact]
@@ -144,17 +144,17 @@ public class PlayerBladeChargeTests
         RunTicks(player, Melee, 2 * BladeTicks);                // held until long after the cooldown
         player.Tick(PlayerInput.None);
 
-        Assert.False(player.BladeCharge.IsCharging);
+        Assert.False(player.MeleeCharge.IsCharging);
         Assert.Empty(player.Events);
     }
 
     /// <summary>Presses the blade button, holds it for <paramref name="extraTicks"/> more ticks, lets go.</summary>
-    private static BladeSwung HoldAndRelease(Player player, int extraTicks)
+    private static MeleeSwung HoldAndRelease(Player player, int extraTicks)
     {
         player.Tick(Melee);
         RunTicks(player, Melee, extraTicks);
         player.Tick(PlayerInput.None);
-        return Assert.IsType<BladeSwung>(Assert.Single(player.Events));
+        return Assert.IsType<MeleeSwung>(Assert.Single(player.Events));
     }
 
     /// <summary>Jumps and leaves exactly <paramref name="amount"/> in the bar (in the bar's own unit).</summary>

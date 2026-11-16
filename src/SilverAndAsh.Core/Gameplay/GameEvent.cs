@@ -16,7 +16,7 @@ public abstract record GameEvent;
 /// <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/>, charged by <paramref name="Charge"/>
 /// (0 = not at all, 1 = fully).
 /// </summary>
-public sealed record BladeSwung(
+public sealed record MeleeSwung(
     Vector3 Origin, Vector3 Direction, float Charge = 0f, WeaponKind Weapon = WeaponKind.SilverBlade) : GameEvent;
 
 /// <summary>

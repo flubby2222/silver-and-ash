@@ -5,7 +5,7 @@ using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
-public class BladeStrikeTests
+public class MeleeStrikeTests
 {
     private const float BodyRadius = 0.3f;
 
@@ -67,8 +67,8 @@ public class BladeStrikeTests
         var down30 = Vector3.Normalize(new Vector3(0f, -MathF.Tan(30f * MathF.PI / 180f), 1f));
         var up75 = Vector3.Normalize(new Vector3(0f, MathF.Tan(75f * MathF.PI / 180f), 1f));
 
-        Assert.True(BladeStrike.Hits(Field, Eye, down30, body));
-        Assert.False(BladeStrike.Hits(Field, Eye, up75, body));
+        Assert.True(MeleeStrike.Hits(Field, Eye, down30, body));
+        Assert.False(MeleeStrike.Hits(Field, Eye, up75, body));
     }
 
     [Fact]
@@ -80,11 +80,11 @@ public class BladeStrikeTests
         var eye = new Vector3(1.65f, BodySizes.Player.EyeHeight, 1.3f);
         var direction = Vector3.Normalize(new Vector3(body.Position.X, eye.Y, body.Position.Z) - eye);
 
-        Assert.False(BladeStrike.Hits(LevelParser.Parse("P#\n.D"), eye, direction, body));
-        Assert.True(BladeStrike.Hits(LevelParser.Parse("P.\n.D"), eye, direction, body));
+        Assert.False(MeleeStrike.Hits(LevelParser.Parse("P#\n.D"), eye, direction, body));
+        Assert.True(MeleeStrike.Hits(LevelParser.Parse("P.\n.D"), eye, direction, body));
     }
 
-    private static bool Hits(CylinderBody body) => BladeStrike.Hits(Field, Eye, Ahead, body);
+    private static bool Hits(CylinderBody body) => MeleeStrike.Hits(Field, Eye, Ahead, body);
 
     /// <summary>Like <see cref="At"/>, but the angle and distance are measured from the cone's tip behind the eyes.</summary>
     private static CylinderBody FromTip(float degrees, float distance)

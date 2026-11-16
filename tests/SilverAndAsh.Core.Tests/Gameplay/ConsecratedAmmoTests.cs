@@ -127,8 +127,8 @@ public class ConsecratedAmmoTests
         world.Tick(PlayerInput.None with { Melee = true });
         world.Tick(PlayerInput.None);
 
-        Assert.Equal(1f, world.Player.BladeCooldown.RemainingFraction, 0.05f);
-        Assert.Equal(SimulationClock.SecondsToTicks(Balance.Default.Blade.Cooldown), world.Player.BladeCooldown.DurationTicks);
+        Assert.Equal(1f, world.Player.MeleeCooldown.RemainingFraction, 0.05f);
+        Assert.Equal(SimulationClock.SecondsToTicks(Balance.Default.Blade.Cooldown), world.Player.MeleeCooldown.DurationTicks);
     }
 
     [Fact]
