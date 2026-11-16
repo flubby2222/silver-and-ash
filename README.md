@@ -35,6 +35,7 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | Linke Maustaste | Silberklinge |
 | Rechte Maustaste | Pistole (7 Schuss) |
 | R | Nachladen (bei leerem Magazin lädt auch ein Schuss nach) |
+| Mausrad, 1 / 2 / 3 | Fernwaffe wechseln (bis zu drei Plätze) |
 | F | Interagieren (Türen, Kisten) |
 | Tab (halten) | Karte: betretene Räume, ihre Türen (Schloss, Boss-Tür), Kisten, liegen gelassene Blutphiolen, eigene Position |
 | M | Karte an/aus: bleibt offen, auch beim Laufen |

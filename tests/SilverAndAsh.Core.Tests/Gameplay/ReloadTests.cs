@@ -111,8 +111,8 @@ public class ReloadTests
     {
         var player = new Player(LevelParser.Parse("P"));
 
-        Assert.Equal(Pistol.MagazineSize, player.PistolMagazine.Size);
-        Assert.Equal(Pistol.MagazineSize, player.PistolMagazine.Rounds);
+        Assert.Equal(Pistol.MagazineSize, player.Ranged.Magazine.Size);
+        Assert.Equal(Pistol.MagazineSize, player.Ranged.Magazine.Rounds);
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class ReloadTests
         }
 
         Assert.Equal(Pistol.MagazineSize, events.OfType<ShotFired>().Count());
-        Assert.Equal(0, player.PistolMagazine.Rounds);
+        Assert.Equal(0, player.Ranged.Magazine.Rounds);
 
         var empty = Tick(player, Shoot);
         Assert.DoesNotContain(empty, e => e is ShotFired);
@@ -145,7 +145,7 @@ public class ReloadTests
         var events = Tick(player, Shoot);
 
         Assert.Contains(new ReloadStarted(player.Id), events);
-        Assert.True(player.PistolMagazine.IsReloading);
+        Assert.True(player.Ranged.Magazine.IsReloading);
     }
 
     [Fact]
@@ -159,12 +159,12 @@ public class ReloadTests
         Assert.Contains(new ReloadStarted(player.Id), events);
 
         events.AddRange(Tick(player, PlayerInput.None, ReloadTicks - 1));
-        Assert.True(player.PistolMagazine.IsReloading);
+        Assert.True(player.Ranged.Magazine.IsReloading);
         Assert.DoesNotContain(events, e => e is ReloadFinished);
 
         events.AddRange(Tick(player, PlayerInput.None));
         Assert.Contains(new ReloadFinished(player.Id), events);
-        Assert.Equal(Pistol.MagazineSize, player.PistolMagazine.Rounds);
+        Assert.Equal(Pistol.MagazineSize, player.Ranged.Magazine.Rounds);
     }
 
     [Fact]
@@ -178,7 +178,7 @@ public class ReloadTests
         var events = Tick(player, Shoot);
 
         Assert.DoesNotContain(events, e => e is ShotFired);
-        Assert.Equal(Pistol.MagazineSize - 1, player.PistolMagazine.Rounds);
+        Assert.Equal(Pistol.MagazineSize - 1, player.Ranged.Magazine.Rounds);
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class ReloadTests
 
         Assert.Single(events.OfType<ReloadStarted>());
         Assert.Contains(new ReloadFinished(player.Id), events);
-        Assert.Equal(Pistol.MagazineSize, player.PistolMagazine.Rounds);
+        Assert.Equal(Pistol.MagazineSize, player.Ranged.Magazine.Rounds);
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public class ReloadTests
 
         Assert.Contains(events, e => e is ShotFired);
         Assert.DoesNotContain(events, e => e is ReloadStarted);
-        Assert.False(player.PistolMagazine.IsReloading);
+        Assert.False(player.Ranged.Magazine.IsReloading);
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public class ReloadTests
         var events = Tick(player, Reload);
 
         Assert.DoesNotContain(events, e => e is ReloadStarted);
-        Assert.False(player.PistolMagazine.IsReloading);
+        Assert.False(player.Ranged.Magazine.IsReloading);
     }
 
     [Fact]
@@ -243,6 +243,6 @@ public class ReloadTests
         events.AddRange(Tick(player, Shoot));
 
         Assert.Single(events.OfType<ShotFired>());
-        Assert.Equal(Pistol.MagazineSize - 1, player.PistolMagazine.Rounds);
+        Assert.Equal(Pistol.MagazineSize - 1, player.Ranged.Magazine.Rounds);
     }
 }

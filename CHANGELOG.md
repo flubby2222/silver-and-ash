@@ -8,6 +8,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ### Hinzugefügt
 - **Wandbruch mit Wucht:** Bricht die rissige Wand zum Geheimraum, fliegen Steinbrocken heraus (die meisten von dir weg), poltern zu Boden und versinken; eine Staubwolke steigt auf, und das Bild ruckt kurz
+- **Waffen-Plätze:** Du trägst eine Nahkampfwaffe und bis zu **drei Fernwaffen**. Wechseln mit dem **Mausrad** oder **1 / 2 / 3**; leere Plätze werden übersprungen, ein Wechsel bricht das Nachladen ab, jede Waffe behält ihr Magazin. Unten rechts stehen die Plätze, umrandet in der Farbe ihrer Stufe. Neue Waffen kommen mit den nächsten Updates
 
 ### Geändert
 - **Nachladen:** Die Pistole hat ein Magazin mit **7 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („6 / 7“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)

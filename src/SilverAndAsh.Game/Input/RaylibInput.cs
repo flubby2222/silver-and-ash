@@ -79,7 +79,23 @@ internal sealed class RaylibInput
             Melee: _captureClick.Filter(Raylib.IsMouseButtonDown(MouseButton.Left)),
             Shoot: Raylib.IsMouseButtonDown(MouseButton.Right),
             Interact: Raylib.IsKeyPressed(KeyboardKey.F),
-            Reload: Raylib.IsKeyDown(KeyboardKey.R));
+            Reload: Raylib.IsKeyDown(KeyboardKey.R),
+            SelectSlot: ReadSlotKeys(),
+            CycleSlot: ReadWheel());
+    }
+
+    // 1 / 2 / 3 pressed this frame: that ranged weapon place (0, 1, 2).
+    private static int? ReadSlotKeys() =>
+        Raylib.IsKeyPressed(KeyboardKey.One) ? 0
+        : Raylib.IsKeyPressed(KeyboardKey.Two) ? 1
+        : Raylib.IsKeyPressed(KeyboardKey.Three) ? 2
+        : null;
+
+    // Mouse wheel this frame: towards you (down) = the next weapon, away (up) = the one before.
+    private static int ReadWheel()
+    {
+        var wheel = Raylib.GetMouseWheelMove();
+        return wheel < 0f ? 1 : wheel > 0f ? -1 : 0;
     }
 
     private static Vector2 ReadMoveKeys()

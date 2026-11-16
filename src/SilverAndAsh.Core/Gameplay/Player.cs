@@ -43,9 +43,11 @@ public sealed class Player
         Crouch = new Crouch(_player);
         Stamina = new Stamina(_player);
         BladeCooldown = new Cooldown(balance.Blade.Cooldown);
-        PistolCooldown = new Cooldown(balance.Pistol.Cooldown);
-        PistolMagazine = new Magazine(balance.Pistol.MagazineSize, balance.Pistol.ReloadTime);
         BladeCharge = new BladeCharge(balance.Blade);
+
+        // Every run starts with the silver blade and the pistol (decision record 0008).
+        _balance = balance;
+        _rangedSlots[0] = new RangedWeapon(WeaponKind.Pistol, balance);
 
         // Dash speed chosen so that the dash covers exactly DashDistance in its whole number of ticks.
         _dashTicks = SimulationClock.SecondsToTicks(_player.DashDuration);
@@ -165,6 +167,8 @@ public sealed class Player
 
     private int _consecratedTicksLeft;
     private readonly float _consecratedFireRate;
+    private readonly Balance _balance;
+    private readonly RangedWeapon?[] _rangedSlots = new RangedWeapon?[RangedSlotCount];
 
     /// <summary>Silver collected in this run - 0 at the start, back to 0 after death (a new world).</summary>
     public int Silver { get; private set; }
@@ -354,11 +358,31 @@ public sealed class Player
     /// <summary>Waiting time of the silver blade.</summary>
     public Cooldown BladeCooldown { get; }
 
-    /// <summary>Waiting time of the pistol.</summary>
-    public Cooldown PistolCooldown { get; }
+    /// <summary>Most ranged weapons a player carries at once (decision record 0008).</summary>
+    public const int RangedSlotCount = 3;
 
-    /// <summary>The pistol's magazine: rounds left, and whether it is being reloaded (decision record 0008).</summary>
-    public Magazine PistolMagazine { get; }
+    /// <summary>The melee weapon in the left hand (the silver blade until more come with #190).</summary>
+    public WeaponKind Melee => WeaponKind.SilverBlade;
+
+    /// <summary>The ranged weapons carried: <see cref="RangedSlotCount"/> places, empty ones null.</summary>
+    public IReadOnlyList<RangedWeapon?> RangedSlots => _rangedSlots;
+
+    /// <summary>Which of <see cref="RangedSlots"/> is in the hand (0, 1 or 2).</summary>
+    public int SelectedSlot { get; private set; }
+
+    /// <summary>The ranged weapon in the hand - never null: there is always at least one.</summary>
+    public RangedWeapon Ranged => _rangedSlots[SelectedSlot]!;
+
+    /// <summary>
+    /// Puts <paramref name="kind"/> into ranged place <paramref name="slot"/> (ready and full), replacing what was there.
+    /// The inventory (#193) and loot use this; so do tests.
+    /// </summary>
+    public void Equip(int slot, WeaponKind kind)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(slot);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(slot, RangedSlotCount);
+        _rangedSlots[slot] = new RangedWeapon(kind, _balance);
+    }
 
     /// <summary>Charging the silver blade (hold the button, swing on release).</summary>
     public BladeCharge BladeCharge { get; }
@@ -449,10 +473,13 @@ public sealed class Player
         _events.Clear();
         BladeCooldown.Tick();
         _consecratedTicksLeft = Math.Max(0, _consecratedTicksLeft - 1);
-        PistolCooldown.Tick();
-        if (PistolMagazine.Tick())
+        foreach (var weapon in _rangedSlots.OfType<RangedWeapon>())
         {
-            _events.Add(new ReloadFinished(Id));
+            weapon.Cooldown.Tick();
+            if (weapon.Magazine.Tick())
+            {
+                _events.Add(new ReloadFinished(Id));
+            }
         }
 
         LandingDip.Tick();
@@ -736,20 +763,56 @@ public sealed class Player
             _events.Add(new BladeSwung(EyePosition, View.Forward, charge));
         }
 
-        // R reloads; so does a shot with an empty magazine. While reloading the pistol does not fire.
-        if (reloadPressed || (shootPressed && PistolMagazine.Rounds == 0))
+        // Mouse wheel or 1 - 3: another ranged weapon (empty places are skipped). Putting one away breaks its reload off.
+        SwitchRanged(input);
+
+        // R reloads; so does a shot with an empty magazine. While reloading the weapon does not fire.
+        var ranged = Ranged;
+        if (reloadPressed || (shootPressed && ranged.Magazine.Rounds == 0))
         {
-            if (PistolMagazine.StartReload())
+            if (ranged.Magazine.StartReload())
             {
                 _events.Add(new ReloadStarted(Id));
             }
         }
-        else if (shootPressed && PistolCooldown.IsReady && PistolMagazine.TryTake())
+        else if (shootPressed && ranged.Cooldown.IsReady && ranged.Magazine.TryTake())
         {
-            // Consecrated ammunition: the pistol is ready again sooner.
-            PistolCooldown.TryUse(IsConsecrated ? _consecratedFireRate : 1f);
+            // Consecrated ammunition: the weapon is ready again sooner.
+            ranged.Cooldown.TryUse(IsConsecrated ? _consecratedFireRate : 1f);
             _events.Add(new ShotFired(EyePosition, View.Forward, IsConsecrated));
         }
+    }
+
+    private void SwitchRanged(PlayerInput input)
+    {
+        var target = SelectedSlot;
+        if (input.SelectSlot is { } slot && slot >= 0 && slot < RangedSlotCount && _rangedSlots[slot] is not null)
+        {
+            target = slot;
+        }
+        else if (input.CycleSlot != 0)
+        {
+            // Round the places in the wheel's direction until a weapon comes.
+            var step = Math.Sign(input.CycleSlot);
+            for (var tries = 1; tries < RangedSlotCount; tries++)
+            {
+                var next = (((SelectedSlot + (step * tries)) % RangedSlotCount) + RangedSlotCount) % RangedSlotCount;
+                if (_rangedSlots[next] is not null)
+                {
+                    target = next;
+                    break;
+                }
+            }
+        }
+
+        if (target == SelectedSlot)
+        {
+            return;
+        }
+
+        Ranged.Magazine.CancelReload();
+        SelectedSlot = target;
+        _events.Add(new WeaponSwitched(Id, target, Ranged.Kind));
     }
 
     /// <summary>

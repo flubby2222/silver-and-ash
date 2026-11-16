@@ -167,7 +167,7 @@ public class BalanceTests
         });
 
         Assert.Equal(Second, world.Player.BladeCooldown.DurationTicks);
-        Assert.Equal(2 * Second, world.Player.PistolCooldown.DurationTicks);
+        Assert.Equal(2 * Second, world.Player.Ranged.Cooldown.DurationTicks);
     }
 
     [Fact]
