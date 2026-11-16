@@ -12,6 +12,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Club (Keule, Worn):** neue Nahkampfwaffe, langsamer als die Klinge, aber härter (50 Schaden). Er stößt Ghule und Fledermäuse **3 m zurück**, voll aufgeladen **6 m**; Wände halten sie auf, Gorm bleibt stehen. Zu finden ist er mit dem Beute-System; zum Ausprobieren startet die Debug-Version mit `--give club`
 - **Jede Nahkampfwaffe lässt sich aufladen**, und jeder voll aufgeladene Nahkampfschlag bricht die rissige Wand zum Geheimraum
 - **Rifle (Gewehr, Forged):** neue Fernwaffe für schwere, gezielte Schüsse: 80 Schaden, Kopftreffer ×3, 80 m Reichweite, 4 Schuss, 1,4 s zwischen den Schüssen, 2,5 s Nachladen. Ein Schuss **durchschlägt einen Gegner** und trifft den dahinter; Wände halten ihn auf. Zum Ausprobieren startet die Debug-Version mit `--give rifle` (Taste 2 nimmt sie in die Hand)
+- **Blunderbuss (Donnerbüchse, Forged):** neue Fernwaffe für kurze Distanz: Ein Schuss feuert **9 Kugeln** in einem 20°-Kegel, je 12 Schaden, **wirksam bis 12 m**, darüber nichts. 1 Schuss, dann 1,8 s Nachladen. Die Streuung hängt vom Seed ab. Zum Ausprobieren: `--give blunderbuss`
 
 ### Geändert
 - **Nachladen:** Die Pistole hat ein Magazin mit **7 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („6 / 7“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)

@@ -33,6 +33,7 @@ public enum WeaponKind
     Pistol,
     Club,
     Rifle,
+    Blunderbuss,
 }
 
 /// <summary>What a weapon is: its name (shown in the game), its hand and its tier.</summary>
@@ -48,6 +49,7 @@ public static class Weapons
         WeaponKind.Pistol => new("Pistol", WeaponHand.Ranged, ItemTier.Worn),
         WeaponKind.Club => new("Club", WeaponHand.Melee, ItemTier.Worn),
         WeaponKind.Rifle => new("Rifle", WeaponHand.Ranged, ItemTier.Forged),
+        WeaponKind.Blunderbuss => new("Blunderbuss", WeaponHand.Ranged, ItemTier.Forged),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
 }

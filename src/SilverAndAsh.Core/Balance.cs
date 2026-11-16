@@ -49,10 +49,24 @@ public sealed record Balance
         Pierce = 1,
     };
 
+    /// <summary>The blunderbuss (Forged, decision record 0008): a cone of pellets, devastating up close, useless far away.</summary>
+    public RangedBalance Blunderbuss { get; init; } = new()
+    {
+        Damage = 12,
+        HeadshotMultiplier = 1f,
+        Range = 12f,
+        Cooldown = 0.5f,
+        MagazineSize = 1,
+        ReloadTime = 1.8f,
+        Pellets = 9,
+        Spread = 20f,
+    };
+
     /// <summary>The values of ranged weapon <paramref name="kind"/>.</summary>
     public RangedBalance Ranged(Gameplay.WeaponKind kind) => kind switch
     {
         Gameplay.WeaponKind.Rifle => Rifle,
+        Gameplay.WeaponKind.Blunderbuss => Blunderbuss,
         _ => Pistol,
     };
 
@@ -500,8 +514,8 @@ public sealed record MeleeBalance
 }
 
 /// <summary>
-/// Balancing values of a ranged weapon - the pistol (<see cref="Balance.Pistol"/>) and the rifle
-/// (<see cref="Balance.Rifle"/>) have the same kind of values (decision record 0008).
+/// Balancing values of a ranged weapon - the pistol (<see cref="Balance.Pistol"/>), the rifle
+/// (<see cref="Balance.Rifle"/>) and the blunderbuss (<see cref="Balance.Blunderbuss"/>) have the same kind of values (decision record 0008).
 /// </summary>
 public sealed record RangedBalance
 {
@@ -525,6 +539,12 @@ public sealed record RangedBalance
 
     /// <summary>How many enemies a shot goes on through after the first (0 = it stops in the first). Walls stop it.</summary>
     public int Pierce { get; init; }
+
+    /// <summary>Bullets (pellets) one shot fires; each hits on its own with <see cref="Damage"/>.</summary>
+    public int Pellets { get; init; } = 1;
+
+    /// <summary>Full width of the cone the pellets fly in, in degrees (0 = all straight ahead). The spread comes from the seed.</summary>
+    public float Spread { get; init; }
 }
 
 /// <summary>Balancing values of the training dummy.</summary>

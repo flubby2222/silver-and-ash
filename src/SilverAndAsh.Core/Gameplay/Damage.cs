@@ -7,6 +7,7 @@ public enum Weapon
     Pistol,
     Club,
     Rifle,
+    Blunderbuss,
 }
 
 /// <summary>Where a body was hit.</summary>
@@ -71,6 +72,8 @@ public sealed class DamageRules
         rules.Add(new ZoneBonus(Weapon.Pistol, HitZone.BossHead, balance.Gorm.HeadMultiplier));
         rules.Add(new ZoneBonus(Weapon.Rifle, HitZone.Head, balance.Rifle.HeadshotMultiplier));
         rules.Add(new ZoneBonus(Weapon.Rifle, HitZone.BossHead, balance.Gorm.HeadMultiplier));
+        rules.Add(new ZoneBonus(Weapon.Blunderbuss, HitZone.Head, balance.Blunderbuss.HeadshotMultiplier));
+        rules.Add(new ZoneBonus(Weapon.Blunderbuss, HitZone.BossHead, balance.Gorm.HeadMultiplier));
         rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
         rules.Add(new ChargeBonus(balance.Club.ChargeMaxMultiplier, Weapon.Club));
         rules.Add(new DamageBoonBonus(balance.Boons.Damage));

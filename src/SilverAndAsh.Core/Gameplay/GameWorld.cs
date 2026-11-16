@@ -19,6 +19,9 @@ public sealed class GameWorld
     private readonly List<GameEvent> _events = [];
     private readonly Random _random;
     private readonly Random _lootRandom;
+
+    /// <summary>Only for the spread of pellets: so shooting does not change what the other random rolls give.</summary>
+    private readonly Random _shotRandom;
     private int _ticksAllPlayersDead;
     private readonly List<TrainingDummy> _dummies;
     private readonly List<Ghoul> _ghouls;
@@ -78,6 +81,7 @@ public sealed class GameWorld
         // amounts never shift what the fights roll - and the fights never shift the loot.
         _random = new Random(seed);
         _lootRandom = new Random(unchecked((seed * 397) ^ 0x5117E2));
+        _shotRandom = new Random(unchecked((seed * 7919) ^ 0x5407));
         _dummies = level.DummyPositions.Select((position, index) => new TrainingDummy(index, position, Balance)).ToList();
 
         // Ghoul numbers continue after the dummies': every target has its own number.
@@ -936,14 +940,52 @@ public sealed class GameWorld
     private void FireShot(ShotFired shot, Player attacker)
     {
         var values = Balance.Ranged(shot.Weapon);
-        var weapon = shot.Weapon == WeaponKind.Rifle ? Weapon.Rifle : Weapon.Pistol;
-        var direction = Vector3.Normalize(shot.Direction);
-        var wall = Raycast.AgainstLevel(Level, shot.Origin, direction, values.Range);
+        var weapon = shot.Weapon switch
+        {
+            WeaponKind.Rifle => Weapon.Rifle,
+            WeaponKind.Blunderbuss => Weapon.Blunderbuss,
+            _ => Weapon.Pistol,
+        };
+        var forward = Vector3.Normalize(shot.Direction);
+
+        for (var pellet = 0; pellet < values.Pellets; pellet++)
+        {
+            FirePellet(shot.Origin, Spread(forward, values.Spread), values, weapon, attacker);
+        }
+    }
+
+    /// <summary>
+    /// A direction in the cone <paramref name="degrees"/> wide around <paramref name="forward"/>, evenly spread over
+    /// the cone's cross-section. The roll comes from the seed (coop rule: the same seed gives the same spread).
+    /// </summary>
+    private Vector3 Spread(Vector3 forward, float degrees)
+    {
+        if (degrees <= 0f)
+        {
+            return forward;
+        }
+
+        var halfAngle = degrees / 2f * MathF.PI / 180f;
+        var tilt = halfAngle * MathF.Sqrt((float)_shotRandom.NextDouble());
+        var around = 2f * MathF.PI * (float)_shotRandom.NextDouble();
+
+        // Two directions across the shot: sideways and (roughly) up.
+        var helper = MathF.Abs(forward.Y) < 0.99f ? Vector3.UnitY : Vector3.UnitX;
+        var side = Vector3.Normalize(Vector3.Cross(helper, forward));
+        var up = Vector3.Cross(forward, side);
+        var across = side * MathF.Cos(around) + up * MathF.Sin(around);
+        return Vector3.Normalize(forward * MathF.Cos(tilt) + across * MathF.Sin(tilt));
+    }
+
+    /// <summary>One bullet (or pellet) along <paramref name="direction"/>: hits up to 1 + pierce targets before the first wall.</summary>
+    private void FirePellet(Vector3 origin, Vector3 direction, RangedBalance values, Weapon weapon, Player attacker)
+    {
+        var wall = Raycast.AgainstLevel(Level, origin, direction, values.Range);
         var reach = wall?.Distance ?? values.Range;
 
         // Every target on the ray before the wall, nearest first; the shot takes the first one and pierces on.
         var hits = Targets.Where(candidate => candidate.IsHittable)
-            .Select(candidate => (Target: candidate, Distance: Raycast.AgainstCylinder(shot.Origin, direction, candidate.Body)))
+            .Select(candidate => (Target: candidate, Distance: Raycast.AgainstCylinder(origin, direction, candidate.Body)))
             .Where(hit => hit.Distance is { } distance && distance <= reach)
             .OrderBy(hit => hit.Distance)
             .Take(1 + values.Pierce)
@@ -951,7 +993,7 @@ public sealed class GameWorld
 
         foreach (var (target, distance) in hits)
         {
-            var zone = target.ZoneAt(shot.Origin + direction * distance!.Value);
+            var zone = target.ZoneAt(origin + direction * distance!.Value);
             Damage(target, new Hit(weapon, zone, values.Damage), attacker);
         }
 
