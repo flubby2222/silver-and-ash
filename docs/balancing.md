@@ -97,6 +97,55 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Runde 2 – 16.11.2026 (vor 0.10.0)
+
+**Anlass:** Mit Gorm (v0.10) zwei Siege, Gorm nach 44 und 47 s besiegt. Eindruck: Gorm „viel zu leicht“, Phase 2 „zu harmlos“, der Weg „zu leicht, Länge passt“, Heilung „ab und zu knapp“, also richtig.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `gorm.maxHealth` | 1600 | 3600 | Kampf von 45 s Richtung 1,5–2 min |
+| `gorm.pauseTime` | 1,5 s | 1,2 s | weniger freie Zeit zum Zuschlagen |
+| `gorm.hammerDamage` / `swingDamage` / `throwDamage` | 35 / 25 / 15 | 40 / 30 / 20 | Fehler kosten mehr |
+| `gorm.phase2SpeedUp` | 1,3 | 1,4 | Phase 2 spürbar schneller |
+| `gorm.stoneCount` / `stoneSpread` / `stoneDamage` | 4 / 5 m / 20 | 6 / 4 m / 25 | Steine dichter und gefährlicher |
+| `ghoul.speed` / `attackDamage` / `recoverTime` | 4,5 / 25 / 0,8 s | 5 / 30 / 0,6 s | gefährlicher, nicht zahlreicher |
+| `bat.biteDamage` / `spitInterval`, `bloodBolt.damage` | 15 / 2 s, 15 | 20 / 1,6 s, 20 | dito |
+| `difficulty.budgetFar` | 20 | 24 | hinten etwas mehr Gegner |
+
+**Report (500 Ebenen, Durchschnitt):**
+
+| Kennzahl | vorher | nachher |
+|---|---|---|
+| Gegner | 84 | 96 |
+| Gegner-HP (mit Gorm) | 8661 | 11580 |
+| erreichte Stufe | 9,0 | 9,5 |
+| Silber | 311 | 323 |
+| Schlüssel pro Schloss | 1,14 | 1,23 |
+| Heilung (× maximales Leben) | 2,6 | 2,8 |
+| Zeit (grobe Schätzung) | 10,0 min | 10,5 min |
+
+**Unterwegs geändert, weil das Anspielen es zeigte** (eigene PRs):
+- Die Kette zeigt ihre echte Reichweite (#177).
+- Der Kettenschwung streicht jetzt als sichtbarer Bogen von links nach rechts statt überall gleichzeitig zu treffen (#181/#182).
+- Die Karte hat eigene Symbole und bleibt beim Laufen offen (#178/#179/#180).
+
+**Gespielt (16.11., drei Durchläufe mit allem zusammen):**
+- 5:56 verloren (11/15 Räume);
+- 3:47 verloren (6/15 Räume);
+- 11:55 gewonnen (15/15 Räume, Stufe 10, 290 Schaden genommen, **Gorm in 1:22**).
+
+Eindruck: Weg „hart, aber fair“, Gorm „passt“. Die Werte bleiben so.
+
+**Offene Fragen aus v0.9 und #165 geklärt:**
+- **Kisten sollen blockieren:** ja → eigenes Issue.
+- **Wandbruch mit Effekt (Staub, Brocken):** ja → eigenes Issue.
+- **Fern-Anteile der Kampfraum-Kisten (55/37/8/0):** passen.
+- **Schutzräume:** nicht zu sicher.
+- **Risse am Geheimraum:** dezent genug.
+- **Abstand nach dem Kettenzug (3 m):** bleibt.
+
+**Noch offen:** Ein gewonnener Durchlauf mit allen Räumen dauert jetzt 12 Minuten, die 20 Minuten aus ADR 0005 sind noch nicht erreicht. Weitere Ebenen kommen mit späteren Versionen.
+
 ### Runde 1 – 15.11.2026 (vor 0.9.0)
 
 **Anlass:** Durchlauf in 6:11, nur 115 Schaden genommen, „zu leicht und zu kurz“. Ghul-Köpfe zu leicht zu treffen; Blutphiolen zu häufig und zu stark.

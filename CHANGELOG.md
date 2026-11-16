@@ -8,13 +8,13 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ### Hinzugefügt
 - **Gorm, the Chained:** Im Bossraum wartet jetzt ein Troll, 3,2 m groß, mit Keule und Kette (Platzhalter aus Kästen).
-  - Betrittst du den Bossraum, erscheint oben sein Lebensbalken (1600 Leben).
+  - Betrittst du den Bossraum, erscheint oben sein Lebensbalken (3600 Leben).
   - Er geht langsam auf dich zu und **greift an**, jeder Angriff mit deutlicher Ankündigung und einer Antwort:
     - **Hammerschlag** (Keule hoch, roter Kreis am Boden): Eine Schockwelle läuft über den Boden → **springen**. Verfehlt er, steckt die Keule 2 s fest: Er beugt sich vor und nimmt doppelten Schaden.
     - **Kettenschwung** (Kette wird über dem Kopf angedreht, so lang, wie sie reicht): Die Kette streicht in 0,6 s auf Brusthöhe von seiner Linken über vorne nach rechts → **Dodge** (geduckt), wenn sie ankommt, oder **hinter ihn**; Springen hilft nicht.
     - **Kettenwurf** (Haken glüht rot): Der Haken fliegt dorthin, wo du standest → **zur Seite** oder hinter eine Säule. Trifft er, zieht er dich heran.
     - Nach jedem Angriff ruht er kurz; nie zweimal hintereinander derselbe Angriff.
-  - **Phase 2:** Bei halbem Leben brüllt er 1,5 s lang (Kopf in den Nacken, der Boden bebt) und greift solange nicht an. Danach läuft, kündigt an und ruht er 30 % schneller. Jeder Hammerschlag löst dann **4 Steine von der Decke**: Ihr dunkler Schatten wächst 1 s lang am Boden um dich herum, dann schlägt der Stein ein (20 Schaden) → **aus dem Schatten gehen**.
+  - **Phase 2:** Bei halbem Leben brüllt er 1,5 s lang (Kopf in den Nacken, der Boden bebt) und greift solange nicht an. Danach läuft, kündigt an und ruht er 40 % schneller. Jeder Hammerschlag löst dann **6 Steine von der Decke**: Ihr dunkler Schatten wächst 1 s lang am Boden um dich herum, dann schlägt der Stein ein (25 Schaden) → **aus dem Schatten gehen**.
   - Sein Kopf ist ein Schwachpunkt: Ein Pistolenschuss dorthin macht 150 % Schaden.
   - Er hinterlässt 100–150 Silber und eine Blutphiole.
 - **Wendeltreppe und neuer Sieg:** Nach Gorms Tod fährt in der Mitte des Bossraums eine Wendeltreppe aus dem Boden. „[F] Climb the stairs“ gewinnt den Durchlauf. Der Endbildschirm und `runs.log` zeigen, ob Gorm besiegt wurde und wie lange der Kampf dauerte
@@ -27,6 +27,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Gegner stehen jedes Mal anders:** Statt fester Plätze bekommt jeder Kampfraum ein Gegner-Budget, das weiter vom Start wächst. Davon kauft er Ghule und Fledermäuse (hinten mehr Fledermäuse) und stellt sie auf zufällige freie Felder, mit Abstand zu den Türen und zueinander. Insgesamt etwa so viele Gegner wie bisher. Einstellbar in `balance.json` unter `difficulty`
 - Der **Startraum hat nur noch eine Tür**. Der Ausgang liegt je Durchlauf in einer anderen Richtung, und der Weg zum Boss wird etwas länger
 - **Karte:** **Tab halten** zeigt sie, **M** schaltet sie an und aus, damit sie beim Laufen offen bleiben kann. Sie ist jetzt durchsichtiger, sodass man das Spiel dahinter gut sieht
+- **Balancing-Runde 2:** Gorm ist zäher und härter (3600 Leben, mehr Schaden, kürzere Pausen), Phase 2 schneller und mit mehr Steinen. Ghule und Fledermäuse sind gefährlicher: Ghule kriechen schneller (5 m/s), schlagen härter (30) und erholen sich schneller; Fledermäuse beißen und spucken härter (20) und öfter. Hinten etwas mehr Gegner. Ein Durchlauf mit allen Räumen dauert etwa 12 Minuten, Gorm um 1,5 Minuten. Protokoll in `docs/balancing.md`
 
 ## [0.9.0] – 2026-11-15 – Schatz & Wirtschaft
 

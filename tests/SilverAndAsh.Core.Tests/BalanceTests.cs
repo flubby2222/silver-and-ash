@@ -44,8 +44,8 @@ public class BalanceTests
         var normal = DistanceAfterHalfASecond(Balance.Default);
         var fast = DistanceAfterHalfASecond(Balance.Default with { Ghoul = Balance.Default.Ghoul with { Speed = 6f } });
 
-        // 6 instead of 4.5 m/s: 0.75 m more in half a second.
-        Assert.Equal(normal - 0.75f, fast, 0.1f);
+        // 6 m/s instead of the standard: the difference times half a second more.
+        Assert.Equal(normal - ((6f - Balance.Default.Ghoul.Speed) / 2f), fast, 0.1f);
     }
 
     [Fact]

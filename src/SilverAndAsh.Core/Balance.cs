@@ -289,7 +289,7 @@ public sealed record DifficultyBalance
     public int BudgetNear { get; init; } = 10;
 
     /// <summary>Budget of the farthest combat room.</summary>
-    public int BudgetFar { get; init; } = 20;
+    public int BudgetFar { get; init; } = 24;
 
     /// <summary>Budget of the boss room for enemies besides the boss (0 = the boss fights alone).</summary>
     public int BudgetBoss { get; init; }
@@ -482,7 +482,7 @@ public sealed record DummyBalance
 public sealed record GormBalance
 {
     /// <summary>His health.</summary>
-    public int MaxHealth { get; init; } = 1600;
+    public int MaxHealth { get; init; } = 3600;
 
     /// <summary>Walking speed in m/s - slower than the player.</summary>
     public float Speed { get; init; } = 2.5f;
@@ -512,13 +512,13 @@ public sealed record GormBalance
     public float FarRange { get; init; } = 30f;
 
     /// <summary>Seconds of rest after every attack - the moment to strike back.</summary>
-    public float PauseTime { get; init; } = 1.5f;
+    public float PauseTime { get; init; } = 1.2f;
 
     /// <summary>Warning before the hammer blow (club raised, red circle on the floor), in seconds.</summary>
     public float HammerWindUp { get; init; } = 0.8f;
 
     /// <summary>Damage of the hammer's shock wave.</summary>
-    public int HammerDamage { get; init; } = 35;
+    public int HammerDamage { get; init; } = 40;
 
     /// <summary>The shock wave runs along the floor this fast (m/s) ...</summary>
     public float ShockwaveSpeed { get; init; } = 8f;
@@ -539,7 +539,7 @@ public sealed record GormBalance
     public float SwingWindUp { get; init; } = 0.6f;
 
     /// <summary>Damage of the chain swing.</summary>
-    public int SwingDamage { get; init; } = 25;
+    public int SwingDamage { get; init; } = 30;
 
     /// <summary>Reach of the chain swing (metres, middle to middle).</summary>
     public float SwingReach { get; init; } = 8f;
@@ -563,7 +563,7 @@ public sealed record GormBalance
     public float HookSpeed { get; init; } = 18f;
 
     /// <summary>Damage of the hook.</summary>
-    public int ThrowDamage { get; init; } = 15;
+    public int ThrowDamage { get; init; } = 20;
 
     /// <summary>A hit pulls the player to this distance from him (metres) ...</summary>
     public float PullDistance { get; init; } = 3f;
@@ -578,13 +578,13 @@ public sealed record GormBalance
     public float RoarTime { get; init; } = 1.5f;
 
     /// <summary>In phase 2 he is this many times as fast: walking, warnings and pauses (1.3 = 30 % faster).</summary>
-    public float Phase2SpeedUp { get; init; } = 1.3f;
+    public float Phase2SpeedUp { get; init; } = 1.4f;
 
     /// <summary>In phase 2 every hammer blow shakes this many stones from the ceiling ...</summary>
-    public int StoneCount { get; init; } = 4;
+    public int StoneCount { get; init; } = 6;
 
     /// <summary>... each landing at most this far (metres) from the player ...</summary>
-    public float StoneSpread { get; init; } = 5f;
+    public float StoneSpread { get; init; } = 4f;
 
     /// <summary>... announced by its shadow on the floor this long (seconds) ...</summary>
     public float StoneWarning { get; init; } = 1f;
@@ -593,7 +593,7 @@ public sealed record GormBalance
     public float StoneRadius { get; init; } = 1f;
 
     /// <summary>... with this damage.</summary>
-    public int StoneDamage { get; init; } = 20;
+    public int StoneDamage { get; init; } = 25;
 }
 
 /// <summary>Balancing values of the ghoul.</summary>
@@ -608,8 +608,8 @@ public sealed record GhoulBalance
     /// <summary>It notices a player it can see who is closer than this, in metres.</summary>
     public float SightRange { get; init; } = 12f;
 
-    /// <summary>Crawling speed in m/s - three quarters of the player's 6 m/s: you can get away, but not by strolling.</summary>
-    public float Speed { get; init; } = 4.5f;
+    /// <summary>Crawling speed in m/s - a little slower than the player's 6 m/s: you can get away, but not by strolling.</summary>
+    public float Speed { get; init; } = 5f;
 
     /// <summary>It starts its blow when a player is this close (centre to centre, flat), in metres.</summary>
     public float AttackReach { get; init; } = 1.6f;
@@ -627,10 +627,10 @@ public sealed record GhoulBalance
     public float AttackHalfAngle { get; init; } = 60f;
 
     /// <summary>Damage of a blow.</summary>
-    public int AttackDamage { get; init; } = 25;
+    public int AttackDamage { get; init; } = 30;
 
     /// <summary>Seconds of rest after a blow.</summary>
-    public float RecoverTime { get; init; } = 0.8f;
+    public float RecoverTime { get; init; } = 0.6f;
 
     /// <summary>The way to the target is searched again at most this often, in seconds.</summary>
     public float RepathTime { get; init; } = 0.5f;
@@ -679,7 +679,7 @@ public sealed record BatBalance
     public float BobTime { get; init; } = 2f;
 
     /// <summary>Seconds between two spits.</summary>
-    public float SpitInterval { get; init; } = 2f;
+    public float SpitInterval { get; init; } = 1.6f;
 
     /// <summary>Seconds it glows before it spits - the warning.</summary>
     public float SpitWindUpTime { get; init; } = 0.4f;
@@ -697,7 +697,7 @@ public sealed record BatBalance
     public float DiveSpeed { get; init; } = 10f;
 
     /// <summary>Damage of its bite at the end of a dive.</summary>
-    public int BiteDamage { get; init; } = 15;
+    public int BiteDamage { get; init; } = 20;
 
     /// <summary>The way to its target is searched again at most this often, in seconds.</summary>
     public float RepathTime { get; init; } = 0.5f;
@@ -710,7 +710,7 @@ public sealed record BloodBoltBalance
     public float Speed { get; init; } = 12f;
 
     /// <summary>Damage to the player.</summary>
-    public int Damage { get; init; } = 15;
+    public int Damage { get; init; } = 20;
 
     /// <summary>Radius of the ball in metres.</summary>
     public float Radius { get; init; } = 0.15f;
