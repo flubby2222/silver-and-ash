@@ -2,6 +2,7 @@ using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Game.Rendering;
 
@@ -11,7 +12,9 @@ namespace SilverAndAsh.Game.Rendering;
 /// (red for a shot at his head) and falls onto his back when he dies. His head matches his hit zone. Every attack is
 /// announced clearly: hammer = club raised high and a red circle on the floor; chain swing = the chain spun up round
 /// his head; chain throw = the hook glows red. Then the shock wave runs as a pale ring along the floor, the hook flies
-/// on its chain, and a stuck club glows while he bends forward. Pure presentation - a real model comes with v0.13.
+/// on its chain, and a stuck club glows while he bends forward. At half health he roars, head thrown back and arms
+/// raised (phase 2); falling stones cast a dark shadow that grows on the floor until the stone drops into it.
+/// Pure presentation - a real model comes with v0.13.
 /// </summary>
 internal sealed class GormView
 {
@@ -28,6 +31,12 @@ internal sealed class GormView
     private static readonly Color Warning = new(200, 30, 30, 255);
     private static readonly Color Wave = new(220, 210, 190, 255);
     private static readonly Color Glow = new(255, 120, 60, 255);
+    private static readonly Color Shadow = new(12, 10, 10, 255);
+    private static readonly Color Stone = new(96, 92, 88, 255);
+
+    // Index of the head in BodyParts and the neck it tips back on while roaring.
+    private const int Head = 4;
+    private static readonly Vector3 Neck = new(0f, 2.6f, 0.15f);
 
     // (size, centre above the feet, colour) - local space: x right, y up, z forward. Height 3.2 m.
     private static readonly (Vector3 Size, Vector3 Centre, Color Color)[] BodyParts =
@@ -82,8 +91,11 @@ internal sealed class GormView
         var hookGlows = gorm is { State: GormState.WindingUp, Attack: GormAttack.Throw };
         var stuck = gorm.State == GormState.Stuck;
 
+        // Roaring: leaning back, head in the neck, both arms up - quickly in, held, then down again.
+        var roar = gorm.State == GormState.Roaring ? MathF.Min(1f, MathF.Min(progress, 1f - progress) * 6f) : 0f;
+
         // Stuck: bent forward over the club, head down (as his hit zone).
-        var bend = stuck ? 0.45f : 0f;
+        var bend = (stuck ? 0.45f : 0f) - (0.25f * roar);
         var body =
             Matrix4x4.CreateTranslation(0f, -0.3f * bend, 0f) *
             Matrix4x4.CreateRotationX(bend) *
@@ -96,9 +108,13 @@ internal sealed class GormView
         var flashColor = _flashIsCritical ? CriticalFlashColor : FlashColor;
         Color Shown(Color color) => _flash > 0f ? Blend(color, flashColor, _flash) : color;
 
-        foreach (var (size, centre, color) in BodyParts)
+        for (var part = 0; part < BodyParts.Length; part++)
         {
-            ShadedBox.Draw(Matrix4x4.CreateTranslation(centre) * body, size, Shown(color));
+            var (size, centre, color) = BodyParts[part];
+            var place = part == Head
+                ? Matrix4x4.CreateTranslation(centre - Neck) * Matrix4x4.CreateRotationX(-0.8f * roar) * Matrix4x4.CreateTranslation(Neck)
+                : Matrix4x4.CreateTranslation(centre);
+            ShadedBox.Draw(place * body, size, Shown(color));
         }
 
         // Arms hang from the shoulders; the right one carries the club, the left one the chain.
@@ -106,9 +122,9 @@ internal sealed class GormView
         {
             // Right arm: lifted high over the head while the hammer winds up, slammed down on the floor while stuck.
             // Left arm: raised for spinning the chain or throwing the hook.
-            var lift = side > 0f
+            var lift = (2.2f * roar) + (side > 0f
                 ? (2.6f * hammerUp) + (stuck ? 1.2f : 0f)
-                : (spinning ? 2.4f : 0f) + (hookGlows ? 1.4f * progress : 0f);
+                : (spinning ? 2.4f : 0f) + (hookGlows ? 1.4f * progress : 0f));
             var arm =
                 Matrix4x4.CreateTranslation(0f, -0.7f, 0f) *
                 Matrix4x4.CreateRotationX(-0.25f - 0.15f * sway * side - lift) *
@@ -154,7 +170,8 @@ internal sealed class GormView
 
     /// <summary>
     /// What lies on the floor and in the air around him: the red warning circle before the hammer, the shock wave's
-    /// ring, and the flying hook on its chain. Drawn even after the body has fallen (nothing then).
+    /// ring, the flying hook on its chain, and the falling stones with their shadows. Drawn even after the body has
+    /// fallen (nothing then).
     /// </summary>
     public void DrawEffects(Gorm gorm)
     {
@@ -162,6 +179,21 @@ internal sealed class GormView
         if (gorm.IsDead)
         {
             return;
+        }
+
+        foreach (var stone in gorm.Stones)
+        {
+            // The shadow grows to the stone's full reach; in the last part of the warning the stone drops into it.
+            var shadow = gorm.StoneReach * (0.35f + (0.65f * stone.Progress));
+            Raylib.DrawCylinder(stone.At + new Vector3(0f, 0.02f, 0f), shadow, shadow, 0.03f, 20, Shadow);
+            const float DropFrom = 0.6f;
+            if (stone.Progress > DropFrom)
+            {
+                var t = (stone.Progress - DropFrom) / (1f - DropFrom);
+                var height = (Cell.DefaultCeilingHeight - 0.3f) * (1f - (t * t));
+                var spin = Matrix4x4.CreateRotationY(stone.At.X) * Matrix4x4.CreateRotationX(stone.At.Z);
+                ShadedBox.Draw(spin * Matrix4x4.CreateTranslation(stone.At + new Vector3(0f, 0.3f + height, 0f)), new Vector3(0.6f, 0.5f, 0.55f), Stone);
+            }
         }
 
         if (gorm is { State: GormState.WindingUp, Attack: GormAttack.Hammer })

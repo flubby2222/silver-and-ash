@@ -564,6 +564,30 @@ public sealed record GormBalance
 
     /// <summary>... within this time (seconds), without control.</summary>
     public float PullTime { get; init; } = 0.4f;
+
+    /// <summary>At or below this share of his health (0.5 = 50 %) phase 2 begins - once.</summary>
+    public float Phase2Health { get; init; } = 0.5f;
+
+    /// <summary>Seconds he roars at the start of phase 2 - he does not attack meanwhile.</summary>
+    public float RoarTime { get; init; } = 1.5f;
+
+    /// <summary>In phase 2 he is this many times as fast: walking, warnings and pauses (1.3 = 30 % faster).</summary>
+    public float Phase2SpeedUp { get; init; } = 1.3f;
+
+    /// <summary>In phase 2 every hammer blow shakes this many stones from the ceiling ...</summary>
+    public int StoneCount { get; init; } = 4;
+
+    /// <summary>... each landing at most this far (metres) from the player ...</summary>
+    public float StoneSpread { get; init; } = 5f;
+
+    /// <summary>... announced by its shadow on the floor this long (seconds) ...</summary>
+    public float StoneWarning { get; init; } = 1f;
+
+    /// <summary>... hitting whoever stands this close (metres) to where it lands ...</summary>
+    public float StoneRadius { get; init; } = 1f;
+
+    /// <summary>... with this damage.</summary>
+    public int StoneDamage { get; init; } = 20;
 }
 
 /// <summary>Balancing values of the ghoul.</summary>

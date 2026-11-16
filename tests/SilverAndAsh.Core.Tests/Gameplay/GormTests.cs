@@ -144,7 +144,8 @@ public class GormTests
 
         Assert.True(gorm.IsDead);
         Assert.False(gorm.IsHittable);
-        Assert.Equal([new GormHit(9, 1000), new GormHit(9, 600), new GormDied(9)], events);
+        // The first blow takes him past half his health: he roars (phase 2, issue #166).
+        Assert.Equal([new GormHit(9, 1000), new GormRoared(9), new GormHit(9, 600), new GormDied(9)], events);
     }
 
     [Fact]

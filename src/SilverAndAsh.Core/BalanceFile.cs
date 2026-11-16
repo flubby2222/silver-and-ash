@@ -50,7 +50,7 @@ public static class BalanceFile
         "chests.beggar.combatShareNear", "chests.beggar.combatShareFar", "chests.beggar.treasureShare", "chests.beggar.lockedTreasureShare", "chests.beggar.secretShare", "chests.beggar.lockedChance", "chests.beggar.silverMin", "chests.beggar.silverMax", "chests.beggar.bloodVialChance", "chests.guard.combatShareNear", "chests.guard.combatShareFar", "chests.guard.treasureShare", "chests.guard.lockedTreasureShare", "chests.guard.secretShare", "chests.guard.lockedChance", "chests.guard.silverMin", "chests.guard.silverMax", "chests.guard.bloodVialChance", "chests.king.combatShareNear", "chests.king.combatShareFar", "chests.king.treasureShare", "chests.king.lockedTreasureShare", "chests.king.secretShare", "chests.king.lockedChance", "chests.king.silverMin", "chests.king.silverMax", "chests.king.bloodVialChance", "chests.vampire.combatShareNear", "chests.vampire.combatShareFar", "chests.vampire.treasureShare", "chests.vampire.lockedTreasureShare", "chests.vampire.secretShare", "chests.vampire.lockedChance", "chests.vampire.silverMin", "chests.vampire.silverMax", "chests.vampire.bloodVialChance", "silver.ghoulChance", "silver.batChance", "silver.ghoulMin", "silver.ghoulMax", "silver.batMin", "silver.batMax",
         "experience.ghoul", "experience.bat",
         "boons.staminaRegen", "boons.health", "boons.damage", "boons.experience",
-        "layout.corridorChance", "layout.maxLoops", "gorm.pauseTime", "layout.treasureRooms", "layout.lockedTreasureRooms", "layout.secretRooms",
+        "layout.corridorChance", "layout.maxLoops", "gorm.pauseTime", "gorm.stoneCount", "gorm.stoneDamage", "layout.treasureRooms", "layout.lockedTreasureRooms", "layout.secretRooms",
         "difficulty.budgetNear", "difficulty.budgetFar", "difficulty.budgetBoss",
         "difficulty.ghoulWeightNear", "difficulty.ghoulWeightFar", "difficulty.batWeightNear", "difficulty.batWeightFar",
         "difficulty.doorDistance", "difficulty.spacing",
@@ -80,6 +80,7 @@ public static class BalanceFile
         ["chests.vampire.bloodVialChance"] = 1,
         ["silver.batChance"] = 1,
         ["layout.corridorChance"] = 1,
+        ["gorm.phase2Health"] = 1,
     };
 
     /// <summary>Values that must stay below a limit (a penalty of 100 % would mean standing still).</summary>
