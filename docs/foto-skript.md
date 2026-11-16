@@ -16,7 +16,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo all --out D:\fotos
 dotnet run --project src/SilverAndAsh.Game -- --photo list
 ```
 
-- `--photo <szene>` – eine Szene; `all` – alle nacheinander; `list` – Namen und Beschreibung aller Szenen ausgeben (ohne Fenster).
+- `--photo <szene>` – eine Szene; `all` – alle nacheinander; `compare` – die Vergleichsszenen in allen Bild-Varianten (siehe unten); `list` – Namen und Beschreibung aller Szenen ausgeben (ohne Fenster).
 - `--out <ordner>` – wohin die Bilder kommen. Ohne `--out`: `%LOCALAPPDATA%\SilverAndAsh\photos`. **Nie ins Repository legen.**
 - Pro Szene entstehen zwei Dateien:
   - `<szene>.png` – das 3D-Bild in Spielauflösung (854 × 480), so wie es die Grafikkarte zeichnet, ohne HUD.
@@ -42,6 +42,29 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `inventory` | das offene Inventar (G) mit voller Tasche |
 | `map` | die offene Karte (M) zu Beginn eines Durchlaufs |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |
+
+## Bild-Varianten vergleichen (`--look`, `--photo compare`)
+
+ADR 0010 lässt offen, ob das Spiel 15-Bit-Farbe mit Punktmuster, ein Ausblenden über das Muster statt Nebel und eine niedrigere Auflösung bekommt (#234). Dafür gibt es vier Bild-Varianten, nur in der Debug-Version:
+
+| `--look` | Variante |
+|---|---|
+| `1` | heute: Nebel, volle Farbtiefe, 854 × 480 (Standard, auch ohne `--look`) |
+| `2` | 15 Bit (5 je Kanal) mit festem 4 × 4-Bayer-Muster, Nebel bleibt |
+| `3` | wie 2, aber kein Nebel: ab 9 m fallen Pixel nach dem Muster weg (bei 18,2 m alle), die Laterne dunkelt weiter ab |
+| `4` | wie 3 in 640 × 360 |
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --look 3
+```
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --photo compare --out D:otosergleich
+```
+
+- `--look <1-4>` gilt fürs Spielen und für einzelne Fotos (`--photo ghoul-4m --look 4`).
+- `--photo compare` nimmt Gang, Kampfraum, Ghul aus 4 m und 10 m, Ghul beim Ausholen, Fledermaus aus 10 m und Gorm in allen vier Varianten auf (`<szene>-look<n>.png`, `<szene>-look<n>-screen.png`) und legt je Szene ein beschriftetes 2 × 2-Vergleichsbild `<szene>-compare.png` aus den Fensterbildern an.
+- Die Werte stehen in [`LookVariants.cs`](../src/SilverAndAsh.Game/Rendering/LookVariants.cs) neben `LookSettings`, die Formeln getestet in [`Dithering.cs`](../src/SilverAndAsh.Core/Presentation/Dithering.cs); der Shader `assets/shaders/level.fs` rechnet dieselben.
 
 ## Wie es funktioniert
 

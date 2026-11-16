@@ -56,6 +56,14 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.Arena('G', 10)) { IsModelProbe = true }),
     ];
 
+    /// <summary>
+    /// The scenes <c>--photo compare</c> takes in every picture variant (issue #234): corridor, combat room, a ghoul from
+    /// near and far and drawing back, a bat from far, Gorm.
+    /// </summary>
+    public static IReadOnlyList<PhotoScene> LookComparison { get; } =
+        new[] { "room-corridor", "room-combat", "ghoul-4m", "ghoul-10m", "ghoul-windup", "bat-10m", "gorm" }
+            .Select(name => All.First(scene => scene.Name == name)).ToList();
+
     /// <summary>The scene called <paramref name="name"/>, or null.</summary>
     public static PhotoScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
 
