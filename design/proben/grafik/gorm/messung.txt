@@ -1,0 +1,4 @@
+ruhe aus 4 m: 366 x 338 Pixel, 55422 Pixel gedeckt
+Kopf aus 4 m: 76 x 54 Pixel, 2632 Pixel gedeckt
+ruhe aus 10 m: 102 x 143 Pixel, 6883 Pixel gedeckt
+phase2_ruhe aus 10 m: 134 x 138 Pixel, 6877 Pixel gedeckt
