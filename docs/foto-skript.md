@@ -97,3 +97,19 @@ Danach: Name in den Test `Every_scene_the_issue_asks_for_is_there` aufnehmen ([`
 ## Modell-Probe
 
 `model-probe-4m` und `model-probe-10m` zeigen den Ghul als geladenes Modell (`assets/models/ghoul.glb`, siehe [`modelle.md`](modelle.md)), genau wie im Spiel. Fehlt das Modell, zeigen sie – wie das Spiel – den Platzhalter; die Warnung steht dann im Log.
+
+## Bildzeit messen (`--bench`)
+
+Bei jedem neuen Modell oder jeder neuen Textur stellt sich die Frage, ob die Bildrate einbricht. `--bench <szene>` beantwortet sie:
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --bench room-combat
+```
+
+- Die Szene wird aufgebaut wie beim Foto. Die Simulation steht danach still.
+- Gezeichnet wird ohne VSync und ohne Bildraten-Grenze: zuerst 100 Bilder zum Aufwärmen, dann 1 000 gemessene. Jedes Bild entsteht vollständig wie im Spiel, also Welt und dann Bildschirm mit HUD.
+- Am Ende stehen auf der Konsole und im Log die mittlere Bildzeit (mit fps), der Median und das 99. Perzentil in Millisekunden. Danach schließt sich das Fenster, der Exit-Code ist 0.
+- Die Auswertung steht in [`FrameTimeStatistics`](../src/SilverAndAsh.Core/Diagnostics/FrameTimeStatistics.cs) im Core. Das 99. Perzentil ermittelt sie nach dem Nearest-Rank-Verfahren und testet es.
+- Wie `--photo` geht `--bench` nur in der Debug-Version. Die Zahlen gelten also für den Debug-Build und sind nur untereinander vergleichbar, nicht mit der Release-Version.
+
+**Vorher/Nachher im selben Build:** Für den Vergleich mit dem Stand vor einer neuen Textur oder einem neuen Modell benennst du die Datei im Ausgabeordner (`src/SilverAndAsh.Game/bin/Debug/net10.0/assets/…`) um. Dann greift der Rückfall: Die Fläche wird einfarbig gezeichnet bzw. der Platzhalter erscheint. Miss jede Szene mehrmals, denn einzelne Läufe streuen um etwa ±1 ms. Die Grafikkarte steht im Konsolen-Text von raylib (`Renderer:`).

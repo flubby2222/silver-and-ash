@@ -21,9 +21,13 @@ namespace SilverAndAsh.Core;
 /// <c>--look &lt;1-4&gt;</c>: draw the world in this picture variant (issue #234, decision record 0010 - an open question
 /// to be decided with pictures). Only in the debug version. Null: variant 1, the game as it is.
 /// </param>
+/// <param name="Bench">
+/// <c>--bench &lt;scene&gt;</c>: build this photo scene, draw it a fixed number of times without VSync and print the frame
+/// times (issue #233) - to see whether a new model or texture costs frame rate. Only in the debug version. Null: play.
+/// </param>
 public sealed partial record LaunchOptions(
     string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null, string? Photo = null, string? PhotoFolder = null,
-    int? Look = null)
+    int? Look = null, string? Bench = null)
 {
     /// <summary><c>--photo compare</c> takes the comparison scenes in every picture variant, plus one 2 x 2 sheet per scene.</summary>
     public const string ComparePhotos = "compare";
@@ -59,6 +63,7 @@ public sealed partial record LaunchOptions(
         string? photo = null;
         string? photoFolder = null;
         int? look = null;
+        string? bench = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -134,6 +139,16 @@ public sealed partial record LaunchOptions(
 
                     break;
 
+                case "--bench":
+                    var benchScenes = string.Join(", ", Photos.PhotoScenes.All.Select(scene => scene.Name));
+                    if (i + 1 >= args.Count || Photos.PhotoScenes.Find(args[i + 1]) is null)
+                    {
+                        throw new ArgumentException($"'--bench' needs one photo scene, e.g. '--bench room-combat'. Scenes: {benchScenes}.");
+                    }
+
+                    bench = args[++i];
+                    break;
+
                 case "--out":
                     if (i + 1 >= args.Count || string.IsNullOrWhiteSpace(args[i + 1]))
                     {
@@ -157,7 +172,7 @@ public sealed partial record LaunchOptions(
 
                 default:
                     throw new ArgumentException(
-                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --out <folder>, --look <1-4>.");
+                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --out <folder>, --look <1-4>.");
             }
         }
 
@@ -166,12 +181,17 @@ public sealed partial record LaunchOptions(
             throw new ArgumentException("'--out' only goes with '--photo'.");
         }
 
+        if (bench is not null && photo is not null)
+        {
+            throw new ArgumentException("'--bench' and '--photo' cannot be combined - measure and take pictures one after the other.");
+        }
+
         if (look is not null && photo == ComparePhotos)
         {
             throw new ArgumentException($"'--photo {ComparePhotos}' takes every picture variant; leave out '--look'.");
         }
 
-        return new LaunchOptions(levelName, seed, give, photo, photoFolder, look);
+        return new LaunchOptions(levelName, seed, give, photo, photoFolder, look, bench);
     }
 
     /// <summary>The level file for these options inside <paramref name="levelDirectory"/>.</summary>

@@ -20,12 +20,14 @@ public class SurfaceTexturingTests
     private static readonly Vector3[] WallNormals = [Vector3.UnitX, -Vector3.UnitX, Vector3.UnitZ, -Vector3.UnitZ];
 
     [Fact]
-    public void Floors_and_ceilings_follow_x_and_z_in_tiles()
+    public void Floors_and_ceilings_follow_x_and_z_in_tiles_and_ceilings_are_not_mirrored_from_below()
     {
         var position = new Vector3(3f, 1.7f, -5f);
 
         Assert.Equal(new Vector2(1.5f, -2.5f), SurfaceTexturing.TexCoord(position, Vector3.UnitY, SurfaceKind.Floor, 2f));
-        Assert.Equal(new Vector2(1.5f, -2.5f), SurfaceTexturing.TexCoord(position, -Vector3.UnitY, SurfaceKind.Ceiling, 2f));
+
+        // Looking up at a ceiling with the head toward -z, the right hand points to -x: u must grow that way.
+        Assert.Equal(new Vector2(-1.5f, -2.5f), SurfaceTexturing.TexCoord(position, -Vector3.UnitY, SurfaceKind.Ceiling, 2f));
     }
 
     [Fact]

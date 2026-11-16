@@ -119,6 +119,33 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public void Bench_takes_one_photo_scene()
+    {
+        var options = LaunchOptions.Parse(["--bench", "room-combat"]);
+
+        Assert.Equal("room-combat", options.Bench);
+        Assert.Null(options.Photo);
+        Assert.Null(LaunchOptions.Parse([]).Bench);
+    }
+
+    [Theory]
+    [InlineData]
+    [InlineData("all")]
+    [InlineData("ghoul-5m")]
+    public void Bench_without_a_known_scene_is_rejected_with_the_known_ones(params string[] scene)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--bench", .. scene]));
+
+        Assert.Contains("room-combat", error.Message);
+    }
+
+    [Fact]
+    public void Bench_and_photo_cannot_be_combined()
+    {
+        Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--bench", "room-combat", "--photo", "all"]));
+    }
+
+    [Fact]
     public void Photo_with_out_names_the_folder()
     {
         var options = LaunchOptions.Parse(["--photo", "all", "--out", "some folder"]);

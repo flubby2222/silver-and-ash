@@ -9,7 +9,7 @@ namespace SilverAndAsh.Core.Presentation;
 /// the texture without a seam - across cell borders, steps and cells of different heights - because their shared
 /// corners get the same coordinates.
 /// <para>
-/// Floors and ceilings: u along x, v along z. Walls: u along the wall, v with the height above y = 0 (not with the
+/// Floors and ceilings: u along x (along -x on a ceiling, seen from below), v along z. Walls: u along the wall, v with the height above y = 0 (not with the
 /// lower edge of the face), so every course of stones lies at the same height all around. Walls are never turned by
 /// 90 degrees - the damp streaks of the wall texture run down.
 /// </para>
@@ -33,9 +33,15 @@ public static class SurfaceTexturing
         }
 
         var p = position / tileSize;
-        if (kind != SurfaceKind.Wall)
+        // Looking down at a floor (head toward -z) the right hand points to +x; looking up at a ceiling, to -x.
+        if (kind == SurfaceKind.Floor)
         {
             return new Vector2(p.X, p.Z);
+        }
+
+        if (kind == SurfaceKind.Ceiling)
+        {
+            return new Vector2(-p.X, p.Z);
         }
 
         // Looking at a wall that faces +x one looks toward -x, and the right hand points to -z (and so on).
