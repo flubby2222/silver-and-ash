@@ -22,6 +22,7 @@ public static class GlbScene
 {
     private const uint Magic = 0x46546C67;     // "glTF"
     private const uint JsonChunk = 0x4E4F534A; // "JSON"
+    private const uint BinaryChunk = 0x004E4942; // "BIN"
 
     /// <summary>Reads the parts of a .glb file, in the order of its nodes (the order raylib loads the meshes in).</summary>
     /// <exception cref="InvalidDataException">Not a .glb file, or one that uses more than this game understands.</exception>
@@ -50,9 +51,25 @@ public static class GlbScene
             throw new InvalidDataException("The .glb file has no readable JSON chunk.");
         }
 
+        // The binary chunk follows the JSON chunk: its 8-byte head, then the data the corners and the texture are read from.
+        var binaryLength = 0L;
+        var binaryStart = 20L + jsonLength;
+        if (binaryStart + 8 <= file.Length)
+        {
+            var length = BinaryPrimitives.ReadUInt32LittleEndian(file[(int)binaryStart..]);
+            if (BinaryPrimitives.ReadUInt32LittleEndian(file[((int)binaryStart + 4)..]) != BinaryChunk
+                || binaryStart + 8 + length > file.Length)
+            {
+                throw new InvalidDataException("The binary chunk of the .glb file is missing or longer than the file.");
+            }
+
+            binaryLength = length;
+        }
+
         try
         {
             using var json = JsonDocument.Parse(Encoding.UTF8.GetString(file.Slice(20, (int)jsonLength)));
+            CheckData(json.RootElement, binaryLength);
             return ReadParts(json.RootElement);
         }
         catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException
@@ -61,6 +78,92 @@ public static class GlbScene
             throw new InvalidDataException($"The .glb description is broken: {exception.Message}", exception);
         }
     }
+
+    // Raylib (cgltf) reads corners, indices and the texture straight from the data the description points to - and on
+    // data that is not there it crashes in native code, where no catch helps. So every place the description points to
+    // must lie inside the binary chunk before raylib sees the file.
+    private static void CheckData(JsonElement root, long binaryLength)
+    {
+        var buffers = root.TryGetProperty("buffers", out var b) ? b : default;
+        var bufferCount = buffers.ValueKind == JsonValueKind.Array ? buffers.GetArrayLength() : 0;
+        if (bufferCount != 1)
+        {
+            throw new InvalidDataException($"The .glb file has {bufferCount} buffers - the game needs exactly one, in the file.");
+        }
+
+        var buffer = buffers[0];
+        if (buffer.TryGetProperty("uri", out _))
+        {
+            throw new InvalidDataException("The buffer lies in another file - the game only reads data inside the .glb.");
+        }
+
+        var bufferLength = buffer.GetProperty("byteLength").GetInt64();
+        if (bufferLength < 0 || bufferLength > binaryLength)
+        {
+            throw new InvalidDataException($"The buffer claims {bufferLength} bytes, the binary chunk has {binaryLength}.");
+        }
+
+        var views = root.TryGetProperty("bufferViews", out var v) ? v : default;
+        var viewLengths = new List<long>();
+        if (views.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var view in views.EnumerateArray())
+            {
+                var offset = view.TryGetProperty("byteOffset", out var o) ? o.GetInt64() : 0L;
+                var length = view.GetProperty("byteLength").GetInt64();
+                if (view.GetProperty("buffer").GetInt32() != 0 || offset < 0 || length < 0 || offset + length > bufferLength)
+                {
+                    throw new InvalidDataException($"A buffer view ({offset} + {length} bytes) lies outside the buffer ({bufferLength} bytes).");
+                }
+
+                viewLengths.Add(length);
+            }
+        }
+
+        foreach (var accessor in root.GetProperty("accessors").EnumerateArray())
+        {
+            if (!accessor.TryGetProperty("bufferView", out var viewIndex))
+            {
+                throw new InvalidDataException("An accessor has no data in the file.");
+            }
+
+            var view = viewIndex.GetInt32();
+            if (view < 0 || view >= viewLengths.Count)
+            {
+                throw new InvalidDataException($"An accessor points to buffer view {view}, the file has {viewLengths.Count}.");
+            }
+
+            var offset = accessor.TryGetProperty("byteOffset", out var o) ? o.GetInt64() : 0L;
+            var count = accessor.GetProperty("count").GetInt64();
+            var element = ComponentSize(accessor.GetProperty("componentType").GetInt32()) * Components(accessor.GetProperty("type").GetString());
+            var stride = views[view].TryGetProperty("byteStride", out var s) ? s.GetInt64() : element;
+            var needed = count == 0 ? 0 : offset + (count - 1) * stride + element;
+            if (offset < 0 || count < 0 || needed > viewLengths[view])
+            {
+                throw new InvalidDataException($"An accessor needs {needed} bytes, its buffer view has {viewLengths[view]}.");
+            }
+        }
+    }
+
+    private static long ComponentSize(int componentType) => componentType switch
+    {
+        5120 or 5121 => 1, // byte, unsigned byte
+        5122 or 5123 => 2, // short, unsigned short
+        5125 or 5126 => 4, // unsigned int, float
+        _ => throw new InvalidDataException($"Unknown component type {componentType}."),
+    };
+
+    private static long Components(string? type) => type switch
+    {
+        "SCALAR" => 1,
+        "VEC2" => 2,
+        "VEC3" => 3,
+        "VEC4" => 4,
+        "MAT2" => 4,
+        "MAT3" => 9,
+        "MAT4" => 16,
+        _ => throw new InvalidDataException($"Unknown accessor type '{type}'."),
+    };
 
     private static List<GlbPart> ReadParts(JsonElement root)
     {

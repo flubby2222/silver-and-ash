@@ -20,13 +20,88 @@ public class GlbSceneTests
             { "primitives": [ { "attributes": { "POSITION": 1 }, "indices": 3 } ] }
           ],
           "accessors": [
-            { "count": 86, "min": [-0.1, 0.04, -0.01], "max": [0.1, 0.25, 0.19] },
-            { "count": 33, "min": [-0.05, -0.07, -0.04], "max": [0, 0, 0] },
-            { "count": 432 },
-            { "count": 108 }
-          ]
+            { "bufferView": 0, "componentType": 5126, "type": "VEC3", "count": 86, "min": [-0.1, 0.04, -0.01], "max": [0.1, 0.25, 0.19] },
+            { "bufferView": 1, "componentType": 5126, "type": "VEC3", "count": 33, "min": [-0.05, -0.07, -0.04], "max": [0, 0, 0] },
+            { "bufferView": 2, "componentType": 5123, "type": "SCALAR", "count": 432 },
+            { "bufferView": 3, "componentType": 5123, "type": "SCALAR", "count": 108 }
+          ],
+          "bufferViews": [
+            { "buffer": 0, "byteOffset": 0, "byteLength": 1032 },
+            { "buffer": 0, "byteOffset": 1032, "byteLength": 396 },
+            { "buffer": 0, "byteOffset": 1428, "byteLength": 864 },
+            { "buffer": 0, "byteOffset": 2292, "byteLength": 216 }
+          ],
+          "buffers": [ { "byteLength": 2508 } ]
         }
         """;
+
+    // Bytes of data the description above points to (86 + 33 corners of 12 bytes, 432 + 108 indices of 2 bytes).
+    private const int DataLength = 2508;
+
+    [Fact]
+    public void A_whole_file_with_its_data_is_read()
+    {
+        Assert.Equal(2, GlbScene.Read(Glb(TwoParts)).Count);
+    }
+
+    [Fact]
+    public void The_real_ghoul_model_passes_every_check()
+    {
+        Assert.Equal(11, GlbScene.Read(File.ReadAllBytes(RepositoryFiles.Find("assets/models/ghoul.glb"))).Count);
+    }
+
+    [Fact]
+    public void A_buffer_longer_than_the_binary_chunk_is_refused()
+    {
+        // The reviewer's case: one digit more in the description, 4 bytes - raylib crashed on it.
+        var longer = TwoParts.Replace("\"byteLength\": 2508 }", "\"byteLength\": 2512 }", StringComparison.Ordinal);
+
+        Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(longer)));
+    }
+
+    [Fact]
+    public void A_binary_chunk_with_half_the_data_is_refused()
+    {
+        Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(TwoParts, DataLength / 2)));
+    }
+
+    [Fact]
+    public void A_file_without_binary_chunk_is_refused()
+    {
+        Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(TwoParts, dataLength: null)));
+    }
+
+    [Fact]
+    public void A_buffer_in_another_file_is_refused()
+    {
+        var outside = TwoParts.Replace("{ \"byteLength\": 2508 }", "{ \"uri\": \"missing.bin\", \"byteLength\": 2508 }", StringComparison.Ordinal);
+
+        Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(outside)));
+    }
+
+    [Fact]
+    public void A_buffer_view_beyond_the_buffer_is_refused()
+    {
+        var beyond = TwoParts.Replace("\"byteOffset\": 2292, \"byteLength\": 216", "\"byteOffset\": 2400, \"byteLength\": 216", StringComparison.Ordinal);
+
+        Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(beyond)));
+    }
+
+    [Fact]
+    public void An_accessor_with_more_corners_than_its_view_holds_is_refused()
+    {
+        var more = TwoParts.Replace("\"count\": 33,", "\"count\": 34,", StringComparison.Ordinal);
+
+        Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(more)));
+    }
+
+    [Fact]
+    public void An_accessor_without_data_is_refused()
+    {
+        var without = TwoParts.Replace("\"bufferView\": 3, ", string.Empty, StringComparison.Ordinal);
+
+        Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(without)));
+    }
 
     [Fact]
     public void Reads_the_parts_with_mesh_in_file_order_with_name_pivot_and_corners()
@@ -100,19 +175,27 @@ public class GlbSceneTests
         Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(twoPrimitives)));
     }
 
-    // A minimal .glb: 12-byte header, then the JSON chunk (padded with spaces to 4 bytes).
-    private static byte[] Glb(string json)
+    // A minimal .glb: 12-byte header, the JSON chunk (padded with spaces to 4 bytes), then - unless dataLength is null -
+    // a binary chunk of that many zero bytes.
+    private static byte[] Glb(string json, int? dataLength = DataLength)
     {
         var text = Encoding.UTF8.GetBytes(json);
         var padded = (text.Length + 3) / 4 * 4;
-        var file = new byte[20 + padded];
+        var binary = dataLength is { } length ? 8 + (length + 3) / 4 * 4 : 0;
+        var file = new byte[20 + padded + binary];
         BinaryPrimitives.WriteUInt32LittleEndian(file, 0x46546C67);
         BinaryPrimitives.WriteUInt32LittleEndian(file.AsSpan(4), 2);
         BinaryPrimitives.WriteUInt32LittleEndian(file.AsSpan(8), (uint)file.Length);
         BinaryPrimitives.WriteUInt32LittleEndian(file.AsSpan(12), (uint)padded);
         BinaryPrimitives.WriteUInt32LittleEndian(file.AsSpan(16), 0x4E4F534A);
         text.CopyTo(file, 20);
-        file.AsSpan(20 + text.Length).Fill((byte)' ');
+        file.AsSpan(20 + text.Length, padded - text.Length).Fill((byte)' ');
+        if (binary > 0)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(file.AsSpan(20 + padded), (uint)(binary - 8));
+            BinaryPrimitives.WriteUInt32LittleEndian(file.AsSpan(24 + padded), 0x004E4942);
+        }
+
         return file;
     }
 }

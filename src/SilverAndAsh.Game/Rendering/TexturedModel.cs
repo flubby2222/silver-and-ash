@@ -78,11 +78,19 @@ internal sealed class TexturedModel : IDisposable
             return null;
         }
 
+        // Parts the figure does not move are not drawn; a name twice takes the first node. Worth a line in the log.
+        var unused = file.Select(part => part.Name).Except(parts.Select(part => part.Name)).ToList();
+        var twice = file.GroupBy(part => part.Name).Where(group => group.Count() > 1).Select(group => group.Key).ToList();
+        if (unused.Count > 0 || twice.Count > 0)
+        {
+            log?.Warning($"Model '{path}': parts not drawn: {string.Join(", ", unused)}; names twice (first one used): {string.Join(", ", twice)}.");
+        }
+
         var model = Raylib.LoadModel(path);
         var problem = Check(model, file);
         if (problem is not null)
         {
-            Raylib.UnloadModel(model);
+            Unload(model);
             log?.Warning($"Model '{path}': {problem} - the placeholder is drawn instead.");
             return null;
         }
@@ -148,11 +156,32 @@ internal sealed class TexturedModel : IDisposable
             }
 
             Rlgl.End();
-            Rlgl.SetTexture(0);
+            // Back to the white default texture: SetTexture(0) would leave the model's texture on the running batch, and
+            // the next triangles without a texture of their own (DrawCube ...) would get it.
+            Rlgl.SetTexture(Rlgl.GetTextureIdDefault());
         }
     }
 
-    public void Dispose() => Raylib.UnloadModel(_model);
+    public void Dispose() => Unload(_model);
+
+    // UnloadModel frees meshes and material maps, but not the textures (raylib lets models share them) - those as well.
+    private static unsafe void Unload(Model model)
+    {
+        var textures = new HashSet<uint>();
+        foreach (var material in model.MaterialsAsSpan())
+        {
+            if (material.Maps != null)
+            {
+                var texture = material.Maps[(int)MaterialMapIndex.Albedo].Texture;
+                if (texture.Id != 0 && texture.Id != Rlgl.GetTextureIdDefault() && textures.Add(texture.Id))
+                {
+                    Raylib.UnloadTexture(texture);
+                }
+            }
+        }
+
+        Raylib.UnloadModel(model);
+    }
 
     // Does what raylib loaded match the description of the file? Returns what is wrong, or null.
     private static string? Check(Model model, IReadOnlyList<GlbPart> file)

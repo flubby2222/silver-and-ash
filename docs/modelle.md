@@ -9,7 +9,7 @@ Wie das Spiel ein Modell der Designer lädt, bewegt und zeichnet (Issue #232, St
 - **Teile:** Jedes bewegliche Teil ist ein eigener Knoten mit genau einem Mesh aus einem Primitiv (Dreiecksliste mit Indizes). Die Verschiebung des Knotens ist sein Drehpunkt. Knoten sind nicht verschachtelt und nicht gedreht oder skaliert. Was davon abweicht, lehnt der Lader ab.
 - **Daten je Ecke:** Position, Normale, Texturkoordinate. Keine Vertex-Farben.
 
-## Wie Raylib lädt (geprüft, Raylib-cs 8.1 = raylib 5.5)
+## Wie Raylib lädt (geprüft mit Raylib-cs 8.1; das Spiel meldet beim Start raylib 6.0)
 
 - `LoadModel` legt **ein Mesh je Knoten mit Mesh** an, in der **Reihenfolge der Knoten** in der Datei (Blender schreibt sie alphabetisch).
 - Es **rechnet die Knoten-Verschiebung in die Ecken ein**: Die Ecken liegen danach dort, wo sie im Modell stehen, nicht um den Drehpunkt.
@@ -40,7 +40,7 @@ Wie das Spiel ein Modell der Designer lädt, bewegt und zeichnet (Issue #232, St
 
 ## Wenn es nicht klappt
 
-Fehlt die Datei, ist sie abgeschnitten oder kaputt, fehlt ein Teil oder passt Raylibs Ergebnis nicht zur Beschreibung: eine Warnung ins technische Log (`%LOCALAPPDATA%\SilverAndAsh\logs`), und die Figur wird als Platzhalter gezeichnet. Das Spiel läuft weiter.
+Fehlt die Datei, ist sie abgeschnitten oder kaputt, fehlt ein Teil oder passt Raylibs Ergebnis nicht zur Beschreibung: eine Warnung ins technische Log (`%LOCALAPPDATA%\SilverAndAsh\logs`), und die Figur wird als Platzhalter gezeichnet. Das Spiel läuft weiter. Raylib bekommt die Datei erst, wenn `GlbScene` geprüft hat, dass alle Puffer, Puffer-Ansichten und Zugriffe innerhalb des Binärabschnitts liegen: Auf fehlende Daten stürzt Raylib im nativen Code ab, das kann kein `catch` auffangen.
 
 ## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus)
 
