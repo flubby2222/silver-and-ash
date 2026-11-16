@@ -11,7 +11,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
   - Betrittst du den Bossraum, erscheint oben sein Lebensbalken (1600 Leben).
   - Er geht langsam auf dich zu und **greift an**, jeder Angriff mit deutlicher Ankündigung und einer Antwort:
     - **Hammerschlag** (Keule hoch, roter Kreis am Boden): Eine Schockwelle läuft über den Boden → **springen**. Verfehlt er, steckt die Keule 2 s fest: Er beugt sich vor und nimmt doppelten Schaden.
-    - **Rundumschwung** (Kette wird angedreht): Kette auf Brusthöhe → **Dodge** (geduckt); Springen hilft nicht.
+    - **Rundumschwung** (Kette wird über dem Kopf angedreht, so lang, wie sie reicht): Kette auf Brusthöhe rundherum, kurz als rostiges Band zu sehen → **Dodge** (geduckt); Springen hilft nicht.
     - **Kettenwurf** (Haken glüht rot): Der Haken fliegt dorthin, wo du standest → **zur Seite** oder hinter eine Säule. Trifft er, zieht er dich heran.
     - Nach jedem Angriff ruht er kurz; nie zweimal hintereinander derselbe Angriff.
   - **Phase 2:** Bei halbem Leben brüllt er 1,5 s lang (Kopf in den Nacken, der Boden bebt) und greift solange nicht an. Danach läuft, kündigt an und ruht er 30 % schneller. Jeder Hammerschlag löst dann **4 Steine von der Decke**: Ihr dunkler Schatten wächst 1 s lang am Boden um dich herum, dann schlägt der Stein ein (20 Schaden) → **aus dem Schatten gehen**.
