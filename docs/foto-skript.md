@@ -96,4 +96,4 @@ Danach: Name in den Test `Every_scene_the_issue_asks_for_is_there` aufnehmen ([`
 
 ## Modell-Probe
 
-`model-probe-4m` und `model-probe-10m` zeigen heute den Platzhalter-Ghul. Das Spiel zeichnet das Ziel dieser Szenen über `ModelProbeView()` in `Program.cs`. Sobald Modelle geladen werden können, kommt dort die Ansicht mit dem geladenen Modell hinein – die Szene selbst bleibt gleich.
+`model-probe-4m` und `model-probe-10m` zeigen den Ghul als geladenes Modell (`assets/models/ghoul.glb`, siehe [`modelle.md`](modelle.md)), genau wie im Spiel. Fehlt das Modell, zeigen sie – wie das Spiel – den Platzhalter; die Warnung steht dann im Log.

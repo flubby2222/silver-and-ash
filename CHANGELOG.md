@@ -7,6 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Der Ghul hat Gestalt:** Statt Quadern kriecht jetzt ein ausgemergelter Mensch mit Textur auf allen vieren auf dich zu, weich schattiert im Licht deiner Laterne. Beim Ausholen richtet er sich auf, reißt die Arme hoch und öffnet das Maul weit; er blitzt bei Treffern (rot bei Kopftreffern), zuckt zurück und sackt beim Tod zur Seite
 - **Wandbruch mit Wucht:** Bricht die rissige Wand zum Geheimraum, fliegen Steinbrocken heraus (die meisten von dir weg), poltern zu Boden und versinken; eine Staubwolke steigt auf, und das Bild ruckt kurz
 - **Waffen-Plätze:** Du trägst eine Nahkampfwaffe und bis zu **drei Fernwaffen**. Wechseln mit dem **Mausrad** oder **1 / 2 / 3**; leere Plätze werden übersprungen, ein Wechsel bricht das Nachladen ab, jede Waffe behält ihr Magazin. Unten rechts stehen die Plätze, umrandet in der Farbe ihrer Stufe. Neue Waffen kommen mit den nächsten Updates
 - **Club (Keule, Worn):** neue Nahkampfwaffe, langsamer als die Klinge, aber härter (50 Schaden). Er stößt Ghule und Fledermäuse **3 m zurück**, voll aufgeladen **6 m**; Wände halten sie auf, Gorm bleibt stehen. Zu finden ist er mit dem Beute-System; zum Ausprobieren startet die Debug-Version mit `--give club`

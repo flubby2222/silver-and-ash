@@ -192,7 +192,10 @@ static void RunGame(
         var gameWorld = newWorld(seed ?? Random.Shared.Next(), balance);
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
-        IGhoulView ghoulView = new PlaceholderGhoulView();
+        // Ghouls: the designer's model once it is loaded (after the shader, below), the placeholder until then - and for
+        // good if the model is missing or broken.
+        Func<IGhoulView> newGhoulView = () => new PlaceholderGhoulView();
+        IGhoulView ghoulView = newGhoulView();
         var gormView = new GormView();
         IBatView batView = new PlaceholderBatView();
         var projectileView = new ProjectileView();
@@ -236,7 +239,7 @@ static void RunGame(
             LogRun(gameWorld, log);
             player = gameWorld.Player;
             dummyView = new PlaceholderDummyView();
-            ghoulView = new PlaceholderGhoulView();
+            ghoulView = newGhoulView();
             gormView = new GormView();
             batView = new PlaceholderBatView();
             projectileView = new ProjectileView();
@@ -270,6 +273,16 @@ static void RunGame(
         // Lantern light and fog: a small program for the graphics card (assets/shaders/), for everything in the 3D world.
         using var levelShader = new LevelShader(Path.Combine(AppContext.BaseDirectory, "assets", "shaders"));
         levelShader.Apply(look);
+
+        // The models of the designers (assets/models/, docs/modelle.md). Missing or broken: a warning in the log and
+        // the placeholder - the game goes on.
+        using var ghoulModel = TexturedModel.TryLoad(
+            Path.Combine(AppContext.BaseDirectory, "assets", "models", "ghoul.glb"), GhoulPose.Parts, log);
+        if (ghoulModel is not null)
+        {
+            newGhoulView = () => new ModelGhoulView(ghoulModel, levelShader);
+            ghoulView = newGhoulView();
+        }
 
         // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
         using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, levelShader.Shader);
@@ -467,7 +480,8 @@ static void RunGame(
                 StartFresh(setup.World);
                 if (setup.IsModelProbe)
                 {
-                    ghoulView = ModelProbeView();
+                    // The single target of the model probe: the loaded model, as in the game.
+                    ghoulView = newGhoulView();
                 }
 
                 // One frame per tick: views and banners age exactly as in a game running at 60 frames per second.
@@ -734,10 +748,6 @@ static void RunGame(
         Raylib.CloseWindow();
     }
 }
-
-// The view of the single target in the model probe (--photo model-probe-4m). The placeholder ghoul today; a designer's
-// loaded model goes in here once models can be loaded.
-static IGhoulView ModelProbeView() => new PlaceholderGhoulView();
 
 // Started on a monitor left of the main monitor, Raylib/GLFW put the window far outside every monitor
 // (found while testing v0.3.0). If that happens, move it to the middle of the main monitor.
