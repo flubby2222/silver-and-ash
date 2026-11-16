@@ -212,3 +212,46 @@ Heute zieht die Keule das Auge: hell, groß, warm-braun mit hellen Bändern. Die
 5. **Haken größer:** etwa 40 cm, mit einem hellen, geschliffenen Spitzenrand, damit das rote Aufglühen vor dem Wurf auf einer großen Fläche liegt.
 
 Umsetzen erst, wenn ein Gesicht gewählt ist.
+
+---
+
+# Endfassung: Eisenmaske und schwere Kette (2026-11-16)
+
+**Der Mensch hat die Eisenmaske gewählt.** Skript: [`gorm_final.py`](gorm_final.py), mit `gorm.py` (Körper) und `gorm_koepfe.py` (Kopf) als Bausteinen. Die beiden anderen Köpfe bleiben nur als Bilder auf dem Branch.
+
+**Was geändert wurde:**
+
+1. **Kopf:** die Eisenmaske unverändert (Gitter mit Zähnen, Stachelband, Ring am Kinn). Kopf 264 Dreiecke, Kiefer 60.
+2. **Kette als Waffe:**
+   - Glieder 30 × 19 cm statt 16 × 10 cm, blankes Eisen (158, 160, 170) mit Rost nur in den Vertiefungen; das Hellste an Gorms Körper außer dem Kopf.
+   - Dreimal um den linken Unterarm gewickelt (eigenes Teil `wrap_nx`).
+   - In Ruhe bis zum Boden hängend und ein Stück schleifend.
+   - Beim Schwung bestimmt sie die Silhouette: fünf Meter lang, waagerecht über dem Kopf.
+   - Der Haken ist 1,8-fach.
+3. **Keule:** bleibt, weil sie im Spiel den Hammerschlag trägt (`GormAttack.Hammer`, „Keule steckt fest“), ist aber 38 % dunkler gemalt, ohne helle Eisenbänder.
+
+**Dreiecke:** Datei 2 268; mit hängender Kette etwa 3 300, mit gestrecktem Schwung etwa 5 000 (vereinfachtes Glied vorgeschlagen, siehe README der Übergabe).
+
+## Bilder
+
+Im Bossraum mit den neuen Level-Texturen, Nebel mit Körnung.
+
+| Bild | Was |
+|---|---|
+| `final_4m_ruhe.png`, `final_10m_ruhe.png` | Ruhe |
+| `final_6m_schwung_an.png`, `final_6m_schwung.png` | Ankündigung und Ausführung des Kettenschwungs |
+| `final_6m_haken_an.png` | Ankündigung des Hakens (glüht) |
+| `final_4m_phase2_ruhe.png` | Phase 2 |
+| `final_vergleich_alt_neu_10m.png` | links erste Fassung, rechts Endfassung, aus 10 m, dreifach vergrößert |
+| `final_textur_rumpf.png`, `final_textur_rumpf_phase2.png`, `final_textur_glieder.png` | die Texturen |
+
+## Ist die Kette jetzt die Waffe?
+
+- **Aus 10 m:** Ja. In der alten Fassung war die Kette ein dünner roter Strich in der Faust, das Fass das Einzige, das auffiel. Jetzt liegt die helle Kette im Bogen am Boden, die gewickelte Faust ist ein heller Fleck, und die Keule ist dunkel zurückgetreten.
+- **Beim Schwung:** Die Kette zieht sich als helles Band quer durchs Bild.
+
+## Wo ich unsicher bin
+
+- **Wicklung:** Sie wirkt aus der Nähe eher wie ein Verband, weil die Bänder glatt sind. Quer angedeutete Glieder würden sie als Kette lesen lassen.
+- **Maske aus 10 m:** weiterhin das schwächste Ziel der drei Köpfe; Zähne und Nieten tragen sie.
+- **Nicht jede Haltung geprüft:** Ich habe nur die verlangten Bilder gerendert (sparsam). Haken und Phase 2 habe ich nicht einzeln durchgesehen.

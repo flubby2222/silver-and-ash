@@ -300,3 +300,87 @@ Damit liegt jede Steinlage auf gleicher Höhe ringsum. Das v der Wände mit der 
 | `assets/textures/catacomb_wall.png` | `tools/textures/catacomb.py` | 2026-11-16 |
 | `assets/textures/catacomb_floor.png` | `tools/textures/catacomb.py` | 2026-11-16 |
 | `assets/textures/catacomb_ceiling.png` | `tools/textures/catacomb.py` | 2026-11-16 |
+
+## Gorm, the Chained – `gorm.glb` (Boss)
+
+Ergänzt am 2026-11-16 auf Bitte der Leitung (Endfassung mit der vom Menschen gewählten Eisenmaske). Die Ghul-Dateien sind unverändert.
+
+```
+design/uebergabe/
+  tools/models/gorm.py, gorm_base.py, gorm_heads.py  -> tools/models/
+  assets/models/gorm.glb, gorm_body.png, gorm_body_phase2.png, gorm_limbs.png  -> assets/models/
+```
+
+```bash
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/gorm.py
+```
+
+`gorm.py` ist der Aufruf; `gorm_base.py` hat Körper, Waffen und Posen, `gorm_heads.py` die Köpfe (die Eisenmaske ist gewählt, die beiden anderen Köpfe stehen nur als Bilder auf dem Branch). Nutzt `psx.py` aus demselben Ordner.
+
+**Neue Zeile für `assets/HERKUNFT.md`:**
+
+| Datei | Skript | Datum |
+|---|---|---|
+| `assets/models/gorm.glb`, `gorm_body.png`, `gorm_body_phase2.png`, `gorm_limbs.png` | `tools/models/gorm.py` | 2026-11-16 |
+
+**Größe und Ursprung:** zwischen den Füßen auf dem Boden, Blick nach +z, Höhe 3,1 m (Scheitel), 2 268 Dreiecke in der Datei. Die rechte Hand (+x, wie `GormView`) hält die Keule, die linke (−x) die Kette.
+
+**Texturen** (128 × 128, 32 Farben, Point-Filter, keine Mipmaps), zwei Materialien in der Datei:
+
+| Datei | gehört zu | Inhalt |
+|---|---|---|
+| `gorm_body.png` | `torso`, `head`, `jaw` | Rumpf, Eisenmaske, Halsring, Lendenschurz |
+| `gorm_body_phase2.png` | dieselben Teile | Phase 2: Blutspuren, Blut unter der Maske. Der Code tauscht die Textur dieser drei Teile beim Wechsel in Phase 2 |
+| `gorm_limbs.png` | alle anderen Teile | Arme, Beine, Keule, Eisen, Kette, Haken |
+
+| Teil (Datei, alphabetisch) | Drehpunkt (x, y, z) | hängt an | Dreiecke |
+|---|---|---|---|
+| `torso` (Halsring, Lendenschurz) | 0, 1,15, 0 (Hüfte) | – | 432 |
+| `head` (Eisenmaske) | 0, 2,5, 0,42 (Nacken) | torso | 264 |
+| `jaw` | 0, 2,7, 0,58 | head | 60 |
+| `upper_arm_px` | 0,86, 2,3, 0,26 (Schulter, Keulenseite) | torso | 72 |
+| `upper_arm_nx` | −0,86, 2,22, 0,26 (Kettenseite, 8 cm tiefer) | torso | 72 |
+| `forearm_px` (Handschelle, Faust) | 1,04, 1,46, 0,42 (Ellbogen) | upper_arm_px | 196 |
+| `forearm_nx` | −1,04, 1,38, 0,42 | upper_arm_nx | 196 |
+| `wrap_nx` (Kette dreimal um den Unterarm) | −1,04, 1,38, 0,42 | forearm_nx | 216 |
+| `thigh_px`, `thigh_nx` | ±0,36, 1,12, 0 (Hüftgelenk) | torso | je 72 |
+| `shin_px`, `shin_nx` (mit Fuß) | ±0,44, 0,6, 0,12 (Knie) | thigh | je 120 |
+| `club` | 1,0, 0,56, 0,58 (Mitte der rechten Faust) | forearm_px | 188 |
+| `chain_link` | Mitte des Glieds | – | 64 |
+| `hook` | Öse oben, Spitze nach unten und vorn | – | 124 |
+
+`chain_link` und `hook` sind **keine Körperteile**, sondern Bausteine, die der Code beliebig oft zeichnet.
+
+**Kette im Code:**
+
+- Glieder entlang eines Linienzugs aufreihen, **Abstand 0,19 m**, jedes zweite um 90° um die Kettenrichtung gedreht. Die Glieder sind 0,30 × 0,19 m groß.
+- Am Ende der Haken, **1,8-fach vergrößert**.
+- Ruhe: linke Faust → senkrecht zum Boden → ein Stück am Boden schleifend (etwa 1,1 m nach vorn links).
+- Schwung: von der Faust zum Ziel; die Ankündigung waagerecht über dem Kopf, Länge wie `SwingArea.Reach`.
+- Hakenwurf: Faust → Haken, wie heute.
+- Dazu eine kleine Kette (halbe Gliedgröße) vom Kinnring der Maske zum Halsring. In Phase 1 hängt hinten am Halsring ein abgerissenes Stück; in Phase 2 entfällt es.
+- **Dreiecke:** Hängend etwa 3 300 insgesamt, bei 8 m Reichweite etwa 5 000. Für den Schwung ein vereinfachtes Glied nehmen (zwei Vierecke, 16 Dreiecke) oder jedes zweite Glied weglassen; das entscheidet der Einbau.
+
+Das Glühen des Hakens (Ankündigung des Wurfs) bleibt eine Tönung im Code (Warnfarbe 200, 30, 30, Gefahr). Das Modell selbst hat kein Rot.
+
+**Haltungen** („heben“ um x wie oben; „abspreizen“ um die Längsachse z, positiv = Hand nach außen):
+
+| Haltung | Winkel |
+|---|---|
+| **Ruhe** | `jaw` −6, `forearm_px` 14, `forearm_nx` 10 |
+| **Ankündigung Kettenschwung** | `upper_arm_nx` 160 / abspreizen 25, `forearm_nx` 20, `head` 8, `jaw` −20, `torso` 6, `forearm_px` 14 |
+| **Kettenschwung** | `upper_arm_nx` 15 / 85, `upper_arm_px` −10 / −15, `torso` −6, `jaw` −25, `forearm_px` 14 |
+| **Ankündigung Haken** | `upper_arm_nx` −40 / 45, `forearm_nx` 60, `torso` 4, `head` −4, `jaw` −12, `forearm_px` 14 |
+| **Phase 2 Brüllen** | `torso` 16, `head` 38, `jaw` −45, beide Oberarme 150 / 30, beide Unterarme 20 |
+| **Phase 2 Ruhe** | `torso` −8, `head` −6, `jaw` −22, beide Oberarme 8 / 18, beide Unterarme 24 |
+
+**Nicht gerendert, für den Einbau nötig:**
+
+- **Hammerschlag:** `upper_arm_px` hoch (heben etwa 150, der Platzhalter hebt um 2,6 rad); die Keule folgt als Teil des Unterarms.
+- **Keule steckt fest:** `torso` nach vorn beugen (Kopf tiefer um etwa `StuckBend` 0,8 m), die Keule glüht (Tönung im Code).
+- **Tod:** wie im Platzhalter nach hinten fallen.
+
+**Wichtig für den Einbau:**
+
+- Die Keule bleibt, weil sie den Hammerschlag trägt. Sie ist bewusst dunkler als die Kette, damit die Kette als Waffe ins Auge fällt.
+- Die Maske sitzt weiter vorn als der Kopf des Platzhalters (0,35 bis 0,94 m vor der Mitte). Die Code-Sitzung sollte prüfen, ob die Kopfzone von `BodySizes.Gorm` weit genug nach vorn reicht.

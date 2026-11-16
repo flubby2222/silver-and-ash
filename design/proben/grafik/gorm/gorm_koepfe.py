@@ -313,4 +313,5 @@ def main():
     print("Dreiecke Kopf und Kiefer:", tris)
 
 
-main()
+if __name__ == "__main__":       # auch als Modul nutzbar (gorm_final.py)
+    main()
