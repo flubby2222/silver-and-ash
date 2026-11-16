@@ -268,6 +268,189 @@ Der Ghul ist dagegen sauber, symmetrisch, einfarbig und hat einen großen Kopf m
 
 Dazu kommt mein eigener Fehler: Ich habe auf Lesbarkeit aus 10 m optimiert, also auf große, klare, kontrastreiche Formen, und dabei Bedrohlichkeit nicht geprüft. Die Lesbarkeitsregeln haben den Kopf noch größer und das Gesicht noch einfacher gemacht – genau in Richtung Kindchenschema. Künftig prüfe ich beides: Lesbarkeit aus 10 m **und** Wirkung aus 2 m.
 
+---
+
+# Nachtrag nach den Antworten des Menschen (2026-11-16)
+
+## Neuer Rahmen
+
+Der Mensch hat vier Antworten gegeben:
+
+- **Was am Ghul nicht passte:** Gestalt und Proportionen, zu klotzig und zu wenig Detail, flächige Farben ohne Textur, Gesicht und Ausdruck – alles vier.
+- **Texturen:** Sie sind erlaubt, wenn sie per Skript entstehen.
+- **Detailgrad:** Gewünscht ist „wie echte PS2“. Ein unscharfer Eindruck ist in Ordnung, und wenn PS1-Stil einfacher ist, gern so.
+- **Was der Ghul ist:** ein ausgemergelter, kriechender Mensch.
+
+Er überlegt außerdem, die Sichtweite per Dithering zu begrenzen, dann aber alles im selben Stil.
+
+Die Fragen a bis d der Leitung beantworte ich hier. Probestück 3 (`design/proben/grafik/ghul-2/`) setzt die Empfehlung um.
+
+## a) PS1-Stil und PS2-Stil nebeneinander
+
+| | PS1 (1994–2000) | PS2 (2000–2006) |
+|---|---|---|
+| **Dreiecke je Figur** | 250–750, Hauptfiguren eher oben [Beleg] ([Polycount](https://polycount.com/discussion/226167/)) | 3 000–5 000, bis 10 000 [Beleg] (Abschnitt 1) |
+| **Textur-Speicher** | 1 MB für alles, als Fläche von 1024 × 512 Pixeln mit 16 Bit [Beleg] ([Wikipedia](https://en.wikipedia.org/wiki/PlayStation_technical_specifications), [psdevwiki PS1 GPU](https://psdevwiki.com/ps1/GPU)) | 4 MB für Bild, Tiefe und Texturen [Beleg] |
+| **Texturgröße** | höchstens 256 × 256; üblich 32 × 32 bis 128 × 128 [Beleg] ([SplashEdit-Doku](https://psxsplash.github.io/docs/components/textures), [Polycount](https://polycount.com/discussion/comment/2753204)) | meist 128 × 128 bis 256 × 256 [Beleg] |
+| **Farbtiefe Textur** | 4 Bit (16 Farben) oder 8 Bit (256 Farben) mit Farbtabelle, selten 15 Bit direkt [Beleg] ([Wikipedia](https://en.wikipedia.org/wiki/PlayStation_technical_specifications)) | ebenso überwiegend 4 und 8 Bit [Beleg] |
+| **Filterung** | keine: Texel bleiben harte Quadrate | bilinear und Mipmaps: weich, eher unscharf [Beleg] (Abschnitt 2) |
+| **Farbtiefe Bild** | intern 24 Bit, ausgegeben mit 15 Bit (5 je Kanal) und optional geordnetem Dithering. Daher das typische Körnchenmuster in dunklen Verläufen [Beleg] ([Bitmapped-Doku PS1](https://martink-rsa.github.io/bitmapped/presets/ps1), [Emulation Wiki](https://emulation.gametechwiki.com/index.php/Dithering)) | meist 32 Bit, teils 16 Bit mit Dithering; die Quellen sind uneinig [Beleg] |
+| **Bildauflösung** | meist 320 × 240 [Beleg] ([Bitmapped-Doku PS1](https://martink-rsa.github.io/bitmapped/presets/ps1)) | 512–640 × 448, oft als Halbbilder [Beleg] |
+| **Schattierung** | Flat und Gouraud; Licht fast immer vorab gebacken, weil die PS1 keine Lichtberechnung in Hardware hatte [Beleg] ([Polycount](https://polycount.com/discussion/comment/2798550)) | Flat und Gouraud je Dreieck einstellbar; eingebackenes Licht verbreitet [Beleg] |
+| **Bildfehler** | wackelnde Ecken (gerundete Bildschirmkoordinaten), verzogene Texturen (keine Perspektivkorrektur), Flackern beim Sortieren (kein Tiefenpuffer) [Beleg] ([Pikuma](https://pikuma.com/blog/how-to-make-ps1-graphics), [Hackaday](https://hackaday.com/2026/02/06/why-playstation-graphics-wobble-flicker-and-twitch)) | Treppenkanten, Flimmern durch Halbbilder |
+
+**Ein Zeitzeuge:** Ein ehemaliger Programmierer einer großen PS2-Rollenspielreihe wundert sich öffentlich, dass heutige Entwickler das Verziehen nachbauen. Damals habe man hart daran gearbeitet, es loszuwerden. [Beleg] ([Automaton](https://automaton-media.com/en/news/final-fantasy-x-programmer-doesnt-get-why-devs-want-to-replicate-low-poly-ps1-era-games-we-worked-so-hard-to-avoid-warping-but-now-they-say-its-charming/))
+
+**Heutige Spiele im PS1-Stil:**
+
+- Texturen in 64 × 64 oder 128 × 128 mit begrenzter Palette, Filterung und Mipmaps ausgeschaltet. [Beleg] ([foro3d über ein heutiges Spiel im N64/PS1-Stil](https://foro3d.com/en/2026/mayo/pseudoregalia-como-lograr-estetica-n64ps1-en-unreal-engine-4.html))
+- 64 × 64 gilt als guter Mittelweg zwischen Qualität und Aufwand. [Beleg] ([itch.io-Jam](https://itch.io/jam/32-bit-jam/topic/981913/texture-resolution-polygon-count))
+- Einfach herunterskalierte Bilder sehen dabei nicht richtig aus. [Beleg] ([Unity-Forum](https://discussions.unity.com/t/support-for-low-resolution-pixel-art-textures-and-sprites/342353))
+
+### Empfehlung: PS1-nah, mit zwei Anleihen bei der PS2 [Schluss]
+
+Die Vermutung der Leitung stimmt im Kern. Für reine Skript-Erzeugung ist PS1-nah klar verzeihender:
+
+1. **Kleine Texturen verzeihen.** Eine 64- bis 128-Pixel-Textur ohne Filterung braucht nur grobe, kräftige Formen: Rippen als Streifen, Augenhöhlen als Flecken, Schmutz als Rauschen. Genau das kann ein Skript gut. PS2-Texturen leben von gemalten Feinheiten wie Hautporen, Stoffgewebe und Gesichtsmimik. Die überzeugend per Skript zu erzeugen, ist sehr viel schwerer; sie sehen schnell nach „Rauschfilter“ aus. Davor warnt auch die Literatur zu prozeduralen Texturen. [Beleg] ([GarageFarm](https://garagefarm.net/blog/procedural-texturing-in-3d-power-precision-and-possibility))
+2. **Wenige Dreiecke verzeihen.** Um 1 000 Dreiecke kann man mit Ringen und Lofts im Skript sauber bauen. 5 000 Dreiecke mit glaubhafter Anatomie bräuchten Werkzeuge, die wir nicht haben: Bildhauern, Retopologie.
+3. **Die Ära-Fehler bekommen wir gratis**, wenn wir sie wollen: keine Filterung, 15-Bit-Dithering, niedrige Auflösung. Die PS2-Weichheit (bilinear, Halbbilder, Röhre) müssten wir dagegen nachahmen.
+4. **Stimmigkeit:** Unser Spiel hat schon harte Pixel (854 × 480, hart hochskaliert) und kantige Räume. PS1-nah passt dazu; ein weicher PS2-Ghul in einem harten Pixelraum würde fremd wirken.
+
+**Zwei Anleihen bei der PS2** sind trotzdem sinnvoll:
+
+- **Gouraud-Schattierung** statt Flat auf allen Figuren. Das hatte die PS1 auch schon, und es macht aus Facetten Körper.
+- **Etwas mehr Dreiecke als typische PS1-Figuren**, etwa 800 bis 1 200 für einen normalen Gegner. Das reicht für Finger, Rippenkorb und Gelenkkugeln.
+
+**Wackelnde Ecken und verzogene Texturen** würde ich **nicht** nachbauen. Sie sind die Fehler, die man damals loswerden wollte. Sie stören beim Zielen und lesen sich heute als Zitat, nicht als Stimmung.
+
+**Was ich nicht empfehle:** „Unscharf wie PS2“ über bilineare Filterung. Kleine Skript-Texturen werden dann matschig, und die Pixelkante, die bei uns Stil ist, verschwindet. Der unscharfe Eindruck, den der Mensch zulässt, entsteht besser über das Dithering und die niedrige Auflösung. [Schluss]
+
+## b) Dithering
+
+**Wie es entstand:**
+
+- Hardware mit wenigen Bits je Farbe (PS1: 5 Bit je Kanal) erzeugt in Verläufen sichtbare Stufen. Ein festes 4 × 4-Muster verschiebt die Schwelle von Pixel zu Pixel. So mischt das Auge Zwischentöne, und aus Stufen wird Körnung. [Beleg] ([Emulation Wiki](https://emulation.gametechwiki.com/index.php/Dithering), [Bitmapped](https://martink-rsa.github.io/bitmapped/guides/dithering))
+- Auf Röhrenfernsehern verschwamm das Muster weitgehend; auf heutigen Bildschirmen sieht man es deutlich. [Beleg] ([VOGONS](https://www.vogons.org/viewtopic.php?p=208875))
+
+**Dithering für Transparenz und Übergänge („Fliegengitter-Transparenz“):**
+
+- Statt halbdurchsichtig zu mischen, wird ein Pixel nach einem geordneten Muster (Bayer-Matrix) entweder gezeichnet oder weggelassen.
+- Damit blendet man Objekte an der Sichtgrenze aus oder wechselt zwischen Detailstufen.
+- Das Muster muss an die **Bildschirmposition** gebunden sein, nicht an die Textur, sonst flimmert es.
+- Liegen mehrere „durchsichtige“ Dinge hintereinander, brauchen sie versetzte Muster.
+
+[Beleg] ([DigitalRune-Doku](https://digitalrune.github.io/DigitalRune-Documentation/html/fa431d48-b457-4c70-a590-d44b0840ab1e.htm), [Godot Shaders](https://godotshaders.com/shader/dithering-screen-door-transparency/), [Eurographics](https://diglib.eg.org/bitstreams/1850ae15-9d38-4522-a389-e6cfe8e990ed/download))
+
+**Sichtgrenze per Dithering (im Probestück 3 umgesetzt)** [Schluss]:
+
+- **Wie es funktioniert:** Für jedes Pixel gibt es einen Ausblend-Anteil aus der Entfernung. Liegt er über der Schwelle des 4 × 4-Musters an dieser Bildschirmstelle, fällt das Pixel weg und zeigt den Hintergrund. Die Farbe wird **nicht** mit Nebel gemischt; die Laterne dunkelt weiter ab. Dazu wird die ganze Farbe auf 5 Bit je Kanal mit demselben Muster gerastert.
+- **Die Kurve ist nicht egal.** Mit der Nebelkurve des Spiels (ab 3,25 m) fehlten aus 10 m schon 43 % der Pixel, und die dünnen Glieder des neuen Ghuls zerfielen in Punkte. Für die Bilder lasse ich das Ausblenden deshalb erst ab 9 m beginnen und bei 18,2 m enden. Das ist ein Gestaltungswert, den der Mensch festlegen müsste.
+- **Ehrlicher Nachteil:** Nahe Wände zeigen das Punktmuster deutlich (`spiel_4m_ruhe_dither.png`). Das ist gewollt PS1, aber es ist viel Unruhe im Bild. Abmildern ließe es sich mit einem 8 × 8-Muster oder einem Muster nur im Übergangsbereich.
+
+**Was „alles im selben Stil“ dann heißt** [Schluss]:
+
+- **Ein Muster, eine Auflösung:**
+  - Dasselbe 4 × 4-Muster und dieselbe 15-Bit-Rasterung für alles, was in der 3D-Welt gezeichnet wird: Level, Figuren, Beute, Effekte.
+  - Gerastert wird **nach** Licht und Laterne, also im Shader am Ende, nicht in den Texturen.
+- **Texturen:** Sie bekommen selbst **kein** eingebranntes Dithering, sonst doppelt sich das Muster. Sie haben nur eine begrenzte Palette (16 bis 32 Farben) und keine Filterung.
+- **Modelle:** Gouraud mit Licht je Ecke. Dünne Teile müssen dick genug sein, dass sie das Ausblenden überstehen: Glieder mindestens 2 bis 3 Pixel aus 10 m.
+- **Transparenz:** Rauch, Geister und Blut würden als Fliegengitter gezeichnet statt halbdurchsichtig gemischt.
+- **HUD:**
+  - Ebenfalls in der niedrigen Auflösung gezeichnet, mit derselben Palette-Logik.
+  - Weiche Verläufe wie Lebensbalken oder Abdunklungen werden mit demselben Muster gerastert.
+  - Schrift bleibt scharf und ohne Dither, sonst ist sie nicht lesbar.
+- **Level:** Wände und Böden bekommen ebenfalls kleine Texturen ohne Filterung, Stein in 64 × 64. Heute sind sie einfarbig. Ein texturierter Ghul in einfarbigen Räumen ist **nicht** derselbe Stil. Das ist im Probestück noch so und die größte Lücke.
+- **Auflösung:** 854 × 480 ist für PS1-Stil eher hoch, weil das Muster sehr fein wird. Mit 640 × 360 oder 427 × 240 würde es gröber und „echter“, aber Ziele werden kleiner. Das muss der Mensch entscheiden.
+
+## c) Texturen per Skript
+
+**Verfahren, die in der Praxis genutzt werden:**
+
+- Licht und Umgebungsverdeckung (AO) einbacken, Farben quantisieren (Posterize, begrenzte Palette) und Schatten und Konturen dazumalen. [Beleg] ([80.lv](https://80.lv/articles/breakdown-stylized-clover-material-in-substance-3d-designer), [Ultipixelizer](https://r60d.itch.io/ultipixelizer))
+- Nicht nur ein Rauschen verwenden, sondern mehrere mischen und bewusst Unregelmäßigkeit setzen, sonst entsteht der „Prozedural-Look“. [Beleg] ([GarageFarm](https://garagefarm.net/blog/procedural-texturing-in-3d-power-precision-and-possibility))
+- Blender kann per Skript UVs abwickeln (`smart_project`) und AO in ein Bild backen; dazu braucht es eine UV-Karte und einen Bild-Knoten als Ziel. [Beleg] ([Blender-Handbuch Baking](https://docs.blender.org/manual/en/4.5/render/cycles/baking.html), [Blender Artists](https://blenderartists.org/t/assign-image-to-mesh-uv-in-python/511119)). Der Bake-Aufruf mit fester UV-Ebene gilt als absturzanfällig. [Beleg] ([Blender-Bug T60093](https://developer.blender.org/T60093))
+
+**Was ich im Probestück gemacht habe** [Schluss], weil es mit Skript-Erzeugung am besten kontrollierbar ist:
+
+1. **UVs aus der Bauweise statt automatischer Abwicklung.** Jedes Teil entsteht als Loft aus Ringen. Dann ist die UV-Karte geschenkt: u = rundherum (0 unten am Bauch, 0,5 oben auf dem Rücken), v = entlang des Teils. Jedes Teil bekommt ein festes Rechteck im Atlas; linke und rechte Gliedmaßen teilen sich dasselbe.
+   - **Vorteil:** Der Maler weiß, wo was ist – Rippen sind Streifen in v, die Wirbelsäule ist die Linie u = 0,5, die Augen liegen bei u = 0,5 ± 0,085.
+   - Die Naht liegt jeweils auf der Unterseite (Bauch, Kinn, Hinterkopf), wo man sie kaum sieht.
+2. **Malen in vierfacher Größe** (512 × 512) in numpy, dann auf 128 × 128 verkleinert. Das gibt leicht weiche Übergänge wie bei einer verkleinerten Malerei, statt harter Rechenkanten.
+3. **Bausteine:**
+   - Wertrauschen in zwei Größen für Hautunruhe.
+   - Ein grobes Rauschen mit Schwelle für Flecken.
+   - Ein Verlauf über u für Licht von oben (Unterseite dunkler).
+   - Ein Verlauf über v für dunkle Gelenke.
+   - Weiche Ellipsen für Augenhöhlen, Wangen und Schulterblätter.
+   - Streifenmuster für Rippen, Zähne und Stofffalten.
+   - Fein gestreiftes Rauschen für Haarsträhnen.
+4. **Begrenzte Palette:** K-Means auf 32 Farben. Das gibt die abgestimmten, leicht gestuften Töne einer Textur mit Farbtabelle.
+5. **AO nicht gebacken, sondern gemalt** (Gelenke, Rippenzwischenräume, Bauch). Das ist billiger und genau steuerbar. Echtes AO-Backen mit Cycles wäre der nächste Schritt für Flächen, die sich nicht so klar beschreiben lassen.
+
+**Was sich je Material bewährt** [Schluss]:
+
+| Material | Rezept |
+|---|---|
+| **Haut** | Grundton, zwei Rauschgrößen ±10 %, oliv-braune Flecken über einer Schwelle, Unterseite dunkler, über Knochen heller (Schädel, Gelenke) |
+| **Knochen und Zähne** | heller, wärmerer Ton, dunkle Fugen dazwischen; harte Kanten, kein Rauschen |
+| **Stoff** | Grundton, Faltenstreifen quer zum Fall, Schmutzflecken, zum Saum hin dunkler; ausgefranster Saum über die Geometrie |
+| **Stein** (nicht im Probestück) | Fugenraster mit versetzten Reihen, je Stein leicht anderer Ton, dunkle Fugen, helle obere Kanten |
+| **Holz** (nicht im Probestück) | Maserung als gestauchtes Rauschen entlang einer Richtung, dunkle Brettfugen, Astlöcher als kleine Ellipsen |
+
+## d) Ein ausgemergelter, kriechender Mensch
+
+**Proportionen eines Menschen:**
+
+- Etwa 7 bis 8 Kopfhöhen.
+- Die Spannweite der Arme entspricht der Körpergröße.
+- Hängend reichen die Fingerspitzen bis zur Mitte des Oberschenkels.
+- Die Körpermitte liegt am Schambein.
+
+[Beleg] ([drawingforall](https://www.drawingforall.net/human-body-proportions/), [Wikipedia Proportionskanon](https://www.wikiwand.com/en/articles/Artistic_canons_of_body_proportions))
+
+**Abgemagerte Körper:**
+
+- Bei Auszehrung treten Rippen und Rippenzwischenräume, Schlüsselbeine, Schulterblätter und Wirbelsäule hervor; Gelenke wirken knotig, weil die Muskeln dazwischen fehlen. [Beleg] ([Mind the Graph](https://mindthegraph.com/illustrations/anorexia-cachexia-muscle-loss-male-front-indian))
+- Unheimlich wirkt, was **fast** menschlich ist. Das ist das „Uncanny Valley“ nach Mori (1970). [Beleg] ([Wellcome Collection](https://wellcomecollection.org/stories/why-the-scariest-monsters-look-almost-human), [Game Developer](https://www.gamedeveloper.com/design/designing-the-uncanny))
+- Verstärkt wird das durch leere oder falsche Augen, gespannte Haut, verlängerte Glieder und ungelenke Bewegung. [Beleg] ([Game Developer](https://www.gamedeveloper.com/design/designing-the-uncanny), [KeenGamer](https://www.keengamer.com/articles/features/opinion-pieces/the-art-of-scary-monster-design))
+
+**Umsetzung im Probestück** [Schluss]:
+
+- **Menschliche Grundlage, kleiner Mensch:** Die Teile sind wie bei einem Menschen von etwa 1,5 m bemessen. Der Kopf ist rund 0,22 m hoch, also ein Siebtel. Arme und Beine sind leicht verlängert: Unterarme etwa 0,39 m, Finger bis 0,1 m.
+- **Haltung:**
+  - Auf Händen und Knien, die Zehen aufgestellt.
+  - Der Rücken ist zum Buckel gekrümmt, das Becken liegt tiefer als der Buckel.
+  - Der Hals ist lang und dünn, schräg nach vorn gestreckt.
+  - Der Kopf schaut zum Spieler hoch und ist um 10° zur Seite geneigt.
+  - Der Kiefer hängt schief offen.
+- **Rumpf:**
+  - Breiter Rippenkorb, eingeschnürte Taille, Becken.
+  - Die Wirbelsäule ist ein Grat in der Geometrie *und* eine Knotenreihe in der Textur; die Schulterblätter stehen in Geometrie und Textur vor.
+  - Rippen als Streifen an den Flanken.
+- **Gelenke:** Die Teile sind starr und überlappen. Das Ende des oberen Teils ist dicker (Ellbogen, Knie) und deckt die Fuge.
+- **Hände:** groß, fünf lange, gekrümmte Finger, die Spitzen krallen sich in den Boden, Nägel und Schmutz in der Textur.
+- **Asymmetrie:** Ein Arm greift 5 cm weiter vor; Kopfneigung, schiefer Kiefer, ein Lumpenfetzen hängt tiefer.
+- **Gesicht:**
+  - Schmale, schräge, tiefe Augenhöhlen – geometrisch eingedellt und dunkel gemalt – mit einem winzigen, trüben Augapfel.
+  - Hohle Wangen, statt einer Nase zwei Schlitze.
+  - Die Oberlippe ist weggefault; man sieht unregelmäßige Zähne und dunkles Zahnfleisch.
+  - Strähnige, verfilzte Haarreste: Das ist das deutlichste Zeichen „war einmal ein Mensch“.
+
+### Neue Regeln, ergänzt (ersetzt die Zahlen im Vorschlag oben, wo sie abweichen) [Schluss]
+
+- **Stil:** PS1-nah mit Gouraud.
+  - Normale Gegner 800 bis 1 200 Dreiecke, große Gegner 2 000 bis 4 000.
+  - Requisiten 100 bis 400.
+  - Waffe im Bild bis 1 500.
+- **Texturen:**
+  - Eine je Figur, 128 × 128, höchstens 32 Farben, keine Filterung, keine Mipmaps.
+  - Requisiten und Wandstücke 64 × 64, 16 bis 32 Farben.
+  - Kopf mindestens ein Achtel der Atlasfläche.
+- **UVs:** entstehen beim Bauen (Loft: rundherum und entlang). Nähte auf die Unterseite. Spiegelbildliche Teile teilen sich die Textur.
+- **Licht:** je Ecke aus der Welt-Normale (Gouraud). In der Textur nur gemalte Verdeckung und Licht von oben, nicht die Richtung der Laterne.
+- **Bild:** 15-Bit-Rasterung mit 4 × 4-Muster am Ende des Shaders. Die Sichtgrenze wählt der Mensch zwischen Nebel und Dither; in jedem Fall dieselbe für alles.
+- **Keine** wackelnden Ecken, **keine** verzogenen Texturen.
+
 ## Quellen
 
 Alle Quellen sind in eigenen Worten zusammengefasst. Gesperrte Seiten habe ich nur über die Auszüge der Suchmaschine gelesen; das steht beim jeweiligen Punkt.
@@ -300,3 +483,14 @@ Alle Quellen sind in eigenen Worten zusammengefasst. Gesperrte Seiten habe ich n
 - Gotische Architektur: <https://pressbooks.palomar.edu/arthc1100/chapter/gothic-art-and-architecture/>, <https://mymodernmet.com/gothic-architecture-characteristics>
 - Baukästen heute: <https://assetstore.unity.com/packages/3d/environments/dungeons/multistory-dungeons-33955>
 - Vorberechnetes Licht: <https://help.autodesk.com/cloudhelp/2017/ENU/Maya/files/GUID-2EC022C8-B33C-4CCD-BBBE-73FE1FDE6E51.htm>, <https://sites.google.com/site/swbf2modtoolsdocumentation/bf2_lighting>
+
+**Quellen des Nachtrags:**
+
+- PS1-Technik: <https://en.wikipedia.org/wiki/PlayStation_technical_specifications>, <https://psdevwiki.com/ps1/GPU>, <https://martink-rsa.github.io/bitmapped/presets/ps1>, <https://martink-rsa.github.io/bitmapped/guides/dithering>, <https://psxsplash.github.io/docs/components/textures>
+- Dithering auf Röhren: <https://www.vogons.org/viewtopic.php?p=208875>
+- Rückblick eines PS2-Programmierers: <https://automaton-media.com/en/news/final-fantasy-x-programmer-doesnt-get-why-devs-want-to-replicate-low-poly-ps1-era-games-we-worked-so-hard-to-avoid-warping-but-now-they-say-its-charming/>
+- Heutiger PS1-Stil: <https://foro3d.com/en/2026/mayo/pseudoregalia-como-lograr-estetica-n64ps1-en-unreal-engine-4.html>, <https://itch.io/jam/32-bit-jam/topic/981913/texture-resolution-polygon-count>, <https://discussions.unity.com/t/support-for-low-resolution-pixel-art-textures-and-sprites/342353>
+- Fliegengitter-Transparenz: <https://digitalrune.github.io/DigitalRune-Documentation/html/fa431d48-b457-4c70-a590-d44b0840ab1e.htm>, <https://godotshaders.com/shader/dithering-screen-door-transparency/>, <https://diglib.eg.org/bitstreams/1850ae15-9d38-4522-a389-e6cfe8e990ed/download>
+- Prozedurale Texturen und Backen: <https://80.lv/articles/breakdown-stylized-clover-material-in-substance-3d-designer>, <https://r60d.itch.io/ultipixelizer>, <https://garagefarm.net/blog/procedural-texturing-in-3d-power-precision-and-possibility>, <https://docs.blender.org/manual/en/4.5/render/cycles/baking.html>, <https://blenderartists.org/t/assign-image-to-mesh-uv-in-python/511119>, <https://developer.blender.org/T60093>
+- Proportionen und Auszehrung: <https://www.drawingforall.net/human-body-proportions/>, <https://www.wikiwand.com/en/articles/Artistic_canons_of_body_proportions>, <https://mindthegraph.com/illustrations/anorexia-cachexia-muscle-loss-male-front-indian>
+- Uncanny Valley: <https://wellcomecollection.org/stories/why-the-scariest-monsters-look-almost-human>, <https://www.gamedeveloper.com/design/designing-the-uncanny>, <https://www.keengamer.com/articles/features/opinion-pieces/the-art-of-scary-monster-design>
