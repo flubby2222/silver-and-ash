@@ -8,7 +8,8 @@ namespace SilverAndAsh.Game.Rendering;
 /// What the player sees when hurt: a red flash at the screen's edges and a short jolt of the camera.
 /// At death the picture turns red (the end screen with "YOU DIED" follows). When healed, "+50" rises next to the health bar.
 /// (A level up shows the bonus window instead - <see cref="BoonWindow"/>.) Pure presentation - Core reports
-/// <see cref="PlayerHit"/>, <see cref="PlayerDied"/> and <see cref="PlayerHealed"/>.
+/// <see cref="PlayerHit"/>, <see cref="PlayerDied"/> and <see cref="PlayerHealed"/>. The ground also trembles when
+/// Gorm roars (<see cref="GormRoared"/>) and, a little, when a stone lands (<see cref="StoneLanded"/>).
 /// </summary>
 internal sealed class DamageFeedback
 {
@@ -17,9 +18,12 @@ internal sealed class DamageFeedback
     private const float JoltSeconds = 0.25f;
     private const float DeathFadeSeconds = 1f;
     private const float JoltRadians = 0.035f;
+    private const float QuakeSeconds = 1.5f;
+    private const float QuakeRadians = 0.02f;
 
     private float _flash;
     private float _jolt;
+    private float _quake;
     private float _deathFade;
     private bool _isDead;
     private float _time;
@@ -41,6 +45,12 @@ internal sealed class DamageFeedback
             case PlayerDied:
                 _isDead = true;
                 break;
+            case GormRoared:
+                _quake = 1f;
+                break;
+            case StoneLanded:
+                _quake = MathF.Max(_quake, 0.25f);
+                break;
         }
     }
 
@@ -49,6 +59,7 @@ internal sealed class DamageFeedback
         _time += frameSeconds;
         _flash = MathF.Max(0f, _flash - frameSeconds / FlashSeconds);
         _jolt = MathF.Max(0f, _jolt - frameSeconds / JoltSeconds);
+        _quake = MathF.Max(0f, _quake - frameSeconds / QuakeSeconds);
         _heal = MathF.Max(0f, _heal - frameSeconds / HealSeconds);
         if (_isDead)
         {
@@ -58,10 +69,11 @@ internal sealed class DamageFeedback
 
     /// <summary>
     /// The camera jolt as a small turn (x = to the right, y = up, in radians) - add it to the looking direction.
-    /// A quick shake that dies down.
+    /// A quick shake that dies down, plus the slower trembling of the ground.
     /// </summary>
     public Vector2 Jolt() =>
-        new Vector2(MathF.Sin(_time * 70f), MathF.Cos(_time * 53f) * 0.6f + 0.4f) * JoltRadians * _jolt * _jolt;
+        (new Vector2(MathF.Sin(_time * 70f), MathF.Cos(_time * 53f) * 0.6f + 0.4f) * JoltRadians * _jolt * _jolt)
+        + (new Vector2(MathF.Sin(_time * 41f), MathF.Sin(_time * 57f)) * QuakeRadians * MathF.Sqrt(_quake));
 
     /// <summary>Draws the red edges and the death screen. Call after the 3D picture, before the HUD.</summary>
     public void Draw()

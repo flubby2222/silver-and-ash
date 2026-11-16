@@ -94,7 +94,8 @@ public sealed class GameWorld
         // Gorm (at most one, 'T') comes after the bats; he starts looking towards the player's start.
         _gorm = level.BossPositions
             .Select(position => new Gorm(
-                _dummies.Count + _ghouls.Count + _bats.Count, position, FacingTowards(position, level.PlayerStartPosition), Balance, _random))
+                _dummies.Count + _ghouls.Count + _bats.Count, position, FacingTowards(position, level.PlayerStartPosition), Balance, _random,
+                rooms?.FirstOrDefault(room => room.Kind == RoomKind.Boss)?.FloorCells.ToHashSet()))
             .FirstOrDefault();
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.

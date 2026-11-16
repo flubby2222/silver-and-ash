@@ -118,6 +118,7 @@ public class BalanceFileTests
     [InlineData("""{ "keys": { "roomChance": 1.5 } }""", "keys.roomChance")]
     [InlineData("""{ "keys": { "enemyChance": 3 } }""", "keys.enemyChance")]
     [InlineData("""{ "layout": { "corridorChance": 1.5 } }""", "layout.corridorChance")]
+    [InlineData("""{ "gorm": { "phase2Health": 1.5 } }""", "gorm.phase2Health")]
     [InlineData("""{ "difficulty": { "ghoulShareNear": 1.5 } }""", "difficulty.ghoulShareNear")]
     [InlineData("""{ "difficulty": { "ghoulShareFar": 2 } }""", "difficulty.ghoulShareFar")]
     [InlineData("""{ "difficulty": { "batShareNear": 1.1 } }""", "difficulty.batShareNear")]
@@ -265,6 +266,15 @@ public class BalanceFileTests
         var result = BalanceFile.Parse("""{ "keys": { "roomChance": 0, "enemyChance": 0 } }""");
 
         Assert.Equal(new KeysBalance { RoomChance = 0f, EnemyChance = 0f }, result.Balance.Keys);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void Gorm_s_stones_may_be_switched_off()
+    {
+        var result = BalanceFile.Parse("""{ "gorm": { "stoneCount": 0, "stoneDamage": 0 } }""");
+
+        Assert.Equal(Balance.Default.Gorm with { StoneCount = 0, StoneDamage = 0 }, result.Balance.Gorm);
         Assert.Empty(result.Warnings);
     }
 

@@ -37,7 +37,13 @@ public enum GormState
 
     /// <summary>Resting after an attack - the moment to strike back.</summary>
     Recovering,
+
+    /// <summary>At half health he roars, head thrown back (no attack meanwhile) - then phase 2 begins.</summary>
+    Roaring,
 }
+
+/// <summary>A stone falling from the ceiling: its shadow lies at <paramref name="At"/> on the floor; <paramref name="Progress"/> runs from 0 (just loose) to 1 (it lands).</summary>
+public readonly record struct FallingStone(Vector3 At, float Progress);
 
 /// <summary>
 /// Gorm, the Chained: the troll, boss of level 0 (decision record 0007). 3.2 m tall, slow, much health. He sleeps in
@@ -45,7 +51,9 @@ public enum GormState
 /// chain swing (50/50), farther away the chain throw - never the same attack twice in a row, and after every attack
 /// he rests a moment. Every attack is announced; each has its one answer (jump, duck in a dodge, step aside). A hammer
 /// blow that hits nobody gets his club stuck: he bends forward (head lower) and takes double damage. His head is a
-/// weak spot (<see cref="HitZone.BossHead"/>). When he dies, his body stays where it fell.
+/// weak spot (<see cref="HitZone.BossHead"/>). At half health he roars once and phase 2 begins: walking, warnings
+/// and pauses get faster, and every hammer blow shakes stones from the ceiling - each announced by its shadow on the
+/// floor. When he dies, his body stays where it fell.
 /// </summary>
 public sealed class Gorm : ITarget
 {
@@ -77,8 +85,17 @@ public sealed class Gorm : ITarget
     private Vector3 _hookDirection;
     private float _hookTravelled;
 
-    /// <summary>Creates Gorm at <paramref name="position"/> (centre of his feet), looking along <paramref name="facing"/>.</summary>
-    public Gorm(int id, Vector3 position, Vector3? facing = null, Balance? balance = null, Random? random = null)
+    private readonly IReadOnlySet<(int X, int Z)>? _arena;
+    private readonly int _stoneTicks;
+    private readonly List<(Vector3 At, int TicksLeft)> _stones = [];
+
+    /// <summary>
+    /// Creates Gorm at <paramref name="position"/> (centre of his feet), looking along <paramref name="facing"/>.
+    /// Stones fall only on the cells of <paramref name="arena"/> (his boss room) - without one, on any open cell.
+    /// </summary>
+    public Gorm(
+        int id, Vector3 position, Vector3? facing = null, Balance? balance = null, Random? random = null,
+        IReadOnlySet<(int X, int Z)>? arena = null)
     {
         Id = id;
         Position = position;
@@ -88,9 +105,21 @@ public sealed class Gorm : ITarget
         _gorm = balance.Gorm;
         _gravity = balance.Player.Gravity;
         _repathTicks = SimulationClock.SecondsToTicks(_gorm.RepathTime);
+        _stoneTicks = Math.Max(1, SimulationClock.SecondsToTicks(_gorm.StoneWarning));
         _random = random ?? new Random(id);
+        _arena = arena;
         Health = _gorm.MaxHealth;
     }
+
+    /// <summary>True once he has fallen to half health and roared: faster, and his hammer brings down stones.</summary>
+    public bool IsInPhase2 { get; private set; }
+
+    /// <summary>How far round its spot a stone hits (metres) - for the size of its shadow.</summary>
+    public float StoneReach => _gorm.StoneRadius;
+
+    /// <summary>The stones falling right now - their shadows on the floor.</summary>
+    public IEnumerable<FallingStone> Stones =>
+        _stones.Select(stone => new FallingStone(stone.At, 1f - ((float)stone.TicksLeft / _stoneTicks)));
 
     public int Id { get; }
 
@@ -172,7 +201,20 @@ public sealed class Gorm : ITarget
             Velocity = Vector3.Zero;
             Shockwave = null;
             Hook = null;
+            _stones.Clear();
             events.Add(new GormDied(Id));
+            return;
+        }
+
+        // Half his health gone: he breaks off whatever he is doing and roars - once.
+        if (!IsInPhase2 && Health <= MaxHealth * _gorm.Phase2Health)
+        {
+            IsInPhase2 = true;
+            Shockwave = null;
+            Hook = null;
+            Attack = null;
+            Begin(GormState.Roaring, _gorm.RoarTime);
+            events.Add(new GormRoared(Id));
         }
     }
 
@@ -193,6 +235,7 @@ public sealed class Gorm : ITarget
 
         // Online co-op rule 1: the nearest of THE living players.
         var target = players.Where(player => !player.IsDead).MinBy(player => FlatDistance(Position, player.Position));
+        DropStones(players, events);
         switch (State)
         {
             case GormState.Walking:
@@ -208,7 +251,7 @@ public sealed class Gorm : ITarget
                 Stand(level, obstacles);
                 if (--_stateTicksLeft == 0)
                 {
-                    Release(players, events);
+                    Release(level, target, players, events);
                 }
 
                 break;
@@ -234,6 +277,7 @@ public sealed class Gorm : ITarget
                 break;
 
             case GormState.Recovering:
+            case GormState.Roaring:
                 Stand(level, obstacles);
                 if (--_stateTicksLeft == 0)
                 {
@@ -242,6 +286,58 @@ public sealed class Gorm : ITarget
                 }
 
                 break;
+        }
+    }
+
+    // In phase 2 walking, warnings and pauses take less time.
+    private float Quicker(float seconds) => IsInPhase2 ? seconds / _gorm.Phase2SpeedUp : seconds;
+
+    // Each stone counts down its shadow, then lands: whoever stands within its radius is hit.
+    private void DropStones(IReadOnlyList<Player> players, ICollection<GameEvent> events)
+    {
+        for (var index = _stones.Count - 1; index >= 0; index--)
+        {
+            var (at, ticksLeft) = _stones[index];
+            if (--ticksLeft > 0)
+            {
+                _stones[index] = (at, ticksLeft);
+                continue;
+            }
+
+            _stones.RemoveAt(index);
+            events.Add(new StoneLanded(at));
+            foreach (var player in players.Where(player => !player.IsDead && FlatDistance(at, player.Position) <= _gorm.StoneRadius))
+            {
+                player.TakeDamage(_gorm.StoneDamage, events);
+                events.Add(new StoneHit(player.Id));
+            }
+        }
+    }
+
+    // Phase 2: the hammer blow shakes stones loose, each at a random spot of open floor in his room near the player.
+    private void LoosenStones(Level level, Player target, ICollection<GameEvent> events)
+    {
+        const int Tries = 30;
+        for (var stone = 0; stone < _gorm.StoneCount; stone++)
+        {
+            for (var attempt = 0; attempt < Tries; attempt++)
+            {
+                var angle = _random.NextSingle() * 2f * MathF.PI;
+                var distance = _gorm.StoneSpread * MathF.Sqrt(_random.NextSingle());
+                var x = target.Position.X + (MathF.Cos(angle) * distance);
+                var z = target.Position.Z + (MathF.Sin(angle) * distance);
+                // Outside the level counts as wall (see Level's indexer).
+                var cell = Level.ToGrid(x, z);
+                if (level[cell.X, cell.Z].IsSolid || _arena?.Contains(cell) == false)
+                {
+                    continue;
+                }
+
+                var at = new Vector3(x, level[cell.X, cell.Z].FloorHeight, z);
+                _stones.Add((at, _stoneTicks));
+                events.Add(new StoneFalling(at));
+                break;
+            }
         }
     }
 
@@ -261,9 +357,9 @@ public sealed class Gorm : ITarget
             FaceTowards(target.Position);
             Begin(GormState.WindingUp, chosen switch
             {
-                GormAttack.Hammer => _gorm.HammerWindUp,
-                GormAttack.Swing => _gorm.SwingWindUp,
-                _ => _gorm.ThrowWindUp,
+                GormAttack.Hammer => Quicker(_gorm.HammerWindUp),
+                GormAttack.Swing => Quicker(_gorm.SwingWindUp),
+                _ => Quicker(_gorm.ThrowWindUp),
             });
             Attack = chosen;
             _lastAttack = chosen;
@@ -287,7 +383,7 @@ public sealed class Gorm : ITarget
         }
 
         FaceTowards(point);
-        Move(level, Facing * _gorm.Speed, obstacles);
+        Move(level, Facing * (IsInPhase2 ? _gorm.Speed * _gorm.Phase2SpeedUp : _gorm.Speed), obstacles);
     }
 
     // Close up hammer or chain swing (50/50), farther away the throw - never the same twice in a row.
@@ -304,7 +400,7 @@ public sealed class Gorm : ITarget
     }
 
     // The end of the wind-up: the blow, the swing or the throw.
-    private void Release(IReadOnlyList<Player> players, ICollection<GameEvent> events)
+    private void Release(Level level, Player? target, IReadOnlyList<Player> players, ICollection<GameEvent> events)
     {
         switch (Attack)
         {
@@ -314,6 +410,11 @@ public sealed class Gorm : ITarget
                 _waveHit = false;
                 State = GormState.Slamming;
                 events.Add(new GormSlammed(Id));
+                if (IsInPhase2 && target is not null)
+                {
+                    LoosenStones(level, target, events);
+                }
+
                 break;
 
             case GormAttack.Swing:
@@ -424,7 +525,7 @@ public sealed class Gorm : ITarget
 
     private void Rest()
     {
-        Begin(GormState.Recovering, _gorm.PauseTime);
+        Begin(GormState.Recovering, Quicker(_gorm.PauseTime));
     }
 
     private void Begin(GormState state, float seconds)

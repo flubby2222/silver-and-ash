@@ -160,6 +160,18 @@ public sealed record ClubStuck(int GormId) : GameEvent;
 /// <summary>Gorm pulled his club free again.</summary>
 public sealed record ClubFreed(int GormId) : GameEvent;
 
+/// <summary>Gorm fell to half his health: he roars (head back, the ground trembles) - phase 2 begins.</summary>
+public sealed record GormRoared(int GormId) : GameEvent;
+
+/// <summary>A stone comes loose from the ceiling: its shadow appears at <paramref name="At"/> on the floor.</summary>
+public sealed record StoneFalling(Vector3 At) : GameEvent;
+
+/// <summary>The stone struck the floor at <paramref name="At"/>.</summary>
+public sealed record StoneLanded(Vector3 At) : GameEvent;
+
+/// <summary>A falling stone hit player <paramref name="PlayerId"/>.</summary>
+public sealed record StoneHit(int PlayerId) : GameEvent;
+
 /// <summary>Gorm <paramref name="GormId"/> is dead.</summary>
 public sealed record GormDied(int GormId) : GameEvent;
 
