@@ -5,6 +5,7 @@ using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
+using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 using SilverAndAsh.Game.Input;
@@ -49,6 +50,7 @@ using (log)
     Func<int, Balance, GameWorld>? newWorld = null;
     Func<GameWorld, GameWorld>? nextWorld = null;
     int? seed = null;
+    PhotoRequest? photos = null;
     try
     {
         var options = LaunchOptions.Parse(args);
@@ -81,6 +83,34 @@ using (log)
             nextWorld = world => WithGivenWeapons(plainNext(world), give);
             log?.Info($"Every run starts with: {string.Join(", ", give)}.");
         }
+
+        // Test option: --photo <scene> takes fixed pictures for testers and designers and quits (issue #224,
+        // docs/foto-skript.md). Only in the debug version, like --give.
+        if (options.Photo is { } photo)
+        {
+            if (photo == LaunchOptions.ListPhotos)
+            {
+                foreach (var scene in PhotoScenes.All)
+                {
+                    Console.WriteLine($"{scene.Name,-16} {scene.Description}");
+                }
+
+                newWorld = null;
+            }
+            else
+            {
+                var folder = Path.GetFullPath(options.PhotoFolder ?? Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "photos"));
+                var scenes = photo == LaunchOptions.AllPhotos ? PhotoScenes.All : [PhotoScenes.Find(photo)!];
+                photos = new PhotoRequest(scenes, folder, RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")));
+                log?.Info($"Photo mode: {scenes.Count} scenes into '{folder}'.");
+            }
+        }
+#else
+        if (options.Photo is not null)
+        {
+            throw new ArgumentException("'--photo' works only in the debug version (dotnet run).");
+        }
 #endif
     }
     catch (Exception exception) when (exception is ArgumentException or LevelFormatException or IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -88,6 +118,9 @@ using (log)
         log?.Error("Could not load the level.", exception);
         Console.Error.WriteLine($"Could not load the level: {exception.Message}");
         Environment.ExitCode = 1;
+
+        // No game after a failed start - also when the level was already loaded (e.g. '--photo' in the release version).
+        newWorld = null;
     }
 
     if (newWorld is not null && nextWorld is not null)
@@ -95,7 +128,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log);
+            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos);
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -109,7 +142,8 @@ using (log)
 
 // newWorld builds a world from a seed and balancing values; nextWorld the one after a run ended (new layout on level 0).
 static void RunGame(
-    Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log)
+    Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
+    PhotoRequest? photos)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted.
     Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
@@ -221,6 +255,221 @@ static void RunGame(
         // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
         using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, levelShader.Shader);
         var renderedLevel = gameWorld.LevelAsBuilt;
+
+        // Events must be read after EVERY tick - the next tick clears them.
+        void ReadEvents()
+        {
+            foreach (var gameEvent in gameWorld.Events)
+            {
+                dummyView.OnEvent(gameEvent, player.Position);
+                ghoulView.OnEvent(gameEvent);
+                gormView.OnEvent(gameEvent);
+                batView.OnEvent(gameEvent);
+                projectileView.OnEvent(gameEvent);
+                impactMarks.OnEvent(gameEvent);
+                wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position);
+                weaponView.OnEvent(gameEvent);
+                damageFeedback.OnEvent(gameEvent);
+                if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
+                {
+                    boonOpen = false;
+                }
+            }
+        }
+
+        void UpdateViews(float frameSeconds)
+        {
+            dummyView.Update(frameSeconds);
+            ghoulView.Update(frameSeconds);
+            batView.Update(frameSeconds);
+            projectileView.Update(frameSeconds);
+            pickupView.Update(frameSeconds);
+            impactMarks.Update(frameSeconds);
+            wallBreakView.Update(frameSeconds);
+            weaponView.Update(frameSeconds, player);
+            damageFeedback.Update(frameSeconds);
+        }
+
+        // 3a. The 3D world goes into the small low-resolution picture, blended between the last two ticks by alpha.
+        void DrawWorld(float alpha, float frameSeconds)
+        {
+            var eye = player.InterpolatedEyePosition(alpha);
+
+            // Looking direction, tilted down a little right after landing (the "nod"), jolted when hit.
+            var forward = player.View.ForwardTiltedDown(player.InterpolatedViewTilt(alpha));
+            var jolt = damageFeedback.Jolt();
+            forward += player.View.FlatRight * jolt.X + Vector3.UnitY * jolt.Y;
+            var camera = new Camera3D
+            {
+                Position = eye,
+                Target = eye + forward,
+                Up = Vector3.UnitY,
+                FovY = LookSettings.FieldOfViewDegrees,
+                Projection = CameraProjection.Perspective,
+            };
+
+            levelShader.SetCameraPosition(eye);
+            picture.BeginDrawing();
+            Raylib.ClearBackground(LookSettings.BackgroundColor);
+            Raylib.BeginMode3D(camera);
+            if (!ReferenceEquals(renderedLevel, gameWorld.LevelAsBuilt))
+            {
+                levelRenderer.Rebuild(gameWorld.LevelAsBuilt);
+                renderedLevel = gameWorld.LevelAsBuilt;
+            }
+
+            levelRenderer.Draw();
+            levelShader.BeginFigures();
+            DoorView.Draw(gameWorld.Doors, seconds);
+            ChestView.Draw(gameWorld.Chests, seconds, camera.Position);
+            StairsView.Draw(gameWorld.Stairs, seconds);
+            foreach (var dummy in gameWorld.Dummies)
+            {
+                dummyView.Draw(dummy);
+            }
+
+            foreach (var ghoul in gameWorld.Ghouls)
+            {
+                ghoulView.Draw(ghoul);
+            }
+
+            if (gameWorld.Gorm is { } gorm)
+            {
+                gormView.Draw(gorm, frameSeconds);
+                gormView.DrawEffects(gorm);
+            }
+
+            foreach (var bat in gameWorld.Bats)
+            {
+                batView.Draw(bat, eye);
+            }
+
+            projectileView.Draw(gameWorld.Projectiles, alpha);
+            pickupView.Draw(gameWorld.Pickups, alpha);
+            pickupView.DrawLoot(gameWorld.Loot, alpha);
+            pickupView.DrawWeapons(gameWorld.WeaponDrops, alpha);
+
+            impactMarks.Draw();
+            wallBreakView.Draw();
+
+            // Last: the weapons in the hands, in front of everything else.
+            weaponView.Draw(camera.Position, camera.Target - camera.Position);
+
+            levelShader.EndFigures();
+            Raylib.EndMode3D();
+            picture.EndDrawing();
+        }
+
+        // 3b. The small picture scaled up onto the screen, the HUD on top at full resolution (sharp). Between
+        // Raylib.BeginDrawing and EndDrawing.
+        // debugInfo: the frame rate, and in the debug version the test display - not in photos.
+        void DrawScreen(float frameSeconds, bool frozen, bool showMap, bool mapKeptOpen, bool debugInfo)
+        {
+            Raylib.ClearBackground(LookSettings.BarColor);
+            picture.DrawToScreen();
+            if (endSummary is null)
+            {
+                damageFeedback.Draw();
+            }
+
+            DrawHud(displayVersion, fps: debugInfo);
+            DrawStaminaBar(player);
+            CombatHud.Draw(player);
+            BossBar.Draw(gameWorld);
+            if (!boonOpen && !player.IsInventoryOpen && !frozen)
+            {
+                InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);
+            }
+
+            levelNameSeconds = MathF.Max(0f, levelNameSeconds - frameSeconds);
+            if (!frozen)
+            {
+                LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
+            }
+
+            if (!frozen && !boonOpen && !player.IsInventoryOpen && showMap)
+            {
+                MapView.Draw(gameWorld, player, mapKeptOpen, (float)Raylib.GetTime());
+            }
+
+            if (player.IsInventoryOpen && !frozen)
+            {
+                InventoryWindow.Draw(player);
+            }
+            else if (boonOpen && !frozen)
+            {
+                BoonWindow.Draw(player, gameWorld.Balance.Boons);
+            }
+            else if (!frozen)
+            {
+                BoonWindow.DrawHint(player.PendingBoons, seconds);
+            }
+
+            if (menuOpen)
+            {
+                EscMenu.Draw(escMenu, settings);
+            }
+
+            if (endSummary is not null)
+            {
+                EndScreen.Draw(endMenu, endSummary);
+            }
+#if DEBUG
+            if (debugInfo)
+            {
+                DrawDebugInfo(player);
+                if (reloadedNoticeSeconds > 0f)
+                {
+                    Raylib.DrawText("Balancing reloaded", 20, 160, 20, new Color(230, 190, 90, 255));
+                }
+            }
+#endif
+        }
+
+        // Photo mode (--photo, issue #224): every scene is built in Core, ticked like the game ticks, drawn with the
+        // same code as above and saved twice - the small picture and the whole window with HUD. Then the game ends.
+        if (photos is not null)
+        {
+            var studio = new PhotoStudio(photos.Templates, balance);
+            Directory.CreateDirectory(photos.Folder);
+            foreach (var scene in photos.Scenes)
+            {
+                var setup = scene.Build(studio);
+                StartFresh(setup.World);
+                if (setup.IsModelProbe)
+                {
+                    ghoulView = ModelProbeView();
+                }
+
+                // One frame per tick: views and banners age exactly as in a game running at 60 frames per second.
+                var ticks = setup.Run(afterTick: () =>
+                {
+                    ReadEvents();
+                    UpdateViews(SimulationClock.SecondsPerTick);
+                    seconds += SimulationClock.SecondsPerTick;
+                    levelNameSeconds = MathF.Max(0f, levelNameSeconds - SimulationClock.SecondsPerTick);
+                });
+
+                // The cursor in the corner, so no box of the inventory is drawn as "under the mouse".
+                Raylib.SetMousePosition(0, 0);
+                DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
+                Raylib.BeginDrawing();
+                DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
+                Rlgl.DrawRenderBatchActive();
+                var screenPath = Path.Combine(photos.Folder, $"{scene.Name}-screen.png");
+                var screen = Raylib.LoadImageFromScreen();
+                Raylib.ExportImage(screen, screenPath);
+                Raylib.UnloadImage(screen);
+                Raylib.EndDrawing();
+
+                var picturePath = Path.Combine(photos.Folder, $"{scene.Name}.png");
+                picture.SaveAs(picturePath);
+                log?.Info($"Photo '{scene.Name}' after {ticks} ticks: {picturePath}, {screenPath}");
+                Console.WriteLine($"{scene.Name}: {picturePath} ({ticks} ticks)");
+            }
+
+            return;
+        }
 
         // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.
         while (!Raylib.WindowShouldClose() && !quit)
@@ -384,24 +633,7 @@ static void RunGame(
                 interactPressed = false;
                 slotChosen = null;
                 wheelSteps = 0;
-
-                // Events must be read after EVERY tick - the next tick clears them.
-                foreach (var gameEvent in gameWorld.Events)
-                {
-                    dummyView.OnEvent(gameEvent, player.Position);
-                    ghoulView.OnEvent(gameEvent);
-                    gormView.OnEvent(gameEvent);
-                    batView.OnEvent(gameEvent);
-                    projectileView.OnEvent(gameEvent);
-                    impactMarks.OnEvent(gameEvent);
-                    wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position);
-                    weaponView.OnEvent(gameEvent);
-                    damageFeedback.OnEvent(gameEvent);
-                    if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
-                    {
-                        boonOpen = false;
-                    }
-                }
+                ReadEvents();
             }
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
@@ -435,150 +667,22 @@ static void RunGame(
             reloadedNoticeSeconds = MathF.Max(0f, reloadedNoticeSeconds - Raylib.GetFrameTime());
 #endif
 
-            dummyView.Update(Raylib.GetFrameTime());
-            ghoulView.Update(Raylib.GetFrameTime());
-            batView.Update(Raylib.GetFrameTime());
-            projectileView.Update(Raylib.GetFrameTime());
-            pickupView.Update(Raylib.GetFrameTime());
-            impactMarks.Update(Raylib.GetFrameTime());
-            wallBreakView.Update(Raylib.GetFrameTime());
-            weaponView.Update(Raylib.GetFrameTime(), player);
-            damageFeedback.Update(Raylib.GetFrameTime());
+            UpdateViews(Raylib.GetFrameTime());
 
             // 3. Rendering: draw the current state, blended between the last two ticks (no stutter
             //    on monitors faster than 60 Hz). No game rules in here.
-            var eye = player.InterpolatedEyePosition(accumulator.Alpha);
+            DrawWorld(accumulator.Alpha, Raylib.GetFrameTime());
 
-            // Looking direction, tilted down a little right after landing (the "nod"), jolted when hit.
-            var forward = player.View.ForwardTiltedDown(player.InterpolatedViewTilt(accumulator.Alpha));
-            var jolt = damageFeedback.Jolt();
-            forward += player.View.FlatRight * jolt.X + Vector3.UnitY * jolt.Y;
-            var camera = new Camera3D
-            {
-                Position = eye,
-                Target = eye + forward,
-                Up = Vector3.UnitY,
-                FovY = LookSettings.FieldOfViewDegrees,
-                Projection = CameraProjection.Perspective,
-            };
-
-            // 3a. The 3D world goes into the small low-resolution picture ...
-            levelShader.SetCameraPosition(eye);
-            picture.BeginDrawing();
-            Raylib.ClearBackground(LookSettings.BackgroundColor);
-            Raylib.BeginMode3D(camera);
-            if (!ReferenceEquals(renderedLevel, gameWorld.LevelAsBuilt))
-            {
-                levelRenderer.Rebuild(gameWorld.LevelAsBuilt);
-                renderedLevel = gameWorld.LevelAsBuilt;
-            }
-
-            levelRenderer.Draw();
-            levelShader.BeginFigures();
-            DoorView.Draw(gameWorld.Doors, seconds);
-            ChestView.Draw(gameWorld.Chests, seconds, camera.Position);
-            StairsView.Draw(gameWorld.Stairs, seconds);
-            foreach (var dummy in gameWorld.Dummies)
-            {
-                dummyView.Draw(dummy);
-            }
-
-            foreach (var ghoul in gameWorld.Ghouls)
-            {
-                ghoulView.Draw(ghoul);
-            }
-
-            if (gameWorld.Gorm is { } gorm)
-            {
-                gormView.Draw(gorm, Raylib.GetFrameTime());
-                gormView.DrawEffects(gorm);
-            }
-
-            foreach (var bat in gameWorld.Bats)
-            {
-                batView.Draw(bat, eye);
-            }
-
-            projectileView.Draw(gameWorld.Projectiles, accumulator.Alpha);
-            pickupView.Draw(gameWorld.Pickups, accumulator.Alpha);
-            pickupView.DrawLoot(gameWorld.Loot, accumulator.Alpha);
-            pickupView.DrawWeapons(gameWorld.WeaponDrops, accumulator.Alpha);
-
-            impactMarks.Draw();
-            wallBreakView.Draw();
-
-            // Last: the weapons in the hands, in front of everything else.
-            weaponView.Draw(camera.Position, camera.Target - camera.Position);
-
-            levelShader.EndFigures();
-            Raylib.EndMode3D();
-            picture.EndDrawing();
-
-            // 3b. ... which is scaled up onto the screen. The HUD is drawn afterwards at full resolution (sharp).
-            Raylib.BeginDrawing();
-            Raylib.ClearBackground(LookSettings.BarColor);
-            picture.DrawToScreen();
-            if (endSummary is null)
-            {
-                damageFeedback.Draw();
-            }
-
-            DrawHud(displayVersion);
-            DrawStaminaBar(player);
-            CombatHud.Draw(player);
-            BossBar.Draw(gameWorld);
-            if (!boonOpen && !player.IsInventoryOpen && !frozen)
-            {
-                InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);
-            }
-
-            levelNameSeconds = MathF.Max(0f, levelNameSeconds - Raylib.GetFrameTime());
-            if (!frozen)
-            {
-                LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
-            }
-
-            // The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
+            // 3b. ... which is scaled up onto the screen, the HUD on top. The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
             // (no pause: online co-op).
             if (!frozen && !boonOpen && !player.IsInventoryOpen && Raylib.IsKeyPressed(KeyboardKey.M))
             {
                 mapKeptOpen = !mapKeptOpen;
             }
 
-            if (!frozen && !boonOpen && !player.IsInventoryOpen && (mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab)))
-            {
-                MapView.Draw(gameWorld, player, mapKeptOpen, (float)Raylib.GetTime());
-            }
-
-            if (player.IsInventoryOpen && !frozen)
-            {
-                InventoryWindow.Draw(player);
-            }
-            else if (boonOpen && !frozen)
-            {
-                BoonWindow.Draw(player, gameWorld.Balance.Boons);
-            }
-            else if (!frozen)
-            {
-                BoonWindow.DrawHint(player.PendingBoons, seconds);
-            }
-
-            if (menuOpen)
-            {
-                EscMenu.Draw(escMenu, settings);
-            }
-
-            if (endSummary is not null)
-            {
-                EndScreen.Draw(endMenu, endSummary);
-            }
-#if DEBUG
-            DrawDebugInfo(player);
-            if (reloadedNoticeSeconds > 0f)
-            {
-                Raylib.DrawText("Balancing reloaded", 20, 160, 20, new Color(230, 190, 90, 255));
-            }
-#endif
+            Raylib.BeginDrawing();
+            DrawScreen(
+                Raylib.GetFrameTime(), frozen, showMap: mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab), mapKeptOpen, debugInfo: true);
             Raylib.EndDrawing();
         }
     }
@@ -587,6 +691,10 @@ static void RunGame(
         Raylib.CloseWindow();
     }
 }
+
+// The view of the single target in the model probe (--photo model-probe-4m). The placeholder ghoul today; a designer's
+// loaded model goes in here once models can be loaded.
+static IGhoulView ModelProbeView() => new PlaceholderGhoulView();
 
 // Started on a monitor left of the main monitor, Raylib/GLFW put the window far outside every monitor
 // (found while testing v0.3.0). If that happens, move it to the middle of the main monitor.
@@ -616,14 +724,17 @@ static void BringWindowOnScreen(FileLog? log)
 }
 
 // Texts on top of the 3D world, in full window resolution - always sharp, whatever the window size.
-static void DrawHud(string displayVersion)
+static void DrawHud(string displayVersion, bool fps)
 {
     var screenWidth = Raylib.GetScreenWidth();
     var screenHeight = Raylib.GetScreenHeight();
     var textColor = new Color(200, 200, 210, 255);
 
     Raylib.DrawText("Silver & Ash", 20, 20, 30, textColor);
-    Raylib.DrawFPS(20, screenHeight - 30);
+    if (fps)
+    {
+        Raylib.DrawFPS(20, screenHeight - 30);
+    }
 
     var versionText = $"v{displayVersion}";
     var versionWidth = Raylib.MeasureText(versionText, 20);
@@ -745,3 +856,6 @@ static string CooldownText(Cooldown cooldown) =>
         ? "ready"
         : string.Create(CultureInfo.InvariantCulture, $"{cooldown.RemainingSeconds:0.00} s");
 #endif
+
+/// <summary>What the photo mode (--photo) is to take: these scenes, saved into this folder, built from these room templates.</summary>
+internal sealed record PhotoRequest(IReadOnlyList<PhotoScene> Scenes, string Folder, IReadOnlyList<RoomTemplate> Templates);

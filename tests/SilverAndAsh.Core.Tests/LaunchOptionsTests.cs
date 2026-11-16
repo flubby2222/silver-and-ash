@@ -100,6 +100,65 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public void Without_photo_the_game_is_played()
+    {
+        var options = LaunchOptions.Parse([]);
+
+        Assert.Null(options.Photo);
+        Assert.Null(options.PhotoFolder);
+    }
+
+    [Theory]
+    [InlineData("ghoul-4m")]
+    [InlineData("all")]
+    [InlineData("list")]
+    public void Photo_takes_a_scene_all_or_list(string photo)
+    {
+        Assert.Equal(photo, LaunchOptions.Parse(["--photo", photo]).Photo);
+    }
+
+    [Fact]
+    public void Photo_with_out_names_the_folder()
+    {
+        var options = LaunchOptions.Parse(["--photo", "all", "--out", "some folder"]);
+
+        Assert.Equal("some folder", options.PhotoFolder);
+    }
+
+    [Fact]
+    public void An_unknown_photo_scene_is_rejected_with_the_known_ones()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo", "ghoul-5m"]));
+
+        Assert.Contains("ghoul-5m", error.Message);
+        Assert.Contains("ghoul-4m", error.Message);
+    }
+
+    [Fact]
+    public void Photo_without_a_scene_is_rejected()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo"]));
+
+        Assert.Contains("needs a scene", error.Message);
+    }
+
+    [Theory]
+    [InlineData]
+    [InlineData("  ")]
+    public void Out_without_a_folder_is_rejected(params string[] folder)
+    {
+        Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo", "all", "--out", .. folder]));
+    }
+
+    [Fact]
+    public void Out_without_photo_is_rejected()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--out", "photos"]));
+
+        Assert.Contains("only goes with '--photo'", error.Message);
+    }
+
+    [Fact]
     public void Without_give_no_weapon_is_given()
     {
         Assert.Empty(LaunchOptions.Parse([]).Give!);
