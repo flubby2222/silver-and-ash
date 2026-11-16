@@ -44,10 +44,10 @@ Die beiden Formeln aus dem Shader, mit Entfernung `d` in Metern zur Kamera:
 **Figuren und Gegenstände** müssen sich davon abheben, sonst gehen sie im Stein unter:
 
 - Der Platzhalter-Ghul nutzt fahle, grünliche Haut (124, 132, 112) und dunkle Lumpen (62, 52, 54). Diese Richtung – **kränklich, kalt, etwas heller als die Wand** – ist der Ausgangspunkt für Untote.
-- **Rot ist reserviert** für Blut, Treffer, Gefahr (Treffer-Blitz 230, 40, 50) und die höchste Beute-Stufe *Vampire*. Kein Rot als bloße Zierde.
+- **Rot ist reserviert** für Blut, Treffer, Gefahr (Treffer-Blitz 230, 40, 50) und die höchste Stufe *Vampiric* (blutrot, pulsierend). Kein Rot als bloße Zierde.
 - **Warmes Licht** (Gelb, Orange) gehört der Laterne und allem, was der Spieler haben will.
 - **Silber** – hell, kühl, fast weiß – gehört dem Jäger und seinen Waffen.
-- **Die vier Beute-Stufen haben eigene Farben** (*Beggar*, *Guard*, *King*, *Vampire*), festgelegt in [`ChestView.cs`](../../src/SilverAndAsh.Game/Rendering/ChestView.cs) und [`TierColours.cs`](../../src/SilverAndAsh.Game/Rendering/TierColours.cs). Sie bedeuten im Spiel „so wertvoll ist das“. Lies sie dort nach, bevor du Kisten oder Beute gestaltest, und verwende sie für nichts anderes.
+- **Die vier Stufen von Ausrüstung und Kisten haben eigene Farben:** *Worn* = Holzbraun, *Forged* = Stahlblau, *Royal* = Gold, *Vampiric* = Blutrot (bei Kisten heißen sie *Beggar*, *Guard*, *King*, *Vampire*). Festgelegt in [`ChestView.cs`](../../src/SilverAndAsh.Game/Rendering/ChestView.cs) und [`TierColours.cs`](../../src/SilverAndAsh.Game/Rendering/TierColours.cs). Sie bedeuten im Spiel „so wertvoll ist das“. Lies sie dort nach, bevor du Kisten oder Beute gestaltest, und verwende sie für nichts anderes.
 
 Pro Modell **höchstens vier bis fünf Farben**, davon eine als Akzent.
 
