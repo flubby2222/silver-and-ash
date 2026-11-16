@@ -603,7 +603,9 @@ static void DrawHud(string displayVersion)
     Raylib.DrawText(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
 }
 
+#if DEBUG
 // Test option --give: a melee weapon goes into the hand, a ranged one into the first free place (or the last one).
+// Only in the debug version, like the option itself.
 static GameWorld WithGivenWeapons(GameWorld world, IReadOnlyList<WeaponKind> give)
 {
     foreach (var kind in give)
@@ -620,6 +622,7 @@ static GameWorld WithGivenWeapons(GameWorld world, IReadOnlyList<WeaponKind> giv
 
     return world;
 }
+#endif
 
 // Reads the balancing file; every problem with it goes into the log as a warning.
 static void LogRun(GameWorld world, FileLog? log) =>
