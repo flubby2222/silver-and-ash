@@ -2,7 +2,11 @@
 
 Dieses Dokument liest der Grafikdesigner vor jeder Aufgabe. Es hat zwei Teile: den **gewünschten Stil** und die **gelernten Regeln**. Jede Ablehnung eines Probestücks wird unten zu einer Regel, damit derselbe Fehler nicht zweimal vorkommt (siehe [ADR 0009](../entscheidungen/0009-leitung-designer-auto-merge.md)).
 
-**Stand:** zweite Fassung vom 2026-11-16. Die erste war geschätzt und hat zu einem Ghul geführt, den der Mensch ablehnte. Diese Fassung beruht auf der Recherche des Grafikdesigners ([Grundlagen Grafik](grundlagen-grafik.md)) und auf den Urteilen des Menschen. Den Stil hat er am zweiten Ghul-Entwurf bestätigt („Ja, Richtung stimmt“). Die Entscheidung dazu steht in ADR 0010 (`docs/entscheidungen/0010-stil-ps1-nah-texturen.md`).
+**Stand:** zweite Fassung vom 2026-11-16. Die erste war geschätzt und hat zu einem Ghul geführt, den der Mensch ablehnte. Diese Fassung beruht auf der Recherche des Grafikdesigners ([Grundlagen Grafik](grundlagen-grafik.md)) und auf den Urteilen des Menschen. Den Stil hat er am zweiten Ghul-Entwurf bestätigt („Ja, Richtung stimmt“). Die Entscheidung dazu steht in [ADR 0010](../entscheidungen/0010-stil-ps1-nah-texturen.md).
+
+**Maßstab** für alle weiteren Figuren ist der Ghul aus Probestück 3 (Ordner `design/proben/grafik/ghul-2/` auf dem Branch des Grafikdesigners, `claude/design-probe-ghul-45a8c4`), in der nachgearbeiteten Fassung.
+
+**Die Art Bible hat Vorrang vor der Recherche.** Wo [Grundlagen Grafik](grundlagen-grafik.md) etwas anderes sagt, gilt dieses Dokument. Bekannte Abweichungen dort: Abschnitt 5 rechnet noch ohne Texturen; die Regel „15-Bit-Rasterung am Ende des Shaders“ ist nicht entschieden (ADR 0010, „Noch offen“); „400 Dreiecke am oberen Rand der PS1“ ist falsch gerechnet (400 liegt im unteren Drittel von 250 bis 750); Verweise auf `ghul-2` und einzelne Bilder zeigen auf den Branch des Designers, nicht auf `main`.
 
 ## Leitbild
 
@@ -16,7 +20,7 @@ Stimmung als Anhaltspunkt: Castlevania, Devil May Cry, Vampire Hunter D, Hellsin
 
 ## Was der Mensch gesagt hat
 
-In seinen Worten, als Maßstab für alles Weitere:
+Wörtlich aus dem Gespräch mit der Leitung (Tippfehler berichtigt); ADR 0010 und die Recherche geben dieselben Sätze sinngemäß wieder:
 
 - Zum ersten Ghul (einfarbige Flächen, etwa 350 Dreiecke): „besser als vorher, ja. Allerdings überhaupt nicht, was ich mir vorgestellt habe.“ Falsch waren Gestalt und Proportionen, zu klotzig und zu wenig Detail, flächige Farben ohne Textur, Gesicht und Ausdruck.
 - Zum Stil: „Kann gerne einen unscharfen Eindruck machen. Wenn PS1-Style einfacher ist, dann gerne so.“
@@ -42,16 +46,17 @@ Die Formeln aus dem Shader, mit Entfernung `d` in Metern zur Kamera:
 - **Nebel:** `anteil = smoothstep(3,25; 18,2; d)`
 - **Ergebnis:** `farbe = mischen(grundfarbe · helligkeit, nebelfarbe, anteil)`
 
-**Was das Spiel noch nicht kann:** Es zeichnet heute nur einfarbige Quader mit einer Helligkeit je Fläche. Texturierte Modelle laden und weich schattieren muss es erst lernen. Bis dahin entstehen Probebilder in Blender.
+**Was das Spiel noch nicht kann:** Es zeichnet heute nur einfarbige Flächen und einfache Körper (Quader, flache Scheiben), meist mit einer Helligkeit je Fläche; es lädt keine Texturen und keine Modelle. Texturierte Modelle laden und weich schattieren muss es erst lernen. Bis dahin entstehen Probebilder in Blender.
 
-**Noch nicht entschieden** (ADR 0010, Abschnitt „Noch offen“): ob das Bild auf 15 Bit mit Punktmuster gerastert wird, ob die Sichtgrenze Nebel bleibt oder ein Ausblenden über das Punktmuster wird, und ob die Bildauflösung sinkt. Probebilder zeigen deshalb **beide** Fassungen der Sichtgrenze.
+**Noch nicht entschieden** (ADR 0010, Abschnitt „Noch offen“): ob das Bild auf 15 Bit mit Punktmuster gerastert wird, ob die Sichtgrenze Nebel bleibt oder ein Ausblenden über das Punktmuster wird, und ob die Bildauflösung sinkt. Probebilder zeigen deshalb **beide** Fassungen der Sichtgrenze. Damit Bilder verschiedener Stücke vergleichbar sind, gelten für die Fassung mit Punktmuster diese **vorläufigen Prüfwerte** (keine Entscheidung): festes 4 × 4-Muster (Bayer) an der Bildschirmposition, Farbe auf 5 Bit je Kanal gerastert, Ausblenden linear von 9 m bis 18,2 m, keine Nebelfarbe beigemischt, die Laterne dunkelt weiter ab.
 
 ## Regeln für Modelle
 
 | Was | Regel |
 |---|---|
 | Dreiecke | normale Gegner 800 bis 1 200; große Gegner und Bosse 2 000 bis 4 000; Requisiten 100 bis 400; Waffe im Bild bis 1 500 |
-| Textur | eine je Figur, 128 × 128, höchstens 32 Farben; Requisiten und Wandstücke 64 × 64 mit 16 bis 32 Farben |
+| Textur | eine je Figur, 128 × 128, höchstens 32 Farben; die Waffe im Bild zählt wie eine Figur (128 × 128), weil sie immer nah ist; Requisiten und Wandstücke 64 × 64 mit 16 bis 32 Farben |
+| Verteilung der Dreiecke | etwa ein Viertel in Kopf und Hände; Rundungen mit 8 bis 12 Seiten |
 | Filterung | keine, auch keine Mipmaps: Texel bleiben harte Quadrate |
 | Kopf in der Textur | mindestens ein Achtel der Fläche |
 | Dithering in der Textur | keines. Falls gerastert wird, geschieht das am Ende im Bild, sonst doppelt sich das Muster |
@@ -60,6 +65,7 @@ Die Formeln aus dem Shader, mit Entfernung `d` in Metern zur Kamera:
 | UVs | entstehen beim Bauen im Skript; Nähte auf die Unterseite; spiegelbildliche Teile dürfen sich Textur teilen |
 | Bewegung | getrennte Teile mit sinnvollem Drehpunkt, per Code gedreht; keine Skelett-Animation |
 | Herkunft | Geometrie, UVs, Textur und Bilder entstehen aus **einem** Skript je Stück; nichts heruntergeladen |
+| Werkzeuge | Blender-Python mit den mitgelieferten Modulen (auch NumPy); kein `pip install`, keine weiteren Programme |
 
 ## Farben
 
@@ -84,11 +90,13 @@ Die Formeln aus dem Shader, mit Entfernung `d` in Metern zur Kamera:
 - **Silhouette zuerst.** Jede Figur braucht einen Umriss, den man von den anderen unterscheidet.
 - **Menschen bleiben Menschen.** Ein Untoter, der einmal ein Mensch war, hat die Proportionen eines Menschen: Schultern, Brustkorb, Becken, Gelenke an der richtigen Stelle. Unheimlich wird er durch Auszehrung, Haltung und Asymmetrie, nicht durch Tierformen.
 - **Ausgemergelt heißt Knochen unter Haut, nicht Strichfigur.** Rumpf und Schultern behalten Masse.
+- **Kopf klein halten:** bei menschlichen Figuren höchstens ein Sechstel bis ein Siebtel der Körperhöhe. Große Köpfe wirken niedlich.
+- **Mindestens zwei Asymmetrien** je Untotem (Kopfneigung, ungleiche Arme, schiefer Kiefer, ungleicher Saum).
 - **Lesbarkeit im Kampf geht vor Schönheit.** Der Kopf ist bei Ghul und Gorm eine eigene Trefferzone: Je nach Fernwaffe macht ein Treffer dort mehr Schaden. Die Faktoren stehen in `Balance` und ändern sich mit dem Balancing; heute sind es beim Ghul dreifach für Pistole und Rifle und kein Bonus für die Blunderbuss, bei Gorm 1,5-fach für alle drei. Der Kopf muss deshalb klar abgesetzt und erkennbar sein. Die Fledermaus hat keine Kopfzone.
 - **Die Ankündigung ist die wichtigste Haltung.** Zwischen Ruhe und Ausholen muss die Silhouette deutlich wechseln (beim Ghul: von niedrig und breit zu hoch und schmal).
-- **Modell und Trefferkörper passen zusammen.** Die Maße stehen in `BodySizes` im Core.
+- **Modell und Trefferkörper passen zusammen, und das Spiel gibt vor.** Die Maße stehen in `BodySizes` im Core; die Kopfzone des Ghuls ist dort nach dem heutigen Platzhalter bemessen. Das Modell legt Körper und Kopf in diese Maße. Passt eine Gestalt nicht hinein (zum Beispiel ein Kopf an langem Hals), ändert der Designer nichts stillschweigend, sondern schlägt in den Notizen neue Maße vor. Darüber entscheidet die Leitung, weil es das Spiel verändert; umgesetzt wird es von einer Code-Sitzung.
 
-Mehr dazu, mit Quellen: [Grundlagen Grafik](grundlagen-grafik.md), Abschnitte 3 bis 5 und der Nachtrag d.
+Hintergrund mit Quellen: [Grundlagen Grafik](grundlagen-grafik.md), Abschnitte 3 und 4 und der Nachtrag d. Verbindlich sind nur die Regeln in diesem Dokument.
 
 ## Vom Modell ins Spiel
 
@@ -107,7 +115,7 @@ Figuren hängen im Spiel hinter einer austauschbaren Schnittstelle (z. B. `IGhou
 Alle Bilder entstehen in Blender, mit dem Skript des Probestücks, ohne Fenster:
 
 1. **Vier Ansichten** (vorn, Seite, hinten, schräg oben) vor der Nebelfarbe, mit Textur und Schattierung.
-2. **Bilder unter Spielbedingungen** in 854 × 480 mit 70° vertikalem Blickwinkel aus Augenhöhe 1,6 m: Ruhehaltung aus 4 m und aus 10 m, bei Gegnern zusätzlich die Ankündigung aus 4 m. Jeweils **einmal mit Nebel und einmal mit Sichtgrenze per Punktmuster**, bis das entschieden ist.
+2. **Bilder unter Spielbedingungen** in 854 × 480 mit 70° vertikalem Blickwinkel aus Augenhöhe 1,6 m: Ruhehaltung aus 2 m, aus 4 m und aus 10 m, bei Gegnern zusätzlich die Ankündigung aus 4 m. Jeweils **einmal mit Nebel und einmal mit Sichtgrenze per Punktmuster**, bis das entschieden ist.
 3. **Der Gang im Bild ist texturiert**, im selben Stil wie das Stück.
 4. **Die Textur** selbst als Bild.
 5. **Notizen:** Dreiecke je Teil, Texturgröße und wie sie erzeugt ist, Farben, Drehpunkte, angewendete Regeln, und wo der Designer unsicher ist.

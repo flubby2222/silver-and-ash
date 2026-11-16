@@ -6,11 +6,11 @@ Dieses Dokument liest der Audiodesigner vor jeder Aufgabe. Es hat zwei Teile: de
 
 ## Leitbild
 
-*Dieses Leitbild ist eine Setzung der Leitung und gilt als Vermutung bis zur ersten Hörprobe.*
+*Dieses Leitbild ist eine Setzung der Leitung und gilt als Vermutung, bis eine Hörprobe es bestätigt.*
 
 Unter der Erde ist es still. Man hört den eigenen Schritt auf Stein, das Tropfen von Wasser, weit weg etwas, das sich bewegt. Geräusche sind **trocken, nah und körperlich**; der Raum antwortet mit kurzem, kaltem Hall. Wenn etwas laut wird, ist es gefährlich.
 
-Passend zum Bild im PS2-Stil darf der Klang **etwas rau und einfach** sein. Er soll nicht nach Filmorchester klingen.
+Passend zum PS1-nahen Bild darf der Klang **etwas rau und einfach** sein. Er soll nicht nach Filmorchester klingen.
 
 **Keine komponierte Musik in 1.0.** Stattdessen ein Ambiente je Ebene und eine dichtere, bedrohlichere Schicht für den Kampf gegen Gorm.
 
@@ -45,11 +45,11 @@ Jede Familie soll man an ihrem Charakter erkennen, auch mit geschlossenen Augen:
 Aus dem Urteil des Menschen zu Hörprobe 1 und aus der Recherche. Die Regeln 1 und 2 folgen direkt aus seinem Urteil, die übrigen sind Vorschläge des Audiodesigners, die die Leitung übernommen hat und die eine Hörprobe noch bestätigen muss:
 
 1. **Ein Geräusch ist eine Geste.** Jede Datei ist *ein* hörbares Ereignis aus höchstens drei Schichten (Anschlag, Körper, Ausklang), die zu einem Ereignis verschmelzen. Kein Vorlauf, keine Nachschläge.
-2. **Eine Ankündigung ist eine Uhr.** Der Laut vor einem Angriff besteht aus einer gleichförmigen Bewegung (Anschwellen, Tonhöhenfahrt oder schneller werdender Puls), die beim Schlag ihr Ende oder ihren Gipfel erreicht. Höchstens zwei Schichten, keine Pausen oder Stöße mittendrin. Messbar: genau ein Einsatz (eine Stelle, an der der Pegel innerhalb von 50 ms um mehr als 8 dB steigt).
+2. **Eine Ankündigung ist eine Uhr.** Der Laut vor einem Angriff besteht aus einer gleichförmigen Bewegung (Anschwellen, Tonhöhenfahrt oder schneller werdender Puls), die beim Schlag ihr Ende oder ihren Gipfel erreicht. Höchstens zwei Schichten, keine Pausen oder Stöße mittendrin. Messbar: genau ein Einsatz (eine Stelle, an der der Pegel innerhalb von 50 ms um mehr als 8 dB steigt; der Beginn des Lauts zählt mit, es gibt also keinen zweiten).
 3. **Varianten unterscheiden sich im Charakter** einer Geste (Tonlage, Härte, Länge, Raum), nicht durch zusätzliche Ereignisse.
 4. **Bedrohung durch Tiefe und Rauheit, nicht durch Menge.** Nur eine Modulation gleichzeitig.
 5. **Kurze Ausklänge.** Hall in der Datei nur so lang, wie das Geräusch es braucht.
-6. **Ambiente: Mitte frei, messbar.** Die Fläche liegt im Band 300 bis 3 000 Hz mindestens 25 dB unter ihrem Gesamtpegel.
+6. **Ambiente: Mitte frei, messbar.** Die Fläche liegt im Band 300 bis 3 000 Hz mindestens 25 dB unter ihrem Gesamtpegel. Gemessen wird die Fläche **ohne** Einzelereignisse: Solange Tropfen fest in der Schleife liegen, erzeugt das Skript zum Messen zusätzlich eine Fassung ohne sie. Tiefere Tropfen liegen selbst in diesem Band; das ist gewollt, sie sind ein Ereignis und keine Fläche. (Die Recherche nennt an einer Stelle 5 kHz als Obergrenze; es gilt 3 000 Hz.)
 
 Noch nicht entschieden, Vorschlag aus der Recherche: erkennbare Einzelereignisse (Tropfen, Poltern) nicht fest in die Ambiente-Schleife einbauen, sondern vom Spiel einzeln abspielen lassen. Das ist eine Code-Aufgabe und gehört zu v0.15.
 
@@ -90,5 +90,5 @@ Hier trägt die Leitung nach jeder Hörprobe ein, was der Mensch gesagt hat – 
 |---|---|---|---|---|
 | 1 | 2026-11-16 | Hörprobe 1 insgesamt | „Die Hörproben klingen ganz interessant.“ | Die Richtung (Synthese per Skript, trocken, kurz) wird weiterverfolgt |
 | 2 | 2026-11-16 | Katakomben-Ambiente | „Ambience klingt ganz gut. Das Tropfen könnte etwas lower pitch sein.“ | Ambiente mit Tropfen bleibt die Grundlage; Tropfen tiefer. Wie viel tiefer, entscheidet Hörprobe 2 (Quinte, Oktave, anderthalb Oktaven) |
-| 3 | 2026-11-16 | Ghul-Laut | „Der Ghoul gefällt mir nicht. Da ist zu viel los. Das kann ruhig etwas simpler sein.“ | Regeln 1 bis 4 oben: eine Geste, ein Einsatz, höchstens zwei Schichten |
+| 3 | 2026-11-16 | Ghul-Laut | „Der Ghoul gefällt mir nicht. Da ist zu viel los. Das kann ruhig etwas simpler sein.“ | Regeln 1 und 2 oben: eine Geste, ein Einsatz, höchstens zwei Schichten |
 | – | 2026-11-16 | Pistole, Klinge, Schritte | kein Urteil | Schweigen ist keine Zustimmung; Hörprobe 2 fragt ausdrücklich danach |
