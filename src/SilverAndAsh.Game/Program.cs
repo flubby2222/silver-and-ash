@@ -200,6 +200,11 @@ static void RunGame(
         var boonOpenSeconds = 0f;
         Boon? chosenBoon = null;
 
+        // The inventory (G): Core keeps whether it is open; G and a click wait for the next tick, like a chosen bonus.
+        var inventoryToggle = false;
+        var inventoryOpenSeconds = 0f;
+        InventoryClick? inventoryClick = null;
+
         // F pressed in a frame without a tick must not get lost: it waits for the next tick, like a chosen bonus.
         // So do 1 / 2 / 3 and the mouse wheel (switching the ranged weapon).
         var interactPressed = false;
@@ -313,7 +318,8 @@ static void RunGame(
             // The mouse is captured only while playing: free in the menu, on the end screen and while the bonus choice
             // is open (a click chooses; you walk on with the keys; a hit closes it).
             var frozen = menuOpen || endSummary is not null;
-            var capture = !frozen && !onTitle && !boonOpen;
+            var inventoryOpen = player.IsInventoryOpen;
+            var capture = !frozen && !onTitle && !boonOpen && !inventoryOpen;
             if (capture && !input.IsMouseCaptured)
             {
                 input.CaptureMouse();
@@ -324,7 +330,7 @@ static void RunGame(
             }
 
             // 1. Input: looking around happens every frame, so it feels immediate.
-            var playerInput = input.Read(keysWithFreeMouse: boonOpen && !frozen);
+            var playerInput = input.Read(keysWithFreeMouse: (boonOpen || inventoryOpen) && !frozen);
             player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
             slotChosen = playerInput.SelectSlot ?? slotChosen;
@@ -332,7 +338,7 @@ static void RunGame(
 
             // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while
             // walking - only a hit closes it (see the events below). Several level ups come one after the other.
-            if (!frozen && Raylib.IsKeyPressed(KeyboardKey.X) && player.PendingBoons > 0)
+            if (!frozen && !inventoryOpen && Raylib.IsKeyPressed(KeyboardKey.X) && player.PendingBoons > 0)
             {
                 boonOpen = !boonOpen;
             }
@@ -348,6 +354,19 @@ static void RunGame(
                 chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, boonOpenSeconds);
             }
 
+            // The inventory (decision record 0008): G opens and closes it - not while the bonus choice is open. Moving or a
+            // hit closes it (Core). A click is picked only once it has been open for a moment.
+            if (!frozen && !boonOpen && Raylib.IsKeyPressed(KeyboardKey.G))
+            {
+                inventoryToggle = !inventoryToggle;
+            }
+
+            inventoryOpenSeconds = inventoryOpen ? inventoryOpenSeconds + Raylib.GetFrameTime() : 0f;
+            if (inventoryOpen && !frozen)
+            {
+                inventoryClick ??= InventoryWindow.Pick(inventoryOpenSeconds);
+            }
+
             // 2. Simulation: as many fixed ticks as fit into the real time of the last frame.
             //    A chosen bonus is kept until a tick has taken it - not every frame has a tick.
             var ticks = accumulator.Advance(Raylib.GetFrameTime());
@@ -357,8 +376,11 @@ static void RunGame(
                 {
                     ChooseBoon = chosenBoon, Interact = interactPressed, Paused = frozen,
                     SelectSlot = slotChosen, CycleSlot = Math.Sign(wheelSteps),
+                    ToggleInventory = inventoryToggle, InventoryClick = inventoryClick,
                 });
                 chosenBoon = null;
+                inventoryToggle = false;
+                inventoryClick = null;
                 interactPressed = false;
                 slotChosen = null;
                 wheelSteps = 0;
@@ -480,6 +502,7 @@ static void RunGame(
             projectileView.Draw(gameWorld.Projectiles, accumulator.Alpha);
             pickupView.Draw(gameWorld.Pickups, accumulator.Alpha);
             pickupView.DrawLoot(gameWorld.Loot, accumulator.Alpha);
+            pickupView.DrawWeapons(gameWorld.WeaponDrops, accumulator.Alpha);
 
             impactMarks.Draw();
             wallBreakView.Draw();
@@ -504,7 +527,7 @@ static void RunGame(
             DrawStaminaBar(player);
             CombatHud.Draw(player);
             BossBar.Draw(gameWorld);
-            if (!boonOpen && !frozen)
+            if (!boonOpen && !player.IsInventoryOpen && !frozen)
             {
                 InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);
             }
@@ -517,17 +540,21 @@ static void RunGame(
 
             // The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
             // (no pause: online co-op).
-            if (!frozen && !boonOpen && Raylib.IsKeyPressed(KeyboardKey.M))
+            if (!frozen && !boonOpen && !player.IsInventoryOpen && Raylib.IsKeyPressed(KeyboardKey.M))
             {
                 mapKeptOpen = !mapKeptOpen;
             }
 
-            if (!frozen && !boonOpen && (mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab)))
+            if (!frozen && !boonOpen && !player.IsInventoryOpen && (mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab)))
             {
                 MapView.Draw(gameWorld, player, mapKeptOpen, (float)Raylib.GetTime());
             }
 
-            if (boonOpen && !frozen)
+            if (player.IsInventoryOpen && !frozen)
+            {
+                InventoryWindow.Draw(player);
+            }
+            else if (boonOpen && !frozen)
             {
                 BoonWindow.Draw(player, gameWorld.Balance.Boons);
             }
@@ -604,20 +631,28 @@ static void DrawHud(string displayVersion)
 }
 
 #if DEBUG
-// Test option --give: a melee weapon goes into the hand, a ranged one into the first free place (or the last one).
-// Only in the debug version, like the option itself.
+// Test option --give: a melee weapon goes into the hand (the one before into the bag), a ranged one into the first free
+// place, or into the bag when all are taken. Only in the debug version, like the option itself.
 static GameWorld WithGivenWeapons(GameWorld world, IReadOnlyList<WeaponKind> give)
 {
     foreach (var kind in give)
     {
         if (Weapons.Info(kind).Hand == WeaponHand.Melee)
         {
+            world.Player.Stow(world.Player.Melee);
             world.Player.EquipMelee(kind);
             continue;
         }
 
         var free = world.Player.RangedSlots.ToList().FindIndex(weapon => weapon is null);
-        world.Player.Equip(free >= 0 ? free : Player.RangedSlotCount - 1, kind);
+        if (free >= 0)
+        {
+            world.Player.Equip(free, kind);
+        }
+        else
+        {
+            world.Player.Stow(kind);
+        }
     }
 
     return world;

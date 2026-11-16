@@ -35,6 +35,8 @@ public sealed class GameWorld
     private int _nextPickupId;
     private readonly List<Loot> _loot = [];
     private int _nextLootId;
+    private readonly List<WeaponDrop> _weaponDrops = [];
+    private int _nextWeaponDropId;
     private int _nextProjectileId;
     private readonly Level _levelWithOpenDoors;
     private readonly IReadOnlyList<LevelDoor> _doorPlan;
@@ -589,6 +591,9 @@ public sealed class GameWorld
     /// <summary>Silver and keys lying in the level (taken ones are removed after each tick).</summary>
     public IReadOnlyList<Loot> Loot => _loot;
 
+    /// <summary>Weapons lying in the level, dropped from an inventory (#193). Taking them up comes with #194.</summary>
+    public IReadOnlyList<WeaponDrop> WeaponDrops => _weaponDrops;
+
     /// <summary>The silver among <see cref="Loot"/>.</summary>
     public IReadOnlyList<Loot> SilverPiles => _loot.Where(loot => loot.Kind == LootKind.Silver).ToList();
 
@@ -1066,6 +1071,12 @@ public sealed class GameWorld
         Player.Tick(input);
         _events.AddRange(Player.Events);
 
+        // A weapon dropped from the inventory lies where the player stood.
+        foreach (var dropped in Player.Events.OfType<WeaponDropped>())
+        {
+            _weaponDrops.Add(new WeaponDrop(_nextWeaponDropId++, dropped.Kind, dropped.Position));
+        }
+
         if (input.Interact)
         {
             Interact(Player);
@@ -1134,6 +1145,11 @@ public sealed class GameWorld
         DropGormsLoot();
         MovePickups();
         MoveLoot();
+        foreach (var weapon in _weaponDrops)
+        {
+            weapon.Fall(Level, Balance.Player.Gravity);
+        }
+
         foreach (var chest in _chests)
         {
             chest.Tick();

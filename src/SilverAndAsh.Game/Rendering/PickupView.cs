@@ -82,6 +82,26 @@ internal sealed class PickupView
         }
     }
 
+    /// <summary>
+    /// Weapons lying in the level (dropped from the inventory): a flat bar on the floor in the colour of its tier - long and
+    /// thin for a melee weapon, short and thick for a ranged one - over a faint glow that pulses, so it can be found again.
+    /// </summary>
+    public void DrawWeapons(IReadOnlyList<WeaponDrop> weapons, float alpha)
+    {
+        foreach (var weapon in weapons)
+        {
+            var bottom = Vector3.Lerp(weapon.PreviousPosition, weapon.Position, alpha);
+            var place = Matrix4x4.CreateRotationY(weapon.Id * 1.3f) * Matrix4x4.CreateTranslation(bottom);
+            var tier = TierColours.Of(weapon.Info.Tier, _time);
+            var glow = 0.35f + 0.25f * MathF.Sin(_time * 3f + weapon.Id);
+            var size = weapon.Info.Hand == WeaponHand.Melee ? new Vector3(0.8f, 0.05f, 0.08f) : new Vector3(0.55f, 0.09f, 0.12f);
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.005f, 0f) * place, new Vector3(size.X + 0.2f, 0.01f, size.Z + 0.2f), Blend(Dark, tier, glow));
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.01f + (size.Y / 2f), 0f) * place, size, tier);
+        }
+    }
+
+    private static readonly Color Dark = new(20, 16, 22, 255);
+
     /// <summary>An old key standing upright: a ring bow on top, a shaft, a bit at the bottom - glowing gold.</summary>
     private void DrawKey(Vector3 bottom, int id)
     {

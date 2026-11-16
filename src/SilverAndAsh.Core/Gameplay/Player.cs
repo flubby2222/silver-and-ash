@@ -6,7 +6,7 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>The player character: where it stands, how it moves and where it looks.</summary>
-public sealed class Player
+public sealed partial class Player
 {
     private Level _level;
     private readonly Func<IEnumerable<CylinderBody>> _bodies;
@@ -345,6 +345,7 @@ public sealed class Player
             return;
         }
 
+        CloseInventoryOnHit();
         var taken = Math.Min(damage, Health);
         Health -= taken;
         events.Add(new PlayerHit(Id, taken));
@@ -488,6 +489,7 @@ public sealed class Player
         }
 
         _events.Clear();
+        UseInventory(input);
         MeleeCooldown.Tick();
         _consecratedTicksLeft = Math.Max(0, _consecratedTicksLeft - 1);
         foreach (var weapon in _rangedSlots.OfType<RangedWeapon>())
