@@ -9,7 +9,11 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ### Hinzugefügt
 - **Gorm, the Chained:** Im Bossraum wartet jetzt ein Troll, 3,2 m groß, mit Keule und Kette (Platzhalter aus Kästen).
   - Betrittst du den Bossraum, erscheint oben sein Lebensbalken (1600 Leben).
-  - Er geht langsam auf dich zu und bleibt vor dir stehen. Seine Angriffe kommen im nächsten Schritt; noch ist er harmlos.
+  - Er geht langsam auf dich zu und **greift an**, jeder Angriff mit deutlicher Ankündigung und einer Antwort:
+    - **Hammerschlag** (Keule hoch, roter Kreis am Boden): Eine Schockwelle läuft über den Boden → **springen**. Verfehlt er, steckt die Keule 2 s fest: Er beugt sich vor und nimmt doppelten Schaden.
+    - **Rundumschwung** (Kette wird angedreht): Kette auf Brusthöhe → **Dodge** (geduckt); Springen hilft nicht.
+    - **Kettenwurf** (Haken glüht rot): Der Haken fliegt dorthin, wo du standest → **zur Seite** oder hinter eine Säule. Trifft er, zieht er dich heran.
+    - Nach jedem Angriff ruht er kurz; nie zweimal hintereinander derselbe Angriff.
   - Sein Kopf ist ein Schwachpunkt: Ein Pistolenschuss dorthin macht 150 % Schaden.
   - Er hinterlässt 100–150 Silber und eine Blutphiole.
 - **Wendeltreppe und neuer Sieg:** Nach Gorms Tod fährt in der Mitte des Bossraums eine Wendeltreppe aus dem Boden. „[F] Climb the stairs“ gewinnt den Durchlauf. Der Endbildschirm und `runs.log` zeigen, ob Gorm besiegt wurde und wie lange der Kampf dauerte

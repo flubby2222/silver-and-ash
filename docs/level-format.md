@@ -54,7 +54,7 @@ Eine kleine Treppe nach oben (`123`) und eine Grube (`___`).
 dotnet run --project src/SilverAndAsh.Game -- --seed 123
 ```
 
-**Sieg:** Im Bossraum wartet **Gorm, the Chained** (ADR 0007). Ist er tot, ist der Bossraum geräumt: In seiner Mitte fährt in 3 s eine **Wendeltreppe** aus dem Boden. **„[F] Climb the stairs“** gewinnt den Durchlauf.
+**Sieg:** Im Bossraum wartet **Gorm, the Chained** (ADR 0007). Er greift nah mit Hammer (Schockwelle: **springen**) oder Rundumschwung (Kette auf Brusthöhe: **Dodge**) an, aus der Ferne mit dem Kettenwurf (**zur Seite** oder hinter eine Säule). Jeder Angriff wird angekündigt, danach ruht er kurz. Verfehlt der Hammer, steckt die Keule fest und Gorm nimmt doppelten Schaden. Alle Werte in `balance.json` unter `gorm`. Ist er tot, ist der Bossraum geräumt: In seiner Mitte fährt in 3 s eine **Wendeltreppe** aus dem Boden. **„[F] Climb the stairs“** gewinnt den Durchlauf.
 
 **Ende eines Durchlaufs:** Nach dem Tod (2 s später) bzw. dem Sieg (2 s später) erscheint „YOU DIED“ / „VICTORY“ mit der Statistik des Durchlaufs und der Wahl „New run“ / „Title“. Die Statistik wird außerdem als Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log` geschrieben.
 

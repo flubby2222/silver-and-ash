@@ -79,7 +79,27 @@
     "repathTime": 0.5,                  // s between path searches
     "silverMin": 100,                   // silver he leaves behind ...
     "silverMax": 150,
-    "stairsRiseTime": 3                 // s the spiral staircase takes to rise after his death
+    "stairsRiseTime": 3,                // s the spiral staircase takes to rise after his death
+    "nearRange": 8,                     // m: this close he uses hammer or chain swing (50/50) ...
+    "farRange": 30,                     // ... up to this far he throws his chain. Never the same attack twice in a row
+    "pauseTime": 1.5,                   // s of rest after every attack - strike back!
+    "hammerWindUp": 0.8,                // s: club raised, red circle on the floor -> JUMP
+    "hammerDamage": 35,
+    "shockwaveSpeed": 8,                // m/s along the floor ...
+    "shockwaveRadius": 12,              // ... up to this far ...
+    "shockwaveHeight": 0.4,             // ... this high: higher in the air is safe
+    "stuckTime": 2,                     // s the club sticks after a blow that hit nobody ...
+    "stuckDamageMultiplier": 2,         // ... meanwhile he takes double damage
+    "swingWindUp": 0.6,                 // s: the chain is spun up -> DODGE (ducked)
+    "swingDamage": 25,
+    "swingReach": 8,                    // m
+    "swingLow": 1.1,                    // m above his feet the chain passes from here ...
+    "swingHigh": 1.6,                   // ... to here: standing or jumping it hits, ducked in a dodge not
+    "throwWindUp": 0.5,                 // s: the hook glows red -> step ASIDE or behind a pillar
+    "hookSpeed": 18,                    // m/s, straight to where you stood when he threw
+    "throwDamage": 15,
+    "pullDistance": 3,                  // m: a hit pulls you this close ...
+    "pullTime": 0.4                     // ... within this time, without control
   },
 
   "bat": {

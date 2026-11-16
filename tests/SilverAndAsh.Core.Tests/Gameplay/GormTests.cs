@@ -28,6 +28,9 @@ public class GormTests
         return new GameWorld(LevelParser.Parse(Map), 1, balance ?? Balance.Default, doors, rooms);
     }
 
+    /// <summary>A Gorm who never attacks (no range for any attack) - to look at his walking alone.</summary>
+    private static readonly Balance NoAttacks = Balance.Default with { Gorm = Balance.Default.Gorm with { NearRange = 0f, FarRange = 0f } };
+
     private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
     {
         var events = new List<GameEvent>();
@@ -90,7 +93,7 @@ public class GormTests
     [Fact]
     public void Gorm_walks_up_to_the_player_and_stops_close_in_front()
     {
-        var world = World();
+        var world = World(NoAttacks);
         Enter(world);
         var before = FlatDistance(world.Gorm!.Position, world.Player.Position);
 
@@ -104,7 +107,7 @@ public class GormTests
     [Fact]
     public void Gorm_walks_at_his_speed()
     {
-        var world = World();
+        var world = World(NoAttacks);
         Enter(world);
         var start = world.Gorm!.Position;
 

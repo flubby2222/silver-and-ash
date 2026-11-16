@@ -133,6 +133,33 @@ public sealed record RunWon : GameEvent;
 /// <summary>Gorm <paramref name="GormId"/> took <paramref name="Damage"/> (critical: a shot at his head).</summary>
 public sealed record GormHit(int GormId, int Damage, bool Critical = false) : GameEvent;
 
+/// <summary>Gorm <paramref name="GormId"/> starts winding up <paramref name="Attack"/> - the warning.</summary>
+public sealed record GormWindUp(int GormId, GormAttack Attack) : GameEvent;
+
+/// <summary>Gorm's hammer struck the floor: its shock wave starts.</summary>
+public sealed record GormSlammed(int GormId) : GameEvent;
+
+/// <summary>The shock wave hit player <paramref name="PlayerId"/> (who was on the ground).</summary>
+public sealed record ShockwaveHit(int PlayerId) : GameEvent;
+
+/// <summary>Gorm's chain swung round; <paramref name="Hit"/> tells whether it hit anyone.</summary>
+public sealed record GormSwung(int GormId, bool Hit) : GameEvent;
+
+/// <summary>Gorm threw his hook from <paramref name="From"/> along <paramref name="Direction"/>.</summary>
+public sealed record GormThrew(int GormId, Vector3 From, Vector3 Direction) : GameEvent;
+
+/// <summary>The hook hit player <paramref name="PlayerId"/>: they are pulled to Gorm.</summary>
+public sealed record HookHit(int PlayerId) : GameEvent;
+
+/// <summary>The hook hit a wall or pillar at <paramref name="At"/> (or flew its range) and is drawn back.</summary>
+public sealed record HookStopped(Vector3 At) : GameEvent;
+
+/// <summary>Gorm's hammer blow hit nobody: the club is stuck - he takes double damage for a while.</summary>
+public sealed record ClubStuck(int GormId) : GameEvent;
+
+/// <summary>Gorm pulled his club free again.</summary>
+public sealed record ClubFreed(int GormId) : GameEvent;
+
 /// <summary>Gorm <paramref name="GormId"/> is dead.</summary>
 public sealed record GormDied(int GormId) : GameEvent;
 
