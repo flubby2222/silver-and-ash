@@ -241,3 +241,62 @@ Erst schwenken, dann heben: `Drehung = Schwenken × Heben`.
 2. Kamera-Matrix der Waffen ohne Spiegelung (siehe Pistole).
 3. Shader mit Textur, Normale und Licht je Ecke; Point-Filter ohne Mipmaps.
 4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind in der zweiten Fassung: Finger einzeln um den Griff, Knöchel, Daumen, bei der Pistole der Zeigefinger am Abzug, Stulpe mit Naht und zwei Silbernieten. Sie hängen starr an der Waffe; Dateinamen und Drehpunkte sind gleich geblieben.
+
+## Level-Texturen der Katakomben (Issue #233)
+
+Ergänzt am 2026-11-16 auf Bitte der Leitung. Die Modell-Dateien oben sind dabei unverändert geblieben.
+
+```
+design/uebergabe/
+  tools/textures/catacomb.py      -> tools/textures/catacomb.py
+  assets/textures/catacomb_*.png  -> assets/textures/
+```
+
+Das Skript nutzt das Hilfsmodul `tools/models/psx.py` (Farbpalette, Speichern) und findet es über den Nachbarordner `../models`.
+
+```bash
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/textures/catacomb.py
+```
+
+Die Dateien sind pixelgleich mit dem angenommenen Probestück 8, Fassung 2 (`design/proben/grafik/level/catacomb_*_v2.png`).
+
+| Datei | Fläche im Level | Inhalt | mittlere Farbe (sRGB) |
+|---|---|---|---|
+| `catacomb_wall.png` | alle Wände, auch Säulen und Stirnseiten von Stufen | Bruchsteinmauer in vier ungleich hohen Lagen, leise unregelmäßige Fugen, feuchte Laufspuren | wie die Wandfarbe 122, 104, 112 |
+| `catacomb_floor.png` | alle Böden | große, abgetretene Platten (0,5 m Lagen), leise Fugen, Schmutzflecken | wie die Bodenfarbe 84, 72, 78 |
+| `catacomb_ceiling.png` | alle Decken | Gewölbemauerwerk, kaum sichtbare Fugen, weicher Ruß | **72 %** der Deckenfarbe 64, 56, 66, also etwa 46, 40, 48: Die Decke soll nach oben verschwinden |
+
+**Größe und Farben:** 64 × 64 Pixel, je 24 Farben (erlaubt bis 32), sRGB-PNG.
+
+**Filterung:** keine. `TEXTURE_FILTER_POINT`, keine Mipmaps; Wiederholung (`TEXTURE_WRAP_REPEAT`) muss an sein.
+
+**Kacheln:**
+
+- Alle drei sind nahtlos: Fugen, Rauschen und Laufspuren laufen über den Rand und kommen gegenüber wieder herein.
+- **Eine Kachel ist 1 m × 1 m.** Ein Texel ist 1,56 cm; aus 4 m ist das etwa ein Bildpixel.
+
+**UV aus Weltkoordinaten**, damit die Kacheln über Zellgrenzen hinweg durchlaufen und keine Naht an jeder Zelle entsteht:
+
+| Fläche | u | v |
+|---|---|---|
+| Böden und Decken | Welt-x | Welt-z |
+| Wände mit Blick nach ±x | Welt-z | Welt-y (Höhe) |
+| Wände mit Blick nach ±z | Welt-x | Welt-y |
+
+Damit liegt jede Steinlage auf gleicher Höhe ringsum. Das v der Wände mit der Höhe über dem Boden (y) beginnen, nicht mit der Unterkante der Fläche. So passen Stufen und unterschiedliche Bodenhöhen aneinander.
+
+**Ausrichtung:** Bei v = 0 liegt die Unterkante einer Steinlage. Die Wandtextur ist oben nicht anders als unten, aber das Licht von oben (Oberkante der Steine heller) ist eingemalt. Deshalb muss v mit der Höhe zunehmen, sonst steht das Licht auf dem Kopf.
+
+**Helligkeit:**
+
+- Die Texturen ersetzen die Flächenfarbe; sie werden **nicht** mit ihr multipliziert.
+- Die Helligkeit je Fläche aus `FlatShading` (Wand ±x/±z, Boden 0,9, Decke 0,55), die Laterne und der Nebel kommen wie heute dazu, dann die 15-Bit-Körnung.
+- Wer die Textur mit der Flächenfarbe multipliziert, macht alles doppelt dunkel.
+
+**Neue Zeilen für `assets/HERKUNFT.md`:**
+
+| Datei | Skript | Datum |
+|---|---|---|
+| `assets/textures/catacomb_wall.png` | `tools/textures/catacomb.py` | 2026-11-16 |
+| `assets/textures/catacomb_floor.png` | `tools/textures/catacomb.py` | 2026-11-16 |
+| `assets/textures/catacomb_ceiling.png` | `tools/textures/catacomb.py` | 2026-11-16 |
