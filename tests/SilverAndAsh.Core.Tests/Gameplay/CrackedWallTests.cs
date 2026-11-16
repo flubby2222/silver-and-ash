@@ -72,7 +72,7 @@ public class CrackedWallTests
         events.AddRange(Swing(world, FullCharge / 2));
         events.AddRange(Run(world, Shoot, Second));
 
-        Assert.Contains(events, e => e is BladeSwung);
+        Assert.Contains(events, e => e is MeleeSwung);
         Assert.Contains(events, e => e is ShotFired);
         Assert.False(world.Doors[0].IsOpen);
         Assert.DoesNotContain(events, e => e is WallBroken);

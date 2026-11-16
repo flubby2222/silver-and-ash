@@ -42,8 +42,8 @@ public sealed class Player
         LandingDip = new LandingDip(_player);
         Crouch = new Crouch(_player);
         Stamina = new Stamina(_player);
-        BladeCooldown = new Cooldown(balance.Blade.Cooldown);
-        BladeCharge = new BladeCharge(balance.Blade);
+        MeleeCooldown = new Cooldown(balance.Blade.Cooldown);
+        MeleeCharge = new MeleeCharge(balance.Blade);
 
         // Every run starts with the silver blade and the pistol (decision record 0008).
         _balance = balance;
@@ -355,8 +355,8 @@ public sealed class Player
         }
     }
 
-    /// <summary>Waiting time of the melee weapon in the hand (the name stems from the time of the blade alone).</summary>
-    public Cooldown BladeCooldown { get; private set; }
+    /// <summary>Waiting time of the melee weapon in the hand.</summary>
+    public Cooldown MeleeCooldown { get; private set; }
 
     /// <summary>Most ranged weapons a player carries at once (decision record 0008).</summary>
     public const int RangedSlotCount = 3;
@@ -377,8 +377,8 @@ public sealed class Player
 
         var values = _balance.Melee(kind);
         Melee = kind;
-        BladeCooldown = new Cooldown(values.Cooldown);
-        BladeCharge = new BladeCharge(values);
+        MeleeCooldown = new Cooldown(values.Cooldown);
+        MeleeCharge = new MeleeCharge(values);
     }
 
     /// <summary>The ranged weapons carried: <see cref="RangedSlotCount"/> places, empty ones null.</summary>
@@ -402,7 +402,7 @@ public sealed class Player
     }
 
     /// <summary>Charging the melee weapon in the hand (hold the button, swing on release) - every melee weapon can.</summary>
-    public BladeCharge BladeCharge { get; private set; }
+    public MeleeCharge MeleeCharge { get; private set; }
 
     /// <summary>
     /// What happened in the latest tick (swings, shots, ...), for the presentation.
@@ -488,7 +488,7 @@ public sealed class Player
         }
 
         _events.Clear();
-        BladeCooldown.Tick();
+        MeleeCooldown.Tick();
         _consecratedTicksLeft = Math.Max(0, _consecratedTicksLeft - 1);
         foreach (var weapon in _rangedSlots.OfType<RangedWeapon>())
         {
@@ -519,7 +519,7 @@ public sealed class Player
         // No refilling during a dodge either - otherwise standing on the ground would pay part of it back.
         // Nor while the blade is still charging (it pays bit by bit); once it is fully charged, holding on is free
         // and the bar refills again (found while playing).
-        var stillCharging = BladeCharge.IsCharging && !BladeCharge.IsFull;
+        var stillCharging = MeleeCharge.IsCharging && !MeleeCharge.IsFull;
         Stamina.SetRecharging(chainOver && !IsDodging && !stillCharging);
         Stamina.Tick();
 
@@ -749,9 +749,9 @@ public sealed class Player
         if (IsDead)
         {
             // Dying while charging must not count as "let go" - drop the charge without a swing.
-            if (BladeCharge.IsCharging)
+            if (MeleeCharge.IsCharging)
             {
-                BladeCharge.Release();
+                MeleeCharge.Release();
             }
 
             return;
@@ -765,19 +765,19 @@ public sealed class Player
         _reloadWasHeld = input.Reload;
 
         // Blade: pressing starts charging (only when the cooldown is over), holding charges, letting go swings.
-        if (meleePressed && BladeCooldown.IsReady)
+        if (meleePressed && MeleeCooldown.IsReady)
         {
-            BladeCharge.Start();
+            MeleeCharge.Start();
         }
-        else if (BladeCharge.IsCharging && input.Melee)
+        else if (MeleeCharge.IsCharging && input.Melee)
         {
-            BladeCharge.Tick(Stamina);
+            MeleeCharge.Tick(Stamina);
         }
-        else if (BladeCharge.IsCharging)
+        else if (MeleeCharge.IsCharging)
         {
-            var charge = BladeCharge.Release();
-            BladeCooldown.TryUse();
-            _events.Add(new BladeSwung(EyePosition, View.Forward, charge, Melee));
+            var charge = MeleeCharge.Release();
+            MeleeCooldown.TryUse();
+            _events.Add(new MeleeSwung(EyePosition, View.Forward, charge, Melee));
         }
 
         // Mouse wheel or 1 - 3: another ranged weapon (empty places are skipped). Putting one away breaks its reload off.

@@ -16,10 +16,10 @@ public sealed record Balance
     public PlayerBalance Player { get; init; } = new();
 
     /// <summary>The silver blade.</summary>
-    public BladeBalance Blade { get; init; } = new();
+    public MeleeBalance Blade { get; init; } = new();
 
     /// <summary>The club (decision record 0008): slower than the blade, harder, and it knocks enemies back.</summary>
-    public BladeBalance Club { get; init; } = new()
+    public MeleeBalance Club { get; init; } = new()
     {
         Cooldown = 0.55f,
         Damage = 50,
@@ -28,7 +28,7 @@ public sealed record Balance
     };
 
     /// <summary>The values of melee weapon <paramref name="kind"/>.</summary>
-    public BladeBalance Melee(Gameplay.WeaponKind kind) => kind switch
+    public MeleeBalance Melee(Gameplay.WeaponKind kind) => kind switch
     {
         Gameplay.WeaponKind.Club => Club,
         _ => Blade,
@@ -441,7 +441,7 @@ public sealed record PlayerBalance
 /// Balancing values of a melee weapon - the silver blade (<see cref="Balance.Blade"/>) and the club
 /// (<see cref="Balance.Club"/>) have the same kind of values (decision record 0008).
 /// </summary>
-public sealed record BladeBalance
+public sealed record MeleeBalance
 {
     /// <summary>Seconds before the next swing.</summary>
     public float Cooldown { get; init; } = 0.4f;

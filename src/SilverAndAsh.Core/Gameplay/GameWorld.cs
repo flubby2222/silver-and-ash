@@ -872,17 +872,17 @@ public sealed class GameWorld
     public IReadOnlyList<GameEvent> Events => _events;
 
     /// <summary>
-    /// A swing of <paramref name="attacker"/> hits every target in the weapon's cone (see <see cref="BladeStrike"/>).
+    /// A swing of <paramref name="attacker"/> hits every target in the weapon's cone (see <see cref="MeleeStrike"/>).
     /// A heavy weapon (the club) also knocks living ghouls and bats back - further when charged; Gorm stands firm.
     /// </summary>
-    private void StrikeWithBlade(BladeSwung swing, Player attacker)
+    private void StrikeWithMelee(MeleeSwung swing, Player attacker)
     {
         var values = Balance.Melee(swing.Weapon);
         BreakWalls(swing, attacker, values);
 
         foreach (var target in Targets.Where(target => target.IsHittable).ToList())
         {
-            if (BladeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, values))
+            if (MeleeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, values))
             {
                 // A melee weapon hits the whole body at once - it has no hit zone (and so no headshot bonus).
                 var weapon = swing.Weapon == WeaponKind.Club ? Weapon.Club : Weapon.Blade;
@@ -892,7 +892,7 @@ public sealed class GameWorld
         }
     }
 
-    private static void KnockBack(ITarget target, Player attacker, BladeBalance values, float charge)
+    private static void KnockBack(ITarget target, Player attacker, MeleeBalance values, float charge)
     {
         var distance = values.Knockback + (charge * (values.ChargedKnockback - values.Knockback));
         var away = target.Body.Position - attacker.Position;
@@ -909,7 +909,7 @@ public sealed class GameWorld
     /// A fully charged swing of any melee weapon breaks the cracked wall it is aimed at, within the weapon's range.
     /// Uncharged swings and shots leave it as it is.
     /// </summary>
-    private void BreakWalls(BladeSwung swing, Player attacker, BladeBalance values)
+    private void BreakWalls(MeleeSwung swing, Player attacker, MeleeBalance values)
     {
         if (swing.Charge < 1f)
         {
@@ -1028,9 +1028,9 @@ public sealed class GameWorld
 
         EnterRooms(Player);
 
-        foreach (var swing in Player.Events.OfType<BladeSwung>())
+        foreach (var swing in Player.Events.OfType<MeleeSwung>())
         {
-            StrikeWithBlade(swing, Player);
+            StrikeWithMelee(swing, Player);
         }
 
         foreach (var shot in Player.Events.OfType<ShotFired>())

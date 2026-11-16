@@ -38,7 +38,7 @@ public class PlayerDeathTests
         for (var i = 0; i < 30; i++)
         {
             world.Tick(Everything with { Jump = i % 2 == 0, Melee = i % 2 == 0, Shoot = i % 2 == 0 });
-            Assert.DoesNotContain(world.Events, e => e is BladeSwung or ShotFired);
+            Assert.DoesNotContain(world.Events, e => e is MeleeSwung or ShotFired);
         }
 
         Assert.Equal(position, world.Player.Position);
@@ -60,10 +60,10 @@ public class PlayerDeathTests
         for (var i = 0; i < 10; i++)
         {
             world.Tick(melee);
-            Assert.DoesNotContain(world.Events, e => e is BladeSwung);
+            Assert.DoesNotContain(world.Events, e => e is MeleeSwung);
         }
 
-        Assert.False(world.Player.BladeCharge.IsCharging);
+        Assert.False(world.Player.MeleeCharge.IsCharging);
     }
 
     [Fact]

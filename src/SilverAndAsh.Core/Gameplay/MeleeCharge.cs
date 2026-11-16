@@ -2,15 +2,15 @@ namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
 /// Charging the silver blade: hold the button, release to swing harder. Linear from 0 (released at once) to 1
-/// (held for <see cref="BladeBalance.ChargeTime"/>). Charging costs up to
-/// <see cref="BladeBalance.ChargeStaminaSegments"/> stamina segments, linearly as well - and stops when the
+/// (held for <see cref="MeleeBalance.ChargeTime"/>). Charging costs up to
+/// <see cref="MeleeBalance.ChargeStaminaSegments"/> stamina segments, linearly as well - and stops when the
 /// stamina cannot pay for the next bit.
 /// <para>
 /// Its own small class (like <see cref="Cooldown"/>): the player only starts, ticks and releases it, and what the
 /// charge is worth is decided by a damage rule (<see cref="ChargeBonus"/>). Items can later change either side.
 /// </para>
 /// </summary>
-public sealed class BladeCharge
+public sealed class MeleeCharge
 {
     private readonly int _fullTicks;
     private readonly int _segments;
@@ -19,7 +19,7 @@ public sealed class BladeCharge
     private int _paid;
 
     /// <summary>Not charging; as slow and as costly as <paramref name="balance"/> says (the standard values if none is given).</summary>
-    public BladeCharge(BladeBalance? balance = null)
+    public MeleeCharge(MeleeBalance? balance = null)
     {
         balance ??= Balance.Default.Blade;
         _fullTicks = SimulationClock.SecondsToTicks(balance.ChargeTime);
@@ -79,7 +79,7 @@ public sealed class BladeCharge
 
 /// <summary>
 /// Damage rule: a charged melee weapon (<paramref name="Weapon"/>, the blade unless said otherwise) hits harder,
-/// linearly up to <see cref="BladeBalance.ChargeMaxMultiplier"/>.
+/// linearly up to <see cref="MeleeBalance.ChargeMaxMultiplier"/>.
 /// </summary>
 public sealed record ChargeBonus(float MaxMultiplier, Weapon Weapon = Weapon.Blade) : IDamageRule
 {

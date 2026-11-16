@@ -88,7 +88,7 @@ internal sealed class PlaceholderWeaponView : IWeaponView
     {
         switch (gameEvent)
         {
-            case BladeSwung:
+            case MeleeSwung:
                 _swing = 0f;
                 break;
             case ShotFired shot:
@@ -118,7 +118,7 @@ internal sealed class PlaceholderWeaponView : IWeaponView
         _time += frameSeconds;
 
         // Charging the blade: drawn back a little at once, further the longer it is held.
-        var charge = player.BladeCharge;
+        var charge = player.MeleeCharge;
         var windUpTarget = charge.IsCharging ? 0.25f + 0.75f * charge.Fraction : 0f;
         _windUp += (windUpTarget - _windUp) * MathF.Min(1f, catchUp * 2f);
         _fullyCharged = charge.IsCharging && charge.Fraction >= 1f;

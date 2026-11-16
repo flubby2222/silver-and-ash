@@ -5,18 +5,18 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// Which bodies a swing of the silver blade hits: everything inside a cone in front of the eyes -
-/// <see cref="BladeBalance.Range"/> long (from the eyes), <see cref="BladeBalance.Angle"/> wide, up and
+/// Which bodies a swing of a melee weapon (blade, club ...) hits: everything inside a cone in front of the eyes -
+/// <see cref="MeleeBalance.Range"/> long (from the eyes), <see cref="MeleeBalance.Angle"/> wide, up and
 /// down as well as left and right - and not behind a wall. The cone's tip lies
-/// <see cref="BladeBalance.ConeStartBehind"/> behind the eyes, so close to you it is already wide.
+/// <see cref="MeleeBalance.ConeStartBehind"/> behind the eyes, so close to you it is already wide.
 /// </summary>
-public static class BladeStrike
+public static class MeleeStrike
 {
     /// <summary>
     /// True if a swing from <paramref name="eye"/> in <paramref name="direction"/> (length 1) hits <paramref name="body"/> -
     /// with the reach and cone of <paramref name="blade"/> (the standard values if none is given).
     /// </summary>
-    public static bool Hits(Level level, Vector3 eye, Vector3 direction, CylinderBody body, BladeBalance? blade = null)
+    public static bool Hits(Level level, Vector3 eye, Vector3 direction, CylinderBody body, MeleeBalance? blade = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         blade ??= Balance.Default.Blade;

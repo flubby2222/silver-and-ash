@@ -26,10 +26,10 @@ public class PlayerCombatTests
 
         Click(player);
 
-        var swing = Assert.IsType<BladeSwung>(Assert.Single(player.Events));
+        var swing = Assert.IsType<MeleeSwung>(Assert.Single(player.Events));
         Assert.Equal(player.EyePosition, swing.Origin);
         Assert.Equal(player.View.Forward, swing.Direction);
-        Assert.False(player.BladeCooldown.IsReady);
+        Assert.False(player.MeleeCooldown.IsReady);
     }
 
     [Fact]
@@ -66,12 +66,12 @@ public class PlayerCombatTests
         for (var i = 0; i < 3 * PistolTicks; i++)
         {
             player.Tick(Melee with { Shoot = true });
-            swings += player.Events.OfType<BladeSwung>().Count();
+            swings += player.Events.OfType<MeleeSwung>().Count();
             shots += player.Events.OfType<ShotFired>().Count();
         }
 
         player.Tick(PlayerInput.None);
-        swings += player.Events.OfType<BladeSwung>().Count();
+        swings += player.Events.OfType<MeleeSwung>().Count();
 
         Assert.Equal(1, swings);
         Assert.Equal(1, shots);
@@ -98,7 +98,7 @@ public class PlayerCombatTests
 
         Click(player);
 
-        Assert.IsType<BladeSwung>(Assert.Single(player.Events));
+        Assert.IsType<MeleeSwung>(Assert.Single(player.Events));
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class PlayerCombatTests
 
         Assert.IsType<ShotFired>(Assert.Single(player.Events));
         Assert.Equal(PistolTicks, player.Ranged.Cooldown.DurationTicks);
-        Assert.Equal(BladeTicks, player.BladeCooldown.DurationTicks);
+        Assert.Equal(BladeTicks, player.MeleeCooldown.DurationTicks);
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class PlayerCombatTests
         Assert.IsType<ShotFired>(Assert.Single(player.Events));
 
         player.Tick(PlayerInput.None);
-        Assert.IsType<BladeSwung>(Assert.Single(player.Events));
+        Assert.IsType<MeleeSwung>(Assert.Single(player.Events));
     }
 
     [Fact]
