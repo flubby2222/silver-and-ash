@@ -207,3 +207,27 @@ Ausgewertete Quellen mit den übernommenen Rezepten. Die Seiten zu Farnells Buch
 - **Klinge – Ursache gemessen:** Im Band 2–8 kHz lag der Treffer 18 dB unter seinem Gesamtpegel, über 8 kHz 36 dB darunter; die PS1-Kette nahm über 8 kHz noch einmal 12 dB weg. **[Schluss]** Mein Treffer hatte nur den Körper (Farnells „Blast“), nicht den hellen Anteil, den die Audio Bible für Nahkampf verlangt („scharf und hell“). Regel-Vorschlag: *Treffer mit Waffe = dumpfer Körper plus kurzer heller Anteil (Schneide oder Metall), beide setzen zugleich ein; vor der PS1-Kette die Höhen über 3 kHz anheben.* Hörprobe 4: 2–8 kHz jetzt 6–9 dB heller als die PS1-Fassung aus Hörprobe 3; der Ausgleich holt den Verlust der Kette in diesem Band zurück, über 11 kHz kann er nichts zurückholen.
 - **Kuratieren:** Vorschlag im [Konzept Klangbibliothek](konzept-klangbibliothek.md), Abschnitt 4 – PS1-Einstellung einmal je Kategorie festlegen, danach kurze Abnahme-Hörproben.
 - **Neue Grundregel in Arbeit:** Echte Aufnahmen aus seriösen, kostenfreien Quellen sollen erlaubt werden (Änderung an ADR 0009, Freigabe durch den Menschen steht aus). Bis dahin wird nichts heruntergeladen. Konzept: [konzept-klangbibliothek.md](konzept-klangbibliothek.md).
+
+---
+
+# Nachtrag nach Hörprobe 4 (2026-11-16)
+
+**Urteil des Menschen (wörtlich, über die Leitung):** „Hörprobe 3 war besser. Klingt jetzt, als hätte man mehrere Sounds gemischt.“
+
+**[Schluss]** Dieselbe Lehre wie beim ersten Ghul: Beim Beheben von „Klingeln“ und „stumpf“ habe ich Anteile *hinzugefügt* (Aufschlag-Rauschen, Raum, Metallklang), die man einzeln hört. Regel 1 ist verletzt, sobald Schichten getrennt wahrnehmbar sind. Künftig: Fehler durch **Wegnehmen** beheben und Helligkeit über die Klangfarbe **desselben** Ereignisses (Filter öffnen, Anschlag härter, Tonhöhe), nie durch einen zweiten Klang.
+
+**Messung „wirkt gemischt?“** ([`mischung.py`](../proben/audio/hoerprobe-5/mischung.py)): Einsätze, Einsatzversatz zwischen vier Bändern, Ausklang-Umkehr (ein höheres Band klingt länger als das tiefere = eigener Anteil), Knick im Abklingen (kurzer Teil + langsamer Teil). Grenzen (Schluss aus diesen Werten, nicht belegt): Einsätze > 1, Versatz > 10 ms, Umkehr > 40 ms, Knick-Verhältnis > 3.
+
+| Datei | Hörprobe | Umkehr | Knick 0→−20 / −20→−40 dB | Auffällig |
+|---|---|---|---|---|
+| Klinge `klinge-ps1-1` | 3 | 0 ms | 100 / 105 ms | – |
+| Klinge `a-schneide-1` | 4 | 50 ms | 90 / 105 ms | Umkehr |
+| Klinge `b-biss-1` | 4 | 0 ms | 85 / 105 ms | – |
+| Klinge `c-klirr-1` | 4 | 135 ms | 95 / 115 ms | Umkehr |
+| Tropfen (sauber) | 3 | 5 ms | 435 / 330 ms | – (aber Klingeln: 1,2 s bis −60 dB) |
+| Tropfen `a-kurz` | 4 | 0 ms | 15 / 40 ms | Knick (2,7, knapp) |
+| Tropfen `b-breit` | 4 | 0 ms | 20 / 105 ms | Knick (5) |
+| Tropfen `c-geraeusch` | 4 | 0 ms | 15 / 110 ms | Knick (7) |
+| Pistole `pistole-ps1` | 3 | 0 ms | 115 / 135 ms | – |
+
+Hörprobe 5 (alle Kandidaten): siehe [Messwerte Hörprobe 5](../proben/audio/hoerprobe-5/messwerte.md), Abschnitt „Wirkt es gemischt?“. Nach der Überarbeitung ist nur noch auffällig: `tropfen-1-glas` (Umkehr 55 ms) und `klinge-2-schnitt-rein` (Versatz, weil die Aufnahme selbst ein durch die Frequenzen wandernder Schnitt ist). Der Höhlenhall der Tropfen erzeugte schon bei 5 % Pegel eigene Einsätze; er ist deshalb ganz weggenommen.

@@ -95,7 +95,7 @@ def pistole_2():
     n = n_of(0.3)
     hit = A.head(A.cut_gesture(src("impact-sounds", "impactMetal_heavy_002.ogg"), 0.2), 25)
     dry = A.layer(normalize(gun_body(rng, n), 0.9), normalize(hit, 1.0), 1.0)
-    dry = HP3.saturate(dry, 2.0)
+    dry = HP3.saturate(mul(dry, env_ad(len(dry), 0.0003, 0.05)), 2.0)  # gemeinsame Huellkurve
     return finish(gun_room(dry), -1.5, length=0.4, fade_out_ms=60)
 
 
@@ -105,7 +105,7 @@ def pistole_3():
     n = n_of(0.3)
     hit = A.head(A.varispeed(A.cut_gesture(src("impact-sounds", "impactPlate_heavy_001.ogg"), 0.3), -3), 20)
     dry = A.layer(normalize(gun_body(rng, n), 0.9), normalize(hit, 1.0), 0.9)
-    dry = HP3.saturate(dry, 2.0)
+    dry = HP3.saturate(mul(dry, env_ad(len(dry), 0.0003, 0.05)), 2.0)  # gemeinsame Huellkurve
     return finish(gun_room(dry), -1.5, length=0.4, fade_out_ms=60)
 
 
@@ -118,21 +118,37 @@ def klinge_1():
 
 
 def klinge_2():
-    """Rein aus zwei Aufnahmen: Koerper impactPunch_medium_000 + Schneide knifeSlice.ogg (erste 60 ms), gleichzeitig."""
-    body = A.cut_gesture(src("impact-sounds", "impactPunch_medium_000.ogg"), 0.35)
-    edge = A.head(A.cut_gesture(src("rpg-audio", "knifeSlice.ogg"), 0.3), 60)
-    x = A.layer(normalize(A.clean(body), 1.0), normalize(edge, 1.0), 0.6)
-    return finish(x, -4.0, length=0.35, fade_out_ms=40)
+    """Rein aus einer Aufnahme: knifeSlice.ogg (Messerschnitt), 3 Halbtoene tiefer (schwerer)."""
+    x = A.varispeed(A.clean((lambda y: y[max(0, A.first_onset(y) - 220):][:n_of(0.47)])(src("rpg-audio", "knifeSlice.ogg"))), -3)
+    return finish(x, -4.0, length=min(0.56, len(x) / SR), fade_out_ms=100)
 
 
 def klinge_3():
-    """Mischung: Schneide aus knifeSlice.ogg (erste 40 ms) + synthetischer Koerper aus Hoerprobe 4 (fallender Tiefpass, Ton)."""
+    """Mischung, verschmolzen: Schneide aus knifeSlice.ogg (erste 40 ms) und synthetisches Rauschen laufen
+    GEMEINSAM durch einen Tiefpass, der von 7 kHz auf 180 Hz faellt, und tragen eine gemeinsame Huellkurve;
+    darunter der Koerperton 110 -> 55 Hz. So hat der echte Anschlag dieselbe Klangfarbe wie der Koerper."""
     rng = random.Random(53)
     n = n_of(0.26)
-    body = HP4K.body(rng, n, rng.uniform)
     edge = A.head(A.cut_gesture(src("rpg-audio", "knifeSlice.ogg"), 0.3), 40)
-    x = A.layer(normalize(body, 1.0), normalize(edge, 1.0), 0.6)
+    mix = A.layer(normalize(white(n, rng), 0.5), normalize(edge, 1.0), 1.0)[:n]
+    cut = [180.0 + 6820.0 * math.exp(-i / (0.012 * SR)) for i in range(n)]
+    x = normalize(mul(svf(mix, cut, 1.4, "lp"), env_ad(n, 0.0003, 0.03)), 1.0)
+    tone = mul(osc_sine(curve(n, [(0.0, 110.0), (0.08, 55.0)])), env_ad(n, 0.002, 0.045))
+    x = add_into(x, tone, 0, 0.6)
     return finish(x, -4.0, length=0.26, fade_out_ms=40)
+
+
+def klinge_hp3_heller():
+    """Vergleich, rein synthetisch: Klinge aus Hoerprobe 3, heller gemacht nur ueber die Klangfarbe DESSELBEN
+    Ereignisses – Tiefpass startet bei 4,5 kHz statt 1,8 kHz und faellt schneller, Anschlag 0,2 ms statt 1 ms,
+    Koerperton 140 -> 70 Hz statt 110 -> 55 Hz. Weggenommen: der leise Klick aus Hoerprobe 3. Nichts hinzugefuegt."""
+    rng = random.Random(14101)
+    n = n_of(0.24)
+    cut = [180.0 + 4320.0 * math.exp(-i / (0.010 * SR)) for i in range(n)]
+    body = mul(svf(white(n, rng), cut, 1.4, "lp"), env_ad(n, 0.0002, 0.03))
+    tone = mul(osc_sine(curve(n, [(0.0, 140.0), (0.08, 70.0)])), env_ad(n, 0.0005, 0.045))
+    x = add_into(normalize(body, 1.0), tone, 0, 0.6)
+    return finish(x, -4.0, length=0.24, fade_out_ms=40)
 
 
 # --- Schritte ----------------------------------------------------------------
@@ -162,9 +178,9 @@ def schritt_3(k):
     n = n_of(0.24)
     curve_ = HP3.grf(n, 0.008 * j(0.8, 1.2), j(0.045, 0.065), j(0.25, 0.4))
     tex = svf(svf(white(n, rng), 1300.0 * j(0.85, 1.15), 0.8, "lp"), 200.0, 0.7, "hp")
-    body = normalize(mul(tex, curve_), 1.0)
     hit = A.head(A.cut_gesture(src("rpg-audio", RPG_STEPS[k]), 0.2), 20)
-    x = A.layer(body, normalize(hit, 1.0), 0.8)
+    # verschmolzen: Anschlag und Rauschen werden GEMEINSAM von der Bodenreaktions-Kurve getragen
+    x = mul(A.layer(normalize(tex, 0.5), normalize(hit, 1.0), 1.0)[:n], curve_)
     return finish(x, -12.0 - 0.5 * k, length=0.24, fade_out_ms=40)
 
 
@@ -179,11 +195,32 @@ def folge(takes):
 # Jede drip-Funktion verbraucht genau zwei Zufallszahlen (wie in Hoerprobe 1-4),
 # damit die sieben Zeitpunkte im Ambiente gleich bleiben.
 
+def cave_kurz(x):
+    """Raum der Tropfen: KEINER. Gemessen (mischung.py): Schon mit 5 % Pegel liefert der Hoehlenhall aus
+    Hoerprobe 3 eigene Einsaetze (seine Echos bei 62/100 ms) und einen Knick im Abklingen – er wirkt als
+    zweiter Anteil. Also ganz weggenommen; den Raum gibt die Flaeche des Ambientes."""
+    return list(x) + [0.0] * n_of(0.05)
+
+
 def _drip_from(x_cache, rng, semis_base):
     st = semis_base + rng.uniform(-2.0, 2.0)
     g = rng.uniform(0.8, 1.0)
     y = A.varispeed(x_cache, st)
-    return [v * g for v in HP4T.room(normalize(y, 1.0))]
+    return [v * g for v in cave_kurz(normalize(y, 1.0))]
+
+
+def drip_hp3_gekuerzt(rng):
+    """Vergleich, rein synthetisch: Tropfen aus Hoerprobe 3, Klingeln durch WEGNEHMEN behoben – derselbe Ton
+    mit steigender Tonhoehe, aber Zeitkonstante 8 ms statt 20 ms (kuerzer und damit breiter) und der
+    entschaerfte Hoehlenhall (cave_kurz). Nichts hinzugefuegt."""
+    f_a = rng.uniform(3000.0, 4200.0) * 2 ** -1.5
+    f_b = f_a * rng.uniform(1.15, 1.3)
+    ln = n_of(0.06)
+    ph, out = 0.0, [0.0] * ln
+    for i in range(ln):
+        ph += f_a * (f_b / f_a) ** (1.0 - math.exp(-5.0 * i / ln)) / SR
+        out[i] = math.sin(2.0 * math.pi * ph) * math.exp(-i / (0.008 * SR)) * min(1.0, i / (0.002 * SR))
+    return [v * 0.35 for v in cave_kurz(out)]
 
 
 _CACHE = {}
@@ -213,9 +250,10 @@ def drip_3(rng):
     hit = _cached("h", lambda: A.head(A.cut_gesture(src("impact-sounds", "impactGeneric_light_000.ogg"), 0.1), 8, 4))
     f_a = rng.uniform(3000.0, 4200.0) * 2 ** -1.5
     f_b = f_a * rng.uniform(1.15, 1.3)
-    t = HP4T.tone(f_a, f_b, 0.005, n_of(0.05))
+    t = HP4T.tone(f_a, f_b, 0.008, n_of(0.06))
     x = A.layer(normalize(t, 1.0), normalize(hit, 1.0), 0.5)
-    return [v * 0.35 for v in HP4T.room(normalize(x, 1.0))]
+    x = mul(x, env_ad(len(x), 0.0005, 0.008))  # gemeinsame Huellkurve fuer Aufschlag und Ton
+    return [v * 0.35 for v in cave_kurz(normalize(x, 1.0))]
 
 
 DRIPS = {"1-glas": drip_1, "2-blech": drip_2, "3-klopfen-plus-ton": drip_3}
@@ -289,7 +327,8 @@ def main():
     # Kandidaten (Einstellung a-leicht)
     for name, fn in (("pistole-1-schlag-rein", pistole_1), ("pistole-2-metall-plus-koerper", pistole_2),
                      ("pistole-3-platte-plus-koerper", pistole_3), ("klinge-1-hieb-rein", klinge_1),
-                     ("klinge-2-zwei-aufnahmen", klinge_2), ("klinge-3-schneide-plus-koerper", klinge_3)):
+                     ("klinge-2-schnitt-rein", klinge_2), ("klinge-3-schneide-plus-koerper", klinge_3),
+                     ("vergleich-klinge-hp3-heller", klinge_hp3_heller)):
         save(name, A.to_ps1(fn()))
         print(name)
     for key, fn in (("1-rpg-rein", schritt_1), ("2-beton-rein", schritt_2), ("3-anschlag-plus-koerper", schritt_3)):
@@ -302,12 +341,12 @@ def main():
         save(f"tropfen-{key}-einzeln", A.to_ps1(drip_singles(fn)))
         ambience(fn, f"ambiente-tropfen-{key}")
         print("tropfen", key)
+    save("vergleich-tropfen-hp3-gekuerzt", A.to_ps1(drip_singles(drip_hp3_gekuerzt)))
+    ambience(drip_hp3_gekuerzt, "ambiente-tropfen-vergleich-hp3-gekuerzt")
 
-    # Vergleich: beste rein synthetische Fassung bisher (PS1)
+    # Vergleich: rein synthetische Fassungen aus Hoerprobe 3 (PS1), die der Mensch besser fand als Hoerprobe 4
     for src_, dst in ((AUDIO / "hoerprobe-3" / "pistole-ps1.wav", "vergleich-pistole-hp3"),
-                      (AUDIO / "hoerprobe-4" / "klinge-a-schneide-1-ps1.wav", "vergleich-klinge-hp4-a"),
-                      (AUDIO / "hoerprobe-3" / "schritt-ps1-folge.wav", "vergleich-schritt-hp3-folge"),
-                      (AUDIO / "hoerprobe-4" / "tropfen-b-breit-einzeln-ps1.wav", "vergleich-tropfen-hp4-b")):
+                      (AUDIO / "hoerprobe-3" / "schritt-ps1-folge.wav", "vergleich-schritt-hp3-folge")):
         shutil.copyfile(src_, HERE / f"{dst}.wav")
 
     # PS1-Einstellung je Kategorie: dieselbe saubere Datei in a-leicht und b-stark

@@ -51,6 +51,5 @@ Für die Lücken käme laut Entscheidung der Leitung Freesound über das Konto d
 | `impactMetal_heavy_002.ogg` | Impact Sounds | `b914c8f1eb7c0f34bb165d7c77f4be0351f6be0660c13c53e65424e262e2c093` |
 | `impactPlate_heavy_001.ogg` | Impact Sounds | `142fd6c77f13d25f318265901163f70f8dfe12f87829169a570025be43de7011` |
 | `impactPunch_heavy_001.ogg` | Impact Sounds | `f92f5cb6ba4ff2766497292ffd90865654317eeca976f5652e0708dbdcdc0dd9` |
-| `impactPunch_medium_000.ogg` | Impact Sounds | `486988aa2d6440ffc4c62a0e8ccf3c23673ba84424bd4723378d451b7255eb5c` |
 | `impactTin_medium_004.ogg` | Impact Sounds | `fd53e24efec3d5c1cee5a46fee70f97efd4bd01e53ac5d9b5f3b6719dfe9f5aa` |
 | `knifeSlice.ogg` | RPG Audio | `4cd96dc630bed9840c15f1dd2306da2cc56a4da26a5d3f1a03c5a7265ac5e54f` |

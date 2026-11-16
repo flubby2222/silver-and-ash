@@ -20,28 +20,29 @@ spec = importlib.util.spec_from_file_location("messen_hp1", HP1 / "messen.py")
 m1 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m1)
 import quelle as Q  # noqa: E402
+import mischung as MI  # noqa: E402
 
 LIMIT = {"pistole": 0.6, "klinge": 0.6, "schritt": 0.3, "tropfen": None, "einstellung": None}
-REF = {"pistole": "vergleich-pistole-hp3.wav", "klinge": "vergleich-klinge-hp4-a.wav",
-       "schritt": "vergleich-schritt-hp3-folge.wav", "tropfen": "vergleich-tropfen-hp4-b.wav"}
+REF = {"pistole": "vergleich-pistole-hp3.wav", "klinge": "vergleich-klinge-hp3-heller.wav",
+       "schritt": "vergleich-schritt-hp3-folge.wav", "tropfen": "vergleich-tropfen-hp3-gekuerzt.wav"}
 
 HERKUNFT = {
     "pistole-1-schlag-rein": "**Rein aus einer Aufnahme.** `impactPunch_heavy_001.ogg` (Impact Sounds): auf den Schlag geschnitten, Brummen unter 40 Hz entfernt, 2 Halbtöne tiefer (Varispeed), stark weich gesättigt (tanh), kurzer synthetischer Raum wie Hörprobe 3. Kenney hat keinen Schuss; der Faustschlag ersetzt ihn.",
-    "pistole-2-metall-plus-koerper": "**Mischung.** Anschlag: erste 25 ms von `impactMetal_heavy_002.ogg` (Impact Sounds). Körper, Sub und Raum synthetisch wie Hörprobe 3; zusammen weich gesättigt.",
-    "pistole-3-platte-plus-koerper": "**Mischung.** Anschlag: erste 20 ms von `impactPlate_heavy_001.ogg` (Impact Sounds), 3 Halbtöne tiefer. Körper, Sub und Raum synthetisch wie Hörprobe 3.",
-    "vergleich-pistole-hp3": "Vergleich: `pistole-ps1.wav` aus Hörprobe 3, rein synthetisch.",
+    "pistole-2-metall-plus-koerper": "**Mischung, verschmolzen.** Anschlag: erste 25 ms von `impactMetal_heavy_002.ogg` (Impact Sounds) + synthetischer Körper und Sub wie Hörprobe 3; beide tragen eine gemeinsame Hüllkurve, werden gemeinsam gesättigt und liegen im selben Raum.",
+    "pistole-3-platte-plus-koerper": "**Mischung, verschmolzen.** Anschlag: erste 20 ms von `impactPlate_heavy_001.ogg` (Impact Sounds), 3 Halbtöne tiefer, + synthetischer Körper; gemeinsame Hüllkurve, gemeinsame Sättigung, selber Raum.",
+    "vergleich-pistole-hp3": "Vergleich: `pistole-ps1.wav` aus Hörprobe 3, rein synthetisch, unverändert.",
     "klinge-1-hieb-rein": "**Rein aus einer Aufnahme.** `chop.ogg` (RPG Audio): geschnitten, 2 Halbtöne tiefer.",
-    "klinge-2-zwei-aufnahmen": "**Rein aus zwei Aufnahmen.** Körper `impactPunch_medium_000.ogg` (Impact Sounds) + Schneide: erste 60 ms von `knifeSlice.ogg` (RPG Audio), gleichzeitig.",
-    "klinge-3-schneide-plus-koerper": "**Mischung.** Schneide: erste 40 ms von `knifeSlice.ogg` (RPG Audio) + synthetischer Körper aus Hörprobe 4 (fallender Tiefpass, Ton 110→55 Hz).",
-    "vergleich-klinge-hp4-a": "Vergleich: `klinge-a-schneide-1-ps1.wav` aus Hörprobe 4, rein synthetisch (noch ohne Urteil).",
+    "klinge-2-schnitt-rein": "**Rein aus einer Aufnahme.** `knifeSlice.ogg` (RPG Audio): geschnitten, 3 Halbtöne tiefer. Die Aufnahme ist ein Schnitt, der durch die Frequenzen wandert; die Messung zeigt deshalb Einsatzversatz.",
+    "klinge-3-schneide-plus-koerper": "**Mischung, verschmolzen.** Erste 40 ms von `knifeSlice.ogg` (RPG Audio) und synthetisches Rauschen laufen gemeinsam durch einen Tiefpass, der von 7 kHz auf 180 Hz fällt, mit gemeinsamer Hüllkurve; darunter der Körperton 110→55 Hz. Ersetzt die Fassung „zwei Aufnahmen“ aus dem ersten Stand dieser Hörprobe.",
+    "vergleich-klinge-hp3-heller": "Vergleich, rein synthetisch: die Klinge aus **Hörprobe 3**, heller nur über die Klangfarbe desselben Ereignisses (Tiefpass startet bei 4,5 statt 1,8 kHz, Anschlag 0,2 statt 1 ms, Körperton 140→70 statt 110→55 Hz); der leise Klick wurde weggenommen, nichts hinzugefügt.",
     "schritt-1-rpg-rein": "**Rein aus Aufnahmen.** `footstep00/02/06/07.ogg` (RPG Audio), je auf einen Schritt geschnitten. Diese vier ohne Übersteuerung ausgewählt (03 und 08 haben übersteuerte Samples).",
     "schritt-2-beton-rein": "**Rein aus Aufnahmen.** `footstep_concrete_000–003.ogg` (Impact Sounds), 2 Halbtöne tiefer (schwerer). Die Originale sind sehr knapp geschnitten (0,1 s).",
-    "schritt-3-anschlag-plus-koerper": "**Mischung.** Anschlag: erste 20 ms der RPG-Schritte + synthetische Bodenreaktions-Kurve aus Hörprobe 3.",
-    "vergleich-schritt-hp3": "Vergleich: `schritt-ps1-folge.wav` aus Hörprobe 3, rein synthetisch.",
-    "tropfen-1-glas": "**Rein aus einer Aufnahme.** `impactGlass_light_000.ogg` (Impact Sounds), eine Oktave tiefer (±2 Halbtöne je Tropfen), gedämpfter Raum aus Hörprobe 4. Kenney hat kein Wasser; leichtes Glas ersetzt es.",
-    "tropfen-2-blech": "**Rein aus einer Aufnahme.** `impactTin_medium_004.ogg` (Impact Sounds), 7 Halbtöne tiefer, Tiefpass 2,5 kHz, gedämpfter Raum.",
-    "tropfen-3-klopfen-plus-ton": "**Mischung.** Aufschlag: erste 8 ms von `impactGeneric_light_000.ogg` (Impact Sounds) + synthetischer kurzer Ton (Hörprobe 4, Fassung a), gedämpfter Raum.",
-    "vergleich-tropfen-hp4-b": "Vergleich: `tropfen-b-breit-einzeln-ps1.wav` aus Hörprobe 4, rein synthetisch (noch ohne Urteil).",
+    "schritt-3-anschlag-plus-koerper": "**Mischung, verschmolzen.** Erste 20 ms der RPG-Schritte und synthetisches Rauschen werden gemeinsam von der Bodenreaktions-Kurve aus Hörprobe 3 getragen.",
+    "vergleich-schritt-hp3": "Vergleich: `schritt-ps1-folge.wav` aus Hörprobe 3, rein synthetisch, unverändert.",
+    "tropfen-1-glas": "**Rein aus einer Aufnahme.** `impactGlass_light_000.ogg` (Impact Sounds), eine Oktave tiefer (±2 Halbtöne je Tropfen), kein eigener Raum. Kenney hat kein Wasser; leichtes Glas ersetzt es.",
+    "tropfen-2-blech": "**Rein aus einer Aufnahme.** `impactTin_medium_004.ogg` (Impact Sounds), 7 Halbtöne tiefer, Tiefpass 2,5 kHz, kein eigener Raum.",
+    "tropfen-3-klopfen-plus-ton": "**Mischung, verschmolzen.** Erste 8 ms von `impactGeneric_light_000.ogg` (Impact Sounds) + synthetischer Ton (8 ms Abklingzeit) unter einer gemeinsamen Hüllkurve, kein eigener Raum.",
+    "vergleich-tropfen-hp3-gekuerzt": "Vergleich, rein synthetisch: der Tropfen aus **Hörprobe 3**, Klingeln durch Wegnehmen behoben – derselbe Ton, Abklingzeit 8 statt 20 ms, Höhlenhall ganz weggenommen (schon bei 5 % Pegel lieferte er eigene Einsätze). Nichts hinzugefügt.",
 }
 
 
@@ -61,7 +62,7 @@ def main():
     sys.stdout.reconfigure(encoding="utf-8")
     (HERE / "spektrogramme").mkdir(exist_ok=True)
     refs = {k: Q.bands(m1.read_wav(HERE / v)[0][0]) for k, v in REF.items()}
-    rows, checks, settings = [], [], []
+    rows, checks, settings, mix = [], [], [], []
     for p in sorted(HERE.glob("*.wav")):
         stem = p.stem
         kind = kind_of(stem)
@@ -86,6 +87,8 @@ def main():
         line = (f"| `{p.name}` | {on} | {'–' if d is None or hilfe else f'{d * 1000:.0f} ms'} | "
                 + " | ".join(f"{v:.0f}" for v in b[1:]) + f" | {delta} | ![{stem}](spektrogramme/{stem}.png) |")
         (settings if kind == "einstellung" else rows).append(line)
+        if kind != "einstellung" and not stem.endswith("folge") and not (kind == "schritt" and not stem.endswith("-1")):
+            mix.append(MI.zeile(f"`{p.name}`", MI.first_event(x) if kind == "tropfen" else x))
     amb = []
     for p in sorted(HERE.glob("ambiente-*.ogg")):
         with tempfile.TemporaryDirectory() as td:
