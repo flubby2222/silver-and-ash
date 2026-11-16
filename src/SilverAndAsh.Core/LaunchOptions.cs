@@ -8,7 +8,11 @@ namespace SilverAndAsh.Core;
 /// </summary>
 /// <param name="LevelName">Name of the level file in assets/levels/ without ".txt", or <see cref="GeneratedLevelName"/>.</param>
 /// <param name="Seed">Seed chosen with <c>--seed</c>, or null for a new one every game.</param>
-public sealed partial record LaunchOptions(string LevelName, int? Seed = null)
+/// <param name="Give">
+/// Weapons to start every run with, chosen with <c>--give club</c> (as often as wanted) - for trying weapons out
+/// before they can be found. The game honours it only in its debug version.
+/// </param>
+public sealed partial record LaunchOptions(string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null)
 {
     /// <summary>Level that is played when no <c>--level</c> is given: a generated level 0.</summary>
     public const string DefaultLevelName = GeneratedLevelName;
@@ -28,6 +32,7 @@ public sealed partial record LaunchOptions(string LevelName, int? Seed = null)
         ArgumentNullException.ThrowIfNull(args);
         var levelName = DefaultLevelName;
         int? seed = null;
+        var give = new List<Gameplay.WeaponKind>();
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -71,12 +76,28 @@ public sealed partial record LaunchOptions(string LevelName, int? Seed = null)
                     seed = number;
                     break;
 
+                case "--give":
+                    var known = string.Join(", ", Enum.GetNames<Gameplay.WeaponKind>()).ToLowerInvariant();
+                    if (i + 1 >= args.Count)
+                    {
+                        throw new ArgumentException($"'--give' needs a weapon, e.g. '--give club'. Known: {known}.");
+                    }
+
+                    var name = args[++i];
+                    if (!Enum.TryParse<Gameplay.WeaponKind>(name, ignoreCase: true, out var weapon) || int.TryParse(name, out _))
+                    {
+                        throw new ArgumentException($"Unknown weapon '{name}'. Known: {known}.");
+                    }
+
+                    give.Add(weapon);
+                    break;
+
                 default:
-                    throw new ArgumentException($"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>.");
+                    throw new ArgumentException($"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>.");
             }
         }
 
-        return new LaunchOptions(levelName, seed);
+        return new LaunchOptions(levelName, seed, give);
     }
 
     /// <summary>The level file for these options inside <paramref name="levelDirectory"/>.</summary>

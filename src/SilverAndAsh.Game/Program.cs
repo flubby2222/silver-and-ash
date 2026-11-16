@@ -69,6 +69,19 @@ using (log)
             nextWorld = world => world.Restarted();
             log?.Info($"Level '{levelPath}' loaded: {level.Width} x {level.Depth} cells.");
         }
+
+#if DEBUG
+        // Test option: --give club - every run (and restart) starts with these weapons, to try them before they can
+        // be found. Only in the debug version.
+        if (options.Give is { Count: > 0 } give)
+        {
+            var plainNew = newWorld;
+            var plainNext = nextWorld;
+            newWorld = (worldSeed, balance) => WithGivenWeapons(plainNew(worldSeed, balance), give);
+            nextWorld = world => WithGivenWeapons(plainNext(world), give);
+            log?.Info($"Every run starts with: {string.Join(", ", give)}.");
+        }
+#endif
     }
     catch (Exception exception) when (exception is ArgumentException or LevelFormatException or IOException or UnauthorizedAccessException or InvalidOperationException)
     {
@@ -590,6 +603,27 @@ static void DrawHud(string displayVersion)
     Raylib.DrawText(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
 }
 
+#if DEBUG
+// Test option --give: a melee weapon goes into the hand, a ranged one into the first free place (or the last one).
+// Only in the debug version, like the option itself.
+static GameWorld WithGivenWeapons(GameWorld world, IReadOnlyList<WeaponKind> give)
+{
+    foreach (var kind in give)
+    {
+        if (Weapons.Info(kind).Hand == WeaponHand.Melee)
+        {
+            world.Player.EquipMelee(kind);
+            continue;
+        }
+
+        var free = world.Player.RangedSlots.ToList().FindIndex(weapon => weapon is null);
+        world.Player.Equip(free >= 0 ? free : Player.RangedSlotCount - 1, kind);
+    }
+
+    return world;
+}
+#endif
+
 // Reads the balancing file; every problem with it goes into the log as a warning.
 static void LogRun(GameWorld world, FileLog? log) =>
     log?.Info($"New run, seed {world.Seed}: {world.Rooms.Count} rooms, {world.Doors.Count} doors, "
@@ -657,7 +691,7 @@ static void DrawDebugInfo(Player player)
     var chargeText = player.BladeCharge.IsCharging
         ? string.Create(CultureInfo.InvariantCulture, $"   Charge {player.BladeCharge.Fraction * 100f:0} %")
         : string.Empty;
-    var weaponsText = $"Blade {CooldownText(player.BladeCooldown)}   {player.Ranged.Info.Name} {CooldownText(player.Ranged.Cooldown)}{chargeText}";
+    var weaponsText = $"{Weapons.Info(player.Melee).Name} {CooldownText(player.BladeCooldown)}   {player.Ranged.Info.Name} {CooldownText(player.Ranged.Cooldown)}{chargeText}";
     Raylib.DrawText(weaponsText, 20, 135, 20, new Color(200, 200, 210, 255));
 
     if (player.IsDashing)

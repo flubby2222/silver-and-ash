@@ -128,6 +128,9 @@ public sealed class Bat : ITarget
     /// <summary>Bottom centre of its body in world coordinates (it flies, so this is in the air).</summary>
     public Vector3 Position { get; private set; }
 
+    /// <summary>A push from a heavy blow (the club) - while it lasts the bat is flung away and does nothing else.</summary>
+    public Knockback Knockback { get; } = new();
+
     /// <summary>Middle of its body - where it spits from.</summary>
     public Vector3 Centre => Position + new Vector3(0f, HalfHeight, 0f);
 
@@ -180,6 +183,15 @@ public sealed class Bat : ITarget
         ArgumentNullException.ThrowIfNull(events);
         if (IsDead)
         {
+            return;
+        }
+
+        // Flung away by a heavy blow: it flies with the push (walls stop it) and does nothing else meanwhile.
+        if (Knockback.IsActive)
+        {
+            (Position, _) = CharacterCollision.Move(
+                level, Position, Knockback.Velocity, BodySizes.Bat.Radius, SimulationClock.SecondsPerTick, BodySizes.Bat.Height, FlyingStepHeight);
+            Knockback.Tick();
             return;
         }
 

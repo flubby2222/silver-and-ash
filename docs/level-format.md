@@ -68,6 +68,12 @@ dotnet run --project src/SilverAndAsh.Game -- --level test
 dotnet run --project src/SilverAndAsh.Game -- --level heights
 ```
 
+**Waffen ausprobieren**, bevor man sie finden kann: Mit `--give <waffe>` beginnt jeder Durchlauf mit dieser Waffe. Eine Nahkampfwaffe kommt in die Hand, eine Fernwaffe auf den ersten freien Platz. Das geht auch mehrfach und lässt sich mit `--seed` kombinieren. Es wirkt **nur in der Debug-Version** (`dotnet run`), nicht im Release:
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --give club
+```
+
 Die beiden `--` trennen die Optionen für `dotnet` von denen für das Spiel. Erlaubt sind Namen aus Kleinbuchstaben, Ziffern und `-`. `--level generated` ist dasselbe wie gar kein `--level`.
 
 ## Im Code

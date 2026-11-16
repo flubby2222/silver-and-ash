@@ -111,6 +111,7 @@ public class BalanceFileTests
     [InlineData("""{ "player": { "airControl": 1.5 } }""", "player.airControl")]
     [InlineData("""{ "player": { "exhaustedJumpSpeedPenalty": 1 } }""", "player.exhaustedJumpSpeedPenalty")]
     [InlineData("""{ "blade": { "angle": 200 } }""", "blade.angle")]
+    [InlineData("""{ "club": { "angle": 200 } }""", "club.angle")]
     [InlineData("""{ "ghoul": { "attackHalfAngle": 200 } }""", "ghoul.attackHalfAngle")]
     [InlineData("""{ "drops": { "ghoulChance": 1.5 } }""", "drops.ghoulChance")]
     [InlineData("""{ "drops": { "batChance": 2 } }""", "drops.batChance")]
@@ -251,6 +252,24 @@ public class BalanceFileTests
         var result = BalanceFile.Parse("""{ "layout": { "secretRooms": 0 } }""");
 
         Assert.Equal(0, result.Balance.Layout.SecretRooms);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void A_charged_knockback_shorter_than_the_plain_one_falls_back_to_both_standards()
+    {
+        var result = BalanceFile.Parse("""{ "club": { "knockback": 8, "chargedKnockback": 2 } }""");
+
+        Assert.Equal(Balance.Default.Club, result.Balance.Club);
+        Assert.Contains(result.Warnings, w => w.Contains("club.knockback") && w.Contains("club.chargedKnockback"));
+    }
+
+    [Fact]
+    public void A_melee_weapon_may_have_no_knockback()
+    {
+        var result = BalanceFile.Parse("""{ "club": { "knockback": 0, "chargedKnockback": 0 } }""");
+
+        Assert.Equal(0f, result.Balance.Club.Knockback);
         Assert.Empty(result.Warnings);
     }
 

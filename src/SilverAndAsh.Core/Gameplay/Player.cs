@@ -355,14 +355,31 @@ public sealed class Player
         }
     }
 
-    /// <summary>Waiting time of the silver blade.</summary>
-    public Cooldown BladeCooldown { get; }
+    /// <summary>Waiting time of the melee weapon in the hand (the name stems from the time of the blade alone).</summary>
+    public Cooldown BladeCooldown { get; private set; }
 
     /// <summary>Most ranged weapons a player carries at once (decision record 0008).</summary>
     public const int RangedSlotCount = 3;
 
-    /// <summary>The melee weapon in the left hand (the silver blade until more come with #190).</summary>
-    public WeaponKind Melee => WeaponKind.SilverBlade;
+    /// <summary>The melee weapon in the left hand: the silver blade at the start, later e.g. the club.</summary>
+    public WeaponKind Melee { get; private set; } = WeaponKind.SilverBlade;
+
+    /// <summary>
+    /// Takes melee weapon <paramref name="kind"/> into the left hand (ready, not charging) - there is only one. The
+    /// inventory (#193) and loot use this; so do tests.
+    /// </summary>
+    public void EquipMelee(WeaponKind kind)
+    {
+        if (Weapons.Info(kind).Hand != WeaponHand.Melee)
+        {
+            throw new ArgumentException($"{kind} is no melee weapon.", nameof(kind));
+        }
+
+        var values = _balance.Melee(kind);
+        Melee = kind;
+        BladeCooldown = new Cooldown(values.Cooldown);
+        BladeCharge = new BladeCharge(values);
+    }
 
     /// <summary>The ranged weapons carried: <see cref="RangedSlotCount"/> places, empty ones null.</summary>
     public IReadOnlyList<RangedWeapon?> RangedSlots => _rangedSlots;
@@ -384,8 +401,8 @@ public sealed class Player
         _rangedSlots[slot] = new RangedWeapon(kind, _balance);
     }
 
-    /// <summary>Charging the silver blade (hold the button, swing on release).</summary>
-    public BladeCharge BladeCharge { get; }
+    /// <summary>Charging the melee weapon in the hand (hold the button, swing on release) - every melee weapon can.</summary>
+    public BladeCharge BladeCharge { get; private set; }
 
     /// <summary>
     /// What happened in the latest tick (swings, shots, ...), for the presentation.
@@ -760,7 +777,7 @@ public sealed class Player
         {
             var charge = BladeCharge.Release();
             BladeCooldown.TryUse();
-            _events.Add(new BladeSwung(EyePosition, View.Forward, charge));
+            _events.Add(new BladeSwung(EyePosition, View.Forward, charge, Melee));
         }
 
         // Mouse wheel or 1 - 3: another ranged weapon (empty places are skipped). Putting one away breaks its reload off.

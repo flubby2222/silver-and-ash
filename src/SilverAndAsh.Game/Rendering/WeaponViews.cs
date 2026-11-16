@@ -75,6 +75,7 @@ internal sealed class PlaceholderWeaponView : IWeaponView
     private float _flash;           // 1 = bright, fading to 0
     private bool _holyFlash;        // the last shot was consecrated: white-blue flash
     private bool _consecrated;      // consecrated ammunition loaded: the barrel shimmers
+    private WeaponKind _melee;      // which melee weapon is in the left hand
     private float _bobPhase;
     private float _bobStrength;
     private Vector2 _turnSway;      // x = right, y = up, in metres
@@ -105,6 +106,7 @@ internal sealed class PlaceholderWeaponView : IWeaponView
         _recoil = MathF.Min(1f, _recoil + frameSeconds / RecoilSeconds);
         _flash = MathF.Max(0f, _flash - frameSeconds / FlashSeconds);
         _consecrated = player.IsConsecrated;
+        _melee = player.Melee;
 
         // Bob only while walking on the ground; fades in and out instead of switching on and off.
         var walking = player.IsGrounded ? Math.Clamp(player.HorizontalSpeed / player.WalkSpeed, 0f, 1f) : 0f;
@@ -184,6 +186,17 @@ internal sealed class PlaceholderWeaponView : IWeaponView
             Matrix4x4.CreateRotationY(Deg(sweep - 35f * _windUp)) *
             Matrix4x4.CreateTranslation(BladeHand + windUp + new Vector3(t * 0.06f, t * 0.04f, 0f)) *
             motion;
+
+        if (_melee == WeaponKind.Club)
+        {
+            // The club: a wooden handle thickening into a heavy head with iron bands.
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.01f) * hand, new Vector3(0.022f, 0.022f, 0.1f), Wood);
+            var head = Matrix4x4.CreateRotationX(Deg(-25f)) * Matrix4x4.CreateTranslation(0f, 0.03f, 0.1f) * hand;
+            ShadedBox.Draw(head, new Vector3(0.038f, 0.038f, 0.11f), Wood);
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.02f) * head, new Vector3(0.041f, 0.041f, 0.008f), DarkSilver);
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.03f) * head, new Vector3(0.041f, 0.041f, 0.008f), DarkSilver);
+            return;
+        }
 
         // Handle, guard and the long silver blade pointing forward and a little up.
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.03f) * hand, new Vector3(0.022f, 0.022f, 0.07f), Wood);

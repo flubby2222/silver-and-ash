@@ -73,6 +73,9 @@ public sealed class Ghoul : ITarget
     /// <summary>Its movement in metres per second.</summary>
     public Vector3 Velocity { get; private set; }
 
+    /// <summary>A push from a heavy blow (the club) - while it lasts the ghoul slides away and does nothing else.</summary>
+    public Knockback Knockback { get; } = new();
+
     /// <summary>Its crawling speed in m/s (for drawing: how fast the arms move).</summary>
     public float Speed => _ghoul.Speed;
 
@@ -150,6 +153,14 @@ public sealed class Ghoul : ITarget
         if (IsDead)
         {
             Velocity = Vector3.Zero;
+            return;
+        }
+
+        // Knocked back by a heavy blow: it slides away and does nothing else meanwhile (its wind-up waits).
+        if (Knockback.IsActive)
+        {
+            Move(level, Knockback.Velocity, obstacles);
+            Knockback.Tick();
             return;
         }
 
