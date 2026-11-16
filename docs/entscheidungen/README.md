@@ -19,4 +19,4 @@ Entscheidungen werden nicht gelöscht. Ändert sich etwas, kommt eine neue Notiz
 | [0007](0007-boss-gorm-luft-dash.md) | Boss Gorm und Luft-Dash | angenommen |
 | [0008](0008-ausruestung-haendler-waffenkammer.md) | Ausrüstung, Händler und Waffenkammer | angenommen |
 | [0009](0009-leitung-designer-auto-merge.md) | Leitung durch Claude, Designer-Sitzungen und Auto-Merge | angenommen, teilweise abgelöst durch 0010 |
-| [0010](0010-stil-ps1-nah-texturen.md) | Stil: PS1-nah, mit Texturen und weicher Schattierung | angenommen, Sichtgrenze noch offen |
+| [0010](0010-stil-ps1-nah-texturen.md) | Stil: PS1-nah, mit Texturen und weicher Schattierung | angenommen |
