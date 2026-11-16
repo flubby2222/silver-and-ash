@@ -796,7 +796,7 @@ public sealed class Player
         {
             // Consecrated ammunition: the weapon is ready again sooner.
             ranged.Cooldown.TryUse(IsConsecrated ? _consecratedFireRate : 1f);
-            _events.Add(new ShotFired(EyePosition, View.Forward, IsConsecrated));
+            _events.Add(new ShotFired(EyePosition, View.Forward, IsConsecrated, ranged.Kind));
         }
     }
 

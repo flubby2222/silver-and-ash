@@ -90,7 +90,19 @@ public class BalanceFileTests
         Assert.Empty(result.Warnings);
     }
 
+    [Fact]
+    public void A_ranged_weapon_may_pierce_nothing()
+    {
+        var result = BalanceFile.Parse("""{ "pistol": { "pierce": 0 }, "rifle": { "pierce": 0 } }""");
+
+        Assert.Equal(0, result.Balance.Pistol.Pierce);
+        Assert.Equal(0, result.Balance.Rifle.Pierce);
+        Assert.Empty(result.Warnings);
+    }
+
     [Theory]
+    [InlineData("rifle", "magazineSize")]
+    [InlineData("rifle", "reloadTime")]
     [InlineData("blade", "cooldown")]
     [InlineData("player", "maxHealth")]
     [InlineData("player", "jumpDuration")]

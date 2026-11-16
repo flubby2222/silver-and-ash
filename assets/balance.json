@@ -67,7 +67,18 @@
     "range": 50,                        // m
     "cooldown": 0.7,                    // s between shots
     "magazineSize": 7,                  // rounds, then reload (R) ...
-    "reloadTime": 1.5                   // ... taking this long (s); the supply is unlimited
+    "reloadTime": 1.5,                  // ... taking this long (s); the supply is unlimited
+    "pierce": 0                         // enemies a shot goes on through after the first (walls stop it)
+  },
+
+  "rifle": {                            // the rifle (Forged): heavy aimed shots
+    "damage": 80,
+    "headshotMultiplier": 3,            // 300 % on the head
+    "range": 80,                        // m
+    "cooldown": 1.4,                    // s between shots
+    "magazineSize": 4,
+    "reloadTime": 2.5,
+    "pierce": 1                         // goes through one enemy into the next
   },
 
   "dummy": {

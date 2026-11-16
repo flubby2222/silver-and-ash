@@ -32,6 +32,7 @@ public enum WeaponKind
     SilverBlade,
     Pistol,
     Club,
+    Rifle,
 }
 
 /// <summary>What a weapon is: its name (shown in the game), its hand and its tier.</summary>
@@ -46,6 +47,7 @@ public static class Weapons
         WeaponKind.SilverBlade => new("Silver Blade", WeaponHand.Melee, ItemTier.Worn),
         WeaponKind.Pistol => new("Pistol", WeaponHand.Ranged, ItemTier.Worn),
         WeaponKind.Club => new("Club", WeaponHand.Melee, ItemTier.Worn),
+        WeaponKind.Rifle => new("Rifle", WeaponHand.Ranged, ItemTier.Forged),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
 }
@@ -66,10 +68,9 @@ public sealed class RangedWeapon
         }
 
         Kind = kind;
-        (Cooldown, Magazine) = kind switch
-        {
-            _ => (new Cooldown(balance.Pistol.Cooldown), new Magazine(balance.Pistol.MagazineSize, balance.Pistol.ReloadTime)),
-        };
+        var values = balance.Ranged(kind);
+        Cooldown = new Cooldown(values.Cooldown);
+        Magazine = new Magazine(values.MagazineSize, values.ReloadTime);
     }
 
     public WeaponKind Kind { get; }

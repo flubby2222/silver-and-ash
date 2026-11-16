@@ -183,7 +183,7 @@ internal static class CombatHud
 
         var frame = TierColours.Of(info.Tier, seconds);
         Raylib.DrawRectangleLinesEx(new Rectangle(x, y, width, height), selected ? 2f : 1f, frame);
-        Raylib.DrawText(key, x + 4, y + 3, 10, selected ? TextColor : Track);
+        Raylib.DrawText(key, x + 4, y + 3, 10, selected ? TextColor : new Color(150, 150, 160, 255));
         Raylib.DrawText(info.Name, x + 4, y + 15, 10, selected ? TextColor : new Color(150, 150, 160, 255));
     }
 

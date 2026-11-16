@@ -11,6 +11,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Waffen-Plätze:** Du trägst eine Nahkampfwaffe und bis zu **drei Fernwaffen**. Wechseln mit dem **Mausrad** oder **1 / 2 / 3**; leere Plätze werden übersprungen, ein Wechsel bricht das Nachladen ab, jede Waffe behält ihr Magazin. Unten rechts stehen die Plätze, umrandet in der Farbe ihrer Stufe. Neue Waffen kommen mit den nächsten Updates
 - **Club (Keule, Worn):** neue Nahkampfwaffe, langsamer als die Klinge, aber härter (50 Schaden). Er stößt Ghule und Fledermäuse **3 m zurück**, voll aufgeladen **6 m**; Wände halten sie auf, Gorm bleibt stehen. Zu finden ist er mit dem Beute-System; zum Ausprobieren startet die Debug-Version mit `--give club`
 - **Jede Nahkampfwaffe lässt sich aufladen**, und jeder voll aufgeladene Nahkampfschlag bricht die rissige Wand zum Geheimraum
+- **Rifle (Gewehr, Forged):** neue Fernwaffe für schwere, gezielte Schüsse: 80 Schaden, Kopftreffer ×3, 80 m Reichweite, 4 Schuss, 1,4 s zwischen den Schüssen, 2,5 s Nachladen. Ein Schuss **durchschlägt einen Gegner** und trifft den dahinter; Wände halten ihn auf. Zum Ausprobieren startet die Debug-Version mit `--give rifle` (Taste 2 nimmt sie in die Hand)
 
 ### Geändert
 - **Nachladen:** Die Pistole hat ein Magazin mit **7 Schuss**. **R** lädt nach (1,5 s); ist das Magazin leer, startet ein Schuss das Nachladen. Munition gibt es unbegrenzt. Unten rechts steht die Munition („6 / 7“, leer rot mit „[R]“), beim Nachladen „Reloading...“ mit einem Balken. Dafür schießt sie etwas schneller (0,7 statt 0,8 s)

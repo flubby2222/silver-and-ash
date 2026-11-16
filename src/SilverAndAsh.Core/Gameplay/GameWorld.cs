@@ -929,31 +929,34 @@ public sealed class GameWorld
     }
 
     /// <summary>
-    /// A shot hits the first thing on its ray within the pistol's range: a standing dummy (damage) or a wall,
-    /// floor or ceiling (an impact). Instant - no flying bullet ("hitscan").
+    /// A shot hits the first thing on its ray within the weapon's range: a target (damage) or a wall, floor or
+    /// ceiling (an impact). A piercing weapon (the rifle) goes on through as many more targets as its
+    /// <see cref="RangedBalance.Pierce"/> says - walls always stop it. Instant - no flying bullet ("hitscan").
     /// </summary>
-    private void FirePistol(ShotFired shot, Player attacker)
+    private void FireShot(ShotFired shot, Player attacker)
     {
+        var values = Balance.Ranged(shot.Weapon);
+        var weapon = shot.Weapon == WeaponKind.Rifle ? Weapon.Rifle : Weapon.Pistol;
         var direction = Vector3.Normalize(shot.Direction);
-        var wall = Raycast.AgainstLevel(Level, shot.Origin, direction, Balance.Pistol.Range);
-        var nearest = wall?.Distance ?? Balance.Pistol.Range;
+        var wall = Raycast.AgainstLevel(Level, shot.Origin, direction, values.Range);
+        var reach = wall?.Distance ?? values.Range;
 
-        ITarget? target = null;
-        foreach (var candidate in Targets.Where(candidate => candidate.IsHittable))
+        // Every target on the ray before the wall, nearest first; the shot takes the first one and pierces on.
+        var hits = Targets.Where(candidate => candidate.IsHittable)
+            .Select(candidate => (Target: candidate, Distance: Raycast.AgainstCylinder(shot.Origin, direction, candidate.Body)))
+            .Where(hit => hit.Distance is { } distance && distance <= reach)
+            .OrderBy(hit => hit.Distance)
+            .Take(1 + values.Pierce)
+            .ToList();
+
+        foreach (var (target, distance) in hits)
         {
-            if (Raycast.AgainstCylinder(shot.Origin, direction, candidate.Body) is { } distance && distance <= nearest)
-            {
-                nearest = distance;
-                target = candidate;
-            }
+            var zone = target.ZoneAt(shot.Origin + direction * distance!.Value);
+            Damage(target, new Hit(weapon, zone, values.Damage), attacker);
         }
 
-        if (target is not null)
-        {
-            var zone = target.ZoneAt(shot.Origin + direction * nearest);
-            Damage(target, new Hit(Weapon.Pistol, zone, Balance.Pistol.Damage), attacker);
-        }
-        else if (wall is { } impact)
+        // Not stopped by enough targets: the bullet ends in the wall.
+        if (hits.Count < 1 + values.Pierce && wall is { } impact)
         {
             _events.Add(new BulletImpact(impact.Point, impact.Normal));
         }
@@ -1035,7 +1038,7 @@ public sealed class GameWorld
 
         foreach (var shot in Player.Events.OfType<ShotFired>())
         {
-            FirePistol(shot, Player);
+            FireShot(shot, Player);
         }
 
         foreach (var dummy in _dummies)
