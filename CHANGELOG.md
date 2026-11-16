@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Wandbruch mit Wucht:** Bricht die rissige Wand zum Geheimraum, fliegen Steinbrocken heraus (die meisten von dir weg), poltern zu Boden und versinken; eine Staubwolke steigt auf, und das Bild ruckt kurz
+
 ### Geändert
 - **Kisten sind fest:** Man läuft nicht mehr durch Kisten hindurch, kann aber auf sie springen (0,7 m). Steigt eine Kiste unter dir aus dem Boden, hebt sie dich an. Ghule und Gorm laufen um Kisten herum; Fledermäuse fliegen darüber. Noch versteckte Kisten blockieren nicht
 
