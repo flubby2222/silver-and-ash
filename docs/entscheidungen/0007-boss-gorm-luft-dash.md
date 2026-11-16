@@ -100,3 +100,9 @@ Endbildschirm und `runs.log` zeigen zusätzlich **„Gorm slain“** und die **D
 - **Positiv:** Die Säulen im Bossraum geben dem Kampf Raum für Taktik (Deckung gegen den Kettenwurf).
 - **Negativ:** Der Sieg hängt an einem neuen, großen Gegner mit eigener KI. Bis Gorm fertig ist, gibt es keinen Sieg mehr, weil der Bossraum leer ist. Die Issues 5–7 kommen deshalb direkt nacheinander.
 - **Negativ:** Viele neue Zahlen. Ohne Anspielen und Balancing-Runde sind sie nur geschätzt.
+
+## Nachtrag (16.11.2026, #181): Kettenschwung als Bogen
+
+Nach dem Anspielen von Phase 2 war der Rundumschwung „praktisch unberechenbar“: Er traf überall gleichzeitig im Moment, in dem die Ankündigung endete. Jetzt streicht die Kette nach der Ankündigung in **0,6 s** (`swingTime`) in einem **Halbkreis** (`swingArc` = 180°) von Gorms Linker über vorne nach rechts. Getroffen wird, wer im Moment des Vorbeistreichens in Reichweite und auf Brusthöhe steht.
+- **Antworten:** Dodge, wenn die Kette ankommt, oder hinter Gorm laufen.
+- **Reichweite:** Die Werte aus der Tabelle oben wurden in #174 verdoppelt (8 m).

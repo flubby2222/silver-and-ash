@@ -95,6 +95,8 @@
     "swingReach": 8,                    // m
     "swingLow": 1.1,                    // m above his feet the chain passes from here ...
     "swingHigh": 1.6,                   // ... to here: standing or jumping it hits, ducked in a dodge not
+    "swingTime": 0.6,                   // s the chain takes to sweep from his left over the front to his right ...
+    "swingArc": 180,                    // ... along this arc (degrees): behind him you are safe
     "throwWindUp": 0.5,                 // s: the hook glows red -> step ASIDE or behind a pillar
     "hookSpeed": 18,                    // m/s, straight to where you stood when he threw
     "throwDamage": 20,
