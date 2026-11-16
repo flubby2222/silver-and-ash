@@ -37,8 +37,9 @@ internal static class CombatHud
 
             // Blade on the left, pistol on the right - the same sides as the weapons in the hands.
             DrawReadiness(centreX - 22, centreY, player.BladeCooldown);
-            DrawReadiness(centreX + 19, centreY, player.PistolCooldown);
-            DrawAmmo(player.PistolMagazine);
+            DrawReadiness(centreX + 19, centreY, player.Ranged.Cooldown);
+            DrawAmmo(player.Ranged.Magazine);
+            DrawWeapons(player);
         }
 
         if (player.BladeCharge.IsCharging)
@@ -143,6 +144,47 @@ internal static class CombatHud
         Raylib.DrawRectangle(x - 1, top - 1, Width + 2, Height + 2, Outline);
         Raylib.DrawRectangle(x, top, Width, Height, Track);
         Raylib.DrawRectangle(x, top + Height - filled, Width, filled, cooldown.IsReady ? Ready : Cooling);
+    }
+
+    /// <summary>
+    /// The weapons carried, bottom right above the rounds: the melee weapon ([LMB]) and the three ranged places
+    /// ([1] [2] [3]), each framed in its tier's colour; the ranged weapon in the hand is lit up, empty places are dim.
+    /// </summary>
+    private static void DrawWeapons(Player player)
+    {
+        const int Width = 96;
+        const int Height = 30;
+        const int Gap = 6;
+        var seconds = (float)Raylib.GetTime();
+        var right = Raylib.GetScreenWidth() - 20;
+        var top = Raylib.GetScreenHeight() - 122;
+        var left = right - (4 * Width) - (3 * Gap);
+
+        DrawWeaponBox(left, top, Width, Height, "LMB", Weapons.Info(player.Melee), selected: true, seconds);
+        for (var slot = 0; slot < Player.RangedSlotCount; slot++)
+        {
+            var x = left + ((slot + 1) * (Width + Gap));
+            var key = string.Create(CultureInfo.InvariantCulture, $"{slot + 1}");
+            DrawWeaponBox(x, top, Width, Height, key, player.RangedSlots[slot]?.Info, slot == player.SelectedSlot, seconds);
+        }
+    }
+
+    private static void DrawWeaponBox(int x, int y, int width, int height, string key, WeaponInfo? weapon, bool selected, float seconds)
+    {
+        Raylib.DrawRectangle(x, y, width, height, selected ? new Color(40, 34, 40, 220) : new Color(20, 16, 22, 160));
+        if (weapon is not { } info)
+        {
+            var empty = new Color(90, 88, 98, 255);
+            Raylib.DrawRectangleLines(x, y, width, height, empty);
+            Raylib.DrawText(key, x + 4, y + 3, 10, empty);
+            Raylib.DrawText("-", x + 4, y + 15, 10, empty);
+            return;
+        }
+
+        var frame = TierColours.Of(info.Tier, seconds);
+        Raylib.DrawRectangleLinesEx(new Rectangle(x, y, width, height), selected ? 2f : 1f, frame);
+        Raylib.DrawText(key, x + 4, y + 3, 10, selected ? TextColor : Track);
+        Raylib.DrawText(info.Name, x + 4, y + 15, 10, selected ? TextColor : new Color(150, 150, 160, 255));
     }
 
     /// <summary>

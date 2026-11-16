@@ -40,7 +40,7 @@ public class PlayerCombatTests
         player.Tick(Shoot);
 
         Assert.IsType<ShotFired>(Assert.Single(player.Events));
-        Assert.False(player.PistolCooldown.IsReady);
+        Assert.False(player.Ranged.Cooldown.IsReady);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class PlayerCombatTests
         player.Tick(Shoot);
 
         Assert.IsType<ShotFired>(Assert.Single(player.Events));
-        Assert.Equal(PistolTicks, player.PistolCooldown.DurationTicks);
+        Assert.Equal(PistolTicks, player.Ranged.Cooldown.DurationTicks);
         Assert.Equal(BladeTicks, player.BladeCooldown.DurationTicks);
     }
 

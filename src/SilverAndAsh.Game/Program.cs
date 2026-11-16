@@ -188,7 +188,10 @@ static void RunGame(
         Boon? chosenBoon = null;
 
         // F pressed in a frame without a tick must not get lost: it waits for the next tick, like a chosen bonus.
+        // So do 1 / 2 / 3 and the mouse wheel (switching the ranged weapon).
         var interactPressed = false;
+        int? slotChosen = null;
+        var wheelSteps = 0;
         var seconds = 0f;
 
         var accumulator = new TickAccumulator();
@@ -311,6 +314,8 @@ static void RunGame(
             var playerInput = input.Read(keysWithFreeMouse: boonOpen && !frozen);
             player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
+            slotChosen = playerInput.SelectSlot ?? slotChosen;
+            wheelSteps += playerInput.CycleSlot;
 
             // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while
             // walking - only a hit closes it (see the events below). Several level ups come one after the other.
@@ -335,9 +340,15 @@ static void RunGame(
             var ticks = accumulator.Advance(Raylib.GetFrameTime());
             for (var i = 0; i < ticks; i++)
             {
-                gameWorld.Tick(playerInput with { ChooseBoon = chosenBoon, Interact = interactPressed, Paused = frozen });
+                gameWorld.Tick(playerInput with
+                {
+                    ChooseBoon = chosenBoon, Interact = interactPressed, Paused = frozen,
+                    SelectSlot = slotChosen, CycleSlot = Math.Sign(wheelSteps),
+                });
                 chosenBoon = null;
                 interactPressed = false;
+                slotChosen = null;
+                wheelSteps = 0;
 
                 // Events must be read after EVERY tick - the next tick clears them.
                 foreach (var gameEvent in gameWorld.Events)
@@ -646,7 +657,7 @@ static void DrawDebugInfo(Player player)
     var chargeText = player.BladeCharge.IsCharging
         ? string.Create(CultureInfo.InvariantCulture, $"   Charge {player.BladeCharge.Fraction * 100f:0} %")
         : string.Empty;
-    var weaponsText = $"Blade {CooldownText(player.BladeCooldown)}   Pistol {CooldownText(player.PistolCooldown)}{chargeText}";
+    var weaponsText = $"Blade {CooldownText(player.BladeCooldown)}   {player.Ranged.Info.Name} {CooldownText(player.Ranged.Cooldown)}{chargeText}";
     Raylib.DrawText(weaponsText, 20, 135, 20, new Color(200, 200, 210, 255));
 
     if (player.IsDashing)

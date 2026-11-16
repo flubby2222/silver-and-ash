@@ -208,7 +208,7 @@ public class ConsecratedAmmoTests
         world.Tick(Shoot);
         Assert.Contains(world.Events, e => e is ShotFired);
         var ticks = 0;
-        for (; !world.Player.PistolCooldown.IsReady; ticks++)
+        for (; !world.Player.Ranged.Cooldown.IsReady; ticks++)
         {
             Assert.True(ticks < 2 * Second, "The pistol never got ready again.");
             world.Tick(PlayerInput.None);
