@@ -9,7 +9,8 @@ namespace SilverAndAsh.Game.Rendering;
 /// At death the picture turns red (the end screen with "YOU DIED" follows). When healed, "+50" rises next to the health bar.
 /// (A level up shows the bonus window instead - <see cref="BoonWindow"/>.) Pure presentation - Core reports
 /// <see cref="PlayerHit"/>, <see cref="PlayerDied"/> and <see cref="PlayerHealed"/>. The ground also trembles when
-/// Gorm roars (<see cref="GormRoared"/>) and, a little, when a stone lands (<see cref="StoneLanded"/>).
+/// Gorm roars (<see cref="GormRoared"/>) and, a little, when a stone lands (<see cref="StoneLanded"/>) or a cracked
+/// wall breaks (<see cref="WallBroken"/>).
 /// </summary>
 internal sealed class DamageFeedback
 {
@@ -50,6 +51,9 @@ internal sealed class DamageFeedback
                 break;
             case StoneLanded:
                 _quake = MathF.Max(_quake, 0.25f);
+                break;
+            case WallBroken:
+                _quake = MathF.Max(_quake, 0.45f);
                 break;
         }
     }

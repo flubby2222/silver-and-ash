@@ -133,6 +133,7 @@ static void RunGame(
         var projectileView = new ProjectileView();
         var pickupView = new PickupView();
         var impactMarks = new ImpactMarks();
+        var wallBreakView = new WallBreakView();
         IWeaponView weaponView = new PlaceholderWeaponView();
         var damageFeedback = new DamageFeedback();
         var input = new RaylibInput();
@@ -176,6 +177,7 @@ static void RunGame(
             projectileView = new ProjectileView();
             pickupView = new PickupView();
             impactMarks = new ImpactMarks();
+            wallBreakView = new WallBreakView();
             weaponView = new PlaceholderWeaponView();
             damageFeedback = new DamageFeedback();
         }
@@ -333,6 +335,7 @@ static void RunGame(
                     batView.OnEvent(gameEvent);
                     projectileView.OnEvent(gameEvent);
                     impactMarks.OnEvent(gameEvent);
+                    wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position);
                     weaponView.OnEvent(gameEvent);
                     damageFeedback.OnEvent(gameEvent);
                 }
@@ -375,6 +378,7 @@ static void RunGame(
             projectileView.Update(Raylib.GetFrameTime());
             pickupView.Update(Raylib.GetFrameTime());
             impactMarks.Update(Raylib.GetFrameTime());
+            wallBreakView.Update(Raylib.GetFrameTime());
             weaponView.Update(Raylib.GetFrameTime(), player);
             damageFeedback.Update(Raylib.GetFrameTime());
 
@@ -437,6 +441,7 @@ static void RunGame(
             pickupView.DrawLoot(gameWorld.Loot, accumulator.Alpha);
 
             impactMarks.Draw();
+            wallBreakView.Draw();
 
             // Last: the weapons in the hands, in front of everything else.
             weaponView.Draw(camera.Position, camera.Target - camera.Position);
