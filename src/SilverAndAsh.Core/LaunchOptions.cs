@@ -19,7 +19,7 @@ namespace SilverAndAsh.Core;
 /// <param name="PhotoFolder"><c>--out &lt;folder&gt;</c>: where the pictures go; null for the standard folder.</param>
 /// <param name="Look">
 /// <c>--look &lt;1-4&gt;</c>: draw the world in this picture variant (issue #234, decision record 0010 - an open question
-/// to be decided with pictures). Only in the debug version. Null: variant 1, the game as it is.
+/// to be decided with pictures). Only in the debug version. Null: the standard picture (variant 2, issue #237); 1 is the picture without grain.
 /// </param>
 /// <param name="Bench">
 /// <c>--bench &lt;scene&gt;</c>: build this photo scene, draw it a fixed number of times without VSync and print the frame
