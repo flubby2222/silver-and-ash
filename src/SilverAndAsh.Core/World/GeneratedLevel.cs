@@ -59,4 +59,7 @@ public sealed record LevelDoor(int X, int Z, int RoomA, int RoomB, RoomSide Side
 /// <param name="Silver">The silver inside.</param>
 /// <param name="HasBloodVial">True if a blood vial lies inside too.</param>
 /// <param name="RisesWhenCleared">True for the chest of a combat room: it rises from the floor once the room is cleared.</param>
-public sealed record ChestPlan(int X, int Z, int Room, ChestTier Tier, bool IsLocked, int Silver, bool HasBloodVial, bool RisesWhenCleared);
+/// <param name="Front">Which way its front (lock) looks: towards the middle of its room. Only how it looks.</param>
+public sealed record ChestPlan(
+    int X, int Z, int Room, ChestTier Tier, bool IsLocked, int Silver, bool HasBloodVial, bool RisesWhenCleared,
+    ChestFront Front = ChestFront.PlusZ);

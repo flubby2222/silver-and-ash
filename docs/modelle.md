@@ -1,6 +1,6 @@
 # Modelle im Spiel
 
-Wie das Spiel ein Modell der Designer lädt, bewegt und zeichnet (Issue #232, Stil aus [ADR 0010](entscheidungen/0010-stil-ps1-nah-texturen.md)). Erster Einsatz: der Ghul.
+Wie das Spiel ein Modell der Designer lädt, bewegt und zeichnet (Issue #232, Stil aus [ADR 0010](entscheidungen/0010-stil-ps1-nah-texturen.md)). Erster Einsatz: der Ghul, danach die Kiste in vier Stufen (Issue #249).
 
 ## Die Datei
 
@@ -62,4 +62,6 @@ Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_mode
 1. `.glb`, `.png` und Skript an ihren Platz, Zeile in `assets/HERKUNFT.md`, `python tools/models/checksums.py`.
 2. Im Core eine Haltungs-Klasse wie `GhoulPose`: Teile mit Eltern (`RigPart`) und die Winkel je Zustand, mit Tests.
 3. Im Game eine Ansicht hinter der Schnittstelle der Figur: `TexturedModel.TryLoad(pfad, Teile, log)` einmal nach dem Shader laden, je Bild `Rig.Pose(...)` und `TexturedModel.Draw(...)`. Fehlt das Modell, bleibt der Platzhalter.
-4. Für die Waffen in der Hand ist noch offen: Ihre Kamera-Matrix spiegelt heute (siehe Übergabe des Designers); für echte Modelle braucht es eine echte Drehung.
+4. Teile, die nicht immer zu sehen sind, zeichnet die Ansicht einzeln mit `TexturedModel.DrawPart(index, frame, tint)` – so lässt die Kiste ihr Schloss weg, sobald sie aufgeschlossen ist. `tint` hellt ein Teil auf oder dunkelt es ab (die pulsierende Vampirkiste).
+5. Mehrere Modelle mit denselben Teilen (die vier Kisten-Stufen) laden je eine eigene Datei; fehlt eine, bekommt nur diese Stufe den Platzhalter ([`ChestView`](../src/SilverAndAsh.Game/Rendering/ChestView.cs)).
+6. Für die Waffen in der Hand ist noch offen: Ihre Kamera-Matrix spiegelt heute (siehe Übergabe des Designers); für echte Modelle braucht es eine echte Drehung.

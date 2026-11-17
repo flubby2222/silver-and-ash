@@ -40,7 +40,7 @@ public class PhotoSceneTests
         [
             "start-room", "room-combat", "room-corridor", "room-treasure", "room-secret", "room-boss",
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
-            "model-probe-4m", "model-probe-10m",
+            "model-probe-4m", "model-probe-10m", "chests-4m",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -188,5 +188,22 @@ public class PhotoSceneTests
         var middle = gorm.Body.Position + new Vector3(0f, gorm.Body.Height / 2f, 0f);
         var towards = Vector3.Normalize(middle - world.Player.EyePosition);
         Assert.Equal(1f, Vector3.Dot(world.Player.View.Forward, towards), 0.001f);
+    }
+
+    [Fact]
+    public void The_chest_scene_shows_every_tier_closed_and_one_open_all_facing_the_player()
+    {
+        var world = Built("chests-4m").World;
+
+        Assert.Equal(Enum.GetValues<ChestTier>().Order(), world.Chests.Where(chest => !chest.IsOpen).Select(chest => chest.Tier).Order());
+        Assert.All(world.Chests.Where(chest => !chest.IsOpen), chest => Assert.True(chest.IsLocked));
+        var open = Assert.Single(world.Chests, chest => chest.IsOpen);
+        Assert.False(open.IsLocked);
+        Assert.All(world.Chests, chest =>
+        {
+            Assert.Equal(ChestFront.MinusZ, chest.Plan.Front);
+            Assert.True(chest.Position.Z > world.Player.EyePosition.Z, "The chests stand in front of the player, on the -z side of their fronts.");
+            Assert.Equal(4f, chest.Position.Z - world.Player.Body.Position.Z, 0.001f);
+        });
     }
 }
