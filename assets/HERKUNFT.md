@@ -18,6 +18,7 @@ Alles unter `assets/` ist per Skript erzeugt, nichts heruntergeladen (`CLAUDE.md
 | `audio/klinge-1.wav`, `audio/klinge-2.wav`, `audio/klinge-3.wav` | `tools/audio/erzeugen.py` (Funktion `klinge`, mit `ableiten.py`, `ps1_klang.py`); rein synthetisch | 2026-11-17 |
 | `audio/ambiente-katakomben.ogg` | `tools/audio/erzeugen.py` (mit `ambiente_hp1.py`, `ambiente_hp3.py`, `ps1_klang.py`); Fläche synthetisch, **Tropfen aus einer Aufnahme:** `impactTin_medium_004.ogg` aus „Impact Sounds“ von Kenney, <https://kenney.nl/assets/impact-sounds>, Lizenz CC0 1.0 (<https://creativecommons.org/publicdomain/zero/1.0/>; Satz aus `License.txt`: „This content is free to use in personal, educational and commercial projects.“), abgerufen 2026-11-16, SHA-256 des Originals `fd53e24efec3d5c1cee5a46fee70f97efd4bd01e53ac5d9b5f3b6719dfe9f5aa`. Das Original liegt nicht im Repository. Seit Issue #271 spielt das Spiel diese Datei nicht mehr (die Katakomben-Musik ersetzt sie); sie wird mit den neuen Geräuschen ersetzt oder entfernt. | 2026-11-17 |
 | `audio/musik-hauptmenue.ogg`, `audio/musik-katakomben.ogg` | `tools/audio/musik_erzeugen.py` (mit `musik_klang.py`, `ambiente_hp3.py`, `ambiente_hp1.py`, `ps1_klang.py`, `synth.py`); rein synthetisch, keine Aufnahmen | 2026-11-17 |
+| `audio/p1-*.wav` (34 Dateien: Schüsse, Klinge, Schritte, Nachladen, Ghul, Tür, Kiste, Aufheben, Sprung, Dash, Landung, Menü) | `tools/audio/paket1/paket1.py` (mit `bauen.py`, `bauen9.py`, den Bauplänen in `skripte/` und `tools/audio/ps1_klang.py`, `synth.py`); eigene Synthese: fünf Quell-Klänge, in SoundCraft 0.20.1 gebaut, keine Aufnahmen, keine fremden Samples. **Braucht SoundCraft, läuft nicht in der CI** | 2026-11-17 |
 
 ## Neu erzeugen
 
@@ -55,6 +56,12 @@ python tools/audio/musik_erzeugen.py --aus assets/audio
 python tools/audio/musik_pruefen.py assets/audio
 ```
 
+Klangpaket 1 (`p1-*.wav`) **braucht SoundCraft** (`C:/Program Files/ArtCraft/SoundCraft/soundcraft-cli.exe`, Version 0.20.1) und läuft deshalb **nicht in der CI**. Das Skript baut die fünf Quell-Klänge in SoundCraft, spielt sie je Geräusch in der Tonhöhe verschoben und kopiert die 34 Dateien nach `assets/audio/`; Messwerte und Zuordnung stehen in `tools/audio/paket1/uebersicht.md` (dort noch mit den Pfaden der Übergabe):
+
+```
+python tools/audio/paket1/paket1.py
+```
+
 **Danach immer die Prüfsummen-Listen `models/models.sha256`, `textures/textures.sha256` und `audio/audio.sha256` neu schreiben** (normales Python 3, ein Aufruf für alle drei). Ohne passenden Eintrag lädt das Spiel die Datei nicht und zeichnet den Platzhalter bzw. die Fläche einfarbig oder bleibt bei diesem Geräusch stumm; ein Test wird rot:
 
 ```
@@ -86,3 +93,5 @@ Am 2026-11-17 übernommen (Issue #271): `musik-hauptmenue.ogg` und `musik-katako
 Am 2026-11-17 übernommen (Issue #245): Die Türen kommen aus den Probestücken des Grafikdesigners (Commit `412096d`): Normal, Locked und Boss aus Runde 2 (`design/proben/grafik/tueren2/door2.py`, Bosstür Entwurf A, im Spiel `door_boss`), die Risswand aus Runde 1 (`design/proben/grafik/tueren/door.py`). `tools/models/door.py` fasst beide zusammen; Entwurf B (Fallgitter) ist verworfen und fehlt. Alle Bilder und `door_normal.glb`, `door_locked.glb`, `door_cracked.glb` kommen byte-gleich zur Übergabe heraus (SHA-256 verglichen). `door_boss.glb` ist 4 Byte kürzer: Nur der Name der Textur heißt `door_boss` statt `door_boss_a`; Geometrie und Binärteil sind byte-gleich.
 
 Am 2026-11-17 übernommen (Issue #246): Die rissige Wand (`cracked_wall_a/b/c`) kommt aus dem Probestück des Grafikdesigners (Commit `2769789`, `design/proben/grafik/risswand/risswand.py`, Stärke „deutlich“). `tools/models/cracked_wall.py` erzeugt nur noch diese Stärke und teilt Platte und Brocken in Vorder- und Rückseite (`panel_front`, `panel_back`, `debris_front`, `debris_back`), weil beide Flächen der Zelle verschiedene Varianten zeigen können; Geometrie und Zufallszahlen sind unverändert. Die drei Bilder kommen byte-gleich zur Übergabe heraus (SHA-256 verglichen), ein zweiter Lauf ergibt byte-gleiche Modelle und Bilder. Die Texturen sind aus `textures/catacomb_wall*.png` gemalt: Ändert sich eine Wand-Textur, muss `cracked_wall.py` neu laufen. Das prüft ein Test (`tools/models/cracked_wall_sources.sha256` gegen `textures/textures.sha256`).
+
+Am 2026-11-17 übernommen (Issue #290): Die 34 Dateien `p1-*.wav` und die Skripte unter `tools/audio/paket1/` kommen aus der Übergabe des Audiodesigners (Commit `2a87efb`), die Klangdateien byte-gleich (SHA-256 gegen die Liste der Übergabe verglichen). In `paket1.py` und `bauen.py` sind nur die Pfade auf den neuen Ort angepasst; in diesem Schritt nicht neu erzeugt. `p1-schritt-l3.wav` und `p1-schritt-r2.wav` sind byte-gleich.

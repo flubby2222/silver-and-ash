@@ -5,16 +5,20 @@ using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Core.Tests.Audio;
 
-/// <summary>Which sound the events of a tick ask for (issue #267).</summary>
+/// <summary>
+/// Which sound the events of a tick ask for (issue #267) - with the old pack, as before issue #290. The new pack and
+/// the switch between them are in <see cref="SoundPackTests"/>.
+/// </summary>
 public class SoundCuesTests
 {
     private static readonly ShotFired PistolShot = new(Vector3.Zero, Vector3.UnitZ);
     private static readonly TargetHitBy BladeHit = new(0, 0, Weapon.Blade);
+    private static readonly SoundPack Old = SoundPack.Old;
 
     [Fact]
     public void A_pistol_shot_plays_the_pistol()
     {
-        var cue = Assert.Single(new SoundCues(1).For([PistolShot]));
+        var cue = Assert.Single(new SoundCues(1).For([PistolShot], Old));
 
         Assert.Equal(new SoundCue(SoundKind.Pistol, "pistole.wav", SoundBoard.SoundVolume), cue);
     }
@@ -22,16 +26,16 @@ public class SoundCuesTests
     [Fact]
     public void Another_ranged_weapon_does_not_play_the_pistol()
     {
-        Assert.Empty(new SoundCues(1).For([PistolShot with { Weapon = WeaponKind.Rifle }]));
+        Assert.Empty(new SoundCues(1).For([PistolShot with { Weapon = WeaponKind.Rifle }], Old));
     }
 
     [Fact]
     public void A_blade_hit_plays_one_of_the_blade_sounds()
     {
-        var cue = Assert.Single(new SoundCues(1).For([new GhoulHit(3, 40), BladeHit with { TargetId = 3 }]));
+        var cue = Assert.Single(new SoundCues(1).For([new GhoulHit(3, 40), BladeHit with { TargetId = 3 }], Old));
 
         Assert.Equal(SoundKind.Blade, cue.Kind);
-        Assert.Contains(cue.File, SoundBoard.Variants(SoundKind.Blade));
+        Assert.Contains(cue.File, Old.Variants(SoundKind.Blade));
     }
 
     [Theory]
@@ -40,28 +44,28 @@ public class SoundCuesTests
     [InlineData(Weapon.Rifle)]
     public void A_hit_with_another_weapon_plays_no_blade(Weapon weapon)
     {
-        Assert.DoesNotContain(new SoundCues(1).For([BladeHit with { Weapon = weapon }]), cue => cue.Kind == SoundKind.Blade);
+        Assert.DoesNotContain(new SoundCues(1).For([BladeHit with { Weapon = weapon }], Old), cue => cue.Kind == SoundKind.Blade);
     }
 
     [Fact]
     public void A_swing_without_a_hit_plays_no_blade()
     {
-        Assert.Empty(new SoundCues(1).For([new MeleeSwung(Vector3.Zero, Vector3.UnitZ)]));
+        Assert.Empty(new SoundCues(1).For([new MeleeSwung(Vector3.Zero, Vector3.UnitZ)], Old));
     }
 
     [Fact]
     public void A_step_plays_one_of_the_step_sounds()
     {
-        var cue = Assert.Single(new SoundCues(1).For([new PlayerStepped(0, Foot.Left)]));
+        var cue = Assert.Single(new SoundCues(1).For([new PlayerStepped(0, Foot.Left)], Old));
 
-        Assert.Equal(SoundKind.Step, cue.Kind);
-        Assert.Contains(cue.File, SoundBoard.Variants(SoundKind.Step));
+        Assert.Equal(SoundKind.StepLeft, cue.Kind);
+        Assert.Contains(cue.File, Old.Variants(SoundKind.StepLeft));
     }
 
     [Fact]
     public void A_ghoul_winding_up_plays_its_warning()
     {
-        var cue = Assert.Single(new SoundCues(1).For([new GhoulWindUp(2)]));
+        var cue = Assert.Single(new SoundCues(1).For([new GhoulWindUp(2)], Old));
 
         Assert.Equal(new SoundCue(SoundKind.GhoulWindUp, "ghul-ankuendigung.wav", SoundBoard.SoundVolume), cue);
     }
@@ -79,30 +83,31 @@ public class SoundCuesTests
     [Fact]
     public void Events_without_a_sound_play_nothing()
     {
-        Assert.Empty(new SoundCues(1).For([new DummyHit(0, 10), new ReloadStarted(0), new PlayerHit(0, 5)]));
+        Assert.Empty(new SoundCues(1).For([new DummyHit(0, 10), new ReloadStarted(0), new PlayerHit(0, 5)], Old));
     }
 
     [Fact]
     public void Each_kind_plays_once_per_tick_in_the_order_it_first_appears()
     {
+        // The old pack has one set of steps for both feet: a left and a right step in one tick are one sound.
         var cues = new SoundCues(1).For(
-            [new PlayerStepped(0, Foot.Left), BladeHit, BladeHit with { TargetId = 1 }, PistolShot, new PlayerStepped(0, Foot.Right)]);
+            [new PlayerStepped(0, Foot.Left), BladeHit, BladeHit with { TargetId = 1 }, PistolShot, new PlayerStepped(0, Foot.Right)], Old);
 
-        Assert.Equal([SoundKind.Step, SoundKind.Blade, SoundKind.Pistol], cues.Select(cue => cue.Kind));
+        Assert.Equal([SoundKind.StepLeft, SoundKind.Blade, SoundKind.Pistol], cues.Select(cue => cue.Kind));
     }
 
     [Theory]
     [InlineData(SoundKind.Blade)]
-    [InlineData(SoundKind.Step)]
+    [InlineData(SoundKind.StepLeft)]
     public void A_variant_never_plays_twice_in_a_row_and_every_one_comes_up(SoundKind kind)
     {
         var gameEvent = kind == SoundKind.Blade ? (GameEvent)BladeHit : new PlayerStepped(0, Foot.Left);
         var cues = new SoundCues(7);
 
-        var files = Enumerable.Range(0, 400).Select(_ => Assert.Single(cues.For([gameEvent])).File).ToList();
+        var files = Enumerable.Range(0, 400).Select(_ => Assert.Single(cues.For([gameEvent], Old)).File).ToList();
 
         Assert.All(files.Zip(files.Skip(1)), pair => Assert.NotEqual(pair.First, pair.Second));
-        Assert.Equal(SoundBoard.Variants(kind).Order(), files.Distinct().Order());
+        Assert.Equal(Old.Variants(kind).Order(), files.Distinct().Order());
     }
 
     [Fact]
@@ -113,8 +118,8 @@ public class SoundCuesTests
         var blades = new List<string>();
         for (var i = 0; i < 200; i++)
         {
-            blades.Add(Assert.Single(cues.For([BladeHit])).File);
-            cues.For([new PlayerStepped(0, Foot.Left)]);
+            blades.Add(Assert.Single(cues.For([BladeHit], Old)).File);
+            cues.For([new PlayerStepped(0, Foot.Left)], Old);
         }
 
         Assert.All(blades.Zip(blades.Skip(1)), pair => Assert.NotEqual(pair.First, pair.Second));
@@ -141,7 +146,7 @@ public class SoundCuesTests
         {
             quiet.Tick(input);
             loud.Tick(input);
-            cues.For(loud.Events);
+            cues.For(loud.Events, SoundPack.Default);
             Assert.Equal(quiet.Events, loud.Events);
         }
 
@@ -164,5 +169,5 @@ public class SoundCuesTests
     }
 
     private static List<string> Picks(SoundCues cues) =>
-        [.. Enumerable.Range(0, 50).Select(i => Assert.Single(cues.For([i % 2 == 0 ? BladeHit : new PlayerStepped(0, Foot.Left)])).File)];
+        [.. Enumerable.Range(0, 50).Select(i => Assert.Single(cues.For([i % 2 == 0 ? BladeHit : new PlayerStepped(0, Foot.Left)], Old)).File)];
 }
