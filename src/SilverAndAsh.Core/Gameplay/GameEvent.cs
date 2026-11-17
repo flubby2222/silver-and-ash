@@ -53,6 +53,14 @@ public sealed record BulletImpact(Vector3 Point, Vector3 Normal) : GameEvent;
 /// </summary>
 public sealed record DummyHit(int DummyId, int Damage, bool Critical = false) : GameEvent;
 
+/// <summary>
+/// Target <paramref name="TargetId"/> (a dummy, ghoul, bat or Gorm) was hit by player <paramref name="PlayerId"/> with
+/// <paramref name="Weapon"/> (issue #267). Comes in the same tick right after the target's own hit event
+/// (<see cref="DummyHit"/>, <see cref="GhoulHit"/>, <see cref="BatHit"/>, <see cref="GormHit"/>), which says how much
+/// damage it took but not what with - the blade sound must not play for a pistol hit.
+/// </summary>
+public sealed record TargetHitBy(int TargetId, int PlayerId, Weapon Weapon) : GameEvent;
+
 /// <summary>Ghoul <paramref name="GhoulId"/> took <paramref name="Damage"/>; <paramref name="Critical"/> for a headshot.</summary>
 public sealed record GhoulHit(int GhoulId, int Damage, bool Critical = false) : GameEvent;
 
@@ -205,6 +213,12 @@ public sealed record StairsClimbed(int PlayerId) : GameEvent;
 
 /// <summary>Every player is dead before the run was won.</summary>
 public sealed record RunLost : GameEvent;
+
+/// <summary>
+/// Player <paramref name="PlayerId"/> set down <paramref name="Foot"/>: they walked one step length on the ground
+/// (issue #267). Never in the air or while standing.
+/// </summary>
+public sealed record PlayerStepped(int PlayerId, Foot Foot) : GameEvent;
 
 /// <summary>Player <paramref name="PlayerId"/> took <paramref name="Damage"/>.</summary>
 public sealed record PlayerHit(int PlayerId, int Damage) : GameEvent;
