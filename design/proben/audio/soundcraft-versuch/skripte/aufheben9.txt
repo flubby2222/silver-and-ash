@@ -1,0 +1,9 @@
+# aufheben9 - SoundCraft-Skript (soundcraft-cli script). Erzeugt von bauen.py, nicht von Hand aendern.
+session.new {"name":"aufheben9","sample_rate":44100,"bit_depth":16}
+event.tempo {"bpm":120}
+track.new {"kind":"instrument","format":"stereo","name":"Aufheben","instrument":"sampler"}
+mix.sampler_load {"track":"Aufheben","path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/aufheben-vag.wav","params":{"root_note":59,"play_mode":1,"loop_mode":0,"attack":0.1,"decay":4000.0,"sustain":100.0,"release":200.0}}
+mix.insert {"track":"Aufheben","slot":0,"plugin":"room_reverb","params":{"mix":22,"pre_delay":4,"decay":0.5,"size":25,"damping":4500,"diffusion":70,"low_cut":150}}
+midi.new_clip {"track":"Aufheben","start":0,"end":52920}
+midi.note_add {"clip":3,"pitch":71,"start_ticks":0,"length_ticks":960,"velocity":100}
+file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/aufheben9.wav","format":"wav","bit_depth":16,"start":0,"end":52920,"dither":false}

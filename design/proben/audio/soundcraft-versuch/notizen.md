@@ -71,3 +71,41 @@ Lesen: Die Mitte (300–3 000 Hz) liegt bei b in der Skizze 21 dB unter dem Gesa
 - Gewinnt **b** in der Skizze: Dann nur ein Hinweis, dass der Weg trägt; die Skizze ist ein erster Wurf ohne Abstimmung.
 
 Offen, weil nicht prüfbar: ob die Fassungen für das Ohr kohärent wirken (das ist die Hörprobe), ob der Bit-Crusher oder die Sättigung etwas Brauchbares für den PS1-Charakter bringen (nicht ausprobiert), und ob die Fensteroberfläche das Nachstellen so einfach macht, wie ich vermute.
+
+## Hörprobe 9: dieselben Stücke nach der Methode des Videos
+
+Siehe [video.md](video.md) (Methode mit Zeitmarken, Widersprüche zu unserem Vorgehen). Skripte: `bauen9.py` (erzeugt je Stück `skripte/<name>9.txt` und die Quellen `skripte/q-*.txt`), Ausgabe in [hoerprobe-9-methode/](hoerprobe-9-methode/hoerprobe.md). Alle neun SoundCraft-Läufe (vier Stücke, fünf Quellen) waren bei zwei Läufen **bitgleich**. a = b aus Hörprobe 8 (Skizze: korrigierte Fassung).
+
+**Was ich konkret anders gemacht habe (ein Satz je Stück):**
+- **Schuss:** Statt eines synthetisierten Drum-Synth-Schlags jetzt Rauschen aus dem Signalgenerator mit Automation (Tiefpass 9 kHz → 500 Hz in 60 ms, Pegel −45 dB in 0,22 s), auf 22,05 kHz in VAG gewandelt (0,5 s, 11 004 Frames) und im Sampler **eine Oktave tiefer** abgespielt; keine PS1-Kette danach, keine Sättigung.
+- **Klinge:** Statt der offenen Hi-Hat jetzt Rauschen mit schnell fallendem Tiefpass (6 kHz → 300 Hz in 15 ms, wie mein Python-Weg, aber als Sample), VAG, im Sampler **eine Quinte höher** gespielt.
+- **Aufheben:** Statt eines bei H4 gerechneten Tons jetzt ein Glocken-Sample (zwei Sinus, 15 Halbtöne) **bei H3 aufgenommen** (44 100 Frames), VAG, im Sampler **eine Oktave höher** gespielt (spielt doppelt so schnell, klingt kürzer und heller).
+- **Skizze:** Statt zweier Synthesizer-Spuren mit Hall jetzt **zwei Sample-Instrumente** – Glocke (bei E2 aufgenommen, als Einzelschlag, auf E3 und H2 verschoben) und Chor (bei E3 aufgenommen, 2,8 s, **Schleife 0,8–2,8 s auf Vielfache von 28, 0,5 s linear überblendet**, mit Tonhöhenverschiebung auf die Akkordtöne E3–E4) –, dieselben Noten, derselbe Hall wie in Hörprobe 8.
+
+**Messwerte** (dBFS; Bänder = Energie minus Gesamtenergie in dB; Lautheit nach RMS bzw. bei der Skizze nach LUFS gleich gemacht):
+
+| Stück | Datei | Spitze | RMS | LUFS | Schwerpunkt | < 300 Hz | 300–3 000 Hz | > 3 000 Hz |
+|---|---|---|---|---|---|---|---|---|
+| Schuss | a (Hörprobe 8 b) | −1,0 | −25,9 | −23,1 | 167 Hz | −0,1 | −18,0 | −22,1 |
+| | b (Methode) | −5,0 | −25,9 | −24,4 | 640 Hz | −3,0 | −3,2 | −17,4 |
+| Klinge | a | −1,9 | −26,5 | −20,2 | 5 121 Hz | −12,1 | −11,3 | −0,6 |
+| | b | −1,0 | −26,5 | −21,4 | 1 016 Hz | −4,2 | −2,7 | −10,7 |
+| Aufheben | a | −1,0 | −19,8 | −18,3 | 507 Hz | −34,0 | 0,0 | −60,4 |
+| | b | −3,1 | −19,8 | −19,1 | 507 Hz | −31,5 | 0,0 | −59,0 |
+| Skizze 20 s | a | −1,2 | −18,7 | −16,9 | 166 Hz | 0,0 | −21,2 | −64,6 |
+| | b | −1,1 | −18,9 | −16,9 | 166 Hz | 0,0 | −20,0 | −64,7 |
+
+Lesen: Beim Schuss ist b deutlich mittiger (Schwerpunkt 640 statt 167 Hz, Mitte −3 statt −18 dB), das ist die tiefer gespielte Rauschprobe. Bei der Klinge ist b viel **dumpfer** (über 3 kHz nur −10,7 statt −0,6 dB), weil die 22,05-kHz-Probe nichts über 11 kHz enthält und der Tiefpass schnell fällt – sie ähnelt jetzt eher meinem alten Python-Schlag als dem hellen Rauschen aus Hörprobe 8. Aufheben und Skizze sind spektral fast gleich (gleiche Töne); der Unterschied liegt in der Körnung und im zeitlichen Verlauf, nicht im Spektrum. Pegel je Sekunde der Skizze b: −15, −20, −19 … −18 (0–8 s), −15 (Glocke bei 8 s), −26 … −23, −12 (Glocke bei 16 s), −23 … −25; die Glocken sitzen wie bei a bei 0, 8 und 16 s, und die Datei ist durchgehend gefüllt.
+
+**Was sich damit umsetzen ließ und was nicht:**
+- **Rauschquelle:** Geht, über `audiosuite.process` mit `signal_generator` auf einer Audiospur (Rauschen, Farbe wählbar).
+- **Automation:** Geht für Plugin-Parameter und Lautstärke (`automation.set_point`, `plugin:<Slot>:<Parameter>`): fallender Tiefpass und Abfall der Lautstärke waren messbar (Hochtonanteil −7 → −25 dB).
+- **Sampler mit eigenem Sample:** Geht (`mix.sampler_load`); Wurzelton, Transposition, Schleife (in Prozent der Länge), Hüllkurve einstellbar; 22 050-Hz-Dateien spielen in richtiger Tonhöhe (gemessen: 440 Hz bei Wurzelton, 220 Hz eine Oktave tiefer).
+- **Schichten mehrerer Spuren:** Geht (Skizze: zwei Spuren). Für die drei Geräusche habe ich bewusst keine Schichten gebaut („ein Klang, eine Geste“).
+- **Nicht umgesetzt:**
+  - **Tonhöhenhüllkurve** (fallende Tonhöhe innerhalb eines Klangs): nicht gefunden; die Tonhöhe wird je Note festgelegt.
+  - **Bus-Effekte:** weiter nicht möglich, der Hall ist je Spur eingefügt.
+  - **Gauß-Interpolation und der echte VAG-Kodierer:** Der Sampler spielt mit seiner eigenen Interpolation (welche, ist unbekannt); die VAG-Wandlung ist meine Annäherung aus `ps1_klang.py`, nicht PSXAVENC. Das Video führt gerade die Gauß-Glättung bei tiefen Tönen als Kern der Textur an; ob SoundCraft das ähnlich glättet, habe ich nicht prüfen können (nur gemessen: bei b liegt nichts über 11 kHz).
+  - `pitch_shifter` und `audiosuite varispeed` habe ich nicht benutzt; die Transposition des Samplers deckt, was die Methode braucht.
+
+**Ehrliche Einschätzung:** Das Video liefert eine einzige neue Methode, nämlich *Sample-Instrumente mit Tonhöhenverschiebung* statt *Dauerton mit nachgeschalteter Kette*. Ob das für das Ohr mehr nach PS1 und besser zum Menü-Thema klingt, weiß nur der Mensch. Sollte b bei der Skizze nicht überzeugen, liegt es vermutlich weniger an der Methode als daran, dass die Quellen (zwei Sinus als Glocke, zwei Sägen als Chor) einfacher sind als mein Python-Klang aus dem Menü-Thema; das wäre der nächste Hebel (Quellen aus meinem Python-Klang statt aus dem SoundCraft-Synthesizer, danach dieselbe Sample-Methode).
