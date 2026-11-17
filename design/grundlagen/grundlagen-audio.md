@@ -241,3 +241,21 @@ Hörprobe 5 (alle Kandidaten): siehe [Messwerte Hörprobe 5](../proben/audio/hoe
 **Festgehalten (sein Urteil, keine Regel):** In drei von vier Kategorien hat die synthetische Fassung gegen die echte Aufnahme gewonnen. Die Klangbibliothek aus Aufnahmen ist damit nicht verworfen, aber kein Selbstläufer: Die echte Aufnahme setzte sich nur beim Tropfen durch, wo es für Wasser ohnehin keine Aufnahme gab. **[Schluss, nicht belegt]** Die synthetischen Fassungen waren durch drei Hörproben schon auf sein Urteil abgestimmt, die Aufnahmen waren ein erster Versuch.
 
 Übergabe fürs Spiel: [README-audio.md](../uebergabe/README-audio.md).
+
+---
+
+# Nachtrag nach Hörprobe 6 (2026-11-17): die Palette von b – **vorläufiger Maßstab**
+
+**Urteil des Menschen (über die Leitung):** „b ist als Theme im Hauptmenü top. Bedarf später noch Überarbeitung.“ Zu a hat er nichts gesagt. **Vorläufig, wird später überarbeitet** – nicht poliert, nur spielbar gemacht.
+
+Palette von b, nach der künftige Musik und Geräusche gebaut werden (Konzept: [konzept-klangwelt.md](../proben/audio/konzept-klangwelt.md)):
+
+| | |
+|---|---|
+| Tonart, Tempo | e-Moll (E Fis G A H C D), 60 Schläge/min, 4/4, Grundton E |
+| Instrumente | tiefe **Glocke** (unharmonische Teiltöne, Grundton E3), **Chor-Pad** (drei verstimmte Stimmquellen, Vokalfilter u → o → u), **Herzschlag-Trommel** (Sinus mit fallender Tonhöhe auf E1 bzw. H1) |
+| Hall | einer für alles (Schroeder, RT60 2,8 s, Dämpfung 2,5 kHz, 50 % Send, 70 % Anteil) |
+| Frequenzrahmen | trägt unter 300 Hz; Katakomben-Musik hält die Mitte 300–3 000 Hz mindestens 15 dB unter dem Gesamtpegel (erreicht: −19,0 dB), Menü-Thema −15,2 dB |
+| Kette | PS1 (22 050 Hz, ADPCM, Gauß-Interpolation) |
+
+**Ausgeliefert** ([README-audio.md](../uebergabe/README-audio.md)): `musik-hauptmenue.ogg` (72 s, nahtlos, aus der Skizze erweitert) und `musik-katakomben.ogg` (64 s, nahtlos, karger und etwa 12 LU leiser). **[Schluss]** Lehre aus dem Bau: Die einseitige Stimmquelle erzeugt einen Gleichanteil, der ohne Hochpass jede Messung des Spektrums verfälscht; eine Zwischenfassung sah deshalb wie reiner Bass aus. Seitdem filtert das Skript ihn (kreisförmig, damit die Schleifennaht bleibt).
