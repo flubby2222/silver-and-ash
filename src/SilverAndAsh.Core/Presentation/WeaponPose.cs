@@ -41,10 +41,13 @@ public static class WeaponPose
     public const float BladeRestRollDegrees = 20f;
 
     /// <summary>At the height of a swing it leans this much further (degrees).</summary>
-    public const float SwingRollDegrees = 25f;
+    public const float SwingRollDegrees = 8f;
 
     /// <summary>At the height of a swing the tip has turned this far to the right (degrees).</summary>
-    public const float SwingYawDegrees = 95f;
+    public const float SwingYawDegrees = 50f;
+
+    /// <summary>At the height of a swing the tip has dipped this far (degrees, as <see cref="Rig.Lift"/> negated): a chop, not a sweep.</summary>
+    public const float SwingDipDegrees = 12f;
 
     /// <summary>Fully wound up for a charged swing, the tip has turned this far to the left (degrees).</summary>
     public const float WindUpYawDegrees = 35f;
@@ -120,7 +123,43 @@ public static class WeaponPose
     public static Vector3 WindUpShift { get; } = new(-0.03f, -0.01f, -0.03f);
 
     /// <summary>At the height of a swing the blade hand has moved this far to the right and up.</summary>
-    public static Vector3 SwingShift { get; } = new(0.06f, 0.04f, 0f);
+    public static Vector3 SwingShift { get; } = new(0.09f, 0f, 0.03f);
+
+    /// <summary>
+    /// How far a swing has come (0..1 of its time) -> the swing value for <see cref="Blade"/> (0 rest, 1 the height).
+    /// Weight comes from the timing: a fast strike (the first quarter), a short hold with a little overshoot where
+    /// the blade would meet something, then a slow way back that dips a touch past rest and settles. Values above 1 and
+    /// below 0 are the overshoot - small (<see cref="SwingOvershoot"/>).
+    /// </summary>
+    public static float SwingCurve(float s)
+    {
+        s = Math.Clamp(s, 0f, 1f);
+        if (s < StrikeEnd)
+        {
+            var u = s / StrikeEnd;
+            return 1f - ((1f - u) * (1f - u) * (1f - u));
+        }
+
+        if (s < HoldEnd)
+        {
+            var u = (s - StrikeEnd) / (HoldEnd - StrikeEnd);
+            return 1f + (SwingOvershoot * MathF.Sin(MathF.PI * u));
+        }
+
+        var back = (s - HoldEnd) / (1f - HoldEnd);
+        var eased = back * back * (3f - (2f * back));
+        var settle = back > 0.55f ? 0.04f * MathF.Sin(MathF.PI * (back - 0.55f) / 0.45f) : 0f;
+        return 1f - eased - settle;
+    }
+
+    /// <summary>The strike takes this part of a swing (a quarter: 4 of 17 ticks) ...</summary>
+    public const float StrikeEnd = 0.25f;
+
+    /// <summary>... the hold at the height until here ...</summary>
+    public const float HoldEnd = 0.40f;
+
+    /// <summary>... overshooting by this much of the swing.</summary>
+    public const float SwingOvershoot = 0.06f;
 
     /// <summary>From a model file (+x = the weapon's left) to camera space (+x = right): x mirrored.</summary>
     public static Matrix4x4 FileToCamera { get; } = Matrix4x4.CreateScale(-1f, 1f, 1f);
@@ -129,11 +168,82 @@ public static class WeaponPose
     /// The pistol's grip from the file into camera space. <paramref name="kick"/>: 1 right after a shot, easing to 0.
     /// At rest the barrel runs along the line of sight, rolled so its top leans towards the middle of the picture.
     /// </summary>
-    public static Matrix4x4 Pistol(float kick) =>
-        FileToCamera *
-        Matrix4x4.CreateRotationZ(Radians(PistolRollDegrees)) *
-        Matrix4x4.CreateRotationX(Radians(-RecoilLiftDegrees * kick)) *
-        Matrix4x4.CreateTranslation(PistolGrip + (RecoilShift * kick));
+    public static Matrix4x4 Pistol(float kick) => Pistol(kick, 0f, 0f, 0);
+
+    /// <summary>
+    /// The same with a reload: <paramref name="reload"/> is how far the reload has come (0..1 of its time),
+    /// <paramref name="weight"/> how much of the reload motion is shown (0..1: fades in and, if the reload is cancelled,
+    /// out again), <paramref name="variant"/> 0 = tip the pistol over, 1 = dip it away down and right.
+    /// </summary>
+    public static Matrix4x4 Pistol(float kick, float reload, float weight, int variant)
+    {
+        var (roll, lift, shift) = ReloadOffsets(reload, variant);
+        return FileToCamera *
+            Matrix4x4.CreateRotationZ(Radians(PistolRollDegrees - (roll * weight))) *
+            Matrix4x4.CreateRotationX(Radians((-RecoilLiftDegrees * kick) - (lift * weight))) *
+            Matrix4x4.CreateTranslation(PistolGrip + (RecoilShift * kick) + (shift * weight));
+    }
+
+    /// <summary>
+    /// The reload motion at <paramref name="p"/> (0..1): extra roll (degrees, the top turning away to the right), extra
+    /// lift of the muzzle (degrees) and the shift of the hand (camera space). Away in the first 20 %, held (with two
+    /// small taps where the rounds go in) until 80 %, back by 92 %, then the hammer click and a small nudge. At 0 and 1
+    /// everything is zero. Variant 0: the pistol tips over on its side and the muzzle rises; variant 1: the hand dips
+    /// down and out to the right with a steeper muzzle.
+    /// </summary>
+    public static (float Roll, float Lift, Vector3 Shift) ReloadOffsets(float p, int variant)
+    {
+        p = Math.Clamp(p, 0f, 1f);
+        float env;
+        if (p < 0.2f)
+        {
+            var u = p / 0.2f;
+            env = u * u * (3f - (2f * u));
+        }
+        else if (p < 0.8f)
+        {
+            env = 1f;
+        }
+        else if (p < 0.92f)
+        {
+            var u = (p - 0.8f) / 0.12f;
+            env = 1f - (u * u * (3f - (2f * u)));
+        }
+        else
+        {
+            env = 0f;
+        }
+
+        // Two taps while the rounds go in: the hand bobs.
+        var tap = (p is > 0.3f and < 0.7f) ? MathF.Abs(MathF.Sin((p - 0.3f) / 0.4f * 2f * MathF.PI)) * 0.012f : 0f;
+        // The nudge of the hammer click.
+        var nudge = p > 0.92f ? MathF.Sin(MathF.PI * (p - 0.92f) / 0.08f) * 0.012f : 0f;
+        var click = new Vector3(0f, nudge, -nudge);
+        if (variant == 0)
+        {
+            return (ReloadTipRollDegrees * env, ReloadTipLiftDegrees * env,
+                (new Vector3(0.02f, 0.01f, 0f) * env) + new Vector3(0f, -tap, 0f) + click);
+        }
+
+        return (ReloadDipRollDegrees * env, ReloadDipLiftDegrees * env,
+            (new Vector3(0.05f, -0.07f, -0.02f) * env) + new Vector3(0f, -tap, 0f) + click);
+    }
+
+    /// <summary>Reload, variant 0: the pistol rolls over this far (degrees) ...</summary>
+    public const float ReloadTipRollDegrees = 70f;
+
+    /// <summary>... and the muzzle rises this far (degrees).</summary>
+    public const float ReloadTipLiftDegrees = 25f;
+
+    /// <summary>Reload, variant 1: the pistol rolls this far ...</summary>
+    public const float ReloadDipRollDegrees = 25f;
+
+    /// <summary>... and the muzzle rises this far (degrees).</summary>
+    public const float ReloadDipLiftDegrees = 40f;
+
+    /// <summary>The hammer while reloading: fallen forward until the click (92 % of the reload), then cocked.</summary>
+    public static float ReloadCockDegrees(float reload, float weight, float kick) =>
+        reload > 0.9f || weight <= 0f ? CockDegrees(kick) : CockFallDegrees * Math.Max(kick, weight);
 
     /// <summary>How far the hammer is turned (degrees for <see cref="Rig.Lift"/>): fallen forward after a shot.</summary>
     public static float CockDegrees(float kick) => CockFallDegrees * kick;
@@ -146,7 +256,7 @@ public static class WeaponPose
     public static Matrix4x4 Blade(float swing, float windUp, float tremble) =>
         FileToCamera *
         Matrix4x4.CreateRotationZ(Radians(-(BladeRestRollDegrees + (SwingRollDegrees * swing)))) *
-        Matrix4x4.CreateRotationX(Radians(-WindUpLiftDegrees * windUp)) *
+        Matrix4x4.CreateRotationX(Radians((-WindUpLiftDegrees * windUp) + (SwingDipDegrees * swing))) *
         Matrix4x4.CreateRotationY(Radians((SwingYawDegrees * swing) - (WindUpYawDegrees * windUp))) *
         Matrix4x4.CreateTranslation(BladeGrip + (WindUpShift * windUp) + new Vector3(tremble, 0f, 0f) + (SwingShift * swing));
 
@@ -160,6 +270,10 @@ public static class WeaponPose
     /// <summary>The turn of the pistol's forearm around its pivot in the pose <see cref="Pistol"/> gives.</summary>
     public static Matrix4x4 PistolForearm(float kick, Vector3 pivot) =>
         ForearmTurn(Pistol(kick), Pistol(0f), pivot, PistolShoulder);
+
+    /// <summary>The same in a reload (see <see cref="Pistol(float, float, float, int)"/>).</summary>
+    public static Matrix4x4 PistolForearm(float kick, float reload, float weight, int variant, Vector3 pivot) =>
+        ForearmTurn(Pistol(kick, reload, weight, variant), Pistol(0f), pivot, PistolShoulder);
 
     /// <summary>
     /// The forearm of a sleeve points from its pivot to the shoulder in every pose: the weapon turns, the cuff turns with
