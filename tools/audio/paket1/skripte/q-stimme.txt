@@ -8,4 +8,4 @@ mix.insert {"track":"Q","slot":1,"plugin":"eq_1band","params":{"type":0,"freq":1
 mix.insert {"track":"Q","slot":2,"plugin":"eq_1band","params":{"type":4,"freq":3000.0,"q":0.7}}
 midi.new_clip {"track":"Q","start":0,"end":149940}
 midi.note_add {"clip":2,"pitch":52,"start_ticks":0,"length_ticks":6143,"velocity":100}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/q-stimme.wav","format":"wav","bit_depth":16,"start":0,"end":149940,"dither":false}
+file.bounce_mix {"path":"{TMP}/q-stimme.wav","format":"wav","bit_depth":16,"start":0,"end":149940,"dither":false}
