@@ -566,13 +566,7 @@ public sealed class GameWorld
             return;
         }
 
-        var x = room.Cells.Average(cell => cell.X);
-        var z = room.Cells.Average(cell => cell.Z);
-        var (cellX, cellZ) = room.Cells
-            .OrderBy(cell => ((cell.X - x) * (cell.X - x)) + ((cell.Z - z) * (cell.Z - z)))
-            .ThenBy(cell => cell.Z)
-            .ThenBy(cell => cell.X)
-            .First();
+        var (cellX, cellZ) = Stairs.CellIn(room.Cells);
         _stairs = new Stairs(Level.CellCenter(cellX, cellZ), Balance.Gorm.StairsRiseTime);
         _events.Add(new StairsRose());
     }
@@ -954,10 +948,7 @@ public sealed class GameWorld
                 // A melee weapon hits the whole body at once - it has no hit zone (and so no headshot bonus).
                 var weapon = swing.Weapon == WeaponKind.Club ? Weapon.Club : Weapon.Blade;
                 Damage(target, new Hit(weapon, HitZone.Body, values.Damage, swing.Charge), attacker);
-                if (!IsShowroom)
-                {
-                    KnockBack(target, attacker, values, swing.Charge);
-                }
+                KnockBack(target, attacker, values, swing.Charge);
             }
         }
     }

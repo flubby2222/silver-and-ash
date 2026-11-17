@@ -385,11 +385,17 @@ static void RunGame(
             gormView = newGormView();
         }
 
+        // The shock wave of Gorm's hammer as breaking stone (issue #299); without its model the plain ring.
+        using var shockwaveView = ShockwaveView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // One door model per kind (issue #245); a kind without one keeps the placeholder boxes.
         using var doorView = DoorView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
         // One chest model per tier (issue #249); a tier without one keeps the placeholder boxes.
         using var chestView = ChestView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
+        // The spiral staircase of every wall variant (issue #300); without one the placeholder boxes.
+        using var stairsView = StairsView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
@@ -472,14 +478,10 @@ static void RunGame(
 
             levelRenderer.Draw();
             levelShader.BeginFigures();
-            doorView.Draw(
-                gameWorld.Doors,
-                seconds,
-                new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)look.RenderWidth / look.RenderHeight),
-                gameWorld.Surfaces,
-                levelTextures);
+            var viewCone = new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)look.RenderWidth / look.RenderHeight);
+            doorView.Draw(gameWorld.Doors, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             chestView.Draw(gameWorld.Chests, seconds);
-            StairsView.Draw(gameWorld.Stairs, seconds);
+            stairsView.Draw(gameWorld.Stairs, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
@@ -494,6 +496,7 @@ static void RunGame(
             {
                 gormView.Draw(gorm, frameSeconds);
                 gormView.DrawEffects(gorm);
+                shockwaveView.Draw(gorm);
             }
 
             foreach (var bat in gameWorld.Bats)

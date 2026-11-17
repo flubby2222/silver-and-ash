@@ -2,6 +2,7 @@ using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Game.Rendering;
@@ -18,8 +19,8 @@ internal interface IGormView
     void Draw(Gorm gorm, float frameSeconds);
 
     /// <summary>
-    /// What lies on the floor and in the air around him (warning circle, shock wave, stones - and with the boxes the
-    /// sweeping chain and the flying hook). Nothing once he is dead.
+    /// What lies on the floor and in the air around him (warning circle, stones - and with the boxes the sweeping chain
+    /// and the flying hook). Nothing once he is dead. The shock wave has a view of its own, <see cref="ShockwaveView"/>.
     /// </summary>
     void DrawEffects(Gorm gorm);
 }
@@ -190,9 +191,8 @@ internal sealed class PlaceholderGormView : IGormView
     }
 
     /// <summary>
-    /// What lies on the floor and in the air around him: the red warning circle before the hammer, the shock wave's
-    /// ring, the flying hook on its chain, and the falling stones with their shadows. Drawn even after the body has
-    /// fallen (nothing then).
+    /// What lies on the floor and in the air around him: the red warning circle before the hammer, the flying hook on
+    /// its chain, and the falling stones with their shadows. Drawn even after the body has fallen (nothing then).
     /// </summary>
     public void DrawEffects(Gorm gorm)
     {
@@ -238,7 +238,8 @@ internal sealed class PlaceholderGormView : IGormView
 
 /// <summary>
 /// What lies on the floor around Gorm, the same for the model and the boxes: the red warning circle before the hammer
-/// (as far as the shock wave reaches), the shock wave's ring, and the falling stones with their growing shadows.
+/// (as far as the shock wave reaches) and the falling stones with their growing shadows. The shock wave itself draws
+/// <see cref="ShockwaveView"/>; without its model it falls back to <see cref="WaveRing"/>.
 /// </summary>
 internal static class GormFloorEffects
 {
@@ -270,12 +271,10 @@ internal static class GormFloorEffects
             var strength = 0.4f + (0.6f * gorm.StateProgress);
             Ring(gorm.Position, gorm.ShockwaveReach, Blend(new Color(60, 10, 10, 255), Warning, strength), 0.06f);
         }
-
-        if (gorm.Shockwave is { } wave)
-        {
-            Ring(wave.Origin, MathF.Max(0.3f, wave.Radius), Wave, 0.35f);
-        }
     }
+
+    /// <summary>The plain ring of pale boxes the shock wave had before its model (issue #299): the fallback.</summary>
+    public static void WaveRing(Vector3 origin, float radius) => Ring(origin, ShockwaveLook.Edge(radius), Wave, 0.35f);
 
     // A flat ring of small boxes on the floor.
     private static void Ring(Vector3 centre, float radius, Color color, float height)

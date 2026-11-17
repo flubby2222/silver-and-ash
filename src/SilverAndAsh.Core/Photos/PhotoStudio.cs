@@ -82,11 +82,33 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
+    /// Level 0 with the player in the boss room after the fight (issue #300): Gorm is dead before the first tick, so the
+    /// room is cleared on the first tick and the spiral staircase begins to rise in its middle, as in the game. The
+    /// player stands on the floor cell nearest to <paramref name="metres"/> from the foot of the staircase that sees its
+    /// middle, looking there (half its height above the floor).
+    /// </summary>
+    public GameWorld AfterGorm(float metres)
+    {
+        var (generated, room) = FirstRoom(RoomKind.Boss);
+        var level = generated.Level;
+        var (stairsX, stairsZ) = Stairs.CellIn(room.FloorCells);
+        var foot = level.CellCenter(stairsX, stairsZ);
+        var middle = foot + new Vector3(0f, Stairs.Height / 2f, 0f);
+        var cell = BestPlace(level, room, middle, cell => MathF.Abs(Vector3.Distance(level.CellCenter(cell.X, cell.Z), foot) - metres));
+
+        var world = World(generated, cell);
+        world.Gorm!.TakeDamage(world.Gorm.Health, new List<GameEvent>());
+        Face(world.Player, middle);
+        return world;
+    }
+
+    /// <summary>
     /// A bare hall (hand-made, so its enemies are awake) with one figure - 'G' ghoul, 'B' bat, 'T' Gorm, 'D' dummy -
     /// <paramref name="metres"/> in front of the player (a multiple of 2, the cell size), looking at it. The ceiling
     /// lies at <paramref name="ceiling"/> (default: as high as a corridor; Gorm's boss room: <see cref="RoomTemplate.RoomCeilingHeight"/>).
+    /// The floor shows texture <paramref name="floor"/> (default A, like every hand-made level); walls and ceiling stay A.
     /// </summary>
-    public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight)
+    public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight, TextureVariant floor = TextureVariant.A)
     {
         if (metres <= 0 || metres % (int)Level.CellSize != 0)
         {
@@ -123,7 +145,12 @@ public sealed class PhotoStudio
                 select (x, z, level[x, z] with { CeilingHeight = ceiling }));
         }
 
-        var world = new GameWorld(level, Seed, Balance);
+        var world = new GameWorld(level, Seed, Balance)
+        {
+            Surfaces = floor == TextureVariant.A ? SurfaceVariants.Plain : SurfaceVariants.Of(
+                [new RoomLook(TextureVariant.A, floor, TextureVariant.A)],
+                (from x in Enumerable.Range(0, level.Width) from z in Enumerable.Range(0, level.Depth) select (x, z)).ToDictionary(cell => cell, _ => 0)),
+        };
         var target = world.Targets.Single();
         Face(world.Player, Middle(target.Body));
         return world;

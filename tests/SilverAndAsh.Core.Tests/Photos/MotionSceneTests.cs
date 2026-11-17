@@ -26,7 +26,8 @@ public class MotionSceneTests
     }
 
     // What one picture depends on in the Core: the tick, the events the game read since the last picture (they drive
-    // swing, recoil and sounds in the views) and the state of the player, the weapons, the targets and the doors.
+    // swing, recoil and sounds in the views) and the state of the player, the weapons, the targets, the doors and
+    // Gorm's attack with its shock wave.
     private static List<string> Filmed(MotionScene scene)
     {
         var setup = scene.Build(Studio());
@@ -44,6 +45,7 @@ public class MotionSceneTests
                     + $"|{player.MeleeCooldown.RemainingFraction}|{magazine.Rounds}|{magazine.ReloadProgress}"
                     + $"|{string.Join(";", world.Targets.Select(target => target.Body.Position))}"
                     + $"|{string.Join(";", world.Doors.Select(door => door.OpenFraction))}"
+                    + $"|{world.Gorm?.State}|{world.Gorm?.StateProgress}|{world.Gorm?.Shockwave}"
                     + $"|{string.Join(";", events)}"));
                 events.Clear();
             },
@@ -55,7 +57,8 @@ public class MotionSceneTests
     public void Every_clip_the_issue_asks_for_is_there()
     {
         string[] wanted = ["blade-charge", "blade-quick", "pistol-shot", "pistol-reload", "door-normal-opening", "door-boss-opening",
-            "pistol-shot-in-swing", "pistol-reload-in-swing", "pistol-reload-cancelled", "rifle-reload-to-pistol"];
+            "pistol-shot-in-swing", "pistol-reload-in-swing", "pistol-reload-cancelled", "rifle-reload-to-pistol",
+            "gorm-slam", "gorm-slam-far", "gorm-slam-far-b", "gorm-slam-far-c", "stairs-rising"];
 
         Assert.Equal(wanted.Order(), MotionScenes.All.Select(scene => scene.Name).Order());
     }

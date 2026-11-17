@@ -37,6 +37,23 @@ public sealed class Stairs : IInteractable
 
     public Vector3 BoxMax => Position + new Vector3(Radius, Height, Radius);
 
+    /// <summary>
+    /// The cell the staircase rises in: of the room's floor cells the one nearest their mean, on a tie the one with the
+    /// smaller Z, then the smaller X - the middle of the room, the same for every order of the cells.
+    /// </summary>
+    public static (int X, int Z) CellIn(IEnumerable<(int X, int Z)> floorCells)
+    {
+        ArgumentNullException.ThrowIfNull(floorCells);
+        var cells = floorCells.ToList();
+        var x = cells.Average(cell => cell.X);
+        var z = cells.Average(cell => cell.Z);
+        return cells
+            .OrderBy(cell => ((cell.X - x) * (cell.X - x)) + ((cell.Z - z) * (cell.Z - z)))
+            .ThenBy(cell => cell.Z)
+            .ThenBy(cell => cell.X)
+            .First();
+    }
+
     public InteractionOffer OfferFor(Player player) => new("Climb the stairs", true);
 
     internal void Tick()

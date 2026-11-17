@@ -38,6 +38,14 @@ internal static class ShowroomLabelView
             var width = Raylib.MeasureText(label.Text, fontSize);
             var left = (int)x - (width / 2);
             var top = (int)y - (fontSize / 2);
+
+            // A label that does not fit whole into the picture is left out rather than cut off at its edge.
+            if (left - 4 < target.X || left + width + 4 > target.X + target.Width
+                || top - 2 < target.Y || top + fontSize + 2 > target.Y + target.Height)
+            {
+                continue;
+            }
+
             Raylib.DrawRectangle(left - 4, top - 2, width + 8, fontSize + 4, Shadow);
             Raylib.DrawText(label.Text, left, top, fontSize, Text);
         }
