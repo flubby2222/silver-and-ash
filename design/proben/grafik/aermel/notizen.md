@@ -16,3 +16,16 @@ Texturen: 128 × 128, 32 Farben, Felder wie vorher (`glove` entfällt, dafür `l
 - **Klinge „aufgeladen“**: Das Heft liegt dann etwa 1 cm vor dem Auge. Die Nahebene schneidet die Stulpe an; man sieht durch die Schnittstelle in die Stulpe, Griff mit Wicklung unter dem Rand. Das war beim alten Arm genauso; ein Eingriff in die Haltung (`WeaponPose.Blade`, Code) würde es lösen, nicht das Modell.
 - Der Sporn am Hahn ist ein dunkler Dorn, der im Foto etwas groß wirkt.
 - Ausgelassen (nicht gefordert): Nachladen und Schlag der Klinge als eigene Fotos; Szenen gibt es dafür nicht, der Ärmel ist starr an der Waffe wie vorher.
+
+---
+
+# Zweite Runde (nach dem Urteil der Leitung)
+
+**Hahn:** um ein Drittel kleiner (Faktor 0,66 um den Drehpunkt), Sporn kurz, Schlosseisen in der Farbe des Laufs (58, 56, 64) statt fast schwarz; Backen lagen vorher versehentlich auf der falschen Seite des Halses und sitzen jetzt mittig. Der helle Stein bleibt (eigenes Feld).
+**Ärmel:** ein weiter Mantelärmel aus Stoff, keine Stulpe mehr. Die Öffnung ist mit einem kleinen Trichter um den Griff geschlossen (Waffe ragt heraus), fällt leicht aus (Radius 3,1 cm gegenüber 2,4 cm am Trichter), dann läuft der Ärmel zum Ellbogen außerhalb des Bildes; Pistole von rechts unten, Klinge von links unten. Nachtblau (50, 58, 84) mit hellen und dunklen Faltenbahnen längs, Saum mit hellem Faden und Borte, Abnutzung am Saum. Ein Teil `arm` mit einem Mesh wie bisher; `cuff` kommt nicht mehr vor. Fassung 3 war falsch herum gebaut (Flächen nach innen, durch Culling nur zu erahnen); die Reihenfolge der Ringe ist jetzt umgekehrt.
+
+**Was mir nicht gefällt:**
+- **Pistole:** Der Hahn ist jetzt sehr unauffällig; im Foto sieht man den Stein nur als kleinen hellen Fleck, weil der Lauf ihn aus dieser Sicht teilweise verdeckt. Wenn er stärker lesen soll, ist ein größerer Faktor (0,8) der nächste Schritt. Der Ärmel ist von hinten oben eine blaue Fläche mit Strahlenmuster (Kappe der Öffnung, einzelne Dreiecke je Ecke schattiert); sichtbar sind etwa 10 cm statt 15 bis 20, weil die Pistole im Bild weit unten sitzt und der Rest unter dem Bildrand liegt.
+- **Klinge im Gang:** Der Ärmel ist ein großer blauer Klumpen links unten und bedeckt mehr Bild als der alte Arm; zu groß, Radius ruhig kleiner.
+- **Klinge „aufgeladen“:** Der Fehler bleibt. Das Heft liegt dort rund 1 cm vor dem Auge; was von der Nahebene geschnitten wird, kann das Modell nicht schließen (Culling zeigt die Rückseite nicht). Der Griff mit der Wicklung schaut unter dem Ärmel hervor. **Das lässt sich nur über die Haltung im Code lösen** (`WeaponPose.Blade`: aufgeladen etwa 3 cm weiter nach vorn oder die Nahebene näher), nicht im Modell.
+- Die Falten im Foto sind nur als zwei, drei Bahnen zu erkennen; 128 × 128 Pixel für Hand und Ärmel zusammen sind knapp.

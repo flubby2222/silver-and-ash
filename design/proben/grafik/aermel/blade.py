@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 from mathutils import Matrix  # noqa: E402
-from arm import C, build_sleeve, paint_cuff3 as paint_cuff, paint_sleeve3 as paint_sleeve  # noqa: E402
+from arm import C, build_sleeve4, paint_sleeve4 as paint_sleeve, paint_cuff3 as paint_cuff  # noqa: E402
 from psx import load_png, side_by_side, zoom  # noqa: E402
 from psx import bake_scale, export_glb, report_parts  # noqa: E402
 from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
@@ -114,7 +114,11 @@ def build_hand():
     part = Part("arm", (0, 0, 0), UV, parent="sword")
     # Fassung 3: kein Handschuh. Der linke Aermel (Punkte fuer rechts, s = -1 spiegelt) umschliesst Griff, Knauf und
     # Heft bis dicht an die Parierstange; die Stulpe endet vorn mit umgeschlagenem Rand.
-    build_sleeve(part, -1, rear=(0, 0, -0.062), front=(0, 0, -0.006), radius=0.0205, elbow=(0.12, -0.28, -0.16))
+    # Fassung 4: weiter Mantelaermel, Oeffnung an der Parierstange; er verschluckt Griff und Knauf und faellt nach
+    # links unten aus dem Bild (links = s = -1). Kurz hinter dem Knauf biegt er seitlich ab (Nahebene im Blick).
+    path = [(0, 0, -0.003), (0, 0, -0.011), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07), (0.09, -0.06, -0.09),
+            (0.18, -0.11, -0.12), (0.30, -0.17, -0.16)]
+    build_sleeve4(part, -1, path, [0.030, 0.024, 0.029, 0.031, 0.036, 0.040, 0.046])
     return part
 
 

@@ -205,3 +205,39 @@ def paint_cuff3(U, V_):
     for cu in (0.2, 0.5, 0.8):
         col = mix(col, CUFF_SILVER, (blob(U, V_, cu, 0.9, 0.03, 0.06) > 0.3).astype(float))
     return col
+
+
+# --- Fassung 4 (Leitung: Stoff statt Leder, Unterarm im Bild): ein weiter Mantelaermel ohne eigene Stulpe -----------
+
+SLEEVE4 = np.array((50, 58, 84), float)          # dunkler Mantelstoff, kaltes Nachtblau
+SLEEVE4_LIGHT = np.array((92, 104, 140), float)  # Lichtbahnen der Falten (muessen bei 854 x 480 lesbar sein)
+
+
+def paint_sleeve4(U, V_):
+    """u rund um den Aermel, v von der Oeffnung (0) zum Ellbogen (1). Faltenbahnen laengs, Saum mit Naht an der
+    Oeffnung, Abnutzung am Saum. Kontrast bewusst hoch: im Foto muessen helle und dunkle Bahnen zu sehen sein."""
+    h, w = U.shape
+    col = np.broadcast_to(SLEEVE4, (h, w, 3)).copy()
+    warp = 0.07 * vnoise(h, w, 6, 3, 91)
+    fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 3 + warp + 0.12 * V_))          # drei breite Bahnen rund herum
+    fold2 = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 7 + 2 * warp))
+    col = mix(col * 0.72, SLEEVE4_LIGHT, np.clip(0.75 * fold + 0.25 * fold2, 0, 1) ** 1.5 * 0.9)
+    col *= (0.9 + 0.2 * vnoise(h, w, 24, 8, 92))[..., None]                       # Gewebe
+    hem = V_ < 0.09
+    col = mix(col, SLEEVE4 * 0.55, hem.astype(float))                                  # Saum, dunkler
+    stitch = (np.abs(V_ - 0.065) < 0.012) & (((U * 56) % 1.0) < 0.55)
+    col = mix(col, CUFF_SILVER * 0.8, stitch.astype(float))                            # Naht aus hellem Faden
+    col = mix(col, SLEEVE4 * 1.6, (np.abs(V_ - 0.11) < 0.012).astype(float) * 0.7)     # Borte kurz ueber dem Saum
+    wear = np.clip((vnoise(h, w, 5, 6, 93) - 0.62) * 3, 0, 0.55) * (V_ < 0.3)
+    col = mix(col, SLEEVE4_LIGHT * 1.05, wear)
+    return col
+
+
+def build_sleeve4(part, s, path, radii, mouth_cap=True):
+    """Mantelaermel: path[0] ist die Oeffnung (Mitte, auf der Waffenachse), danach Punkte bis zum Ellbogen;
+    radii dazu. Die Oeffnung ist mit einer dunklen Scheibe geschlossen, die Waffe steckt durch sie hindurch.
+    Reihenfolge der Ringe: Ellbogen zuerst, damit die Flaechen nach aussen zeigen (an Foto geprueft)."""
+    m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
+    pts = [m(p) for p in path][::-1]
+    rad = [(r,) * 3 for r in radii][::-1]
+    part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0)), "sleeve", cap_start=True, cap_end=mouth_cap)

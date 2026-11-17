@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 from mathutils import Matrix  # noqa: E402
-from arm import build_sleeve, paint_cuff3 as paint_cuff, paint_sleeve3 as paint_sleeve  # noqa: E402
+from arm import build_sleeve4, paint_sleeve4 as paint_sleeve, paint_cuff3 as paint_cuff  # noqa: E402
 from psx import bake_scale, export_glb, report_parts  # noqa: E402
 from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
                  export_material, stone_textures, build_room, pass_material, write_light, pose, raise_fwd,
@@ -36,7 +36,7 @@ SILVER = np.array((206, 210, 222), float)     # Silber des Jaegers: hell, kuehl,
 TARNISH = np.array((92, 92, 104), float)      # angelaufenes Silber in Vertiefungen
 STEEL = np.array((112, 114, 124), float)      # Hahn und Batterie
 DARK = np.array((14, 12, 14), float)
-LOCKSTEEL = np.array((50, 50, 62), float)    # Schloss: dunkles, blau gebraeuntes Eisen
+LOCKSTEEL = np.array((58, 56, 64), float)   # Schloss: dunkles Eisen, zwischen Lauf und Schwarz (Fassung 4: heller)
 FLINT = np.array((176, 164, 138), float)     # Feuerstein: heller als alles ringsum, damit er als Stein lesbar ist
 FLASH = np.array((255, 232, 170), float)      # Muendungsfeuer wie im Platzhalter
 
@@ -205,34 +205,43 @@ def build_fittings():
 HAMMER_PIVOT = C(0.007, 0.010, 0.004)
 
 
+COCK_K = 0.66                                                                       # Fassung 4: ein Drittel kleiner
+
+
 def build_cock():
-    """Hahn (Fassung 3): geschwungener Hals mit Volumen, oben zwei Backen, die einen hellen Feuerstein nach vorn
-    halten, hinten ein Sporn fuer den Daumen. Der Hals ist ein Rohr statt einer flachen Platte, so liest er sich von
-    hinten oben als Haken. Ursache der alten Linien: der Stein benutzte die Eisenfelder der Textur mit Silberlinien."""
+    """Hahn (Fassung 4): wie Fassung 3, aber um ein Drittel kleiner um seinen Drehpunkt, mit kurzem Sporn und in
+    hellerem Schlosseisen. Hals als Rohr, zwei Backen, Oberbacke, heller Feuerstein (eigenes Texturfeld)."""
     part = Part("cock", HAMMER_PIVOT, UV, parent="stock")
-    x = 0.0075
-    neck = [C(x, 0.010, 0.004), C(x, 0.017, 0.002), C(x, 0.025, 0.005), C(x, 0.031, 0.012)]
-    part.loft(tube(neck, [(0.0034, 0.004, 0.004), (0.0034, 0.0042, 0.0042), (0.0034, 0.004, 0.004),
-                          (0.0036, 0.0042, 0.0042)], 6, ref_up=V(1, 0, 0)), "lock")
-    # Backen: zwei Platten rechts und links des Steins, oben mit Schraube.
+    k, x0 = COCK_K, 0.0075
+    py, pz = 0.010, 0.004
+
+    def P(y, z):
+        return C(x0, py + (y - py) * k, pz + (z - pz) * k)
+
+    neck = [P(0.010, 0.004), P(0.017, 0.002), P(0.025, 0.005), P(0.031, 0.012)]
+    part.loft(tube(neck, [(0.0034 * k,) + (0.004 * k,) * 2, (0.0034 * k,) + (0.0042 * k,) * 2,
+                          (0.0034 * k,) + (0.004 * k,) * 2, (0.0036 * k,) + (0.0042 * k,) * 2], 6,
+                   ref_up=V(1, 0, 0)), "lock")
+    # Backen
     for sx in (-1, 1):
-        part.box((x + sx * 0.0042 - 0.0012, 0.029, 0.010), (x + sx * 0.0042 + 0.0012, 0.0375, 0.022), "lock")
-    part.box((x - 0.0042, 0.0375, 0.012), (x + 0.0042, 0.0395, 0.02), "lock")                # Oberbacke
-    part.spike(C(x, 0.0335, 0.0105), C(x, 0.037, -0.002), 0.0026, "lock")                   # Sporn nach hinten
-    # Feuerstein: schraeg nach vorn-unten, zwischen den Backen.
-    part.prism([C(x, 0.0305, 0.016), C(x, 0.036, 0.020), C(x, 0.0345, 0.031), C(x, 0.0295, 0.0295)],
-               (-0.0034, 0, 0), "flint")
-    part.prism([C(x, 0.0305, 0.016), C(x, 0.036, 0.020), C(x, 0.0345, 0.031), C(x, 0.0295, 0.0295)],
-               (0.0034, 0, 0), "flint")
+        y0, y1, z0, z1 = py + (0.029 - py) * k, py + (0.0375 - py) * k, pz + (0.010 - pz) * k, pz + (0.022 - pz) * k
+        part.box((-(x0 + sx * 0.0042 * k) - 0.0012 * k, y0, z0), (-(x0 + sx * 0.0042 * k) + 0.0012 * k, y1, z1), "lock")
+    y0, y1, z0, z1 = py + (0.0375 - py) * k, py + (0.0395 - py) * k, pz + (0.012 - pz) * k, pz + (0.02 - pz) * k
+    part.box((-(x0) - 0.0042 * k, y0, z0), (-(x0) + 0.0042 * k, y1, z1), "lock")      # Oberbacke
+    part.spike(P(0.0335, 0.0105), P(0.036, 0.0045), 0.002, "lock")                    # kurzer Sporn nach hinten
+    flint = [P(0.0305, 0.016), P(0.036, 0.020), P(0.0345, 0.031), P(0.0295, 0.0295)]
+    part.prism(flint, (-0.0034 * k, 0, 0), "flint")
+    part.prism(flint, (0.0034 * k, 0, 0), "flint")
     return part
 
 
 def build_hand():
     part = Part("arm", (0, 0, 0), UV, parent="stock")
-    # Fassung 3 (Issue #256): kein Handschuh. Die Stulpe umschliesst den Griff vom Schloss bis unter die Kolbenkappe,
-    # der Aermel kommt von rechts unten aus dem Bild.
-    build_sleeve(part, +1, rear=(0, -0.083, -0.031), front=(0, -0.012, 0.0), radius=0.0235,
-                 elbow=(0.14, -0.20, -0.14))
+    # Fassung 4: weiter Mantelaermel, Oeffnung um den Griff unter dem Schloss (die Pistole ragt heraus), von dort
+    # nach rechts unten zum Ellbogen ausserhalb des Bildes. Weiter als der Arm (Oeffnung ausgestellt).
+    path = [(0, -0.010, 0.003), (0, -0.017, 0.0), (0.0, -0.034, -0.008), (0.03, -0.052, -0.017), (0.08, -0.080, -0.03),
+            (0.16, -0.12, -0.06), (0.30, -0.17, -0.12)]
+    build_sleeve4(part, +1, path, [0.031, 0.0245, 0.030, 0.031, 0.033, 0.038, 0.044])
     return part
 
 
