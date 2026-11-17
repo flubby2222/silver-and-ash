@@ -43,6 +43,19 @@ RAUM_SOUND = {"mix": 22, "pre_delay": 4, "decay": 0.5, "size": 25, "damping": 45
 RAUM_SKIZZE = {"mix": 35, "pre_delay": 20, "decay": 2.8, "size": 80, "damping": 2500, "diffusion": 85, "low_cut": 150}
 
 
+PLATZHALTER = "{TMP}"  # steht in skripte/*.txt fuer den Zwischenordner TMP (dort liegt der Benutzername)
+
+
+def mit_platzhalter(text):
+    """Ersetzt den absoluten Zwischenordner durch {TMP}, damit eingecheckte Skripte keinen lokalen Pfad enthalten."""
+    return text.replace(TMP.as_posix(), PLATZHALTER)
+
+
+def aufgeloest(text):
+    """Gegenstueck zu mit_platzhalter: setzt den Zwischenordner dieses Rechners ein, bevor SoundCraft das Skript liest."""
+    return text.replace(PLATZHALTER, TMP.as_posix())
+
+
 def j(**kw):
     return json.dumps(kw, separators=(",", ":"))
 
@@ -92,9 +105,13 @@ def lauf(name, zeilen, ende_s):
     pfad_wav = TMP / f"{name}.wav"
     zeilen.append("file.bounce_mix " + j(path=str(pfad_wav).replace("\\", "/"), format="wav", bit_depth=16,
                                          start=0, end=int(ende_s * 44100), dither=False))
-    skript = SKR / f"{name}.txt"
+    text = "\n".join(zeilen) + "\n"
     SKR.mkdir(exist_ok=True)
-    skript.write_text("\n".join(zeilen) + "\n", encoding="utf-8", newline="\n")
+    # Eingecheckt wird die Fassung mit Platzhalter (kein Benutzername im oeffentlichen Repository);
+    # SoundCraft bekommt die Fassung mit dem echten Zwischenordner.
+    (SKR / f"{name}.txt").write_text(mit_platzhalter(text), encoding="utf-8", newline="\n")
+    skript = TMP / f"{name}.txt"
+    skript.write_text(text, encoding="utf-8", newline="\n")
     hashes = []
     for i in range(2):
         if pfad_wav.exists():

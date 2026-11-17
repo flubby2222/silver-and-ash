@@ -7,4 +7,4 @@ mix.insert {"track":"Klinge","slot":0,"plugin":"eq_1band","params":{"type":4,"fr
 mix.insert {"track":"Klinge","slot":1,"plugin":"room_reverb","params":{"mix":22,"pre_delay":4,"decay":0.5,"size":25,"damping":4500,"diffusion":70,"low_cut":150}}
 midi.new_clip {"track":"Klinge","start":0,"end":44100}
 midi.note_add {"clip":2,"pitch":46,"start_ticks":0,"length_ticks":120,"velocity":127}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/klinge.wav","format":"wav","bit_depth":16,"start":0,"end":35280,"dither":false}
+file.bounce_mix {"path":"{TMP}/klinge.wav","format":"wav","bit_depth":16,"start":0,"end":35280,"dither":false}

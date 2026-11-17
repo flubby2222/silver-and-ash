@@ -24,4 +24,4 @@ midi.note_add {"clip":4,"pitch":52,"start_ticks":15360,"length_ticks":4128,"velo
 midi.note_add {"clip":4,"pitch":57,"start_ticks":15360,"length_ticks":4128,"velocity":90}
 midi.note_add {"clip":4,"pitch":60,"start_ticks":15360,"length_ticks":4128,"velocity":90}
 midi.note_add {"clip":4,"pitch":64,"start_ticks":15360,"length_ticks":4128,"velocity":90}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/skizze.wav","format":"wav","bit_depth":16,"start":0,"end":882000,"dither":false}
+file.bounce_mix {"path":"{TMP}/skizze.wav","format":"wav","bit_depth":16,"start":0,"end":882000,"dither":false}

@@ -1,0 +1,12 @@
+# p1-fledermaus-kreischen - SoundCraft-Skript (soundcraft-cli script). Erzeugt von bauen.py, nicht von Hand aendern.
+session.new {"name":"p1-fledermaus-kreischen","sample_rate":44100,"bit_depth":16}
+event.tempo {"bpm":120}
+track.new {"kind":"instrument","format":"stereo","name":"S","instrument":"sampler"}
+mix.sampler_load {"track":"S","path":"{TMP}/pfeife-vag.wav","params":{"play_mode":0,"loop_mode":0,"attack":4.0,"decay":300.0,"sustain":100.0,"release":60.0,"root_note":52}}
+mix.insert {"track":"S","slot":0,"plugin":"pitch_shifter","params":{"semitones":0.0,"mix":100.0}}
+mix.insert {"track":"S","slot":1,"plugin":"room_reverb","params":{"mix":22,"pre_delay":8,"decay":0.8,"size":30,"damping":3500,"diffusion":75,"low_cut":150}}
+midi.new_clip {"track":"S","start":0,"end":39690}
+midi.note_add {"clip":3,"pitch":64,"start_ticks":0,"length_ticks":864,"velocity":120}
+automation.set_point {"track":"S","param":"plugin:0:semitones","at":0,"value":3.0}
+automation.set_point {"track":"S","param":"plugin:0:semitones","at":17640,"value":-5.0}
+file.bounce_mix {"path":"{TMP}/p1-fledermaus-kreischen.wav","format":"wav","bit_depth":16,"start":0,"end":39690,"dither":false}

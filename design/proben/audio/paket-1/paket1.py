@@ -63,14 +63,31 @@ def q_hauch():
     return N.vag(B.b_aus_wav(wav, True)[0], "hauch"), h
 
 
+# Erweiterte Stimme (Paket 1.1): drei Formanten (600, 1050, 2400 Hz), zweite Schwingung (Dreieck, 12 Cent verstimmt) fuer leichtes Schweben
+STIMME2 = dict(STIMME, osc2_wave=3, osc2_semitones=0.0, osc2_detune=12.0, osc_mix=35.0, cutoff=3500.0)
+FORMANTEN2 = [("eq_1band", {"type": 0, "freq": 600.0, "gain": 14.0, "q": 3.0}),
+              ("eq_1band", {"type": 0, "freq": 1050.0, "gain": 11.0, "q": 3.0}),
+              ("eq_1band", {"type": 0, "freq": 2400.0, "gain": 6.0, "q": 3.0}),
+              ("eq_1band", {"type": 4, "freq": 2800.0, "q": 0.7})]
+
+
+def q_stimme2():
+    x, h = N.quelle_synth("q-stimme2", STIMME2, 52, 3.4, inserts=FORMANTEN2)
+    return N.vag(x, "stimme2", schleife=(1.0, 1.5, 0.4)), h
+
+
+STIMMEN = ("stimme", "stimme2")
+TONAL = ("pfeife", "glocke") + STIMMEN  # Quellen, die bei E3 (52) aufgenommen sind; Schlag und Hauch bei C4 (60)
+
 QUELLEN = {"schlag": N.instrument_rausch, "hauch": q_hauch, "pfeife": N.instrument_pfeife, "glocke": N.instrument_glocke,
-           "stimme": q_stimme}
+           "stimme": q_stimme, "stimme2": q_stimme2}
 
 # --- die Geraeusche ---------------------------------------------------------------------------------------------------
 # Spitzenpegel je Kategorie (dBFS). Die alten Dateien des Spiels: Schuss -1,5, Klinge -4,9, Schritt -12,1, Ghul-Ankuendigung -3,0 (Mittel -18,3).
 PEGEL = {
     "ankuendigung": -1.5, "schuss": -1.5, "schmerz": -5.0, "ghul": -6.0, "treffer": -4.5, "nachladen": -8.0, "schwung": -9.0,
     "bewegung": -11.0, "tuer_kiste": -7.0, "aufheben": -8.0, "schritt": -12.0, "menue": -12.0, "marke": -10.0,
+    "ankuendigung_b": -4.5, "boss": -2.5, "boss_schritt": -8.0,
 }
 
 SCHLAG = dict(play_mode=1, loop_mode=0, attack=0.1, sustain=100.0, release=100.0)
@@ -113,26 +130,40 @@ for i, p in enumerate((64, 63), 1):
 for i, p in enumerate((72, 71, 73), 1):
     GERAEUSCHE.append(G(f"p1-treffer-{i}", "schlag", "treffer", [(p, 0, 0.06, 127)], 0.8, dict(SCHLAG, decay=300.0), max_s=0.45))
 # Schritte: links etwas tiefer als rechts, je drei Varianten, Rauschschlag zwei Oktaven tiefer, kurz
-for foot, base in (("l", 45), ("r", 47)):
-    for i, d in enumerate((0, -1, 1), 1):
+# (links l3 liegt bei -2 statt +1: dort war es byte-gleich zu r2, Befund der Review)
+for foot, base, abw in (("l", 45, (0, -1, -2)), ("r", 47, (0, -1, 1))):
+    for i, d in enumerate(abw, 1):
         GERAEUSCHE.append(G(f"p1-schritt-{foot}{i}", "schlag", "schritt", [(base + d, 0, 0.05, 110)], 0.5, adsr(70.0, 40.0), max_s=0.28))
 # Bewegung
 GERAEUSCHE.append(G("p1-sprung", "hauch", "bewegung", [(72, 0, 0.06, 100)], 0.6, SCHLAG, max_s=0.3))
 GERAEUSCHE.append(G("p1-dash", "hauch", "bewegung", [(55, 0, 0.06, 110)], 1.0, SCHLAG, max_s=0.6))
 GERAEUSCHE.append(G("p1-landung", "schlag", "bewegung", [(42, 0, 0.05, 115)], 0.6, adsr(160.0, 60.0), max_s=0.35))
 # Stimme: Schmerz (faellt), Ghul entdecken (steigt), Ankuendigung (Anschwellen und Steigen, endet am Gipfel), sterben (faellt lang)
-GERAEUSCHE.append(G("p1-schmerz", "stimme", "schmerz", [(55, 0, 0.35, 110)], 0.9, adsr(400.0, 120.0, 100.0, 5.0),
-                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (0.35, -4.0)]), inserts=[("pitch_shifter", {"semitones": 0.0, "mix": 100.0})],
-                    max_s=0.6))
+PS = ("pitch_shifter", {"semitones": 0.0, "mix": 100.0})
+# Paket 1.1: Schmerz tiefer (H2 statt G3, nicht hoeher als die Ghul-Laute E3/A2), kuerzer und trockener (kurzes Ausklingen)
+GERAEUSCHE.append(G("p1-schmerz", "stimme", "schmerz", [(47, 0, 0.25, 110)], 0.7, adsr(200.0, 60.0, 100.0, 5.0),
+                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (0.25, -3.0)]), inserts=[PS], max_s=0.4))
 GERAEUSCHE.append(G("p1-ghul-entdecken", "stimme", "ghul", [(52, 0, 0.55, 105)], 1.2, adsr(400.0, 120.0, 100.0, 5.0),
-                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (0.4, 3.0)]), inserts=[("pitch_shifter", {"semitones": 0.0, "mix": 100.0})],
-                    max_s=0.9))
-GERAEUSCHE.append(G("p1-ghul-ankuendigung", "stimme", "ankuendigung", [(64, 0, 0.9, 127)], 1.4, adsr(400.0, 25.0, 100.0, 5.0),
-                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (0.9, 7.0)]) + lautstaerke("V", [(0.0, -18.0), (0.9, 0.0)]),
-                    inserts=[("pitch_shifter", {"semitones": 0.0, "mix": 100.0})], max_s=1.0))
+                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (0.4, 3.0)]), inserts=[PS], max_s=0.9))
+# Variante 2: erweiterte Stimme (drei Formanten, schwebend), leichte Tonhoehenbewegung, dazu ein leiser Hauch als Rauschanteil
+GERAEUSCHE.append(G("p1-ghul-entdecken-2", "stimme2", "ghul", [(50, 0, 0.5, 105)], 1.2, adsr(400.0, 120.0, 100.0, 5.0),
+                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (0.1, 0.5), (0.2, -0.3), (0.3, 1.5), (0.45, 4.0)]), inserts=[PS], max_s=0.85,
+                    zusatz=[("hauch", [(52, 0.0, 0.3, 90)], dict(SCHLAG, level=-14.0))]))
+# Ankuendigung (Paket 1.1): tiefer und sanfter, kein schriller Anstieg; durchkommen ueber Einsatz, Pegel und Mittenband
+TIEF = ("eq_1band", {"type": 4, "freq": 1800.0, "q": 0.7})
+HOCH_PASS = ("eq_1band", {"type": 3, "freq": 200.0, "q": 0.7})  # nimmt den Bauch unter 200 Hz weg, damit die Warnung im Mittenband liegt
+GERAEUSCHE.append(G("p1-ghul-ankuendigung", "stimme", "ankuendigung", [(50, 0, 0.9, 127)], 1.4, adsr(400.0, 25.0, 100.0, 5.0),
+                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (0.9, 3.0)]) + lautstaerke("V", [(0.0, -18.0), (0.9, 0.0)]),
+                    inserts=[PS, HOCH_PASS, TIEF], max_s=1.0))
+GERAEUSCHE.append(G("p1-ghul-ankuendigung-leise", "stimme", "ankuendigung_b", [(47, 0, 0.9, 120)], 1.4, adsr(400.0, 25.0, 100.0, 5.0),
+                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (0.9, 2.0)]) + lautstaerke("V", [(0.0, -20.0), (0.9, 0.0)]),
+                    inserts=[PS, ("eq_1band", {"type": 3, "freq": 160.0, "q": 0.7}), ("eq_1band", {"type": 4, "freq": 1400.0, "q": 0.7})], max_s=1.0))
 GERAEUSCHE.append(G("p1-ghul-sterben", "stimme", "ghul", [(45, 0, 0.9, 105)], 1.6, adsr(400.0, 400.0, 100.0, 5.0),
                     auto=glide("V", 0, "semitones", [(0.0, 0.0), (1.0, -9.0)]) + lautstaerke("V", [(0.5, 0.0), (1.2, -35.0)]),
                     inserts=[("pitch_shifter", {"semitones": 0.0, "mix": 100.0})], max_s=1.3))
+GERAEUSCHE.append(G("p1-ghul-sterben-2", "stimme2", "ghul", [(43, 0, 0.8, 105)], 1.6, adsr(400.0, 400.0, 100.0, 5.0),
+                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (0.2, -0.4), (0.5, 0.2), (1.0, -7.0)]) + lautstaerke("V", [(0.5, 0.0), (1.2, -35.0)]),
+                    inserts=[PS], max_s=1.3, zusatz=[("hauch", [(48, 0.0, 0.5, 90)], dict(SCHLAG, level=-12.0))]))
 # Tuer, Kiste, Menue
 GERAEUSCHE.append(G("p1-tuer-oeffnen", "hauch", "tuer_kiste", [(43, 0, 0.7, 100)], 1.8, dict(play_mode=0, loop_mode=0, attack=0.1, decay=300.0, sustain=100.0, release=250.0),
                     max_s=1.3))
@@ -161,19 +192,63 @@ for i, p in enumerate((48, 47), 1):
                         zusatz=[("glocke", [(64, 0.0, 0.3, 100)], dict(adsr(300.0, 120.0), level=6.0))]))
 GERAEUSCHE.append(G("p1-weihe-ende", "glocke", "marke", [(52, 0.0, 0.3, 90)], 0.9, adsr(350.0, 150.0), max_s=0.7))
 
+# --- Fledermaus (Issue #297): kleiner und heller als der Ghul, aber nicht schrill (Pfeife um E4 mit Tonfahrt, Hauch fuer Fluegel) ---
+def glide_s(pts):
+    return glide("S", 0, "semitones", pts)
+
+
+for i, p in enumerate((66, 65), 1):
+    GERAEUSCHE.append(G(f"p1-fledermaus-flattern-{i}", "hauch", "bewegung", [(p, 0, 0.05, 90)], 0.5, adsr(90.0, 60.0), max_s=0.22))
+GERAEUSCHE.append(G("p1-fledermaus-spuck-ankuendigung", "glocke", "ankuendigung", [(71, 0, 0.5, 110)], 1.0, adsr(500.0, 150.0), max_s=0.7))
+GERAEUSCHE.append(G("p1-fledermaus-spucken", "hauch", "schwung", [(76, 0, 0.05, 110)], 0.6, adsr(120.0, 60.0), max_s=0.3))
+GERAEUSCHE.append(G("p1-fledermaus-kreischen", "pfeife", "ankuendigung", [(64, 0, 0.45, 120)], 0.9, adsr(300.0, 60.0, 100.0, 4.0),
+                    auto=glide_s([(0.0, 3.0), (0.4, -5.0)]), inserts=[PS], max_s=0.55))
+GERAEUSCHE.append(G("p1-fledermaus-biss", "schlag", "treffer", [(68, 0, 0.04, 120)], 0.5, adsr(60.0, 30.0), max_s=0.25))
+GERAEUSCHE.append(G("p1-fledermaus-fehlsturz", "hauch", "bewegung", [(58, 0, 0.1, 100)], 0.8, adsr(200.0, 100.0), max_s=0.45))
+GERAEUSCHE.append(G("p1-fledermaus-treffer", "schlag", "treffer", [(70, 0, 0.04, 110)], 0.5, adsr(80.0, 40.0), max_s=0.3))
+GERAEUSCHE.append(G("p1-fledermaus-sterben", "pfeife", "ghul", [(62, 0, 0.5, 105)], 1.0, adsr(350.0, 150.0, 100.0, 4.0),
+                    auto=glide_s([(0.0, 0.0), (0.5, -12.0)]) + lautstaerke("S", [(0.2, 0.0), (0.6, -30.0)]), inserts=[PS], max_s=0.7))
+# --- Gorm (Issue #298): tief und schwer, nie schrill. Die drei Ankuendigungen unterscheiden sich in der Klangart:
+# Hammer = tiefer Pfeifton (schwillt an), Kettenschwung = Rauschen (wirbelt), Wurf = ein Glockenschlag mit Abklingen.
+GERAEUSCHE.append(G("p1-gorm-ankuendigung-hammer", "pfeife", "ankuendigung", [(47, 0, 0.9, 127)], 1.4, adsr(500.0, 60.0, 100.0, 5.0),
+                    auto=lautstaerke("S", [(0.0, -20.0), (0.8, 0.0)]), inserts=[("eq_1band", {"type": 0, "freq": 500.0, "gain": 12.0, "q": 1.0})], max_s=1.0))
+GERAEUSCHE.append(G("p1-gorm-ankuendigung-schwung", "hauch", "ankuendigung", [(46, 0, 0.9, 127)], 1.4,
+                    dict(play_mode=0, loop_mode=0, attack=0.1, decay=500.0, sustain=100.0, release=60.0),
+                    auto=lautstaerke("S", [(0.0, -4.0), (0.8, 0.0)]), max_s=1.0))
+GERAEUSCHE.append(G("p1-gorm-ankuendigung-wurf", "glocke", "ankuendigung", [(45, 0, 0.5, 127)], 1.0, adsr(450.0, 120.0), max_s=0.8))
+GERAEUSCHE.append(G("p1-gorm-aufschlag", "schlag", "boss", [(30, 0, 0.1, 127)], 1.4, adsr(500.0, 150.0), max_s=1.0,
+                    zusatz=[("glocke", [(40, 0.0, 0.4, 100)], dict(adsr(500.0, 150.0), level=-2.0))]))
+GERAEUSCHE.append(G("p1-gorm-kette", "glocke", "boss", [(40, 0, 0.3, 120)], 0.9, adsr(300.0, 100.0), max_s=0.6,
+                    zusatz=[("hauch", [(44, 0.0, 0.4, 100)], dict(SCHLAG, level=-6.0))]))
+GERAEUSCHE.append(G("p1-gorm-haken-wurf", "hauch", "schwung", [(52, 0, 0.1, 120)], 0.7, adsr(180.0, 80.0), max_s=0.4))
+GERAEUSCHE.append(G("p1-gorm-haken-treffer", "schlag", "boss", [(33, 0, 0.08, 127)], 0.9, adsr(300.0, 100.0), max_s=0.6,
+                    zusatz=[("glocke", [(47, 0.0, 0.25, 110)], dict(adsr(250.0, 100.0), level=-2.0))]))
+for i, p in enumerate((52, 50), 1):
+    GERAEUSCHE.append(G(f"p1-gorm-treffer-{i}", "schlag", "treffer", [(p, 0, 0.05, 120)], 0.6, adsr(120.0, 50.0), max_s=0.35))
+GERAEUSCHE.append(G("p1-gorm-treffer-kopf", "schlag", "treffer", [(58, 0, 0.05, 127)], 0.7, adsr(140.0, 60.0), max_s=0.4,
+                    zusatz=[("glocke", [(52, 0.0, 0.3, 100)], dict(adsr(250.0, 100.0), level=0.0))]))
+GERAEUSCHE.append(G("p1-gorm-bruellen", "stimme", "boss", [(31, 0, 1.2, 127)], 1.8, adsr(400.0, 250.0, 100.0, 120.0),
+                    auto=glide("V", 0, "semitones", [(0.0, 2.0), (0.5, 0.0), (1.2, -3.0)])
+                    + lautstaerke("V", [(0.0, -12.0), (0.4, 0.0), (1.0, 0.0), (1.5, -30.0)]), inserts=[PS], max_s=1.5))
+GERAEUSCHE.append(G("p1-gorm-sterben", "stimme", "boss", [(28, 0, 1.2, 120)], 1.8, adsr(400.0, 400.0, 100.0, 20.0),
+                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (1.3, -9.0)]) + lautstaerke("V", [(0.6, 0.0), (1.5, -35.0)]),
+                    inserts=[PS], max_s=1.5))
+for i, p in enumerate((30, 29), 1):
+    GERAEUSCHE.append(G(f"p1-gorm-schritt-{i}", "schlag", "boss_schritt", [(p, 0, 0.06, 120)], 0.7, adsr(200.0, 80.0), max_s=0.45))
+
 
 def stueck(g, quellen):
     inst = quellen[g["quelle"]][0]
     pfad, n, a, b = inst
-    p = dict(g["params"], root_note=52 if g["quelle"] in ("pfeife", "glocke", "stimme") else 60)
-    if g["quelle"] == "stimme":
+    p = dict(g["params"], root_note=52 if g["quelle"] in TONAL else 60)
+    if g["quelle"] in STIMMEN:
         p.update(loop_mode=1, loop_start=a, loop_end=b)
     noten = [(pi, int(t * TPS), max(1, int(l * TPS)), v) for pi, t, l, v in g["noten"]]
-    name = "V" if g["quelle"] == "stimme" else "S"
+    name = "V" if g["quelle"] in STIMMEN else "S"
     z = B.kopf(g["datei"]) + N.sampler_spur(name, pfad, p, noten, g["laenge"], RAUM_P1, inserts=g["inserts"])
     for k, (q2, noten2, params2) in enumerate(g["zusatz"], 1):
         pfad2 = quellen[q2][0][0]
-        p2 = dict(params2, root_note=52 if q2 in ("pfeife", "glocke", "stimme") else 60)
+        p2 = dict(params2, root_note=52 if q2 in TONAL else 60)
         n2 = [(pi, int(t * TPS), max(1, int(l * TPS)), v) for pi, t, l, v in noten2]
         z += N.sampler_spur(f"Z{k}", pfad2, p2, n2, g["laenge"], RAUM_P1)
     z += g["auto"]
@@ -198,9 +273,9 @@ def nachbearbeiten(wav, g):
     return [v * f for v in x]
 
 
-def onsets(x):
+def onsets(x, fenster=0.01):
     """Zaehlt Einsaetze: Pegel steigt innerhalb von 50 ms um mehr als 8 dB (Hop 5 ms, Fenster 10 ms); der Beginn zaehlt mit."""
-    hop, win = int(0.005 * SR), int(0.01 * SR)
+    hop, win = int(0.005 * SR), int(fenster * SR)
     lv = []
     for i in range(0, max(1, len(x) - win), hop):
         r = math.sqrt(sum(v * v for v in x[i:i + win]) / win)
@@ -232,6 +307,7 @@ def main():
         B.schreibe(DATEIEN / f"{g['datei']}.wav", [x])
         m = B.mess([x])
         m["einsaetze"] = onsets(x)
+        m["einsaetze_30ms"] = onsets(x, 0.03)  # tiefe Toene (Periode > 6 ms): das 10-ms-Fenster sieht einzelne Schwingungen als Einsaetze
         m["kategorie"] = g["kat"]
         m["bitgleich"] = h[0] == h[1]
         bericht["dateien"][g["datei"]] = m
@@ -272,7 +348,7 @@ def tabellenzeilen(bericht):
         m = bericht["dateien"].get(g["datei"])
         if not m:
             continue
-        root = 52 if g["quelle"] in ("pfeife", "glocke", "stimme") else 60
+        root = 52 if g["quelle"] in TONAL else 60
         tonlage = ", ".join(f"{ton(p)} ({p - root:+d})" for p, t, l, v in g["noten"])
         z.append(f"| `{g['datei']}.wav` | {g['quelle']} | {tonlage} | {m['seconds']:.2f} s | {m['peak_db']:.1f} | {m['rms_db']:.1f} | {g['kat']} |")
     return "\n".join(z)

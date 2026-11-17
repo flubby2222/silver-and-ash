@@ -8,4 +8,4 @@ automation.set_point {"track":"N","param":"plugin:0:freq","at":0,"value":8000.0}
 automation.set_point {"track":"N","param":"plugin:0:freq","at":2646,"value":1500.0}
 automation.set_point {"track":"N","param":"volume","at":0,"value":0.0}
 automation.set_point {"track":"N","param":"volume","at":15434,"value":-50.0}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/q-rausch.wav","format":"wav","bit_depth":16,"start":0,"end":22050,"dither":false}
+file.bounce_mix {"path":"{TMP}/q-rausch.wav","format":"wav","bit_depth":16,"start":0,"end":22050,"dither":false}

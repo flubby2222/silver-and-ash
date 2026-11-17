@@ -2,8 +2,8 @@
 session.new {"name":"klinge9","sample_rate":44100,"bit_depth":16}
 event.tempo {"bpm":120}
 track.new {"kind":"instrument","format":"stereo","name":"Klinge","instrument":"sampler"}
-mix.sampler_load {"track":"Klinge","path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/rausch-vag.wav","params":{"play_mode":1,"loop_mode":0,"attack":0.1,"sustain":100.0,"release":150.0,"root_note":60,"decay":300.0}}
+mix.sampler_load {"track":"Klinge","path":"{TMP}/rausch-vag.wav","params":{"play_mode":1,"loop_mode":0,"attack":0.1,"sustain":100.0,"release":150.0,"root_note":60,"decay":300.0}}
 mix.insert {"track":"Klinge","slot":0,"plugin":"room_reverb","params":{"mix":28,"pre_delay":8,"decay":1.1,"size":40,"damping":3500,"diffusion":75,"low_cut":150}}
 midi.new_clip {"track":"Klinge","start":0,"end":44100}
 midi.note_add {"clip":3,"pitch":72,"start_ticks":0,"length_ticks":120,"velocity":127}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/klinge9.wav","format":"wav","bit_depth":16,"start":0,"end":35280,"dither":false}
+file.bounce_mix {"path":"{TMP}/klinge9.wav","format":"wav","bit_depth":16,"start":0,"end":35280,"dither":false}

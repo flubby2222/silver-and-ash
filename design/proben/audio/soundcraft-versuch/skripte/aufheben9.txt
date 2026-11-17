@@ -2,8 +2,8 @@
 session.new {"name":"aufheben9","sample_rate":44100,"bit_depth":16}
 event.tempo {"bpm":120}
 track.new {"kind":"instrument","format":"stereo","name":"Aufheben","instrument":"sampler"}
-mix.sampler_load {"track":"Aufheben","path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/glocke-vag.wav","params":{"play_mode":1,"loop_mode":0,"attack":0.1,"sustain":100.0,"release":150.0,"root_note":52,"decay":4000.0}}
+mix.sampler_load {"track":"Aufheben","path":"{TMP}/glocke-vag.wav","params":{"play_mode":1,"loop_mode":0,"attack":0.1,"sustain":100.0,"release":150.0,"root_note":52,"decay":4000.0}}
 mix.insert {"track":"Aufheben","slot":0,"plugin":"room_reverb","params":{"mix":28,"pre_delay":8,"decay":1.1,"size":40,"damping":3500,"diffusion":75,"low_cut":150}}
 midi.new_clip {"track":"Aufheben","start":0,"end":52920}
 midi.note_add {"clip":3,"pitch":64,"start_ticks":0,"length_ticks":960,"velocity":100}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/aufheben9.wav","format":"wav","bit_depth":16,"start":0,"end":52920,"dither":false}
+file.bounce_mix {"path":"{TMP}/aufheben9.wav","format":"wav","bit_depth":16,"start":0,"end":52920,"dither":false}

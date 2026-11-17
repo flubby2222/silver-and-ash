@@ -1,0 +1,108 @@
+{
+ "quellen": {
+  "schlag": {
+   "frames": 11004,
+   "sha256_roh": "9281855fa26e7e7cc8046302b27baee9eec66433ddb64beb672da57a6d082255"
+  },
+  "hauch": {
+   "frames": 11004,
+   "sha256_roh": "c77d68c12bc3eb42221b5ce5b75028ccb329d9167be94116c5d4aa04145c246e"
+  },
+  "pfeife": {
+   "frames": 60452,
+   "sha256_roh": "64cf843f9d65314836a01b269f928fd27b84e802a5000dd26eda3c1a66203f1f"
+  },
+  "glocke": {
+   "frames": 136696,
+   "sha256_roh": "811dde8a79eed2e16452eeca1d30e55a5a075b52da623df6f74fd456673995d7"
+  },
+  "stimme": {
+   "frames": 54012,
+   "sha256_roh": "0e1dbbce3444a51c001e333545a7b41af42d3f3db75caaf90a50529c10f67c21"
+  },
+  "stimme2": {
+   "frames": 54012,
+   "sha256_roh": "b9b629b4e2d0868ef97709c784bf317ffb1516dc88430b9b24a6641ecdfbd71b"
+  }
+ },
+ "dateien": {
+  "p1-ghul-ankuendigung": {
+   "peak_db": -1.5,
+   "rms_db": -20.2,
+   "centroid_hz": 502,
+   "seconds": 1.0,
+   "low_db": -4.6,
+   "mid_db": -1.9,
+   "high_db": -48.4,
+   "einsaetze": 2,
+   "einsaetze_30ms": 1,
+   "kategorie": "ankuendigung",
+   "bitgleich": true
+  },
+  "p1-ghul-ankuendigung-leise": {
+   "peak_db": -4.5,
+   "rms_db": -23.8,
+   "centroid_hz": 286,
+   "seconds": 1.0,
+   "low_db": -1.8,
+   "mid_db": -4.8,
+   "high_db": -58.4,
+   "einsaetze": 1,
+   "einsaetze_30ms": 1,
+   "kategorie": "ankuendigung_b",
+   "bitgleich": true
+  },
+  "p1-fledermaus-spuck-ankuendigung": {
+   "peak_db": -1.5,
+   "rms_db": -23.5,
+   "centroid_hz": 533,
+   "seconds": 0.7,
+   "low_db": -9.0,
+   "mid_db": -0.6,
+   "high_db": -44.9,
+   "einsaetze": 1,
+   "einsaetze_30ms": 1,
+   "kategorie": "ankuendigung",
+   "bitgleich": true
+  },
+  "p1-gorm-ankuendigung-hammer": {
+   "peak_db": -1.5,
+   "rms_db": -13.0,
+   "centroid_hz": 195,
+   "seconds": 1.0,
+   "low_db": -0.6,
+   "mid_db": -8.9,
+   "high_db": -55.9,
+   "einsaetze": 2,
+   "einsaetze_30ms": 1,
+   "kategorie": "ankuendigung",
+   "bitgleich": true
+  },
+  "p1-gorm-ankuendigung-schwung": {
+   "peak_db": -1.5,
+   "rms_db": -18.7,
+   "centroid_hz": 953,
+   "seconds": 1.0,
+   "low_db": -11.4,
+   "mid_db": -0.4,
+   "high_db": -16.5,
+   "einsaetze": 4,
+   "einsaetze_30ms": 4,
+   "kategorie": "ankuendigung",
+   "bitgleich": true
+  },
+  "p1-gorm-ankuendigung-wurf": {
+   "peak_db": -1.5,
+   "rms_db": -21.8,
+   "centroid_hz": 174,
+   "seconds": 0.8,
+   "low_db": -0.8,
+   "mid_db": -7.7,
+   "high_db": -62.7,
+   "einsaetze": 1,
+   "einsaetze_30ms": 1,
+   "kategorie": "ankuendigung",
+   "bitgleich": true
+  }
+ }
+}
