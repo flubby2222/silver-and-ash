@@ -18,6 +18,9 @@ Aufbau (Entscheidung des Menschen, 2026-11-17, siehe docs/design/art-bible.md, A
 - Die übrigen Reihen (Haut/Knochen, Stoff, Holz, Eisen, Messing/Gold, Blutrot) sind Rampen aus Ankerpunkten (Farbton,
   Sättigung, Helligkeit in HLS) wie in Runde 2, Palette 1 "Violettgrau". Die Stufenfarben der Beute sind feste Ankerpunkte
   und stehen genau so im Spiel (ChestView.Colours); die Nebelfarbe ist Stufe 0 des Steins (LookSettings.FogColor).
+- Die Reihe Werkstein (Akzent, 4 Stufen, Issue #303; Entscheidung des Menschen am Bild, 2026-11-17, Fassung "blau") ist
+  aus den vier hellsten Stein-Stufen gerechnet: zu 55 % zum Grau gemischt und mal 1,45 (WERKSTEIN unten). Gleicher
+  Farbton wie der Stein, heller und neutraler; nur für besondere Portale (heute: das Bosstor).
 
 Herkunft der Methode: Rampen mit Farbton-Verschiebung nach Slynyrd "Pixelblog 1: Color Palettes" und gamedev.net
 "Color Palettes" (nur Nachschlagewerke, keine fremde Palette übernommen). Alles per Skript, nichts heruntergeladen.
@@ -111,12 +114,24 @@ AKZENT_ROWS = [
     ("Blutrot", [anchor(0, 340, .50, .07), pin(3, BLOOD_DARK), pin(5, BLOOD_LIGHT), anchor(7, 370, .75, .62)]),
 ]
 
+
+def werkstein(c):
+    """Eine Stein-Stufe als Werkstein: zu 55 % zum Grau (Mittel der drei Kanäle) gemischt, dann mal 1,45."""
+    grey = sum(c) / 3
+    return tuple(min(255, max(0, round((0.45 * v + 0.55 * grey) * 1.45))) for v in c)
+
+
+# Werkstein, 4 Stufen: aus den Stein-Stufen 11 bis 14 (Issue #303). Die Rahmen der Tueren (tools/models/door.py) bilden
+# jede Wandkachel auf diese Stufen ab: die hellste Farbe der Kachel auf Stufe 3.
+WERKSTEIN = [werkstein(c) for c in STEIN[11:15]]
+
 # Wofür eine Akzent-Reihe da ist (kommt in die Datei, damit niemand sie als Flächenfarbe nimmt)
 ZWECK = {
     "Holz": "Türen, Kisten der Stufe Worn; später Balken und Möbel",
     "Eisen": "Beschläge, Gitter, Kisten der Stufe Forged; später Ketten und Werkzeug",
     "Messing/Gold": "Beute der Stufe Royal, Schlüssel, Zierrat; später Kerzenleuchter",
     "Blutrot": "Blut, Treffer, Gefahr, Beute der Stufe Vampiric; nie als bloße Zierde",
+    "Werkstein": "besondere Portale: Bogenläufe, Kämpfer und Sockel des Bosstors; nie als Wandfläche",
 }
 VERWENDUNG = {
     "Stein": "Wände, Böden, Decken (Fläche)",
@@ -159,6 +174,7 @@ def build_rows():
                 if row == name:
                     colours[step] = c
             target.append((name, colours))
+    akzent.append(("Werkstein", list(WERKSTEIN)))
     return grund, akzent
 
 
