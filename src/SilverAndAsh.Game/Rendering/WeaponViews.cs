@@ -86,7 +86,6 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
     private WeaponKind _ranged;     // which ranged weapon is in the right hand
     private float _reloadProgress;
     private float _reloadWeight;
-    private const int ReloadVariant = 0;   // 0 = tip over, 1 = dip away (see notes)
     private float _bobPhase;
     private float _bobStrength;
     private Vector2 _turnSway;      // x = right, y = up, in metres
@@ -135,12 +134,9 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         if (player.Ranged.Magazine is { IsReloading: true } magazine)
         {
             _reloadProgress = magazine.ReloadProgress;
-            _reloadWeight = MathF.Min(1f, _reloadWeight + (frameSeconds * 10f));
         }
-        else
-        {
-            _reloadWeight = MathF.Max(0f, _reloadWeight - (frameSeconds * 10f));
-        }
+
+        _reloadWeight = WeaponPose.ReloadWeightStep(_reloadWeight, player.Ranged.Magazine is { IsReloading: true }, frameSeconds);
 
         // Bob only while walking on the ground; fades in and out instead of switching on and off.
         var walking = player.IsGrounded ? Math.Clamp(player.HorizontalSpeed / player.WalkSpeed, 0f, 1f) : 0f;
@@ -259,7 +255,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         var kick = 1f - EaseOut(_recoil);
         if (_ranged == WeaponKind.Pistol && models is { Pistol: { } pistol, PistolHand: { } pistolHand })
         {
-            DrawPistolModel(pistol, pistolHand, WeaponPose.Pistol(kick, _reloadProgress, _reloadWeight, ReloadVariant) * modelMotion, kick);
+            DrawPistolModel(pistol, pistolHand, WeaponPose.Pistol(kick, _reloadProgress, _reloadWeight) * modelMotion, kick);
             return;
         }
 
@@ -330,7 +326,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
 
         pistol.DrawPart(2, _pistolFrames[2]);
         pistol.DrawPart(3, _pistolFrames[3]);
-        DrawSleeve(hand, grip, WeaponPose.PistolForearm(kick, _reloadProgress, _reloadWeight, ReloadVariant, hand.Rig.Pivots[1]));
+        DrawSleeve(hand, grip, WeaponPose.PistolForearm(kick, _reloadProgress, _reloadWeight, hand.Rig.Pivots[1]));
 
         // The muzzle flash: full brightness whatever the light, pale blue-white after a consecrated shot.
         if (_flash > 0f)

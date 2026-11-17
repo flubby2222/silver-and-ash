@@ -168,16 +168,16 @@ public static class WeaponPose
     /// The pistol's grip from the file into camera space. <paramref name="kick"/>: 1 right after a shot, easing to 0.
     /// At rest the barrel runs along the line of sight, rolled so its top leans towards the middle of the picture.
     /// </summary>
-    public static Matrix4x4 Pistol(float kick) => Pistol(kick, 0f, 0f, 0);
+    public static Matrix4x4 Pistol(float kick) => Pistol(kick, 0f, 0f);
 
     /// <summary>
     /// The same with a reload: <paramref name="reload"/> is how far the reload has come (0..1 of its time),
     /// <paramref name="weight"/> how much of the reload motion is shown (0..1: fades in and, if the reload is cancelled,
-    /// out again), <paramref name="variant"/> 0 = tip the pistol over, 1 = dip it away down and right.
+    /// out again).
     /// </summary>
-    public static Matrix4x4 Pistol(float kick, float reload, float weight, int variant)
+    public static Matrix4x4 Pistol(float kick, float reload, float weight)
     {
-        var (roll, lift, shift) = ReloadOffsets(reload, variant);
+        var (roll, lift, shift) = ReloadOffsets(reload);
         return FileToCamera *
             Matrix4x4.CreateRotationZ(Radians(PistolRollDegrees - (roll * weight))) *
             Matrix4x4.CreateRotationX(Radians((-RecoilLiftDegrees * kick) - (lift * weight))) *
@@ -188,10 +188,9 @@ public static class WeaponPose
     /// The reload motion at <paramref name="p"/> (0..1): extra roll (degrees, the top turning away to the right), extra
     /// lift of the muzzle (degrees) and the shift of the hand (camera space). Away in the first 20 %, held (with two
     /// small taps where the rounds go in) until 80 %, back by 92 %, then the hammer click and a small nudge. At 0 and 1
-    /// everything is zero. Variant 0: the pistol tips over on its side and the muzzle rises; variant 1: the hand dips
-    /// down and out to the right with a steeper muzzle.
+    /// everything is zero. The hand dips down and out to the right and the muzzle rises steeply.
     /// </summary>
-    public static (float Roll, float Lift, Vector3 Shift) ReloadOffsets(float p, int variant)
+    public static (float Roll, float Lift, Vector3 Shift) ReloadOffsets(float p)
     {
         p = Math.Clamp(p, 0f, 1f);
         float env;
@@ -219,31 +218,32 @@ public static class WeaponPose
         // The nudge of the hammer click.
         var nudge = p > 0.92f ? MathF.Sin(MathF.PI * (p - 0.92f) / 0.08f) * 0.012f : 0f;
         var click = new Vector3(0f, nudge, -nudge);
-        if (variant == 0)
-        {
-            return (ReloadTipRollDegrees * env, ReloadTipLiftDegrees * env,
-                (new Vector3(0.02f, 0.01f, 0f) * env) + new Vector3(0f, -tap, 0f) + click);
-        }
-
-        return (ReloadDipRollDegrees * env, ReloadDipLiftDegrees * env,
-            (new Vector3(0.05f, -0.07f, -0.02f) * env) + new Vector3(0f, -tap, 0f) + click);
+        return (ReloadRollDegrees * env, ReloadLiftDegrees * env,
+            (ReloadShift * env) + new Vector3(0f, -tap, 0f) + click);
     }
 
-    /// <summary>Reload, variant 0: the pistol rolls over this far (degrees) ...</summary>
-    public const float ReloadTipRollDegrees = 70f;
+    /// <summary>Reloading: the pistol rolls this far (degrees, its top turning away to the right) ...</summary>
+    public const float ReloadRollDegrees = 25f;
 
-    /// <summary>... and the muzzle rises this far (degrees).</summary>
-    public const float ReloadTipLiftDegrees = 25f;
+    /// <summary>... the muzzle rises this far (degrees) ...</summary>
+    public const float ReloadLiftDegrees = 40f;
 
-    /// <summary>Reload, variant 1: the pistol rolls this far ...</summary>
-    public const float ReloadDipRollDegrees = 25f;
+    /// <summary>... and the hand dips down and out to the right, a little back (camera space, metres).</summary>
+    public static Vector3 ReloadShift { get; } = new(0.01f, 0.0f, -0.02f);
 
-    /// <summary>... and the muzzle rises this far (degrees).</summary>
-    public const float ReloadDipLiftDegrees = 40f;
+    /// <summary>How fast the reload motion fades in and out (per second): a tenth of a second from nothing to all.</summary>
+    public const float ReloadFadePerSecond = 10f;
+
+    /// <summary>
+    /// The next value of the reload motion's weight (0..1): rises while a reload runs, falls when it is gone (cancelled by a
+    /// weapon switch), so the pistol eases back instead of jumping.
+    /// </summary>
+    public static float ReloadWeightStep(float weight, bool reloading, float frameSeconds) =>
+        Math.Clamp(weight + ((reloading ? 1f : -1f) * frameSeconds * ReloadFadePerSecond), 0f, 1f);
 
     /// <summary>The hammer while reloading: fallen forward until the click (92 % of the reload), then cocked.</summary>
     public static float ReloadCockDegrees(float reload, float weight, float kick) =>
-        reload > 0.9f || weight <= 0f ? CockDegrees(kick) : CockFallDegrees * Math.Max(kick, weight);
+        reload >= 0.92f || weight <= 0f ? CockDegrees(kick) : CockFallDegrees * Math.Max(kick, weight);
 
     /// <summary>How far the hammer is turned (degrees for <see cref="Rig.Lift"/>): fallen forward after a shot.</summary>
     public static float CockDegrees(float kick) => CockFallDegrees * kick;
@@ -271,9 +271,9 @@ public static class WeaponPose
     public static Matrix4x4 PistolForearm(float kick, Vector3 pivot) =>
         ForearmTurn(Pistol(kick), Pistol(0f), pivot, PistolShoulder);
 
-    /// <summary>The same in a reload (see <see cref="Pistol(float, float, float, int)"/>).</summary>
-    public static Matrix4x4 PistolForearm(float kick, float reload, float weight, int variant, Vector3 pivot) =>
-        ForearmTurn(Pistol(kick, reload, weight, variant), Pistol(0f), pivot, PistolShoulder);
+    /// <summary>The same in a reload (see <see cref="Pistol(float, float, float)"/>).</summary>
+    public static Matrix4x4 PistolForearm(float kick, float reload, float weight, Vector3 pivot) =>
+        ForearmTurn(Pistol(kick, reload, weight), Pistol(0f), pivot, PistolShoulder);
 
     /// <summary>
     /// The forearm of a sleeve points from its pivot to the shoulder in every pose: the weapon turns, the cuff turns with
