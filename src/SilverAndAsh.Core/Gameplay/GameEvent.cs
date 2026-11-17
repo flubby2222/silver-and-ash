@@ -234,3 +234,26 @@ public sealed record DummyKnockedDown(int DummyId) : GameEvent;
 
 /// <summary>Training dummy <paramref name="DummyId"/> stands up again with full health.</summary>
 public sealed record DummyStoodUp(int DummyId) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> jumped off the ground (every jump, also a queued or perfect one; issue #291).</summary>
+public sealed record PlayerJumped(int PlayerId) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> started an air dash (issue #291).</summary>
+public sealed record PlayerDashed(int PlayerId) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/> started a dodge on the ground (issue #291).</summary>
+public sealed record PlayerDodged(int PlayerId) : GameEvent;
+
+/// <summary>
+/// Player <paramref name="PlayerId"/> came down on the ground after a stay in the air (issue #291).
+/// <paramref name="FallHeight"/>: metres from the highest point of that stay down to where the feet are now -
+/// small for a step down, about the jump height for a normal jump. Every landing comes; whether it is loud
+/// enough to be heard is up to the presentation.
+/// </summary>
+public sealed record PlayerLanded(int PlayerId, float FallHeight) : GameEvent;
+
+/// <summary>Player <paramref name="PlayerId"/>'s consecrated ammunition ran out by itself (issue #291).</summary>
+public sealed record ConsecrationEnded(int PlayerId) : GameEvent;
+
+/// <summary>Ghoul <paramref name="GhoulId"/> noticed player <paramref name="PlayerId"/> and starts chasing (once per noticing; issue #291).</summary>
+public sealed record GhoulNoticed(int GhoulId, int PlayerId) : GameEvent;
