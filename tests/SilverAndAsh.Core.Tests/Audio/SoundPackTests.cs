@@ -1,0 +1,194 @@
+using System.Numerics;
+using SilverAndAsh.Core.Audio;
+using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.World;
+
+namespace SilverAndAsh.Core.Tests.Audio;
+
+/// <summary>Sound pack 1, the old pack and the key that switches between them (issue #290).</summary>
+public class SoundPackTests
+{
+    private static readonly SoundPack Pack1 = SoundPack.Pack1;
+    private static readonly MeleeSwung BladeSwing = new(Vector3.Zero, Vector3.UnitZ);
+    private static readonly TargetHitBy BladeHit = new(0, 0, Weapon.Blade);
+
+    public static TheoryData<GameEvent, SoundKind, string[]> Pack1Events => new()
+    {
+        { new ShotFired(Vector3.Zero, Vector3.UnitZ), SoundKind.Pistol, ["p1-schuss-1.wav", "p1-schuss-2.wav", "p1-schuss-3.wav"] },
+        { new ShotFired(Vector3.Zero, Vector3.UnitZ, Consecrated: true), SoundKind.ConsecratedShot, ["p1-schuss-geweiht-1.wav", "p1-schuss-geweiht-2.wav"] },
+        { new ReloadStarted(0), SoundKind.ReloadStarted, ["p1-nachladen-start.wav"] },
+        { new ReloadFinished(0), SoundKind.ReloadFinished, ["p1-nachladen-bereit.wav"] },
+        { BladeSwing, SoundKind.BladeSwing, ["p1-schwung-1.wav", "p1-schwung-2.wav"] },
+        { BladeHit, SoundKind.Blade, ["p1-treffer-1.wav", "p1-treffer-2.wav", "p1-treffer-3.wav"] },
+        { new PlayerStepped(0, Foot.Left), SoundKind.StepLeft, ["p1-schritt-l1.wav", "p1-schritt-l2.wav", "p1-schritt-l3.wav"] },
+        { new PlayerStepped(0, Foot.Right), SoundKind.StepRight, ["p1-schritt-r1.wav", "p1-schritt-r2.wav", "p1-schritt-r3.wav"] },
+        { new PlayerHit(0, 5), SoundKind.PlayerHurt, ["p1-schmerz.wav"] },
+        { new GhoulWindUp(2), SoundKind.GhoulWindUp, ["p1-ghul-ankuendigung.wav"] },
+        { new GhoulDied(2), SoundKind.GhoulDied, ["p1-ghul-sterben.wav"] },
+        { new DoorOpened(1), SoundKind.DoorOpened, ["p1-tuer-oeffnen.wav"] },
+        { new ChestOpened(1, 0, ChestTier.Guard), SoundKind.ChestOpened, ["p1-kiste-oeffnen.wav"] },
+        { new SilverTaken(1, 0, 10), SoundKind.SilverTaken, ["p1-aufheben-silber.wav"] },
+        { new PickupTaken(1, 0, ConsumableKind.BloodVial), SoundKind.BloodVialTaken, ["p1-aufheben-phiole.wav"] },
+        { new PickupTaken(1, 0, ConsumableKind.ConsecratedAmmo), SoundKind.ConsecratedAmmoTaken, ["p1-aufheben-weihmunition.wav"] },
+        { new KeyTaken(1, 0), SoundKind.KeyTaken, ["p1-aufheben-schluessel.wav"] },
+    };
+
+    [Theory]
+    [MemberData(nameof(Pack1Events))]
+    public void Each_event_plays_its_files_of_pack_1(GameEvent gameEvent, SoundKind kind, string[] files)
+    {
+        Assert.Equal(kind, SoundBoard.KindFor(gameEvent));
+        Assert.Equal(files, Pack1.Variants(kind));
+
+        var cue = Assert.Single(new SoundCues(1).For([gameEvent], Pack1));
+        Assert.Equal(kind, cue.Kind);
+        Assert.Contains(cue.File, files);
+        Assert.Equal(SoundBoard.SoundVolume, cue.Volume);
+    }
+
+    [Fact]
+    public void Pack_1_has_a_sound_for_every_kind()
+    {
+        Assert.All(Enum.GetValues<SoundKind>(), kind => Assert.NotEmpty(Pack1.Variants(kind)));
+    }
+
+    [Fact]
+    public void The_old_pack_plays_a_consecrated_shot_like_any_pistol_shot()
+    {
+        var cue = Assert.Single(new SoundCues(1).For([new ShotFired(Vector3.Zero, Vector3.UnitZ, Consecrated: true)], SoundPack.Old));
+
+        Assert.Equal("pistole.wav", cue.File);
+    }
+
+    [Fact]
+    public void The_old_pack_plays_nothing_for_the_new_kinds()
+    {
+        Assert.Empty(new SoundCues(1).For(
+            [BladeSwing, new ReloadFinished(0), new GhoulDied(1), new DoorOpened(1), new KeyTaken(1, 0)], SoundPack.Old));
+    }
+
+    [Fact]
+    public void A_swing_without_a_hit_plays_the_swing()
+    {
+        var cue = Assert.Single(new SoundCues(1).For([BladeSwing], Pack1));
+
+        Assert.Equal(SoundKind.BladeSwing, cue.Kind);
+    }
+
+    [Fact]
+    public void A_swing_that_hits_in_the_same_tick_plays_only_the_hit()
+    {
+        // Core resolves the swing in its own tick: swing and hit come together, and both sounds would smear into one.
+        var cues = new SoundCues(1).For([BladeSwing, new GhoulHit(3, 40), BladeHit with { TargetId = 3 }], Pack1);
+
+        Assert.Equal([SoundKind.Blade], cues.Select(cue => cue.Kind));
+    }
+
+    [Fact]
+    public void A_swing_with_the_club_plays_no_swing()
+    {
+        Assert.Empty(new SoundCues(1).For([BladeSwing with { Weapon = WeaponKind.Club }], Pack1));
+    }
+
+    [Fact]
+    public void A_left_and_a_right_step_draw_from_their_own_files()
+    {
+        var cues = new SoundCues(5);
+        for (var i = 0; i < 100; i++)
+        {
+            var foot = i % 2 == 0 ? Foot.Left : Foot.Right;
+            var cue = Assert.Single(cues.For([new PlayerStepped(0, foot)], Pack1));
+            Assert.Contains(cue.File, Pack1.Variants(foot == Foot.Left ? SoundKind.StepLeft : SoundKind.StepRight));
+        }
+    }
+
+    [Theory]
+    [InlineData(Foot.Left)]
+    [InlineData(Foot.Right)]
+    public void Steps_never_repeat_their_last_file_and_use_all_of_them(Foot foot)
+    {
+        var cues = new SoundCues(11);
+        var step = new PlayerStepped(0, foot);
+
+        var files = Enumerable.Range(0, 300).Select(_ => Assert.Single(cues.For([step], Pack1)).File).ToList();
+
+        Assert.All(files.Zip(files.Skip(1)), pair => Assert.NotEqual(pair.First, pair.Second));
+        Assert.Equal(Pack1.Variants(foot == Foot.Left ? SoundKind.StepLeft : SoundKind.StepRight).Order(), files.Distinct().Order());
+    }
+
+    [Fact]
+    public void The_same_seed_picks_the_same_steps()
+    {
+        static List<string> Walk(int seed)
+        {
+            var cues = new SoundCues(seed);
+            return [.. Enumerable.Range(0, 60).Select(i =>
+                Assert.Single(cues.For([new PlayerStepped(0, i % 2 == 0 ? Foot.Left : Foot.Right)], Pack1)).File)];
+        }
+
+        Assert.Equal(Walk(42), Walk(42));
+        Assert.NotEqual(Walk(42), Walk(43));
+    }
+
+    [Fact]
+    public void Every_file_of_every_pack_is_loaded_and_checked_in()
+    {
+        Assert.All(SoundPack.All, pack => Assert.All(pack.Files, file => Assert.Contains(file, SoundBoard.SoundFiles)));
+        Assert.All(SoundBoard.SoundFiles, file => Assert.Contains(file, SoundBoard.AllFiles));
+    }
+
+    [Fact]
+    public void The_files_waiting_for_their_events_are_checked_in_but_not_played()
+    {
+        Assert.Equal(7, SoundPack.Pack1WithoutEvent.Length);
+        Assert.All(SoundPack.Pack1WithoutEvent, file =>
+        {
+            Assert.Contains(file, SoundBoard.AllFiles);
+            Assert.DoesNotContain(file, SoundBoard.SoundFiles);
+        });
+    }
+
+    [Fact]
+    public void The_game_starts_with_pack_1()
+    {
+        Assert.Same(SoundPack.Pack1, SoundPack.Default);
+        Assert.Same(SoundPack.Default, new SoundPackSwitch().Current);
+    }
+
+    [Fact]
+    public void After_the_last_pack_comes_the_first_again()
+    {
+        Assert.Same(SoundPack.Old, SoundPack.After(SoundPack.Pack1));
+        Assert.Same(SoundPack.Pack1, SoundPack.After(SoundPack.Old));
+    }
+
+    [Fact]
+    public void The_key_switches_the_pack_and_shows_its_name_for_a_while()
+    {
+        var packs = new SoundPackSwitch();
+        Assert.Equal(0f, packs.NoticeSecondsLeft);
+
+        packs.Toggle();
+        Assert.Same(SoundPack.Old, packs.Current);
+        Assert.Equal(SoundPackSwitch.NoticeSeconds, packs.NoticeSecondsLeft);
+        Assert.Contains(SoundPack.Old.Name, packs.Notice);
+
+        packs.Update(SoundPackSwitch.NoticeSeconds / 2f);
+        Assert.Equal(SoundPackSwitch.NoticeSeconds / 2f, packs.NoticeSecondsLeft, 0.001f);
+        packs.Update(SoundPackSwitch.NoticeSeconds);
+        Assert.Equal(0f, packs.NoticeSecondsLeft);
+
+        packs.Toggle();
+        Assert.Same(SoundPack.Pack1, packs.Current);
+        Assert.Contains(SoundPack.Pack1.Name, packs.Notice);
+    }
+
+    [Fact]
+    public void Switching_the_pack_keeps_the_choice_of_variants_going()
+    {
+        // The pack only names the files: the same cues object serves both, so a switch needs no new one.
+        var cues = new SoundCues(1);
+        Assert.Contains(Assert.Single(cues.For([BladeHit], Pack1)).File, Pack1.Variants(SoundKind.Blade));
+        Assert.Contains(Assert.Single(cues.For([BladeHit], SoundPack.Old)).File, SoundPack.Old.Variants(SoundKind.Blade));
+    }
+}
