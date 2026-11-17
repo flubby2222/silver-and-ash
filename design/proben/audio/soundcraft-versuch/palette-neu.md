@@ -35,5 +35,23 @@ Warum nur drei: Das Video zeigt einen Weg für **ein** Sample nach dem anderen; 
 ## Was die Palette nicht kann (bewusst offen)
 
 - **Keine Gauß-Interpolation und kein echter VAG-Kodierer:** SoundCraft interpoliert beim Transponieren auf eigene Weise; die VAG-Wandlung ist meine Annäherung aus `ps1_klang.py`. Das Video nennt gerade die Gauß-Glättung bei tiefen Tönen als Kern der Textur. Ob b trotzdem „PS1“ klingt, hört nur der Mensch.
-- **Keine Tonhöhenhüllkurve:** ein fallender Schlag (Trommel, Körperton der Klinge) ist nicht Teil der Palette.
-- **Kein Ghul, keine Schritte, kein Ambiente:** Folgen aus denselben Instrumenten (Ghul: menschliche Stimme als Sample, einfach), erst nach dem Urteil zu Hörprobe 9.
+- **Keine Tonhöhenhüllkurve im Sampler:** ein fallender Schlag (Trommel, Körperton der Klinge) ist nicht Teil der Palette. (Für Stimmen geht ein Umweg, siehe unten.)
+
+## Erweiterung für Geräuschpaket 1 (2026-11-17, nach dem Urteil zu Hörprobe 9)
+
+Urteil des Menschen: Schuss = Rauschschlag tief (1b); die Klinge braucht **zwei** Geräusche: Treffer = Rauschschlag hoch (2b), Schwung ohne Treffer = luftig, ohne Anschlag (Charakter von 2a, aber in der neuen Palette); Aufheben **je Verbrauchsgut** eigen; Skizze: nur als Probe gedacht, keine weitere Musik vorerst. Dafür kommen **zwei Quellen** dazu (jetzt fünf, die obere Grenze von drei bis fünf):
+
+| Instrument | Quelle in SoundCraft | Form | Rolle und Begründung |
+|---|---|---|---|
+| **Hauch** | Signalgenerator weißes Rauschen; Bandpass (`eq_1band`, Typ Bandpass) fährt per Automation von 900 auf 3 800 Hz in 0,35 s; Pegel steigt von −45 dB sanft auf 0 dB nach 0,15 s und fällt bis zum Ende (0,5 s) wieder auf −45 dB; 11 004 Frames, ohne Schleife | Einzelschlag, kein Anschlag | **Klingenschwung** (kein Treffer), Sprung, Dash, Tür. Warum nicht der Rauschschlag: Der hat einen Anschlag und einen Tiefpass-Sturz (dumpf); der Schwung soll luftig sein. Wie 2a wirkt (hell, kein Anschlag), wird hier durch **ansteigenden** Pegel und **steigenden** Bandpass erzeugt, nicht durch ein altes Rezept (kein Drum-Synth, kein Hi-Hat) |
+| **Stimme** | Subtractive Synth, **eine** Säge ohne Verstimmung, Tiefpass 4 kHz, durch zwei Formant-Spitzen (`eq_1band` Peak, 700 Hz +14 dB Q 3 und 1 150 Hz +12 dB Q 3, Vokal „a“) und einen Tiefpass 3 kHz; bei E3 aufgenommen (2,45 s), Schleife ab 1,0 s, 0,5 s überblendet, Länge phasenrichtig | Dauerton, Schleife | **Ghul** (menschlich, sehr einfach) und **Schmerz** der Spielfigur. Keine der drei alten Quellen kann eine Stimme. Bewusst die einfachste Stimme: ein Vokal, eine Quelle |
+
+**Tonhöhenfahrten der Stimme:** Der Sampler kann innerhalb einer Note die Tonhöhe nicht ändern. Umweg: `pitch_shifter` als Effekt auf der Spur, sein Parameter `semitones` per Automation (`plugin:0:semitones`) – gemessen 180 → 244 Hz bei +7 Halbtönen. Das ersetzt die fehlende Tonhöhenhüllkurve **nur für die Stimme** (Ghul, Schmerz); der Effekt kann Artefakte erzeugen (ungehört).
+
+**Regeln aus Paket 1 (zusätzlich zu den obigen):**
+- **Schlag:** Schuss (eine Oktave tiefer), Treffer (eine Oktave höher), Schritte (zwei Oktaven tiefer, kurz: Abklingzeit 70 ms), Nachladen, Landung, Kiste, Menü-Klick: dasselbe Sample, nur Tonhöhe und Abklingzeit ändern sich.
+- **Hauch:** Klingenschwung, Sprung (+12, kurz), Dash (−5), Tür (−17, lang). Nie mit Anschlag.
+- **Stimme:** Ghul-Entdecken (steigt +3), Ankündigung (**eine Oktave über der Aufnahme**, steigt +7 und schwillt von −18 dB auf 0 dB an, endet am Gipfel: eine Uhr nach Regel 2; liegt dadurch ganz im Band 300–3 000 Hz und damit über der Musik und den anderen Geräuschen), Sterben (fällt −9, 0,9 s), Schmerz (fällt −4, kurz).
+- **Aufheben (Glocke, Töne von e-Moll):** je Verbrauchsgut **Zahl, Richtung und Lage** der Töne, als Familie ein Klingen derselben Glocke: Silber ein Ton E4; Phiole zwei aufsteigend G3→H3; Weihmunition zwei fallend E4→H3; Schlüssel drei E3→H3→E4; Ausrüstung ein tiefer langer Ton E2.
+- **Ein Raum für alles, kürzer als in Hörprobe 9:** Hall 0,8 s, Größe 30 %, Mix 22 % (vorher 1,1 s, 40 %, 28 %), weil bei winzigen Geräuschen (Schritt, Klick) der Hall nach dem trockenen Ton zu einem hörbaren zweiten Einsatz wuchs (gemessen: Pegel stieg nach dem Abfall wieder um 9 dB).
+- **Lautheit je Kategorie fest** (Spitze dBFS): Ankündigung −1,5; Schuss −1,5; Schmerz −5; Ghul −6; Treffer −4,5; Nachladen −8; Schwung −9; Bewegung −11; Tür/Kiste −7; Aufheben −8; Schritte −12; Menü −12 (Tabelle in `paket-1/uebersicht.md`).
