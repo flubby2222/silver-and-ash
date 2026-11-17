@@ -70,6 +70,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `door-level-seed1`, `door-level-seed2-boss` | die erste Holztür in Seed 1 bzw. das Bosstor in Seed 2, aus 2–3 Zellen Abstand |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |
 | `showroom-a-corridor`, `showroom-a-room`, … `showroom-c-room` | je einen Teil des Musterraums (Issue #283, [musterraum.md](musterraum.md)): Wandvariante A, B oder C in Ganghöhe (3,5 m) bzw. Raumhöhe (6 m), vom Westende des Laufwegs schräg auf die Türwand und die Stücke, mit Schildern |
+| `stairs-4m`, `stairs-10m` | die Wendeltreppe im Bossraum der Ebene 0 nach Gorms Tod (Issue #300): Gorm stirbt vor dem ersten Tick, die Treppe steigt wie im Spiel auf; das Bild entsteht, sobald sie steht und ihre Lampe leuchtet, aus 4 m bzw. 10 m vom Fuß, mit Blick auf ihre halbe Höhe |
 
 ## Bild-Varianten vergleichen (`--look`, `--photo compare`)
 
@@ -170,6 +171,7 @@ powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\Silve
 | `rifle-reload-to-pistol` | Büchse gewählt (2) und geschossen, Nachladen (R), nach der Hälfte die Pistole (1): sie darf die Nachladehaltung nicht zeigen |
 | `door-normal-opening` | eine hölzerne Doppeltür aus 6 m von vorn, geöffnet (F): der ganze Schwung, bis sie offen steht |
 | `door-boss-opening` | dasselbe mit dem Bosstor |
+| `stairs-rising` | die Wendeltreppe im Bossraum nach Gorms Tod aus 6 m: der ganze Aufstieg aus dem Boden, bis sie steht und ihre Lampe leuchtet |
 
 **Eine Bewegungs-Szene ergänzen:** ein Eintrag in `MotionScenes.All` ([`MotionScenes.cs`](../src/SilverAndAsh.Core/Photos/MotionScenes.cs)) – dieselben Bausteine wie bei den Fotos, nur mit `Input` je Tick und genug `Ticks` für den ganzen Ablauf, zum Beispiel:
 

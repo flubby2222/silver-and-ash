@@ -1,32 +1,133 @@
 using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Logging;
+using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The spiral staircase that rises in the boss room after Gorm's death: a stone pole with steps winding round it,
-/// coming up out of the floor. Pure presentation.
+/// The spiral staircase that rises in the boss room after Gorm's death. The designer's model (issue #300, see
+/// <see cref="StairsLook"/>): one file per wall variant, drawn in the variant of the walls of the room it stands in. It
+/// comes up out of the floor (the part below the floor is hidden by it); the lamp on top is lit only once it stands, and
+/// pulses. Pure presentation.
+/// <para>
+/// Without a model - in the wall variant and in variant A - the placeholder stands in: a stone pole with steps winding
+/// round it and a faint light from above.
+/// </para>
 /// </summary>
-internal static class StairsView
+internal sealed class StairsView : IDisposable
 {
     private const int Steps = 16;
+
+    // The staircase lies within +-Stairs.Radius around its middle and 0..Stairs.Height above its floor: its farthest corner
+    // is 2.3 m from the middle at half height. A little more, for safety.
+    private const float BoundingRadius = 2.5f;
 
     private static readonly Color Stone = new(120, 114, 108, 255);
     private static readonly Color Pole = new(84, 80, 76, 255);
     private static readonly Color Light = new(210, 190, 140, 255);
 
-    public static void Draw(Stairs? stairs, float seconds)
+    private static readonly int StonePart = Index(StairsLook.Stone);
+    private static readonly int GlowPart = Index(StairsLook.Glow);
+
+    private readonly Dictionary<TextureVariant, TexturedModel> _models;
+    private readonly Matrix4x4[] _turns = new Matrix4x4[2];
+    private readonly Matrix4x4[] _frames = new Matrix4x4[2];
+
+    private StairsView(Dictionary<TextureVariant, TexturedModel> models)
     {
-        if (stairs is null || stairs.RiseFraction <= 0f)
+        _models = models;
+    }
+
+    /// <summary>
+    /// Loads the staircase of every wall variant from <paramref name="directory"/> (<see cref="StairsLook.FileName"/>). A
+    /// missing or broken one: a warning in the log and the fallback for it. Needs the window.
+    /// </summary>
+    public static StairsView Load(string directory, FileLog? log)
+    {
+        var models = new Dictionary<TextureVariant, TexturedModel>();
+        foreach (var variant in Enum.GetValues<TextureVariant>())
+        {
+            var path = Path.Combine(directory, StairsLook.FileName(variant));
+            if (TexturedModel.TryLoad(path, StairsLook.Parts, log) is { } model)
+            {
+                models[variant] = model;
+            }
+        }
+
+        return new StairsView(models);
+    }
+
+    /// <summary>
+    /// Draws the staircase if it has begun to rise and <paramref name="view"/> may see it. <paramref name="surfaces"/> and
+    /// <paramref name="textures"/>: the wall variants of the level and the ones really loaded. Call between BeginFigures
+    /// and EndFigures.
+    /// </summary>
+    public void Draw(Stairs? stairs, float seconds, ViewCone view, SurfaceVariants surfaces, LevelTextures textures)
+    {
+        if (stairs is null || stairs.RiseFraction <= 0f
+            || !view.MaySee(stairs.Position + new Vector3(0f, Stairs.Height / 2f, 0f), BoundingRadius))
         {
             return;
         }
 
-        // Rising: it comes up out of the floor (the part below the floor is hidden by it).
-        var rise = 1f - (1f - stairs.RiseFraction) * (1f - stairs.RiseFraction);
-        var place = Matrix4x4.CreateTranslation(stairs.Position - new Vector3(0f, (1f - rise) * Stairs.Height, 0f));
+        var place = Matrix4x4.CreateTranslation(stairs.Position - new Vector3(0f, StairsLook.Sink(stairs.RiseFraction), 0f));
+        var lit = StairsLook.ShowsGlow(stairs.CanInteract);
+        var glow = StairsLook.GlowTint(seconds);
+        if (Model(stairs, surfaces, textures) is { } model)
+        {
+            // Nothing of the staircase moves in its file: both parts stand where they are, the whole of it rises.
+            var turns = _turns.AsSpan();
+            var frames = _frames.AsSpan();
+            turns.Fill(Matrix4x4.Identity);
+            model.Rig.Pose(turns, place, frames);
+            model.DrawPart(StonePart, frames[StonePart]);
+            if (lit)
+            {
+                model.DrawPart(GlowPart, frames[GlowPart], glow);
+            }
+        }
+        else
+        {
+            DrawPlaceholder(place, lit, glow);
+        }
+    }
 
+    public void Dispose()
+    {
+        foreach (var model in _models.Values)
+        {
+            model.Dispose();
+        }
+    }
+
+    private static int Index(string name)
+    {
+        for (var i = 0; i < StairsLook.Parts.Count; i++)
+        {
+            if (StairsLook.Parts[i].Name == name)
+            {
+                return i;
+            }
+        }
+
+        throw new InvalidOperationException($"The staircase has no part {name}.");
+    }
+
+    // The variant the level really draws on the walls there (a missing B or C falls back to A there, too), else variant
+    // A of the staircase, else none.
+    private TexturedModel? Model(Stairs stairs, SurfaceVariants surfaces, LevelTextures textures)
+    {
+        var wanted = textures.Resolve(SurfaceKind.Wall, StairsLook.Variant(surfaces, stairs.Position));
+        var pick = StairsLook.Pick(wanted, _models.ContainsKey(wanted), _models.ContainsKey(TextureVariant.A));
+        return pick is { } variant ? _models[variant] : null;
+    }
+
+    // The coded staircase from before the model: a pole, 16 steps winding round it, a light on top once it stands.
+    private static void DrawPlaceholder(Matrix4x4 place, bool lit, float glow)
+    {
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, Stairs.Height / 2f, 0f) * place, new Vector3(0.35f, Stairs.Height, 0.35f), Pole);
         for (var step = 0; step < Steps; step++)
         {
@@ -39,10 +140,8 @@ internal static class StairsView
             ShadedBox.Draw(stepPlace, new Vector3(Stairs.Radius, 0.12f, 0.55f), Stone);
         }
 
-        // Once it stands, a faint light from above shows the way up.
-        if (stairs.CanInteract)
+        if (lit)
         {
-            var glow = 0.5f + 0.5f * MathF.Sin(seconds * 2f);
             var color = new Color((byte)(Light.R * glow), (byte)(Light.G * glow), (byte)(Light.B * glow), (byte)255);
             ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, Stairs.Height + 0.05f, 0f) * place, new Vector3(0.5f, 0.1f, 0.5f), color);
         }

@@ -57,7 +57,7 @@ python tools/models/checksums.py
 
 Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_model_file`) wird rot, wenn Liste und Dateien nicht zusammenpassen.
 
-## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus, Gorm, Tür)
+## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus, Gorm, Tür, Treppe)
 
 1. `.glb`, `.png` und Skript an ihren Platz, Zeile in `assets/HERKUNFT.md`, `python tools/models/checksums.py`.
 2. Im Core eine Haltungs-Klasse wie `GhoulPose`: Teile mit Eltern (`RigPart`) und die Winkel je Zustand, mit Tests.
@@ -86,3 +86,8 @@ Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_mode
    - **Öffnen:** Der Core zählt den Fortschritt (`Door.OpenFraction`, 0..1) gleichmäßig je Tick über die Zeit aus `balance.json` (`doors`). Geglättet (`DoorPose.Ease`) wird nur im Bild. Die Flügel schwingen von dem weg, der geöffnet hat (`Door.OpenedFromLowSide`); 90° bei Holz- und Bosstür, 80° bei der Eisentür.
    - **Ost-West:** `DoorPose.Yaw` dreht die ganze Tür um 90°, so wird +z der Datei zu +x der Welt; die Regel für die Seite bleibt dieselbe.
    - **Durchgang:** Die Zelle ist wie bisher im Tick des Öffnens frei; die Flügel sind nur Bild.
+10. **Wendeltreppe** ([`StairsLook`](../src/SilverAndAsh.Core/Presentation/StairsLook.cs) im Core, [`StairsView`](../src/SilverAndAsh.Game/Rendering/StairsView.cs) im Game, Skript `tools/models/stairs.py`, Issue #300):
+   - **Eine Datei je Wand-Spielart** (`stairs_spiral_a.glb`, `_b`, `_c`) mit zwei Teilen, die sich in der Datei nicht bewegen: `stairs` (Sockel, Säule, zwölf Stufen, Kapitell) und `glow` (die Lampe oben). Ursprung ist die Mitte am Boden, die Treppe füllt den Kasten von `Stairs` (±1,2 m, 4 m hoch). Der Atlas trägt die echte Wand-Kachel der Spielart, auf den Trittflächen die Boden-Kachel desselben Buchstabens, dazu Werkstein und Messing aus der Hauptpalette.
+   - **Welche Spielart:** die der Wände des Raums, in dem die Treppe steht (`StairsLook.Variant`); ihre Zelle bestimmt `Stairs.CellIn` (die Bodenzelle nächst der Raummitte). Fehlt die Datei, nimmt `StairsView` die von A, fehlt auch die, den Platzhalter aus Kästen.
+   - **Aufsteigen:** Die ganze Treppe kommt in `Stairs.RiseFraction` aus dem Boden (`StairsLook.Sink`, erst schnell, dann langsam); die Lampe leuchtet erst, wenn sie steht, und pulsiert (`StairsLook.GlowTint`). Ändert sich eine Wand- oder Boden-Textur, muss `stairs.py` neu laufen – das prüft ein Test gegen `tools/models/stairs_sources.sha256`.
+   - **Keine Kollision:** Man kann noch in die Treppe hineinlaufen (Issue #302).
