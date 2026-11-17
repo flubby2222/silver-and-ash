@@ -4,6 +4,10 @@ Stand 2026-11-17. Benutzt wurde nur `C:\Program Files\ArtCraft\SoundCraft\soundc
 
 Wiederholen: `python design/proben/audio/soundcraft-versuch/bauen.py` (nur Standardbibliothek, `ffmpeg`, `soundcraft-cli.exe`; ein Lauf dauert etwa 20 s). Die erzeugten SoundCraft-Skripte liegen in [skripte/](skripte/) (je Zeile `ID JSON`), die Hörprobe in [hoerprobe-8-soundcraft/](hoerprobe-8-soundcraft/hoerprobe.md).
 
+## Korrektur vom 2026-11-17 (nach Hörprobe 8): Die b-Skizze war fehlerhaft
+
+**Die erste Fassung von `4b-skizze.wav` war falsch.** SoundCraft zählt **960 Ticks je Viertel** (gemessen: 1 920 Ticks = 1 s bei 120/min), ich hatte 480 angenommen. Dadurch lief die Skizze mit **doppeltem Tempo**: Die Akkorde wechselten nach 4 statt nach 8 s, und ab etwa 13 s war sie **stumm** (gemessen: Pegel je Sekunde −180 dBFS). Der Mensch hat seine Hörprobe-8-Antwort zur Skizze („klingt wie die letzten Hörproben“) also auf einer kaputten Datei gegeben. Behoben in `bauen.py` (`TICKS_PRO_SCHLAG = 960`); `4b-skizze.wav` und `3b-aufheben.wav` (Notenlänge von 0,25 auf 0,5 s) sind neu gerechnet, die Tabelle unten zeigt die neuen Werte. Schuss und Klinge (je eine Note) waren nicht betroffen. Gefunden habe ich es erst, als ich Notenzeiten in einem neuen Versuch gegen die Uhr prüfte; ich hätte die Skizze nach dem Bau auf Pegel je Sekunde prüfen müssen. Neue Prüfregel für `bauen.py`-Ausgaben: Pegel je Sekunde der Skizze ansehen (keine Stille vor dem Ende).
+
 ## Was SoundCraft kann (aus `commands`, `describe`, `plugins`)
 
 - **Sehr großer Umfang:** 484 Befehle einer vollständigen Schnittsoftware (Sitzungen, Spuren, Clips, MIDI-Noten, Mischpult, Automation, Transport). Für uns relevant sind nur wenige: `session.new`, `track.new`, `midi.new_clip`, `midi.note_add`, `mix.instrument`, `mix.insert`, `mix.volume`, `file.bounce_mix`.
@@ -44,12 +48,12 @@ Pegel in dBFS; „Schwerpunkt“ = Spektrum-Schwerpunkt der ersten 0,37 s; Bänd
 | Klinge | SoundCraft roh | −37,8 | −63,0 | – | 6 882 Hz | −18,6 | −16,2 | −0,2 |
 | | a | −1,6 | −25,6 | −22,7 | 157 Hz | −0,1 | −16,8 | −22,8 |
 | | b | −1,0 | −25,6 | −19,3 | 5 121 Hz | −12,1 | −11,3 | −0,6 |
-| Aufheben (H4 = 494 Hz) | SoundCraft roh | −20,4 | −39,2 | – | 507 Hz | −34,8 | 0,0 | −59,6 |
+| Aufheben (H4 = 494 Hz) | SoundCraft roh | −20,4 | −39,2 | – | 507 Hz | −34,7 | 0,0 | −59,5 |
 | | a | −6,6 | −19,8 | −19,9 | 437 Hz | −5,7 | −1,4 | −53,6 |
-| | b | −1,0 | −19,8 | −18,3 | 507 Hz | −34,1 | 0,0 | −60,6 |
-| Skizze 20 s | SoundCraft roh | −21,8 | −41,4 | – | 166 Hz | 0,0 | −20,5 | −64,0 |
-| | a (Anfang Menü-Thema) | −5,2 | −20,6 | −19,2 | 145 Hz | −0,2 | −13,4 | −59,5 |
-| | b | −5,6 | −23,6 | −19,2 | 166 Hz | 0,0 | −21,1 | −64,7 |
+| | b | −1,0 | −19,8 | −18,3 | 507 Hz | −34,0 | 0,0 | −60,4 |
+| Skizze 20 s | SoundCraft roh | −21,8 | −40,3 | – | 166 Hz | 0,0 | −20,5 | −64,0 |
+| | a (Anfang Menü-Thema) | −4,1 | −19,5 | −18,1 | 145 Hz | −0,2 | −13,4 | −59,5 |
+| | b | −2,4 | −19,9 | −18,1 | 166 Hz | 0,0 | −21,1 | −64,7 |
 
 Lesen: Die Mitte (300–3 000 Hz) liegt bei b in der Skizze 21 dB unter dem Gesamtpegel (Regel „Mitte frei“ ≥ 15 dB: erfüllt), bei a nur 13 dB (das fertige Theme ist dort dichter). Der Schuss ist bei b heller (mehr Energie über 3 kHz). Die Klinge ist bei a ein dumpfer Schlag, bei b helles Rauschen – **zwei verschiedene Klangarten**, nicht zwei Ausführungen derselben. Aufheben: b ist ein einfacherer Ton (ein Teilton über 1 kHz, kaum Tiefe), a hat durch die Glocken-Teiltöne zusätzlich Bass.
 

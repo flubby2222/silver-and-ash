@@ -72,15 +72,15 @@
   },
   "aufheben": {
    "bitgleich": true,
-   "sha256_roh": "b1184bfd9538b3bc5e886a3dc3808c4c09fc0f2e5c9874a9bf458cfd2a598014",
+   "sha256_roh": "8c76a7f8de9ae697cf22e7e1472cb911c79c30f5840d7b424597370b2180ecfb",
    "roh_soundcraft": {
     "peak_db": -20.4,
     "rms_db": -39.2,
     "centroid_hz": 507,
     "seconds": 1.2,
-    "low_db": -34.8,
+    "low_db": -34.7,
     "mid_db": -0.0,
-    "high_db": -59.6
+    "high_db": -59.5
    },
    "a": {
     "peak_db": -6.6,
@@ -96,9 +96,9 @@
     "rms_db": -19.8,
     "centroid_hz": 507,
     "seconds": 1.2,
-    "low_db": -34.1,
+    "low_db": -34.0,
     "mid_db": -0.0,
-    "high_db": -60.6
+    "high_db": -60.4
    },
    "ziel_rms_db": -19.800000000000004,
    "lufs_a": -19.9,
@@ -106,10 +106,10 @@
   },
   "skizze": {
    "bitgleich": true,
-   "sha256_roh": "8fb59065f67cc76b5f1f51e303b8283bec3f2dd037c7bdaaf7034ae0b37ceab8",
+   "sha256_roh": "174e8574d24a83447e5b46ec0bdd0464079b342444c744d3bc4b1562c6941799",
    "roh_soundcraft": {
     "peak_db": -21.8,
-    "rms_db": -41.4,
+    "rms_db": -40.3,
     "centroid_hz": 166,
     "seconds": 20.0,
     "low_db": -0.0,
@@ -117,8 +117,8 @@
     "high_db": -64.0
    },
    "a": {
-    "peak_db": -5.2,
-    "rms_db": -20.6,
+    "peak_db": -4.1,
+    "rms_db": -19.5,
     "centroid_hz": 145,
     "seconds": 20.0,
     "low_db": -0.2,
@@ -126,17 +126,17 @@
     "high_db": -59.5
    },
    "b": {
-    "peak_db": -5.6,
-    "rms_db": -23.6,
+    "peak_db": -2.4,
+    "rms_db": -19.9,
     "centroid_hz": 166,
     "seconds": 20.0,
     "low_db": -0.0,
     "mid_db": -21.1,
     "high_db": -64.7
    },
-   "ziel_rms_db": -20.599999999999998,
-   "lufs_a": -19.2,
-   "lufs_b": -19.2
+   "ziel_rms_db": -19.499999999999996,
+   "lufs_a": -18.1,
+   "lufs_b": -18.1
   }
  }
 }

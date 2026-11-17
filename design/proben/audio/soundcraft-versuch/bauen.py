@@ -36,6 +36,7 @@ OUT = HERE / "hoerprobe-8-soundcraft"
 SKR = HERE / "skripte"
 TMP = Path(tempfile.gettempdir()) / "sc-versuch"
 PS1_RATE = 22050
+TICKS_PRO_SCHLAG = 960  # gemessen: 1920 Ticks = 1 s bei 120/min, also 960 je Viertel
 
 # --- gemeinsamer Raum: auf jeder Spur dieselbe Hall-Einstellung (Hall ist linear, gleichwertig zu einem Bus) ------------
 RAUM_SOUND = {"mix": 22, "pre_delay": 4, "decay": 0.5, "size": 25, "damping": 4500, "diffusion": 70, "low_cut": 150}
@@ -211,16 +212,16 @@ def sc_aufheben():
     z += spur("Aufheben", "subtractive_synth",
               {"osc1_wave": 2, "osc2_wave": 2, "osc2_semitones": 15.0, "osc2_detune": 0.0, "osc_mix": 30.0, "cutoff": 6000.0,
                "resonance": 0.0, "filter_env_amount": 0.0, "amp_attack": 2.0, "amp_decay": 450.0, "amp_sustain": 0.0,
-               "amp_release": 200.0, "level": -3.0}, [(71, 0, 480, 100)], 1.2, RAUM_SOUND)
+               "amp_release": 200.0, "level": -3.0}, [(71, 0, 960, 100)], 1.2, RAUM_SOUND)
     return z
 
 
 # --- Skizze: dieselben Noten wie Teil A des Menue-Themas (musik_erzeugen.py) ---------------------------------------
 
 def sc_skizze():
-    """20 s, 60/min (1 Schlag = 480 Ticks = 1 s). Glocke (zwei Sinus, unharmonisch) + Chor (zwei verstimmte Saegen, tiefer Tiefpass,
+    """20 s, 60/min (1 Schlag = 960 Ticks = 1 s). Glocke (zwei Sinus, unharmonisch) + Chor (zwei verstimmte Saegen, tiefer Tiefpass,
     langsamer Einsatz), gemeinsamer Raum. Kein Herzschlag."""
-    t = 480
+    t = TICKS_PRO_SCHLAG  # SoundCraft rechnet mit 960 Ticks je Viertel (nicht 480)
     akkorde = [(0, 8, [52, 55, 59, 64]), (8, 8, [52, 55, 60, 64]), (16, 4, [52, 57, 60, 64])]
     bell = [(0, 8, 52, 1.0), (8, 8, 52, 0.9), (16, 8, 47, 1.0)]
     chor = [(m, s * t, int((d + 0.3) * t), 90) for s, d, ch in akkorde for m in ch]
