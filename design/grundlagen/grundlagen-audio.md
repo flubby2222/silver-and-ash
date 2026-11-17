@@ -231,3 +231,13 @@ Ausgewertete Quellen mit den übernommenen Rezepten. Die Seiten zu Farnells Buch
 | Pistole `pistole-ps1` | 3 | 0 ms | 115 / 135 ms | – |
 
 Hörprobe 5 (alle Kandidaten): siehe [Messwerte Hörprobe 5](../proben/audio/hoerprobe-5/messwerte.md), Abschnitt „Wirkt es gemischt?“. Nach der Überarbeitung ist nur noch auffällig: `tropfen-1-glas` (Umkehr 55 ms) und `klinge-2-schnitt-rein` (Versatz, weil die Aufnahme selbst ein durch die Frequenzen wandernder Schnitt ist). Der Höhlenhall der Tropfen erzeugte schon bei 5 % Pegel eigene Einsätze; er ist deshalb ganz weggenommen.
+
+---
+
+# Nachtrag nach Hörprobe 5 kurz (2026-11-17)
+
+**Urteil des Menschen (über die Leitung):** „b“ – ein Wort, ohne Zusatz, gelesen als b in allen vier Kategorien: Schuss synthetisch (Hörprobe 3), Klinge synthetisch (heller), Schritte synthetisch (Hörprobe 3), Tropfen aus der Blech-Aufnahme. Zum Ghul-Laut hat er nichts gesagt; er gilt als vorläufig.
+
+**Festgehalten (sein Urteil, keine Regel):** In drei von vier Kategorien hat die synthetische Fassung gegen die echte Aufnahme gewonnen. Die Klangbibliothek aus Aufnahmen ist damit nicht verworfen, aber kein Selbstläufer: Die echte Aufnahme setzte sich nur beim Tropfen durch, wo es für Wasser ohnehin keine Aufnahme gab. **[Schluss, nicht belegt]** Die synthetischen Fassungen waren durch drei Hörproben schon auf sein Urteil abgestimmt, die Aufnahmen waren ein erster Versuch.
+
+Übergabe fürs Spiel: [README-audio.md](../uebergabe/README-audio.md).
