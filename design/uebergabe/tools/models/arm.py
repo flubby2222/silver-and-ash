@@ -8,7 +8,7 @@ import math
 
 import numpy as np
 
-from psx import V, tube, vnoise, blob, mix, rects_from_pixels
+from psx import V, tube, vnoise, blob, mix
 
 GLOVE = np.array((44, 40, 44), float)       # dunkles, kuehles Leder (hebt sich vom Nussbaum ab)
 SLEEVE = np.array((46, 44, 56), float)      # dunkler Mantelstoff, leicht violett-kalt
@@ -255,8 +255,8 @@ def build_sleeve4(part, s, path, radii, mouth_cap=True, lining=False):
 # c: dunkelblauer Aermel mit heller Ruschenmanschette (Spitze), ohne Hand
 import os
 
-DESIGN = os.environ.get("AERMEL", "g")
-CUFF_V = 0.17        # Anteil von v (vom Mund aus), der Stulpe/Ruesche ist; die Pistole setzt 0,29 (Ringflaeche zusaetzlich)
+DESIGN = os.environ.get("AERMEL", "c")
+CUFF_V = 0.17        # wie in C (sieben Ringe) # Anteil von v (vom Mund aus), der Stulpe/Ruesche ist; die Pistole setzt 0,29 (Ringflaeche zusaetzlich)
 STEEL_B = np.array((96, 100, 114), float)
 LEATHER_B = np.array((38, 36, 42), float)
 WOOL_B = np.array((54, 56, 66), float)
@@ -318,6 +318,12 @@ def paint_c_sleeve(U, V_):
     col *= (0.88 + 0.2 * vnoise(h, w, 24, 8, 531))[..., None]
     fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 3 + 0.1 * vnoise(h, w, 6, 3, 532) + 0.1 * V_))
     col = mix(col * 0.75, NAVY_C * 2.4 + 12, fold ** 1.6 * 0.8)
+    # Fassung i: eine schmale dunkle Naht hinter der Ruesche und zwei kleine Silberknoepfe am Aermel (sonst wie C)
+    col = mix(col, NAVY_C * 0.45, ((V_ > CUFF_V) & (V_ < CUFF_V + 0.035)).astype(float))
+    for cv in (CUFF_V + 0.10, CUFF_V + 0.18):
+        d = blob(U, V_, 0.5, cv, 0.035, 0.03)
+        col = mix(col, np.array((206.0, 210, 222)), (d > 0.35).astype(float))
+        col = mix(col, NAVY_C * 0.4, ((d > 0.1) & (d <= 0.35)).astype(float) * 0.7)
     lace = np.broadcast_to(LACE, (h, w, 3)).copy() * (0.9 + 0.15 * vnoise(h, w, 8, 16, 533))[..., None]
     holes = ((((U * 24) % 1.0) - 0.5) ** 2 + (((V_ * 40 * 0.17 / CUFF_V) % 1.0) - 0.5) ** 2) < 0.06
     lace = mix(lace, NAVY_C * 1.4, holes.astype(float) * 0.8)                              # Spitzenloecher: dunkel durch
@@ -329,59 +335,14 @@ def paint_c_sleeve(U, V_):
 DARK_B = np.array((18, 14, 14), float)
 
 
-# --- Entwurf d (nach dem Video, Issue #265): Handschuh in grossen Formen, Stulpe mit Riemen, Aermel mit langen Faltenbahnen
-GLOVE_D = np.array((66, 68, 80), float)
-STRAP_D = np.array((138, 108, 70), float)
-SLEEVE_D = np.array((32, 48, 96), float)
-CUFF_D = np.array((44, 46, 58), float)
-
-
-def paint_d_glove(U, V_):
-    """Handschuh: dunkles Leder, Knoechel und Fingerruecken hell abgesetzt, damit die Faust als Form steht."""
-    h, w = U.shape
-    col = np.broadcast_to(GLOVE_D, (h, w, 3)).copy()
-    col *= (0.85 + 0.25 * vnoise(h, w, 10, 10, 601))[..., None]
-    top = 1 - np.abs(np.cos(np.pi * U))
-    col = mix(col, GLOVE_D * 1.9 + 14, np.clip(top, 0, 1) ** 2 * 0.65)
-    col = mix(col, GLOVE_D * 0.45, (((V_ * 3) % 1.0) < 0.07).astype(float) * 0.8)          # Gelenkfalten
-    return col
-
-
-def paint_d_cuff(U, V_):
-    """Stulpe: dunkles dickes Leder mit zwei hellen Riemen (Schnallen) quer, Silberniete."""
-    h, w = U.shape
-    col = np.broadcast_to(CUFF_D, (h, w, 3)).copy()
-    col *= (0.85 + 0.25 * vnoise(h, w, 8, 16, 611))[..., None]
-    for v0 in (0.3, 0.68):
-        strap = np.abs(V_ - v0) < 0.11
-        col = mix(col, STRAP_D * (0.9 + 0.2 * vnoise(h, w, 4, 12, 612))[..., None], strap.astype(float))
-        col = mix(col, STRAP_D * 0.5, ((np.abs(V_ - v0) > 0.09) & strap).astype(float) * 0.8)
-        col = mix(col, np.array((214.0, 214, 224)), (blob(U, V_, 0.5, v0, 0.04, 0.06) > 0.3).astype(float))   # Schnalle
-    return col
-
-
-def paint_d_sleeve(U, V_):
-    """Mantelaermel: dunkles Nachtblau mit drei langen hellen Faltenbahnen entlang der Achse, Naht, Abnutzung."""
-    h, w = U.shape
-    col = np.broadcast_to(SLEEVE_D, (h, w, 3)).copy()
-    col *= (0.88 + 0.2 * vnoise(h, w, 24, 8, 621))[..., None]
-    fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 3 + 0.08 * vnoise(h, w, 6, 3, 622) + 0.1 * V_))
-    col = mix(col * 0.7, SLEEVE_D * 2.6 + 12, fold ** 2.0 * 0.85)
-    col = mix(col, np.array((190.0, 190, 204)), ((np.abs(U - 0.5) < 0.008) & (((V_ * 40) % 1.0) < 0.5)).astype(float) * 0.5)
-    col = mix(col, SLEEVE_D * 2.4 + 12, np.clip((vnoise(h, w, 5, 6, 623) - 0.64) * 3, 0, 0.55))
-    return col
-
-
 def design_painters(design):
-    if design == "d":
-        return {"glove": paint_d_glove, "cuff": paint_d_cuff, "sleeve": paint_d_sleeve}
     if design == "a":
         return {"glove": paint_glove2, "cuff": paint_a_cuff, "sleeve": paint_a_sleeve}
     f = paint_b_sleeve if design == "b" else paint_c_sleeve
     return {"sleeve": f, "glove": f, "cuff": f}                      # glove/cuff sind hier ungenutzt
 
 
-def build_sleeve5(part, s, path, radii, frill=False, cuff_v=0.17):
+def build_sleeve5(part, s, path, radii, frill=False, cuff_v=0.17, extra_ring=False):
     """Wie build_sleeve4, aber die ersten beiden Ringe (Oeffnung) koennen zackig sein (Ruesche)."""
     m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
     pts = [m(p) for p in path][::-1]
@@ -391,23 +352,43 @@ def build_sleeve5(part, s, path, radii, frill=False, cuff_v=0.17):
     CUFF_V = cuff_v
     mods = (lambda i, k: (1.0 if k % 2 == 0 else 0.8) if i >= n - 3 else 1.0) if frill else None
     part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0), mods=mods), "sleeve", cap_start=True, cap_end=True)
+    if extra_ring:
+        # Fassung i: der letzte Ring (Ellbogen) ist neu angefuegt; die Textur soll wie bei sieben Ringen (C) liegen. Die
+        # UV-Hoehe wird deshalb so umgerechnet, dass der alte Ellbogenring wieder bei v = 0 und der Mund bei v = 1 liegt;
+        # der neue Ring behaelt v = 0 (ausserhalb des Bildes, nur ein Streifen).
+        v0, v1 = part.rects["sleeve"][1], part.rects["sleeve"][3]
+        nrings = len(path)
+        for face in part.bm.faces:
+            for loop in face.loops:
+                uv = loop[part.uv].uv
+                fr = (uv[1] - v0) / (v1 - v0)
+                uv[1] = v0 + (v1 - v0) * max((fr * (nrings - 1) - 1) / (nrings - 2), 0.0)
 
 
 def build_design(part, weapon):
-    if DESIGN == "e":
-        return build_design_e(part, weapon)
     """Baut den Arm des Entwurfs DESIGN fuer 'pistol' (rechts, s = +1) oder 'blade' (links, s = -1)."""
-    if DESIGN in ("a", "d"):
-        elb_p, elb_b = ((0.10, -0.17, -0.26), (0.11, -0.16, -0.27)) if DESIGN == "a" else ((0.20, -0.13, -0.15), (0.17, -0.12, -0.17))
+    if DESIGN == "a":
         if weapon == "pistol":
             build_hand(part, +1, top=(0, -0.006, 0.006), bottom=(0, -0.052, -0.015), outer=(1, 0, 0), radius=0.0185,
-                       finger_ts=(0.014, 0.026, 0.037), wrist=(0.016, -0.046, -0.034), elbow=elb_p,
+                       finger_ts=(0.014, 0.026, 0.037), wrist=(0.016, -0.046, -0.034), elbow=(0.10, -0.17, -0.26),
                        thumb=((0.004, -0.014, -0.010), (-0.011, -0.004, 0.0), (-0.0125, 0.004, 0.016)),
                        index=((0.017, -0.006, 0.002), (0.012, -0.011, 0.016), (0.003, -0.015, 0.018)))
         else:
             build_hand(part, -1, top=(0, 0, -0.008), bottom=(0, 0, -0.058), outer=(0.8, 0.6, 0), radius=0.0165,
-                       finger_ts=(0.006, 0.017, 0.028, 0.039), wrist=(0.012, -0.004, -0.082), elbow=elb_b,
+                       finger_ts=(0.006, 0.017, 0.028, 0.039), wrist=(0.012, -0.004, -0.082), elbow=(0.11, -0.16, -0.27),
                        thumb=((-0.002, 0.016, -0.05), (-0.012, 0.013, -0.03), (-0.011, 0.009, -0.012)))
+        return
+    if DESIGN == "c":
+        # Fassung i: der Klingenaermel aus C (Pfad und Radien unveraendert), der letzte Ring (Ellbogen) weiter nach hinten gesetzt (sieben Ringe wie in C, damit die Textur gleich bleibt), damit das
+        # Ende in jeder Haltung ausserhalb des Bildes liegt. Die Pistole bekommt denselben Aermel gespiegelt (s = +1).
+        path = [(0, 0, -0.003), (0, 0, -0.016), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07), (0.09, -0.06, -0.09),
+                (0.18, -0.11, -0.12), (0.30, -0.17, -0.16), (0.78, -0.41, -0.32)]
+        r = [0.040, 0.031, 0.029, 0.031, 0.036, 0.040, 0.046, 0.060]
+        if weapon == "pistol":
+            # an den Pistolengriff gesetzt: um 2,6 cm nach unten (reine Verschiebung, Form und Winkel bleiben), damit Schloss, Hahn und Abzugsbuegel
+            # vor dem Rueschenrand frei bleiben (sonst derselbe Aermel, nur gespiegelt)
+            path = [(x, y - 0.026, z) for x, y, z in path]
+        build_sleeve5(part, +1 if weapon == "pistol" else -1, path, r, frill=True, cuff_v=0.17, extra_ring=True)
         return
     if weapon == "pistol":
         # Von oben gesehen: erst eine kleine Innenkante um den Griff, dann sofort der volle Radius (Ringflaeche = Stulpenrand
@@ -421,192 +402,3 @@ def build_design(part, weapon):
                 (0.18, -0.11, -0.12), (0.30, -0.17, -0.16)]
         r = [0.040, 0.031, 0.029, 0.031, 0.036, 0.040, 0.046]
         build_sleeve5(part, -1, path, r, frill=(DESIGN == "c"))
-
-
-
-# --- Entwurf e (Issue #265, zweite Fassung nach dem Video): geschlossene Faust, Stulpe, Mantelaermel ---------------
-# Arm und Waffe haben getrennte Atlanten: pistol_hand.glb / blade_hand.glb tragen ihre eigene 64 x 64-Textur mit eigener
-# Palette (32 Farben), so ziehen Holz und Silber der Waffe die Arm-Farben nicht mehr zusammen.
-ARM_RECTS = {"glove": (0, 0, 32, 32), "cuff": (32, 0, 64, 32), "sleeve": (0, 32, 64, 64)}
-UV_ARM = rects_from_pixels(ARM_RECTS, 64)
-
-LEATHER_E = np.array((34, 25, 22), float)       # Fassung f: Faust noch dunkler (Schaft 84, 56, 38)
-CUFF_E = np.array((160, 125, 90), float)        # Stulpe deutlich heller: muss als Band lesen
-CLOTH_E = np.array((40, 44, 56), float)         # Mantelstoff: sehr dunkles Blaugrau
-THREAD_E = np.array((214, 190, 146), float)
-
-
-def paint_e_glove(U, V_):
-    """Faust: u rund um die Faust (0,5 = Handruecken, aussen), v von den Fingerspitzen (0) zum Handgelenk (1).
-    Zwei Flaechen mit Kante: Handruecken (|u - 0,5| < 0,2, glatt, etwas heller) und Fingerruecken (Seiten, drei Fugen);
-    die Kante dazwischen ist eine dunkle Linie mit hellem Saum. Knoechelreihe als heller Streifen oben."""
-    h, w = U.shape
-    col = np.broadcast_to(LEATHER_E, (h, w, 3)).copy()
-    col *= (0.85 + 0.25 * vnoise(h, w, 6, 6, 701))[..., None]
-    back = np.abs(U - 0.5) < 0.2
-    col = mix(col, LEATHER_E * 1.9 + 8, back.astype(float) * 0.6)                                      # Handruecken heller
-    for v0 in (0.14, 0.28, 0.42):
-        col = mix(col, LEATHER_E * 0.35, ((np.abs(V_ - v0) < 0.012) & ~back).astype(float) * 0.9)   # Fugen nur auf den Fingern
-    edge = np.abs(np.abs(U - 0.5) - 0.2) < 0.018
-    col = mix(col, LEATHER_E * 0.3, edge.astype(float) * 0.95)                                         # Kante zwischen den Flaechen
-    col = mix(col, LEATHER_E * 3.0 + 16, ((np.abs(np.abs(U - 0.5) - 0.235) < 0.012)).astype(float) * 0.5)  # heller Saum
-    col = mix(col, LEATHER_E * 3.0 + 16, ((np.abs(V_ - 0.05) < 0.05) & (np.abs(U - 0.5) < 0.32)).astype(float) * 0.5)  # Knoechel
-    col = mix(col, LEATHER_E * 0.7, (V_ > 0.7).astype(float))                                          # Handgelenk dunkler
-    col = mix(col, LEATHER_E * 2.4 + 10, np.clip((vnoise(h, w, 5, 5, 702) - 0.68) * 3, 0, 0.45))
-    return col
-
-
-def paint_e_cuff(U, V_):
-    """Stulpe: helles Leder, deutliche Naht (heller Faden) und ein dunkler Riemen mit Silbernieten; v 0 am Handgelenk."""
-    h, w = U.shape
-    col = np.broadcast_to(CUFF_E, (h, w, 3)).copy()
-    col *= (0.88 + 0.22 * vnoise(h, w, 8, 8, 711))[..., None]
-    col = mix(col, CUFF_E * 0.42, ((V_ > 0.42) & (V_ < 0.72)).astype(float))                          # Riemen
-    col = mix(col, THREAD_E * 1.1, ((np.abs(V_ - 0.2) < 0.035) & (((U * 24) % 1.0) < 0.55)).astype(float))   # Naht
-    for cu in (0.3, 0.7):
-        col = mix(col, np.array((226.0, 226, 236)), (blob(U, V_, cu, 0.57, 0.05, 0.09) > 0.3).astype(float))
-    col = mix(col, CUFF_E * 0.4, (V_ > 0.9).astype(float))                                             # Rand
-    return col
-
-
-def paint_e_sleeve(U, V_):
-    """Mantelstoff: sehr dunkles Blaugrau, drei lange hellere Faltenbahnen laengs (kraeftig), helle Naht, Abnutzung."""
-    h, w = U.shape
-    col = np.broadcast_to(CLOTH_E, (h, w, 3)).copy()
-    col *= (0.9 + 0.2 * vnoise(h, w, 16, 8, 721))[..., None]
-    fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 3 + 0.08 * vnoise(h, w, 5, 3, 722) + 0.1 * V_))
-    col = mix(col * 0.65, CLOTH_E * 2.4 + 12, fold ** 1.8 * 0.9)
-    col = mix(col, THREAD_E * 0.7, ((np.abs(U - 0.5) < 0.012) & (((V_ * 30) % 1.0) < 0.5)).astype(float) * 0.5)
-    col = mix(col, CLOTH_E * 2.6 + 12, np.clip((vnoise(h, w, 4, 5, 723) - 0.66) * 3, 0, 0.5))
-    return col
-
-
-ARM_PAINTERS = {"glove": paint_e_glove, "cuff": paint_e_cuff, "sleeve": paint_e_sleeve}
-
-
-def build_fist_arm(part, s, top, bottom, outer, wrist, elbow, thumb, index=None, fist=(0.0155, 0.015, 0.0185),
-                   reach=0.62, cuff_len=0.016):
-    """Faust (Fassung f): schlank (hoechstens anderthalb Griffbreiten), deckt nur den oberen Teil des Griffs (`reach`),
-    Handruecken (aussen) und Fingerruecken sind zwei Flaechen mit Kante (Textur), Daumen ein eigenes Stueck, Zeigefinger
-    ein Stummel. Danach eine kurze, anliegende Stulpe und der Mantelaermel, der schraeg aus dem Bild laeuft."""
-    m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
-    t, b = V(*top), V(*bottom)
-    a = (b - t).normalized()
-    o = V(*outer)
-    o = (o - a * o.dot(a)).normalized()
-    ref = m(tuple(o))
-    wr, el = V(*wrist), V(*elbow)
-    w, bb, tt = fist
-    pts = [t - a * 0.004, t + (b - t) * reach * 0.5, t + (b - t) * reach, wr]
-    shapes = [(w * 0.92, bb * 0.9, tt * 0.95), (w, bb, tt), (w * 0.95, bb * 0.95, tt * 0.95), (0.0165, 0.0155, 0.017)]
-    part.loft(tube([m(tuple(p)) for p in pts], shapes, 8, ref_up=ref), "glove", cap_end=False)
-    part.loft(tube([m(p) for p in thumb], [(0.0078,) * 3, (0.0070,) * 3, (0.0058,) * 3], 6, ref_up=ref), "glove")
-    if index:
-        part.loft(tube([m(p) for p in index[:2]], [(0.0058,) * 3, (0.0048,) * 3], 6, ref_up=ref), "glove")
-    d = (el - wr).normalized()
-    cuff = [wr - d * 0.004, wr + d * cuff_len * 0.5, wr + d * cuff_len]
-    part.loft(tube([m(tuple(p)) for p in cuff], [(0.0185,) * 3, (0.0205,) * 3, (0.0215,) * 3], 10, ref_up=ref),
-              "cuff", cap_end=False)
-    part.loft(tube([m(tuple(wr + d * (cuff_len - 0.002))), m(tuple(wr + (el - wr) * 0.45)), m(tuple(el))],
-                   [(0.0225,) * 3, (0.032,) * 3, (0.040,) * 3], 10, ref_up=ref), "sleeve")
-
-
-def build_design_e(part, weapon):
-    if weapon == "pistol":
-        build_fist_arm(part, +1, top=(0, -0.006, 0.006), bottom=(0, -0.052, -0.015), outer=(1, 0, 0),
-                       wrist=(0.016, -0.031, -0.018), elbow=(0.26, -0.07, -0.02),
-                       thumb=((0.004, -0.014, -0.010), (-0.011, -0.004, 0.0), (-0.0125, 0.004, 0.016)),
-                       index=((0.017, -0.006, 0.002), (0.008, -0.012, 0.018)), fist=(0.0150, 0.0145, 0.0180))
-    else:
-        build_fist_arm(part, -1, top=(0, 0, -0.008), bottom=(0, 0, -0.058), outer=(0.8, 0.6, 0),
-                       wrist=(0.026, -0.012, -0.054), elbow=(0.27, -0.08, -0.04),
-                       thumb=((-0.002, 0.016, -0.05), (-0.012, 0.013, -0.03), (-0.011, 0.009, -0.012)),
-                       fist=(0.0150, 0.0145, 0.0185), reach=0.72)
-
-
-
-# =====================================================================================================================
-# Fassung g (Issue #265, Entscheidung des Menschen): keine Hand. Dunkelblauer Mantelaermel mit heller Ruschenmanschette
-# (Entwurf C aus Probestueck 13), die Waffe ragt aus der Manschette. Die Aermel sind lang: ihr Ende liegt in jeder
-# Haltung ausserhalb des Bildes. Eigene Arm-Textur 64 x 64 (nur das Feld "sleeve", eigene Palette).
-# =====================================================================================================================
-ARM_RECTS = {"sleeve": (0, 0, 64, 64)}
-UV_ARM = rects_from_pixels(ARM_RECTS, 64)
-
-CLOTH_G = np.array((36, 44, 74), float)          # dunkelblauer Mantelstoff
-LACE_G = np.array((204, 196, 180), float)        # gebrochenes Weiss
-SHADOW_G = np.array((70, 66, 66), float)         # Schattenlinie zwischen den Volants
-BUTTON_G = np.array((200, 204, 214), float)      # Silberknoepfe (Silber gehoert dem Jaeger)
-FRILL_V = 0.34                                   # Anteil von v (vom Mund aus), der Ruesche ist
-
-
-def paint_g_sleeve(U, V_):
-    """Aermel in einem Feld: u rund um die Roehre, v vom Ellbogen (0) zum Mund (1) - wird hier gedreht, so dass v = 0 am
-    Mund liegt. Ruesche: drei Lagen (v bis 0,34) mit dunklen Schattenlinien dazwischen, gebrochenes Weiss, kaum Rauschen.
-    Danach eine schmale Borte, zwei Silberknoepfe am Aermelschlitz und zwei, drei lange Faltenbahnen."""
-    V_ = 1 - V_
-    h, w = U.shape
-    col = np.broadcast_to(CLOTH_G, (h, w, 3)).copy()
-    col *= (0.92 + 0.14 * vnoise(h, w, 20, 8, 801))[..., None]
-    fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 3 + 0.07 * vnoise(h, w, 5, 3, 802) + 0.08 * V_))
-    col = mix(col * 0.72, CLOTH_G * 2.1 + 10, fold ** 1.8 * 0.85)                       # drei lange Faltenbahnen
-    col = mix(col, CLOTH_G * 2.2 + 10, np.clip((vnoise(h, w, 4, 5, 803) - 0.68) * 3, 0, 0.4))   # Abnutzung
-    # Borte und Naht am Uebergang zur Manschette
-    col = mix(col, CLOTH_G * 0.5, ((V_ > FRILL_V) & (V_ < FRILL_V + 0.05)).astype(float))
-    col = mix(col, LACE_G * 0.7, (np.abs(V_ - (FRILL_V + 0.025)) < 0.007).astype(float))
-    # zwei Knoepfe am Aermelschlitz (oben auf dem Aermel, u = 0,5)
-    for cv in (FRILL_V + 0.13, FRILL_V + 0.22):
-        d = blob(U, V_, 0.5, cv, 0.045, 0.035)
-        col = mix(col, BUTTON_G, (d > 0.35).astype(float))
-        col = mix(col, CLOTH_G * 0.4, ((d > 0.1) & (d <= 0.35)).astype(float) * 0.7)
-    # Ruesche: drei Lagen, dunkle Schattenlinie unter jeder Lage, kaum Struktur
-    lace = np.broadcast_to(LACE_G, (h, w, 3)).copy() * (0.94 + 0.08 * vnoise(h, w, 6, 12, 811))[..., None]
-    layer = (V_ / FRILL_V * 3.0) % 1.0
-    lace *= (0.78 + 0.28 * layer)[..., None]                                             # jede Lage unten dunkler
-    lace = mix(lace, SHADOW_G, ((layer < 0.09) & (V_ > 0.03)).astype(float) * 0.85)
-    wave = ((U * 24) % 1.0)
-    lace = mix(lace, LACE_G * 0.7, (np.abs(wave - 0.5) > 0.44).astype(float) * 0.5)       # Falten der Lage
-    col = mix(col, lace, (V_ < FRILL_V).astype(float))
-    return col
-
-
-ARM_PAINTERS = {"sleeve": paint_g_sleeve}
-
-
-def _g_path(weapon):
-    """Mittellinie des Aermels (Kameraraum, rechte Seite; s = -1 spiegelt). Fassung h: die Manschette ist nur ein kurzer
-    Saum (vier Ringe auf 1,2 cm), danach laeuft das Rohr flacher quer durchs Bild und weit ueber den Bildrand hinaus."""
-    if weapon == "blade":
-        z0, y0, dz = -0.003, 0.0, -0.004
-        mouth = [(0, y0, z0 + dz * k) for k in range(4)]
-        tube_ = [(0.03, -0.004, -0.032), (0.08, -0.015, -0.055), (0.17, -0.035, -0.085), (0.30, -0.075, -0.13),
-                 (0.50, -0.14, -0.20), (0.80, -0.26, -0.32)]
-    else:
-        # Manschette weiter hinten und tiefer am Griff: Schloss, Abzugsbuegel und oberer Griff bleiben frei.
-        z0, y0, dz = -0.010, -0.026, -0.004
-        mouth = [(0, y0, z0 + dz * k) for k in range(4)]
-        tube_ = [(0.03, -0.027, -0.040), (0.08, -0.031, -0.060), (0.17, -0.043, -0.090), (0.30, -0.075, -0.135),
-                 (0.50, -0.16, -0.20), (0.80, -0.28, -0.32)]
-    return mouth + tube_
-
-
-def build_design_g(part, weapon):
-    s = +1 if weapon == "pistol" else -1
-    path = _g_path(weapon)
-    m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
-    base = 0.023 if weapon == "pistol" else 0.027                                     # Radius der Manschette (Fassung h)
-    # Mund -> Ellbogen: zwei Lagen Ruesche (Mund und dritter Ring ausgestellt), dann das Rohr, das zum Ellbogen weiter wird.
-    radii = [base * 1.45, base * 1.02, base * 1.30, base * 1.0, base * 0.98, base * 1.0, base * 1.1, base * 1.25,
-             base * 1.4, base * 1.55]
-    pts = [m(p) for p in path][::-1]
-    rad = [(r,) * 3 for r in radii][::-1]
-    n = len(pts)
-    # gewellter Saum: jede zweite Ecke am Mund und am dritten Ring nach innen (Umriss mit Zacken)
-    mods = lambda i, k: (1.0 if k % 2 == 0 else 0.80) if i in (n - 1, n - 3) else 1.0   # noqa: E731
-    part.loft(tube(pts, rad, 16, ref_up=V(1, 0, 0), mods=mods), "sleeve", cap_start=True, cap_end=True)
-
-
-
-
-def build_design(part, weapon):                                                      # noqa: F811
-    build_design_g(part, weapon)

@@ -39,9 +39,12 @@ LEATHER = np.array((70, 48, 34), float)          # Griffwicklung
 WIRE = np.array((170, 172, 184), float)
 
 RECTS = {
+    "glove": (0, 16, 64, 48),
     "blade": (0, 64, 128, 128),
     "silver": (0, 48, 64, 64),
     "grip": (64, 48, 128, 64),
+    "cuff": (0, 0, 64, 16),
+    "sleeve": (64, 0, 128, 48),
 }
 UV = rects_from_pixels(RECTS, TEX)
 
@@ -86,7 +89,8 @@ def paint_grip(U, V_):
 
 
 PAINTERS = {"blade": paint_blade, "silver": paint_silver, "grip": paint_grip,
-            }
+            "cuff": paint_cuff, "sleeve": paint_sleeve}
+PAINTERS.update(_arm.design_painters(_arm.DESIGN))
 
 
 def build_sword():
@@ -110,7 +114,7 @@ def build_sword():
 
 
 def build_hand():
-    part = Part("arm", (0, 0, 0), _arm.UV_ARM, parent="sword")
+    part = Part("arm", (0, 0, 0), UV, parent="sword")
     _arm.build_design(part, "blade")
     return part
 
@@ -134,10 +138,7 @@ def main():
     bpy.context.scene.collection.children.link(coll)
     mat = export_material("blade", image)
     sword = build_sword().build(coll, mat, smooth=False)
-    arm_tex = paint_atlas(_arm.ARM_RECTS, _arm.ARM_PAINTERS, 64, colors=32, seed=11)
-    arm_image = save_image("blade_hand", arm_tex, os.path.join(OUT_DIR, "blade_hand.png"))
-    arm_mat = export_material("blade_hand", arm_image)
-    hand = build_hand().build(coll, arm_mat, smooth=True)
+    hand = build_hand().build(coll, mat, smooth=True)
     pose([sword, hand], {}, root=Matrix.Scale(SCALE, 4))
     bake_scale([sword, hand])
     export_glb([sword], os.path.join(OUT_DIR, "blade.glb"))

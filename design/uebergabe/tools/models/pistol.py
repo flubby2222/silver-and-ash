@@ -27,7 +27,6 @@ from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_a
 
 # Modelle und Texturen landen in assets/models (vom Skript in tools/models aus zwei Ebenen hoch).
 import arm as _arm  # noqa: E402
-_arm.CUFF_V = 0.29
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                        "assets", "models")
 TEX = 128
@@ -43,6 +42,7 @@ FLINT = np.array((176, 164, 138), float)     # Feuerstein: heller als alles ring
 FLASH = np.array((255, 232, 170), float)      # Muendungsfeuer wie im Platzhalter
 
 RECTS = {
+    "glove": (0, 16, 64, 48),
     "wood": (0, 64, 64, 128),
     "iron": (64, 96, 128, 128),
     "silver": (64, 64, 128, 96),
@@ -51,6 +51,8 @@ RECTS = {
     "flash": (48, 48, 64, 64),
     "lock": (64, 48, 96, 64),
     "flint": (96, 48, 128, 64),
+    "cuff": (0, 0, 64, 16),
+    "sleeve": (64, 0, 128, 48),
 }
 UV = rects_from_pixels(RECTS, TEX)
 
@@ -133,10 +135,11 @@ def paint_flint(U, V_):
     return col * (0.82 + 0.3 * vnoise(h, w, 4, 4, 42))[..., None]
 
 
-PAINTERS = {"lock": paint_lock, "flint": paint_flint, "wood": paint_wood, "iron": paint_iron, "silver": paint_silver, "steel": paint_steel,
+PAINTERS = {"lock": paint_lock, "flint": paint_flint, "cuff": paint_cuff, "sleeve": paint_sleeve, "wood": paint_wood, "iron": paint_iron, "silver": paint_silver, "steel": paint_steel,
             "bore": lambda U, V_: np.broadcast_to(DARK, U.shape + (3,)).copy(),
             "flash": lambda U, V_: mix(np.broadcast_to(FLASH, U.shape + (3,)).copy(), np.array((255, 255, 240.0)),
                                        blob(U, V_, 0.5, 0.5, 0.6, 0.6))}
+PAINTERS.update(_arm.design_painters(_arm.DESIGN))
 
 
 # --- Geometrie ----------------------------------------------------------------------------------------------------
@@ -236,7 +239,7 @@ def build_cock():
 
 
 def build_hand():
-    part = Part("arm", (0, 0, 0), _arm.UV_ARM, parent="stock")
+    part = Part("arm", (0, 0, 0), UV, parent="stock")
     _arm.build_design(part, "pistol")
     return part
 
@@ -261,10 +264,7 @@ def main():
     model = [build_stock().build(coll, mat, smooth=True), build_barrel().build(coll, mat, smooth=False),
              build_fittings().build(coll, mat, smooth=False), build_cock().build(coll, mat, smooth=False)]
     flash = build_flash().build(coll, mat, smooth=False)
-    arm_tex = paint_atlas(_arm.ARM_RECTS, _arm.ARM_PAINTERS, 64, colors=32, seed=11)
-    arm_image = save_image("pistol_hand", arm_tex, os.path.join(OUT_DIR, "pistol_hand.png"))
-    arm_mat = export_material("pistol_hand", arm_image)
-    hand = build_hand().build(coll, arm_mat, smooth=True)
+    hand = build_hand().build(coll, mat, smooth=True)
     # In echter Groesse: die Skalierung der Ich-Sicht ist eingebacken (1 Einheit = 1 m).
     pose(model + [flash, hand], {}, root=Matrix.Scale(SCALE, 4))
     bake_scale(model + [flash, hand])

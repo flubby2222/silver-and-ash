@@ -165,7 +165,7 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | `fittings` (Beschläge, Bügel, Ladestock, Batterie) | 0, 0, 0 | stock | 214 |
 | `flash` (Mündungsfeuer, unbeleuchtet) | 0, 0, 0 | stock | 42 |
 | `stock` | 0, 0, 0 | – | 144 |
-| `arm` (in `pistol_hand.glb`: Mantelärmel mit kurzem Rüschensaum, ohne Hand; eigene Textur) | 0, 0, 0 | stock | 320 |
+| `arm` (in `pistol_hand.glb`: Mantelärmel mit Rüschenmanschette, ohne Hand) | 0, 0, 0 | stock | 192 |
 
 **Haltungen:**
 
@@ -185,7 +185,7 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | Teil | Drehpunkt | hängt an | Dreiecke |
 |---|---|---|---|
 | `sword` (Klinge, Parierstange, Griff, Knauf) | 0, 0, 0 | – | 152 |
-| `arm` (in `blade_hand.glb`: Mantelärmel mit kurzem Rüschensaum, ohne Hand; eigene Textur) | 0, 0, 0 | sword | 320 |
+| `arm` (in `blade_hand.glb`: Mantelärmel mit Rüschenmanschette, ohne Hand) | 0, 0, 0 | sword | 192 |
 
 **Haltungen** (aus `DrawBlade`; die Hand liegt bei (−0,11, −0,095, 0,19) im Kameraraum):
 
@@ -246,18 +246,18 @@ Erst schwenken, dann heben: `Drehung = Schwenken × Heben`.
 1. Lädt Raylib die Knoten-Verschiebungen in die Ecken ein? Bleibt die Reihenfolge der Meshes erhalten? Lassen sich Namen lesen?
 2. Kamera-Matrix der Waffen ohne Spiegelung (siehe Pistole).
 3. Shader mit Textur, Normale und Licht je Ecke; Point-Filter ohne Mipmaps.
-4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind seit Probestück 14 (Issue #265, Fassung h) **ein dunkelblauer Mantelärmel mit kurzem hellem Rüschensaum, ohne Hand, Finger oder Handschuh** (Entscheidung des Menschen: „Keine Hände“, Entwurf C). Sie hängen starr an der Waffe; Dateinamen, Knoten und Drehpunkte sind gleich geblieben.
+4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind seit Probestück 14 (Issue #265, Fassung i) **ein dunkelblauer Mantelärmel mit heller Rüschenmanschette, ohne Hand, Finger oder Handschuh** (Entscheidung des Menschen: „Keine Hände“, Entwurf C aus Probestück 13). Der Pistolenärmel ist derselbe Ärmel, gespiegelt. Sie hängen starr an der Waffe; Dateinamen, Knoten und Drehpunkte sind gleich geblieben.
 
-### Was sich gegenüber den Dateien im Spiel ändert (Probestück 14, Fassung h, Issue #265)
+### Was sich gegenüber den Dateien im Spiel ändert (Probestück 14, Fassung i, Issue #265)
 
-Alle sechs Dateien tauschen (`pistol.glb`, `pistol_hand.glb`, `blade.glb`, `blade_hand.glb`, `pistol.png`, `blade.png`), dazu zwei neue PNGs (`pistol_hand.png`, `blade_hand.png`), danach `python tools/models/checksums.py`.
+Vier Dateien tauschen (`pistol.glb`, `pistol_hand.glb`, `blade.glb`, `blade_hand.glb`) und die zwei Atlanten `pistol.png`, `blade.png`, danach `python tools/models/checksums.py`. **Keine neuen PNGs, kein eigener Arm-Atlas:** Der Ärmel liegt wie in Entwurf C im Feld `sleeve` des Waffen-Atlasses (128 × 128, 32 Farben); so bleibt das Aussehen von C erhalten. (`pistol_hand.png` und `blade_hand.png` aus den Fassungen f bis h entfallen.)
 - **Namen, Knoten, Drehpunkte, Eltern:** unverändert; `arm` ist ein Teil mit einem Mesh.
-- **Haltungswerte: unverändert gegenüber `main`.** Pistole (0,095; −0,08; 0,18), Klinge (−0,11; −0,095; 0,19), Ausholen 35° und (−0,03; −0,01; −0,03) bleiben; es ist **keine** Änderung an `WeaponPose.cs` nötig. Mit den neuen Dateien in `assets/models/` laufen die 15 Tests in `WeaponPoseTests` grün (lokal geprüft).
-- **Geometrie:** Ein Rohr aus 16 Seiten je Arm, 320 Dreiecke. Die Manschette ist nur ein **kurzer Saum** (vier Ringe auf 1,2 cm, Radius 0,023 an der Pistole und 0,027 an der Klinge) mit **zwei Lagen Rüsche**; Mund und dritter Ring sind ausgestellt und haben einen **gewellten Umriss** (jede zweite Ecke nach innen). Dahinter läuft das Rohr **flach quer durchs Bild** und weit über den Bildrand hinaus (Länge etwa 0,9 m; Ende bei (0,8; −0,28; −0,32) an der Pistole und (0,8; −0,26; −0,32) an der Klinge in Dateikoordinaten), damit das Ende in keiner Haltung im Bild liegt. Die Pistolenmanschette liegt waagerecht um den unteren, hinteren Teil des Griffs (Mund bei z = −0,010, y = −0,026), sodass Schloss, Abzugsbügel und der obere Griff frei sind; die Klingenmanschette sitzt an der Parierstange. Spiegelbildlich ausgerichtet.
-- **Eigene Arm-Texturen:** `pistol_hand.glb` und `blade_hand.glb` tragen ihre eigene eingebettete Textur (64 × 64, höchstens 32 Farben, eigene Palette: dunkelblauer Stoff mit drei Faltenbahnen, Borte, zwei Silberknöpfen, gebrochenweiße Rüsche mit dunklen Schattenlinien). Die Waffen-Atlanten haben keine Arm-Felder mehr. Die `*_hand.png` sind dieselben Bilder und gehören mit in `assets/models/` und `models.sha256`.
+- **Haltungswerte: unverändert gegenüber `main`.** Es ist keine Änderung an `WeaponPose.cs` nötig; mit den neuen Dateien laufen die 15 Tests in `WeaponPoseTests` grün (lokal geprüft).
+- **Geometrie:** Der Klingenärmel ist der aus Entwurf C (Probestück 13): Rohr aus 12 Seiten, kurze Rüschenmanschette (drei Ringe, zackig) an der Parierstange, dahinter das Rohr nach links unten. Einzige Änderung: ein achter Ring weit hinten (bei (0,78; −0,41; −0,32) in Dateikoordinaten, in derselben Richtung weitergeführt), damit das Ende in keiner Haltung im Bild liegt; die UV ist so umgerechnet, dass die Textur wie bei C liegt. Der Pistolenärmel ist **derselbe Ärmel, gespiegelt** (x → −x), um 2,6 cm nach unten verschoben (reine Verschiebung), sodass Schloss, Hahn und Abzugsbügel vor dem Rüschenrand frei bleiben. Je 192 Dreiecke.
+- **Textur:** Wie C (dunkelblauer Stoff mit Faltenbahnen, helle Rüsche mit Spitzenmuster), neu nur eine schmale dunkle Naht hinter der Rüsche und zwei kleine Silberknöpfe.
 - **Prüfsummen** ändern sich; `assets/HERKUNFT.md`: gleiche Skripte, neues Datum.
-- **Skripte:** `tools/models/arm.py` (Fassung g am Ende: `build_design_g`, `paint_g_sleeve`, Fassung h; die älteren Entwürfe stehen weiter darin), `pistol.py`, `blade.py`.
-- **Was noch nicht stimmt** (siehe `design/proben/grafik/aermel7/notizen.md`): an der Pistole ist im Gang-Foto mehr Weiß als Blau zu sehen (der Ärmel verläuft dort tief am Bildrand); Knöpfe sind kaum zu erkennen; Schwung nicht fotografiert.
+- **Skripte:** `tools/models/arm.py` (Entwurf C am Anfang des Bereichs „Ärmel 2“, `build_design` mit `DESIGN == "c"`; die anderen Entwürfe stehen weiter darin, die Voreinstellung ist C), `pistol.py`, `blade.py`.
+- **Was noch nicht stimmt** (siehe `design/proben/grafik/aermel8/notizen.md`): Der Pistolenärmel ist kein exaktes Spiegelbild des linken (andere Lage und Rollwinkel der Pistole); die Rüsche ist an der Pistole weißer und größer als an der Klinge; der volle Schwung ist nicht fotografiert.
 
 ### Frühere Änderungen (Probestück 11, Issues #256 und #257): Hahn und handlose Ärmel; die Ärmel sind durch Probestück 14 ersetzt, der Hahn gilt weiter
 
