@@ -1035,7 +1035,15 @@ public sealed class GameWorld
     {
         var result = DamageRules.Calculate(hit with { DamageBoons = attacker.BoonCount(Boon.Damage) });
         var wasAlive = target.IsHittable;
+        var eventsBefore = _events.Count;
         target.TakeDamage(result.Amount, _events, result.IsCritical);
+
+        // The target's own hit event does not say what hit it; this one does (issue #267: the blade sound only for the
+        // blade). Only if the hit counted - a target that ignores it (already down) reports nothing.
+        if (_events.Count > eventsBefore)
+        {
+            _events.Insert(eventsBefore + 1, new TargetHitBy(target.Id, attacker.Id, hit.Weapon));
+        }
 
         // A sleeping enemy that is hit wakes up - together with its whole room (the room is not sealed by that).
         if (_asleep.Contains(target.Id))

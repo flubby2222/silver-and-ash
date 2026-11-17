@@ -41,6 +41,8 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `bat-dive` | eine Fledermaus im Sturzflug auf den Spieler |
 | `pistol-recoil` | die Pistole gleich nach dem Schuss: hochgerissen, Hahn gefallen, Mündungsfeuer |
 | `blade-charged` | die Silberklinge voll aufgeladen: zurückgezogen und zitternd |
+| `blade-swing-half` | ein schneller Klingenhieb halb ausgeholt: der Unterarm dreht sich zur Schulter (#265) |
+| `blade-swing-full` | ein schneller Klingenhieb auf dem Höhepunkt: der Unterarm dreht sich zur Schulter (#265) |
 | `gorm` | Gorm aus 6 m in seinem Bossraum |
 | `gorm-swing-windup` | Gorm wirbelt die Kette über dem Kopf: die Ankündigung des Kettenschwungs, die Kette gerade zu seiner Rechten |
 | `gorm-swing` | Gorm im Kettenschwung von seiner Linken zu seiner Rechten, ein Drittel des Bogens |

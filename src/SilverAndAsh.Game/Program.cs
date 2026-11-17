@@ -3,12 +3,14 @@ using System.Numerics;
 using System.Reflection;
 using Raylib_cs;
 using SilverAndAsh.Core;
+using SilverAndAsh.Core.Audio;
 using SilverAndAsh.Core.Diagnostics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
 using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
+using SilverAndAsh.Game.Audio;
 using SilverAndAsh.Game.Input;
 using SilverAndAsh.Game.Rendering;
 
@@ -208,6 +210,9 @@ static void RunGame(
         // repeated. Until then this world only stands in.
         var gameWorld = newWorld(seed ?? Random.Shared.Next(), balance);
         var player = gameWorld.Player;
+
+        // Which sound the events of a tick ask for (issue #267). Its random choice of variants starts from the world's seed.
+        var soundCues = new SoundCues(gameWorld.Seed);
         IDummyView dummyView = new PlaceholderDummyView();
         // Ghouls: the designer's model once it is loaded (after the shader, below), the placeholder until then - and for
         // good if the model is missing or broken.
@@ -261,6 +266,7 @@ static void RunGame(
             wonSeconds = 0f;
             LogRun(gameWorld, log);
             player = gameWorld.Player;
+            soundCues = new SoundCues(gameWorld.Seed);
             dummyView = new PlaceholderDummyView();
             ghoulView = newGhoulView();
             gormView = newGormView();
@@ -609,10 +615,24 @@ static void RunGame(
             return;
         }
 
+        // Sound (issue #267) - only here, after photo and bench mode: those never open a sound device. No device, a
+        // missing or broken file: a warning in the log, the game runs silent or without that sound.
+        using var sounds = SoundPlayer.Open(Path.Combine(AppContext.BaseDirectory, "assets", "audio"), log);
+
         // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.
         while (!Raylib.WindowShouldClose() && !quit)
         {
             seconds += Raylib.GetFrameTime();
+
+            // N mutes the game and turns it on again - anywhere, also on the title screen. Pure presentation, not tick input.
+            if (Raylib.IsKeyPressed(KeyboardKey.N))
+            {
+                sounds.ToggleMute();
+            }
+
+            // The music (issue #271): the title theme on the title screen, the catacomb music in a run (held in the Esc
+            // menu), none on the end screen - as it stood after the latest frame.
+            sounds.Update(SoundBoard.MusicFor(new MusicSituation(onTitle, menuOpen, RunOver: endSummary is not null)), Raylib.GetFrameTime());
 
             // Title screen: no world runs, the mouse is free.
             if (onTitle)
@@ -772,6 +792,7 @@ static void RunGame(
                 slotChosen = null;
                 wheelSteps = 0;
                 ReadEvents();
+                sounds.Play(soundCues.For(gameWorld.Events));
             }
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into

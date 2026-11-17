@@ -2,11 +2,12 @@
 
 - assets/models/models.sha256: jede .glb und .png in assets/models/
 - assets/textures/textures.sha256: jede .png in assets/textures/ (Level-Texturen, Issue #233)
+- assets/audio/audio.sha256: jede .wav und .ogg in assets/audio/ (Geräusche, Issue #267)
 
 Das Spiel vergleicht vor dem Laden jede Datei mit ihrer Liste (ModelChecksums im Core); eine beschädigte oder halb
 kopierte Datei erreicht Raylib so nie. Tests prüfen, dass die Listen zu den eingecheckten Dateien passen.
 
-Aufruf nach jedem Neu-Erzeugen eines Modells oder einer Textur (aus dem Repository-Wurzelverzeichnis, normales Python 3):
+Aufruf nach jedem Neu-Erzeugen eines Modells, einer Textur oder eines Geräuschs (aus dem Repository-Wurzelverzeichnis, normales Python 3):
     python tools/models/checksums.py
 """
 
@@ -17,6 +18,7 @@ ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "a
 LISTS = [
     ("models", "models.sha256", (".glb", ".png"), "a model"),
     ("textures", "textures.sha256", (".png",), "a level texture"),
+    ("audio", "audio.sha256", (".wav", ".ogg"), "a sound"),
 ]
 
 for folder, list_name, endings, what in LISTS:

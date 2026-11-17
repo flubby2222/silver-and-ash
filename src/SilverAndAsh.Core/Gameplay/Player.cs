@@ -499,7 +499,8 @@ public sealed partial class Player
         }
 
         // Pulled by Gorm's chain: no walking, jumping, dashing or dodging - looking and fighting still work.
-        if (IsPulled)
+        var pulled = IsPulled;
+        if (pulled)
         {
             input = input with { Move = Vector2.Zero, Jump = false, Dash = false };
             _dashTicksLeft = 0;
@@ -728,6 +729,7 @@ public sealed partial class Player
         }
 
         Crouch.Tick(IsDodging);
+        CountSteps(wasGrounded && grounded, pulled);
 
         if (!wasGrounded && grounded)
         {

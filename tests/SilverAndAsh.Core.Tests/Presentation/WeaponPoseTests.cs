@@ -129,8 +129,9 @@ public class WeaponPoseTests
     [Fact]
     public void Everything_drawn_of_the_blade_hand_stays_within_reach_until_the_swing_turns_the_sleeve_out()
     {
-        // From about a third of the swing on, the tip has turned so far right that the sleeve behind the grip swings out
-        // to the left edge of the picture (about 42 cm from the eyes) - accepted, the PR of issue #249 says so.
+        // Here the forearm stays unturned, as it stands in the file - a pose drawn only at rest. Rigid, it would swing
+        // out ahead from about a third of the swing on. As drawn, turned towards the shoulder, the whole swing is
+        // checked in SleeveForearmTests (issue #265).
         foreach (var pose in BladePoses(lastSwing: 0.3f))
         {
             AssertWithinReach("blade_hand.glb", pose, _ => Matrix4x4.Identity);
@@ -166,12 +167,12 @@ public class WeaponPoseTests
 
     // Vertical field of view 70 degrees (LookSettings.FieldOfViewDegrees in the game) and the 16:9 window (1280 x 720
     // in Program.cs): the slope of the picture's edges in camera space.
-    private static readonly float HalfHeight = MathF.Tan(35f * MathF.PI / 180f);
-    private static readonly float HalfWidth = HalfHeight * 16f / 9f;
+    internal static readonly float HalfHeight = MathF.Tan(35f * MathF.PI / 180f);
+    internal static readonly float HalfWidth = HalfHeight * 16f / 9f;
 
     // The picture's edges are widened by this much (metres) for bob, sway and the landing dip, which move the weapons a
     // little after the pose.
-    private const float EdgeMargin = 0.02f;
+    internal const float EdgeMargin = 0.02f;
 
     // Every triangle of the checked-in model, turned around its part's pivot as the rig does (all parts hang on the
     // grip at 0, 0, 0), through the pose and shrunk towards the eye.
@@ -196,7 +197,7 @@ public class WeaponPoseTests
     // (the sleeves are long on purpose and run out of the picture). That piece is the triangle clipped by those
     // planes; its farthest point is one of its corners. None lies farther from the eye (the camera-space origin) than
     // the reach.
-    private static void AssertWithinReach(string file, Matrix4x4 pose, Func<string, Matrix4x4> turnOf)
+    internal static void AssertWithinReach(string file, Matrix4x4 pose, Func<string, Matrix4x4> turnOf)
     {
         foreach (var (name, polygons) in Placed(file, pose, turnOf))
         {
@@ -248,7 +249,7 @@ public class WeaponPoseTests
 
     // The corners and triangles of every part with a mesh, read straight from the .glb (the files are checked by
     // GlbScene and its tests; here only what the test needs).
-    private static IEnumerable<(string Name, Vector3 Pivot, Vector3[] Corners, int[] Triangles)> Triangles(string file)
+    internal static IEnumerable<(string Name, Vector3 Pivot, Vector3[] Corners, int[] Triangles)> Triangles(string file)
     {
         var bytes = File.ReadAllBytes(RepositoryFiles.Find(Path.Combine("assets", "models", file)));
         var jsonLength = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(12));
