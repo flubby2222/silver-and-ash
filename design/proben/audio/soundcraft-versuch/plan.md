@@ -1,4 +1,4 @@
-# Versuchsplan: SoundCraft für Pistolenschuss und Klingentreffer
+# Versuchsplan: SoundCraft für eine Skizze des Stimmungsstücks
 
 Stand 2026-11-17. **Nur gelesen, nichts geladen, nichts installiert.** Quellen: nur das offizielle Repository `github.com/storytold/soundcraft` (README, `docs/cli.md`, `docs/releasing.md`, `docs/control-protocol.md`, `Cargo.lock`, `packaging/windows/package.ps1`, Quelltext der Befehlsliste) und die Release-Seite.
 
@@ -14,13 +14,17 @@ Stand 2026-11-17. **Nur gelesen, nichts geladen, nichts installiert.** Quellen: 
 
 Vor dem ersten Start würde ich die SHA-256 gegen `SHA256SUMS.txt` und gegen den GitHub-Wert prüfen. Ob ich die GPG-Signatur prüfen kann, hängt davon ab, ob `gpg` auf dem Rechner ist (nicht geprüft).
 
+## Aktualisiert am 2026-11-17: Das Konzept hat sich geändert
+
+Der Mensch zu den Geräuschen im Spiel: „Man konnte klar hören, wofür Samples als Grundlage dienten. Es war kein richtiger Style und keine Kohärenz erkennbar. Was glaube ich sinnvoll wäre, ein Soundtrack, der einen generellen Mood setzt – dann einzelne Sounds.“ Neue Reihenfolge: **erst die Stimmung (Musik), dann die Geräusche aus derselben Klangwelt** – siehe [konzept-klangwelt.md](../konzept-klangwelt.md). Deshalb fragt der Versuch nicht mehr nach Schuss und Klinge.
+
 ## Frage des Versuchs
 
-Kann ich damit ein Geräusch, das ich heute mit Python-Skripten baue, **einfacher, wiederholbar (byte-gleich bei zwei Läufen?) und mit besserer Kontrolle** über Schichten, Hüllkurven und Effekte bauen – und lässt sich die PS1-Kette anhängen oder ersetzen?
+Kann ich damit **eine 20-Sekunden-Skizze des Stimmungsstücks** (Richtung A oder B des Konzepts) **mit zwei bis drei Spuren und einem gemeinsamen Hall-Bus** bauen und **reproduzierbar (byte-gleich bei zwei Läufen) ausgeben**, einfacher und mit besserer Kontrolle als mit meinen Python-Skripten – und lässt sich die PS1-Kette (`ps1_klang.py`) anhängen? Vergleichsmaßstab: dieselbe Skizze aus meinen Skripten (Töne, Akkorde, eigener Hall).
 
 ## Was gebaut wird
 
-Genau zwei Stücke, je eine Fassung aus SoundCraft, danach durch meine PS1-Kette (`ps1_klang.py`), Vergleich mit dem Stand im Spiel: **Pistolenschuss** (`pistole.wav`) und **Klingentreffer** (`klinge-1.wav`). Aufbau: eine Spur je Schicht (Anschlag, Körper, Ausklang) aus `drum_synth`, `subtractive_synth`, `signal_generator`, Effekte `eq_7band`, `saturator`, `lofi`, `room_reverb`, Ausgabe über `file.bounce_mix`.
+Eine Skizze, 20 s, Richtung A („Gruft-Orgel“: Pedal-Orgelton + dichte tiefe Streicher + wenig Hall-Bus) oder B („Glocken und Chor“), 2–3 Spuren aus `subtractive_synth`/`sampler`/`drum_synth` und einem Hall-Bus (`mix.new_bus`, `mix.send`, `room_reverb`/`plate_reverb`). Noten als **Standard-MIDI-Datei**, die mein Python-Skript schreibt (SoundCraft importiert MIDI laut README; `file.import_midi` steht in der Befehlsliste), Ausgabe `file.bounce_mix` und einzeln `file.bounce_stems`, danach durch die PS1-Kette. Dieselben Stems und die MIDI-Datei wären auch das Rohmaterial für den Menschen in FL Studio (siehe unten). Geprüft wird nach Regeln (Töne der Tonleiter, Pegel, Spektrum, Naht), nicht nach Gehör.
 
 ## Befehle (aus der Doku und dem Quelltext der Befehlsliste belegt)
 
@@ -48,4 +52,4 @@ Ein Befehl für Hüllkurve, Mono-Ausgabe oder Tonhöhenverlauf fehlt; Absturz od
 
 ## Meine Meinung zu FL Studio (der Mensch stellt nach Gehör ein)
 
-Das halte ich für den wirksameren Weg, wenn er Zeit hat: Er hört, ich messe nur. Rohmaterial je Geräusch: **3 bis 5 Schichten als einzelne WAV-Dateien**, 44 100 Hz, 24 Bit, mono, alle gleich lang, alle bei Sample 0 beginnend (damit sie ohne Schieben übereinanderliegen), Pegel einzeln auf −6 dBFS normalisiert, Beschriftung `<geraeusch>_<nr>_<rolle>.wav`, z. B. `pistole_1_anschlag.wav`, `_2_koerper.wav`, `_3_sub.wav`, `_4_raum.wav` (Raum getrennt, damit er ihn weglassen kann), dazu eine `.txt` mit meinem Vorschlag für Lautstärke und Reihenfolge der Spuren, damit er nicht bei null beginnt. Zurück bekomme ich seine fertige WAV und die Einstellungen (Screenshot oder Liste), die ich als Regeln festhalte. Das passt auch zu „der Mensch urteilt am liebsten im Spiel“: Die Ergebnisse würden direkt ins Spiel kommen.
+Das halte ich für den wirksameren Weg, wenn er Zeit hat: Er hört, ich messe nur. Rohmaterial für das Stimmungsstück (und später je Geräusch): die **MIDI-Datei** der Skizze plus **3 bis 5 Spuren als einzelne WAV-Dateien**, 44 100 Hz, 24 Bit, mono, alle gleich lang, alle bei Sample 0 beginnend (damit sie ohne Schieben übereinanderliegen), Pegel einzeln auf −6 dBFS normalisiert, Beschriftung `<stueck>_<nr>_<rolle>.wav`, z. B. `skizze-a_1_pedal-orgel.wav`, `_2_streicher.wav`, `_3_hall-bus.wav` (Raum getrennt, damit er ihn weglassen kann), dazu eine `.txt` mit meinem Vorschlag für Lautstärke und Reihenfolge der Spuren, damit er nicht bei null beginnt. Zurück bekomme ich seine fertige WAV und die Einstellungen (Screenshot oder Liste), die ich als Regeln festhalte. Das passt auch zu „der Mensch urteilt am liebsten im Spiel“: Die Ergebnisse würden direkt ins Spiel kommen.
