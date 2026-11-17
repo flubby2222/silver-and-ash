@@ -101,6 +101,17 @@ public sealed class SurfaceVariants
         return new SurfaceVariants(looks, roomOfCell);
     }
 
+    /// <summary>
+    /// Chosen looks instead of rolled ones (the showroom, issue #283): cell (x, z) shows <paramref name="looks"/>[n] if
+    /// <paramref name="lookOfCell"/> gives it n, otherwise variant A.
+    /// </summary>
+    public static SurfaceVariants Of(IReadOnlyList<RoomLook> looks, IReadOnlyDictionary<(int X, int Z), int> lookOfCell)
+    {
+        ArgumentNullException.ThrowIfNull(looks);
+        ArgumentNullException.ThrowIfNull(lookOfCell);
+        return new SurfaceVariants(looks.ToList(), new Dictionary<(int X, int Z), int>(lookOfCell));
+    }
+
     /// <summary>True for the kinds of room whose floor may be cobbles (floor variant C).</summary>
     public static bool AllowsCobbles(RoomKind kind) => kind is RoomKind.Start or RoomKind.Treasure or RoomKind.Secret;
 
