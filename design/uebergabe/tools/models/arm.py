@@ -404,3 +404,114 @@ def build_design(part, weapon):
                 (0.18, -0.11, -0.12), (0.30, -0.17, -0.16)]
         r = [0.040, 0.031, 0.029, 0.031, 0.036, 0.040, 0.046]
         build_sleeve5(part, -1, path, r, frill=(DESIGN == "c"))
+
+
+
+# =====================================================================================================================
+# Fassung k (Issue #265): zweiteiliger Aermel. arm_cuff (Manschette mit Rueschensaum und kurzem Aermelstueck, starr an der
+# Waffe) und arm_forearm (gerades, leicht konisches Rohr, Drehpunkt am hinteren Ende der Manschette). Der Code dreht
+# arm_forearm so, dass seine Laengsachse in jeder Phase vom Drehpunkt zum Schulterpunkt zeigt (siehe design/uebergabe/README.md).
+# =====================================================================================================================
+import json  # noqa: E402
+import simulation as _sim  # noqa: E402
+from psx import Part  # noqa: E402
+
+SCALE_K = 1.8                                       # eingebackene Skalierung der Ich-Sicht
+K_LENGTH = 0.72                                     # Laenge des Unterarms (ungeskaliert, Meter): 1,3 m nach der Skalierung
+
+
+def _k_cuff_path(weapon):
+    """Die ersten vier Ringe des Pfads aus Fassung j (Mund bis Ring 3), rechte Seite; die Pistole 2,6 cm tiefer."""
+    path = [(0, 0, -0.003), (0, 0, -0.016), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07)]
+    if weapon == "pistol":
+        path = [(x, y - 0.026, z) for x, y, z in path]
+    return path
+
+
+def k_parameters(weapon):
+    """Drehpunkt (Dateikoordinaten, skaliert), Ruheachse und Schulterpunkt fuer die Uebergabe."""
+    s = +1 if weapon == "pistol" else -1
+    x, y, z = _k_cuff_path(weapon)[3]
+    pivot_game = (-s * x, y, z)                                                    # Spiel-Achsen, ungeskaliert
+    pivot_file = tuple(c * SCALE_K for c in pivot_game)
+    axis = _sim.rest_axis(weapon, pivot_file)
+    return {"pivot_game": pivot_game, "pivot_file": pivot_file, "rest_axis": axis, "shoulder": _sim.SHOULDER[weapon],
+            "length": K_LENGTH * SCALE_K}
+
+
+def _patch_uv(part, name, fn):
+    """Wendet fn(face_loops, v_fraction) auf alle Flaechen des Teils an; v_fraction: v relativ zum Feld."""
+    v0, v1 = part.rects[name][1], part.rects[name][3]
+    for face in part.bm.faces:
+        fn(face, v0, v1)
+
+
+DARK_V = 0.007                                      # Streifen am Ellbogenende des Feldes: sehr dunkles Blau (siehe paint_c_sleeve)
+
+
+def build_cuff_k(weapon, UV):
+    s = +1 if weapon == "pistol" else -1
+    path = _k_cuff_path(weapon)
+    m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
+    radii = [0.040, 0.031, 0.029, 0.031]
+    part = Part("arm_cuff", (0, 0, 0), UV, parent="stock" if weapon == "pistol" else "sword")
+    pts = [m(p) for p in path][::-1]
+    rad = [(r,) * 3 for r in radii][::-1]
+    n = len(pts)
+    mods = lambda i, k: (1.0 if k % 2 == 0 else 0.8) if i >= n - 3 else 1.0          # noqa: E731
+    part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0), mods=mods), "sleeve", cap_start=True, cap_end=True)
+    # UV wie bei Fassung j (sieben Ringe): Mund v = 1, Ring 3 liegt bei 0,5; die Kappen (Dreiecke) bekommen den dunklen Streifen.
+    u0, u1 = part.rects["sleeve"][0], part.rects["sleeve"][2]
+
+    def fn(face, v0, v1):
+        for loop in face.loops:
+            uv = loop[part.uv].uv
+            fr = (uv[1] - v0) / (v1 - v0)
+            if len(face.loops) == 3:
+                uv[0], uv[1] = (u0 + u1) / 2, v0 + (v1 - v0) * DARK_V
+            else:
+                uv[1] = v0 + (v1 - v0) * (0.5 + 0.5 * fr)
+    _patch_uv(part, "sleeve", fn)
+    return part
+
+
+def build_forearm_k(weapon, UV):
+    par = k_parameters(weapon)
+    px, py, pz = par["pivot_game"]
+    pivot = V(px, py, pz)
+    a = V(*par["rest_axis"])
+    part = Part("arm_forearm", tuple(pivot), UV, parent="stock" if weapon == "pistol" else "sword")
+    ts = [-0.018, 0.0, 0.30, K_LENGTH]
+    centres = [pivot + a * t for t in ts]
+    radii = [0.027, 0.030, 0.040, 0.052]
+    part.loft(tube(centres, [(r,) * 3 for r in radii], 12, ref_up=V(1, 0, 0)), "sleeve", cap_start=True, cap_end=True)
+    u0, u1 = part.rects["sleeve"][0], part.rects["sleeve"][2]
+
+    def fn(face, v0, v1):
+        for loop in face.loops:
+            uv = loop[part.uv].uv
+            fr = (uv[1] - v0) / (v1 - v0)
+            if len(face.loops) == 3:
+                uv[0], uv[1] = (u0 + u1) / 2, v0 + (v1 - v0) * DARK_V
+            else:
+                uv[1] = v0 + (v1 - v0) * (0.5 - 0.48 * fr)                          # Tuch, von Ring 3 (0,5) zum Ende (0,02)
+    _patch_uv(part, "sleeve", fn)
+    return part
+
+
+def build_hand_parts(weapon, UV):
+    return [build_cuff_k(weapon, UV), build_forearm_k(weapon, UV)]
+
+
+# Beim Malen: das Ende des Feldes (V' > 0,985) ist die dunkle Kappe.
+_paint_c_old = paint_c_sleeve
+
+
+def paint_c_sleeve(U, V_):                                                           # noqa: F811
+    col = _paint_c_old(U, V_)
+    dark = (1 - V_) > 0.985
+    return mix(col, np.array((20.0, 24, 42)), dark.astype(float))
+
+
+def design_painters(design):                                                         # noqa: F811
+    return {"sleeve": paint_c_sleeve, "glove": paint_c_sleeve, "cuff": paint_c_sleeve}

@@ -239,10 +239,8 @@ def build_cock():
     return part
 
 
-def build_hand():
-    part = Part("arm", (0, 0, 0), UV, parent="stock")
-    _arm.build_design(part, "pistol")
-    return part
+def build_hand_parts():
+    return _arm.build_hand_parts("pistol", UV)
 
 
 def build_flash():
@@ -265,13 +263,13 @@ def main():
     model = [build_stock().build(coll, mat, smooth=True), build_barrel().build(coll, mat, smooth=False),
              build_fittings().build(coll, mat, smooth=False), build_cock().build(coll, mat, smooth=False)]
     flash = build_flash().build(coll, mat, smooth=False)
-    hand = build_hand().build(coll, mat, smooth=True)
+    hands = [part.build(coll, mat, smooth=True) for part in build_hand_parts()]
     # In echter Groesse: die Skalierung der Ich-Sicht ist eingebacken (1 Einheit = 1 m).
-    pose(model + [flash, hand], {}, root=Matrix.Scale(SCALE, 4))
-    bake_scale(model + [flash, hand])
+    pose(model + [flash] + hands, {}, root=Matrix.Scale(SCALE, 4))
+    bake_scale(model + [flash] + hands)
     export_glb(model + [flash], os.path.join(OUT_DIR, "pistol.glb"))
-    export_glb([hand], os.path.join(OUT_DIR, "pistol_hand.glb"))
-    report_parts("pistol", model + [flash, hand])
+    export_glb(hands, os.path.join(OUT_DIR, "pistol_hand.glb"))
+    report_parts("pistol", model + [flash] + hands)
 
 
 main()

@@ -113,10 +113,8 @@ def build_sword():
     return part
 
 
-def build_hand():
-    part = Part("arm", (0, 0, 0), UV, parent="sword")
-    _arm.build_design(part, "blade")
-    return part
+def build_hand_parts():
+    return _arm.build_hand_parts("blade", UV)
 
 
 def hand_matrix(t=0.0, wind=0.0):
@@ -138,12 +136,12 @@ def main():
     bpy.context.scene.collection.children.link(coll)
     mat = export_material("blade", image)
     sword = build_sword().build(coll, mat, smooth=False)
-    hand = build_hand().build(coll, mat, smooth=True)
-    pose([sword, hand], {}, root=Matrix.Scale(SCALE, 4))
-    bake_scale([sword, hand])
+    hands = [part.build(coll, mat, smooth=True) for part in build_hand_parts()]
+    pose([sword] + hands, {}, root=Matrix.Scale(SCALE, 4))
+    bake_scale([sword] + hands)
     export_glb([sword], os.path.join(OUT_DIR, "blade.glb"))
-    export_glb([hand], os.path.join(OUT_DIR, "blade_hand.glb"))
-    report_parts("blade", [sword, hand])
+    export_glb(hands, os.path.join(OUT_DIR, "blade_hand.glb"))
+    report_parts("blade", [sword] + hands)
 
 
 main()

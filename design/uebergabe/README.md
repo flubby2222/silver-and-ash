@@ -248,16 +248,40 @@ Erst schwenken, dann heben: `Drehung = Schwenken × Heben`.
 3. Shader mit Textur, Normale und Licht je Ecke; Point-Filter ohne Mipmaps.
 4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind seit Probestück 14 (Issue #265, Fassung j) **ein dunkelblauer Mantelärmel mit heller Rüschenmanschette, ohne Hand, Finger oder Handschuh** (Entscheidung des Menschen: „Keine Hände“, Entwurf C aus Probestück 13). Der Pistolenärmel ist derselbe Ärmel, gespiegelt. Sie hängen starr an der Waffe; Dateinamen, Knoten und Drehpunkte sind gleich geblieben.
 
-### Was sich gegenüber den Dateien im Spiel ändert (Probestück 14, Fassung j, Issue #265)
+### Was sich gegenüber den Dateien im Spiel ändert (Probestück 14, Fassung k, Issue #265): zweiteiliger Ärmel
 
-Vier Dateien tauschen (`pistol.glb`, `pistol_hand.glb`, `blade.glb`, `blade_hand.glb`) und die zwei Atlanten `pistol.png`, `blade.png`, danach `python tools/models/checksums.py`. **Keine neuen PNGs, kein eigener Arm-Atlas:** Der Ärmel liegt wie in Entwurf C im Feld `sleeve` des Waffen-Atlasses (128 × 128, 32 Farben); so bleibt das Aussehen von C erhalten. (`pistol_hand.png` und `blade_hand.png` aus den Fassungen f bis h entfallen.)
-- **Namen, Knoten, Drehpunkte, Eltern:** unverändert; `arm` ist ein Teil mit einem Mesh.
-- **Haltungswerte: unverändert gegenüber `main`.** Es ist keine Änderung an `WeaponPose.cs` nötig; mit den neuen Dateien laufen die 15 Tests in `WeaponPoseTests` grün (lokal geprüft).
-- **Geometrie:** Der Klingenärmel ist der aus Entwurf C (Rohr aus 12 Seiten, kurze Rüschenmanschette mit drei zackigen Ringen an der Parierstange). **Neu in Fassung j:** Die ersten vier Ringe (Manschette und das im Bild liegende Rohrstück) sind unverändert; **ab dem fünften Ring hängt das Rohr nach unten** (Dateirichtung (−0,71; −0,71; 0), das ist bei 45° Rollen genau senkrecht nach unten) und endet weit unten (letzter Ring bei (−0,87; −0,985; −0,12), 8 Ringe). Grund: Beim Schlag dreht die Waffe um die Hochachse (95°); ein Rohr, das in Ruhe nach links hinten zeigt, zeigte dabei nach vorn ins Bild, und sein Ende wurde sichtbar (Fassung i: blauer „Hut“ mit Ende oben links). Die Drehung um die Hochachse verschwenkt nur waagerechte Anteile; ein nach unten hängendes Rohr bleibt unten. Ursache und Beleg: `design/proben/grafik/aermel8/blatt_phasen_i.png` (vorher) und `design/proben/grafik/aermel9/blatt_phasen_j.png` (nachher), Rechnung `aermel9/simulation.py`. Der Pistolenärmel ist weiter derselbe Ärmel gespiegelt (Rohr wie in Fassung i), 2,6 cm nach unten verschoben; die Pistole schwenkt nicht. Je 192 Dreiecke.
-- **Textur:** wie C; eine schmale dunkle Naht hinter der Rüsche; **die Knöpfe entfallen** (im Bild nicht zu erkennen); die Rüsche der Pistole ist im Atlas der Pistole um 14 % dunkler (gebrochenes Weiß wie links).
+Vier Dateien tauschen (`pistol.glb`, `pistol_hand.glb`, `blade.glb`, `blade_hand.glb`) und die Atlanten `pistol.png`, `blade.png`, danach `python tools/models/checksums.py`. Der Ärmel liegt im Feld `sleeve` des Waffen-Atlasses; keine neuen PNGs. **Diese Fassung braucht eine kleine Code-Änderung** (unten), weil ein starres Rohr beim Schlag nicht passt (Fassung j: beim vollen Schlag schwebte links eine Manschette ohne Arm).
+
+**Die zwei Knoten je Hand-Datei** (Namen genau so; Reihenfolge in der Datei alphabetisch: zuerst `arm_cuff`, dann `arm_forearm`):
+
+| Knoten | Drehpunkt (Dateikoordinaten, Meter, Skalierung 1,8 eingebacken) | Inhalt |
+|---|---|---|
+| `arm_cuff` | (0, 0, 0) | Manschette mit zwei Lagen Rüsche (Mund mit **dunkler Kappe** statt der weißen Scheibe) und das kurze Ärmelstück dahinter, bis zum hinteren Ende der Manschette; starr an der Waffe wie früher `arm`; Aussehen in Ruhe wie in Fassung j |
+| `arm_forearm` | **Klinge** (0,063, −0,036, −0,126), **Pistole** (−0,063, −0,0828, −0,126) = hinteres Ende der Manschette | gerades, leicht konisches Rohr (Radius 3,0 cm → 5,2 cm), Faltenbahnen wie bisher; beginnt mit einer Kuppel 1,8 cm vor dem Drehpunkt **im Inneren der Manschette** (kein Spalt, keine Innenseite bei jeder Richtung); Länge 1,3 m (nach Skalierung), am Ende ein dunkler Deckel |
+
+`WeaponPose.HandParts` wird `[new("arm_cuff", null), new("arm_forearm", null)]` (beide hängen wie bisher `arm` am Waffen-Rahmen `grip`). Die Datei ist so gebaut, dass `arm_forearm` in Ruhe **ohne Drehung** (Einheitsmatrix) richtig sitzt.
+
+**Längsachse von `arm_forearm` in Ruhe** (Dateikoordinaten, Einheitsvektor, vom Drehpunkt zum Schulterpunkt):
+- Klinge: **(0,031, −0,911, −0,411)**
+- Pistole: **(−0,138, −0,898, −0,417)**
+
+**Schulterpunkte im Kameraraum** (x rechts, y oben, z vorn, Meter; fest, unter und seitlich hinter der Kamera): Klinge **(−0,40, −0,65, −0,20)**, Pistole **(+0,40, −0,65, −0,20)** (gegenüber dem ersten Vorschlag (∓0,45; −0,40; −0,25) tiefer, damit Ruhe wie in Fassung j aussieht).
+
+**Regel** („die Längsachse zeigt vom Drehpunkt zum Schulterpunkt“), in jedem Bild, für beide Waffen:
+1. `M` = die Waffen-Matrix **ohne** Bob, Schwanken und Verkleinerung: `WeaponPose.Blade(t, windUp, tremble)` beziehungsweise `WeaponPose.Pistol(kick)` (Datei → Kameraraum, Zeilenvektoren).
+2. `schulterDatei = Vector3.Transform(schulterKamera, Invert(M))`.
+3. `d = Vector3.Normalize(schulterDatei - drehpunktDatei)`.
+4. `turn` = die kürzeste Drehung um den Drehpunkt, die die Ruheachse `a` auf `d` bringt: `axis = Cross(a, d)`; ist `axis` fast null, `turn = Identity`; sonst `winkel = acos(Clamp(Dot(a, d), −1, 1))` und `turn` die der beiden Matrizen `CreateFromAxisAngle(Normalize(axis), ±winkel)`, bei der `Vector3.TransformNormal(a, turn)` besser zu `d` passt (so stimmt die Drehrichtung unabhängig von der Konvention).
+5. Mit `Rig.Pose`: `turns[arm_cuff] = Identity`, `turns[arm_forearm] = turn`; beide Teile zeichnen (`DrawPart(0, …)`, `DrawPart(1, …)`).
+
+**Prüfung der Code-Sitzung:** (a) In Ruhe ist `turn` etwa die Einheitsmatrix und das Bild gleicht Fassung j (`design/proben/grafik/aermel10/blatt_j_k.png`). (b) Schwung 0,5 / 0,75 / 1 und Ausholen 0 / 0,5 / 1: Der Unterarm kommt von unten links (Pistole: rechts) ins Bild, läuft nie durch die Bildmitte und endet außerhalb (Rechnung in `tools/models/simulation.py`, Funktion `check`: in allen sieben Phasen und im Rückstoß liegt das Ende bei z ≈ −0,5 m, also hinter der Kamera). (c) Die drei Tests in `WeaponPoseTests` (Anschnitt, Reichweite, Drehung) auf die Teile `arm_cuff` und `arm_forearm` anpassen; mit den neuen Dateien und dem alten Code laufen sie grün (die Dateien werden als zwei Meshes gelesen); bewegt wird der Unterarm erst nach der Änderung.
+
+**Lokal im Spiel geprüft** (nicht committet): `design/proben/grafik/aermel10/phasen_k.py` setzt genau diese Regel lokal in `WeaponViews` ein (`DrawArm2`, der C#-Text steht in dieser Datei als Vorlage) und fotografiert alle Phasen: `design/proben/grafik/aermel10/phasen_k/blatt_phasen_k.png`.
+- **Haltungswerte:** unverändert gegenüber `main`.
+- **Textur:** wie Fassung j; neu die dunkle Kappe (Streifen am Ende des Feldes); keine Knöpfe.
 - **Prüfsummen** ändern sich; `assets/HERKUNFT.md`: gleiche Skripte, neues Datum.
-- **Skripte:** `tools/models/arm.py` (Entwurf C am Anfang des Bereichs „Ärmel 2“, `build_design` mit `DESIGN == "c"`; die anderen Entwürfe stehen weiter darin, die Voreinstellung ist C), `pistol.py`, `blade.py`.
-- **Was noch nicht stimmt** (siehe `design/proben/grafik/aermel9/notizen.md`): Das Rohr ist starr mit der Waffe; beim vollen Schlag zeigt es aus der Hand nach links und dann nach unten, ein Arm von der Schulter her wäre das nicht ganz. Die saubere Lösung wäre ein zweiter Knoten (Unterarm) mit Drehpunkt am Handgelenk, den der Code zur Schulter ausrichtet; das ist eine Änderung für die Code-Sitzung (siehe Notiz).
+- **Skripte:** `tools/models/arm.py` (Fassung k am Ende: `build_cuff_k`, `build_forearm_k`, `k_parameters`), `simulation.py` (neu: die Matrizen von Klinge und Pistole in Python, `rest_axis`, `check`), `pistol.py`, `blade.py`.
+- **Was noch nicht stimmt:** siehe `design/proben/grafik/aermel10/notizen.md`.
 
 ### Frühere Änderungen (Probestück 11, Issues #256 und #257): Hahn und handlose Ärmel; die Ärmel sind durch Probestück 14 ersetzt, der Hahn gilt weiter
 
