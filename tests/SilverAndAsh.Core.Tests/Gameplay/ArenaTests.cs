@@ -173,6 +173,20 @@ public class ArenaTests
     }
 
     [Fact]
+    public void A_sleeping_bat_does_not_flap_until_the_room_is_entered()
+    {
+        // Issue #297: the wing beats are for the sound - a sleeping bat makes none.
+        var world = World(mapText: BatMap);
+
+        var events = Run(world, PlayerInput.None, 300);
+        Assert.DoesNotContain(events, e => e is BatFlapped);
+
+        events = Enter(world);
+        events.AddRange(Run(world, PlayerInput.None, 60));
+        Assert.Contains(events, e => e is BatFlapped);
+    }
+
+    [Fact]
     public void While_one_of_two_enemies_lives_the_room_stays_sealed()
     {
         var world = World(mapText: TwoGhoulsMap);

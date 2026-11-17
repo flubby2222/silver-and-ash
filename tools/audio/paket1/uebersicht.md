@@ -42,6 +42,15 @@ Alle 36 Dateien aus der neuen Palette ([palette-neu.md](../soundcraft-versuch/pa
 | `p1-schuss-geweiht-1.wav` | schlag | C3 (-12) | 0.60 s | -1.5 | -20.4 | schuss |
 | `p1-schuss-geweiht-2.wav` | schlag | H2 (-13) | 0.60 s | -1.5 | -19.7 | schuss |
 | `p1-weihe-ende.wav` | glocke | E3 (+0) | 0.70 s | -10.0 | -31.2 | marke |
+| `p1-fledermaus-flattern-1.wav` | hauch | Fis4 (+6) | 0.22 s | -11.0 | -31.0 | bewegung |
+| `p1-fledermaus-flattern-2.wav` | hauch | F4 (+5) | 0.22 s | -11.0 | -31.1 | bewegung |
+| `p1-fledermaus-spuck-ankuendigung.wav` | glocke | H4 (+19) | 0.70 s | -1.5 | -23.5 | ankuendigung |
+| `p1-fledermaus-spucken.wav` | hauch | E5 (+16) | 0.30 s | -9.0 | -28.9 | schwung |
+| `p1-fledermaus-kreischen.wav` | pfeife | E4 (+12) | 0.55 s | -1.5 | -8.3 | ankuendigung |
+| `p1-fledermaus-biss.wav` | schlag | Gis4 (+8) | 0.25 s | -4.5 | -28.4 | treffer |
+| `p1-fledermaus-fehlsturz.wav` | hauch | B3 (-2) | 0.45 s | -11.0 | -28.0 | bewegung |
+| `p1-fledermaus-treffer.wav` | schlag | B4 (+10) | 0.30 s | -4.5 | -28.9 | treffer |
+| `p1-fledermaus-sterben.wav` | pfeife | D4 (+10) | 0.70 s | -6.0 | -15.9 | ghul |
 
 „gespielt“: Ton und Halbtöne gegen die Aufnahme des Samples (Schlag und Hauch sind bei C4 aufgenommen und tonlos; Pfeife, Glocke und Stimme bei E3). Tonale Geräusche (Aufheben) liegen auf Tönen von e-Moll.
 
@@ -76,3 +85,4 @@ Reihenfolge von laut nach leise: Ankündigung, Schuss, Schmerz, Ghul, Treffer, N
 5. **Aufheben je Verbrauchsgut:** Unterscheidung nur durch Zahl, Richtung und Lage der Töne (Silber ein Ton E4; Phiole zwei aufsteigend G3→H3; Weihmunition E4 und H3 **zugleich** als ein längerer Klang, 1,4 s; Schlüssel drei E3→H3→E4; Ausrüstung ein tiefer langer Ton E2). Ob man Phiole (Folge) und Weihmunition (Zusammenklang) mit Hören auseinanderhält, ist ungeprüft; ob sie bei vielen Pickups hintereinander nerven, auch.
 7. **Vorschlag geweihte Munition (nicht bestellt, getrennt zu bewerten):** `p1-schuss-geweiht-1`, `-2` sind der Rauschschlag des Schusses mit einem kurzen Glockenton (E4) als zweiter Spur (zwei Schichten, eine Geste); `p1-weihe-ende` ist ein leiser tiefer Glockenton (E3) als Marke fürs Ende der Wirkung – seit #291 löst ihn das Core-Ereignis `ConsecrationEnded` aus. Da geweihte Munition die Feuerrate verdoppelt, überlappen die Schüsse bei Dauerfeuer; ob der Glockenanteil dann klingelt oder nervt, ist offen.
 6. **Fehlende Ereignisse im Spiel:** Seit #291 haben Ghul entdecken, Sprung, Dash (auch Ausweichen), Landung (ab 0,6 m Fallhöhe), Ende der Weihe und Menü-Klick ihr Ereignis. Nur das Aufheben von Ausrüstung bleibt ohne Ereignis, bis es Ausrüstung im Spiel gibt (#194).
+8. **Fledermaus (Issue #297):** Alles aus den vorhandenen Quellen, nicht schrill: Ankündigung des Spuckens ist ein einzelner Glockenton H4 (0,7 s), das Kreischen vor dem Sturz ein Pfeifton E4 mit fallender Tonfahrt (0,55 s, Spitze −1,5, Mittel −8,3 dBFS: **der lauteste Mittelwert des Pakets**), das Flattern zwei kurze Hauchschläge. Unterscheidung vom Ghul: andere Quelle (Glocke und Pfeife statt Stimme) und höhere Lage. Ob die Glocke H4 mit den Aufheb-Glocken verwechselt wird (gleiche Quelle und Lage wie `p1-aufheben-silber`, E4), ist offen. Seit #297 hat das Flattern sein Ereignis `BatFlapped` (alle 0,4 s je wache Fledermaus); das Spiel spielt es nur bis 8 m Abstand und höchstens alle 0,25 s.

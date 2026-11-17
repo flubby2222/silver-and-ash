@@ -942,7 +942,8 @@ static void RunGame(
                 slotChosen = null;
                 wheelSteps = 0;
                 ReadEvents();
-                sounds.Play(soundCues.For(gameWorld.Events, soundPacks.Current));
+                // Heard at this player's eyes: far-off wing beats stay silent (issue #297, no spatial sound yet).
+                sounds.Play(soundCues.For(gameWorld.Events, soundPacks.Current, player.EyePosition));
             }
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
