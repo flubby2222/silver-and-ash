@@ -1,0 +1,10 @@
+# schuss - SoundCraft-Skript (soundcraft-cli script). Erzeugt von bauen.py, nicht von Hand aendern.
+session.new {"name":"schuss","sample_rate":44100,"bit_depth":16}
+event.tempo {"bpm":120}
+track.new {"kind":"instrument","format":"stereo","name":"Schuss","instrument":"drum_synth"}
+mix.instrument {"track":"Schuss","plugin":"drum_synth","params":{"level":-3.0,"snare_tune":-9.0,"snare_snappy":100.0,"snare_decay":90.0}}
+mix.insert {"track":"Schuss","slot":0,"plugin":"saturator","params":{"drive":14.0,"tone":5000.0,"mix":100.0,"output":-6.0}}
+mix.insert {"track":"Schuss","slot":1,"plugin":"room_reverb","params":{"mix":22,"pre_delay":4,"decay":0.5,"size":25,"damping":4500,"diffusion":70,"low_cut":150}}
+midi.new_clip {"track":"Schuss","start":0,"end":44100}
+midi.note_add {"clip":2,"pitch":38,"start_ticks":0,"length_ticks":120,"velocity":127}
+file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/schuss.wav","format":"wav","bit_depth":16,"start":0,"end":35280,"dither":false}

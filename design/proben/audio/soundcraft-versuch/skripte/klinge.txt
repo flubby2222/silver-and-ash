@@ -1,0 +1,10 @@
+# klinge - SoundCraft-Skript (soundcraft-cli script). Erzeugt von bauen.py, nicht von Hand aendern.
+session.new {"name":"klinge","sample_rate":44100,"bit_depth":16}
+event.tempo {"bpm":120}
+track.new {"kind":"instrument","format":"stereo","name":"Klinge","instrument":"drum_synth"}
+mix.instrument {"track":"Klinge","plugin":"drum_synth","params":{"level":6.0,"open_hat_decay":100.0}}
+mix.insert {"track":"Klinge","slot":0,"plugin":"eq_1band","params":{"type":4,"freq":5500.0,"q":0.7}}
+mix.insert {"track":"Klinge","slot":1,"plugin":"room_reverb","params":{"mix":22,"pre_delay":4,"decay":0.5,"size":25,"damping":4500,"diffusion":70,"low_cut":150}}
+midi.new_clip {"track":"Klinge","start":0,"end":44100}
+midi.note_add {"clip":2,"pitch":46,"start_ticks":0,"length_ticks":120,"velocity":127}
+file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/klinge.wav","format":"wav","bit_depth":16,"start":0,"end":35280,"dither":false}
