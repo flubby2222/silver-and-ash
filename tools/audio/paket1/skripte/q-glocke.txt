@@ -6,4 +6,4 @@ mix.instrument {"track":"Q","plugin":"subtractive_synth","params":{"osc1_wave":3
 mix.insert {"track":"Q","slot":0,"plugin":"ring_mod","params":{"effect":0,"frequency":395.0,"resonance":50.0,"mod_depth":0.0,"mix":60.0}}
 midi.new_clip {"track":"Q","start":0,"end":273420}
 midi.note_add {"clip":2,"pitch":52,"start_ticks":0,"length_ticks":11520,"velocity":100}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/q-glocke.wav","format":"wav","bit_depth":16,"start":0,"end":273420,"dither":false}
+file.bounce_mix {"path":"{TMP}/q-glocke.wav","format":"wav","bit_depth":16,"start":0,"end":273420,"dither":false}
