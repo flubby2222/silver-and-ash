@@ -103,6 +103,9 @@ public sealed record Balance
     /// <summary>Chests: where they stand, which tier, how often locked, what is inside.</summary>
     public ChestsBalance Chests { get; init; } = new();
 
+    /// <summary>Doors: how long they take to swing open.</summary>
+    public DoorsBalance Doors { get; init; } = new();
+
     /// <summary>The blood vial: a consumable that heals.</summary>
     public BloodVialBalance BloodVial { get; init; } = new();
 
@@ -366,6 +369,32 @@ public sealed record DifficultyBalance
 
     /// <summary>Least distance (metres) between two enemies of a room.</summary>
     public float Spacing { get; init; } = 2.5f;
+}
+
+/// <summary>
+/// Doors (issue #245): seconds a door takes to swing fully open. Only the picture moves - the passage is free the moment
+/// the door is opened. A cracked wall has no time: it breaks at once.
+/// </summary>
+public sealed record DoorsBalance
+{
+    /// <summary>Wooden double door.</summary>
+    public float NormalOpenTime { get; init; } = 0.9f;
+
+    /// <summary>Locked door (one heavy leaf).</summary>
+    public float LockedOpenTime { get; init; } = 1.3f;
+
+    /// <summary>Boss door (two heavy iron leaves).</summary>
+    public float BossOpenTime { get; init; } = 2.2f;
+
+    /// <summary>The time for <paramref name="kind"/>; 0 for a cracked wall.</summary>
+    public float OpenTime(World.DoorKind kind) => kind switch
+    {
+        World.DoorKind.Normal => NormalOpenTime,
+        World.DoorKind.Locked => LockedOpenTime,
+        World.DoorKind.Boss => BossOpenTime,
+        World.DoorKind.Cracked => 0f,
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+    };
 }
 
 /// <summary>Balancing values of the blood vial.</summary>

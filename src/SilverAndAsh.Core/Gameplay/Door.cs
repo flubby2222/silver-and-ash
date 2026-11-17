@@ -10,7 +10,10 @@ namespace SilverAndAsh.Core.Gameplay;
 /// </summary>
 public sealed class Door : IInteractable
 {
-    internal Door(int id, LevelDoor plan, Level level)
+    private readonly int _openingTicks;
+    private int _openedTicks;
+
+    internal Door(int id, LevelDoor plan, Level level, DoorsBalance? balance = null)
     {
         var cell = level[plan.X, plan.Z];
         if (cell.IsSolid)
@@ -27,6 +30,7 @@ public sealed class Door : IInteractable
         RoomB = plan.RoomB;
         BoxMin = new Vector3(plan.X * Level.CellSize, cell.FloorHeight, plan.Z * Level.CellSize);
         BoxMax = new Vector3((plan.X + 1) * Level.CellSize, cell.CeilingHeight, (plan.Z + 1) * Level.CellSize);
+        _openingTicks = SimulationClock.SecondsToTicks((balance ?? new DoorsBalance()).OpenTime(plan.Kind));
     }
 
     /// <summary>Number of the door in its world (position in <see cref="GameWorld.Doors"/>).</summary>
@@ -50,6 +54,20 @@ public sealed class Door : IInteractable
     public RoomSide Side { get; }
 
     public bool IsOpen { get; private set; }
+
+    /// <summary>
+    /// How far the leaves have swung (issue #245): 0 = closed, 1 = fully open. It grows by one tick at a time once the
+    /// door is open, over the time of its kind (<see cref="DoorsBalance"/>); a broken cracked wall is at 1 at once.
+    /// Only the picture follows it - the way through is free from the tick the door opens (<see cref="Blocks"/>).
+    /// </summary>
+    public float OpenFraction => !IsOpen ? 0f : _openingTicks == 0 ? 1f : (float)_openedTicks / _openingTicks;
+
+    /// <summary>
+    /// True if the player who opened the door stood on the lower side of it along the passage (smaller Z for a door
+    /// whose passage runs North/South, smaller X for East/West): the leaves swing away from them, towards the higher
+    /// side. False before the door is opened, and if it was opened from the higher side.
+    /// </summary>
+    public bool OpenedFromLowSide { get; private set; }
 
     /// <summary>True while the grate of an arena is down: the door blocks, open or not, and F does nothing.</summary>
     public bool IsBarred { get; private set; }
@@ -79,10 +97,29 @@ public sealed class Door : IInteractable
 
     public Vector3 BoxMax { get; }
 
-    internal void Open() => IsOpen = true;
+    /// <summary>Opens the door for a player standing at <paramref name="from"/>: the leaves will swing away from there.</summary>
+    internal void Open(Vector3 from)
+    {
+        IsOpen = true;
+        var middle = (BoxMin + BoxMax) / 2f;
+        OpenedFromLowSide = Side is RoomSide.North or RoomSide.South ? from.Z < middle.Z : from.X < middle.X;
+    }
 
-    /// <summary>A cracked wall breaks open (see <see cref="DoorKind.Cracked"/>).</summary>
-    internal void Break() => IsOpen = true;
+    /// <summary>A cracked wall breaks open (see <see cref="DoorKind.Cracked"/>) - nothing swings, it is gone at once.</summary>
+    internal void Break()
+    {
+        IsOpen = true;
+        _openedTicks = _openingTicks;
+    }
+
+    /// <summary>One tick of swinging open (nothing while closed or once fully open).</summary>
+    internal void Tick()
+    {
+        if (IsOpen && _openedTicks < _openingTicks)
+        {
+            _openedTicks++;
+        }
+    }
 
     /// <summary>An arena's grate falls - never at an unbroken cracked wall, which would give the secret away.</summary>
     internal void Bar() => IsBarred = Kind != DoorKind.Cracked || IsOpen;
