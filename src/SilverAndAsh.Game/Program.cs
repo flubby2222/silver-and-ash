@@ -385,6 +385,9 @@ static void RunGame(
             gormView = newGormView();
         }
 
+        // The shock wave of Gorm's hammer as breaking stone (issue #299); without its model the plain ring.
+        using var shockwaveView = ShockwaveView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // One door model per kind (issue #245); a kind without one keeps the placeholder boxes.
         using var doorView = DoorView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
@@ -494,6 +497,7 @@ static void RunGame(
             {
                 gormView.Draw(gorm, frameSeconds);
                 gormView.DrawEffects(gorm);
+                shockwaveView.Draw(gorm);
             }
 
             foreach (var bat in gameWorld.Bats)

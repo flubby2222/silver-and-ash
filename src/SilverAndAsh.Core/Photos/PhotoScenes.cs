@@ -123,6 +123,11 @@ public static class PhotoScenes
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Hammer, StateProgress: >= 0.8f },
             }),
+        new("gorm-shockwave", "Gorm's shock wave half way out (6 m), seen from 14 m, just outside its reach; for --bench with the wave in view (issue #299).",
+            studio => MotionScenes.Find("gorm-slam-far")!.Build(studio) with
+            {
+                StopWhen = world => world.Gorm?.Shockwave is { Radius: >= 6f },
+            }),
         new("gorm-phase2", "Gorm in phase 2 (half his health gone, red marks), 10 m away in his boss room, at the end of his roar (issue #249).",
             studio => new PhotoSetup(HalfHealth(studio.BeforeGorm(10f)))
             {

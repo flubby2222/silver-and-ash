@@ -85,8 +85,9 @@ public sealed class PhotoStudio
     /// A bare hall (hand-made, so its enemies are awake) with one figure - 'G' ghoul, 'B' bat, 'T' Gorm, 'D' dummy -
     /// <paramref name="metres"/> in front of the player (a multiple of 2, the cell size), looking at it. The ceiling
     /// lies at <paramref name="ceiling"/> (default: as high as a corridor; Gorm's boss room: <see cref="RoomTemplate.RoomCeilingHeight"/>).
+    /// The floor shows texture <paramref name="floor"/> (default A, like every hand-made level); walls and ceiling stay A.
     /// </summary>
-    public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight)
+    public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight, TextureVariant floor = TextureVariant.A)
     {
         if (metres <= 0 || metres % (int)Level.CellSize != 0)
         {
@@ -123,7 +124,12 @@ public sealed class PhotoStudio
                 select (x, z, level[x, z] with { CeilingHeight = ceiling }));
         }
 
-        var world = new GameWorld(level, Seed, Balance);
+        var world = new GameWorld(level, Seed, Balance)
+        {
+            Surfaces = floor == TextureVariant.A ? SurfaceVariants.Plain : SurfaceVariants.Of(
+                [new RoomLook(TextureVariant.A, floor, TextureVariant.A)],
+                (from x in Enumerable.Range(0, level.Width) from z in Enumerable.Range(0, level.Depth) select (x, z)).ToDictionary(cell => cell, _ => 0)),
+        };
         var target = world.Targets.Single();
         Face(world.Player, Middle(target.Body));
         return world;
