@@ -131,6 +131,14 @@ public class StairsLookTests
         Assert.Equal((1, 1), Stairs.CellIn(Enumerable.Reverse(cells)));
     }
 
+    [Fact]
+    public void Of_two_cells_equally_near_the_middle_the_smaller_z_wins_before_the_smaller_x()
+    {
+        // (0, 1) and (1, 0) lie equally near their middle (0.5, 0.5): Z decides, not X.
+        Assert.Equal((1, 0), Stairs.CellIn([(0, 1), (1, 0)]));
+        Assert.Equal((1, 0), Stairs.CellIn([(1, 0), (0, 1)]));
+    }
+
     [Theory]
     [InlineData(TextureVariant.B, true, true, TextureVariant.B)]
     [InlineData(TextureVariant.B, true, false, TextureVariant.B)]
