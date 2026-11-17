@@ -50,6 +50,37 @@ public static class MotionScenes
                     Input = tick => PlayerInput.None with { Reload = tick == Rest },
                 };
             }),
+        new("pistol-shot-in-swing", "A pistol shot while the blade swings: both hands move at once.",
+            studio => new PhotoSetup(studio.Arena('D', 10))
+            {
+                Ticks = Rest + 50,
+                Input = tick => PlayerInput.None with { Melee = tick == Rest, Shoot = tick == Rest + 4 },
+            }),
+        new("pistol-reload-in-swing", "The pistol reloaded (R) and the blade swung in the middle of it.",
+            studio =>
+            {
+                var reload = SimulationClock.SecondsToTicks(studio.Balance.Pistol.ReloadTime);
+                return new PhotoSetup(OneRoundFired(studio.Arena('D', 10)))
+                {
+                    Ticks = Rest + reload + 30,
+                    Input = tick => PlayerInput.None with { Reload = tick == Rest, Melee = tick == Rest + 30 },
+                };
+            }),
+        new("pistol-reload-cancelled", "The pistol reloaded (R), the rifle chosen (2) half way through (the reload stops), the pistol chosen again (1).",
+            studio =>
+            {
+                var world = OneRoundFired(studio.Arena('D', 10));
+                world.Player.Equip(1, WeaponKind.Rifle);
+                return new PhotoSetup(world)
+                {
+                    Ticks = Rest + 100,
+                    Input = tick => PlayerInput.None with
+                    {
+                        Reload = tick == Rest,
+                        SelectSlot = tick == Rest + 40 ? 1 : tick == Rest + 70 ? 0 : null,
+                    },
+                };
+            }),
         DoorOpening("door-normal-opening", DoorKind.Normal, "A wooden double door 6 m away, seen from the front"),
         DoorOpening("door-boss-opening", DoorKind.Boss, "The boss door 6 m away, seen from the front"),
     ];

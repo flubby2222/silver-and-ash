@@ -163,6 +163,9 @@ powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\Silve
 | `blade-quick` | ein schneller Klingenhieb (ein Tick gedrückt), der Schwung und zurück in Ruhe |
 | `pistol-shot` | ein Pistolenschuss: Hochreißen, Hahn, Mündungsfeuer, die Pistole kommt zur Ruhe |
 | `pistol-reload` | Nachladen (R) mit einem verbrauchten Schuss, von der Taste bis zum vollen Magazin |
+| `pistol-shot-in-swing` | ein Pistolenschuss mitten im Klingenhieb: beide Hände gleichzeitig |
+| `pistol-reload-in-swing` | Nachladen (R) und mitten darin ein Klingenhieb |
+| `pistol-reload-cancelled` | Nachladen, nach der Hälfte die Büchse gewählt (2, das Nachladen bricht ab), dann wieder die Pistole (1) |
 | `door-normal-opening` | eine hölzerne Doppeltür aus 6 m von vorn, geöffnet (F): der ganze Schwung, bis sie offen steht |
 | `door-boss-opening` | dasselbe mit dem Bosstor |
 

@@ -54,7 +54,8 @@ public class MotionSceneTests
     [Fact]
     public void Every_clip_the_issue_asks_for_is_there()
     {
-        string[] wanted = ["blade-charge", "blade-quick", "pistol-shot", "pistol-reload", "door-normal-opening", "door-boss-opening"];
+        string[] wanted = ["blade-charge", "blade-quick", "pistol-shot", "pistol-reload", "door-normal-opening", "door-boss-opening",
+            "pistol-shot-in-swing", "pistol-reload-in-swing", "pistol-reload-cancelled"];
 
         Assert.Equal(wanted.Order(), MotionScenes.All.Select(scene => scene.Name).Order());
     }

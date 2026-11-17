@@ -44,10 +44,10 @@ Phasen (Anteil der Nachladezeit, bei 1,5 s):
 
 In beiden Varianten bleibt die Pistole rechts der Bildmitte; die Klinge links wird in den Bildern nie berührt.
 
-- **Variante A „Kippen“** (`ReloadVariant = 0`, Standard): Roll **70°** nach rechts weg, Mündung **25°** hoch, Hand (+2 cm rechts, +1 cm hoch). Sieht aus wie „aufklappen und laden“, Pistole bleibt ganz im Bild.
-- **Variante B „Wegtauchen“** (`ReloadVariant = 1`): Roll 25°, Mündung **40°** hoch, Hand (+5 cm rechts, −7 cm unten, −2 cm zurück). Die Pistole steht fast senkrecht am rechten Rand, die Waffe „verschwindet“ halb. Lesbarer neben dem HUD-Hinweis (der Text „Reloading…“ rechts unten bleibt frei), aber ruppiger.
+- **Variante A „Kippen“** (nur Probe, nicht übernommen; stand als `ReloadVariant = 0` im Entwurf): Roll **70°** nach rechts weg, Mündung **25°** hoch, Hand (+2 cm rechts, +1 cm hoch). Sieht aus wie „aufklappen und laden“, Pistole bleibt ganz im Bild.
+- **Variante B „Wegtauchen“** (**vom Menschen gewählt, im Spiel mit PR #292**): Roll 25°, Mündung **40°** hoch, Hand (+5 cm rechts, −7 cm unten, −2 cm zurück). Die Pistole steht fast senkrecht am rechten Rand, die Waffe „verschwindet“ halb. Lesbarer neben dem HUD-Hinweis (der Text „Reloading…“ rechts unten bleibt frei), aber ruppiger.
 
-Empfehlung: **A**. Der Ärmel bleibt kürzer, B nähert sich am rechten Rand der HUD-Leiste.
+Empfehlung war A; der Mensch hat **B** gewählt. Beim Übernehmen deckte B im Haltebereich etwa ein Viertel der Nachlade-Anzeige des HUDs („Reloading…“ samt Leiste) ab (Test über das ganze Nachladen). Darum wurde die Handverschiebung von (+5 / −7 / −2 cm) auf **(+1 / 0 / −2 cm)** zurückgenommen; Roll 25° und Mündung 40° hoch blieben. Die Pistole „taucht“ also weniger nach unten, sie kippt und hebt die Mündung.
 
 ## Tests
 
@@ -59,6 +59,6 @@ Empfehlung: **A**. Der Ärmel bleibt kürzer, B nähert sich am rechten Rand der
 
 - **Der Schlag ist kleiner geworden** (Gier 50° statt 95°, Spitze erreicht die Bildmitte nicht mehr). Das nimmt Reichweitengefühl; der Ausgleich sind das Gewicht (schneller Schlag, Halten, Nachfedern) und die Hiebneigung. Wenn der Mensch mehr Ausholen will, braucht es erst das Kugelgelenk im Modell, dann wieder größere Winkel.
 - **Klinge kreuzt die Pistole** im Höhepunkt (Spitze über dem Lauf, Pistole in Ruhe). Nicht verdeckend, aber nah. Eine Prüfung der Kombination „Schlag und Nachladen gleichzeitig“ und „Schuss im Schlag“ habe ich **nicht als eigene Szene gerendert**: die Hände sind unabhängig, die Schlagbewegung bleibt links der Bildmitte, Variante A kippt rechts weg; eine Gegenprobe im Spiel steht aus.
-- Nachladehaltungen sind **nicht durch Tests abgedeckt** (Reichweite 0,30, Nahebene, Unterarmende): nur im Bild geprüft. Vor dem Übernehmen lohnt ein Test für `ReloadOffsets` über p = 0…1 beider Varianten.
+- (Erledigt mit #292: Nachladen ist jetzt getestet.) Früher: Nachladehaltungen **nicht durch Tests abgedeckt** (Reichweite 0,30, Nahebene, Unterarmende): nur im Bild geprüft. Vor dem Übernehmen lohnt ein Test für `ReloadOffsets` über p = 0…1 beider Varianten.
 - Das Bereit-Signal ist ein Klick des Hammers und ein Ruck – **ohne Ton**; eine Hörprobe für „Nachladen fertig“ ist Sache des Audiodesigners.
 - Einen weiteren Zwischenzustand (Nachladen, während eine Waffe gewechselt wird) deckt das Ausblenden ab; als Szene nicht gerendert.
