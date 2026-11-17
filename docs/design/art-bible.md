@@ -57,6 +57,7 @@ Die Formeln aus dem Shader, mit Entfernung `d` in Metern zur Kamera:
 |---|---|
 | Dreiecke | normale Gegner 800 bis 1 200; große Gegner und Bosse 2 000 bis 4 000; Requisiten 100 bis 400; Waffe im Bild bis 1 500 |
 | Textur | eine je Figur, 128 × 128, höchstens 32 Farben; die Waffe im Bild zählt wie eine Figur (128 × 128), weil sie immer nah ist; Requisiten und Wandstücke 64 × 64 mit 16 bis 32 Farben |
+| Zusammengesetzte Textur (2026-11-17) | Trägt eine Textur unveränderte vorhandene Kacheln nebeneinander (etwa Wand- und Bodenkachel) und nutzt sonst nur Farben der Hauptpalette, darf sie die Summe der Farben ihrer Teile haben; jede Teilfläche hält die 32 Farben ein. |
 | Verteilung der Dreiecke | etwa ein Viertel in Kopf und Hände; Rundungen mit 8 bis 12 Seiten |
 | Filterung | keine, auch keine Mipmaps: Texel bleiben harte Quadrate |
 | Kopf in der Textur | mindestens ein Achtel der Fläche |
