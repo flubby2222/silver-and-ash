@@ -37,6 +37,19 @@ public static class PhotoScenes
                 Ticks = 600,
                 StopWhen = world => world.Ghouls[0] is { State: GhoulState.WindingUp, WindUpProgress: >= 0.5f },
             }),
+        new("pistol-recoil", "The pistol right after a shot: kicked up, hammer down, muzzle flash (issue #249).",
+            studio => new PhotoSetup(studio.Arena('G', 10))
+            {
+                Ticks = 2,
+                Input = tick => PlayerInput.None with { Shoot = tick == 0 },
+            }),
+        new("blade-charged", "The silver blade fully charged, drawn back and trembling (issue #249).",
+            studio => new PhotoSetup(studio.Arena('G', 10))
+            {
+                Ticks = 600,
+                Input = _ => PlayerInput.None with { Melee = true },
+                StopWhen = world => world.Player.MeleeCharge is { IsCharging: true, Fraction: >= 1f },
+            }),
         new("bat-4m", "A bat 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('B', 4))),
         new("bat-10m", "A bat 10 m away in a bare hall.",
@@ -45,6 +58,12 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeGorm(6f))),
         new("hud-weapons", "The HUD with every weapon place taken: club in hand, pistol, rifle and blunderbuss.",
             studio => new PhotoSetup(AllWeapons(studio.StartRun()))),
+        new("hud-rifle", "Like hud-weapons, but the rifle chosen (2): a placeholder next to the club (issue #249).",
+            studio => new PhotoSetup(AllWeapons(studio.StartRun()))
+            {
+                Ticks = 30,
+                Input = tick => PlayerInput.None with { SelectSlot = tick == 0 ? 1 : null },
+            }),
         new("inventory", "The inventory window (G) open, every place of the bag taken.",
             studio => new PhotoSetup(FullBag(AllWeapons(studio.StartRun())))
             {

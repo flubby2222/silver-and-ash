@@ -2,6 +2,7 @@ using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
@@ -25,16 +26,21 @@ internal interface IWeaponView
 }
 
 /// <summary>
-/// Placeholder weapons made of boxes: the silver blade in the left hand, the pistol in the right.
+/// The weapons in the hands: the silver blade in the left hand, the pistol in the right. Both are the designer's models
+/// with their hands (<see cref="WeaponModels"/>, issue #249); club, rifle and blunderbuss - and a weapon whose model is
+/// missing - are placeholder boxes without a hand.
 /// Movement by code, all of it soft so the player seems to glide through the world: a slow, gentle bob while walking,
 /// hands that trail behind when looking around or walking sideways ("weapon sway"), a dip with the landing nod,
-/// a swing of the blade, recoil and a muzzle flash for the pistol.
+/// a swing of the blade, recoil and a muzzle flash for the pistol. Models and boxes move the same way.
 /// <para>
-/// Everything stays within about 30 cm of the eyes. The player keeps at least 35 cm away from every wall
-/// (its radius), so the weapons can never disappear into a wall.
+/// The models are shrunk towards the eye (<see cref="WeaponPose.ShrinkTowardsEye"/>): the picture stays the same, but
+/// everything drawn stays within <see cref="WeaponPose.Reach"/> (30 cm) of the eyes, tested - only the blade hand's
+/// sleeve swings out farther at the height of a swing, at the left edge. The player keeps at least 35 cm away from
+/// every wall (its radius), so the weapons never disappear into a wall. The boxes are drawn as they always
+/// were (the rifle's barrel reaches about 48 cm, as before).
 /// </para>
 /// </summary>
-internal sealed class PlaceholderWeaponView : IWeaponView
+internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shader = null) : IWeaponView
 {
     private const float SwingSeconds = 0.28f;
     private const float RecoilSeconds = 0.18f;
@@ -84,6 +90,10 @@ internal sealed class PlaceholderWeaponView : IWeaponView
     private float _dip;             // landing dip of the eyes, followed softly
     private float? _lastYaw;
     private float? _lastPitch;
+    private readonly Matrix4x4[] _pistolTurns = new Matrix4x4[WeaponPose.PistolParts.Count];
+    private readonly Matrix4x4[] _pistolFrames = new Matrix4x4[WeaponPose.PistolParts.Count];
+    private readonly Matrix4x4[] _oneTurn = [Matrix4x4.Identity];
+    private readonly Matrix4x4[] _oneFrame = new Matrix4x4[1];
 
     public void OnEvent(GameEvent gameEvent)
     {
@@ -163,16 +173,20 @@ internal sealed class PlaceholderWeaponView : IWeaponView
         var sway = new Vector3(_turnSway.X + _walkSway.X, _turnSway.Y + _walkSway.Y - _dip * DipFollow, 0f);
 
         // All soft movements together, applied to both hands in camera space.
-        var motion =
+        var soft =
             Matrix4x4.CreateRotationX(Deg(_dip * DipTiltDegreesPerMetre)) *
-            Matrix4x4.CreateTranslation(bob + sway) *
-            CameraToWorld(eye, forward);
+            Matrix4x4.CreateTranslation(bob + sway);
+        var camera = CameraToWorld(eye, forward);
+        var motion = soft * camera;
 
-        DrawBlade(motion);
-        DrawPistol(motion);
+        // The models: the same movements, then shrunk towards the eye (out of the walls, the picture unchanged).
+        var modelMotion = soft * Matrix4x4.CreateScale(WeaponPose.ShrinkTowardsEye) * camera;
+
+        DrawBlade(motion, modelMotion);
+        DrawPistol(motion, modelMotion);
     }
 
-    private void DrawBlade(Matrix4x4 motion)
+    private void DrawBlade(Matrix4x4 motion, Matrix4x4 modelMotion)
     {
         // Swing: quickly out across the view from left to right (40 % of the time), then calmly back.
         var t = _swing < 0.4f ? EaseOut(_swing / 0.4f) : 1f - EaseInOut((_swing - 0.4f) / 0.6f);
@@ -181,6 +195,15 @@ internal sealed class PlaceholderWeaponView : IWeaponView
 
         // Wind-up while charging: the tip turns back to the left, the hand pulls back. Fully charged, it trembles.
         var tremble = _fullyCharged ? MathF.Sin(_time * 45f) * 0.0012f : 0f;
+
+        if (_melee == WeaponKind.SilverBlade && models is { Blade: { } blade, BladeHand: { } bladeHand })
+        {
+            var grip = WeaponPose.Blade(t, _windUp, tremble) * modelMotion;
+            DrawOnePart(blade, grip);
+            DrawOnePart(bladeHand, grip);
+            return;
+        }
+
         var windUp = new Vector3(-0.03f * _windUp + tremble, 0.015f * _windUp, -0.04f * _windUp);
 
         var hand =
@@ -208,10 +231,16 @@ internal sealed class PlaceholderWeaponView : IWeaponView
             new Vector3(0.016f, 0.005f, 0.15f), Silver);
     }
 
-    private void DrawPistol(Matrix4x4 motion)
+    private void DrawPistol(Matrix4x4 motion, Matrix4x4 modelMotion)
     {
         // Recoil: kicked back and up at once, then easing back into place.
         var kick = 1f - EaseOut(_recoil);
+        if (_ranged == WeaponKind.Pistol && models is { Pistol: { } pistol, PistolHand: { } pistolHand })
+        {
+            DrawPistolModel(pistol, pistolHand, WeaponPose.Pistol(kick) * modelMotion, kick);
+            return;
+        }
+
         var hand =
             Matrix4x4.CreateRotationX(Deg(-14f * kick)) *
             Matrix4x4.CreateTranslation(PistolHand + new Vector3(0f, 0.012f * kick, -0.035f * kick)) *
@@ -252,6 +281,56 @@ internal sealed class PlaceholderWeaponView : IWeaponView
             ShadedBox.Draw(
                 Matrix4x4.CreateTranslation(0f, 0.005f, muzzle) * hand, new Vector3(size, size, size), _holyFlash ? HolyFlash : MuzzleFlash);
         }
+    }
+
+    private void DrawPistolModel(TexturedModel pistol, TexturedModel hand, Matrix4x4 grip, float kick)
+    {
+        for (var p = 0; p < _pistolTurns.Length; p++)
+        {
+            _pistolTurns[p] = Matrix4x4.Identity;
+        }
+
+        _pistolTurns[2] = Rig.Lift(WeaponPose.CockDegrees(kick));
+        pistol.Rig.Pose(_pistolTurns, grip, _pistolFrames);
+
+        pistol.DrawPart(0, _pistolFrames[0]);
+        // Consecrated ammunition loaded: the barrel shimmers pale and holy, as with the placeholder.
+        if (_consecrated)
+        {
+            shader?.SetFlash(HolyGlow, 0.45f + 0.35f * MathF.Sin(_time * 6f));
+        }
+
+        pistol.DrawPart(1, _pistolFrames[1]);
+        if (_consecrated)
+        {
+            shader?.SetFlash(HolyGlow, 0f);
+        }
+
+        pistol.DrawPart(2, _pistolFrames[2]);
+        pistol.DrawPart(3, _pistolFrames[3]);
+        DrawOnePart(hand, grip);
+
+        // The muzzle flash: full brightness whatever the light, pale blue-white after a consecrated shot.
+        if (_flash > 0f)
+        {
+            if (_holyFlash)
+            {
+                shader?.SetFlash(HolyFlash, 0.8f);
+            }
+
+            pistol.DrawPart(4, _pistolFrames[4], tint: 4f);
+            if (_holyFlash)
+            {
+                shader?.SetFlash(HolyFlash, 0f);
+            }
+        }
+    }
+
+    // A model of one part (the sword, a hand) on the grip.
+    private void DrawOnePart(TexturedModel model, Matrix4x4 grip)
+    {
+        model.Rig.Pose(_oneTurn, grip, _oneFrame);
+        model.DrawPart(0, _oneFrame[0]);
     }
 
     /// <summary>

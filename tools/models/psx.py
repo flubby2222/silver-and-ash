@@ -587,6 +587,17 @@ def runs(mask_row):
 
 # --- Uebergabe ------------------------------------------------------------------------------------------------------
 
+def bake_scale(objs):
+    """Die Skalierung der Teile (z. B. aus pose(root=Matrix.Scale(...))) in die Ecken einrechnen. Danach steht in der
+    Datei nur noch die Verschiebung je Teil (der Drehpunkt) - das Spiel kennt keine skalierten Knoten (docs/modelle.md)."""
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in objs:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    bpy.context.view_layer.update()
+
+
 def export_glb(objs, path):
     """Teile als glb: +Y oben (= Spiel-Achsen), Textur eingebettet ohne Filterung, keine Vertex-Farben."""
     bpy.ops.object.select_all(action="DESELECT")

@@ -10,7 +10,8 @@ namespace SilverAndAsh.Core.Presentation;
 /// <param name="Pivot">The node's translation - its pivot, in metres.</param>
 /// <param name="VertexCount">Number of corners of its mesh.</param>
 /// <param name="PositionMin">Smallest corner position of its mesh, relative to the pivot (the "min" of the file).</param>
-public sealed record GlbPart(string Name, Vector3 Pivot, int VertexCount, Vector3 PositionMin);
+/// <param name="PositionMax">Largest corner position of its mesh, relative to the pivot (the "max" of the file).</param>
+public sealed record GlbPart(string Name, Vector3 Pivot, int VertexCount, Vector3 PositionMin, Vector3 PositionMax);
 
 /// <summary>
 /// Reads the description (the JSON chunk) of a binary glTF file (.glb): which parts it has, in which order, and where
@@ -209,8 +210,9 @@ public static class GlbScene
             var accessor = accessors[primitive.GetProperty("attributes").GetProperty("POSITION").GetInt32()];
             var vertexCount = accessor.GetProperty("count").GetInt32();
             var min = Vector(accessor.GetProperty("min"));
+            var max = Vector(accessor.GetProperty("max"));
 
-            parts.Add(new GlbPart(name, pivot, vertexCount, min));
+            parts.Add(new GlbPart(name, pivot, vertexCount, min, max));
         }
 
         return parts;

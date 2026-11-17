@@ -219,7 +219,9 @@ static void RunGame(
         var pickupView = new PickupView();
         var impactMarks = new ImpactMarks();
         var wallBreakView = new WallBreakView();
-        IWeaponView weaponView = new PlaceholderWeaponView();
+        // Weapons: the designer's models once they are loaded (after the shader, below), boxes until then.
+        Func<IWeaponView> newWeaponView = () => new WeaponView();
+        IWeaponView weaponView = newWeaponView();
         var damageFeedback = new DamageFeedback();
         var input = new RaylibInput();
 
@@ -263,7 +265,7 @@ static void RunGame(
             pickupView = new PickupView();
             impactMarks = new ImpactMarks();
             wallBreakView = new WallBreakView();
-            weaponView = new PlaceholderWeaponView();
+            weaponView = newWeaponView();
             damageFeedback = new DamageFeedback();
         }
 
@@ -303,6 +305,11 @@ static void RunGame(
 
         // One chest model per tier (issue #249); a tier without one keeps the placeholder boxes.
         using var chestView = ChestView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
+        // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
+        using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+        newWeaponView = () => new WeaponView(weaponModels, levelShader);
+        weaponView = newWeaponView();
 
         // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
         // The stones of walls, floors and ceilings (assets/textures/, issue #233). Only level 0, the catacombs, exists yet.
