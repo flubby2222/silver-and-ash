@@ -2,8 +2,8 @@
 session.new {"name":"p1-schwung-2","sample_rate":44100,"bit_depth":16}
 event.tempo {"bpm":120}
 track.new {"kind":"instrument","format":"stereo","name":"S","instrument":"sampler"}
-mix.sampler_load {"track":"S","path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/hauch-vag.wav","params":{"play_mode":1,"loop_mode":0,"attack":0.1,"sustain":100.0,"release":100.0,"root_note":60}}
+mix.sampler_load {"track":"S","path":"{TMP}/hauch-vag.wav","params":{"play_mode":1,"loop_mode":0,"attack":0.1,"sustain":100.0,"release":100.0,"root_note":60}}
 mix.insert {"track":"S","slot":0,"plugin":"room_reverb","params":{"mix":22,"pre_delay":8,"decay":0.8,"size":30,"damping":3500,"diffusion":75,"low_cut":150}}
 midi.new_clip {"track":"S","start":0,"end":35280}
 midi.note_add {"clip":3,"pitch":63,"start_ticks":0,"length_ticks":115,"velocity":110}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/p1-schwung-2.wav","format":"wav","bit_depth":16,"start":0,"end":35280,"dither":false}
+file.bounce_mix {"path":"{TMP}/p1-schwung-2.wav","format":"wav","bit_depth":16,"start":0,"end":35280,"dither":false}

@@ -2,7 +2,7 @@
 session.new {"name":"p1-ghul-ankuendigung","sample_rate":44100,"bit_depth":16}
 event.tempo {"bpm":120}
 track.new {"kind":"instrument","format":"stereo","name":"V","instrument":"sampler"}
-mix.sampler_load {"track":"V","path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/stimme-vag.wav","params":{"play_mode":0,"loop_mode":1,"attack":5.0,"decay":400.0,"sustain":100.0,"release":25.0,"root_note":52,"loop_start":40.7983411093831,"loop_end":100.0}}
+mix.sampler_load {"track":"V","path":"{TMP}/stimme-vag.wav","params":{"play_mode":0,"loop_mode":1,"attack":5.0,"decay":400.0,"sustain":100.0,"release":25.0,"root_note":52,"loop_start":40.7983411093831,"loop_end":100.0}}
 mix.insert {"track":"V","slot":0,"plugin":"pitch_shifter","params":{"semitones":0.0,"mix":100.0}}
 mix.insert {"track":"V","slot":1,"plugin":"room_reverb","params":{"mix":22,"pre_delay":8,"decay":0.8,"size":30,"damping":3500,"diffusion":75,"low_cut":150}}
 midi.new_clip {"track":"V","start":0,"end":61739}
@@ -11,4 +11,4 @@ automation.set_point {"track":"V","param":"plugin:0:semitones","at":0,"value":0.
 automation.set_point {"track":"V","param":"plugin:0:semitones","at":39690,"value":7.0}
 automation.set_point {"track":"V","param":"volume","at":0,"value":-18.0}
 automation.set_point {"track":"V","param":"volume","at":39690,"value":0.0}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/p1-ghul-ankuendigung.wav","format":"wav","bit_depth":16,"start":0,"end":61739,"dither":false}
+file.bounce_mix {"path":"{TMP}/p1-ghul-ankuendigung.wav","format":"wav","bit_depth":16,"start":0,"end":61739,"dither":false}
