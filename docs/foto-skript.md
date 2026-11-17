@@ -70,6 +70,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `door-sideways-half` | eine Holztür in einem Ost-West-Durchgang, halb offen: das Modell ist um 90° gedreht |
 | `door-level-seed1`, `door-level-seed2-boss` | die erste Holztür in Seed 1 bzw. das Bosstor in Seed 2, aus 2–3 Zellen Abstand |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |
+| `stairs-4m`, `stairs-10m` | die Wendeltreppe im Bossraum der Ebene 0 nach Gorms Tod (Issue #300): Gorm stirbt vor dem ersten Tick, die Treppe steigt wie im Spiel auf; das Bild entsteht, sobald sie steht und ihre Lampe leuchtet, aus 4 m bzw. 10 m vom Fuß, mit Blick auf ihre halbe Höhe |
 | `showroom-a-corridor`, `showroom-a-room`, … `showroom-c-room` | je einen Teil des Musterraums (Issue #283, [musterraum.md](musterraum.md)): Wandvariante A, B oder C, der Gangteil (3,5 m) mit den Türen und der rissigen Wand bzw. der Raumteil (6 m) mit den Stücken, vom Westende des südlichen Laufwegs schräg auf die Nordwand, mit Schildern |
 
 ## Bild-Varianten vergleichen (`--look`, `--photo compare`)
@@ -171,6 +172,7 @@ powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\Silve
 | `rifle-reload-to-pistol` | Büchse gewählt (2) und geschossen, Nachladen (R), nach der Hälfte die Pistole (1): sie darf die Nachladehaltung nicht zeigen |
 | `door-normal-opening` | eine hölzerne Doppeltür aus 6 m von vorn, geöffnet (F): der ganze Schwung, bis sie offen steht |
 | `door-boss-opening` | dasselbe mit dem Bosstor |
+| `stairs-rising` | die Wendeltreppe im Bossraum nach Gorms Tod aus 6 m: der ganze Aufstieg aus dem Boden, bis sie steht und ihre Lampe leuchtet |
 | `gorm-slam` | Gorms Hammerschlag aus der Nähe: der Spieler steht 8 m vor ihm, hinter ihm stehend, Blick auf Gorm; die Welle aus aufbrechendem Stein läuft auf ihn zu und trifft ihn, sobald der rote Riss seine Füße erreicht (#299) |
 | `gorm-slam-far` | derselbe Schlag aus 14 m, außerhalb der Reichweite (12 m): die ganze Welle von vorn, bis sie vor dem Spieler ausläuft, Boden Variante A |
 | `gorm-slam-far-b`, `gorm-slam-far-c` | dasselbe auf Boden Variante B bzw. C (C, das Kopfsteinpflaster, liegt im Spiel nie im Bossraum) |

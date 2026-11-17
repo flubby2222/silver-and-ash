@@ -106,6 +106,11 @@ public static class MotionScenes
         Slam("gorm-slam-far-c", 14, TextureVariant.C, "from afar on floor C, the cobbles (in the game never in a boss room)"),
         DoorOpening("door-normal-opening", DoorKind.Normal, "A wooden double door 6 m away, seen from the front"),
         DoorOpening("door-boss-opening", DoorKind.Boss, "The boss door 6 m away, seen from the front"),
+        new("stairs-rising", "The spiral staircase rising in the boss room after Gorm's death, seen from 6 m: the whole rise until it stands and its lamp is lit (issue #300).",
+            studio => new PhotoSetup(studio.AfterGorm(6f))
+            {
+                Ticks = SimulationClock.SecondsToTicks(studio.Balance.Gorm.StairsRiseTime) + 40,
+            }),
     ];
 
     /// <summary>The clip called <paramref name="name"/>, or null.</summary>

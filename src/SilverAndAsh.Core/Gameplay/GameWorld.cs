@@ -566,13 +566,7 @@ public sealed class GameWorld
             return;
         }
 
-        var x = room.Cells.Average(cell => cell.X);
-        var z = room.Cells.Average(cell => cell.Z);
-        var (cellX, cellZ) = room.Cells
-            .OrderBy(cell => ((cell.X - x) * (cell.X - x)) + ((cell.Z - z) * (cell.Z - z)))
-            .ThenBy(cell => cell.Z)
-            .ThenBy(cell => cell.X)
-            .First();
+        var (cellX, cellZ) = Stairs.CellIn(room.Cells);
         _stairs = new Stairs(Level.CellCenter(cellX, cellZ), Balance.Gorm.StairsRiseTime);
         _events.Add(new StairsRose());
     }

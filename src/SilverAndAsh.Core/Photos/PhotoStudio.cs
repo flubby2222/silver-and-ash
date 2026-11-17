@@ -82,6 +82,27 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
+    /// Level 0 with the player in the boss room after the fight (issue #300): Gorm is dead before the first tick, so the
+    /// room is cleared on the first tick and the spiral staircase begins to rise in its middle, as in the game. The
+    /// player stands on the floor cell nearest to <paramref name="metres"/> from the foot of the staircase that sees its
+    /// middle, looking there (half its height above the floor).
+    /// </summary>
+    public GameWorld AfterGorm(float metres)
+    {
+        var (generated, room) = FirstRoom(RoomKind.Boss);
+        var level = generated.Level;
+        var (stairsX, stairsZ) = Stairs.CellIn(room.FloorCells);
+        var foot = level.CellCenter(stairsX, stairsZ);
+        var middle = foot + new Vector3(0f, Stairs.Height / 2f, 0f);
+        var cell = BestPlace(level, room, middle, cell => MathF.Abs(Vector3.Distance(level.CellCenter(cell.X, cell.Z), foot) - metres));
+
+        var world = World(generated, cell);
+        world.Gorm!.TakeDamage(world.Gorm.Health, new List<GameEvent>());
+        Face(world.Player, middle);
+        return world;
+    }
+
+    /// <summary>
     /// A bare hall (hand-made, so its enemies are awake) with one figure - 'G' ghoul, 'B' bat, 'T' Gorm, 'D' dummy -
     /// <paramref name="metres"/> in front of the player (a multiple of 2, the cell size), looking at it. The ceiling
     /// lies at <paramref name="ceiling"/> (default: as high as a corridor; Gorm's boss room: <see cref="RoomTemplate.RoomCeilingHeight"/>).

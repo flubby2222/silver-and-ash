@@ -134,6 +134,18 @@ public static class PhotoScenes
                 Ticks = 600,
                 StopWhen = world => world.Gorm is { IsInPhase2: true, State: GormState.Roaring, StateProgress: >= 0.95f },
             }),
+        new("stairs-4m", "The spiral staircase of stone, standing in the boss room after Gorm's death, seen from 4 m, its lamp lit (issue #300).",
+            studio => new PhotoSetup(studio.AfterGorm(4f))
+            {
+                Ticks = 600,
+                StopWhen = world => world.Stairs is { CanInteract: true },
+            }),
+        new("stairs-10m", "Like stairs-4m, from 10 m: what is left of its outline at that distance (issue #300).",
+            studio => new PhotoSetup(studio.AfterGorm(10f))
+            {
+                Ticks = 600,
+                StopWhen = world => world.Stairs is { CanInteract: true },
+            }),
         new("hud-weapons", "The HUD with every weapon place taken: club in hand, pistol, rifle and blunderbuss.",
             studio => new PhotoSetup(AllWeapons(studio.StartRun()))),
         new("hud-rifle", "Like hud-weapons, but the rifle chosen (2): a placeholder next to the club (issue #249).",
