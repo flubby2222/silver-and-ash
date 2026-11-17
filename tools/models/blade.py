@@ -27,6 +27,7 @@ from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_a
                  setup_render, camera, aim, render_passes, compose, save_png)
 
 # Modelle und Texturen landen in assets/models (vom Skript in tools/models aus zwei Ebenen hoch).
+import arm as _arm  # noqa: E402
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                        "assets", "models")
 TEX = 128
@@ -38,6 +39,7 @@ LEATHER = np.array((70, 48, 34), float)          # Griffwicklung
 WIRE = np.array((170, 172, 184), float)
 
 RECTS = {
+    "glove": (0, 16, 64, 48),
     "blade": (0, 64, 128, 128),
     "silver": (0, 48, 64, 64),
     "grip": (64, 48, 128, 64),
@@ -88,6 +90,7 @@ def paint_grip(U, V_):
 
 PAINTERS = {"blade": paint_blade, "silver": paint_silver, "grip": paint_grip,
             "cuff": paint_cuff, "sleeve": paint_sleeve}
+PAINTERS.update(_arm.design_painters(_arm.DESIGN))
 
 
 def build_sword():
@@ -110,16 +113,8 @@ def build_sword():
     return part
 
 
-def build_hand():
-    part = Part("arm", (0, 0, 0), UV, parent="sword")
-    # Fassung 3: kein Handschuh. Der linke Aermel (Punkte fuer rechts, s = -1 spiegelt) umschliesst Griff, Knauf und
-    # Heft bis dicht an die Parierstange; die Stulpe endet vorn mit umgeschlagenem Rand.
-    # Fassung 4: weiter Mantelaermel, Oeffnung an der Parierstange; er verschluckt Griff und Knauf und faellt nach
-    # links unten aus dem Bild (links = s = -1). Kurz hinter dem Knauf biegt er seitlich ab (Nahebene im Blick).
-    path = [(0, 0, -0.003), (0, 0, -0.011), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07), (0.09, -0.06, -0.09),
-            (0.18, -0.11, -0.12), (0.30, -0.17, -0.16)]
-    build_sleeve4(part, -1, path, [0.030, 0.024, 0.029, 0.031, 0.036, 0.040, 0.046])
-    return part
+def build_hand_parts():
+    return _arm.build_hand_parts("blade", UV)
 
 
 def hand_matrix(t=0.0, wind=0.0):
@@ -141,12 +136,12 @@ def main():
     bpy.context.scene.collection.children.link(coll)
     mat = export_material("blade", image)
     sword = build_sword().build(coll, mat, smooth=False)
-    hand = build_hand().build(coll, mat, smooth=True)
-    pose([sword, hand], {}, root=Matrix.Scale(SCALE, 4))
-    bake_scale([sword, hand])
+    hands = [part.build(coll, mat, smooth=True) for part in build_hand_parts()]
+    pose([sword] + hands, {}, root=Matrix.Scale(SCALE, 4))
+    bake_scale([sword] + hands)
     export_glb([sword], os.path.join(OUT_DIR, "blade.glb"))
-    export_glb([hand], os.path.join(OUT_DIR, "blade_hand.glb"))
-    report_parts("blade", [sword, hand])
+    export_glb(hands, os.path.join(OUT_DIR, "blade_hand.glb"))
+    report_parts("blade", [sword] + hands)
 
 
 main()

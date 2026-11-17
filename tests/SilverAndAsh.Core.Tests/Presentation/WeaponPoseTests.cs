@@ -166,12 +166,12 @@ public class WeaponPoseTests
 
     // Vertical field of view 70 degrees (LookSettings.FieldOfViewDegrees in the game) and the 16:9 window (1280 x 720
     // in Program.cs): the slope of the picture's edges in camera space.
-    private static readonly float HalfHeight = MathF.Tan(35f * MathF.PI / 180f);
-    private static readonly float HalfWidth = HalfHeight * 16f / 9f;
+    internal static readonly float HalfHeight = MathF.Tan(35f * MathF.PI / 180f);
+    internal static readonly float HalfWidth = HalfHeight * 16f / 9f;
 
     // The picture's edges are widened by this much (metres) for bob, sway and the landing dip, which move the weapons a
     // little after the pose.
-    private const float EdgeMargin = 0.02f;
+    internal const float EdgeMargin = 0.02f;
 
     // Every triangle of the checked-in model, turned around its part's pivot as the rig does (all parts hang on the
     // grip at 0, 0, 0), through the pose and shrunk towards the eye.
@@ -248,7 +248,7 @@ public class WeaponPoseTests
 
     // The corners and triangles of every part with a mesh, read straight from the .glb (the files are checked by
     // GlbScene and its tests; here only what the test needs).
-    private static IEnumerable<(string Name, Vector3 Pivot, Vector3[] Corners, int[] Triangles)> Triangles(string file)
+    internal static IEnumerable<(string Name, Vector3 Pivot, Vector3[] Corners, int[] Triangles)> Triangles(string file)
     {
         var bytes = File.ReadAllBytes(RepositoryFiles.Find(Path.Combine("assets", "models", file)));
         var jsonLength = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(12));
