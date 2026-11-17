@@ -330,6 +330,9 @@ static void RunGame(
             gormView = newGormView();
         }
 
+        // One door model per kind (issue #245); a kind without one keeps the placeholder boxes.
+        using var doorView = DoorView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // One chest model per tier (issue #249); a tier without one keeps the placeholder boxes.
         using var chestView = ChestView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
@@ -413,7 +416,10 @@ static void RunGame(
 
             levelRenderer.Draw();
             levelShader.BeginFigures();
-            DoorView.Draw(gameWorld.Doors, seconds);
+            doorView.Draw(
+                gameWorld.Doors,
+                seconds,
+                new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)look.RenderWidth / look.RenderHeight));
             chestView.Draw(gameWorld.Chests, seconds);
             StairsView.Draw(gameWorld.Stairs, seconds);
             foreach (var dummy in gameWorld.Dummies)

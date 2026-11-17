@@ -55,6 +55,13 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `inventory` | das offene Inventar (G) mit voller Tasche |
 | `map` | die offene Karte (M) zu Beginn eines Durchlaufs |
 | `chests-4m` | die Kisten aller vier Stufen nebeneinander aus 4 m, geschlossen und verschlossen, dazu eine offene (Issue #249) |
+| `door-normal`, `door-locked`, `door-boss` | die Tür dieser Art geschlossen in einer leeren Halle aus 6 m (Issue #245) |
+| `door-normal-half`, `door-locked-half`, `door-boss-half` | dieselbe Tür halb aufgeschwungen (Fortschritt 0,5, im Bild geglättet) |
+| `door-normal-open`, `door-locked-open`, `door-boss-open` | dieselbe Tür ganz offen |
+| `door-normal-10m`, `door-locked-10m`, `door-boss-10m` | dieselbe Tür geschlossen aus 10 m: Ist die Türart noch zu erkennen? |
+| `door-cracked` | die rissige Wand zum Geheimraum, ungebrochen |
+| `door-sideways-half` | eine Holztür in einem Ost-West-Durchgang, halb offen: das Modell ist um 90° gedreht |
+| `door-level-seed1`, `door-level-seed2-boss` | die erste Holztür in Seed 1 bzw. das Bosstor in Seed 2, aus 2–3 Zellen Abstand |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |
 
 ## Bild-Varianten vergleichen (`--look`, `--photo compare`)

@@ -27,6 +27,17 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeGorm(12f))),
         new("chests-4m", "The chests of all four tiers side by side 4 m away, closed and locked, and an open one.",
             studio => new PhotoSetup(studio.ChestRow())),
+        .. DoorScenes(DoorKind.Normal, "wooden double door"),
+        .. DoorScenes(DoorKind.Locked, "locked door"),
+        .. DoorScenes(DoorKind.Boss, "boss door"),
+        new("door-cracked", "A cracked wall 6 m away in a bare hall: only its fine cracks give it away (issue #245).",
+            studio => new PhotoSetup(studio.DoorHall(DoorKind.Cracked))),
+        new("door-sideways-half", "A wooden double door in a wall running north/south, 6 m away, half open (issue #245).",
+            studio => new PhotoSetup(studio.DoorHall(DoorKind.Normal, sideways: true, open: true)) { Ticks = 600, StopWhen = Swung(0.5f) }),
+        new("door-level-seed1", "The first wooden door of level 0 with seed 1, from 4 to 6 m, closed (issue #245).",
+            studio => new PhotoSetup(studio.BeforeDoor(1, DoorKind.Normal))),
+        new("door-level-seed2-boss", "The boss door of level 0 with seed 2, from 4 to 6 m, closed (issue #245).",
+            studio => new PhotoSetup(studio.BeforeDoor(2, DoorKind.Boss))),
         new("ghoul-4m", "A ghoul 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('G', 4))),
         new("ghoul-10m", "A ghoul 10 m away in a bare hall.",
@@ -154,6 +165,25 @@ public static class PhotoScenes
 
     /// <summary>The scene called <paramref name="name"/>, or null.</summary>
     public static PhotoScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
+
+    // Closed, half open and fully open, 6 m away in a bare hall (issue #245).
+    private static PhotoScene[] DoorScenes(DoorKind kind, string name)
+    {
+        var file = $"door-{kind.ToString().ToLowerInvariant()}";
+        return
+        [
+            new(file, $"A {name} 6 m away in a bare hall, closed (issue #245).",
+                studio => new PhotoSetup(studio.DoorHall(kind))),
+            new($"{file}-half", $"A {name} 6 m away, opened by the player, halfway through its swing (issue #245).",
+                studio => new PhotoSetup(studio.DoorHall(kind, open: true)) { Ticks = 600, StopWhen = Swung(0.5f) }),
+            new($"{file}-open", $"A {name} 6 m away, opened by the player and fully swung open (issue #245).",
+                studio => new PhotoSetup(studio.DoorHall(kind, open: true)) { Ticks = 600, StopWhen = Swung(1f) }),
+            new($"{file}-10m", $"A {name} 10 m away in a bare hall, closed: can its kind still be told apart (issue #245)?",
+                studio => new PhotoSetup(studio.DoorHall(kind, cells: 5))),
+        ];
+    }
+
+    private static Func<GameWorld, bool> Swung(float fraction) => world => world.Doors[0].OpenFraction >= fraction;
 
     private static GameWorld AllWeapons(GameWorld world)
     {

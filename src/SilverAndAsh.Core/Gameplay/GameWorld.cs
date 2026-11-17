@@ -72,11 +72,11 @@ public sealed class GameWorld
         ArgumentNullException.ThrowIfNull(level);
         _levelWithOpenDoors = level;
         _doorPlan = doors ?? [];
-        _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level)).ToList();
+        Balance = balance ?? Balance.Default;
+        _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level, Balance.Doors)).ToList();
         Level = WithClosedDoors();
         LevelAsBuilt = WithUnbrokenWalls();
         Seed = seed;
-        Balance = balance ?? Balance.Default;
         _restartTicks = SimulationClock.SecondsToTicks(Balance.RestartDelay);
         DamageRules = DamageRules.Standard(Balance);
 
@@ -344,7 +344,7 @@ public sealed class GameWorld
                     _events.Add(new DoorUnlocked(door.Id, player.Id));
                 }
 
-                OpenDoor(door);
+                OpenDoor(door, player);
                 break;
             case Stairs stairs when stairs.CanInteract && !IsWon:
                 IsWon = true;
@@ -401,9 +401,9 @@ public sealed class GameWorld
         }
     }
 
-    private void OpenDoor(Door door)
+    private void OpenDoor(Door door, Player player)
     {
-        door.Open();
+        door.Open(player.Position);
         UpdateLevel();
         _events.Add(new DoorOpened(door.Id));
     }
@@ -1171,6 +1171,11 @@ public sealed class GameWorld
         foreach (var chest in _chests)
         {
             chest.Tick();
+        }
+
+        foreach (var door in _doors)
+        {
+            door.Tick();
         }
 
         _stairs?.Tick();
