@@ -103,6 +103,14 @@ public static class PhotoScenes
                 Ticks = 30,
                 Input = tick => PlayerInput.None with { SelectSlot = tick == 0 ? 1 : null },
             }),
+        new("hud-reload", "The pistol fired empty in the start room: \"Reload [R]\" under the crosshair (issue #259).",
+            studio => new PhotoSetup(studio.StartRun())
+            {
+                Ticks = 1200,
+                // Pull the trigger every few ticks; stop as the last round is gone (another pull would reload).
+                Input = tick => PlayerInput.None with { Shoot = tick % 4 == 0 },
+                StopWhen = world => world.Player.AmmoHint == AmmoHint.Reload,
+            }),
         new("inventory", "The inventory window (G) open, every place of the bag taken.",
             studio => new PhotoSetup(FullBag(AllWeapons(studio.StartRun())))
             {

@@ -40,6 +40,12 @@ internal static class CombatHud
             DrawReadiness(centreX + 19, centreY, player.Ranged.Cooldown);
             DrawAmmo(player.Ranged.Magazine);
             DrawWeapons(player);
+
+            // Under the crosshair, below where the blade's charge bar goes.
+            if (player.AmmoHint == AmmoHint.Reload)
+            {
+                DrawHint(centreX, centreY + 26, "Reload [R]");
+            }
         }
 
         if (player.MeleeCharge.IsCharging)
@@ -213,6 +219,22 @@ internal static class CombatHud
             Raylib.DrawRectangle(left, barTop, BarWidth, BarHeight, Track);
             Raylib.DrawRectangle(left, barTop, (int)MathF.Round(BarWidth * magazine.ReloadProgress), BarHeight, TextColor);
         }
+    }
+
+    /// <summary>
+    /// A short hint centred under the crosshair (issue #259): in the light HUD text colour with a dark outline, large
+    /// enough to catch the eye in a fight, on light walls and in the dark alike.
+    /// </summary>
+    private static void DrawHint(int centreX, int top, string text)
+    {
+        const int Size = 22;
+        var left = centreX - (Raylib.MeasureText(text, Size) / 2);
+        foreach (var (dx, dy) in new[] { (-1, 0), (1, 0), (0, -1), (0, 1) })
+        {
+            Raylib.DrawText(text, left + dx, top + dy, Size, Outline);
+        }
+
+        Raylib.DrawText(text, left, top, Size, TextColor);
     }
 
     /// <summary>A thin bar under the crosshair while the blade is being charged; golden when full.</summary>

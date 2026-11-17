@@ -47,6 +47,8 @@ Am 2026-11-17 geprüft: Die vier Kisten (`chest_*.glb`, `chest_*.png`) kommen au
 
 Am 2026-11-17 geprüft: Pistole und Klinge mit ihren Händen (`pistol*.glb`, `blade*.glb`, `pistol.png`, `blade.png`) kommen aus `tools/models/pistol.py` und `tools/models/blade.py` byte-gleich zur eingecheckten Fassung heraus (SHA-256 vor und nach dem Lauf verglichen). Gegenüber der Übergabe des Designers backen beide Skripte jetzt den Maßstab in die Ecken ein (`bake_scale` in `psx.py`); die `.glb`-Dateien unterscheiden sich deshalb von der Übergabe, das Bild nicht.
 
+Am 2026-11-17 ersetzt (Issues #256 und #257): Pistole und Klinge tragen statt Handschuh einen langen Mantelärmel (`build_sleeve4` in `tools/models/arm.py`), der Hahn der Pistole ist kleiner und hat einen hellen Feuerstein mit eigenem Texturfeld. Die sechs Dateien kommen aus der Übergabe des Designers (Commit `6ebf63f`) und aus `pistol.py` und `blade.py` byte-gleich heraus (SHA-256 vor und nach dem Lauf verglichen). `arm.py` ist nur um neue Funktionen ergänzt, `psx.py` unverändert; die übrigen Modelle nutzen `arm.py` nicht.
+
 Am 2026-11-17 geprüft: Die Fledermaus (`bat.glb`, `bat.png`) kommt aus `tools/models/bat.py` byte-gleich zur eingecheckten Fassung heraus (SHA-256 vor und nach dem Lauf verglichen).
 
 Am 2026-11-17 geprüft: Gorm (`gorm.glb`, `gorm_body.png`, `gorm_body_phase2.png`, `gorm_limbs.png`) kommt aus `tools/models/gorm.py` byte-gleich zur eingecheckten Fassung heraus (SHA-256 vor und nach dem Lauf verglichen).

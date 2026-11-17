@@ -144,35 +144,98 @@ public class WeaponPoseTests
         from tremble in (float[])[-0.0012f, 0.0012f]
         select WeaponPose.Blade(swing, windUp, tremble);
 
+    [Fact]
+    public void Winding_up_the_blade_cuts_no_sleeve_open_at_the_near_plane_within_the_picture()
+    {
+        // Issue #256: fully wound up, the near plane cut the long sleeve open in the lower left of the picture.
+        foreach (var windUp in (float[])[0.5f, 1f])
+        {
+            foreach (var tremble in (float[])[-0.0012f, 0.0012f])
+            {
+                var cuts = Placed("blade_hand.glb", WeaponPose.Blade(0f, windUp, tremble), _ => Matrix4x4.Identity)
+                    .SelectMany(part => part.Polygons.SelectMany(polygon => polygon.Zip(polygon.Skip(1).Append(polygon[0]))))
+                    .Where(side => (side.First.Z - WeaponPose.NearPlane) * (side.Second.Z - WeaponPose.NearPlane) < 0f)
+                    .Select(side => Vector3.Lerp(side.First, side.Second, (WeaponPose.NearPlane - side.First.Z) / (side.Second.Z - side.First.Z)))
+                    .Where(cut => MathF.Abs(cut.X) <= cut.Z * HalfWidth && MathF.Abs(cut.Y) <= cut.Z * HalfHeight)
+                    .ToList();
+
+                Assert.True(cuts.Count == 0, $"Wound up {windUp}: the near plane cuts the sleeve open at {cuts.Count} points within the picture.");
+            }
+        }
+    }
+
+    // Vertical field of view 70 degrees (LookSettings.FieldOfViewDegrees in the game) and the 16:9 window (1280 x 720
+    // in Program.cs): the slope of the picture's edges in camera space.
+    private static readonly float HalfHeight = MathF.Tan(35f * MathF.PI / 180f);
+    private static readonly float HalfWidth = HalfHeight * 16f / 9f;
+
+    // The picture's edges are widened by this much (metres) for bob, sway and the landing dip, which move the weapons a
+    // little after the pose.
+    private const float EdgeMargin = 0.02f;
+
     // Every triangle of the checked-in model, turned around its part's pivot as the rig does (all parts hang on the
-    // grip at 0, 0, 0), through the pose and shrunk towards the eye. Of each triangle only the piece beyond the near
-    // plane is drawn; its farthest point is one of its corners or where an edge crosses the plane. None lies farther
-    // from the eye (the camera-space origin) than the reach.
-    private static void AssertWithinReach(string file, Matrix4x4 pose, Func<string, Matrix4x4> turnOf)
+    // grip at 0, 0, 0), through the pose and shrunk towards the eye.
+    private static IEnumerable<(string Name, List<Vector3[]> Polygons)> Placed(string file, Matrix4x4 pose, Func<string, Matrix4x4> turnOf)
     {
         var shrink = Matrix4x4.CreateScale(WeaponPose.ShrinkTowardsEye);
         foreach (var (name, pivot, corners, triangles) in Triangles(file))
         {
             var frame = turnOf(name) * Matrix4x4.CreateTranslation(pivot) * pose * shrink;
             var placed = corners.Select(corner => Vector3.Transform(corner, frame)).ToArray();
+            var polygons = new List<Vector3[]>();
             for (var first = 0; first < triangles.Length; first += 3)
             {
-                for (var side = 0; side < 3; side++)
-                {
-                    var from = placed[triangles[first + side]];
-                    var to = placed[triangles[first + ((side + 1) % 3)]];
-                    if (from.Z >= WeaponPose.NearPlane)
-                    {
-                        AssertNear(file, name, from);
-                    }
+                polygons.Add([placed[triangles[first]], placed[triangles[first + 1]], placed[triangles[first + 2]]]);
+            }
 
-                    if ((from.Z - WeaponPose.NearPlane) * (to.Z - WeaponPose.NearPlane) < 0f)
-                    {
-                        AssertNear(file, name, Vector3.Lerp(from, to, (WeaponPose.NearPlane - from.Z) / (to.Z - from.Z)));
-                    }
+            yield return (name, polygons);
+        }
+    }
+
+    // Of each triangle only the piece beyond the near plane and within the picture's edges is drawn
+    // (the sleeves are long on purpose and run out of the picture). That piece is the triangle clipped by those
+    // planes; its farthest point is one of its corners. None lies farther from the eye (the camera-space origin) than
+    // the reach.
+    private static void AssertWithinReach(string file, Matrix4x4 pose, Func<string, Matrix4x4> turnOf)
+    {
+        foreach (var (name, polygons) in Placed(file, pose, turnOf))
+        {
+            foreach (var triangle in polygons)
+            {
+                var drawn = Clip(triangle, point => point.Z - WeaponPose.NearPlane);
+                drawn = Clip(drawn, point => (point.Z * HalfHeight) + EdgeMargin - point.Y);
+                drawn = Clip(drawn, point => (point.Z * HalfHeight) + EdgeMargin + point.Y);
+                drawn = Clip(drawn, point => (point.Z * HalfWidth) + EdgeMargin - point.X);
+                drawn = Clip(drawn, point => (point.Z * HalfWidth) + EdgeMargin + point.X);
+                foreach (var point in drawn)
+                {
+                    AssertNear(file, name, point);
                 }
             }
         }
+    }
+
+    // Keeps the part of a convex polygon where inside(point) >= 0 (Sutherland-Hodgman); inside must be linear.
+    private static Vector3[] Clip(Vector3[] polygon, Func<Vector3, float> inside)
+    {
+        var kept = new List<Vector3>();
+        for (var i = 0; i < polygon.Length; i++)
+        {
+            var from = polygon[i];
+            var to = polygon[(i + 1) % polygon.Length];
+            var (a, b) = (inside(from), inside(to));
+            if (a >= 0f)
+            {
+                kept.Add(from);
+            }
+
+            if (a * b < 0f)
+            {
+                kept.Add(Vector3.Lerp(from, to, a / (a - b)));
+            }
+        }
+
+        return [.. kept];
     }
 
     private static void AssertNear(string file, string part, Vector3 point)
