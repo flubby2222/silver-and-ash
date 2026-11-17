@@ -28,10 +28,10 @@ Urteil des Menschen zur Hörprobe 6: „b ist als Theme im Hauptmenü top. Bedar
 
 | Datei | Wo | Länge | Vorschlag 0–1 |
 |---|---|---|---|
-| `musik-hauptmenue.ogg` | Titelbildschirm (Hauptmenü), als Schleife (`LoadMusicStream`, `SetMusicLooping` bzw. beim Stream-Ende neu starten) | 72 s, stereo, nahtlos | 0,8 |
+| `musik-hauptmenue.ogg` | Titelbildschirm (Hauptmenü), als Schleife (`LoadMusicStream`, `SetMusicLooping` bzw. beim Stream-Ende neu starten) | 72 s, stereo, nahtlos, **ohne Herzschlag** (Urteil 2026-11-17: „zu überladen“) | 0,8 |
 | `musik-katakomben.ogg` | im Lauf (Katakomben) **statt** `ambiente-katakomben.ogg`, als Schleife | 64 s, stereo, nahtlos | 1,0 |
 
-- **Lautstärke:** Das Menü-Thema ist die lautere Datei (Mittel −21 dBFS, −20,5 LUFS), die Katakomben-Musik absichtlich etwa 12 LU leiser (Mittel −34 dBFS, −32,5 LUFS), damit Schritte, Ankündigungen und Treffer darüber stehen. Auch hier: Gesamtlautstärke 0,7; ein eigener Regler für die Musik ist im Test sinnvoll, weil ich das Verhältnis zu den Geräuschen nicht hören kann.
+- **Lautstärke:** Das Menü-Thema ist die lautere Datei (Mittel −23,5 dBFS, −22,3 LUFS; Glocke und Chor sind seit dem Weglassen des Herzschlags unverändert laut, nur insgesamt fehlt dessen Anteil), die Katakomben-Musik absichtlich etwa 12 LU leiser (Mittel −34 dBFS, −32,5 LUFS), damit Schritte, Ankündigungen und Treffer darüber stehen. Auch hier: Gesamtlautstärke 0,7; ein eigener Regler für die Musik ist im Test sinnvoll, weil ich das Verhältnis zu den Geräuschen nicht hören kann.
 - **Übergang Titel → Lauf (Vorschlag):** Menü-Musik in etwa 1,5 s ausblenden, dann den Lauf laden, die Katakomben-Musik in etwa 3 s einblenden (Lautstärke 0 → 1,0, von Hand je Bild mit `SetMusicVolume`); beim Zurück zum Titel umgekehrt. Beide Stücke beginnen auf demselben Grundton (E) im selben Hall, deshalb klingt ein weiches Überblenden stimmig; ein hartes Umschalten dürfte stören. Ungehört.
 - **Das alte Ambiente** (`ambiente-katakomben.ogg`) ersetzt die Katakomben-Musik; ob die Tropfen bleiben, entscheidet sich mit den Geräuschen (die Tropfen waren in die Ambiente-Datei eingebaut).
 - **Nahtlos:** Alle Noten und der Hallschwanz laufen kreisförmig, die PS1-Kette bekam vorne das Ende und hinten den Anfang angehängt. Naht geprüft: Sprung vom letzten zum ersten Sample höchstens so groß wie 99,9 % der Nachbar-Abstände (unten).
@@ -65,10 +65,10 @@ Urteil des Menschen zur Hörprobe 6: „b ist als Theme im Hauptmenü top. Bedar
 
 | Datei | Länge | Spitze | Mittel | Lautheit | Naht L / R (Sprung ≤ 99,9 %) | < 300 Hz | 300–3 000 Hz | > 3 000 Hz | gesamt | Abstand Mitte | außerhalb e-Moll | stärkste Tonklasse | Ergebnis |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `musik-hauptmenue.ogg` | 72,0 s | −3,5 dBFS | −21,0 dBFS | −20,5 LUFS | 0,00415 ≤ 0,00809; 0,00311 ≤ 0,00662 | −22 | −37 | −87 | −21 | −15,2 dB | 0,2 % | E (39 %) | bestanden |
+| `musik-hauptmenue.ogg` (ohne Herzschlag) | 72,0 s | −7,8 dBFS | −23,5 dBFS | −22,3 LUFS | 0,00391 ≤ 0,00790; 0,00308 ≤ 0,00629 | −25 | −37 | −88 | −24 | −12,5 dB | 0,0 % | E (52 %) | bestanden |
 | `musik-katakomben.ogg` | 64,0 s | −20,7 dBFS | −34,0 dBFS | −32,5 LUFS | 0,00104 ≤ 0,00131; 0,00021 ≤ 0,00131 | −37 | −56 | −98 | −37 | **−19,0 dB** | 0,0 % | E (59 %) | bestanden |
 
-Das 15-dB-Ziel für die freie Mitte ist in den Katakomben erreicht (−19,0 dB) und im Menü zufällig auch (−15,2 dB). **Byte-Gleichheit:** zwei vollständige Läufe ergaben dieselbe SHA-256: `musik-hauptmenue.ogg` `6960b2c024457a75664c962ea4e8b3091228586a0ab98885fb394acab47c0a5e`, `musik-katakomben.ogg` `dcf144b6357b400b43688e74003edbf9012d34c869545e14611d03e500d1ebb0` (gleicher Rechner, gleiche `ffmpeg`-Fassung).
+Das 15-dB-Ziel für die freie Mitte ist in den Katakomben erreicht (−19,0 dB); im Menü ist die Mitte ohne Herzschlag etwas stärker (−12,5 statt −15,2 dB), dort gilt kein Ziel. **Prüfung der Herzschlag-Entfernung:** In den Fenstern ohne Herzschlag (Takt 1–3, Takt 16–18) ist die Datei gegenüber der Fassung mit Herzschlag um ±0,0 dB gleich laut (Glocke und Chor unverändert); in den Herzschlag-Teilen ist sie um 2,3–5,1 dB leiser, wie zu erwarten. **Byte-Gleichheit:** zwei vollständige Läufe ergaben dieselbe SHA-256: `musik-hauptmenue.ogg` `00c16d25434707500b1610e9edf0b0a3a36c31ae8fe9748bb2a77d343ae15a7f`, `musik-katakomben.ogg` `dcf144b6357b400b43688e74003edbf9012d34c869545e14611d03e500d1ebb0` (gleicher Rechner, gleiche `ffmpeg`-Fassung).
 
 ## Herkunft
 
@@ -91,7 +91,7 @@ Das 15-dB-Ziel für die freie Mitte ist in den Katakomben erreicht (−19,0 dB) 
 
 **Zur Musik:**
 - **Ungehört**, auch die Naht der Schleife: Gemessen ist nur, dass der Sprung am Übergang nicht größer ist als sonst im Stück; ob man die Wiederholung hört, weiß ich nicht.
-- **Die Erweiterung des Menü-Themas von 24 auf 72 s** ist meine Setzung: Teil A ist die Skizze (gleiche Akkordfolge Em – C/E – Am/E – Em, Glocke, Herzschlag), die Akkorde sind aber neu gesetzt (die Stimmführung wurde neu berechnet, damit sie über die ganze Schleife keine parallelen Quinten oder Oktaven hat). Teil B (G/D – D/F# – C, Herzschlag durchgehend) und Teil C (Am/E – Bm, Herzschlag verklingt, führt nach Em) sind neu und nicht vom Menschen gehört. Ob 72 s trägt oder zu lang/gleichförmig ist, weiß ich nicht.
+- **Die Erweiterung des Menü-Themas von 24 auf 72 s** ist meine Setzung: Teil A ist die Skizze (gleiche Akkordfolge Em – C/E – Am/E – Em, Glocke), die Akkorde sind aber neu gesetzt (die Stimmführung wurde neu berechnet, damit sie über die ganze Schleife keine parallelen Quinten oder Oktaven hat). Teil B (G/D – D/F# – C) und Teil C (Am/E – Bm, führt nach Em) sind neu und nicht vom Menschen gehört. Ob 72 s trägt oder zu lang/gleichförmig ist, weiß ich nicht.
 - **Katakomben-Musik:** Ob sie „karg und leise“ genug ist und trotzdem nach Stimmung klingt, ob die Katakomben nicht einfach dröhnen (sehr tiefer Chor, Mitte −19 dB, fast alles unter 300 Hz): ungehört. Auf kleinen Lautsprechern könnte sie kaum zu hören sein.
 - **Das Überblenden zwischen Titel und Lauf** ist ein Vorschlag, nicht erprobt.
 - Eine Zwischenfassung hatte versehentlich einen Gleichanteil (die Stimmquelle ist einseitig) und war nach der Messung fast reiner Bass (Mitte 28 dB unter dem Gesamtpegel); er ist jetzt entfernt, die Messung zeigt es.
