@@ -172,6 +172,8 @@ public static class PhotoScenes
                 studio => new PhotoSetup(studio.DoorHall(kind, open: true)) { Ticks = 600, StopWhen = Swung(0.5f) }),
             new($"{file}-open", $"A {name} 6 m away, opened by the player and fully swung open (issue #245).",
                 studio => new PhotoSetup(studio.DoorHall(kind, open: true)) { Ticks = 600, StopWhen = Swung(1f) }),
+            new($"{file}-10m", $"A {name} 10 m away in a bare hall, closed: can its kind still be told apart (issue #245)?",
+                studio => new PhotoSetup(studio.DoorHall(kind, cells: 5))),
         ];
     }
 

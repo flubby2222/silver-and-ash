@@ -105,12 +105,11 @@ public sealed class Door : IInteractable
         OpenedFromLowSide = Side is RoomSide.North or RoomSide.South ? from.Z < middle.Z : from.X < middle.X;
     }
 
-    /// <summary>A cracked wall breaks open (see <see cref="DoorKind.Cracked"/>) - nothing swings, it is gone at once.</summary>
-    internal void Break()
-    {
-        IsOpen = true;
-        _openedTicks = _openingTicks;
-    }
+    /// <summary>
+    /// A cracked wall breaks open (see <see cref="DoorKind.Cracked"/>) - nothing swings, it is gone at once: its opening
+    /// time is 0, so <see cref="OpenFraction"/> is 1 straight away.
+    /// </summary>
+    internal void Break() => IsOpen = true;
 
     /// <summary>One tick of swinging open (nothing while closed or once fully open).</summary>
     internal void Tick()

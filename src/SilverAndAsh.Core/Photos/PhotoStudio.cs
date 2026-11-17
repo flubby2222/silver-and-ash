@@ -155,18 +155,21 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
-    /// A bare hall cut in two by a wall with one door of <paramref name="kind"/> in it, 6 m in front of the player, who
-    /// looks at its middle (issue #245). <paramref name="sideways"/>: the wall runs North/South and the passage along X
-    /// (the door model turned a quarter). <paramref name="open"/>: the door is opened by the player before the first
-    /// tick - its leaves swing away from them while the scene's ticks run.
+    /// A bare hall cut in two by a wall with one door of <paramref name="kind"/> in it, <paramref name="cells"/> cells
+    /// (2 m each, so 6 m by default, at most 5 cells) in front of the player, who looks at its middle (issue #245).
+    /// <paramref name="sideways"/>: the wall runs North/South and the passage along X (the door model turned a quarter).
+    /// <paramref name="open"/>: the door is opened by the player before the first tick - its leaves swing away from them
+    /// while the scene's ticks run.
     /// </summary>
-    public GameWorld DoorHall(DoorKind kind, bool sideways = false, bool open = false)
+    public GameWorld DoorHall(DoorKind kind, bool sideways = false, bool open = false, int cells = 3)
     {
         const int Width = 9;
         const int Depth = 10;
         const int Middle = Width / 2;
-        const int PlayerRow = 3;
-        const int DoorRow = PlayerRow + 3;
+        const int DoorRow = 6;
+        ArgumentOutOfRangeException.ThrowIfLessThan(cells, 2);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(cells, DoorRow - 1);
+        var playerRow = DoorRow - cells;
         var text = new StringBuilder();
         for (var row = 0; row < Depth; row++)
         {
@@ -175,7 +178,7 @@ public sealed class PhotoStudio
                 // Built along Z; sideways the map is mirrored on its diagonal afterwards (rows become columns).
                 var outer = row == 0 || column == 0 || row == Depth - 1 || column == Width - 1;
                 var wall = outer || (row == DoorRow && column != Middle);
-                text.Append(wall ? '#' : row == PlayerRow && column == Middle ? 'P' : '.');
+                text.Append(wall ? '#' : row == playerRow && column == Middle ? 'P' : '.');
             }
 
             text.Append('\n');
@@ -186,12 +189,30 @@ public sealed class PhotoStudio
         LevelDoor[] doors = [new(x, z, 0, 1, sideways ? RoomSide.East : RoomSide.South, kind)];
         var world = new GameWorld(LevelParser.Parse(map), Seed, Balance, doors);
         var door = world.Doors[0];
-        Face(world.Player, (door.BoxMin + door.BoxMax) / 2f);
+        var doorMiddle = (door.BoxMin + door.BoxMax) / 2f;
         if (open)
         {
-            door.Open(world.Player.Position);
+            // The regular way, as in the game: one cell before the door, a key in hand for a locked one, F for one
+            // tick - so the level, the events and the key are exactly as after a real opening. Then back to the start.
+            var start = world.Player.Position;
+            var (beforeX, beforeZ) = sideways ? (DoorRow - 1, Middle) : (Middle, DoorRow - 1);
+            world.Player.PlaceAt(world.Level.CellCenter(beforeX, beforeZ));
+            Face(world.Player, doorMiddle);
+            if (kind == DoorKind.Locked)
+            {
+                world.Player.AddKeys(1);
+            }
+
+            world.Tick(PlayerInput.None with { Interact = true });
+            if (!door.IsOpen)
+            {
+                throw new InvalidOperationException($"The {kind} door of the door hall did not open on F.");
+            }
+
+            world.Player.PlaceAt(start);
         }
 
+        Face(world.Player, doorMiddle);
         return world;
     }
 
