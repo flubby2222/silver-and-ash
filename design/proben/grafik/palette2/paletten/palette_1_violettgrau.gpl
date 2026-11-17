@@ -1,0 +1,68 @@
+GIMP Palette
+Name: Silver and Ash Violettgrau (nah am heutigen Stand)
+Columns: 8
+#
+ 16  11  20 Stein kalt 0
+ 38  28  43 Stein kalt 1
+ 62  49  65 Stein kalt 2
+ 92  77  86 Stein kalt 3
+120 101 108 Stein kalt 4
+147 126 130 Stein kalt 5
+170 156 155 Stein kalt 6
+194 187 183 Stein kalt 7
+ 27  18  28 Stein warm 0
+ 53  36  48 Stein warm 1
+ 76  55  64 Stein warm 2
+ 98  75  77 Stein warm 3
+132 101  98 Stein warm 4
+161 135 124 Stein warm 5
+186 170 155 Stein warm 6
+210 203 188 Stein warm 7
+ 30  19  26 Holz 0
+ 52  27  34 Holz 1
+ 80  41  37 Holz 2
+110  76  46 Holz 3
+138  99  58 Holz 4
+167 125  69 Holz 5
+187 150  89 Holz 6
+199 172 117 Holz 7
+ 20  18  28 Eisen 0
+ 38  36  56 Eisen 1
+ 55  57  84 Eisen 2
+ 73  83 112 Eisen 3
+ 92 112 140 Eisen 4
+126 144 165 Eisen 5
+163 175 187 Eisen 6
+198 205 210 Eisen 7
+ 38  21  13 Messing/Gold 0
+ 74  44  23 Messing/Gold 1
+111  70  31 Messing/Gold 2
+149 100  39 Messing/Gold 3
+188 135  45 Messing/Gold 4
+214 170  64 Messing/Gold 5
+227 202 111 Messing/Gold 6
+238 228 160 Messing/Gold 7
+ 18  17  34 Stoff 0
+ 23  24  48 Stoff 1
+ 30  34  62 Stoff 2
+ 36  45  76 Stoff 3
+ 60  75 116 Stoff 4
+ 86 107 154 Stoff 5
+126 145 178 Stoff 6
+168 181 199 Stoff 7
+ 16  25  20 Haut/Knochen 0
+ 40  58  43 Haut/Knochen 1
+ 72  89  67 Haut/Knochen 2
+109 118  96 Haut/Knochen 3
+140 148 115 Haut/Knochen 4
+170 172 139 Haut/Knochen 5
+195 192 164 Haut/Knochen 6
+216 210 192 Haut/Knochen 7
+ 27   9  15 Blutrot 0
+ 64  17  28 Blutrot 1
+105  20  34 Blutrot 2
+150  20  30 Blutrot 3
+175  25  35 Blutrot 4
+200  30  40 Blutrot 5
+225  58  48 Blutrot 6
+231 110  85 Blutrot 7

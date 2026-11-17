@@ -1,0 +1,68 @@
+GIMP Palette
+Name: Silver and Ash Kalt und blau
+Columns: 8
+#
+ 16  11  20 Stein kalt 0
+ 34  28  46 Stein kalt 1
+ 51  48  73 Stein kalt 2
+ 71  73  98 Stein kalt 3
+ 95 101 128 Stein kalt 4
+124 133 154 Stein kalt 5
+156 164 177 Stein kalt 6
+188 194 200 Stein kalt 7
+ 23  18  28 Stein warm 0
+ 46  37  51 Stein warm 1
+ 69  58  73 Stein warm 2
+ 91  81  93 Stein warm 3
+122 105 118 Stein warm 4
+150 130 136 Stein warm 5
+175 161 159 Stein warm 6
+200 195 188 Stein warm 7
+ 15  15  26 Holz 0
+ 47  28  52 Holz 1
+ 80  38  53 Holz 2
+110  76  46 Holz 3
+136  97  61 Holz 4
+160 118  76 Holz 5
+176 139 100 Holz 6
+187 160 129 Holz 7
+ 16  17  30 Eisen 0
+ 33  38  59 Eisen 1
+ 52  61  87 Eisen 2
+ 71  86 114 Eisen 3
+ 92 112 140 Eisen 4
+127 148 167 Eisen 5
+166 182 191 Eisen 6
+203 212 216 Eisen 7
+ 36  26  15 Messing/Gold 0
+ 70  50  27 Messing/Gold 1
+106  77  36 Messing/Gold 2
+145 106  42 Messing/Gold 3
+186 139  47 Messing/Gold 4
+214 170  64 Messing/Gold 5
+219 204 124 Messing/Gold 6
+230 228 179 Messing/Gold 7
+ 22  22  40 Stoff 0
+ 20  22  48 Stoff 1
+ 27  32  63 Stoff 2
+ 34  43  79 Stoff 3
+ 57  76 122 Stoff 4
+ 83 114 162 Stoff 5
+127 155 184 Stoff 6
+172 191 205 Stoff 7
+ 16  22  24 Haut/Knochen 0
+ 41  57  55 Haut/Knochen 1
+ 69  88  75 Haut/Knochen 2
+101 116  99 Haut/Knochen 3
+129 143 120 Haut/Knochen 4
+159 166 145 Haut/Knochen 5
+188 189 170 Haut/Knochen 6
+211 209 197 Haut/Knochen 7
+ 26  10  18 Blutrot 0
+ 63  18  34 Blutrot 1
+104  21  39 Blutrot 2
+150  20  30 Blutrot 3
+175  25  35 Blutrot 4
+200  30  40 Blutrot 5
+218  52  50 Blutrot 6
+219  98  87 Blutrot 7
