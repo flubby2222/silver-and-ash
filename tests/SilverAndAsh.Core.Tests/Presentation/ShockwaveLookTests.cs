@@ -50,9 +50,11 @@ public class ShockwaveLookTests
         Assert.True(Part(ShockwaveLook.Puff).PositionMax.X < 0.55f + ShockwaveLook.ShardReach);
     }
 
+    // Issue #314: no red crack any more - the front of the shards (their broken lip, the outermost point of the file) is
+    // what marks the danger now, so it is the front that must lie exactly on the edge of the wave.
     [Theory]
     [MemberData(nameof(Radii))]
-    public void The_red_crack_of_every_shard_lies_exactly_on_the_edge_of_the_wave(float radius)
+    public void The_front_of_every_shard_lies_exactly_on_the_edge_of_the_wave(float radius)
     {
         var origin = new Vector3(13f, 0f, 21f);
         var pieces = new List<ShockwavePiece>();

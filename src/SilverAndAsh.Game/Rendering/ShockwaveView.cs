@@ -6,8 +6,8 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// The shock wave of Gorm's hammer (issue #299): the designer's ring of breaking stone, assets/models/shock_wave.glb -
-/// stone plates thrown up along the edge with a thin red crack at their foot and dust behind them, placed by
-/// <see cref="ShockwaveLook"/> so that the crack runs exactly on the edge of the wave's hit zone. Without the model
+/// stone plates thrown up along the edge with a pale broken lip at their foot, a dark furrow and dust behind them, placed
+/// by <see cref="ShockwaveLook"/> so that the front of the lip runs exactly on the edge of the wave's hit zone. Without the model
 /// (missing or broken: a warning in the log) the plain ring of pale boxes it had before. Between BeginFigures and
 /// EndFigures; nothing while there is no wave or once Gorm is dead.
 /// </summary>
