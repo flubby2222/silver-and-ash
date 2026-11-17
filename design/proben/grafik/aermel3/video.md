@@ -35,3 +35,27 @@ Ordner `modelle_d/` (Namen wie im Spiel), Skripte `pistol.py`, `blade.py`, `arm.
 - Die Stulpenriemen sind im Foto kaum zu erkennen.
 - Es ist wieder eine sichtbare Hand mit Fingern. Das Video zeigt, dass es so üblich ist; der Mensch hatte so etwas abgelehnt. Er sollte entscheiden, ob ein Handschuh in wenigen größeren Flächen (weniger Dreiecke an den Fingern) akzeptabel ist; das Fingerwerk ließe sich vereinfachen.
 - Ärmel und Handschuh sind als Farben nicht klar getrennt, die Palette müsste dafür umgebaut werden.
+
+## Stil treu bleiben: was ich aus dem Video übernehme und was nicht
+Das Video zeigt ein modernes, hochauflösendes Arm-Rig (glatte Schattierung, viele Dreiecke, feine Handschuhe und Gurte, Waffe im Stil eines heutigen Schießspiels). Das ist ein anderer Stil als unserer (ADR 0010: PS1-nah, Texturen 64 bis 128 Pixel ungefiltert, wenige Dreiecke, gedeckte Farben).
+
+**Übernommen (Methode):**
+- Die Lage im Bild: Waffe im unteren Drittel, Unterarm von der Bildkante diagonal zur Faust, ein Drittel Bildhöhe sichtbar, Mitte frei.
+- Handgelenk in Verlängerung des Unterarms, Faust schließt den Griff ohne Lücken, Knöchel in einer Reihe.
+- Eine klare Stulpe am Handgelenk zwischen Faust und Ärmel als Abschluss.
+- Das Vorgehen: erst die Haltung im Bild festlegen, dann erst Form und Textur beurteilen.
+
+**Bewusst nicht übernommen:**
+- Dreieckszahl, Gurtwerk, einzelne Finger mit Gelenken und Schnallen: bei uns wenige große Flächen, Faust als geschlossene Form.
+- Glatte Schattierung, hohe Auflösung, Normalkarten: wir bleiben bei Gouraud je Ecke und 128 × 128 mit höchstens 32 Farben.
+- Blickwinkel 90 Grad und Waffenform: Spielentscheidung beziehungsweise eigene Waffe (Steinschloss, Silberklinge).
+- Farben: Das Video ist schwarz mit hellen Gurten. Wir bleiben bei gedeckten Tönen wie Ghul, Gorm und Kisten. **Entwurf d verfehlt das teilweise** (der Handschuh liest sich als grauer Stahl); die nächste Fassung müsste Handschuh und Stulpe in warmes, dunkles Leder bringen und den Ärmel vom Handschuh über den Ton, nicht über Blau gegen Grau absetzen.
+
+## Für künftige Modelle
+1. **Zuerst die Lage im Bild festlegen, dann das Modell beurteilen.** Gilt für alle Dinge in der Ich-Sicht (Waffen, Arme, später Fackel, Schlüssel): Ein Stück, das im Bild halb abgeschnitten oder nur von oben zu sehen ist, ist kein Modellfehler, sondern ein Haltungsfehler. Probefotos immer im Spiel, mit der Haltung als Teil des Probestücks.
+2. **Sichtbare Länge messen:** Bei Armen und Griffen mindestens ein Viertel bis ein Drittel der Bildhöhe, sonst bleibt nur der Rand als Scheibe.
+3. **Öffnungen und Ränder haben eine Ringfläche**, die von der Kamera aus als Ring liest; reine Kegel und Röhren werden von oben zu Scheiben.
+4. **Jedes Ding braucht einen Abschluss mit Materialwechsel** (Stulpe, Zwinge, Beschlag), sonst liest sich eine Röhre nicht als Ärmel oder Griff.
+5. **Wenige große Formen statt Detail.** Das Video bestätigt das für Hände: Faust als geschlossene Form, Lücken zu, keine losen Fingerteile.
+6. **Die Palette gehört zum Entwurf:** Bei 32 Farben im Atlas ziehen Brauntöne (Holz, Leder) Blau und Grau zusammen. Farben, die sich unterscheiden sollen, in der Palette getrennt halten oder in getrennte Atlasfelder mit eigener Palette legen.
+7. **Vorbilder ansehen, bevor gebaut wird,** und festhalten, was man übernimmt und was nicht (diese Notiz als Vorlage).
