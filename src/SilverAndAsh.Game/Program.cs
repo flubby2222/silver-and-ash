@@ -703,6 +703,10 @@ static void RunGame(
         // missing or broken file: a warning in the log, the game runs silent or without that sound.
         using var sounds = SoundPlayer.Open(Path.Combine(AppContext.BaseDirectory, "assets", "audio"), log);
 
+        // Which sound pack plays (issue #290): K switches between sound pack 1 and the old sounds. Presentation only,
+        // never part of the world.
+        var soundPacks = new SoundPackSwitch();
+
         // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.
         while (!Raylib.WindowShouldClose() && !quit)
         {
@@ -713,6 +717,15 @@ static void RunGame(
             {
                 sounds.ToggleMute();
             }
+
+            // K switches the sound pack (issue #290), so the human can compare old and new in the game.
+            if (Raylib.IsKeyPressed(KeyboardKey.K))
+            {
+                soundPacks.Toggle();
+                log?.Info($"Sound pack: {soundPacks.Current.Name}.");
+            }
+
+            soundPacks.Update(Raylib.GetFrameTime());
 
             // The music (issue #271): the title theme on the title screen, the catacomb music in a run (held in the Esc
             // menu), none on the end screen - as it stood after the latest frame.
@@ -740,6 +753,7 @@ static void RunGame(
 
                 Raylib.BeginDrawing();
                 TitleScreen.Draw(titleMenu, displayVersion);
+                SoundPackNotice.Draw(soundPacks);
                 Raylib.EndDrawing();
                 continue;
             }
@@ -876,7 +890,7 @@ static void RunGame(
                 slotChosen = null;
                 wheelSteps = 0;
                 ReadEvents();
-                sounds.Play(soundCues.For(gameWorld.Events));
+                sounds.Play(soundCues.For(gameWorld.Events, soundPacks.Current));
             }
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
@@ -926,6 +940,7 @@ static void RunGame(
             Raylib.BeginDrawing();
             DrawScreen(
                 Raylib.GetFrameTime(), frozen, showMap: mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab), mapKeptOpen, debugInfo: true);
+            SoundPackNotice.Draw(soundPacks);
             Raylib.EndDrawing();
         }
     }
