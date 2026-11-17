@@ -27,6 +27,7 @@ from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_a
 
 # Modelle und Texturen landen in assets/models (vom Skript in tools/models aus zwei Ebenen hoch).
 import arm as _arm  # noqa: E402
+_arm.LACE_K = 0.86                                    # Fassung j: Ruesche der Pistole einen Hauch dunkler
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                        "assets", "models")
 TEX = 128

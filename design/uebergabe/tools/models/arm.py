@@ -263,6 +263,7 @@ WOOL_B = np.array((54, 56, 66), float)
 OCHRE = np.array((132, 100, 64), float)
 NAVY_C = np.array((34, 38, 56), float)
 LACE = np.array((214, 206, 194), float)
+LACE_K = 1.0         # Fassung j: die Pistole setzt 0,86 (Ruesche einen Hauch dunkler)
 
 
 def paint_a_cuff(U, V_):
@@ -320,11 +321,8 @@ def paint_c_sleeve(U, V_):
     col = mix(col * 0.75, NAVY_C * 2.4 + 12, fold ** 1.6 * 0.8)
     # Fassung i: eine schmale dunkle Naht hinter der Ruesche und zwei kleine Silberknoepfe am Aermel (sonst wie C)
     col = mix(col, NAVY_C * 0.45, ((V_ > CUFF_V) & (V_ < CUFF_V + 0.035)).astype(float))
-    for cv in (CUFF_V + 0.10, CUFF_V + 0.18):
-        d = blob(U, V_, 0.5, cv, 0.035, 0.03)
-        col = mix(col, np.array((206.0, 210, 222)), (d > 0.35).astype(float))
-        col = mix(col, NAVY_C * 0.4, ((d > 0.1) & (d <= 0.35)).astype(float) * 0.7)
-    lace = np.broadcast_to(LACE, (h, w, 3)).copy() * (0.9 + 0.15 * vnoise(h, w, 8, 16, 533))[..., None]
+    # Fassung j: keine Knoepfe mehr (im Bild nicht zu erkennen); die schmale dunkle Naht bleibt.
+    lace = np.broadcast_to(LACE * LACE_K, (h, w, 3)).copy() * (0.9 + 0.15 * vnoise(h, w, 8, 16, 533))[..., None]
     holes = ((((U * 24) % 1.0) - 0.5) ** 2 + (((V_ * 40 * 0.17 / CUFF_V) % 1.0) - 0.5) ** 2) < 0.06
     lace = mix(lace, NAVY_C * 1.4, holes.astype(float) * 0.8)                              # Spitzenloecher: dunkel durch
     lace = mix(lace, LACE * 0.6, (np.abs(U * 12 - np.floor(U * 12) - 0.5) > 0.42).astype(float) * 0.4)   # Falten der Ruesche
@@ -381,9 +379,13 @@ def build_design(part, weapon):
     if DESIGN == "c":
         # Fassung i: der Klingenaermel aus C (Pfad und Radien unveraendert), der letzte Ring (Ellbogen) weiter nach hinten gesetzt (sieben Ringe wie in C, damit die Textur gleich bleibt), damit das
         # Ende in jeder Haltung ausserhalb des Bildes liegt. Die Pistole bekommt denselben Aermel gespiegelt (s = +1).
-        path = [(0, 0, -0.003), (0, 0, -0.016), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07), (0.09, -0.06, -0.09),
-                (0.18, -0.11, -0.12), (0.30, -0.17, -0.16), (0.78, -0.41, -0.32)]
-        r = [0.040, 0.031, 0.029, 0.031, 0.036, 0.040, 0.046, 0.060]
+        # Fassung j: die ersten vier Ringe (Manschette und das im Bild liegende Rohrstueck) wie in C; ab dem fuenften Ring
+        # haengt das Rohr nach unten (Richtung (-0,71; -0,71; 0) in Dateikoordinaten, das ist bei 45 Grad Rollen genau
+        # senkrecht nach unten), weil die Drehung um die Hochachse beim Schlag nur waagerechte Anteile verschwenkt:
+        # so zeigt das Rohr beim vollen Schlag nach unten aus dem Bild statt quer nach vorn (Artefakt in Fassung i).
+        path = [(0, 0, -0.003), (0, 0, -0.016), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07), (0.05, -0.065, -0.10),
+                (-0.035, -0.150, -0.11), (-0.30, -0.42, -0.11), (-0.87, -0.985, -0.12)]
+        r = [0.040, 0.031, 0.029, 0.031, 0.036, 0.040, 0.046, 0.052]
         if weapon == "pistol":
             # an den Pistolengriff gesetzt: um 2,6 cm nach unten (reine Verschiebung, Form und Winkel bleiben), damit Schloss, Hahn und Abzugsbuegel
             # vor dem Rueschenrand frei bleiben (sonst derselbe Aermel, nur gespiegelt)
