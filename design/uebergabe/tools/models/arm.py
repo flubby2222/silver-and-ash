@@ -574,18 +574,19 @@ ARM_PAINTERS = {"sleeve": paint_g_sleeve}
 
 
 def _g_path(weapon):
-    """Mittellinie des Aermels (Kameraraum, rechte Seite; s = -1 spiegelt): Mund der Manschette, drei Ringe Ruesche,
-    dann das Rohr: erst zurueck, dann schraeg nach aussen und unten, weit ueber den Bildrand hinaus."""
+    """Mittellinie des Aermels (Kameraraum, rechte Seite; s = -1 spiegelt). Fassung h: die Manschette ist nur ein kurzer
+    Saum (vier Ringe auf 1,2 cm), danach laeuft das Rohr flacher quer durchs Bild und weit ueber den Bildrand hinaus."""
     if weapon == "blade":
-        z0, y0, dz = -0.003, 0.0, -0.008
+        z0, y0, dz = -0.003, 0.0, -0.004
         mouth = [(0, y0, z0 + dz * k) for k in range(4)]
-        tube_ = [(0.0, -0.004, -0.050), (0.035, -0.020, -0.080), (0.09, -0.060, -0.110), (0.18, -0.110, -0.150),
-                 (0.32, -0.190, -0.220), (0.60, -0.350, -0.400)]
+        tube_ = [(0.03, -0.004, -0.032), (0.08, -0.015, -0.055), (0.17, -0.035, -0.085), (0.30, -0.075, -0.13),
+                 (0.50, -0.14, -0.20), (0.80, -0.26, -0.32)]
     else:
-        z0, y0, dz = 0.000, -0.026, -0.008
+        # Manschette weiter hinten und tiefer am Griff: Schloss, Abzugsbuegel und oberer Griff bleiben frei.
+        z0, y0, dz = -0.010, -0.026, -0.004
         mouth = [(0, y0, z0 + dz * k) for k in range(4)]
-        tube_ = [(0.0, -0.028, -0.032), (0.035, -0.040, -0.060), (0.09, -0.064, -0.090), (0.18, -0.105, -0.125),
-                 (0.32, -0.175, -0.185), (0.60, -0.330, -0.300)]
+        tube_ = [(0.03, -0.027, -0.040), (0.08, -0.031, -0.060), (0.17, -0.043, -0.090), (0.30, -0.075, -0.135),
+                 (0.50, -0.16, -0.20), (0.80, -0.28, -0.32)]
     return mouth + tube_
 
 
@@ -593,15 +594,18 @@ def build_design_g(part, weapon):
     s = +1 if weapon == "pistol" else -1
     path = _g_path(weapon)
     m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
-    base = 0.034 if weapon == "pistol" else 0.031                                     # Radius der Manschette
-    radii = [base * 1.22, base * 1.06, base * 1.16, base, base * 0.95, base * 0.98, base * 1.05, base * 1.15,
-             base * 1.3, base * 1.45]
+    base = 0.023 if weapon == "pistol" else 0.027                                     # Radius der Manschette (Fassung h)
+    # Mund -> Ellbogen: zwei Lagen Ruesche (Mund und dritter Ring ausgestellt), dann das Rohr, das zum Ellbogen weiter wird.
+    radii = [base * 1.45, base * 1.02, base * 1.30, base * 1.0, base * 0.98, base * 1.0, base * 1.1, base * 1.25,
+             base * 1.4, base * 1.55]
     pts = [m(p) for p in path][::-1]
     rad = [(r,) * 3 for r in radii][::-1]
     n = len(pts)
-    # Ruesche: der Mund (letzter Ring) und der dritte Ring vom Mund aus sind zackig (Lagen mit Rand).
-    mods = lambda i, k: (1.0 if k % 2 == 0 else 0.9) if i in (n - 1, n - 3) else 1.0   # noqa: E731
-    part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0), mods=mods), "sleeve", cap_start=True, cap_end=True)
+    # gewellter Saum: jede zweite Ecke am Mund und am dritten Ring nach innen (Umriss mit Zacken)
+    mods = lambda i, k: (1.0 if k % 2 == 0 else 0.80) if i in (n - 1, n - 3) else 1.0   # noqa: E731
+    part.loft(tube(pts, rad, 16, ref_up=V(1, 0, 0), mods=mods), "sleeve", cap_start=True, cap_end=True)
+
+
 
 
 def build_design(part, weapon):                                                      # noqa: F811

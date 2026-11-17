@@ -165,7 +165,7 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | `fittings` (Beschläge, Bügel, Ladestock, Batterie) | 0, 0, 0 | stock | 214 |
 | `flash` (Mündungsfeuer, unbeleuchtet) | 0, 0, 0 | stock | 42 |
 | `stock` | 0, 0, 0 | – | 144 |
-| `arm` (in `pistol_hand.glb`: Mantelärmel mit Rüschenmanschette, ohne Hand; eigene Textur) | 0, 0, 0 | stock | 240 |
+| `arm` (in `pistol_hand.glb`: Mantelärmel mit kurzem Rüschensaum, ohne Hand; eigene Textur) | 0, 0, 0 | stock | 320 |
 
 **Haltungen:**
 
@@ -185,7 +185,7 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | Teil | Drehpunkt | hängt an | Dreiecke |
 |---|---|---|---|
 | `sword` (Klinge, Parierstange, Griff, Knauf) | 0, 0, 0 | – | 152 |
-| `arm` (in `blade_hand.glb`: Mantelärmel mit Rüschenmanschette, ohne Hand; eigene Textur) | 0, 0, 0 | sword | 240 |
+| `arm` (in `blade_hand.glb`: Mantelärmel mit kurzem Rüschensaum, ohne Hand; eigene Textur) | 0, 0, 0 | sword | 320 |
 
 **Haltungen** (aus `DrawBlade`; die Hand liegt bei (−0,11, −0,095, 0,19) im Kameraraum):
 
@@ -246,18 +246,18 @@ Erst schwenken, dann heben: `Drehung = Schwenken × Heben`.
 1. Lädt Raylib die Knoten-Verschiebungen in die Ecken ein? Bleibt die Reihenfolge der Meshes erhalten? Lassen sich Namen lesen?
 2. Kamera-Matrix der Waffen ohne Spiegelung (siehe Pistole).
 3. Shader mit Textur, Normale und Licht je Ecke; Point-Filter ohne Mipmaps.
-4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind seit Probestück 14 (Issue #265, Fassung g) **ein dunkelblauer Mantelärmel mit heller Rüschenmanschette, ohne Hand, Finger oder Handschuh** (Entscheidung des Menschen: „Keine Hände“, Entwurf C). Sie hängen starr an der Waffe; Dateinamen, Knoten und Drehpunkte sind gleich geblieben.
+4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind seit Probestück 14 (Issue #265, Fassung h) **ein dunkelblauer Mantelärmel mit kurzem hellem Rüschensaum, ohne Hand, Finger oder Handschuh** (Entscheidung des Menschen: „Keine Hände“, Entwurf C). Sie hängen starr an der Waffe; Dateinamen, Knoten und Drehpunkte sind gleich geblieben.
 
-### Was sich gegenüber den Dateien im Spiel ändert (Probestück 14, Fassung g, Issue #265)
+### Was sich gegenüber den Dateien im Spiel ändert (Probestück 14, Fassung h, Issue #265)
 
 Alle sechs Dateien tauschen (`pistol.glb`, `pistol_hand.glb`, `blade.glb`, `blade_hand.glb`, `pistol.png`, `blade.png`), dazu zwei neue PNGs (`pistol_hand.png`, `blade_hand.png`), danach `python tools/models/checksums.py`.
 - **Namen, Knoten, Drehpunkte, Eltern:** unverändert; `arm` ist ein Teil mit einem Mesh.
 - **Haltungswerte: unverändert gegenüber `main`.** Pistole (0,095; −0,08; 0,18), Klinge (−0,11; −0,095; 0,19), Ausholen 35° und (−0,03; −0,01; −0,03) bleiben; es ist **keine** Änderung an `WeaponPose.cs` nötig. Mit den neuen Dateien in `assets/models/` laufen die 15 Tests in `WeaponPoseTests` grün (lokal geprüft).
-- **Geometrie:** Ein Rohr aus 12 Seiten je Arm. Mund der Manschette mit **drei Lagen Rüsche** (die erste und die dritte zackig), dahinter das Rohr: zuerst gerade zurück, dann schräg nach außen und unten, **bis weit über den Bildrand** (Länge etwa 0,7 m, Ende bei (0,6; −0,33; −0,30) beziehungsweise (0,6; −0,35; −0,4) in Dateikoordinaten), damit das Ende in keiner Haltung im Bild liegt. Die Pistolenmanschette liegt waagerecht um Griff und Schloss (Waffe ragt vorn heraus), spiegelbildlich zur Klingenmanschette. Dreiecke: Pistolen-Arm 240, Klingen-Arm 240.
-- **Eigene Arm-Texturen:** `pistol_hand.glb` und `blade_hand.glb` tragen ihre eigene eingebettete Textur (64 × 64, höchstens 32 Farben, eigene Palette: dunkelblauer Stoff mit drei Faltenbahnen, Borte, zwei Silberknöpfe, gebrochenweiße Rüsche mit dunklen Schattenlinien). Die Waffen-Atlanten haben keine Arm-Felder mehr. Die `*_hand.png` sind dieselben Bilder und gehören mit in `assets/models/` und `models.sha256`.
+- **Geometrie:** Ein Rohr aus 16 Seiten je Arm, 320 Dreiecke. Die Manschette ist nur ein **kurzer Saum** (vier Ringe auf 1,2 cm, Radius 0,023 an der Pistole und 0,027 an der Klinge) mit **zwei Lagen Rüsche**; Mund und dritter Ring sind ausgestellt und haben einen **gewellten Umriss** (jede zweite Ecke nach innen). Dahinter läuft das Rohr **flach quer durchs Bild** und weit über den Bildrand hinaus (Länge etwa 0,9 m; Ende bei (0,8; −0,28; −0,32) an der Pistole und (0,8; −0,26; −0,32) an der Klinge in Dateikoordinaten), damit das Ende in keiner Haltung im Bild liegt. Die Pistolenmanschette liegt waagerecht um den unteren, hinteren Teil des Griffs (Mund bei z = −0,010, y = −0,026), sodass Schloss, Abzugsbügel und der obere Griff frei sind; die Klingenmanschette sitzt an der Parierstange. Spiegelbildlich ausgerichtet.
+- **Eigene Arm-Texturen:** `pistol_hand.glb` und `blade_hand.glb` tragen ihre eigene eingebettete Textur (64 × 64, höchstens 32 Farben, eigene Palette: dunkelblauer Stoff mit drei Faltenbahnen, Borte, zwei Silberknöpfen, gebrochenweiße Rüsche mit dunklen Schattenlinien). Die Waffen-Atlanten haben keine Arm-Felder mehr. Die `*_hand.png` sind dieselben Bilder und gehören mit in `assets/models/` und `models.sha256`.
 - **Prüfsummen** ändern sich; `assets/HERKUNFT.md`: gleiche Skripte, neues Datum.
-- **Skripte:** `tools/models/arm.py` (Fassung g am Ende: `build_design_g`, `paint_g_sleeve`; die älteren Entwürfe stehen weiter darin), `pistol.py`, `blade.py`.
-- **Was noch nicht stimmt** (siehe `design/proben/grafik/aermel6/notizen.md`): die Manschette ist ein großer heller Block, der Ärmel zwischen Manschette und Bildrand kurz; Schwung und Rückstoß nicht fotografiert.
+- **Skripte:** `tools/models/arm.py` (Fassung g am Ende: `build_design_g`, `paint_g_sleeve`, Fassung h; die älteren Entwürfe stehen weiter darin), `pistol.py`, `blade.py`.
+- **Was noch nicht stimmt** (siehe `design/proben/grafik/aermel7/notizen.md`): an der Pistole ist im Gang-Foto mehr Weiß als Blau zu sehen (der Ärmel verläuft dort tief am Bildrand); Knöpfe sind kaum zu erkennen; Schwung nicht fotografiert.
 
 ### Frühere Änderungen (Probestück 11, Issues #256 und #257): Hahn und handlose Ärmel; die Ärmel sind durch Probestück 14 ersetzt, der Hahn gilt weiter
 
