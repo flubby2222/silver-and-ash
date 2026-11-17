@@ -258,4 +258,13 @@ Palette von b, nach der künftige Musik und Geräusche gebaut werden (Konzept: [
 | Frequenzrahmen | trägt unter 300 Hz; Katakomben-Musik hält die Mitte 300–3 000 Hz mindestens 15 dB unter dem Gesamtpegel (erreicht: −19,0 dB), Menü-Thema −15,2 dB |
 | Kette | PS1 (22 050 Hz, ADPCM, Gauß-Interpolation) |
 
-**Ausgeliefert** ([README-audio.md](../uebergabe/README-audio.md)): `musik-hauptmenue.ogg` (72 s, nahtlos, aus der Skizze erweitert) und `musik-katakomben.ogg` (64 s, nahtlos, karger und etwa 12 LU leiser). **[Schluss]** Lehre aus dem Bau: Die einseitige Stimmquelle erzeugt einen Gleichanteil, der ohne Hochpass jede Messung des Spektrums verfälscht; eine Zwischenfassung sah deshalb wie reiner Bass aus. Seitdem filtert das Skript ihn (kreisförmig, damit die Schleifennaht bleibt).
+**Ausgeliefert** ([README-audio.md](../uebergabe/README-audio.md)): `musik-hauptmenue.ogg` (72 s, nahtlos, aus der Skizze erweitert) und `musik-katakomben.ogg` (64 s, nahtlos, karger und etwa 12 LU leiser). ## Nachtrag zur Musik (2026-11-17, zweite Runde)
+
+**Urteil des Menschen:** „Wenn der Herzschlag aus dem Theme-Sound raus könnte, wär das gut (ist mir zu überladen). Für ingame soll er eigene Samples bauen. (Bossfight, Händler extra).“ **Folge:** Das Menü-Thema läuft ohne Herzschlag (Glocke und Chor unverändert laut); im Spiel laufen eigene Stücke aus derselben Palette: Katakomben, Boss (mit zweiter, dichterer Phase) und Händler, jedes mit höchstens drei Schichten – „zu überladen“ ist ein Maßstab für alles: lieber eine Schicht weniger. Alles vorläufig, ungehört; Palette erweitert um die Trommel als Puls und einen **Kettenakzent** (kurzer Glockenschlag auf A4/E5), Boss e-phrygisch, Händler G-Dur mit Vokal „a“.
+
+**Was ich beim Bau gelernt habe (Schlüsse aus Messungen, nicht belegt für das Ohr):**
+- Der gemeinsame Hall hat **Kammfilter-Resonanzen im Bass** (bei etwa 45, 55, 90 und 110 Hz); sie färben tiefe, lang gehaltene Töne. Bei den neuen Stücken ist deshalb der Send hochpassgefiltert; das Menü blieb unverändert. Der Hall sollte später überarbeitet werden.
+- Die **Trommel** mit Tonhöhenabfall 100 → 41 Hz hat ihren Energieschwerpunkt bei 55 Hz, nicht beim Grundton. Eine Tonklassen-Messung der Mischung ist davon verfälscht; Tonart-Prüfungen müssen Schlagwerk und Hall-Resonanzen berücksichtigen.
+- Die **Quinte des Glockenprofils** (Verhältnis 1,506) bestimmt, welche Töne ein Glockenschlag mitbringt; für den Kettenakzent im phrygischen Boss ist H deshalb ungeeignet (die Quinte wäre Fis gegen das F der Akkorde), A und E passen.
+
+**[Schluss]** Lehre aus dem Bau: Die einseitige Stimmquelle erzeugt einen Gleichanteil, der ohne Hochpass jede Messung des Spektrums verfälscht; eine Zwischenfassung sah deshalb wie reiner Bass aus. Seitdem filtert das Skript ihn (kreisförmig, damit die Schleifennaht bleibt).

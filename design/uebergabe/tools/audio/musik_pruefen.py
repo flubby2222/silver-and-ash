@@ -3,7 +3,7 @@
 Aufruf: python musik_pruefen.py <ordner mit den OGG-Dateien>
 Je Datei: Laenge (60-90 s), Spitze (<= -1 dBFS), Mittel, Lautheit (LUFS), Naht der dekodierten Datei (Sprung vom letzten zum ersten
 Sample gegenueber dem 99,9-%-Abstand zweier Nachbar-Samples, je Kanal), Pegel je Band und Abstand der Mitte (300-3 000 Hz) zum
-Gesamtpegel (Ziel Katakomben: mindestens 15 dB), Energie je Tonklasse (Anteil ausserhalb von e-Moll).
+Gesamtpegel (Ziel Katakomben: mindestens 15 dB), Energie je Tonklasse ab 82 Hz (Anteil ausserhalb der Tonleiter).
 """
 import math
 import re
@@ -19,7 +19,8 @@ sys.path.insert(0, str(HERE))
 from synth import svf  # noqa: E402
 
 SR = 44100
-SCALE = {4, 6, 7, 9, 11, 0, 2}
+SCALE = {4, 6, 7, 9, 11, 0, 2}        # e-Moll (= G-Dur): E Fis G A H C D
+SCALE_PHRYG = {4, 5, 7, 9, 11, 0, 2}  # e-phrygisch (Boss): E F G A H C D
 PC = ["C", "Cis", "D", "Es", "E", "F", "Fis", "G", "As", "A", "B", "H"]
 
 
@@ -59,7 +60,7 @@ def chroma(x):
     y = svf(x, 0.4 * SR / f, 0.707, "lp")
     d = [sum(y[i:i + f]) / f for i in range(0, len(y) - f + 1, f)]
     e = [0.0] * 12
-    for m in range(24, 96):
+    for m in range(40, 96):     # ab E2 (82 Hz): darunter dominieren Trommel und Kammfilter-Resonanzen des Halls (siehe README)
         e[m % 12] += goertzel(d, 440.0 * 2 ** ((m - 69) / 12), SR // f)
     t = sum(e)
     return [v / t for v in e]
@@ -89,9 +90,11 @@ def main():
         lo, mid, hi = band(mono, None, 300), band(mono, 300, 3000), band(mono, 3000)
         tot = 10 * math.log10(sum(v * v for v in mono) / n)
         ch = chroma(mono)
-        out = sum(ch[i] for i in range(12) if i not in SCALE)
+        scale = SCALE_PHRYG if "boss" in p.name else SCALE
+        out = sum(ch[i] for i in range(12) if i not in scale)
         top = max(range(12), key=lambda i: ch[i])
-        ok &= 60 <= n / SR <= 90 and mx <= -1.0
+        lo_s, hi_s = (40, 60) if "haendler" in p.name else (60, 90)    # Haendler 40-60 s, alle anderen 60-90 s
+        ok &= lo_s <= n / SR <= hi_s and mx <= -1.0
         print(f"| `{p.name}` | {n / SR:.1f} s | {mx:.1f} dBFS | {mean:.1f} dBFS | {lufs:.1f} LUFS | {'; '.join(seam)} | {lo:.0f} | {mid:.0f} | {hi:.0f} | {tot:.0f} | "
               f"{mid - tot:.1f} dB | {out * 100:.1f} % | {PC[top]} ({ch[top] * 100:.0f} %) | {'bestanden' if ok else 'NICHT bestanden'} |")
 

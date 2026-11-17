@@ -22,30 +22,47 @@ Die Dateien tragen das Pegelverhältnis schon in sich (Schuss −1,5, Klinge −
 
 **Anmerkung 3 – Schritte.** Es gibt kein Core-Ereignis. Sauber wäre ein `PlayerStepped(PlayerId, Foot)` aus der gelaufenen Strecke am Boden (`IsGrounded`). Als Hilfsweg im Game: aus der Strecke am Boden, etwa alle 0,5 s im normalen Lauf (so war die Folge in der Hörprobe gebaut); kein Schritt in der Luft. Den Abstand muss die Code-Sitzung gegen die Laufgeschwindigkeit prüfen; ich kenne ihn nicht.
 
-## Musik (neu, 2026-11-17): Hauptmenü und Katakomben
+## Musik (Stand 2026-11-17, zweite Runde): Menü, Katakomben, Boss, Händler
 
-Urteil des Menschen zur Hörprobe 6: „b ist als Theme im Hauptmenü top. Bedarf später noch Überarbeitung.“ **Alles Folgende ist vorläufig und wird später überarbeitet; nichts davon ist gehört** (nur gemessen).
+Urteile des Menschen: zur Hörprobe 6 „b ist als Theme im Hauptmenü top. Bedarf später noch Überarbeitung.“; zur Musik „Wenn der Herzschlag aus dem Theme-Sound raus könnte, wär das gut (ist mir zu überladen). Für ingame soll er eigene Samples bauen. (Bossfight, Händler extra).“ Maßstab daraus: lieber eine Schicht weniger. **Alles vorläufig und wird später überarbeitet; nichts davon ist gehört** (nur gemessen).
 
-| Datei | Wo | Länge | Vorschlag 0–1 |
-|---|---|---|---|
-| `musik-hauptmenue.ogg` | Titelbildschirm (Hauptmenü), als Schleife (`LoadMusicStream`, `SetMusicLooping` bzw. beim Stream-Ende neu starten) | 72 s, stereo, nahtlos, **ohne Herzschlag** (Urteil 2026-11-17: „zu überladen“) | 0,8 |
-| `musik-katakomben.ogg` | im Lauf (Katakomben) **statt** `ambiente-katakomben.ogg`, als Schleife | 64 s, stereo, nahtlos | 1,0 |
+| Datei | Wo | Länge | Tonart, Tempo | Schichten (höchstens drei gleichzeitig) | Vorschlag 0–1 |
+|---|---|---|---|---|---|
+| `musik-hauptmenue.ogg` | Titelbildschirm | 72,0 s | e-Moll, 60/min | Glocke, Chor (ohne Herzschlag) | 0,8 |
+| `musik-katakomben.ogg` | im Lauf, Standard (Erkunden und Kämpfen) | 70,0 s | e-Moll, 60/min | Chor, seltene Glocke | 1,0 |
+| `musik-boss.ogg` | Bosskampf gegen Gorm | 67,2 s | e-phrygisch, 100/min | Trommelpuls, Kettenakzent, Chor | 1,0 |
+| `musik-boss-phase2.ogg` | ab Gorms zweiter Phase | 67,2 s, **synchron zu `musik-boss.ogg`** | wie Boss | dieselben drei Schichten, dichter (mehr Akzente, Geisterschläge) | 1,0 |
+| `musik-haendler.ogg` | Händlerraum | 46,7 s | G-Dur, 72/min | Chor („a“), leise Glocken | 1,0 |
 
-- **Lautstärke:** Das Menü-Thema ist die lautere Datei (Mittel −23,5 dBFS, −22,3 LUFS; Glocke und Chor sind seit dem Weglassen des Herzschlags unverändert laut, nur insgesamt fehlt dessen Anteil), die Katakomben-Musik absichtlich etwa 12 LU leiser (Mittel −34 dBFS, −32,5 LUFS), damit Schritte, Ankündigungen und Treffer darüber stehen. Auch hier: Gesamtlautstärke 0,7; ein eigener Regler für die Musik ist im Test sinnvoll, weil ich das Verhältnis zu den Geräuschen nicht hören kann.
-- **Übergang Titel → Lauf (Vorschlag):** Menü-Musik in etwa 1,5 s ausblenden, dann den Lauf laden, die Katakomben-Musik in etwa 3 s einblenden (Lautstärke 0 → 1,0, von Hand je Bild mit `SetMusicVolume`); beim Zurück zum Titel umgekehrt. Beide Stücke beginnen auf demselben Grundton (E) im selben Hall, deshalb klingt ein weiches Überblenden stimmig; ein hartes Umschalten dürfte stören. Ungehört.
-- **Das alte Ambiente** (`ambiente-katakomben.ogg`) ersetzt die Katakomben-Musik; ob die Tropfen bleiben, entscheidet sich mit den Geräuschen (die Tropfen waren in die Ambiente-Datei eingebaut).
-- **Nahtlos:** Alle Noten und der Hallschwanz laufen kreisförmig, die PS1-Kette bekam vorne das Ende und hinten den Anfang angehängt. Naht geprüft: Sprung vom letzten zum ersten Sample höchstens so groß wie 99,9 % der Nachbar-Abstände (unten).
-- **Skripte:** `python tools/audio/musik_erzeugen.py --aus assets/audio [--nur menue|katakomben]` (mit `musik_klang.py`, `ambiente_hp3.py`, `ambiente_hp1.py`, `ps1_klang.py`, `synth.py`); Dauer je Stück etwa 5 Minuten (reines Python). Prüfung: `python tools/audio/musik_pruefen.py assets/audio`. Zwei Läufe ergeben byte-gleiche Dateien (siehe unten).
+Alle Dateien: OGG, stereo, nahtlose Schleife; dazu Gesamtlautstärke 0,7. Lautheit (LUFS): Menü −22,3, Boss −26,2 (Phase 2 −25,3), Händler −27,5, Katakomben −32,2, damit die Katakomben-Musik am tiefsten unter dem Spielgeschehen liegt. Jedes Stück ist eine eigene Komposition mit eigenem Einfall (kein Auszug aus dem Menü-Thema).
+
+### Woran hängt welche Musik (aus dem Core gelesen, kein Code geändert)
+
+| Musik | Zustand / Ereignis | Im Core? |
+|---|---|---|
+| Menü | Titelbildschirm | Zustand des Spiels im Game-Projekt, kein Core-Ereignis nötig |
+| Katakomben | Lauf läuft, kein Bosskampf, nicht im Händlerraum | `GameWorld` läuft; „kein Boss“ über `GameWorld.IsBossFightOn == false` (da) |
+| Boss | Beginn: Ereignis `BossFightStarted` (kommt, wenn der Boss-Raum versiegelt wird und Gorm lebt); Zustand `GameWorld.IsBossFightOn`; Ende: `GormDied` | **da** |
+| Boss Phase 2 | Ereignis `GormRoared` (Gorm fällt unter `gorm.phase2Health` = 0,5 und brüllt); Zustand `Gorm.IsInPhase2` | **da** |
+| Händler | Spieler betritt den Händlerraum, verlässt ihn | **fehlt:** `RoomKind` kennt keine Händler-Raumart (Start, Combat, Corridor, Boss, Treasure, Secret; ADR 0008 plant „Merchant“, v0.11) und der Core meldet das Betreten eines Raums nicht als Ereignis (`RoomState.Enter()` läuft in `GameWorld.EnterRooms`, gemeldet werden nur `RoomSealed` und `RoomCleared`). Nötig: `RoomKind.Merchant` und ein Ereignis wie `RoomEntered(RoomIndex, Kind)` samt Gegenstück beim Verlassen (oder eine Abfrage `GameWorld.RoomKindAt(Position)`). |
+| Ende des Laufs | `RunWon`, `RunLost` | da: Musik ausblenden, danach Menü-Musik |
+
+**Überblenden (Vorschlag, nicht erprobt):** Raylib hat je Stück einen `Music`-Stream; mehrere laufen gleichzeitig (`UpdateMusicStream` je Bild für jeden spielenden Stream), das Überblenden macht das Spiel mit `SetMusicVolume` von Hand. Katakomben → Boss: Katakomben in 2 s aus, Boss in 2 s ein. **Boss → Phase 2 bleibt im Takt**, weil beide Dateien gleich lang sind, im selben Tempo und mit derselben Akkordfolge: Beide beim Bosskampf-Beginn **gleichzeitig starten** (Phase 2 mit Lautstärke 0) und bei `GormRoared` in 1,5 s überblenden (Boss 1 → 0, Phase 2 0 → 1). Nach `GormDied` die Boss-Musik in 3 s ausblenden. Katakomben ↔ Händler: je 2 s. Titel → Lauf: Menü in 1,5 s aus, Katakomben in 3 s ein.
+**Prüfsummenliste:** Das Spiel prüft die Klang-Dateien mit `audio.sha256`; die neuen Dateinamen müssen dort und in `SoundBoard.AllFiles` stehen. `ambiente-katakomben.ogg` bleibt als Rückfall, bis die Katakomben-Musik eingebaut ist.
 
 ### Palette von b – vorläufiger Maßstab
 
 | | |
 |---|---|
-| Tonart, Tempo | e-Moll (E Fis G A H C D), 60 Schläge/min, Takt 4/4; Grundton E |
-| Klangerzeuger | **tiefe Glocke** (neun unharmonische Teiltöne eines Glockenprofils, Unterton und Prim leicht schwebend), **Chor-Pad** (drei verstimmte Stimmquellen, Vokalfilter u → o → u), **Herzschlag-Trommel** (Sinus, Tonhöhe fällt auf den Grundton E1 bzw. H1) |
-| Hall | **einer** für alles: Schroeder-Hall, RT60 2,8 s, Dämpfung 2,5 kHz, 50 % Send je Spur, 70 % Hallanteil (links und rechts mit verschiedener Zufallszahl) |
-| Frequenzrahmen | Musik trägt unter etwa 300 Hz; die Mitte 300–3 000 Hz liegt in den Katakomben mindestens 15 dB unter dem Gesamtpegel, über 3 kHz fast nichts |
+| Tonart, Tempo | e-Moll (E Fis G A H C D), 60 Schläge/min, Grundton E (Menü, Katakomben); Boss e-phrygisch (F statt Fis), 100/min; Händler G-Dur (Paralleltonart), 72/min |
+| Klangerzeuger | **tiefe Glocke** (neun unharmonische Teiltöne eines Glockenprofils), **Chor-Pad** (drei verstimmte Stimmquellen, Vokalfilter u → o → u, beim Händler a), **Trommel** (Sinus mit fallender Tonhöhe), **Kettenakzent** (kurzer Glockenschlag, 0,5 s, auf A4 und E5) |
+| Hall | **einer** für alles: Schroeder-Hall, RT60 2,8 s, Dämpfung 2,5 kHz, 50 % Send, 70 % Anteil (links und rechts mit verschiedener Zufallszahl). Bei den vier neuen Stücken ist der Send bei 150 Hz hochpassgefiltert (siehe unten) |
+| Frequenzrahmen | trägt unter etwa 300 Hz; die Mitte 300–3 000 Hz liegt in den Katakomben mindestens 15 dB unter dem Gesamtpegel, über 3 kHz fast nichts (Ausnahme Händler: heller) |
 | Kette | PS1: 22 050 Hz, ADPCM, Gauß-Interpolation, kein Hall der Kette |
+
+### Skripte für die Musik
+
+`python tools/audio/musik_erzeugen.py --aus assets/audio [--nur menue|katakomben|boss|boss2|haendler]` (mit `musik_klang.py`, `ambiente_hp3.py`, `ambiente_hp1.py`, `ps1_klang.py`, `synth.py`); je Stück 5 bis 10 Minuten (reines Python). Prüfung: `python tools/audio/musik_pruefen.py assets/audio`. Die Anfänge zum Vorhören macht `python tools/audio/musik_vorhoeren.py assets/audio <Zielordner>` aus den fertigen OGG-Dateien (nur `ffmpeg`).
 
 ## Skripte
 
@@ -65,10 +82,21 @@ Urteil des Menschen zur Hörprobe 6: „b ist als Theme im Hauptmenü top. Bedar
 
 | Datei | Länge | Spitze | Mittel | Lautheit | Naht L / R (Sprung ≤ 99,9 %) | < 300 Hz | 300–3 000 Hz | > 3 000 Hz | gesamt | Abstand Mitte | außerhalb e-Moll | stärkste Tonklasse | Ergebnis |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `musik-hauptmenue.ogg` (ohne Herzschlag) | 72,0 s | −7,8 dBFS | −23,5 dBFS | −22,3 LUFS | 0,00391 ≤ 0,00790; 0,00308 ≤ 0,00629 | −25 | −37 | −88 | −24 | −12,5 dB | 0,0 % | E (52 %) | bestanden |
-| `musik-katakomben.ogg` | 64,0 s | −20,7 dBFS | −34,0 dBFS | −32,5 LUFS | 0,00104 ≤ 0,00131; 0,00021 ≤ 0,00131 | −37 | −56 | −98 | −37 | **−19,0 dB** | 0,0 % | E (59 %) | bestanden |
+| `musik-boss-phase2.ogg` | 67.2 s | -9.1 dBFS | -25.4 dBFS | -25.3 LUFS | 0.00119 ≤ 0.00546; 0.00031 ≤ 0.00876 | -26 | -39 | -70 | -26 | -13.3 dB | 17.6 % | A (44 %) | bestanden |
+| `musik-boss.ogg` | 67.2 s | -8.9 dBFS | -26.0 dBFS | -26.2 LUFS | 0.00104 ≤ 0.00531; 0.00110 ≤ 0.00861 | -26 | -41 | -72 | -26 | -15.1 dB | 21.3 % | A (32 %) | bestanden |
+| `musik-haendler.ogg` | 46.7 s | -15.6 dBFS | -30.0 dBFS | -27.5 LUFS | 0.00104 ≤ 0.00992; 0.00320 ≤ 0.00800 | -43 | -36 | -79 | -34 | -1.8 dB | 0.0 % | G (41 %) | bestanden |
+| `musik-hauptmenue.ogg` | 72.0 s | -7.8 dBFS | -23.5 dBFS | -22.3 LUFS | 0.00391 ≤ 0.00790; 0.00308 ≤ 0.00629 | -25 | -37 | -88 | -24 | -12.5 dB | 0.0 % | E (62 %) | bestanden |
+| `musik-katakomben.ogg` | 70.0 s | -22.2 dBFS | -34.0 dBFS | -32.2 LUFS | 0.00089 ≤ 0.00150; 0.00031 ≤ 0.00143 | -39 | -54 | -99 | -38 | -15.9 dB | 0.0 % | D (54 %) | bestanden |
 
-Das 15-dB-Ziel für die freie Mitte ist in den Katakomben erreicht (−19,0 dB); im Menü ist die Mitte ohne Herzschlag etwas stärker (−12,5 statt −15,2 dB), dort gilt kein Ziel. **Prüfung der Herzschlag-Entfernung:** In den Fenstern ohne Herzschlag (Takt 1–3, Takt 16–18) ist die Datei gegenüber der Fassung mit Herzschlag um ±0,0 dB gleich laut (Glocke und Chor unverändert); in den Herzschlag-Teilen ist sie um 2,3–5,1 dB leiser, wie zu erwarten. **Byte-Gleichheit:** zwei vollständige Läufe ergaben dieselbe SHA-256: `musik-hauptmenue.ogg` `00c16d25434707500b1610e9edf0b0a3a36c31ae8fe9748bb2a77d343ae15a7f`, `musik-katakomben.ogg` `dcf144b6357b400b43688e74003edbf9012d34c869545e14611d03e500d1ebb0` (gleicher Rechner, gleiche `ffmpeg`-Fassung).
+Spalten: Pegel in dBFS je Band (< 300 Hz, 300–3 000 Hz, > 3 000 Hz, gesamt), *Abstand Mitte* = Mitte minus gesamt; Naht = Sprung vom letzten zum ersten Sample gegenüber dem 99,9-%-Abstand zweier Nachbar-Samples (je Kanal); Tonklassen ab 82 Hz aus der fertigen Datei (Boss mit e-phrygischer Tonleiter gerechnet). Das 15-dB-Ziel für die freie Mitte gilt für die Katakomben (erreicht, −15,9 dB); Boss −15,1 dB, Menü −12,5 dB, Händler −1,8 dB (hell, bewusst).
+
+**Byte-Gleichheit:** Für jedes Stück ergaben zwei vollständige Läufe dieselbe SHA-256 (gleicher Rechner, gleiche `ffmpeg`-Fassung); das Menü ist nach dem Umbau des Skripts byte-gleich zur vorigen Fassung geblieben.
+
+- `musik-hauptmenue.ogg`: `00c16d25434707500b1610e9edf0b0a3a36c31ae8fe9748bb2a77d343ae15a7f`
+- `musik-katakomben.ogg`: `0c5eb10a8d354116423a2f5107bba6f3ff74b9598e1a87b7a2ae26d882c12497`
+- `musik-boss.ogg`: `e24155674be5c96897504a22d1e02b7036ea9dd0118ff64ede8caeb6e67099a3`
+- `musik-boss-phase2.ogg`: `5bb7b2386c1bd78c1fa87de20e70f6f4eef6025ae487f209eca4e2206618418f`
+- `musik-haendler.ogg`: `bfe4b8fda14d09fb4e682c7a75501af180693fffb83874d6a27c6a7e91a0380a`
 
 ## Herkunft
 
@@ -84,17 +112,20 @@ Das 15-dB-Ziel für die freie Mitte ist in den Katakomben erreicht (−19,0 dB);
 | `audio/pistole.wav`, `audio/schritt-1.wav` … `audio/schritt-4.wav`, `audio/ghul-ankuendigung.wav` | `tools/audio/erzeugen.py` (mit `geraeusche_hp3.py`, `synth.py`, `ps1_klang.py`, `ableiten.py`); rein synthetisch | 2026-11-17 |
 | `audio/klinge-1.wav` … `audio/klinge-3.wav` | `tools/audio/erzeugen.py` (Funktion `klinge`, mit `ableiten.py`, `ps1_klang.py`); rein synthetisch | 2026-11-17 |
 | `audio/ambiente-katakomben.ogg` | `tools/audio/erzeugen.py` (mit `ambiente_hp1.py`, `ambiente_hp3.py`, `ps1_klang.py`); Fläche synthetisch, **Tropfen aus einer Aufnahme:** `impactTin_medium_004.ogg` aus „Impact Sounds“ von Kenney, <https://kenney.nl/assets/impact-sounds>, Lizenz CC0 1.0 (<https://creativecommons.org/publicdomain/zero/1.0/>; Satz aus `License.txt`: „This content is free to use in personal, educational and commercial projects.“), abgerufen 2026-11-16, SHA-256 des Originals `fd53e24efec3d5c1cee5a46fee70f97efd4bd01e53ac5d9b5f3b6719dfe9f5aa` | 2026-11-17 |
-
-| `audio/musik-hauptmenue.ogg`, `audio/musik-katakomben.ogg` | `tools/audio/musik_erzeugen.py` (mit `musik_klang.py`, `ambiente_hp3.py`, `ambiente_hp1.py`, `ps1_klang.py`, `synth.py`); rein synthetisch, keine Aufnahmen | 2026-11-17 |
+| `audio/musik-hauptmenue.ogg`, `audio/musik-katakomben.ogg`, `audio/musik-boss.ogg`, `audio/musik-boss-phase2.ogg`, `audio/musik-haendler.ogg` | `tools/audio/musik_erzeugen.py` (mit `musik_klang.py`, `ambiente_hp3.py`, `ambiente_hp1.py`, `ps1_klang.py`, `synth.py`); rein synthetisch, keine Aufnahmen | 2026-11-17 |
 
 ## Was mir nicht gefällt oder was ich nicht prüfen konnte
 
-**Zur Musik:**
-- **Ungehört**, auch die Naht der Schleife: Gemessen ist nur, dass der Sprung am Übergang nicht größer ist als sonst im Stück; ob man die Wiederholung hört, weiß ich nicht.
-- **Die Erweiterung des Menü-Themas von 24 auf 72 s** ist meine Setzung: Teil A ist die Skizze (gleiche Akkordfolge Em – C/E – Am/E – Em, Glocke), die Akkorde sind aber neu gesetzt (die Stimmführung wurde neu berechnet, damit sie über die ganze Schleife keine parallelen Quinten oder Oktaven hat). Teil B (G/D – D/F# – C) und Teil C (Am/E – Bm, führt nach Em) sind neu und nicht vom Menschen gehört. Ob 72 s trägt oder zu lang/gleichförmig ist, weiß ich nicht.
-- **Katakomben-Musik:** Ob sie „karg und leise“ genug ist und trotzdem nach Stimmung klingt, ob die Katakomben nicht einfach dröhnen (sehr tiefer Chor, Mitte −19 dB, fast alles unter 300 Hz): ungehört. Auf kleinen Lautsprechern könnte sie kaum zu hören sein.
-- **Das Überblenden zwischen Titel und Lauf** ist ein Vorschlag, nicht erprobt.
-- Eine Zwischenfassung hatte versehentlich einen Gleichanteil (die Stimmquelle ist einseitig) und war nach der Messung fast reiner Bass (Mitte 28 dB unter dem Gesamtpegel); er ist jetzt entfernt, die Messung zeigt es.
+**Zur Musik (alles ungehört):**
+- **Naht:** Gemessen ist nur, dass der Sprung vom letzten zum ersten Sample nicht größer ist als sonst im Stück; ob man die Wiederholung hört, weiß ich nicht.
+- **Hall färbt die Bässe (gefunden, nur teilweise behoben):** Die Kammfilter des gemeinsamen Halls schwingen bei etwa 45, 55, 90 und 110 Hz mit. Bei der ersten Fassung des Bosses lag ein großer Teil der Energie über 82 Hz auf Fis2 (92 Hz), das gegen die Akkorde F und G steht. Deshalb ist der Send der vier neuen Stücke bei 150 Hz hochpassgefiltert (Menü unverändert, damit die vom Menschen gelobte Datei bleibt). Ob der Bass jetzt sauber klingt, ist ungehört; der Hall selbst sollte später überarbeitet werden.
+- **Die Trommel ist nicht auf den Grundton gestimmt:** Der Tonhöhenabfall (100 → 41 Hz, in 20 ms) hat seinen Energieschwerpunkt bei etwa 55 Hz (A1), nicht bei E1 (41 Hz). Als Schlag unbestimmter Tonhöhe ist das unkritisch, aber meine frühere Aussage „Sub-Ton auf dem Grundton“ stimmte nicht. Die Tonklassen-Messung der Mischung wird davon verfälscht (Boss: 21 % „außerhalb“, stärkste Klasse A); der Chor allein liegt auf den Akkordtönen (gemessen).
+- **Katakomben: Tonart uneindeutig.** Stärkste Tonklasse ist D (54 %), nicht E: Die Akkorde Em – G – D/A – C/G – Bm enthalten D3 dreimal. Klingt es nach e-Moll, nach D-Dur oder nach etwas Schwebendem? Das hört nur der Mensch.
+- **Katakomben fast nur Bass** (unter 300 Hz −39 dB, Mitte −52 dB, Gesamtpegel −34 dBFS im Mittel): Auf kleinen Lautsprechern kann sie kaum zu hören sein.
+- **Boss:** „Drängend“ ist mein Versuch über Tempo 100/min, Trommelmuster und Achtel-Akzente; der „Kettenakzent“ ist ein kurzer Glockenschlag und klingt vielleicht nicht nach Kette. Phase 2 ist ein vollständiges Stück (damit ein Überblenden genügt), keine Zusatzschicht; eine getrennte Zusatzschicht habe ich nicht geliefert.
+- **Händler:** „Wärmer und heller“ entsteht nur über Dur, Vokal „a“, höhere Lage und leise Glocken; ob das nach Ruhepunkt statt nach Spieluhr klingt, ist offen. Die Mitte liegt hier bewusst nicht frei (−1,8 dB).
+- **Das Überblenden** und die Lautstärken sind Vorschläge, nicht erprobt.
+- Frühere Zwischenfassung: ein Gleichanteil (die Stimmquelle ist einseitig) machte das Spektrum zu bassig; er ist kreisförmig herausgefiltert.
 
 **Zu den Geräuschen (unverändert):**
 
