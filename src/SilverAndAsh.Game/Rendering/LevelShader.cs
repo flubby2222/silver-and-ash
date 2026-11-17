@@ -1,15 +1,18 @@
 using System.Numerics;
 using Raylib_cs;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The shader for the level: lantern light and fog, computed by the graphics card for every pixel.
+/// The shader for the whole 3D world (level, figures, loot, effects): lantern light and fog - and in the picture variants
+/// of issue #234 the dot pattern -, computed by the graphics card for every pixel.
 /// The shader programs live in assets/shaders/level.vs and level.fs.
 /// </summary>
 internal sealed class LevelShader : IDisposable
 {
     private readonly int _viewPositionLocation;
+    private readonly int _flashLocation;
 
     public LevelShader(string shaderDirectory)
     {
@@ -26,12 +29,31 @@ internal sealed class LevelShader : IDisposable
 
         // "Locations" are the slots of the uniform variables in the compiled shader program.
         _viewPositionLocation = Raylib.GetShaderLocation(Shader, "viewPos");
+        _flashLocation = Raylib.GetShaderLocation(Shader, "flash");
 
         // These values do not change while playing - set them once.
-        SetVector3("fogColor", ToVector3(LookSettings.FogColor));
         SetFloat("fogStart", LookSettings.FogStart);
         SetFloat("fogEnd", LookSettings.FogEnd);
         SetFloat("lanternMinimum", LookSettings.LanternMinimum);
+        SetFloat("fadeStart", LookVariants.FadeStart);
+        SetFloat("fadeEnd", LookVariants.FadeEnd);
+        Apply(LookVariants.Default);
+    }
+
+    /// <summary>Switches the picture variant (issue #234): 15-bit pattern, fade after the pattern, fog colour.</summary>
+    public void Apply(LookVariant look)
+    {
+        // With the pattern the fog colour lies exactly on a 5-bit step, so fully fogged pixels get no pattern of their
+        // own and match the background (Dithering.SnapToStep).
+        var fog = ToVector3(LookSettings.FogColor);
+        if (look.Quantize)
+        {
+            fog = new Vector3(Dithering.SnapToStep(fog.X), Dithering.SnapToStep(fog.Y), Dithering.SnapToStep(fog.Z));
+        }
+
+        SetVector3("fogColor", fog);
+        SetInt("quantize", look.Quantize ? 1 : 0);
+        SetInt("patternFade", look.PatternFade ? 1 : 0);
     }
 
     public Shader Shader { get; }
@@ -51,6 +73,20 @@ internal sealed class LevelShader : IDisposable
         Raylib.SetShaderValue(Shader, Raylib.GetShaderLocation(Shader, "colDiffuse"), Vector4.One, ShaderUniformDataType.Vec4);
     }
 
+    /// <summary>
+    /// Lets what is drawn next flash: its surface is blended toward <paramref name="color"/> by
+    /// <paramref name="amount"/> (0..1, 0 = no flash) before shading, lantern and fog. Used by models, whose colour comes
+    /// from a texture and cannot simply be swapped like the colour of a box.
+    /// </summary>
+    public void SetFlash(Color color, float amount)
+    {
+        // Raylib collects triangles and sends them to the graphics card later; a value set now would also apply to
+        // triangles collected before. So draw those first.
+        Rlgl.DrawRenderBatchActive();
+        var value = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, Math.Clamp(amount, 0f, 1f));
+        Raylib.SetShaderValue(Shader, _flashLocation, value, ShaderUniformDataType.Vec4);
+    }
+
     /// <summary>Ends drawing figures.</summary>
     public void EndFigures() => Raylib.EndShaderMode();
 
@@ -58,6 +94,9 @@ internal sealed class LevelShader : IDisposable
 
     private void SetFloat(string name, float value) =>
         Raylib.SetShaderValue(Shader, Raylib.GetShaderLocation(Shader, name), value, ShaderUniformDataType.Float);
+
+    private void SetInt(string name, int value) =>
+        Raylib.SetShaderValue(Shader, Raylib.GetShaderLocation(Shader, name), value, ShaderUniformDataType.Int);
 
     private void SetVector3(string name, Vector3 value) =>
         Raylib.SetShaderValue(Shader, Raylib.GetShaderLocation(Shader, name), value, ShaderUniformDataType.Vec3);

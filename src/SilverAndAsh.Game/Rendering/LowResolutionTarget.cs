@@ -11,21 +11,25 @@ namespace SilverAndAsh.Game.Rendering;
 /// </summary>
 internal sealed class LowResolutionTarget : IDisposable
 {
-    private readonly RenderTexture2D _texture;
+    private RenderTexture2D _texture;
 
-    public LowResolutionTarget(int width, int height)
+    public LowResolutionTarget(int width, int height) => Create(width, height);
+
+    public int Width { get; private set; }
+
+    public int Height { get; private set; }
+
+    /// <summary>A new size for the picture (picture variants, issue #234). Does nothing if the size stays.</summary>
+    public void Resize(int width, int height)
     {
-        Width = width;
-        Height = height;
-        _texture = Raylib.LoadRenderTexture(width, height);
+        if (width == Width && height == Height)
+        {
+            return;
+        }
 
-        // Point = no smoothing when scaling: every small pixel becomes a sharp block.
-        Raylib.SetTextureFilter(_texture.Texture, TextureFilter.Point);
+        Raylib.UnloadRenderTexture(_texture);
+        Create(width, height);
     }
-
-    public int Width { get; }
-
-    public int Height { get; }
 
     /// <summary>Everything drawn after this lands in the small picture instead of on the screen.</summary>
     public void BeginDrawing() => Raylib.BeginTextureMode(_texture);
@@ -47,5 +51,26 @@ internal sealed class LowResolutionTarget : IDisposable
         Raylib.DrawTexturePro(_texture.Texture, source, destination, Vector2.Zero, 0f, Color.White);
     }
 
+    /// <summary>Saves the small picture as it is, in game resolution, as a PNG file (photo mode, issue #224).</summary>
+    public void SaveAs(string path)
+    {
+        var image = Raylib.LoadImageFromTexture(_texture.Texture);
+
+        // Stored upside down, like for drawing (see DrawToScreen).
+        Raylib.ImageFlipVertical(ref image);
+        Raylib.ExportImage(image, path);
+        Raylib.UnloadImage(image);
+    }
+
     public void Dispose() => Raylib.UnloadRenderTexture(_texture);
+
+    private void Create(int width, int height)
+    {
+        Width = width;
+        Height = height;
+        _texture = Raylib.LoadRenderTexture(width, height);
+
+        // Point = no smoothing when scaling: every small pixel becomes a sharp block.
+        Raylib.SetTextureFilter(_texture.Texture, TextureFilter.Point);
+    }
 }

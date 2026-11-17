@@ -6,7 +6,7 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>The player character: where it stands, how it moves and where it looks.</summary>
-public sealed class Player
+public sealed partial class Player
 {
     private Level _level;
     private readonly Func<IEnumerable<CylinderBody>> _bodies;
@@ -90,6 +90,17 @@ public sealed class Player
         _pullTicksLeft = Math.Max(1, SimulationClock.SecondsToTicks(seconds));
         var flat = (to - Position) with { Y = 0f };
         _pullVelocity = flat / (_pullTicksLeft * SimulationClock.SecondsPerTick);
+    }
+
+    /// <summary>
+    /// Puts the player at rest with their feet on <paramref name="feet"/> - only for building photo scenes (issue #224),
+    /// which is why it is internal: no game rule moves a player like this.
+    /// </summary>
+    internal void PlaceAt(Vector3 feet)
+    {
+        Position = feet;
+        PreviousPosition = feet;
+        Velocity = Vector3.Zero;
     }
 
     internal void ChangeLevel(Level level) => _level = level ?? throw new ArgumentNullException(nameof(level));
@@ -345,6 +356,7 @@ public sealed class Player
             return;
         }
 
+        CloseInventoryOnHit();
         var taken = Math.Min(damage, Health);
         Health -= taken;
         events.Add(new PlayerHit(Id, taken));
@@ -488,6 +500,7 @@ public sealed class Player
         }
 
         _events.Clear();
+        UseInventory(input);
         MeleeCooldown.Tick();
         _consecratedTicksLeft = Math.Max(0, _consecratedTicksLeft - 1);
         foreach (var weapon in _rangedSlots.OfType<RangedWeapon>())

@@ -7,6 +7,24 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
+/// How Gorm is shown: the designer's model (<see cref="ModelGormView"/>), or boxes when it cannot be loaded.
+/// </summary>
+internal interface IGormView
+{
+    /// <summary>Reacts to something that happened in the simulation (hit, died).</summary>
+    void OnEvent(GameEvent gameEvent);
+
+    /// <summary>Draws Gorm, advancing his animations by <paramref name="frameSeconds"/>. Between BeginFigures and EndFigures.</summary>
+    void Draw(Gorm gorm, float frameSeconds);
+
+    /// <summary>
+    /// What lies on the floor and in the air around him (warning circle, shock wave, stones - and with the boxes the
+    /// sweeping chain and the flying hook). Nothing once he is dead.
+    /// </summary>
+    void DrawEffects(Gorm gorm);
+}
+
+/// <summary>
 /// Placeholder Gorm made of boxes (decision record 0007): a hulking troll, 3.2 m tall, grey-green skin and rags, a
 /// wooden club with iron bands in the right hand and a rusty chain in the left. He sways as he walks, flashes when hit
 /// (red for a shot at his head) and falls onto his back when he dies. His head matches his hit zone. Every attack is
@@ -15,9 +33,9 @@ namespace SilverAndAsh.Game.Rendering;
 /// from his left over the front to his right, the shock wave runs as a pale ring along the floor, the hook flies
 /// on its chain, and a stuck club glows while he bends forward. At half health he roars, head thrown back and arms
 /// raised (phase 2); falling stones cast a dark shadow that grows on the floor until the stone drops into it.
-/// Pure presentation - a real model comes with v0.13.
+/// Pure presentation - drawn when the model (<see cref="ModelGormView"/>) cannot be loaded.
 /// </summary>
-internal sealed class GormView
+internal sealed class PlaceholderGormView : IGormView
 {
     private const float FlashSeconds = 0.12f;
     private const float FallSeconds = 1.2f;
@@ -30,10 +48,7 @@ internal sealed class GormView
     private static readonly Color FlashColor = new(255, 250, 235, 255);
     private static readonly Color CriticalFlashColor = new(230, 40, 50, 255);
     private static readonly Color Warning = new(200, 30, 30, 255);
-    private static readonly Color Wave = new(220, 210, 190, 255);
     private static readonly Color Glow = new(255, 120, 60, 255);
-    private static readonly Color Shadow = new(12, 10, 10, 255);
-    private static readonly Color Stone = new(96, 92, 88, 255);
 
     // Index of the head in BodyParts and the neck it tips back on while roaring.
     private const int Head = 4;
@@ -187,6 +202,53 @@ internal sealed class GormView
             return;
         }
 
+        GormFloorEffects.Draw(gorm);
+
+        if (gorm.SwingDirection is { } sweep)
+        {
+            // The swing itself: the chain stretched out as far as it reaches, at the height it hits, wandering from
+            // his left over the front to his right.
+            var (reach, low, high) = gorm.SwingArea;
+            var middle = gorm.Position + new Vector3(0f, (low + high) / 2f, 0f);
+            var links = Math.Max(8, (int)(reach / 0.3f));
+            for (var link = 1; link <= links; link++)
+            {
+                var spot = middle + (sweep * (reach * link / links));
+                ShadedBox.Draw(Matrix4x4.CreateTranslation(spot), new Vector3(0.16f, high - low, 0.16f), Rust);
+            }
+        }
+
+        if (gorm.Hook is { } hook)
+        {
+            var from = gorm.Hand;
+            var length = Vector3.Distance(from, hook);
+            var links = Math.Max(1, (int)(length / 0.3f));
+            for (var link = 0; link <= links; link++)
+            {
+                var spot = Vector3.Lerp(from, hook, link / (float)links);
+                ShadedBox.Draw(Matrix4x4.CreateTranslation(spot), new Vector3(0.08f, 0.08f, 0.08f), Rust);
+            }
+
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(hook), new Vector3(0.22f, 0.22f, 0.22f), Warning);
+        }
+    }
+
+    private static Color Blend(Color from, Color to, float amount) => GormFloorEffects.Blend(from, to, amount);
+}
+
+/// <summary>
+/// What lies on the floor around Gorm, the same for the model and the boxes: the red warning circle before the hammer
+/// (as far as the shock wave reaches), the shock wave's ring, and the falling stones with their growing shadows.
+/// </summary>
+internal static class GormFloorEffects
+{
+    private static readonly Color Warning = new(200, 30, 30, 255);
+    private static readonly Color Wave = new(220, 210, 190, 255);
+    private static readonly Color Shadow = new(12, 10, 10, 255);
+    private static readonly Color Stone = new(96, 92, 88, 255);
+
+    public static void Draw(Gorm gorm)
+    {
         foreach (var stone in gorm.Stones)
         {
             // The shadow grows to the stone's full reach; in the last part of the warning the stone drops into it.
@@ -209,37 +271,9 @@ internal sealed class GormView
             Ring(gorm.Position, gorm.ShockwaveReach, Blend(new Color(60, 10, 10, 255), Warning, strength), 0.06f);
         }
 
-        if (gorm.SwingDirection is { } sweep)
-        {
-            // The swing itself: the chain stretched out as far as it reaches, at the height it hits, wandering from
-            // his left over the front to his right.
-            var (reach, low, high) = gorm.SwingArea;
-            var middle = gorm.Position + new Vector3(0f, (low + high) / 2f, 0f);
-            var links = Math.Max(8, (int)(reach / 0.3f));
-            for (var link = 1; link <= links; link++)
-            {
-                var spot = middle + (sweep * (reach * link / links));
-                ShadedBox.Draw(Matrix4x4.CreateTranslation(spot), new Vector3(0.16f, high - low, 0.16f), Rust);
-            }
-        }
-
         if (gorm.Shockwave is { } wave)
         {
             Ring(wave.Origin, MathF.Max(0.3f, wave.Radius), Wave, 0.35f);
-        }
-
-        if (gorm.Hook is { } hook)
-        {
-            var from = gorm.Hand;
-            var length = Vector3.Distance(from, hook);
-            var links = Math.Max(1, (int)(length / 0.3f));
-            for (var link = 0; link <= links; link++)
-            {
-                var spot = Vector3.Lerp(from, hook, link / (float)links);
-                ShadedBox.Draw(Matrix4x4.CreateTranslation(spot), new Vector3(0.08f, 0.08f, 0.08f), Rust);
-            }
-
-            ShadedBox.Draw(Matrix4x4.CreateTranslation(hook), new Vector3(0.22f, 0.22f, 0.22f), Warning);
         }
     }
 
@@ -256,7 +290,7 @@ internal sealed class GormView
         }
     }
 
-    private static Color Blend(Color from, Color to, float amount) => new(
+    public static Color Blend(Color from, Color to, float amount) => new(
         (byte)(from.R + (to.R - from.R) * amount),
         (byte)(from.G + (to.G - from.G) * amount),
         (byte)(from.B + (to.B - from.B) * amount),
