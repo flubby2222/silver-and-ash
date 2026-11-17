@@ -127,6 +127,7 @@ public class GlbSceneTests
         Assert.Equal(86, parts[0].VertexCount);
         Assert.Equal(33, parts[1].VertexCount);
         Assert.Equal(new Vector3(-0.05f, -0.07f, -0.04f), parts[1].PositionMin);
+        Assert.Equal(new Vector3(0.1f, 0.25f, 0.19f), parts[0].PositionMax);
     }
 
     [Fact]

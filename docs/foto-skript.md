@@ -37,8 +37,11 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `room-boss` | den Bossraum aus 12 m, Gorm im Blick |
 | `ghoul-4m`, `ghoul-10m`, `bat-4m`, `bat-10m` | einen Ghul bzw. eine Fledermaus in einer leeren Halle aus 4 m bzw. 10 m |
 | `ghoul-windup` | einen Ghul beim Ausholen (Hälfte der Ausholzeit) |
+| `pistol-recoil` | die Pistole gleich nach dem Schuss: hochgerissen, Hahn gefallen, Mündungsfeuer |
+| `blade-charged` | die Silberklinge voll aufgeladen: zurückgezogen und zitternd |
 | `gorm` | Gorm aus 6 m in seinem Bossraum |
 | `hud-weapons` | das HUD mit allen Waffenplätzen belegt (Keule, Pistole, Gewehr, Donnerbüchse) |
+| `hud-rifle` | wie `hud-weapons`, aber mit dem Gewehr (2) in der Hand |
 | `inventory` | das offene Inventar (G) mit voller Tasche |
 | `map` | die offene Karte (M) zu Beginn eines Durchlaufs |
 | `chests-4m` | die Kisten aller vier Stufen nebeneinander aus 4 m, geschlossen und verschlossen, dazu eine offene (Issue #249) |
