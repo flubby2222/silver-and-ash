@@ -165,13 +165,13 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | `fittings` (Beschläge, Bügel, Ladestock, Batterie) | 0, 0, 0 | stock | 214 |
 | `flash` (Mündungsfeuer, unbeleuchtet) | 0, 0, 0 | stock | 42 |
 | `stock` | 0, 0, 0 | – | 144 |
-| `arm` (in `pistol_hand.glb`: Faust im Lederhandschuh, Stulpe, Mantelärmel; eigene Textur `pistol_hand.png`) | 0, 0, 0 | stock | 226 |
+| `arm` (in `pistol_hand.glb`: Mantelärmel mit Rüschenmanschette, ohne Hand; eigene Textur) | 0, 0, 0 | stock | 240 |
 
 **Haltungen:**
 
 | Haltung | Lage im Kameraraum | Drehung | Teile |
 |---|---|---|---|
-| **Ruhe** | **(0,06, −0,04, 0,18)** (vorher (0,095, −0,08, 0,18)) | Lauf parallel zur Blickachse, 15° gekippt: Drehung um die Laufachse, Oberseite zur Bildmitte | – |
+| **Ruhe** | (0,095, −0,08, 0,18) | Lauf parallel zur Blickachse, 15° gekippt: Drehung um die Laufachse, Oberseite zur Bildmitte | – |
 | **Rückstoß** (voll) | zusätzlich (0, +0,012, −0,035) | +14 „heben“ um den Griffpunkt | `cock` −38 (Hahn fällt nach vorn), `flash` sichtbar |
 
 - **Zurückfedern:** wie im Platzhalter, `EaseOut` über 0,18 s.
@@ -185,14 +185,14 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | Teil | Drehpunkt | hängt an | Dreiecke |
 |---|---|---|---|
 | `sword` (Klinge, Parierstange, Griff, Knauf) | 0, 0, 0 | – | 152 |
-| `arm` (in `blade_hand.glb`: Faust im Lederhandschuh, Stulpe, Mantelärmel; eigene Textur `blade_hand.png`) | 0, 0, 0 | sword | 202 |
+| `arm` (in `blade_hand.glb`: Mantelärmel mit Rüschenmanschette, ohne Hand; eigene Textur) | 0, 0, 0 | sword | 240 |
 
-**Haltungen** (aus `DrawBlade`; die Hand liegt jetzt bei **(−0,11, −0,07, 0,19)** im Kameraraum, vorher (−0,11, −0,095, 0,19)):
+**Haltungen** (aus `DrawBlade`; die Hand liegt bei (−0,11, −0,095, 0,19) im Kameraraum):
 
 | Haltung | Neigung um die Längsachse | Drehung der Spitze um die Hochachse | Versatz der Hand |
 |---|---|---|---|
 | **Ruhe** | 20°, Oberseite zur Bildmitte | 0 | – |
-| **Ausholen** beim Aufladen (voll) | 20° | **22°** nach links (vorher 35°) | **(−0,03, +0,01, 0,0)** (vorher (−0,03, −0,01, −0,03)) |
+| **Ausholen** beim Aufladen (voll) | 20° | 35° nach links | (−0,03, +0,015, −0,04) |
 | **Schlag** (Höhepunkt) | 45° | 95° nach rechts | (+0,06, +0,04, 0) |
 
 Zeitverlauf und Zittern bei voller Ladung wie im Platzhalter.
@@ -246,27 +246,18 @@ Erst schwenken, dann heben: `Drehung = Schwenken × Heben`.
 1. Lädt Raylib die Knoten-Verschiebungen in die Ecken ein? Bleibt die Reihenfolge der Meshes erhalten? Lassen sich Namen lesen?
 2. Kamera-Matrix der Waffen ohne Spiegelung (siehe Pistole).
 3. Shader mit Textur, Normale und Licht je Ecke; Point-Filter ohne Mipmaps.
-4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind seit Probestück 14 (Issue #265) wieder **eine Faust im Lederhandschuh mit Stulpe und Mantelärmel** (die handlosen Ärmel aus Probestück 11 wurden vom Menschen abgelehnt, die Faust bestätigt: „Ja, rechte Fassung“). Sie hängen starr an der Waffe; Dateinamen, Knoten und Drehpunkte sind gleich geblieben.
+4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind seit Probestück 14 (Issue #265, Fassung g) **ein dunkelblauer Mantelärmel mit heller Rüschenmanschette, ohne Hand, Finger oder Handschuh** (Entscheidung des Menschen: „Keine Hände“, Entwurf C). Sie hängen starr an der Waffe; Dateinamen, Knoten und Drehpunkte sind gleich geblieben.
 
-### Was sich gegenüber den Dateien im Spiel ändert (Probestück 14, Issue #265: Faust und Haltung)
+### Was sich gegenüber den Dateien im Spiel ändert (Probestück 14, Fassung g, Issue #265)
 
 Alle sechs Dateien tauschen (`pistol.glb`, `pistol_hand.glb`, `blade.glb`, `blade_hand.glb`, `pistol.png`, `blade.png`), dazu zwei neue PNGs (`pistol_hand.png`, `blade_hand.png`), danach `python tools/models/checksums.py`.
 - **Namen, Knoten, Drehpunkte, Eltern:** unverändert; `arm` ist ein Teil mit einem Mesh.
-- **Eigene Arm-Texturen:** `pistol_hand.glb` und `blade_hand.glb` tragen **ihre eigene eingebettete Textur** (64 × 64, höchstens 32 Farben, eigene Palette: Handschuh dunkles Leder, Stulpe helleres Leder mit Naht und Riemen, Mantelstoff dunkles Blaugrau); die Atlanten von `pistol.png` und `blade.png` enthalten keine Arm-Felder mehr. Die PNGs `*_hand.png` sind dieselben Bilder (das Spiel liest die eingebettete Textur; sie gehören trotzdem in `assets/models/` und in `models.sha256`).
-- **Geometrie:** Faust aus einem Körper (acht Seiten) um den Griff, Handrücken und Fingerrücken als zwei Flächen mit Kante (in der Textur), Daumen ein Stück, bei der Pistole der Zeigefinger als Stummel; kurze anliegende Stulpe; Mantelärmel läuft nach rechts (Pistole) beziehungsweise links (Klinge) aus dem Bild. Dreiecke: Pistolen-Arm 226 (vorher 156 als Ärmel ohne Hand), Klingen-Arm 202 (vorher 168).
-- **Haltungswerte in `WeaponPose.cs`** (alles andere unverändert):
-
-| Wert | vorher | neu |
-|---|---|---|
-| `PistolGrip` | (0,095; −0,08; 0,18) | **(0,06; −0,04; 0,18)** |
-| `BladeGrip` | (−0,11; −0,095; 0,19) | **(−0,11; −0,07; 0,19)** |
-| `WindUpShift` | (−0,03; −0,01; −0,03) | **(−0,03; 0,01; 0,0)** |
-| `WindUpYawDegrees` | 35 | **22** |
-
-  Damit liegen Faust und Arm im unteren Drittel des Bildes und der Unterarm läuft aus der Bildecke herein; beim Aufladen steht die Parierstange als Stange über der Faust und nicht mehr als helle Fläche quer im Bild. Der Test zu `WeaponPose.Reach` (30 cm) und die Haltungen Schwung und Rückstoß sind mit den neuen Werten nicht geprüft.
+- **Haltungswerte: unverändert gegenüber `main`.** Pistole (0,095; −0,08; 0,18), Klinge (−0,11; −0,095; 0,19), Ausholen 35° und (−0,03; −0,01; −0,03) bleiben; es ist **keine** Änderung an `WeaponPose.cs` nötig. Mit den neuen Dateien in `assets/models/` laufen die 15 Tests in `WeaponPoseTests` grün (lokal geprüft).
+- **Geometrie:** Ein Rohr aus 12 Seiten je Arm. Mund der Manschette mit **drei Lagen Rüsche** (die erste und die dritte zackig), dahinter das Rohr: zuerst gerade zurück, dann schräg nach außen und unten, **bis weit über den Bildrand** (Länge etwa 0,7 m, Ende bei (0,6; −0,33; −0,30) beziehungsweise (0,6; −0,35; −0,4) in Dateikoordinaten), damit das Ende in keiner Haltung im Bild liegt. Die Pistolenmanschette liegt waagerecht um Griff und Schloss (Waffe ragt vorn heraus), spiegelbildlich zur Klingenmanschette. Dreiecke: Pistolen-Arm 240, Klingen-Arm 240.
+- **Eigene Arm-Texturen:** `pistol_hand.glb` und `blade_hand.glb` tragen ihre eigene eingebettete Textur (64 × 64, höchstens 32 Farben, eigene Palette: dunkelblauer Stoff mit drei Faltenbahnen, Borte, zwei Silberknöpfe, gebrochenweiße Rüsche mit dunklen Schattenlinien). Die Waffen-Atlanten haben keine Arm-Felder mehr. Die `*_hand.png` sind dieselben Bilder und gehören mit in `assets/models/` und `models.sha256`.
 - **Prüfsummen** ändern sich; `assets/HERKUNFT.md`: gleiche Skripte, neues Datum.
-- **Skripte:** `tools/models/arm.py` (neu: `build_fist_arm`, `ARM_RECTS`, `ARM_PAINTERS`), `pistol.py`, `blade.py`.
-- **Was noch nicht stimmt** (siehe `design/proben/grafik/aermel5/notizen.md`): die Klinge zeigt den Mantelärmel im Bild kaum; die Pistolenstulpe ist von hinten ein großer runder Block.
+- **Skripte:** `tools/models/arm.py` (Fassung g am Ende: `build_design_g`, `paint_g_sleeve`; die älteren Entwürfe stehen weiter darin), `pistol.py`, `blade.py`.
+- **Was noch nicht stimmt** (siehe `design/proben/grafik/aermel6/notizen.md`): die Manschette ist ein großer heller Block, der Ärmel zwischen Manschette und Bildrand kurz; Schwung und Rückstoß nicht fotografiert.
 
 ### Frühere Änderungen (Probestück 11, Issues #256 und #257): Hahn und handlose Ärmel; die Ärmel sind durch Probestück 14 ersetzt, der Hahn gilt weiter
 

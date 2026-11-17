@@ -255,7 +255,7 @@ def build_sleeve4(part, s, path, radii, mouth_cap=True, lining=False):
 # c: dunkelblauer Aermel mit heller Ruschenmanschette (Spitze), ohne Hand
 import os
 
-DESIGN = os.environ.get("AERMEL", "e")
+DESIGN = os.environ.get("AERMEL", "g")
 CUFF_V = 0.17        # Anteil von v (vom Mund aus), der Stulpe/Ruesche ist; die Pistole setzt 0,29 (Ringflaeche zusaetzlich)
 STEEL_B = np.array((96, 100, 114), float)
 LEATHER_B = np.array((38, 36, 42), float)
@@ -522,3 +522,87 @@ def build_design_e(part, weapon):
                        wrist=(0.026, -0.012, -0.054), elbow=(0.27, -0.08, -0.04),
                        thumb=((-0.002, 0.016, -0.05), (-0.012, 0.013, -0.03), (-0.011, 0.009, -0.012)),
                        fist=(0.0150, 0.0145, 0.0185), reach=0.72)
+
+
+
+# =====================================================================================================================
+# Fassung g (Issue #265, Entscheidung des Menschen): keine Hand. Dunkelblauer Mantelaermel mit heller Ruschenmanschette
+# (Entwurf C aus Probestueck 13), die Waffe ragt aus der Manschette. Die Aermel sind lang: ihr Ende liegt in jeder
+# Haltung ausserhalb des Bildes. Eigene Arm-Textur 64 x 64 (nur das Feld "sleeve", eigene Palette).
+# =====================================================================================================================
+ARM_RECTS = {"sleeve": (0, 0, 64, 64)}
+UV_ARM = rects_from_pixels(ARM_RECTS, 64)
+
+CLOTH_G = np.array((36, 44, 74), float)          # dunkelblauer Mantelstoff
+LACE_G = np.array((204, 196, 180), float)        # gebrochenes Weiss
+SHADOW_G = np.array((70, 66, 66), float)         # Schattenlinie zwischen den Volants
+BUTTON_G = np.array((200, 204, 214), float)      # Silberknoepfe (Silber gehoert dem Jaeger)
+FRILL_V = 0.34                                   # Anteil von v (vom Mund aus), der Ruesche ist
+
+
+def paint_g_sleeve(U, V_):
+    """Aermel in einem Feld: u rund um die Roehre, v vom Ellbogen (0) zum Mund (1) - wird hier gedreht, so dass v = 0 am
+    Mund liegt. Ruesche: drei Lagen (v bis 0,34) mit dunklen Schattenlinien dazwischen, gebrochenes Weiss, kaum Rauschen.
+    Danach eine schmale Borte, zwei Silberknoepfe am Aermelschlitz und zwei, drei lange Faltenbahnen."""
+    V_ = 1 - V_
+    h, w = U.shape
+    col = np.broadcast_to(CLOTH_G, (h, w, 3)).copy()
+    col *= (0.92 + 0.14 * vnoise(h, w, 20, 8, 801))[..., None]
+    fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 3 + 0.07 * vnoise(h, w, 5, 3, 802) + 0.08 * V_))
+    col = mix(col * 0.72, CLOTH_G * 2.1 + 10, fold ** 1.8 * 0.85)                       # drei lange Faltenbahnen
+    col = mix(col, CLOTH_G * 2.2 + 10, np.clip((vnoise(h, w, 4, 5, 803) - 0.68) * 3, 0, 0.4))   # Abnutzung
+    # Borte und Naht am Uebergang zur Manschette
+    col = mix(col, CLOTH_G * 0.5, ((V_ > FRILL_V) & (V_ < FRILL_V + 0.05)).astype(float))
+    col = mix(col, LACE_G * 0.7, (np.abs(V_ - (FRILL_V + 0.025)) < 0.007).astype(float))
+    # zwei Knoepfe am Aermelschlitz (oben auf dem Aermel, u = 0,5)
+    for cv in (FRILL_V + 0.13, FRILL_V + 0.22):
+        d = blob(U, V_, 0.5, cv, 0.045, 0.035)
+        col = mix(col, BUTTON_G, (d > 0.35).astype(float))
+        col = mix(col, CLOTH_G * 0.4, ((d > 0.1) & (d <= 0.35)).astype(float) * 0.7)
+    # Ruesche: drei Lagen, dunkle Schattenlinie unter jeder Lage, kaum Struktur
+    lace = np.broadcast_to(LACE_G, (h, w, 3)).copy() * (0.94 + 0.08 * vnoise(h, w, 6, 12, 811))[..., None]
+    layer = (V_ / FRILL_V * 3.0) % 1.0
+    lace *= (0.78 + 0.28 * layer)[..., None]                                             # jede Lage unten dunkler
+    lace = mix(lace, SHADOW_G, ((layer < 0.09) & (V_ > 0.03)).astype(float) * 0.85)
+    wave = ((U * 24) % 1.0)
+    lace = mix(lace, LACE_G * 0.7, (np.abs(wave - 0.5) > 0.44).astype(float) * 0.5)       # Falten der Lage
+    col = mix(col, lace, (V_ < FRILL_V).astype(float))
+    return col
+
+
+ARM_PAINTERS = {"sleeve": paint_g_sleeve}
+
+
+def _g_path(weapon):
+    """Mittellinie des Aermels (Kameraraum, rechte Seite; s = -1 spiegelt): Mund der Manschette, drei Ringe Ruesche,
+    dann das Rohr: erst zurueck, dann schraeg nach aussen und unten, weit ueber den Bildrand hinaus."""
+    if weapon == "blade":
+        z0, y0, dz = -0.003, 0.0, -0.008
+        mouth = [(0, y0, z0 + dz * k) for k in range(4)]
+        tube_ = [(0.0, -0.004, -0.050), (0.035, -0.020, -0.080), (0.09, -0.060, -0.110), (0.18, -0.110, -0.150),
+                 (0.32, -0.190, -0.220), (0.60, -0.350, -0.400)]
+    else:
+        z0, y0, dz = 0.000, -0.026, -0.008
+        mouth = [(0, y0, z0 + dz * k) for k in range(4)]
+        tube_ = [(0.0, -0.028, -0.032), (0.035, -0.040, -0.060), (0.09, -0.064, -0.090), (0.18, -0.105, -0.125),
+                 (0.32, -0.175, -0.185), (0.60, -0.330, -0.300)]
+    return mouth + tube_
+
+
+def build_design_g(part, weapon):
+    s = +1 if weapon == "pistol" else -1
+    path = _g_path(weapon)
+    m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
+    base = 0.034 if weapon == "pistol" else 0.031                                     # Radius der Manschette
+    radii = [base * 1.22, base * 1.06, base * 1.16, base, base * 0.95, base * 0.98, base * 1.05, base * 1.15,
+             base * 1.3, base * 1.45]
+    pts = [m(p) for p in path][::-1]
+    rad = [(r,) * 3 for r in radii][::-1]
+    n = len(pts)
+    # Ruesche: der Mund (letzter Ring) und der dritte Ring vom Mund aus sind zackig (Lagen mit Rand).
+    mods = lambda i, k: (1.0 if k % 2 == 0 else 0.9) if i in (n - 1, n - 3) else 1.0   # noqa: E731
+    part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0), mods=mods), "sleeve", cap_start=True, cap_end=True)
+
+
+def build_design(part, weapon):                                                      # noqa: F811
+    build_design_g(part, weapon)
