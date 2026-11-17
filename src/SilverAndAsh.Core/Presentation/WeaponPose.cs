@@ -58,15 +58,15 @@ public static class WeaponPose
 
     /// <summary>
     /// Every point of a weapon model and its sleeve that lies within the picture stays this close to the eyes (metres),
-    /// in every pose - the long sleeves run on out of the picture, and only the sleeve at the height of a blade swing
-    /// reaches farther within it, out to the left edge of the picture. The player keeps 35 cm
+    /// in every pose, with the forearm turned towards the shoulder as drawn (tested) - the long sleeves run on out of
+    /// the picture. The player keeps 35 cm
     /// from every wall (its radius) - the rest is room for bob, sway and the landing dip.
     /// </summary>
     public const float Reach = 0.30f;
 
     /// <summary>
     /// Nothing nearer to the eyes than this is drawn (metres): raylib's near plane. What lies closer is cut off - the
-    /// sleeve running back past the eyes to the elbow, but never the glove or the weapon in view.
+    /// sleeve running back past the eyes to the elbow, but never the cuff or the weapon in view.
     /// </summary>
     public const float NearPlane = 0.05f;
 
@@ -74,7 +74,7 @@ public static class WeaponPose
     /// The models are drawn this much smaller and that much nearer to the eyes, in camera space before the camera
     /// matrix. Shrinking around the eye leaves the picture exactly as it is (every corner stays on its line of sight),
     /// but brings the far end of the barrel, the flash and the blade within <see cref="Reach"/> - out of the walls.
-    /// Not smaller: the near plane would cut away the glove (tried with 0.3).
+    /// Not smaller: the near plane would cut away the hand (tried with 0.3, then still a glove).
     /// </summary>
     public const float ShrinkTowardsEye = 0.5f;
 

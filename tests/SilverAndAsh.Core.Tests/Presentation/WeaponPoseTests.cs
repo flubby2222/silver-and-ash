@@ -129,8 +129,9 @@ public class WeaponPoseTests
     [Fact]
     public void Everything_drawn_of_the_blade_hand_stays_within_reach_until_the_swing_turns_the_sleeve_out()
     {
-        // From about a third of the swing on, the tip has turned so far right that the sleeve behind the grip swings out
-        // to the left edge of the picture (about 42 cm from the eyes) - accepted, the PR of issue #249 says so.
+        // Here the forearm stays unturned, as it stands in the file - a pose drawn only at rest. Rigid, it would swing
+        // out ahead from about a third of the swing on. As drawn, turned towards the shoulder, the whole swing is
+        // checked in SleeveForearmTests (issue #265).
         foreach (var pose in BladePoses(lastSwing: 0.3f))
         {
             AssertWithinReach("blade_hand.glb", pose, _ => Matrix4x4.Identity);
@@ -196,7 +197,7 @@ public class WeaponPoseTests
     // (the sleeves are long on purpose and run out of the picture). That piece is the triangle clipped by those
     // planes; its farthest point is one of its corners. None lies farther from the eye (the camera-space origin) than
     // the reach.
-    private static void AssertWithinReach(string file, Matrix4x4 pose, Func<string, Matrix4x4> turnOf)
+    internal static void AssertWithinReach(string file, Matrix4x4 pose, Func<string, Matrix4x4> turnOf)
     {
         foreach (var (name, polygons) in Placed(file, pose, turnOf))
         {

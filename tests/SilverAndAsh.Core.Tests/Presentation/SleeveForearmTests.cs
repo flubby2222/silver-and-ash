@@ -86,6 +86,42 @@ public class SleeveForearmTests
     }
 
     [Fact]
+    public void Everything_drawn_of_the_blade_sleeve_stays_within_reach_of_the_eyes_with_the_forearm_turned_as_drawn()
+    {
+        // Cuff and forearm as WeaponView draws them: the cuff on the grip, the forearm turned towards the shoulder. A
+        // rigid forearm would reach far ahead at the height of a swing - into the walls.
+        var pivot = Forearm("blade_hand.glb").Pivot;
+        foreach (var swing in Fractions(Steps))
+        {
+            foreach (var windUp in Fractions(20))
+            {
+                foreach (var tremble in Trembles)
+                {
+                    var turn = WeaponPose.BladeForearm(swing, windUp, tremble, pivot);
+                    WeaponPoseTests.AssertWithinReach(
+                        "blade_hand.glb",
+                        WeaponPose.Blade(swing, windUp, tremble),
+                        part => part == WeaponPose.Forearm ? turn : Matrix4x4.Identity);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void Everything_drawn_of_the_pistol_sleeve_stays_within_reach_of_the_eyes_with_the_forearm_turned_as_drawn()
+    {
+        var pivot = Forearm("pistol_hand.glb").Pivot;
+        foreach (var kick in Fractions(Steps))
+        {
+            var turn = WeaponPose.PistolForearm(kick, pivot);
+            WeaponPoseTests.AssertWithinReach(
+                "pistol_hand.glb",
+                WeaponPose.Pistol(kick),
+                part => part == WeaponPose.Forearm ? turn : Matrix4x4.Identity);
+        }
+    }
+
+    [Fact]
     public void Through_the_swing_and_the_wind_up_the_blade_forearm_turns_smoothly_without_rolling_over()
     {
         var pivot = Forearm("blade_hand.glb").Pivot;
