@@ -1,4 +1,4 @@
-"""Geraeuschpaket 1 (Praefix p1-) aus der neuen Palette - alles in SoundCraft, alles Samples (Uebergabe des Audiodesigners, Issue #290; Paket 1.1 fuer Issue #291).
+"""Geraeuschpaket 1 (Praefix p1-) aus der neuen Palette - alles in SoundCraft, alles Samples (Uebergabe des Audiodesigners, Issue #290; Paket 1.1 fuer Issue #291, Fledermaus fuer #297).
 
 BRAUCHT SOUNDCRAFT: soundcraft-cli.exe 0.20.1 unter "C:/Program Files/ArtCraft/SoundCraft/" (Pfad: CLI in bauen.py), dazu ffmpeg und
 Python 3.12 (nur Standardbibliothek). Laeuft NICHT in der CI und wird dort nie aufgerufen - die fertigen Dateien sind eingecheckt.
@@ -192,6 +192,23 @@ for i, p in enumerate((48, 47), 1):
     GERAEUSCHE.append(G(f"p1-schuss-geweiht-{i}", "schlag", "schuss", [(p, 0, 0.0625, 127)], 1.0, dict(SCHLAG, decay=400.0), max_s=0.6,
                         zusatz=[("glocke", [(64, 0.0, 0.3, 100)], dict(adsr(300.0, 120.0), level=6.0))]))
 GERAEUSCHE.append(G("p1-weihe-ende", "glocke", "marke", [(52, 0.0, 0.3, 90)], 0.9, adsr(350.0, 150.0), max_s=0.7))
+
+# --- Fledermaus (Issue #297): kleiner und heller als der Ghul, aber nicht schrill (Pfeife um E4 mit Tonfahrt, Hauch fuer Fluegel) ---
+def glide_s(pts):
+    return glide("S", 0, "semitones", pts)
+
+
+for i, p in enumerate((66, 65), 1):
+    GERAEUSCHE.append(G(f"p1-fledermaus-flattern-{i}", "hauch", "bewegung", [(p, 0, 0.05, 90)], 0.5, adsr(90.0, 60.0), max_s=0.22))
+GERAEUSCHE.append(G("p1-fledermaus-spuck-ankuendigung", "glocke", "ankuendigung", [(71, 0, 0.5, 110)], 1.0, adsr(500.0, 150.0), max_s=0.7))
+GERAEUSCHE.append(G("p1-fledermaus-spucken", "hauch", "schwung", [(76, 0, 0.05, 110)], 0.6, adsr(120.0, 60.0), max_s=0.3))
+GERAEUSCHE.append(G("p1-fledermaus-kreischen", "pfeife", "ankuendigung", [(64, 0, 0.45, 120)], 0.9, adsr(300.0, 60.0, 100.0, 4.0),
+                    auto=glide_s([(0.0, 3.0), (0.4, -5.0)]), inserts=[PS], max_s=0.55))
+GERAEUSCHE.append(G("p1-fledermaus-biss", "schlag", "treffer", [(68, 0, 0.04, 120)], 0.5, adsr(60.0, 30.0), max_s=0.25))
+GERAEUSCHE.append(G("p1-fledermaus-fehlsturz", "hauch", "bewegung", [(58, 0, 0.1, 100)], 0.8, adsr(200.0, 100.0), max_s=0.45))
+GERAEUSCHE.append(G("p1-fledermaus-treffer", "schlag", "treffer", [(70, 0, 0.04, 110)], 0.5, adsr(80.0, 40.0), max_s=0.3))
+GERAEUSCHE.append(G("p1-fledermaus-sterben", "pfeife", "ghul", [(62, 0, 0.5, 105)], 1.0, adsr(350.0, 150.0, 100.0, 4.0),
+                    auto=glide_s([(0.0, 0.0), (0.5, -12.0)]) + lautstaerke("S", [(0.2, 0.0), (0.6, -30.0)]), inserts=[PS], max_s=0.7))
 
 
 def stueck(g, quellen):

@@ -40,7 +40,23 @@ public class SoundPackTests
         { new PlayerLanded(0, 3f), SoundKind.Land, ["p1-landung.wav"] },
         { new GhoulNoticed(2, 0), SoundKind.GhoulNoticed, ["p1-ghul-entdecken.wav", "p1-ghul-entdecken-2.wav"] },
         { new ConsecrationEnded(0), SoundKind.ConsecrationEnded, ["p1-weihe-ende.wav"] },
+
+        // Issue #297.
+        { new BatFlapped(4, Vector3.Zero), SoundKind.BatFlap, ["p1-fledermaus-flattern-1.wav", "p1-fledermaus-flattern-2.wav"] },
+        { new BatSpitWindUp(4), SoundKind.BatSpitWindUp, ["p1-fledermaus-spuck-ankuendigung.wav"] },
+        { new BatSpat(4, Vector3.Zero, Vector3.UnitZ), SoundKind.BatSpat, ["p1-fledermaus-spucken.wav"] },
+        { new BatScreeched(4), SoundKind.BatScreech, ["p1-fledermaus-kreischen.wav"] },
+        { new BatBit(4, 0), SoundKind.BatBite, ["p1-fledermaus-biss.wav"] },
+        { new BatDiveMissed(4), SoundKind.BatDiveMissed, ["p1-fledermaus-fehlsturz.wav"] },
+        { new BatHit(4, 10), SoundKind.BatHurt, ["p1-fledermaus-treffer.wav"] },
+        { new BatDied(4), SoundKind.BatDied, ["p1-fledermaus-sterben.wav"] },
     };
+
+    private static readonly GameEvent[] BatEvents =
+    [
+        new BatFlapped(4, Vector3.Zero), new BatSpitWindUp(4), new BatSpat(4, Vector3.Zero, Vector3.UnitZ), new BatScreeched(4),
+        new BatBit(4, 0), new BatDiveMissed(4), new BatHit(4, 10), new BatDied(4),
+    ];
 
     [Theory]
     [MemberData(nameof(Pack1Events))]
@@ -135,6 +151,156 @@ public class SoundPackTests
             [new PlayerJumped(0), new PlayerDashed(0), new PlayerDodged(0), new PlayerLanded(0, 3f), new GhoulNoticed(1, 0),
              new ConsecrationEnded(0)],
             SoundPack.Old));
+
+        // Issue #297: the bat is silent in the old pack.
+        Assert.All(BatEvents, gameEvent => Assert.Empty(new SoundCues(1).For([gameEvent], SoundPack.Old)));
+    }
+
+    [Fact]
+    public void The_bat_warnings_differ_from_the_ghouls_and_from_each_other()
+    {
+        // Issue #297: spit and dive are announced by other files than the ghoul's attack, and not by the same one.
+        var spit = Pack1.Variants(SoundKind.BatSpitWindUp);
+        var screech = Pack1.Variants(SoundKind.BatScreech);
+        var ghoul = Pack1.Variants(SoundKind.GhoulWindUp);
+
+        Assert.Empty(spit.Intersect(ghoul));
+        Assert.Empty(screech.Intersect(ghoul));
+        Assert.Empty(spit.Intersect(screech));
+    }
+
+    [Fact]
+    public void A_blade_hit_on_a_bat_plays_the_bats_own_hit_in_pack_1()
+    {
+        // Both are short knocks: the bat's own one says what was hit, and the two would smear into one.
+        var cues = new SoundCues(1).For([BladeSwing, new BatHit(4, 40), BladeHit with { TargetId = 4 }], Pack1);
+
+        Assert.Equal([SoundKind.BatHurt], cues.Select(cue => cue.Kind));
+    }
+
+    [Fact]
+    public void A_blade_hit_on_a_bat_plays_the_blade_in_the_old_pack()
+    {
+        // The old pack has no sound for the bat's hit: the blade's hit plays as before issue #297.
+        var cues = new SoundCues(1).For([BladeSwing, new BatHit(4, 40), BladeHit with { TargetId = 4 }], SoundPack.Old);
+
+        Assert.Equal([SoundKind.Blade], cues.Select(cue => cue.Kind));
+    }
+
+    [Fact]
+    public void A_pistol_hit_on_a_bat_plays_the_shot_and_the_bats_hit()
+    {
+        var cues = new SoundCues(1).For(
+            [new ShotFired(Vector3.Zero, Vector3.UnitZ), new BatHit(4, 10), new TargetHitBy(4, 0, Weapon.Pistol)], Pack1);
+
+        Assert.Equal([SoundKind.Pistol, SoundKind.BatHurt], cues.Select(cue => cue.Kind));
+    }
+
+    [Theory]
+    [InlineData(0f)]
+    [InlineData(5f)]
+    [InlineData(SoundBoard.BatFlapHearingDistance - 0.01f)]
+    public void A_wing_beat_near_the_listener_is_heard(float distance)
+    {
+        var listener = new Vector3(3f, 1.6f, -2f);
+        var flap = new BatFlapped(4, listener + Vector3.Normalize(new Vector3(1f, 0.5f, 2f)) * distance);
+
+        var cue = Assert.Single(new SoundCues(1).For([flap], Pack1, listener));
+        Assert.Equal(SoundKind.BatFlap, cue.Kind);
+    }
+
+    [Theory]
+    [InlineData(SoundBoard.BatFlapHearingDistance + 0.01f)]
+    [InlineData(15f)]
+    public void A_wing_beat_far_from_the_listener_is_not(float distance)
+    {
+        var listener = new Vector3(3f, 1.6f, -2f);
+        var flap = new BatFlapped(4, listener + new Vector3(0f, 0f, distance));
+
+        Assert.Empty(new SoundCues(1).For([flap], Pack1, listener));
+    }
+
+    [Fact]
+    public void The_hearing_distance_covers_a_bat_circling_a_player()
+    {
+        Assert.True(SoundBoard.BatFlapHearingDistance > Balance.Default.Bat.CircleRadiusMax);
+        Assert.True(SoundBoard.BatFlapHearingDistance < Balance.Default.Bat.SightRange);
+    }
+
+    [Fact]
+    public void Only_the_wing_beat_has_a_range()
+    {
+        // Warnings must always come through, wherever the bat is.
+        var far = new Vector3(100f, 0f, 0f);
+        GameEvent[] events = [new BatScreeched(4), new BatSpitWindUp(5), new BatDied(6), new PlayerStepped(0, Foot.Left)];
+
+        Assert.All(events, gameEvent => Assert.True(SoundBoard.IsInEarshot(gameEvent, far)));
+        Assert.True(SoundBoard.IsInEarshot(new BatFlapped(4, far), null));
+    }
+
+    [Fact]
+    public void Wing_beats_of_several_bats_are_thinned_out_to_the_minimum_gap()
+    {
+        var cues = new SoundCues(1);
+        var gap = SimulationClock.SecondsToTicks(SoundBoard.BatFlapMinimumGap);
+        var heard = new List<int>();
+
+        // Three bats taking turns, one beat every third tick: never two heard closer than the gap.
+        for (var tick = 0; tick < 4 * SimulationClock.TicksPerSecond; tick++)
+        {
+            GameEvent[] events = tick % 3 == 0 ? [new BatFlapped(4 + tick % 9 / 3, Vector3.Zero)] : [];
+            if (cues.For(events, Pack1).Any(cue => cue.Kind == SoundKind.BatFlap))
+            {
+                heard.Add(tick);
+            }
+        }
+
+        Assert.Equal(0, heard[0]);
+        Assert.All(heard.Zip(heard.Skip(1)), pair => Assert.InRange(pair.Second - pair.First, gap, gap + 2));
+    }
+
+    [Fact]
+    public void One_bat_is_heard_on_every_wing_beat()
+    {
+        Assert.True(Bat.FlapInterval >= SoundBoard.BatFlapMinimumGap);
+
+        var cues = new SoundCues(1);
+        var interval = SimulationClock.SecondsToTicks(Bat.FlapInterval);
+        var heard = 0;
+        for (var tick = 0; tick < 10 * interval; tick++)
+        {
+            GameEvent[] events = tick % interval == 0 ? [new BatFlapped(4, Vector3.Zero)] : [];
+            heard += cues.For(events, Pack1).Count;
+        }
+
+        Assert.Equal(10, heard);
+    }
+
+    [Fact]
+    public void The_minimum_gap_holds_back_only_the_wing_beat()
+    {
+        var cues = new SoundCues(1);
+        cues.For([new BatFlapped(4, Vector3.Zero)], Pack1);
+
+        var cue = Assert.Single(cues.For([new BatFlapped(5, Vector3.Zero), new BatScreeched(5)], Pack1));
+        Assert.Equal(SoundKind.BatScreech, cue.Kind);
+        Assert.Single(cues.For([new BatScreeched(5)], Pack1));
+    }
+
+    [Fact]
+    public void The_wing_beats_take_turns()
+    {
+        var cues = new SoundCues(3);
+        var interval = SimulationClock.SecondsToTicks(Bat.FlapInterval);
+        var files = new List<string>();
+        for (var tick = 0; tick < 20 * interval; tick++)
+        {
+            GameEvent[] events = tick % interval == 0 ? [new BatFlapped(4, Vector3.Zero)] : [];
+            files.AddRange(cues.For(events, Pack1).Select(cue => cue.File));
+        }
+
+        Assert.Equal(20, files.Count);
+        Assert.All(files.Zip(files.Skip(1)), pair => Assert.NotEqual(pair.First, pair.Second));
     }
 
     [Fact]
