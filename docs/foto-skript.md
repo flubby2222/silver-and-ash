@@ -153,6 +153,7 @@ powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\Silve
 ```
 
 - Ergebnis neben dem Ordner: `blade-charge.mp4`, mit `-Half` `…-half.mp4` (halbe Geschwindigkeit, für schnelle Bewegungen), mit `-Gif` ein GIF (640 px breit, öffnet sich überall).
+- `-Sheet` macht statt eines Clips ein **Übersichtsbild** `<szene>-sheet.png`: bis zu 16 Bilder gleichmäßig über die Szene verteilt, 4 × 4, von links oben nach rechts unten zu lesen. Gedacht für alle, die Bilder ansehen, aber kein Video abspielen können – etwa eine Claude-Sitzung oder ein PR-Kommentar. Einzelne Bilder (`frame-0050.png`) stehen daneben im Szenen-Ordner.
 - `-Fps` ändert die Bildrate; Standard 30 passt zur Schrittweite der Szenen (`--clip list` zeigt sie).
 - **Bilder und Clips nie ins Repository legen.**
 

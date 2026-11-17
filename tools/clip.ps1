@@ -19,6 +19,10 @@
 .PARAMETER Gif
     A GIF instead of an MP4 (larger, but opens everywhere, also in a browser or chat).
 
+.PARAMETER Sheet
+    Instead of a clip one overview picture <folder>-sheet.png: up to 16 pictures evenly spread over the scene, 4 x 4.
+    For everyone who can look at pictures but not play a video - a Claude session, a review, a PR comment.
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\SilverAndAsh\clips\blade-charge" -Half
 #>
@@ -26,7 +30,8 @@ param(
     [Parameter(Mandatory = $true)][string]$Folder,
     [double]$Fps = 30,
     [switch]$Half,
-    [switch]$Gif
+    [switch]$Gif,
+    [switch]$Sheet
 )
 
 $ErrorActionPreference = 'Stop'
@@ -54,12 +59,27 @@ if ($Fps -le 0) {
     exit 1
 }
 
+$pattern = Join-Path $Folder 'frame-%04d.png'
+
+if ($Sheet) {
+    $out = "$Folder-sheet.png"
+    $step = [math]::Ceiling($frames.Count / 16)
+    $filter = "select='not(mod(n\,$step))',scale=400:-1,tile=4x4:padding=2"
+    & $ffmpeg.Source -hide_banner -loglevel error -y -i $pattern -vf $filter -frames:v 1 -update 1 $out
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ffmpeg failed (exit code $LASTEXITCODE)." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+
+    Write-Host "$out (every ${step}. of $($frames.Count) pictures, read left to right, top to bottom)"
+    exit 0
+}
+
 $rate = if ($Half) { $Fps / 2 } else { $Fps }
 $rateText = $rate.ToString([System.Globalization.CultureInfo]::InvariantCulture)
 $suffix = if ($Half) { '-half' } else { '' }
 $extension = if ($Gif) { 'gif' } else { 'mp4' }
 $out = "$Folder$suffix.$extension"
-$pattern = Join-Path $Folder 'frame-%04d.png'
 
 if ($Gif) {
     # A palette made from the pictures themselves: far fewer stripes than the standard 256 colours.
