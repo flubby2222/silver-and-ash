@@ -67,13 +67,13 @@ public class SoundCuesTests
     }
 
     [Fact]
-    public void The_ambience_is_its_own_file_and_runs_only_while_a_run_is_played()
+    public void The_old_ambience_stays_checked_in_but_is_no_longer_played()
     {
+        // Issue #271: the catacomb music plays instead; the file goes with the new sounds.
         Assert.Equal("ambiente-katakomben.ogg", SoundBoard.Ambience);
-        Assert.True(SoundBoard.AmbiencePlays(onTitle: false, paused: false, runOver: false));
-        Assert.False(SoundBoard.AmbiencePlays(onTitle: true, paused: false, runOver: false));
-        Assert.False(SoundBoard.AmbiencePlays(onTitle: false, paused: true, runOver: false));
-        Assert.False(SoundBoard.AmbiencePlays(onTitle: false, paused: false, runOver: true));
+        Assert.Contains(SoundBoard.Ambience, SoundBoard.AllFiles);
+        Assert.DoesNotContain(SoundBoard.Ambience, SoundBoard.SoundFiles);
+        Assert.All(Enum.GetValues<MusicTrack>(), track => Assert.NotEqual(SoundBoard.Ambience, SoundBoard.MusicFile(track)));
     }
 
     [Fact]
