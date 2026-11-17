@@ -21,13 +21,24 @@ public sealed record PlacedPiece(ShowroomPiece Piece, int X, int Z, int Section,
 
 /// <summary>
 /// One section of the tour: walls, floor and ceiling all in <paramref name="Variant"/>. Its band runs west to east -
-/// first the corridor part, then the room part, each <paramref name="Length"/> cells long - with the doors in its north
-/// wall (row <paramref name="DoorRow"/>) and the floor from row <paramref name="NorthRow"/> to <paramref name="SouthRow"/>.
+/// first the corridor part, then the room part, each <paramref name="Length"/> cells long - with the doors in the north
+/// wall of the corridor part (row <paramref name="DoorRow"/>). The room's floor runs from row <paramref name="NorthRow"/>
+/// to <paramref name="SouthRow"/>; the corridor is narrower (see <see cref="SouthRowOf"/>), so the lantern reaches its
+/// doors from every step.
 /// </summary>
 public sealed record ShowroomSection(int Index, TextureVariant Variant, int CorridorX, int RoomX, int Length, int DoorRow, int NorthRow, int SouthRow)
 {
     /// <summary>The first column of <paramref name="part"/>.</summary>
     public int StartOf(ShowroomPart part) => part == ShowroomPart.Corridor ? CorridorX : RoomX;
+
+    /// <summary>The southmost floor row of <paramref name="part"/>: the corridor is 3 rows wide, the room 5.</summary>
+    public int SouthRowOf(ShowroomPart part) => part == ShowroomPart.Corridor ? NorthRow + CorridorRows - 1 : SouthRow;
+
+    /// <summary>The middle floor row of <paramref name="part"/>, where one walks along.</summary>
+    public int MiddleRowOf(ShowroomPart part) => (NorthRow + SouthRowOf(part)) / 2;
+
+    /// <summary>Floor rows of the corridor part.</summary>
+    public const int CorridorRows = 3;
 
     /// <summary>The ceiling height of <paramref name="part"/>, in metres.</summary>
     public static float CeilingOf(ShowroomPart part) => part == ShowroomPart.Corridor ? Cell.DefaultCeilingHeight : RoomTemplate.RoomCeilingHeight;
@@ -36,8 +47,10 @@ public sealed record ShowroomSection(int Index, TextureVariant Variant, int Corr
 /// <summary>
 /// The showroom (issue #283, docs/musterraum.md): a level that shows every model of the game side by side under game
 /// conditions. A tour of three sections, one per texture variant (A, B, C), each with a part at corridor and at room
-/// height. Every wall piece (doors, cracked wall) stands in every part, in the north wall with a closet behind; every
-/// other piece stands once, in a row through the middle of the room parts (taking turns between the sections). Built
+/// height. Every wall piece (doors, cracked wall) stands once per section, in the north wall of the corridor part with a
+/// closet behind - where doors stand in the game too: every door cell of a generated level has the corridor ceiling,
+/// the boss gate's as well. Every other piece stands once, in a row through the middle of the room parts (taking turns
+/// between the sections), where there is room for its height. Built
 /// from <see cref="ShowroomPieces.All"/> with a fixed rule - the same list always gives the same showroom.
 /// </summary>
 public sealed class ShowroomLayout
@@ -98,7 +111,7 @@ public sealed class ShowroomLayout
     /// <summary>The sections in the order of the tour (A, B, C).</summary>
     public IReadOnlyList<ShowroomSection> Sections { get; }
 
-    /// <summary>Every piece where it stands: wall pieces once per part, the others once.</summary>
+    /// <summary>Every piece where it stands: wall pieces once per section, the others once.</summary>
     public IReadOnlyList<PlacedPiece> Placed { get; }
 
     /// <summary>
@@ -117,7 +130,8 @@ public sealed class ShowroomLayout
         var floorPieces = pieces.Where(piece => piece is not WallPiece).ToList();
         var perRoom = (floorPieces.Count + Variants.Length - 1) / Variants.Length;
 
-        // Each part is long enough for its doors and for its share of the floor pieces, with a walkway at each end.
+        // Each part is as long as the corridor needs for its doors and the room for its share of the floor pieces, with
+        // a walkway at each end.
         var length = Math.Max(Math.Max(WallStep * wallPieces.Count, (FloorStep * perRoom) + 1), 6);
         var east = BandX + (2 * length) - 1;
         var bottom = Variants.Length * SectionRows;
@@ -159,7 +173,7 @@ public sealed class ShowroomLayout
             foreach (var part in Enum.GetValues<ShowroomPart>())
             {
                 var start = section.StartOf(part);
-                Carve(start, section.NorthRow, start + length - 1, section.SouthRow, ShowroomSection.CeilingOf(part), index);
+                Carve(start, section.NorthRow, start + length - 1, section.SouthRowOf(part), ShowroomSection.CeilingOf(part), index);
             }
         }
 
@@ -183,22 +197,19 @@ public sealed class ShowroomLayout
         var closets = 0;
         foreach (var section in sections)
         {
-            foreach (var part in Enum.GetValues<ShowroomPart>())
+            var start = section.CorridorX;
+            for (var slot = 0; slot < wallPieces.Count; slot++)
             {
-                var start = section.StartOf(part);
-                for (var slot = 0; slot < wallPieces.Count; slot++)
+                var piece = wallPieces[slot];
+                var x = start + 2 + (WallStep * slot);
+                var z = section.DoorRow;
+                Carve(x, z, x, z, Cell.DefaultCeilingHeight, section.Index);
+                Carve(x - 1, z - DoorRowOffset + ClosetRow, x + 1, z - 1, Cell.DefaultCeilingHeight, section.Index);
+                doors.Add(new LevelDoor(x, z, section.Index * 2, (Variants.Length * 2) + closets++, RoomSide.North, piece.Kind));
+                placed.Add(new PlacedPiece(piece, x, z, section.Index, ShowroomPart.Corridor));
+                if (piece.Kind == DoorKind.Locked)
                 {
-                    var piece = wallPieces[slot];
-                    var x = start + 2 + (WallStep * slot);
-                    var z = section.DoorRow;
-                    Carve(x, z, x, z, Cell.DefaultCeilingHeight, section.Index);
-                    Carve(x - 1, z - DoorRowOffset + ClosetRow, x + 1, z - 1, Cell.DefaultCeilingHeight, section.Index);
-                    doors.Add(new LevelDoor(x, z, (section.Index * 2) + (int)part, (Variants.Length * 2) + closets++, RoomSide.North, piece.Kind));
-                    placed.Add(new PlacedPiece(piece, x, z, section.Index, part));
-                    if (piece.Kind == DoorKind.Locked)
-                    {
-                        keys.Add((x + 1, section.NorthRow));
-                    }
+                    keys.Add((x + 1, section.NorthRow));
                 }
             }
         }
@@ -211,7 +222,7 @@ public sealed class ShowroomLayout
         {
             var section = sections[index % sections.Count];
             var x = section.RoomX + 2 + (FloorStep * (index / sections.Count));
-            return new PlacedPiece(piece, x, section.NorthRow + (FloorRows / 2), section.Index, ShowroomPart.Room);
+            return new PlacedPiece(piece, x, section.MiddleRowOf(ShowroomPart.Room), section.Index, ShowroomPart.Room);
         }).ToList();
         placed.AddRange(floorPlaces);
         foreach (var place in floorPlaces)
@@ -223,7 +234,7 @@ public sealed class ShowroomLayout
         }
 
         var startSection = sections[0];
-        var level = new Level(cells, startSection.CorridorX + 1, startSection.NorthRow + (FloorRows / 2), null, ghouls, bats, bosses);
+        var level = new Level(cells, startSection.CorridorX + 1, startSection.MiddleRowOf(ShowroomPart.Corridor), null, ghouls, bats, bosses);
 
         Vector3 Above(int x, int z, float height) => level.CellCenter(x, z) + new Vector3(0f, height, 0f);
 
@@ -266,7 +277,7 @@ public sealed class ShowroomLayout
             foreach (var part in Enum.GetValues<ShowroomPart>())
             {
                 var text = part == ShowroomPart.Corridor ? "corridor 3.5 m" : "room 6 m";
-                labels.Add(new ShowroomLabel($"Wall {section.Variant} - {text}", Above(section.StartOf(part), section.NorthRow + (FloorRows / 2), 2.6f)));
+                labels.Add(new ShowroomLabel($"Wall {section.Variant} - {text}", Above(section.StartOf(part), section.MiddleRowOf(part), 2.6f)));
             }
         }
 
@@ -300,14 +311,14 @@ public sealed class ShowroomLayout
 
     /// <summary>
     /// A new world with the player standing at the west end of <paramref name="part"/> of <paramref name="section"/> on
-    /// its south walkway, looking across it at its doors and pieces - the view of the showroom photos.
+    /// its south walkway, looking across it at its north wall and pieces - the view of the showroom photos.
     /// </summary>
     public GameWorld ViewOf(int section, ShowroomPart part, Balance? balance = null)
     {
         var shown = Sections[section];
         var start = shown.StartOf(part);
         var target = Level.CellCenter(start + (shown.Length / 3), shown.DoorRow) + new Vector3(0f, 2f, Level.CellSize);
-        return NewWorldAt(start, shown.SouthRow, target, balance);
+        return NewWorldAt(start, shown.SouthRowOf(part), target, balance);
     }
 
     /// <summary>
