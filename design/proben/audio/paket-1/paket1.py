@@ -70,7 +70,7 @@ QUELLEN = {"schlag": N.instrument_rausch, "hauch": q_hauch, "pfeife": N.instrume
 # Spitzenpegel je Kategorie (dBFS). Die alten Dateien des Spiels: Schuss -1,5, Klinge -4,9, Schritt -12,1, Ghul-Ankuendigung -3,0 (Mittel -18,3).
 PEGEL = {
     "ankuendigung": -1.5, "schuss": -1.5, "schmerz": -5.0, "ghul": -6.0, "treffer": -4.5, "nachladen": -8.0, "schwung": -9.0,
-    "bewegung": -11.0, "tuer_kiste": -7.0, "aufheben": -8.0, "schritt": -12.0, "menue": -12.0,
+    "bewegung": -11.0, "tuer_kiste": -7.0, "aufheben": -8.0, "schritt": -12.0, "menue": -12.0, "marke": -10.0,
 }
 
 SCHLAG = dict(play_mode=1, loop_mode=0, attack=0.1, sustain=100.0, release=100.0)
@@ -80,10 +80,11 @@ def adsr(decay, release=40.0, sustain=0.0, attack=0.1):
     return dict(play_mode=0, loop_mode=0, attack=attack, decay=decay, sustain=sustain, release=release)
 
 
-def G(datei, quelle, kategorie, noten, laenge, params, auto=(), inserts=(), max_s=None):
-    """noten: (Tonhoehe, Start s, Laenge s, Anschlag). laenge: Rendern in s. max_s: Datei wird darauf gekuerzt."""
+def G(datei, quelle, kategorie, noten, laenge, params, auto=(), inserts=(), max_s=None, zusatz=()):
+    """noten: (Tonhoehe, Start s, Laenge s, Anschlag). laenge: Rendern in s. max_s: Datei wird darauf gekuerzt.
+    zusatz: weitere Spuren (Quelle, Noten, Sampler-Parameter), z. B. ein kurzer Glockenanteil im Schuss."""
     return dict(datei=datei, quelle=quelle, kat=kategorie, noten=noten, laenge=laenge, params=params, auto=list(auto),
-                inserts=list(inserts), max_s=max_s or laenge)
+                inserts=list(inserts), max_s=max_s or laenge, zusatz=list(zusatz))
 
 
 def glide(track, plugin_slot, param, punkte):
@@ -148,10 +149,17 @@ def glocke(datei, tone, lang=0.8, decay=330.0):
 GERAEUSCHE += [
     glocke("p1-aufheben-silber", [(64, 0.0)], 0.6),                                  # ein heller Ton (E4)
     glocke("p1-aufheben-phiole", [(55, 0.0), (59, 0.12)], 0.8),                      # G3 -> H3, aufsteigende Terz (Heilung)
-    glocke("p1-aufheben-weihmunition", [(64, 0.0), (59, 0.12)], 0.8),                # E4 -> H3, fallende Quarte
+    glocke("p1-aufheben-weihmunition", [(64, 0.0), (59, 0.0)], 1.4, decay=600.0),    # E4 und H3 zugleich: ein Klang (Quinte), laenger, hell
     glocke("p1-aufheben-schluessel", [(52, 0.0), (59, 0.11), (64, 0.22)], 0.9),      # E3 -> H3 -> E4, drei Toene
     glocke("p1-aufheben-ausruestung", [(40, 0.0)], 1.3, decay=700.0),                # ein tiefer, langer Ton (E2)
 ]
+# VORSCHLAG (getrennt gekennzeichnet, kein Wunsch aus dem Urteil): geweihte Munition
+# - Schuss mit Glockenanteil: derselbe Rauschschlag wie p1-schuss-*, dazu ein kurzer heller Glockenton (E4) als zweite Spur
+# - Marke fuer das Ende der Wirkung: ein leiser, tiefer Glockenton (E3); im Core gibt es dafuer noch kein Ereignis
+for i, p in enumerate((48, 47), 1):
+    GERAEUSCHE.append(G(f"p1-schuss-geweiht-{i}", "schlag", "schuss", [(p, 0, 0.0625, 127)], 1.0, dict(SCHLAG, decay=400.0), max_s=0.6,
+                        zusatz=[("glocke", [(64, 0.0, 0.3, 100)], dict(adsr(300.0, 120.0), level=6.0))]))
+GERAEUSCHE.append(G("p1-weihe-ende", "glocke", "marke", [(52, 0.0, 0.3, 90)], 0.9, adsr(350.0, 150.0), max_s=0.7))
 
 
 def stueck(g, quellen):
@@ -163,6 +171,11 @@ def stueck(g, quellen):
     noten = [(pi, int(t * TPS), max(1, int(l * TPS)), v) for pi, t, l, v in g["noten"]]
     name = "V" if g["quelle"] == "stimme" else "S"
     z = B.kopf(g["datei"]) + N.sampler_spur(name, pfad, p, noten, g["laenge"], RAUM_P1, inserts=g["inserts"])
+    for k, (q2, noten2, params2) in enumerate(g["zusatz"], 1):
+        pfad2 = quellen[q2][0][0]
+        p2 = dict(params2, root_note=52 if q2 in ("pfeife", "glocke", "stimme") else 60)
+        n2 = [(pi, int(t * TPS), max(1, int(l * TPS)), v) for pi, t, l, v in noten2]
+        z += N.sampler_spur(f"Z{k}", pfad2, p2, n2, g["laenge"], RAUM_P1)
     z += g["auto"]
     return z
 

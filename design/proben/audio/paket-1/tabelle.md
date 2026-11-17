@@ -28,6 +28,9 @@
 | `p1-menue-klick.wav` | schlag | C5 (+12) | 0.12 s | -12.0 | -34.5 | menue |
 | `p1-aufheben-silber.wav` | glocke | E4 (+12) | 0.60 s | -8.0 | -30.0 | aufheben |
 | `p1-aufheben-phiole.wav` | glocke | G3 (+3), H3 (+7) | 0.80 s | -8.0 | -28.3 | aufheben |
-| `p1-aufheben-weihmunition.wav` | glocke | E4 (+12), H3 (+7) | 0.80 s | -8.0 | -28.1 | aufheben |
+| `p1-aufheben-weihmunition.wav` | glocke | E4 (+12), H3 (+7) | 1.40 s | -8.0 | -31.4 | aufheben |
 | `p1-aufheben-schluessel.wav` | glocke | E3 (+0), H3 (+7), E4 (+12) | 0.90 s | -8.0 | -27.1 | aufheben |
 | `p1-aufheben-ausruestung.wav` | glocke | E2 (-12) | 1.30 s | -8.0 | -28.9 | aufheben |
+| `p1-schuss-geweiht-1.wav` | schlag | C3 (-12) | 0.60 s | -1.5 | -20.4 | schuss |
+| `p1-schuss-geweiht-2.wav` | schlag | H2 (-13) | 0.60 s | -1.5 | -19.7 | schuss |
+| `p1-weihe-ende.wav` | glocke | E3 (+0) | 0.70 s | -10.0 | -31.2 | marke |

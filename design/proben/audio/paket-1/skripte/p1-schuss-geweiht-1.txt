@@ -1,0 +1,14 @@
+# p1-schuss-geweiht-1 - SoundCraft-Skript (soundcraft-cli script). Erzeugt von bauen.py, nicht von Hand aendern.
+session.new {"name":"p1-schuss-geweiht-1","sample_rate":44100,"bit_depth":16}
+event.tempo {"bpm":120}
+track.new {"kind":"instrument","format":"stereo","name":"S","instrument":"sampler"}
+mix.sampler_load {"track":"S","path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/rausch-vag.wav","params":{"play_mode":1,"loop_mode":0,"attack":0.1,"sustain":100.0,"release":100.0,"decay":400.0,"root_note":60}}
+mix.insert {"track":"S","slot":0,"plugin":"room_reverb","params":{"mix":22,"pre_delay":8,"decay":0.8,"size":30,"damping":3500,"diffusion":75,"low_cut":150}}
+midi.new_clip {"track":"S","start":0,"end":44100}
+midi.note_add {"clip":3,"pitch":48,"start_ticks":0,"length_ticks":120,"velocity":127}
+track.new {"kind":"instrument","format":"stereo","name":"Z1","instrument":"sampler"}
+mix.sampler_load {"track":"Z1","path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/glocke-vag.wav","params":{"play_mode":0,"loop_mode":0,"attack":0.1,"decay":300.0,"sustain":0.0,"release":120.0,"level":6.0,"root_note":52}}
+mix.insert {"track":"Z1","slot":0,"plugin":"room_reverb","params":{"mix":22,"pre_delay":8,"decay":0.8,"size":30,"damping":3500,"diffusion":75,"low_cut":150}}
+midi.new_clip {"track":"Z1","start":0,"end":44100}
+midi.note_add {"clip":6,"pitch":64,"start_ticks":0,"length_ticks":576,"velocity":100}
+file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/p1-schuss-geweiht-1.wav","format":"wav","bit_depth":16,"start":0,"end":44100,"dither":false}

@@ -1,6 +1,6 @@
 # Übergabe Audio – Geräuschpaket 1 (neue Palette)
 
-Stand 2026-11-17. 31 kurze Geräusche, Präfix `p1-`, in [assets/audio/](assets/audio/) neben den bisherigen Dateien (diese bleiben unverändert, damit die Code-Sitzung zwischen altem und neuem Paket umschalten kann). **Ungehört**, nur gemessen: [Übersicht und Messwerte](../proben/audio/paket-1/uebersicht.md). Erzeugung: `python design/proben/audio/paket-1/paket1.py` (braucht SoundCraft 0.20.1 `soundcraft-cli.exe`, `ffmpeg`, Python 3.12; zweimal gerechnet, bitgleich). Palette und Begründung: [palette-neu.md](../proben/audio/soundcraft-versuch/palette-neu.md).
+Stand 2026-11-17. 34 kurze Geräusche (davon drei Vorschläge für geweihte Munition), Präfix `p1-`, in [assets/audio/](assets/audio/) neben den bisherigen Dateien (diese bleiben unverändert, damit die Code-Sitzung zwischen altem und neuem Paket umschalten kann). **Ungehört**, nur gemessen: [Übersicht und Messwerte](../proben/audio/paket-1/uebersicht.md). Erzeugung: `python design/proben/audio/paket-1/paket1.py` (braucht SoundCraft 0.20.1 `soundcraft-cli.exe`, `ffmpeg`, Python 3.12; zweimal gerechnet, bitgleich). Palette und Begründung: [palette-neu.md](../proben/audio/soundcraft-versuch/palette-neu.md).
 
 **Format** (wie heute): WAV, 16 Bit, 44 100 Hz, mono, Spitze zwischen −1,5 und −12 dBFS je Kategorie, Anfang und Ende bei Stille. **Lautstärke:** Alle spielen mit `SoundBoard.SoundVolume` = 1 (die Lautheit steckt in den Dateien, Tabelle in der Übersicht). **Prüfsummen:** [assets/audio/audio-paket-1.sha256](assets/audio/audio-paket-1.sha256) im Format von `audio.sha256` (Zeilen in die Liste übernehmen oder zusammenführen).
 
@@ -8,7 +8,8 @@ Stand 2026-11-17. 31 kurze Geräusche, Präfix `p1-`, in [assets/audio/](assets/
 
 | Ereignis | Dateien | Hinweis |
 |---|---|---|
-| `ShotFired { Weapon: Pistol }` | `p1-schuss-1` … `-3` | je Mal eine, nie zweimal dieselbe hintereinander |
+| `ShotFired { Weapon: Pistol, Consecrated: false }` | `p1-schuss-1` … `-3` | je Mal eine, nie zweimal dieselbe hintereinander |
+| `ShotFired { Weapon: Pistol, Consecrated: true }` | `p1-schuss-geweiht-1`, `-2` | **Vorschlag** (nicht bestellt): derselbe Rauschschlag mit kurzem Glockenton, damit man die Wirkung hört; zwei Varianten, nie dieselbe zweimal hintereinander. Geweihte Munition verdoppelt die Feuerrate (`ConsecratedAmmoBalance.FireRateMultiplier` = 2, Dauer 10 s), die Schüsse überlappen also bei Dauerfeuer |
 | `ReloadStarted` | `p1-nachladen-start` | |
 | `ReloadFinished` | `p1-nachladen-bereit` | |
 | `MeleeSwung` ohne Treffer | `p1-schwung-1`, `-2` | Der Schwung gehört zum **Fehlschlag**; trifft der Schlag in demselben Tick (`TargetHitBy { Weapon: Blade }`), spielt nur der Treffer. Die Entscheidung liegt beim Spiel (Code-Sitzung). |
@@ -25,6 +26,10 @@ Stand 2026-11-17. 31 kurze Geräusche, Präfix `p1-`, in [assets/audio/](assets/
 | `PickupTaken { Kind: ConsecratedAmmo }` | `p1-aufheben-weihmunition` | |
 | `KeyTaken` | `p1-aufheben-schluessel` | |
 
+## Im Core nachgesehen (2026-11-17): Beute- und Aufheb-Ereignisse
+
+Wirklich vorhanden (`GameWorld.cs`, `Inventory.cs`): `PickupDropped`, `SilverDropped`, `KeyDropped`, `WeaponDropped` (Fallenlassen) und `SilverTaken`, `KeyTaken`, `PickupTaken { Kind }` (Aufheben; `ConsumableKind` hat genau `BloodVial` und `ConsecratedAmmo`), dazu `ChestOpened`, `ChestUnlocked`, `ChestRose`, `DoorUnlocked`, `DoorOpened`, `WeaponSwitched`. **Kein** Ereignis gibt es für das Aufnehmen einer Waffe oder Ausrüstung vom Boden (es gibt nur `WeaponDropped`) und keines für das Ende der geweihten Munition. Dateien für die Ereignisse des Fallenlassens (`PickupDropped`, `SilverDropped`, `KeyDropped`, `WeaponDropped`) gibt es nicht.
+
 ## Fehlende Ereignisse (für die Code-Sitzung; nicht erfunden)
 
 Diese Geräusche sind fertig, aber im Core gibt es keinen Auslöser. Vorschläge für die Ereignisse (Namen und Felder nach dem Muster der vorhandenen):
@@ -36,6 +41,7 @@ Diese Geräusche sind fertig, aber im Core gibt es keinen Auslöser. Vorschläge
 | `p1-dash` | `PlayerDashed(PlayerId)` |
 | `p1-landung` | `PlayerLanded(PlayerId)`, sinnvoll erst ab einer Mindest-Fallhöhe |
 | `p1-aufheben-ausruestung` | `WeaponPickedUp(PlayerId, WeaponKind)`: eine Waffe oder Ausrüstung vom Boden aufgenommen (heute gibt es nur `WeaponDropped`) |
+| `p1-weihe-ende` (**Vorschlag**, leiser tiefer Glockenton als Marke) | `ConsecrationEnded(PlayerId)`: die Wirkung geweihter Munition ist abgelaufen. Heute zählt `Player.cs` nur `_consecratedTicksLeft` herunter (ab `Consecrate(Duration)`), ohne Ereignis; `IsConsecrated` und `ConsecratedSecondsLeft` lassen sich abfragen, aber ein Ereignis ist für den Ton sauberer |
 | `p1-menue-klick` | kein Core-Ereignis nötig: die Menüs sind im Game-Projekt; ein Klick/eine Auswahl im Menü löst ihn aus |
 
 Weitere Ereignisse des Cores haben **keine** Datei (Fledermäuse, Gorm, Stein, Haken, Treppe, Raum versiegelt/befreit, Stufenaufstieg, Beute-Auswahl): sie kommen in einem späteren Paket aus denselben fünf Quellen.

@@ -360,13 +360,13 @@
   },
   "p1-aufheben-weihmunition": {
    "peak_db": -8.0,
-   "rms_db": -28.1,
-   "centroid_hz": 370,
-   "seconds": 0.8,
+   "rms_db": -31.4,
+   "centroid_hz": 354,
+   "seconds": 1.4,
    "low_db": -4.0,
    "mid_db": -2.2,
-   "high_db": -54.9,
-   "einsaetze": 2,
+   "high_db": -54.7,
+   "einsaetze": 1,
    "kategorie": "aufheben",
    "bitgleich": true
   },
@@ -392,6 +392,42 @@
    "high_db": -68.2,
    "einsaetze": 1,
    "kategorie": "aufheben",
+   "bitgleich": true
+  },
+  "p1-schuss-geweiht-1": {
+   "peak_db": -1.5,
+   "rms_db": -20.4,
+   "centroid_hz": 512,
+   "seconds": 0.6,
+   "low_db": -3.9,
+   "mid_db": -2.4,
+   "high_db": -20.0,
+   "einsaetze": 1,
+   "kategorie": "schuss",
+   "bitgleich": true
+  },
+  "p1-schuss-geweiht-2": {
+   "peak_db": -1.5,
+   "rms_db": -19.7,
+   "centroid_hz": 499,
+   "seconds": 0.6,
+   "low_db": -4.4,
+   "mid_db": -2.0,
+   "high_db": -22.3,
+   "einsaetze": 1,
+   "kategorie": "schuss",
+   "bitgleich": true
+  },
+  "p1-weihe-ende": {
+   "peak_db": -10.0,
+   "rms_db": -31.2,
+   "centroid_hz": 253,
+   "seconds": 0.7,
+   "low_db": -1.0,
+   "mid_db": -6.8,
+   "high_db": -60.9,
+   "einsaetze": 1,
+   "kategorie": "marke",
    "bitgleich": true
   }
  }

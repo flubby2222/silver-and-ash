@@ -12,7 +12,7 @@ tabelle = (HERE / "tabelle.md").read_text(encoding="utf-8")
 KAT = {}
 for name, m in d.items():
     KAT.setdefault(m["kategorie"], []).append(m)
-ordnung = ["ankuendigung", "schuss", "schmerz", "ghul", "treffer", "nachladen", "schwung", "bewegung", "tuer_kiste", "aufheben", "schritt", "menue"]
+ordnung = ["ankuendigung", "schuss", "schmerz", "ghul", "treffer", "nachladen", "schwung", "bewegung", "tuer_kiste", "aufheben", "schritt", "menue", "marke"]
 kat_zeilen = []
 for k in ordnung:
     ms = KAT[k]
@@ -23,7 +23,7 @@ kat = "| Kategorie | Dateien | Spitze dBFS | Mittel (RMS) dBFS |\n|---|---|---|-
 
 uebersicht = f"""# Geräuschpaket 1 – Übersicht
 
-Alle 31 Dateien aus der neuen Palette ([palette-neu.md](../soundcraft-versuch/palette-neu.md)), nach der Methode aus dem Video ([video.md](../soundcraft-versuch/video.md)): fünf Quell-Samples (Schlag, Hauch, Pfeife, Glocke, Stimme), je einmal in SoundCraft gebaut, auf 22 050 Hz in VAG gewandelt und je Geräusch vom Sampler in der Tonhöhe verschoben gespielt; ein gemeinsamer kurzer Raum (Hall 0,8 s, 22 %). **Ungehört**; alle Zahlen sind gemessen. Erzeugung: `python paket1.py` (zweimal gerechnet, bitgleich); Dateien in `dateien/` und als Übergabe in [design/uebergabe/assets/audio/](../../uebergabe/assets/audio/) (Präfix `p1-`, Prüfsummen in `audio-paket-1.sha256`); Zuordnung zu den Spielereignissen und fehlende Ereignisse: [README-audio-paket-1.md](../../uebergabe/README-audio-paket-1.md).
+Alle {len(d)} Dateien aus der neuen Palette ([palette-neu.md](../soundcraft-versuch/palette-neu.md)), nach der Methode aus dem Video ([video.md](../soundcraft-versuch/video.md)): fünf Quell-Samples (Schlag, Hauch, Pfeife, Glocke, Stimme), je einmal in SoundCraft gebaut, auf 22 050 Hz in VAG gewandelt und je Geräusch vom Sampler in der Tonhöhe verschoben gespielt; ein gemeinsamer kurzer Raum (Hall 0,8 s, 22 %). **Ungehört**; alle Zahlen sind gemessen. Erzeugung: `python paket1.py` (zweimal gerechnet, bitgleich); Dateien in `dateien/` und als Übergabe in [design/uebergabe/assets/audio/](../../uebergabe/assets/audio/) (Präfix `p1-`, Prüfsummen in `audio-paket-1.sha256`); Zuordnung zu den Spielereignissen und fehlende Ereignisse: [README-audio-paket-1.md](../../uebergabe/README-audio-paket-1.md).
 
 ## Je Geräusch eine Zeile
 
@@ -44,7 +44,8 @@ Reihenfolge von laut nach leise: Ankündigung, Schuss, Schmerz, Ghul, Treffer, N
 2. **Klingenschwung (Hauch):** Charakter von 2a (luftig, kein Anschlag) in der neuen Palette gebaut: weißes Rauschen, Bandpass fährt von 900 auf 3 800 Hz (0,35 s), Pegel steigt sanft und fällt (45 dB unter, 0,15 s hoch, 0,5 s Ende), **kein** Tiefpass-Sturz wie beim Rauschschlag. Gemessen sitzt er hell (Schwerpunkt etwa 2,8 kHz) und hat anders als der Treffer keinen Anschlag. Ob er wie ein Schwung klingt und nicht wie ein Zischen, ist offen; ebenso, ob er zu 2b (Treffer) „gleichzeitig“ abgespielt noch trennt.
 3. **Gleiche Quelle für Schuss, Treffer, Schritte, Nachladen, Landung, Kiste, Menü-Klick:** Alle sind derselbe Rauschschlag bei anderer Tonhöhe und Länge. Das macht sie zu einer Familie, kann aber heißen, dass man sie bei schnellem Wechsel schwer auseinanderhält (Schritt, Landung und Kiste sind alle dumpfe Schläge, 12 bis 18 Halbtöne unter der Aufnahme). Unterscheidung nur über Tonhöhe und Länge.
 4. **Sprung, Dash, Tür:** Dasselbe Hauch-Sample in drei Tonlagen (hoch/kurz, mittel, sehr tief/lang). Als „Tür“ ist ein tief gespieltes Rauschen vielleicht nicht schwer genug; die Messung zeigt bei Dash und Tür mehrere Pegelanstiege (Rauschen mit Bandpassfahrt), was als Zucken zu hören sein kann.
-5. **Aufheben je Verbrauchsgut:** Unterscheidung nur durch Zahl, Richtung und Lage der Töne (Silber ein Ton E4; Phiole zwei aufsteigend G3→H3; Weihmunition zwei fallend E4→H3; Schlüssel drei E3→H3→E4; Ausrüstung ein tiefer langer Ton E2). Ob man Phiole und Weihmunition mit Hören auseinanderhält, ist ungeprüft; ob sie bei vielen Pickups hintereinander nerven, auch.
+5. **Aufheben je Verbrauchsgut:** Unterscheidung nur durch Zahl, Richtung und Lage der Töne (Silber ein Ton E4; Phiole zwei aufsteigend G3→H3; Weihmunition E4 und H3 **zugleich** als ein längerer Klang, 1,4 s; Schlüssel drei E3→H3→E4; Ausrüstung ein tiefer langer Ton E2). Ob man Phiole (Folge) und Weihmunition (Zusammenklang) mit Hören auseinanderhält, ist ungeprüft; ob sie bei vielen Pickups hintereinander nerven, auch.
+7. **Vorschlag geweihte Munition (nicht bestellt, getrennt zu bewerten):** `p1-schuss-geweiht-1`, `-2` sind der Rauschschlag des Schusses mit einem kurzen Glockenton (E4) als zweiter Spur (zwei Schichten, eine Geste); `p1-weihe-ende` ist ein leiser tiefer Glockenton (E3) als Marke fürs Ende der Wirkung – es gibt im Core **kein** Ereignis dafür. Da geweihte Munition die Feuerrate verdoppelt, überlappen die Schüsse bei Dauerfeuer; ob der Glockenanteil dann klingelt oder nervt, ist offen.
 6. **Fehlende Ereignisse im Spiel:** `p1-ghul-entdecken`, Sprung, Dash, Landung, Menü-Klick und das Aufheben von Ausrüstung haben noch kein Ereignis (Liste in der Übergabe); die Dateien sind gebaut, aber nicht auslösbar.
 """
 (HERE / "uebersicht.md").write_text(uebersicht, encoding="utf-8")
