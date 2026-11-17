@@ -57,7 +57,7 @@ python tools/models/checksums.py
 
 Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_model_file`) wird rot, wenn Liste und Dateien nicht zusammenpassen.
 
-## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus)
+## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus, Gorm)
 
 1. `.glb`, `.png` und Skript an ihren Platz, Zeile in `assets/HERKUNFT.md`, `python tools/models/checksums.py`.
 2. Im Core eine Haltungs-Klasse wie `GhoulPose`: Teile mit Eltern (`RigPart`) und die Winkel je Zustand, mit Tests.
@@ -74,3 +74,8 @@ Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_mode
    - Drei Haltungen (`BatStance`): **Schweben** schlägt die Flügel, der äußere Flügel folgt etwas später (`OuterWingLag`). **Kreischen** steht hoch statt breit, denn die Ankündigung des Sturzflugs muss im Umriss lesbar sein (getestet: Flügelspitze mehr als doppelt so hoch wie seitlich). **Sturzflug** legt die Flügel nach hinten; eine tote Fledermaus trudelt in dieser Haltung zu Boden.
    - Ein Flügel wird erst um seine Längsachse gehoben, dann nach hinten geschwenkt; der linke dreht gespiegelt.
    - Der Trefferkörper (`BodySizes.Bat`) ist schmaler als die ausgebreiteten Flügel; das Modell ändert ihn nicht (Issue #240).
+8. **Gorm** ([`GormPose`](../src/SilverAndAsh.Core/Presentation/GormPose.cs) mit `GormChain` im Core, [`ModelGormView`](../src/SilverAndAsh.Game/Rendering/ModelGormView.cs) im Game):
+   - **Zwei Bilder und ein drittes für Phase 2:** Körper und Glieder haben je eine Textur (`gorm_body.png`, `gorm_limbs.png`). `TexturedModel.TryLoad` nimmt zusätzlich `gorm_body_phase2.png` als Ersatzbild 0; in Phase 2 zeichnet die Ansicht Rumpf, Kopf und Kiefer damit (`DrawPart(..., alternate: 0)`). Fehlt eine der Dateien oder ihre Prüfsumme, bleibt der Platzhalter.
+   - **Die Kette ist so lang, wie sie im Spiel reicht.** Die Glieder legt `GormChain.Lay` einzeln von der Faust zum Ziel; das Ziel kommt immer aus dem Core: beim Schwung `GormChain.SwingEnd` aus `Gorm.SwingArea` (Reichweite, Höhe des Treffers), beim Wirbeln vorher `WhirlEnd` mit derselben Reichweite, beim Wurf die Stelle des Hakens in der Simulation (seine Mitte liegt dort). Getestet in `GormPoseTests`.
+   - **Decke:** Räume sind 3,5 m hoch, Gorm 3,2 m. Erhobene Keule und gewirbelte Kette bleiben darunter (getestet). Nur das Brüllen reckt die Fäuste noch in die Decke.
+   - Kreis am Boden für den Hammer und Schockwelle zeichnet weiter `GormFloorEffects` aus dem Core-Zustand, wie beim Platzhalter.

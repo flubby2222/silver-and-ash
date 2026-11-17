@@ -41,7 +41,7 @@ public class PhotoSceneTests
             "start-room", "room-combat", "room-corridor", "room-treasure", "room-secret", "room-boss",
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "hud-rifle",
-            "bat-screech", "bat-dive",
+            "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -169,6 +169,36 @@ public class PhotoSceneTests
 
         Assert.True(ticks < setup.Ticks, "The bat should dive long before the scene gives up.");
         Assert.Equal(BatState.Diving, setup.World.Bats[0].State);
+    }
+
+    [Theory]
+    [InlineData("gorm-swing-windup", GormState.WindingUp, GormAttack.Swing, 0.82f)]
+    [InlineData("gorm-swing", GormState.Swinging, GormAttack.Swing, 0.3f)]
+    [InlineData("gorm-throw-windup", GormState.WindingUp, GormAttack.Throw, 0.5f)]
+    public void The_gorm_attack_scenes_stop_in_their_moment(string name, GormState state, GormAttack attack, float progress)
+    {
+        var setup = Built(name);
+
+        var ticks = setup.Run();
+
+        Assert.True(ticks < setup.Ticks, "Gorm should come to this attack long before the scene gives up.");
+        var gorm = setup.World.Gorm!;
+        Assert.Equal(state, gorm.State);
+        Assert.Equal(attack, gorm.Attack);
+        Assert.InRange(gorm.StateProgress, progress, 1f);
+    }
+
+    [Fact]
+    public void The_phase_2_scene_stops_at_the_end_of_his_roar()
+    {
+        var setup = Built("gorm-phase2");
+
+        var ticks = setup.Run();
+
+        Assert.True(ticks < setup.Ticks, "Gorm should come to the end of his roar long before the scene gives up.");
+        Assert.True(setup.World.Gorm!.IsInPhase2);
+        Assert.Equal(GormState.Roaring, setup.World.Gorm.State);
+        Assert.InRange(setup.World.Gorm.StateProgress, 0.95f, 1f);
     }
 
     [Fact]
