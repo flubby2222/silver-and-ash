@@ -38,6 +38,11 @@ internal sealed class DoorView : IDisposable
     // Room for the parts of the largest door (portal and two leaves).
     private const int MostParts = 3;
 
+    // Every door model, open leaves and arena grate included, lies within x and z +-1 m of the cell's middle and
+    // 0..3.5 m above its floor: its farthest corner is 2.25 m from the middle at half height. A little more, for safety.
+    private const float PortalHeight = 3.5f;
+    private const float BoundingRadius = 2.5f;
+
     private readonly Dictionary<DoorKind, TexturedModel> _models;
     private readonly Matrix4x4[] _turns = new Matrix4x4[MostParts];
     private readonly Matrix4x4[] _frames = new Matrix4x4[MostParts];
@@ -63,13 +68,20 @@ internal sealed class DoorView : IDisposable
         return new DoorView(models);
     }
 
-    /// <summary>Draws all doors. Call between BeginFigures and EndFigures.</summary>
-    public void Draw(IReadOnlyList<Door> doors, float seconds)
+    /// <summary>
+    /// Draws the doors <paramref name="view"/> may see; the others cost nothing (issue #245: all 25 doors of a level
+    /// every frame took 5.8 ms). Call between BeginFigures and EndFigures.
+    /// </summary>
+    public void Draw(IReadOnlyList<Door> doors, float seconds, ViewCone view)
     {
         foreach (var door in doors)
         {
             var size = door.BoxMax - door.BoxMin;
             var centre = (door.BoxMin + door.BoxMax) / 2f;
+            if (!view.MaySee(new Vector3(centre.X, door.BoxMin.Y + (PortalHeight / 2f), centre.Z), BoundingRadius))
+            {
+                continue;
+            }
 
             // Facing: the passage runs along Z for north/south doors, along X for east/west ones.
             var alongX = door.Side is RoomSide.East or RoomSide.West;

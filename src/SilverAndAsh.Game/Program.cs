@@ -416,7 +416,10 @@ static void RunGame(
 
             levelRenderer.Draw();
             levelShader.BeginFigures();
-            doorView.Draw(gameWorld.Doors, seconds);
+            doorView.Draw(
+                gameWorld.Doors,
+                seconds,
+                new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)look.RenderWidth / look.RenderHeight));
             chestView.Draw(gameWorld.Chests, seconds);
             StairsView.Draw(gameWorld.Stairs, seconds);
             foreach (var dummy in gameWorld.Dummies)
