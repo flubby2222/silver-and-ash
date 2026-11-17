@@ -43,7 +43,8 @@ def main():
                 p999, jump = d[int(0.999 * (len(d) - 1))], abs(c[0] - c[-1])
                 ok &= jump <= p999
                 seam.append(f"{jump:.5f} ≤ {p999:.5f}")
-            ok &= 20 <= len(chs[0]) / sr <= 40 and mx <= -1.0
+            lo_s, hi_s = (60, 90) if p.name.startswith("musik") else (20, 40)   # Musik 60-90 s, Ambiente 20-40 s
+            ok &= lo_s <= len(chs[0]) / sr <= hi_s and mx <= -1.0
             print(f"| `{p.name}` | OGG, {sr} Hz, stereo | {len(chs[0]) / sr:.1f} s | {mx:.1f} dBFS | {mean:.1f} dBFS | Naht L/R: {'; '.join(seam)} | {'bestanden' if ok else 'NICHT'} |")
             continue
         chs, sr = read(p)

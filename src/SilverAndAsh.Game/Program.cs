@@ -630,8 +630,9 @@ static void RunGame(
                 sounds.ToggleMute();
             }
 
-            // The ambience runs while a run is played (as it stood after the latest frame).
-            sounds.Update(SoundBoard.AmbiencePlays(onTitle, menuOpen, runOver: endSummary is not null));
+            // The music (issue #271): the title theme on the title screen, the catacomb music in a run (held in the Esc
+            // menu), none on the end screen - as it stood after the latest frame.
+            sounds.Update(SoundBoard.MusicFor(onTitle, menuOpen, runOver: endSummary is not null), Raylib.GetFrameTime());
 
             // Title screen: no world runs, the mouse is free.
             if (onTitle)

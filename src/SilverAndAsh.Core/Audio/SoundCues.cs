@@ -3,7 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 
 namespace SilverAndAsh.Core.Audio;
 
-/// <summary>The short sounds of the game (issue #267); the ambience is a loop of its own (<see cref="SoundBoard.Ambience"/>).</summary>
+/// <summary>The short sounds of the game (issue #267); the music loops on its own (<see cref="MusicTrack"/>).</summary>
 public enum SoundKind
 {
     /// <summary>A pistol shot.</summary>
@@ -25,21 +25,39 @@ public readonly record struct SoundCue(SoundKind Kind, string File, float Volume
 /// <summary>
 /// The files of assets/audio/ and their volumes, as the audio designer handed them over (issue #267). The files
 /// already carry the loudness relation between each other, so every short sound plays at 1 and one master volume
-/// turns all of them down together. The ambience has a value of its own, because nobody could judge it in the game yet.
+/// turns all of them down together. The music has values of its own (issue #271), because nobody could judge it in the game yet.
 /// </summary>
 public static class SoundBoard
 {
     /// <summary>Name of the checksum list next to the sounds (same format as the model list).</summary>
     public const string ChecksumFileName = "audio.sha256";
 
-    /// <summary>The ambience of the catacombs, a seamless loop of 30 s.</summary>
+    /// <summary>
+    /// The old ambience of the catacombs (issue #267). Since issue #271 the catacomb music plays instead; the file stays
+    /// checked in until the new sounds replace or remove it, but the game no longer loads it.
+    /// </summary>
     public const string Ambience = "ambiente-katakomben.ogg";
+
+    /// <summary>The theme of the title screen, a seamless loop of 72 s.</summary>
+    public const string TitleMusic = "musik-hauptmenue.ogg";
+
+    /// <summary>The music of the catacombs, a seamless loop of 64 s - sparser and quieter, so the sounds stand above it.</summary>
+    public const string CatacombsMusic = "musik-katakomben.ogg";
 
     /// <summary>Volume of everything the game plays (the designer's suggestion).</summary>
     public const float MasterVolume = 0.7f;
 
-    /// <summary>Volume of the ambience loop (before <see cref="MasterVolume"/>).</summary>
-    public const float AmbienceVolume = 1f;
+    /// <summary>Volume of the title theme (before <see cref="MasterVolume"/>); the louder of the two files.</summary>
+    public const float TitleMusicVolume = 0.8f;
+
+    /// <summary>Volume of the catacomb music (before <see cref="MasterVolume"/>); the file itself is about 12 LU quieter.</summary>
+    public const float CatacombsMusicVolume = 1f;
+
+    /// <summary>Seconds a piece of music takes to fade out before the next one starts.</summary>
+    public const float MusicFadeOutSeconds = 1.5f;
+
+    /// <summary>Seconds a piece of music takes to fade in from silence.</summary>
+    public const float MusicFadeInSeconds = 3f;
 
     /// <summary>Volume of every short sound (before <see cref="MasterVolume"/>); the files carry their loudness in themselves.</summary>
     public const float SoundVolume = 1f;
@@ -54,15 +72,39 @@ public static class SoundBoard
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "No sound for this kind."),
     };
 
-    /// <summary>Every file the game loads from assets/audio/.</summary>
-    public static ImmutableArray<string> AllFiles =>
-        [.. Enum.GetValues<SoundKind>().SelectMany(kind => Variants(kind)), Ambience];
+    /// <summary>Every short sound the game loads from assets/audio/.</summary>
+    public static ImmutableArray<string> SoundFiles => [.. Enum.GetValues<SoundKind>().SelectMany(kind => Variants(kind))];
+
+    /// <summary>The file of <paramref name="track"/>, or null for no music.</summary>
+    public static string? MusicFile(MusicTrack track) => track switch
+    {
+        MusicTrack.None => null,
+        MusicTrack.Title => TitleMusic,
+        MusicTrack.Catacombs => CatacombsMusic,
+        _ => throw new ArgumentOutOfRangeException(nameof(track), track, "No file for this track."),
+    };
+
+    /// <summary>The volume of <paramref name="track"/> (before <see cref="MasterVolume"/>), 0 for no music.</summary>
+    public static float MusicVolume(MusicTrack track) => track switch
+    {
+        MusicTrack.None => 0f,
+        MusicTrack.Title => TitleMusicVolume,
+        MusicTrack.Catacombs => CatacombsMusicVolume,
+        _ => throw new ArgumentOutOfRangeException(nameof(track), track, "No volume for this track."),
+    };
+
+    /// <summary>Every file of assets/audio/: the short sounds, the music and the old ambience (no longer played).</summary>
+    public static ImmutableArray<string> AllFiles => [.. SoundFiles, TitleMusic, CatacombsMusic, Ambience];
 
     /// <summary>
-    /// Whether the ambience loop runs: while a run is being played - not on the title screen, not while the Esc menu
-    /// holds the world, not once the run is over (end screen).
+    /// Which music the screen asks for (issue #271): the title theme on the title screen; the catacomb music while a
+    /// run is played, held where it is while the Esc menu holds the world; none on the end screen - the run is over,
+    /// the silence marks it, and the title theme belongs to the title.
     /// </summary>
-    public static bool AmbiencePlays(bool onTitle, bool paused, bool runOver) => !onTitle && !paused && !runOver;
+    public static MusicWish MusicFor(bool onTitle, bool paused, bool runOver) =>
+        onTitle ? new MusicWish(MusicTrack.Title, false)
+        : runOver ? new MusicWish(MusicTrack.None, false)
+        : new MusicWish(MusicTrack.Catacombs, paused);
 
     /// <summary>
     /// Which sound <paramref name="gameEvent"/> asks for, or null for none: a pistol shot, a hit with the silver blade
