@@ -186,6 +186,44 @@ public class LaunchOptionsTests
         Assert.Contains("only goes with '--photo'", error.Message);
     }
 
+    [Theory]
+    [InlineData("blade-charge")]
+    [InlineData("all")]
+    [InlineData("list")]
+    public void Clip_takes_a_motion_scene_all_or_list(string clip)
+    {
+        var options = LaunchOptions.Parse(["--clip", clip]);
+
+        Assert.Equal(clip, options.Clip);
+        Assert.Null(options.Photo);
+        Assert.Null(LaunchOptions.Parse([]).Clip);
+    }
+
+    [Fact]
+    public void Clip_with_out_names_the_folder()
+    {
+        Assert.Equal("clips", LaunchOptions.Parse(["--clip", "all", "--out", "clips"]).PhotoFolder);
+    }
+
+    [Theory]
+    [InlineData]
+    [InlineData("ghoul-4m")]
+    [InlineData("compare")]
+    public void Clip_without_a_known_motion_scene_is_rejected_with_the_known_ones(params string[] clip)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--clip", .. clip]));
+
+        Assert.Contains("blade-charge", error.Message);
+    }
+
+    [Theory]
+    [InlineData("--photo", "ghoul-4m")]
+    [InlineData("--bench", "room-combat")]
+    public void Clip_cannot_be_combined_with_photo_or_bench(string option, string scene)
+    {
+        Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--clip", "all", option, scene]));
+    }
+
     [Fact]
     public void Without_give_no_weapon_is_given()
     {

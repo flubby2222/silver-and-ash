@@ -121,6 +121,63 @@ Und in der `PhotoSetup`: `Ticks` (wie lange die Welt läuft), `Input` (Eingabe j
 
 Danach: Name in den Test `Every_scene_the_issue_asks_for_is_there` aufnehmen ([`PhotoSceneTests.cs`](../tests/SilverAndAsh.Core.Tests/Photos/PhotoSceneTests.cs)), die Szene einmal laufen lassen und **das Bild ansehen**.
 
+## Bewegte Vorschau (`--clip`)
+
+Ein Foto zeigt einen Augenblick. Ob eine Bewegung stimmt – der Klingenschwung, das Hochreißen der Pistole, das Aufschwingen einer Tür –, sieht man erst im Ablauf. `--clip` filmt dafür eine **Bewegungs-Szene**: feste Eingaben je Tick, alle zwei Ticks ein Bild (30 Bilder pro Sekunde Spielzeit). Issue #286.
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --clip blade-charge
+```
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --clip all
+```
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --clip list
+```
+
+- `--clip <szene>` – eine Bewegungs-Szene; `all` – alle nacheinander; `list` – Namen, Bildrate und Beschreibung ausgeben (ohne Fenster).
+- Die Bilder landen in `%LOCALAPPDATA%\SilverAndAsh\clips\<szene>\frame-0000.png`, `frame-0001.png` … (mit `--out <ordner>` in `<ordner>\<szene>\`). Das erste Bild zeigt den Zustand vor dem ersten Tick. Alte Bilder im Szenen-Ordner werden vorher gelöscht.
+- Gezeichnet wird wie beim Foto das ganze Fenster mit HUD (1280 × 720), mit demselben Code wie im Spiel.
+- Wie `--photo` nur in der Debug-Version; nicht mit `--photo` oder `--bench` kombinierbar.
+
+**Clip zusammensetzen** (braucht [ffmpeg](https://ffmpeg.org/) im PATH, z. B. per `winget install Gyan.FFmpeg`; fehlt es, sagt das Skript das):
+
+```
+powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\SilverAndAsh\clips\blade-charge"
+```
+
+```
+powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\SilverAndAsh\clips\blade-quick" -Half -Gif
+```
+
+- Ergebnis neben dem Ordner: `blade-charge.mp4`, mit `-Half` `…-half.mp4` (halbe Geschwindigkeit, für schnelle Bewegungen), mit `-Gif` ein GIF (640 px breit, öffnet sich überall).
+- `-Fps` ändert die Bildrate; Standard 30 passt zur Schrittweite der Szenen (`--clip list` zeigt sie).
+- **Bilder und Clips nie ins Repository legen.**
+
+| Bewegungs-Szene | Zeigt |
+|---|---|
+| `blade-charge` | die Silberklinge gedrückt gehalten, bis sie voll aufgeladen ist, eine Weile zitternd, dann losgelassen: der volle Schwung und zurück in Ruhe |
+| `blade-quick` | ein schneller Klingenhieb (ein Tick gedrückt), der Schwung und zurück in Ruhe |
+| `pistol-shot` | ein Pistolenschuss: Hochreißen, Hahn, Mündungsfeuer, die Pistole kommt zur Ruhe |
+| `pistol-reload` | Nachladen (R) mit einem verbrauchten Schuss, von der Taste bis zum vollen Magazin |
+| `door-normal-opening` | eine hölzerne Doppeltür aus 6 m von vorn, geöffnet (F): der ganze Schwung, bis sie offen steht |
+| `door-boss-opening` | dasselbe mit dem Bosstor |
+
+**Eine Bewegungs-Szene ergänzen:** ein Eintrag in `MotionScenes.All` ([`MotionScenes.cs`](../src/SilverAndAsh.Core/Photos/MotionScenes.cs)) – dieselben Bausteine wie bei den Fotos, nur mit `Input` je Tick und genug `Ticks` für den ganzen Ablauf, zum Beispiel:
+
+```csharp
+new("blade-double", "Two quick blade swings in a row.",
+    studio => new PhotoSetup(studio.Arena('D', 10))
+    {
+        Ticks = 100,
+        Input = tick => PlayerInput.None with { Melee = tick is 12 or 50 },
+    }),
+```
+
+Optional als vierter Wert eine andere Schrittweite (`FrameEvery`, Standard 2 Ticks). Danach den Namen in den Test `Every_clip_the_issue_asks_for_is_there` aufnehmen ([`MotionSceneTests.cs`](../tests/SilverAndAsh.Core.Tests/Photos/MotionSceneTests.cs)), die Szene filmen und **den Clip ansehen**. Die Tests prüfen für jede Szene, dass zweimal Filmen dieselben Ticks, Zustände und Ereignisse liefert. Bildprüfsummen gibt es nicht, weil Zeichnen ein Fenster mit Grafikkarte braucht, das die CI nicht hat.
+
 ## Modell-Probe
 
 `model-probe-4m` und `model-probe-10m` zeigen den Ghul als geladenes Modell (`assets/models/ghoul.glb`, siehe [`modelle.md`](modelle.md)), genau wie im Spiel. Fehlt das Modell, zeigen sie – wie das Spiel – den Platzhalter; die Warnung steht dann im Log.
