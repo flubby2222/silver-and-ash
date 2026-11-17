@@ -1,4 +1,6 @@
 # sha256 size name - written by tools/models/checksums.py, checked by the game before loading a model
+8deb86d96492b47880dbf4c7e558457edb5dbe44043613f2dff69f9870a2cbb1 57224 bat.glb
+21d0bc023c4b473c6a9b1c6992cd34edde5e99d051ef6ecf23764d4363702462 11733 bat.png
 85c28b15f28422a2bc8833307921eb5f4a0f53114bdff9b6d85c1f578e8e3b39 23676 blade.glb
 be9c3305dab15d088ac6a70757b1e64b81a810601d4d312ced7be767da5a1de6 9354 blade.png
 be8f02684c369fd804af77e7c6e13596a8fdead5ecd904f4fdf2888b995fd2ff 23600 blade_hand.glb

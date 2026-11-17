@@ -70,3 +70,7 @@ Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_mode
    - **Nicht kleiner:** Raylib zeichnet nichts, was näher als **5 cm** am Auge liegt (`Rlgl.GetCullDistanceNear()`, nicht 1 cm). Bei 0,3 schnitt diese Ebene Handschuh und Ärmel ab: ein heller Keil statt der Hand.
    - **Maßstab im Skript einbacken:** Blender schrieb den Maßstab 1,8 als Knoten-Maßstab in die Datei; `GlbScene` lehnt solche Knoten ab. `bake_scale` in `tools/models/psx.py` überträgt ihn vor dem Export auf die Ecken.
    - Fehlt die Waffe **oder** ihre Hand, zeichnet die Ansicht für diese Waffe die alten Quader. Keule, Gewehr und Donnerbüchse sind noch Quader ohne Hand.
+7. **Fledermaus** ([`BatPose`](../src/SilverAndAsh.Core/Presentation/BatPose.cs) im Core, `ModelBatView` in [`BatViews.cs`](../src/SilverAndAsh.Game/Rendering/BatViews.cs)):
+   - Drei Haltungen (`BatStance`): **Schweben** schlägt die Flügel, der äußere Flügel folgt etwas später (`OuterWingLag`). **Kreischen** steht hoch statt breit, denn die Ankündigung des Sturzflugs muss im Umriss lesbar sein (getestet: Flügelspitze mehr als doppelt so hoch wie seitlich). **Sturzflug** legt die Flügel nach hinten; eine tote Fledermaus trudelt in dieser Haltung zu Boden.
+   - Ein Flügel wird erst um seine Längsachse gehoben, dann nach hinten geschwenkt; der linke dreht gespiegelt.
+   - Der Trefferkörper (`BodySizes.Bat`) ist schmaler als die ausgebreiteten Flügel; das Modell ändert ihn nicht (Issue #240).
