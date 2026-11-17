@@ -50,6 +50,20 @@ public static class PhotoScenes
                 Input = _ => PlayerInput.None with { Melee = true },
                 StopWhen = world => world.Player.MeleeCharge is { IsCharging: true, Fraction: >= 1f },
             }),
+        new("blade-swing-half", "A quick blade swing halfway out: the forearm turns towards the shoulder (issue #265).",
+            studio => new PhotoSetup(studio.Arena('G', 10))
+            {
+                // Pressed on tick 0, released on tick 1 - the swing starts; two frames later it is halfway out.
+                Ticks = 3,
+                Input = tick => PlayerInput.None with { Melee = tick == 0 },
+            }),
+        new("blade-swing-full", "A quick blade swing at its height: the forearm turns towards the shoulder (issue #265).",
+            studio => new PhotoSetup(studio.Arena('G', 10))
+            {
+                // Seven frames after the release the blade is fully out, just before it swings back.
+                Ticks = 8,
+                Input = tick => PlayerInput.None with { Melee = tick == 0 },
+            }),
         new("bat-4m", "A bat 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('B', 4))),
         new("bat-10m", "A bat 10 m away in a bare hall.",

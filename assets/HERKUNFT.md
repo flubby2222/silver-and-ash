@@ -49,6 +49,8 @@ Am 2026-11-17 geprüft: Pistole und Klinge mit ihren Händen (`pistol*.glb`, `bl
 
 Am 2026-11-17 ersetzt (Issues #256 und #257): Pistole und Klinge tragen statt Handschuh einen langen Mantelärmel (`build_sleeve4` in `tools/models/arm.py`), der Hahn der Pistole ist kleiner und hat einen hellen Feuerstein mit eigenem Texturfeld. Die sechs Dateien kommen aus der Übergabe des Designers (Commit `6ebf63f`) und aus `pistol.py` und `blade.py` byte-gleich heraus (SHA-256 vor und nach dem Lauf verglichen). `arm.py` ist nur um neue Funktionen ergänzt, `psx.py` unverändert; die übrigen Modelle nutzen `arm.py` nicht.
 
+Am 2026-11-17 ersetzt (Issue #265, Fassung k): Die Ärmel sind dunkelblaue Mantelärmel mit heller Rüschenmanschette, ohne Hand, und bestehen aus zwei Teilen – `arm_cuff` (Manschette, starr an der Waffe) und `arm_forearm` (Unterarm, vom Spiel zur Schulter gedreht; `build_cuff_k` und `build_forearm_k` in `tools/models/arm.py`). Die sechs Dateien kommen aus der Übergabe des Designers (Commit `61a6a43`) und aus `pistol.py` und `blade.py` byte-gleich heraus (SHA-256 vor und nach dem Lauf verglichen). Neu ist das Hilfsmodul `tools/models/simulation.py` (Waffenhaltungen in Python, Prüfrechnung des Designers); es erzeugt keine Dateien.
+
 Am 2026-11-17 geprüft: Die Fledermaus (`bat.glb`, `bat.png`) kommt aus `tools/models/bat.py` byte-gleich zur eingecheckten Fassung heraus (SHA-256 vor und nach dem Lauf verglichen).
 
 Am 2026-11-17 geprüft: Gorm (`gorm.glb`, `gorm_body.png`, `gorm_body_phase2.png`, `gorm_limbs.png`) kommt aus `tools/models/gorm.py` byte-gleich zur eingecheckten Fassung heraus (SHA-256 vor und nach dem Lauf verglichen).

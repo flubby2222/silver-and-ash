@@ -233,7 +233,7 @@ def paint_sleeve4(U, V_):
     return col
 
 
-def build_sleeve4(part, s, path, radii, mouth_cap=True):
+def build_sleeve4(part, s, path, radii, mouth_cap=True, lining=False):
     """Mantelaermel: path[0] ist die Oeffnung (Mitte, auf der Waffenachse), danach Punkte bis zum Ellbogen;
     radii dazu. Die Oeffnung ist mit einer dunklen Scheibe geschlossen, die Waffe steckt durch sie hindurch.
     Reihenfolge der Ringe: Ellbogen zuerst, damit die Flaechen nach aussen zeigen (an Foto geprueft)."""
@@ -241,3 +241,277 @@ def build_sleeve4(part, s, path, radii, mouth_cap=True):
     pts = [m(p) for p in path][::-1]
     rad = [(r,) * 3 for r in radii][::-1]
     part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0)), "sleeve", cap_start=True, cap_end=mouth_cap)
+    if lining:
+        # Futter (Runde 3): dieselbe Roehre etwas enger mit Flaechen nach innen. Schneidet die Nahebene den Aermel
+        # an, sieht man Stoff statt des Griffs dahinter.
+        inner = [(r * 0.93,) * 3 for r in radii]
+        part.loft(tube([m(p) for p in path], inner, 12, ref_up=V(1, 0, 0)), "sleeve", cap_start=False, cap_end=False)
+
+
+
+# --- Aermel 2: drei Entwuerfe (Issue #265) -------------------------------------------------------------------------
+# a: enger schwarzer Lederaermel, Armschiene (Stahl) am Handgelenk, Lederhandschuh mit Fingern
+# b: Mantelaermel aus grauer Wolle, breite umgeschlagene Stulpe in Ocker mit Silberknoepfen, ohne Hand
+# c: dunkelblauer Aermel mit heller Ruschenmanschette (Spitze), ohne Hand
+import os
+
+DESIGN = os.environ.get("AERMEL", "c")
+CUFF_V = 0.17        # wie in C (sieben Ringe) # Anteil von v (vom Mund aus), der Stulpe/Ruesche ist; die Pistole setzt 0,29 (Ringflaeche zusaetzlich)
+STEEL_B = np.array((96, 100, 114), float)
+LEATHER_B = np.array((38, 36, 42), float)
+WOOL_B = np.array((54, 56, 66), float)
+OCHRE = np.array((132, 100, 64), float)
+NAVY_C = np.array((34, 38, 56), float)
+LACE = np.array((214, 206, 194), float)
+LACE_K = 1.0         # Fassung j: die Pistole setzt 0,86 (Ruesche einen Hauch dunkler)
+
+
+def paint_a_cuff(U, V_):
+    """Armschiene: Stahlblech mit Laengsrippen, Nieten an beiden Enden, dunkler Rand."""
+    h, w = U.shape
+    col = np.broadcast_to(STEEL_B, (h, w, 3)).copy()
+    col *= (0.82 + 0.3 * vnoise(h, w, 6, 10, 501))[..., None]
+    rib = (((U * 6) % 1.0) < 0.12)
+    col = mix(col, STEEL_B * 0.5, rib.astype(float) * 0.8)
+    col = mix(col, STEEL_B * 1.35 + 14, ((((U * 6) % 1.0) > 0.14) & (((U * 6) % 1.0) < 0.26)).astype(float) * 0.6)
+    for cu in (0.1, 0.35, 0.6, 0.85):
+        for cv in (0.15, 0.85):
+            col = mix(col, STEEL_B * 1.8 + 30, (blob(U, V_, cu, cv, 0.04, 0.07) > 0.3).astype(float))
+    col = mix(col, STEEL_B * 0.35, ((V_ < 0.06) | (V_ > 0.94)).astype(float) * 0.85)
+    return col
+
+
+def paint_a_sleeve(U, V_):
+    """Schwarzes Leder: Laengsnaht, helle Faltenbahnen, Abnutzung an den Kanten."""
+    h, w = U.shape
+    col = np.broadcast_to(LEATHER_B, (h, w, 3)).copy()
+    col *= (0.85 + 0.25 * vnoise(h, w, 20, 6, 511))[..., None]
+    fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 4 + 0.08 * vnoise(h, w, 6, 3, 512)))
+    col = mix(col, LEATHER_B * 2.3 + 10, fold ** 2.5 * 0.7)
+    col = mix(col, np.array((150.0, 120, 90)), (((U * 40) % 1.0 < 0.5) & (np.abs(U - 0.5) < 0.012)).astype(float) * 0.7)
+    col = mix(col, LEATHER_B * 2.6 + 12, np.clip((vnoise(h, w, 6, 5, 513) - 0.66) * 3, 0, 0.6))
+    return col
+
+
+def paint_b_sleeve(U, V_):
+    """Grauer Wollmantelaermel; die erste Strecke (v < 0,17) ist die umgeschlagene Stulpe in Ocker mit Naht und Knoepfen."""
+    V_ = 1 - V_                                                  # die Roehre ist vom Ellbogen zur Oeffnung gebaut
+    h, w = U.shape
+    col = np.broadcast_to(WOOL_B, (h, w, 3)).copy()
+    col *= (0.88 + 0.2 * vnoise(h, w, 24, 8, 521))[..., None]
+    fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 3 + 0.1 * vnoise(h, w, 6, 3, 522) + 0.1 * V_))
+    col = mix(col * 0.75, WOOL_B * 1.9 + 10, fold ** 1.6 * 0.85)
+    cuff = V_ < CUFF_V
+    c = np.broadcast_to(OCHRE, (h, w, 3)).copy() * (0.85 + 0.3 * vnoise(h, w, 8, 16, 523))[..., None]
+    c = mix(c, OCHRE * 0.6, (np.abs(V_ - CUFF_V * 0.9) < 0.012).astype(float))                    # Kante zur Wolle
+    c = mix(c, np.array((220.0, 214, 196)), ((np.abs(V_ - CUFF_V * 0.8) < 0.01) & (((U * 56) % 1.0) < 0.5)).astype(float))  # Naht
+    for cu in (0.17, 0.5, 0.83):
+        c = mix(c, np.array((214.0, 218, 230)), (blob(U, V_, cu, CUFF_V * 0.45, 0.05, 0.03) > 0.3).astype(float))    # Silberknoepfe
+        c = mix(c, DARK_B, ((blob(U, V_, cu, CUFF_V * 0.45, 0.07, 0.04) > 0.1) & (blob(U, V_, cu, CUFF_V * 0.45, 0.05, 0.03) <= 0.3)).astype(float) * 0.7)
+    return mix(col, c, cuff.astype(float))
+
+
+def paint_c_sleeve(U, V_):
+    """Dunkelblauer Aermel; v < 0,03 dunkel (Innenseite), v bis 0,17 helle Ruschenmanschette mit Spitzenmuster."""
+    V_ = 1 - V_                                                  # die Roehre ist vom Ellbogen zur Oeffnung gebaut
+    h, w = U.shape
+    col = np.broadcast_to(NAVY_C, (h, w, 3)).copy()
+    col *= (0.88 + 0.2 * vnoise(h, w, 24, 8, 531))[..., None]
+    fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 3 + 0.1 * vnoise(h, w, 6, 3, 532) + 0.1 * V_))
+    col = mix(col * 0.75, NAVY_C * 2.4 + 12, fold ** 1.6 * 0.8)
+    # Fassung i: eine schmale dunkle Naht hinter der Ruesche und zwei kleine Silberknoepfe am Aermel (sonst wie C)
+    col = mix(col, NAVY_C * 0.45, ((V_ > CUFF_V) & (V_ < CUFF_V + 0.035)).astype(float))
+    # Fassung j: keine Knoepfe mehr (im Bild nicht zu erkennen); die schmale dunkle Naht bleibt.
+    lace = np.broadcast_to(LACE * LACE_K, (h, w, 3)).copy() * (0.9 + 0.15 * vnoise(h, w, 8, 16, 533))[..., None]
+    holes = ((((U * 24) % 1.0) - 0.5) ** 2 + (((V_ * 40 * 0.17 / CUFF_V) % 1.0) - 0.5) ** 2) < 0.06
+    lace = mix(lace, NAVY_C * 1.4, holes.astype(float) * 0.8)                              # Spitzenloecher: dunkel durch
+    lace = mix(lace, LACE * 0.6, (np.abs(U * 12 - np.floor(U * 12) - 0.5) > 0.42).astype(float) * 0.4)   # Falten der Ruesche
+    lace = mix(lace, LACE * 0.55, (np.abs(V_ - CUFF_V * 0.94) < 0.012).astype(float))
+    return mix(col, lace, (V_ < CUFF_V).astype(float))
+
+
+DARK_B = np.array((18, 14, 14), float)
+
+
+def design_painters(design):
+    if design == "a":
+        return {"glove": paint_glove2, "cuff": paint_a_cuff, "sleeve": paint_a_sleeve}
+    f = paint_b_sleeve if design == "b" else paint_c_sleeve
+    return {"sleeve": f, "glove": f, "cuff": f}                      # glove/cuff sind hier ungenutzt
+
+
+def build_sleeve5(part, s, path, radii, frill=False, cuff_v=0.17, extra_ring=False):
+    """Wie build_sleeve4, aber die ersten beiden Ringe (Oeffnung) koennen zackig sein (Ruesche)."""
+    m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
+    pts = [m(p) for p in path][::-1]
+    rad = [(r,) * 3 for r in radii][::-1]
+    n = len(pts)
+    global CUFF_V
+    CUFF_V = cuff_v
+    mods = (lambda i, k: (1.0 if k % 2 == 0 else 0.8) if i >= n - 3 else 1.0) if frill else None
+    part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0), mods=mods), "sleeve", cap_start=True, cap_end=True)
+    if extra_ring:
+        # Fassung i: der letzte Ring (Ellbogen) ist neu angefuegt; die Textur soll wie bei sieben Ringen (C) liegen. Die
+        # UV-Hoehe wird deshalb so umgerechnet, dass der alte Ellbogenring wieder bei v = 0 und der Mund bei v = 1 liegt;
+        # der neue Ring behaelt v = 0 (ausserhalb des Bildes, nur ein Streifen).
+        v0, v1 = part.rects["sleeve"][1], part.rects["sleeve"][3]
+        nrings = len(path)
+        for face in part.bm.faces:
+            for loop in face.loops:
+                uv = loop[part.uv].uv
+                fr = (uv[1] - v0) / (v1 - v0)
+                uv[1] = v0 + (v1 - v0) * max((fr * (nrings - 1) - 1) / (nrings - 2), 0.0)
+
+
+def build_design(part, weapon):
+    """Baut den Arm des Entwurfs DESIGN fuer 'pistol' (rechts, s = +1) oder 'blade' (links, s = -1)."""
+    if DESIGN == "a":
+        if weapon == "pistol":
+            build_hand(part, +1, top=(0, -0.006, 0.006), bottom=(0, -0.052, -0.015), outer=(1, 0, 0), radius=0.0185,
+                       finger_ts=(0.014, 0.026, 0.037), wrist=(0.016, -0.046, -0.034), elbow=(0.10, -0.17, -0.26),
+                       thumb=((0.004, -0.014, -0.010), (-0.011, -0.004, 0.0), (-0.0125, 0.004, 0.016)),
+                       index=((0.017, -0.006, 0.002), (0.012, -0.011, 0.016), (0.003, -0.015, 0.018)))
+        else:
+            build_hand(part, -1, top=(0, 0, -0.008), bottom=(0, 0, -0.058), outer=(0.8, 0.6, 0), radius=0.0165,
+                       finger_ts=(0.006, 0.017, 0.028, 0.039), wrist=(0.012, -0.004, -0.082), elbow=(0.11, -0.16, -0.27),
+                       thumb=((-0.002, 0.016, -0.05), (-0.012, 0.013, -0.03), (-0.011, 0.009, -0.012)))
+        return
+    if DESIGN == "c":
+        # Fassung i: der Klingenaermel aus C (Pfad und Radien unveraendert), der letzte Ring (Ellbogen) weiter nach hinten gesetzt (sieben Ringe wie in C, damit die Textur gleich bleibt), damit das
+        # Ende in jeder Haltung ausserhalb des Bildes liegt. Die Pistole bekommt denselben Aermel gespiegelt (s = +1).
+        # Fassung j: die ersten vier Ringe (Manschette und das im Bild liegende Rohrstueck) wie in C; ab dem fuenften Ring
+        # haengt das Rohr nach unten (Richtung (-0,71; -0,71; 0) in Dateikoordinaten, das ist bei 45 Grad Rollen genau
+        # senkrecht nach unten), weil die Drehung um die Hochachse beim Schlag nur waagerechte Anteile verschwenkt:
+        # so zeigt das Rohr beim vollen Schlag nach unten aus dem Bild statt quer nach vorn (Artefakt in Fassung i).
+        path = [(0, 0, -0.003), (0, 0, -0.016), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07), (0.05, -0.065, -0.10),
+                (-0.035, -0.150, -0.11), (-0.30, -0.42, -0.11), (-0.87, -0.985, -0.12)]
+        r = [0.040, 0.031, 0.029, 0.031, 0.036, 0.040, 0.046, 0.052]
+        if weapon == "pistol":
+            # an den Pistolengriff gesetzt: um 2,6 cm nach unten (reine Verschiebung, Form und Winkel bleiben), damit Schloss, Hahn und Abzugsbuegel
+            # vor dem Rueschenrand frei bleiben (sonst derselbe Aermel, nur gespiegelt)
+            path = [(x, y - 0.026, z) for x, y, z in path]
+        build_sleeve5(part, +1 if weapon == "pistol" else -1, path, r, frill=True, cuff_v=0.17, extra_ring=True)
+        return
+    if weapon == "pistol":
+        # Von oben gesehen: erst eine kleine Innenkante um den Griff, dann sofort der volle Radius (Ringflaeche = Stulpenrand
+        # sichtbar), dann die Wand der Stulpe, dann der Aermel.
+        path = [(0, -0.0100, 0.0030), (0, -0.0104, 0.0029), (0, -0.021, -0.001), (0.0, -0.030, -0.007),
+                (0.03, -0.036, -0.016), (0.08, -0.040, -0.030), (0.16, -0.048, -0.052), (0.30, -0.065, -0.090)]
+        r = [0.0165, 0.036, 0.036, 0.029, 0.029, 0.031, 0.036, 0.044]
+        build_sleeve5(part, +1, path, r, frill=(DESIGN == "c"), cuff_v=0.29)
+    else:
+        path = [(0, 0, -0.003), (0, 0, -0.016), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07), (0.09, -0.06, -0.09),
+                (0.18, -0.11, -0.12), (0.30, -0.17, -0.16)]
+        r = [0.040, 0.031, 0.029, 0.031, 0.036, 0.040, 0.046]
+        build_sleeve5(part, -1, path, r, frill=(DESIGN == "c"))
+
+
+
+# =====================================================================================================================
+# Fassung k (Issue #265): zweiteiliger Aermel. arm_cuff (Manschette mit Rueschensaum und kurzem Aermelstueck, starr an der
+# Waffe) und arm_forearm (gerades, leicht konisches Rohr, Drehpunkt am hinteren Ende der Manschette). Der Code dreht
+# arm_forearm so, dass seine Laengsachse in jeder Phase vom Drehpunkt zum Schulterpunkt zeigt (siehe design/uebergabe/README.md).
+# =====================================================================================================================
+import json  # noqa: E402
+import simulation as _sim  # noqa: E402
+from psx import Part  # noqa: E402
+
+SCALE_K = 1.8                                       # eingebackene Skalierung der Ich-Sicht
+K_LENGTH = 0.72                                     # Laenge des Unterarms (ungeskaliert, Meter): 1,3 m nach der Skalierung
+
+
+def _k_cuff_path(weapon):
+    """Die ersten vier Ringe des Pfads aus Fassung j (Mund bis Ring 3), rechte Seite; die Pistole 2,6 cm tiefer."""
+    path = [(0, 0, -0.003), (0, 0, -0.016), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07)]
+    if weapon == "pistol":
+        path = [(x, y - 0.026, z) for x, y, z in path]
+    return path
+
+
+def k_parameters(weapon):
+    """Drehpunkt (Dateikoordinaten, skaliert), Ruheachse und Schulterpunkt fuer die Uebergabe."""
+    s = +1 if weapon == "pistol" else -1
+    x, y, z = _k_cuff_path(weapon)[3]
+    pivot_game = (-s * x, y, z)                                                    # Spiel-Achsen, ungeskaliert
+    pivot_file = tuple(c * SCALE_K for c in pivot_game)
+    axis = _sim.rest_axis(weapon, pivot_file)
+    return {"pivot_game": pivot_game, "pivot_file": pivot_file, "rest_axis": axis, "shoulder": _sim.SHOULDER[weapon],
+            "length": K_LENGTH * SCALE_K}
+
+
+def _patch_uv(part, name, fn):
+    """Wendet fn(face_loops, v_fraction) auf alle Flaechen des Teils an; v_fraction: v relativ zum Feld."""
+    v0, v1 = part.rects[name][1], part.rects[name][3]
+    for face in part.bm.faces:
+        fn(face, v0, v1)
+
+
+DARK_V = 0.007                                      # Streifen am Ellbogenende des Feldes: sehr dunkles Blau (siehe paint_c_sleeve)
+
+
+def build_cuff_k(weapon, UV):
+    s = +1 if weapon == "pistol" else -1
+    path = _k_cuff_path(weapon)
+    m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
+    radii = [0.040, 0.031, 0.029, 0.031]
+    part = Part("arm_cuff", (0, 0, 0), UV, parent="stock" if weapon == "pistol" else "sword")
+    pts = [m(p) for p in path][::-1]
+    rad = [(r,) * 3 for r in radii][::-1]
+    n = len(pts)
+    mods = lambda i, k: (1.0 if k % 2 == 0 else 0.8) if i >= n - 3 else 1.0          # noqa: E731
+    part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0), mods=mods), "sleeve", cap_start=True, cap_end=True)
+    # UV wie bei Fassung j (sieben Ringe): Mund v = 1, Ring 3 liegt bei 0,5; die Kappen (Dreiecke) bekommen den dunklen Streifen.
+    u0, u1 = part.rects["sleeve"][0], part.rects["sleeve"][2]
+
+    def fn(face, v0, v1):
+        for loop in face.loops:
+            uv = loop[part.uv].uv
+            fr = (uv[1] - v0) / (v1 - v0)
+            if len(face.loops) == 3:
+                uv[0], uv[1] = (u0 + u1) / 2, v0 + (v1 - v0) * DARK_V
+            else:
+                uv[1] = v0 + (v1 - v0) * (0.5 + 0.5 * fr)
+    _patch_uv(part, "sleeve", fn)
+    return part
+
+
+def build_forearm_k(weapon, UV):
+    par = k_parameters(weapon)
+    px, py, pz = par["pivot_game"]
+    pivot = V(px, py, pz)
+    a = V(*par["rest_axis"])
+    part = Part("arm_forearm", tuple(pivot), UV, parent="stock" if weapon == "pistol" else "sword")
+    ts = [-0.018, 0.0, 0.30, K_LENGTH]
+    centres = [pivot + a * t for t in ts]
+    radii = [0.027, 0.030, 0.040, 0.052]
+    part.loft(tube(centres, [(r,) * 3 for r in radii], 12, ref_up=V(1, 0, 0)), "sleeve", cap_start=True, cap_end=True)
+    u0, u1 = part.rects["sleeve"][0], part.rects["sleeve"][2]
+
+    def fn(face, v0, v1):
+        for loop in face.loops:
+            uv = loop[part.uv].uv
+            fr = (uv[1] - v0) / (v1 - v0)
+            if len(face.loops) == 3:
+                uv[0], uv[1] = (u0 + u1) / 2, v0 + (v1 - v0) * DARK_V
+            else:
+                uv[1] = v0 + (v1 - v0) * (0.5 - 0.48 * fr)                          # Tuch, von Ring 3 (0,5) zum Ende (0,02)
+    _patch_uv(part, "sleeve", fn)
+    return part
+
+
+def build_hand_parts(weapon, UV):
+    return [build_cuff_k(weapon, UV), build_forearm_k(weapon, UV)]
+
+
+# Beim Malen: das Ende des Feldes (V' > 0,985) ist die dunkle Kappe.
+_paint_c_old = paint_c_sleeve
+
+
+def paint_c_sleeve(U, V_):                                                           # noqa: F811
+    col = _paint_c_old(U, V_)
+    dark = (1 - V_) > 0.985
+    return mix(col, np.array((20.0, 24, 42)), dark.astype(float))
+
+
+def design_painters(design):                                                         # noqa: F811
+    return {"sleeve": paint_c_sleeve, "glove": paint_c_sleeve, "cuff": paint_c_sleeve}

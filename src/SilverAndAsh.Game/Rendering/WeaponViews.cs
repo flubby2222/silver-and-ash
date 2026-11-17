@@ -34,8 +34,9 @@ internal interface IWeaponView
 /// a swing of the blade, recoil and a muzzle flash for the pistol. Models and boxes move the same way.
 /// <para>
 /// The models are shrunk towards the eye (<see cref="WeaponPose.ShrinkTowardsEye"/>): the picture stays the same, but
-/// everything drawn stays within <see cref="WeaponPose.Reach"/> (30 cm) of the eyes, tested - only the blade hand's
-/// sleeve swings out farther at the height of a swing, at the left edge. The player keeps at least 35 cm away from
+/// everything drawn stays within <see cref="WeaponPose.Reach"/> (30 cm) of the eyes, tested - only the sleeves run on
+/// out of the picture. A sleeve has two parts (issue #265): the cuff hangs rigidly on the weapon, the forearm turns so it
+/// always points at the shoulder (<see cref="WeaponPose.ForearmTurn"/>). The player keeps at least 35 cm away from
 /// every wall (its radius), so the weapons never disappear into a wall. The boxes are drawn as they always
 /// were (the rifle's barrel reaches about 48 cm, as before).
 /// </para>
@@ -94,6 +95,8 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
     private readonly Matrix4x4[] _pistolFrames = new Matrix4x4[WeaponPose.PistolParts.Count];
     private readonly Matrix4x4[] _oneTurn = [Matrix4x4.Identity];
     private readonly Matrix4x4[] _oneFrame = new Matrix4x4[1];
+    private readonly Matrix4x4[] _sleeveTurns = [Matrix4x4.Identity, Matrix4x4.Identity];
+    private readonly Matrix4x4[] _sleeveFrames = new Matrix4x4[WeaponPose.HandParts.Count];
 
     public void OnEvent(GameEvent gameEvent)
     {
@@ -200,7 +203,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         {
             var grip = WeaponPose.Blade(t, _windUp, tremble) * modelMotion;
             DrawOnePart(blade, grip);
-            DrawOnePart(bladeHand, grip);
+            DrawSleeve(bladeHand, grip, WeaponPose.BladeForearm(t, _windUp, tremble, bladeHand.Rig.Pivots[1]));
             return;
         }
 
@@ -308,7 +311,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
 
         pistol.DrawPart(2, _pistolFrames[2]);
         pistol.DrawPart(3, _pistolFrames[3]);
-        DrawOnePart(hand, grip);
+        DrawSleeve(hand, grip, WeaponPose.PistolForearm(kick, hand.Rig.Pivots[1]));
 
         // The muzzle flash: full brightness whatever the light, pale blue-white after a consecrated shot.
         if (_flash > 0f)
@@ -326,7 +329,16 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         }
     }
 
-    // A model of one part (the sword, a hand) on the grip.
+    // A sleeve on the grip: the cuff rigidly, the forearm turned around its pivot towards the shoulder.
+    private void DrawSleeve(TexturedModel sleeve, Matrix4x4 grip, Matrix4x4 forearmTurn)
+    {
+        _sleeveTurns[1] = forearmTurn;
+        sleeve.Rig.Pose(_sleeveTurns, grip, _sleeveFrames);
+        sleeve.DrawPart(0, _sleeveFrames[0]);
+        sleeve.DrawPart(1, _sleeveFrames[1]);
+    }
+
+    // A model of one part (the sword) on the grip.
     private void DrawOnePart(TexturedModel model, Matrix4x4 grip)
     {
         model.Rig.Pose(_oneTurn, grip, _oneFrame);

@@ -40,7 +40,7 @@ public class PhotoSceneTests
         [
             "start-room", "room-combat", "room-corridor", "room-treasure", "room-secret", "room-boss",
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
-            "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "hud-rifle",
+            "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "hud-rifle",
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload",
         ];
 
