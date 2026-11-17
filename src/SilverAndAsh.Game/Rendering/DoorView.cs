@@ -1,19 +1,28 @@
 using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Logging;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// Placeholder doors: a closed door fills its whole doorway cell (exactly what blocks you), an open one is gone.
-/// Wooden doors are brown planks with dark bands; the boss door is almost black with bone-white skulls and a red
-/// glow; a locked door is dark iron with rivets and a brass padlock on both faces. The grate of an arena shows as
-/// iron bars on both faces of the doorway. A cracked wall is drawn as wall by the level itself; here it only gets its
-/// fine, dark cracks on both faces - easy to miss if you are not looking. Pure presentation - real models
-/// come later.
+/// The doors. The designer's models (assets/models/door_*.glb, issue #245, see <see cref="DoorPose"/>): a wooden double
+/// door, a locked door with one iron-bound leaf and a padlock, a boss door with two heavy leaves, and the fine cracks of a
+/// cracked wall. The portal (posts, head panel, arch field) always stands; the leaves swing open away from the player
+/// who opened the door, as far as <see cref="Door.OpenFraction"/> says, starting and stopping slowly. The padlock is
+/// gone once the door is unlocked. A cracked wall is drawn as wall by the level itself; here it only gets its cracks,
+/// and once broken nothing.
+/// <para>
+/// A kind whose model is missing or broken gets the placeholder: a closed door fills its whole doorway cell (exactly what
+/// blocks you), an open one is gone. Wooden doors are brown planks with dark bands; the boss door is almost black with
+/// bone-white skulls and a red glow; a locked door is dark iron with rivets and a brass padlock on both faces; the
+/// cracks are a few dark lines. The grate of an arena shows as iron bars on both faces of the doorway, with or
+/// without a model.
+/// </para>
 /// </summary>
-internal static class DoorView
+internal sealed class DoorView : IDisposable
 {
     private static readonly Color Wood = new(104, 70, 42, 255);
     private static readonly Color Band = new(48, 40, 36, 255);
@@ -26,44 +35,118 @@ internal static class DoorView
     private static readonly Color Brass = new(176, 140, 72, 255);
     private static readonly Color Crack = new(30, 26, 30, 255);
 
-    /// <summary>Draws all closed doors. Call between BeginMode3D and EndMode3D.</summary>
-    public static void Draw(IReadOnlyList<Door> doors, float seconds)
+    // Room for the parts of the largest door (portal and two leaves).
+    private const int MostParts = 3;
+
+    private readonly Dictionary<DoorKind, TexturedModel> _models;
+    private readonly Matrix4x4[] _turns = new Matrix4x4[MostParts];
+    private readonly Matrix4x4[] _frames = new Matrix4x4[MostParts];
+
+    private DoorView(Dictionary<DoorKind, TexturedModel> models) => _models = models;
+
+    /// <summary>
+    /// Loads one model per kind from <paramref name="directory"/> (<see cref="DoorPose.FileName"/>). A missing or broken
+    /// one: a warning in the log and the placeholder for that kind. Needs the window.
+    /// </summary>
+    public static DoorView Load(string directory, FileLog? log)
     {
-        foreach (var door in doors.Where(door => door.Blocks))
+        var models = new Dictionary<DoorKind, TexturedModel>();
+        foreach (var kind in Enum.GetValues<DoorKind>())
+        {
+            var path = Path.Combine(directory, DoorPose.FileName(kind));
+            if (TexturedModel.TryLoad(path, DoorPose.Parts(kind), log) is { } model)
+            {
+                models[kind] = model;
+            }
+        }
+
+        return new DoorView(models);
+    }
+
+    /// <summary>Draws all doors. Call between BeginFigures and EndFigures.</summary>
+    public void Draw(IReadOnlyList<Door> doors, float seconds)
+    {
+        foreach (var door in doors)
         {
             var size = door.BoxMax - door.BoxMin;
             var centre = (door.BoxMin + door.BoxMax) / 2f;
 
             // Facing: the passage runs along Z for north/south doors, along X for east/west ones.
             var alongX = door.Side is RoomSide.East or RoomSide.West;
-            var turn = alongX ? Matrix4x4.CreateRotationY(MathF.PI / 2f) : Matrix4x4.Identity;
+            var turn = Matrix4x4.CreateRotationY(DoorPose.Yaw(door.Side));
             var width = alongX ? size.Z : size.X;
-            var place = turn * Matrix4x4.CreateTranslation(centre);
-
             var depth = alongX ? size.X : size.Z;
-            if (!door.IsOpen && door.Kind == DoorKind.Cracked)
-            {
-                DrawCracks(place, size.Y, depth);
-                continue;
-            }
 
-            if (!door.IsOpen && door.Kind == DoorKind.Boss)
+            if (_models.TryGetValue(door.Kind, out var model))
             {
-                DrawBossDoor(place, width, size.Y, depth, seconds);
+                // The model stands on the floor in the middle of the cell.
+                DrawModel(model, door, turn * Matrix4x4.CreateTranslation(centre.X, door.BoxMin.Y, centre.Z));
             }
-            else if (!door.IsOpen && door.Kind == DoorKind.Locked)
+            else
             {
-                DrawLockedDoor(place, width, size.Y, depth);
-            }
-            else if (!door.IsOpen)
-            {
-                DrawWoodenDoor(place, width, size.Y, depth);
+                DrawPlaceholder(door, turn * Matrix4x4.CreateTranslation(centre), width, size.Y, depth, seconds);
             }
 
             if (door.IsBarred)
             {
-                DrawGrate(place, width, size.Y, depth);
+                DrawGrate(turn * Matrix4x4.CreateTranslation(centre), width, size.Y, depth);
             }
+        }
+    }
+
+    public void Dispose()
+    {
+        foreach (var model in _models.Values)
+        {
+            model.Dispose();
+        }
+    }
+
+    private void DrawModel(TexturedModel model, Door door, Matrix4x4 place)
+    {
+        // A broken cracked wall leaves nothing behind.
+        if (door.Kind == DoorKind.Cracked && door.IsOpen)
+        {
+            return;
+        }
+
+        var parts = DoorPose.Parts(door.Kind);
+        var turns = _turns.AsSpan(0, parts.Count);
+        var frames = _frames.AsSpan(0, parts.Count);
+        DoorPose.Turns(door.Kind, door.OpenFraction, door.OpenedFromLowSide, turns);
+        model.Rig.Pose(turns, place, frames);
+        for (var i = 0; i < parts.Count; i++)
+        {
+            if (parts[i].Name == DoorPose.Lock && !DoorPose.ShowsLock(door.IsOpen))
+            {
+                continue;
+            }
+
+            model.DrawPart(i, frames[i]);
+        }
+    }
+
+    private static void DrawPlaceholder(Door door, Matrix4x4 place, float width, float height, float depth, float seconds)
+    {
+        if (door.IsOpen)
+        {
+            return;
+        }
+
+        switch (door.Kind)
+        {
+            case DoorKind.Cracked:
+                DrawCracks(place, height, depth);
+                break;
+            case DoorKind.Boss:
+                DrawBossDoor(place, width, height, depth, seconds);
+                break;
+            case DoorKind.Locked:
+                DrawLockedDoor(place, width, height, depth);
+                break;
+            default:
+                DrawWoodenDoor(place, width, height, depth);
+                break;
         }
     }
 

@@ -155,6 +155,90 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
+    /// A bare hall cut in two by a wall with one door of <paramref name="kind"/> in it, 6 m in front of the player, who
+    /// looks at its middle (issue #245). <paramref name="sideways"/>: the wall runs North/South and the passage along X
+    /// (the door model turned a quarter). <paramref name="open"/>: the door is opened by the player before the first
+    /// tick - its leaves swing away from them while the scene's ticks run.
+    /// </summary>
+    public GameWorld DoorHall(DoorKind kind, bool sideways = false, bool open = false)
+    {
+        const int Width = 9;
+        const int Depth = 10;
+        const int Middle = Width / 2;
+        const int PlayerRow = 3;
+        const int DoorRow = PlayerRow + 3;
+        var text = new StringBuilder();
+        for (var row = 0; row < Depth; row++)
+        {
+            for (var column = 0; column < Width; column++)
+            {
+                // Built along Z; sideways the map is mirrored on its diagonal afterwards (rows become columns).
+                var outer = row == 0 || column == 0 || row == Depth - 1 || column == Width - 1;
+                var wall = outer || (row == DoorRow && column != Middle);
+                text.Append(wall ? '#' : row == PlayerRow && column == Middle ? 'P' : '.');
+            }
+
+            text.Append('\n');
+        }
+
+        var map = sideways ? Transposed(text.ToString()) : text.ToString();
+        var (x, z) = sideways ? (DoorRow, Middle) : (Middle, DoorRow);
+        LevelDoor[] doors = [new(x, z, 0, 1, sideways ? RoomSide.East : RoomSide.South, kind)];
+        var world = new GameWorld(LevelParser.Parse(map), Seed, Balance, doors);
+        var door = world.Doors[0];
+        Face(world.Player, (door.BoxMin + door.BoxMax) / 2f);
+        if (open)
+        {
+            door.Open(world.Player.Position);
+        }
+
+        return world;
+    }
+
+    /// <summary>
+    /// Level 0 from <paramref name="seed"/> with the player before its first door of <paramref name="kind"/>, on the
+    /// floor cell 4 to 6 m in front of it (along its passage) that sees it, looking at it - a door as the generator
+    /// placed it, between its rooms (issue #245).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">If the level has no such door or no place before it.</exception>
+    public GameWorld BeforeDoor(int seed, DoorKind kind)
+    {
+        var generated = _levelZero.Build(seed, Balance);
+        var plan = generated.Doors.FirstOrDefault(door => door.Kind == kind)
+            ?? throw new InvalidOperationException($"Level 0 with seed {seed} has no {kind} door.");
+        var level = generated.Level;
+        var target = level.CellCenter(plan.X, plan.Z) + new Vector3(0f, LookHeight, 0f);
+        var alongX = plan.Side is RoomSide.East or RoomSide.West;
+        var eye = new Vector3(0f, BodySizes.Player.EyeHeight, 0f);
+        var place = new[] { 2, 3, -2, -3 }
+            .Select(step => alongX ? (X: plan.X + step, Z: plan.Z) : (X: plan.X, Z: plan.Z + step))
+            .Where(cell => cell.X >= 0 && cell.Z >= 0 && cell.X < level.Width && cell.Z < level.Depth && !level[cell.X, cell.Z].IsSolid)
+            .Where(cell => !generated.Doors.Any(door => door.X == cell.X && door.Z == cell.Z))
+            .Where(cell => LineOfSight.IsClear(level, level.CellCenter(cell.X, cell.Z) + eye, target))
+            .Select(cell => ((int X, int Z)?)cell)
+            .FirstOrDefault()
+            ?? throw new InvalidOperationException($"No place before the first {kind} door of level 0 with seed {seed}.");
+
+        var world = World(generated, place);
+        var door = world.Doors.First(door => door.X == plan.X && door.Z == plan.Z);
+        Face(world.Player, (door.BoxMin + door.BoxMax) / 2f);
+        return world;
+    }
+
+    // The map with rows and columns swapped.
+    private static string Transposed(string map)
+    {
+        var lines = map.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var text = new StringBuilder();
+        for (var column = 0; column < lines[0].Length; column++)
+        {
+            text.Append(string.Concat(lines.Select(line => line[column]))).Append('\n');
+        }
+
+        return text.ToString();
+    }
+
+    /// <summary>
     /// Turns <paramref name="player"/> to look at <paramref name="point"/> - through the normal look input (as if the
     /// mouse had moved exactly so far).
     /// </summary>
