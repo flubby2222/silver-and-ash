@@ -1,0 +1,45 @@
+door_boss_a.glb
+  Richtung +1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+door_bosshell_a.glb
+  Richtung +1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+door_bosshoch_a.glb
+  Richtung +1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+door_locked_a.glb
+  Richtung +1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+door_normal_a.glb
+  Richtung +1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung +1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.33: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 0.67: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
+  Richtung -1 Phase 1.00: ueber Zelle x 0.0 cm, y 0.0 cm; Durchstiche fest 0, bewegt 0
