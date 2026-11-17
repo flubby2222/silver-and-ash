@@ -170,17 +170,19 @@ public static class PhotoScenes
     /// <summary>The scene called <paramref name="name"/>, or null.</summary>
     public static PhotoScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
 
-    // The showroom (issue #283): every part of every section from its west end, across to its doors and pieces.
+    // The showroom (issue #283): every part of every section from its west end, across to its north wall and pieces.
     private static IEnumerable<PhotoScene> ShowroomScenes()
     {
         foreach (var section in ShowroomLayout.Build().Sections)
         {
             foreach (var part in Enum.GetValues<ShowroomPart>())
             {
-                var height = part == ShowroomPart.Corridor ? "corridor height (3.5 m)" : "room height (6 m)";
+                var shown = part == ShowroomPart.Corridor
+                    ? "the corridor (3.5 m) with its doors and cracked wall"
+                    : "the room (6 m) with its pieces";
                 yield return new(
                     $"showroom-{section.Variant.ToString().ToLowerInvariant()}-{part.ToString().ToLowerInvariant()}",
-                    $"The showroom, wall variant {section.Variant} at {height}: its doors, cracked wall and pieces.",
+                    $"The showroom, wall variant {section.Variant}: {shown}.",
                     studio => new PhotoSetup(ShowroomLayout.Build().ViewOf(section.Index, part, studio.Balance)));
             }
         }
