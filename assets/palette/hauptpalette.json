@@ -367,6 +367,32 @@
     ]
    ],
    "zweck": "Blut, Treffer, Gefahr, Beute der Stufe Vampiric; nie als bloße Zierde"
+  },
+  {
+   "name": "Werkstein",
+   "farben": [
+    [
+     171,
+     159,
+     164
+    ],
+    [
+     183,
+     171,
+     176
+    ],
+    [
+     195,
+     182,
+     188
+    ],
+    [
+     209,
+     193,
+     200
+    ]
+   ],
+   "zweck": "besondere Portale: Bogenläufe, Kämpfer und Sockel des Bosstors; nie als Wandfläche"
   }
  ],
  "katakomben": [
