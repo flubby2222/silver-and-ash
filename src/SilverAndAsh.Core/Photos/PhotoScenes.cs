@@ -85,23 +85,29 @@ public static class PhotoScenes
             }),
         new("gorm", "Gorm, the Chained, 6 m away in his boss room.",
             studio => new PhotoSetup(studio.BeforeGorm(6f))),
-        new("gorm-swing-windup", "Gorm whirling his chain above his head, the warning before the swing, the chain out to his right (issue #249).",
-            studio => new PhotoSetup(studio.Arena('T', 8))
+        new("gorm-swing-windup", "Gorm whirling his chain above his head, the warning before the swing, the chain out to his right; in a hall as high as his boss room (issues #249, #254).",
+            studio => new PhotoSetup(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight))
             {
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Swing, StateProgress: >= 0.82f },
             }),
-        new("gorm-swing", "Gorm sweeping his chain from his left to his right, a third of the way (issue #249).",
-            studio => new PhotoSetup(studio.Arena('T', 8))
+        new("gorm-swing", "Gorm sweeping his chain from his left to his right, a third of the way; in a hall as high as his boss room (issues #249, #254).",
+            studio => new PhotoSetup(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight))
             {
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.Swinging, StateProgress: >= 0.3f },
             }),
-        new("gorm-throw-windup", "Gorm about to throw his hook, which glows red: the warning, halfway through (issue #249).",
-            studio => new PhotoSetup(studio.Arena('T', 10))
+        new("gorm-throw-windup", "Gorm about to throw his hook, which glows red: the warning, halfway through; in a hall as high as his boss room (issues #249, #254).",
+            studio => new PhotoSetup(studio.Arena('T', 10, RoomTemplate.RoomCeilingHeight))
             {
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Throw, StateProgress: >= 0.5f },
+            }),
+        new("gorm-hammer-windup", "Gorm with his club raised high, the warning before the hammer, near its top; in a hall as high as his boss room (issue #254).",
+            studio => new PhotoSetup(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight))
+            {
+                Ticks = 3000,
+                StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Hammer, StateProgress: >= 0.8f },
             }),
         new("gorm-phase2", "Gorm in phase 2 (half his health gone, red marks), 10 m away in his boss room, at the end of his roar (issue #249).",
             studio => new PhotoSetup(HalfHealth(studio.BeforeGorm(10f)))

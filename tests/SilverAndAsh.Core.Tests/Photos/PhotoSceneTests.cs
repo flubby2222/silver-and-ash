@@ -42,6 +42,7 @@ public class PhotoSceneTests
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "hud-rifle",
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload",
+            "gorm-hammer-windup",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -107,6 +108,20 @@ public class PhotoSceneTests
         var middle = target.Body.Position + new Vector3(0f, target.Body.Height / 2f, 0f);
         var towards = Vector3.Normalize(middle - world.Player.EyePosition);
         Assert.Equal(1f, Vector3.Dot(world.Player.View.Forward, towards), 0.001f);
+    }
+
+    [Fact]
+    public void An_arena_can_be_as_high_as_gorms_boss_room()
+    {
+        var level = Studio().Arena('T', 8, RoomTemplate.RoomCeilingHeight).Level;
+        var open = (from x in Enumerable.Range(0, level.Width)
+                    from z in Enumerable.Range(0, level.Depth)
+                    where !level[x, z].IsSolid
+                    select level[x, z]).ToList();
+
+        Assert.NotEmpty(open);
+        Assert.All(open, cell => Assert.Equal(RoomTemplate.RoomCeilingHeight, cell.CeilingHeight));
+        Assert.All(open, cell => Assert.Equal(0f, cell.FloorHeight));
     }
 
     [Theory]

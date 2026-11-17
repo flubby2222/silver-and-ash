@@ -44,9 +44,10 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `blade-swing-half` | ein schneller Klingenhieb halb ausgeholt: der Unterarm dreht sich zur Schulter (#265) |
 | `blade-swing-full` | ein schneller Klingenhieb auf dem Höhepunkt: der Unterarm dreht sich zur Schulter (#265) |
 | `gorm` | Gorm aus 6 m in seinem Bossraum |
-| `gorm-swing-windup` | Gorm wirbelt die Kette über dem Kopf: die Ankündigung des Kettenschwungs, die Kette gerade zu seiner Rechten |
-| `gorm-swing` | Gorm im Kettenschwung von seiner Linken zu seiner Rechten, ein Drittel des Bogens |
-| `gorm-throw-windup` | Gorm vor dem Hakenwurf, der Haken glüht rot: die Ankündigung, zur Hälfte vorbei |
+| `gorm-swing-windup` | Gorm wirbelt die Kette über dem Kopf: die Ankündigung des Kettenschwungs, die Kette gerade zu seiner Rechten; in einer 6 m hohen Halle wie sein Bossraum (#254) |
+| `gorm-swing` | Gorm im Kettenschwung von seiner Linken zu seiner Rechten, ein Drittel des Bogens; in einer 6 m hohen Halle wie sein Bossraum (#254) |
+| `gorm-throw-windup` | Gorm vor dem Hakenwurf, der Haken glüht rot: die Ankündigung, zur Hälfte vorbei; in einer 6 m hohen Halle wie sein Bossraum (#254) |
+| `gorm-hammer-windup` | Gorm reißt die Keule hoch über den Kopf: die Ankündigung des Hammerschlags, kurz vor dem Höhepunkt; in einer 6 m hohen Halle wie sein Bossraum (#254) |
 | `gorm-phase2` | Gorm in Phase 2 (rote Male) aus 10 m in seinem Bossraum, am Ende seines Brüllens |
 | `hud-weapons` | das HUD mit allen Waffenplätzen belegt (Keule, Pistole, Gewehr, Donnerbüchse) |
 | `hud-rifle` | wie `hud-weapons`, aber mit dem Gewehr (2) in der Hand |
