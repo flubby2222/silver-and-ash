@@ -118,6 +118,42 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
+    /// A bare hall with the chests of all four tiers side by side, closed and locked, 4 m in front of the player, their
+    /// fronts towards them - and a fifth one, a Beggar's chest, unlocked and open (issue #249).
+    /// </summary>
+    public GameWorld ChestRow()
+    {
+        const int Width = 9;
+        const int Depth = 8;
+        const int PlayerRow = 2;
+        const int ChestRow = PlayerRow + 2;
+        var text = new StringBuilder();
+        for (var z = 0; z < Depth; z++)
+        {
+            for (var x = 0; x < Width; x++)
+            {
+                var wall = x == 0 || z == 0 || x == Width - 1 || z == Depth - 1;
+                text.Append(wall ? '#' : x == Width / 2 && z == PlayerRow ? 'P' : '.');
+            }
+
+            text.Append('\n');
+        }
+
+        // Looking towards +z, +x lies on the left: the row reads Beggar's .. Vampire's from left to right, the open one last.
+        ChestTier[] tiers = [ChestTier.Beggar, ChestTier.Vampire, ChestTier.King, ChestTier.Guard, ChestTier.Beggar];
+        var chests = tiers
+            .Select((tier, index) => new ChestPlan(2 + index, ChestRow, 0, tier, IsLocked: true, Silver: 0,
+                HasBloodVial: false, RisesWhenCleared: false, ChestFront.MinusZ))
+            .ToList();
+        var world = new GameWorld(LevelParser.Parse(text.ToString()), Seed, Balance, chests: chests);
+        var open = world.Chests[0];
+        open.Unlock();
+        open.Open();
+        Face(world.Player, world.Chests[2].Position + new Vector3(0f, Chest.Height / 2f, 0f));
+        return world;
+    }
+
+    /// <summary>
     /// Turns <paramref name="player"/> to look at <paramref name="point"/> - through the normal look input (as if the
     /// mouse had moved exactly so far).
     /// </summary>

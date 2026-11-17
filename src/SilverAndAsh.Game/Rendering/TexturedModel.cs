@@ -143,37 +143,45 @@ internal sealed class TexturedModel : IDisposable
 
         for (var p = 0; p < _parts.Length; p++)
         {
-            var part = _parts[p];
-            var frame = frames[p];
-
-            // Each corner once (corners are shared by several triangles): position and brightness in the world.
-            for (var i = 0; i < part.Positions.Length; i++)
-            {
-                _worldCorners[i] = Vector3.Transform(part.Positions[i], frame);
-                var brightness = SmoothShading.Brightness(Vector3.TransformNormal(part.Normals[i], frame), Facing);
-                var level = (byte)Math.Clamp(MathF.Round(brightness * 255f), 0f, 255f);
-                _cornerColors[i] = new Color(level, level, level, (byte)255);
-            }
-
-            // Room for all corners of this part in the current batch; otherwise raylib draws what it has first.
-            Rlgl.CheckRenderBatchLimit(part.Indices.Length);
-            Rlgl.SetTexture(_texture.Id);
-            Rlgl.Begin(DrawMode.Triangles);
-            foreach (var index in part.Indices)
-            {
-                var color = _cornerColors[index];
-                var uv = part.TexCoords[index];
-                var world = _worldCorners[index];
-                Rlgl.Color4ub(color.R, color.G, color.B, color.A);
-                Rlgl.TexCoord2f(uv.X, uv.Y);
-                Rlgl.Vertex3f(world.X, world.Y, world.Z);
-            }
-
-            Rlgl.End();
-            // Back to the white default texture: SetTexture(0) would leave the model's texture on the running batch, and
-            // the next triangles without a texture of their own (DrawCube ...) would get it.
-            Rlgl.SetTexture(Rlgl.GetTextureIdDefault());
+            DrawPart(p, frames[p]);
         }
+    }
+
+    /// <summary>
+    /// Draws one part only (index in the order of <see cref="Rig"/>) - for parts that are not always there, like the
+    /// lock of a chest. <paramref name="tint"/> makes the part brighter or darker (1: as it is; capped at full white).
+    /// </summary>
+    public void DrawPart(int index, Matrix4x4 frame, float tint = 1f)
+    {
+        var part = _parts[index];
+
+        // Each corner once (corners are shared by several triangles): position and brightness in the world.
+        for (var i = 0; i < part.Positions.Length; i++)
+        {
+            _worldCorners[i] = Vector3.Transform(part.Positions[i], frame);
+            var brightness = SmoothShading.Brightness(Vector3.TransformNormal(part.Normals[i], frame), Facing) * tint;
+            var level = (byte)Math.Clamp(MathF.Round(brightness * 255f), 0f, 255f);
+            _cornerColors[i] = new Color(level, level, level, (byte)255);
+        }
+
+        // Room for all corners of this part in the current batch; otherwise raylib draws what it has first.
+        Rlgl.CheckRenderBatchLimit(part.Indices.Length);
+        Rlgl.SetTexture(_texture.Id);
+        Rlgl.Begin(DrawMode.Triangles);
+        foreach (var corner in part.Indices)
+        {
+            var color = _cornerColors[corner];
+            var uv = part.TexCoords[corner];
+            var world = _worldCorners[corner];
+            Rlgl.Color4ub(color.R, color.G, color.B, color.A);
+            Rlgl.TexCoord2f(uv.X, uv.Y);
+            Rlgl.Vertex3f(world.X, world.Y, world.Z);
+        }
+
+        Rlgl.End();
+        // Back to the white default texture: SetTexture(0) would leave the model's texture on the running batch, and
+        // the next triangles without a texture of their own (DrawCube ...) would get it.
+        Rlgl.SetTexture(Rlgl.GetTextureIdDefault());
     }
 
     public void Dispose() => Unload(_model);

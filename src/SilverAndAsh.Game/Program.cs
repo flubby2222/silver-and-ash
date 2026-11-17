@@ -301,6 +301,9 @@ static void RunGame(
             ghoulView = newGhoulView();
         }
 
+        // One chest model per tier (issue #249); a tier without one keeps the placeholder boxes.
+        using var chestView = ChestView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
         // The stones of walls, floors and ceilings (assets/textures/, issue #233). Only level 0, the catacombs, exists yet.
         // Missing or broken: a warning in the log and plain surfaces as before.
@@ -374,7 +377,7 @@ static void RunGame(
             levelRenderer.Draw();
             levelShader.BeginFigures();
             DoorView.Draw(gameWorld.Doors, seconds);
-            ChestView.Draw(gameWorld.Chests, seconds, camera.Position);
+            chestView.Draw(gameWorld.Chests, seconds);
             StairsView.Draw(gameWorld.Stairs, seconds);
             foreach (var dummy in gameWorld.Dummies)
             {

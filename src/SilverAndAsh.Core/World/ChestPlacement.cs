@@ -6,7 +6,7 @@ namespace SilverAndAsh.Core.World;
 /// (<see cref="ChestsBalance.CombatRoomChance"/>) gets one, on one of its chest places; it rises from the floor once the
 /// room is cleared. Its tier follows the combat shares of <see cref="ChestTierBalance"/> - "near" in the combat room
 /// nearest to the start, "far" in the farthest, rising evenly in between. Lock and contents are rolled at once, so the
-/// same seed always gives the same chests.
+/// same seed always gives the same chests. Each looks with its front towards the middle of its room (issue #209).
 /// </summary>
 public static class ChestPlacement
 {
@@ -36,7 +36,7 @@ public static class ChestPlacement
             var (x, z) = places[random.Next(places.Count)];
             var far = farthest == nearest ? 0f : (room.DistanceFromStart - nearest) / (float)(farthest - nearest);
             var tier = PickTier(chests, values => values.CombatShareNear + ((values.CombatShareFar - values.CombatShareNear) * far), random);
-            plans.Add(Roll(chests, tier, x, z, room.Index, risesWhenCleared: true, random));
+            plans.Add(Roll(chests, tier, x, z, room, risesWhenCleared: true, random));
         }
 
         // Treasure rooms: 1-2 chests standing from the start, better behind a locked door. Rolled after the combat
@@ -49,7 +49,7 @@ public static class ChestPlacement
             foreach (var (x, z) in places.Take(count))
             {
                 var tier = PickTier(chests, values => locked ? values.LockedTreasureShare : values.TreasureShare, random);
-                plans.Add(Roll(chests, tier, x, z, room.Index, risesWhenCleared: false, random));
+                plans.Add(Roll(chests, tier, x, z, room, risesWhenCleared: false, random));
             }
         }
 
@@ -64,20 +64,32 @@ public static class ChestPlacement
 
             var (x, z) = places[random.Next(places.Count)];
             var tier = PickTier(chests, values => values.SecretShare, random);
-            plans.Add(Roll(chests, tier, x, z, room.Index, risesWhenCleared: false, random));
+            plans.Add(Roll(chests, tier, x, z, room, risesWhenCleared: false, random));
         }
 
         return generated with { Chests = plans };
     }
 
     /// <summary>Lock and contents of a chest of <paramref name="tier"/> at (<paramref name="x"/>, <paramref name="z"/>).</summary>
-    private static ChestPlan Roll(ChestsBalance chests, ChestTier tier, int x, int z, int room, bool risesWhenCleared, Random random)
+    private static ChestPlan Roll(ChestsBalance chests, ChestTier tier, int x, int z, PlacedRoom room, bool risesWhenCleared, Random random)
     {
         var values = chests.Of(tier);
         var isLocked = random.NextDouble() < values.LockedChance;
         var silver = random.Next(values.SilverMin, values.SilverMax + 1);
         var hasVial = random.NextDouble() < values.BloodVialChance;
-        return new ChestPlan(x, z, room, tier, isLocked, silver, hasVial, risesWhenCleared);
+        return new ChestPlan(x, z, room.Index, tier, isLocked, silver, hasVial, risesWhenCleared, FrontFor(room, z));
+    }
+
+    /// <summary>
+    /// The front of a chest in row <paramref name="z"/> of <paramref name="room"/>: towards the middle of the room along
+    /// Z (issue #209). On the middle row itself it looks towards +Z. Worked out from the place alone - no random number,
+    /// so the other rolls of the level stay as they were.
+    /// </summary>
+    internal static ChestFront FrontFor(PlacedRoom room, int z)
+    {
+        // In half cells, so the middle of a room with an even depth lies between two rows: 2 * (middle - centre of the cell).
+        var towardsMiddle = (2 * room.Z) + room.Depth - ((2 * z) + 1);
+        return towardsMiddle >= 0 ? ChestFront.PlusZ : ChestFront.MinusZ;
     }
 
     /// <summary>The places in random order (Fisher-Yates).</summary>

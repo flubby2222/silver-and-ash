@@ -25,6 +25,8 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.InRoom(RoomKind.Secret))),
         new("room-boss", "The boss room from 12 m, Gorm waiting.",
             studio => new PhotoSetup(studio.BeforeGorm(12f))),
+        new("chests-4m", "The chests of all four tiers side by side 4 m away, closed and locked, and an open one.",
+            studio => new PhotoSetup(studio.ChestRow())),
         new("ghoul-4m", "A ghoul 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('G', 4))),
         new("ghoul-10m", "A ghoul 10 m away in a bare hall.",
