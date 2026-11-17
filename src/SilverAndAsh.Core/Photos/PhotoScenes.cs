@@ -1,6 +1,7 @@
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.Showroom;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Photos;
@@ -155,6 +156,7 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.Arena('G', 4)) { IsModelProbe = true }),
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 10)) { IsModelProbe = true }),
+        .. ShowroomScenes(),
     ];
 
     /// <summary>
@@ -167,6 +169,22 @@ public static class PhotoScenes
 
     /// <summary>The scene called <paramref name="name"/>, or null.</summary>
     public static PhotoScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
+
+    // The showroom (issue #283): every part of every section from its west end, across to its doors and pieces.
+    private static IEnumerable<PhotoScene> ShowroomScenes()
+    {
+        foreach (var section in ShowroomLayout.Build().Sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                var height = part == ShowroomPart.Corridor ? "corridor height (3.5 m)" : "room height (6 m)";
+                yield return new(
+                    $"showroom-{section.Variant.ToString().ToLowerInvariant()}-{part.ToString().ToLowerInvariant()}",
+                    $"The showroom, wall variant {section.Variant} at {height}: its doors, cracked wall and pieces.",
+                    studio => new PhotoSetup(ShowroomLayout.Build().ViewOf(section.Index, part, studio.Balance)));
+            }
+        }
+    }
 
     // Closed, half open and fully open, 6 m away in a bare hall (issue #245).
     private static PhotoScene[] DoorScenes(DoorKind kind, string name)
