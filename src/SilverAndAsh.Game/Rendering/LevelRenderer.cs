@@ -7,7 +7,8 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// Draws a <see cref="Level"/>. The visible faces (from <see cref="LevelGeometry"/>) are turned into one mesh per kind of
-/// surface (walls, floors, ceilings) when the level is loaded, each with its own stone texture (issue #233). Each face
+/// surface (walls, floors, ceilings) and texture variant when the level is loaded, each with its own stone texture
+/// (issues #233 and #244; which room shows which variant decides <see cref="SurfaceVariants"/>). Each face
 /// gets a brightness depending on the direction it faces (flat shading), stored as the colour of its corners - that is
 /// what makes corners and edges visible. The texture coordinates come from the world position
 /// (<see cref="SurfaceTexturing"/>), so the stones run on across cell borders without a seam.
@@ -22,28 +23,36 @@ internal sealed class LevelRenderer : IDisposable
     private List<Model> _models;
 
     /// <param name="level">The level to draw.</param>
+    /// <param name="surfaces">Which texture variant each surface shows.</param>
     /// <param name="shader">Shader for lantern light and fog. The renderer uses it but does not own it.</param>
     /// <param name="textures">The stones of the layer. The renderer uses them but does not own them.</param>
-    public LevelRenderer(Level level, Shader shader, LevelTextures textures)
+    public LevelRenderer(Level level, SurfaceVariants surfaces, Shader shader, LevelTextures textures)
     {
         _shader = shader;
         _textures = textures;
-        _models = Load(level, shader, textures);
+        _models = Load(level, surfaces, shader, textures);
     }
 
     /// <summary>Draws <paramref name="level"/> from now on (a new run with a new layout); the old meshes are freed.</summary>
-    public void Rebuild(Level level)
+    public void Rebuild(Level level, SurfaceVariants surfaces)
     {
         Unload();
-        _models = Load(level, _shader, _textures);
+        _models = Load(level, surfaces, _shader, _textures);
     }
 
-    private static List<Model> Load(Level level, Shader shader, LevelTextures textures)
+    private static List<Model> Load(Level level, SurfaceVariants surfaces, Shader shader, LevelTextures textures)
     {
         var models = new List<Model>();
-        foreach (var group in LevelGeometry.Build(level).GroupBy(face => face.Kind))
+
+        // One mesh per texture really drawn: faces whose variant could not be loaded join those of variant A.
+        var groups = LevelGeometry.Build(level).GroupBy(face =>
         {
-            var texture = textures.For(group.Key);
+            var (x, z) = LevelGeometry.CellOf(face);
+            return (face.Kind, Variant: textures.Resolve(face.Kind, surfaces.At(x, z, face.Kind)));
+        });
+        foreach (var group in groups)
+        {
+            var texture = textures.For(group.Key.Kind, group.Key.Variant);
             var mesh = BuildMesh([.. group], texture is not null, textures.Set.TileSize);
 
             // Copies the data to the graphics card. From then on drawing costs almost nothing.

@@ -42,4 +42,20 @@ public sealed record LevelTextureSet(string Wall, string Floor, string Ceiling, 
         SurfaceKind.Wall => Wall,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown kind of surface."),
     };
+
+    /// <summary>
+    /// The file of variant <paramref name="variant"/> for surfaces of kind <paramref name="kind"/> (issue #244): A is
+    /// <see cref="FileFor(SurfaceKind)"/> itself, B and C carry "_b" or "_c" before the ending (catacomb_wall_b.png).
+    /// </summary>
+    public string FileFor(SurfaceKind kind, TextureVariant variant)
+    {
+        var file = FileFor(kind);
+        return variant switch
+        {
+            TextureVariant.A => file,
+            TextureVariant.B or TextureVariant.C =>
+                Path.GetFileNameWithoutExtension(file) + "_" + variant.ToString().ToLowerInvariant() + Path.GetExtension(file),
+            _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, "Unknown variant."),
+        };
+    }
 }
