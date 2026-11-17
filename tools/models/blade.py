@@ -19,7 +19,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 from mathutils import Matrix  # noqa: E402
-from arm import C, build_hand as build_glove_hand, paint_glove2, paint_cuff, paint_sleeve  # noqa: E402
+from arm import C, build_sleeve4, paint_sleeve4 as paint_sleeve, paint_cuff3 as paint_cuff  # noqa: E402
 from psx import load_png, side_by_side, zoom  # noqa: E402
 from psx import bake_scale, export_glb, report_parts  # noqa: E402
 from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
@@ -41,7 +41,6 @@ RECTS = {
     "blade": (0, 64, 128, 128),
     "silver": (0, 48, 64, 64),
     "grip": (64, 48, 128, 64),
-    "glove": (0, 16, 64, 48),
     "cuff": (0, 0, 64, 16),
     "sleeve": (64, 0, 128, 48),
 }
@@ -88,7 +87,7 @@ def paint_grip(U, V_):
 
 
 PAINTERS = {"blade": paint_blade, "silver": paint_silver, "grip": paint_grip,
-            "glove": paint_glove2, "cuff": paint_cuff, "sleeve": paint_sleeve}
+            "cuff": paint_cuff, "sleeve": paint_sleeve}
 
 
 def build_sword():
@@ -113,12 +112,13 @@ def build_sword():
 
 def build_hand():
     part = Part("arm", (0, 0, 0), UV, parent="sword")
-    # Linke Hand: Punkte fuer die rechte Seite angegeben, s = -1 spiegelt sie.
-    # Zweite Fassung der Hand: vier Finger um den Griff, Knoechel oben aussen, Daumen innen oben, Stulpe.
-    build_glove_hand(part, -1, top=(0, 0, -0.008), bottom=(0, 0, -0.058), outer=(0.8, 0.6, 0),
-                     radius=0.0165, finger_ts=(0.006, 0.017, 0.028, 0.039),
-                     wrist=(0.012, -0.004, -0.082), elbow=(0.11, -0.16, -0.27),
-                     thumb=((-0.002, 0.016, -0.05), (-0.012, 0.013, -0.03), (-0.011, 0.009, -0.012)))
+    # Fassung 3: kein Handschuh. Der linke Aermel (Punkte fuer rechts, s = -1 spiegelt) umschliesst Griff, Knauf und
+    # Heft bis dicht an die Parierstange; die Stulpe endet vorn mit umgeschlagenem Rand.
+    # Fassung 4: weiter Mantelaermel, Oeffnung an der Parierstange; er verschluckt Griff und Knauf und faellt nach
+    # links unten aus dem Bild (links = s = -1). Kurz hinter dem Knauf biegt er seitlich ab (Nahebene im Blick).
+    path = [(0, 0, -0.003), (0, 0, -0.011), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07), (0.09, -0.06, -0.09),
+            (0.18, -0.11, -0.12), (0.30, -0.17, -0.16)]
+    build_sleeve4(part, -1, path, [0.030, 0.024, 0.029, 0.031, 0.036, 0.040, 0.046])
     return part
 
 

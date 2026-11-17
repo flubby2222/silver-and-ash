@@ -150,3 +150,94 @@ def build_arm(part, s, grip, wrist, elbow, thumb, index, fist=(0.021, 0.024, 0.0
     part.loft(tube([m(wrist), m(tuple(cuff)), m(tuple(V(*wrist) + (V(*elbow) - V(*wrist)) * 0.5)), m(elbow)],
                    [(0.03, 0.03, 0.03), (0.033, 0.033, 0.033), (0.036, 0.036, 0.036), (0.04, 0.04, 0.04)], 8),
               "sleeve")
+
+
+# --- Fassung 3 (Issue #256): kein Handschuh, kein Finger - langer Aermel mit Stulpe ueber der Waffe --------------
+
+def build_sleeve(part, s, rear, front, radius, elbow, flare=1.12, thickness=0.036):
+    """Aermel eines schweren Jaegermantels, der den Griff (Pistole) bzw. Griff und Heft (Klinge) ganz umschliesst.
+    rear, front: hinteres und vorderes Ende der Stulpe auf der Waffenachse (Kameraraum, rechte Seite; s = -1
+    spiegelt); radius: Innenradius der Stulpe; elbow: Ellbogen (ausserhalb des Bildes). Rueckgabe: nichts.
+    Teil 'cuff': Stulpe mit umgeschlagenem Rand vorn (v = 1 am Rand); Teil 'sleeve': Aermel bis zum Ellbogen."""
+    m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
+    r, f, e = V(*rear), V(*front), V(*elbow)
+    mid = (r + f) / 2
+    # Stulpe von hinten (v = 0) nach vorn (v = 1): leicht weiter nach vorn, dann ein kurzer dicker Rand.
+    pts = [r, r + (mid - r) * 0.6, mid + (f - mid) * 0.5, f - (f - r).normalized() * 0.003, f]
+    rad = [radius * 1.02, radius * 1.0, radius * 1.05, radius * flare, radius * flare * 1.03]
+    # Reihenfolge vorn -> hinten (v = 1 vorn bleibt im Bild: siehe paint_cuff3), sonst zeigen die Flaechen nach innen.
+    part.loft(tube([m(tuple(p)) for p in pts[::-1]], [(x,) * 3 for x in rad[::-1]], 10, ref_up=V(1, 0, 0)), "cuff")
+    # Aermel: aus der Stulpe nach hinten-aussen-unten, weitet sich zum Ellbogen; ein weicher Knick unterwegs.
+    d = (e - r)
+    b1 = r + d * 0.18 + (r - f).normalized() * 0.01
+    b2 = r + d * 0.55
+    part.loft(tube([m(tuple(r + (f - r).normalized() * 0.004)), m(tuple(b1)), m(tuple(b2)), m(tuple(e))],
+                   [(radius * 1.12,) * 3, (thickness * 0.85,) * 3, (thickness,) * 3, (thickness * 1.1,) * 3], 10,
+                   ref_up=V(1, 0, 0)), "sleeve")
+
+
+SLEEVE3 = np.array((54, 60, 84), float)     # schwerer Mantelstoff: kaltes Nachtblau, klar blauer als Holz und Leder
+CUFF3 = np.array((96, 72, 54), float)       # Stulpe: helleres, dickes Leder (Nussbraun), hebt sich vom Stoff ab
+
+
+def paint_sleeve3(U, V_):
+    """Mantelstoff: u rund um den Aermel, v entlang. Koeper in laengs laufenden Rippen, weiche Falten, Abnutzung."""
+    h, w = U.shape
+    col = np.broadcast_to(SLEEVE3, (h, w, 3)).copy()
+    col *= (0.86 + 0.22 * vnoise(h, w, 30, 6, 71))[..., None]
+    col *= (0.93 + 0.1 * np.cos(2 * np.pi * U * 14))[..., None]                         # Rippen (Koeper)
+    folds = 0.88 + 0.12 * np.cos(2 * np.pi * (V_ * 4 + 0.35 * vnoise(h, w, 4, 4, 72)))
+    col *= folds[..., None]
+    col = mix(col, SLEEVE3 * 1.35, np.clip((vnoise(h, w, 5, 5, 73) - 0.68) * 3, 0, 0.5))   # abgewetzt
+    return col
+
+
+def paint_cuff3(U, V_):
+    """Stulpe: v von hinten (0) nach vorn (1). Vorn umgeschlagener, dunklerer Rand mit Naht und drei Silbernieten."""
+    h, w = U.shape
+    V_ = 1 - V_                                       # die Stulpe ist von vorn nach hinten gebaut
+    col = np.broadcast_to(CUFF3, (h, w, 3)).copy()
+    col *= (0.8 + 0.35 * vnoise(h, w, 8, 16, 65))[..., None]
+    rim = V_ > 0.8
+    col = mix(col, CUFF3 * 0.62, rim.astype(float))
+    stitch = (np.abs(V_ - 0.74) < 0.03) & (((U * 48) % 1.0) < 0.5)
+    col = mix(col, STITCH, stitch.astype(float))
+    for cu in (0.2, 0.5, 0.8):
+        col = mix(col, CUFF_SILVER, (blob(U, V_, cu, 0.9, 0.03, 0.06) > 0.3).astype(float))
+    return col
+
+
+# --- Fassung 4 (Leitung: Stoff statt Leder, Unterarm im Bild): ein weiter Mantelaermel ohne eigene Stulpe -----------
+
+SLEEVE4 = np.array((50, 58, 84), float)          # dunkler Mantelstoff, kaltes Nachtblau
+SLEEVE4_LIGHT = np.array((92, 104, 140), float)  # Lichtbahnen der Falten (muessen bei 854 x 480 lesbar sein)
+
+
+def paint_sleeve4(U, V_):
+    """u rund um den Aermel, v von der Oeffnung (0) zum Ellbogen (1). Faltenbahnen laengs, Saum mit Naht an der
+    Oeffnung, Abnutzung am Saum. Kontrast bewusst hoch: im Foto muessen helle und dunkle Bahnen zu sehen sein."""
+    h, w = U.shape
+    col = np.broadcast_to(SLEEVE4, (h, w, 3)).copy()
+    warp = 0.07 * vnoise(h, w, 6, 3, 91)
+    fold = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 3 + warp + 0.12 * V_))          # drei breite Bahnen rund herum
+    fold2 = 0.5 + 0.5 * np.cos(2 * np.pi * (U * 7 + 2 * warp))
+    col = mix(col * 0.72, SLEEVE4_LIGHT, np.clip(0.75 * fold + 0.25 * fold2, 0, 1) ** 1.5 * 0.9)
+    col *= (0.9 + 0.2 * vnoise(h, w, 24, 8, 92))[..., None]                       # Gewebe
+    hem = V_ < 0.09
+    col = mix(col, SLEEVE4 * 0.55, hem.astype(float))                                  # Saum, dunkler
+    stitch = (np.abs(V_ - 0.065) < 0.012) & (((U * 56) % 1.0) < 0.55)
+    col = mix(col, CUFF_SILVER * 0.8, stitch.astype(float))                            # Naht aus hellem Faden
+    col = mix(col, SLEEVE4 * 1.6, (np.abs(V_ - 0.11) < 0.012).astype(float) * 0.7)     # Borte kurz ueber dem Saum
+    wear = np.clip((vnoise(h, w, 5, 6, 93) - 0.62) * 3, 0, 0.55) * (V_ < 0.3)
+    col = mix(col, SLEEVE4_LIGHT * 1.05, wear)
+    return col
+
+
+def build_sleeve4(part, s, path, radii, mouth_cap=True):
+    """Mantelaermel: path[0] ist die Oeffnung (Mitte, auf der Waffenachse), danach Punkte bis zum Ellbogen;
+    radii dazu. Die Oeffnung ist mit einer dunklen Scheibe geschlossen, die Waffe steckt durch sie hindurch.
+    Reihenfolge der Ringe: Ellbogen zuerst, damit die Flaechen nach aussen zeigen (an Foto geprueft)."""
+    m = lambda p: C(s * p[0], p[1], p[2])                                            # noqa: E731
+    pts = [m(p) for p in path][::-1]
+    rad = [(r,) * 3 for r in radii][::-1]
+    part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0)), "sleeve", cap_start=True, cap_end=mouth_cap)

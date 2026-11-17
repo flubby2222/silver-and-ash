@@ -45,8 +45,16 @@ public static class WeaponPose
     public const float WindUpYawDegrees = 35f;
 
     /// <summary>
-    /// Every drawn point of a weapon model and its hand stays this close to the eyes (metres), in every pose - only the
-    /// sleeve at the height of a blade swing reaches farther, out to the left edge of the picture. The player keeps 35 cm
+    /// Fully wound up, the blade is also lifted this far, its tip up (degrees, as <see cref="Rig.Lift"/>). Without the
+    /// lift the sleeve behind the grip swung so close to the eyes that the near plane cut it open in the lower left of
+    /// the picture (issue #256); lifted, it runs down out of the picture before it gets that close.
+    /// </summary>
+    public const float WindUpLiftDegrees = 40f;
+
+    /// <summary>
+    /// Every point of a weapon model and its sleeve that lies within the picture stays this close to the eyes (metres),
+    /// in every pose - the long sleeves run on out of the picture, and only the sleeve at the height of a blade swing
+    /// reaches farther within it, out to the left edge of the picture. The player keeps 35 cm
     /// from every wall (its radius) - the rest is room for bob, sway and the landing dip.
     /// </summary>
     public const float Reach = 0.30f;
@@ -93,8 +101,8 @@ public static class WeaponPose
     /// <summary>Full recoil: the pistol moves this far up and back.</summary>
     public static Vector3 RecoilShift { get; } = new(0f, 0.012f, -0.035f);
 
-    /// <summary>Fully wound up: the blade hand pulls back to the left and up.</summary>
-    public static Vector3 WindUpShift { get; } = new(-0.03f, 0.015f, -0.04f);
+    /// <summary>Fully wound up: the blade hand pulls back and to the left (a little down, the lift raises the tip).</summary>
+    public static Vector3 WindUpShift { get; } = new(-0.03f, -0.01f, -0.03f);
 
     /// <summary>At the height of a swing the blade hand has moved this far to the right and up.</summary>
     public static Vector3 SwingShift { get; } = new(0.06f, 0.04f, 0f);
@@ -123,6 +131,7 @@ public static class WeaponPose
     public static Matrix4x4 Blade(float swing, float windUp, float tremble) =>
         FileToCamera *
         Matrix4x4.CreateRotationZ(Radians(-(BladeRestRollDegrees + (SwingRollDegrees * swing)))) *
+        Matrix4x4.CreateRotationX(Radians(-WindUpLiftDegrees * windUp)) *
         Matrix4x4.CreateRotationY(Radians((SwingYawDegrees * swing) - (WindUpYawDegrees * windUp))) *
         Matrix4x4.CreateTranslation(BladeGrip + (WindUpShift * windUp) + new Vector3(tremble, 0f, 0f) + (SwingShift * swing));
 
