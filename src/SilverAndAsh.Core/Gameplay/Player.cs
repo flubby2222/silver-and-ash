@@ -403,6 +403,13 @@ public sealed partial class Player
     public RangedWeapon Ranged => _rangedSlots[SelectedSlot]!;
 
     /// <summary>
+    /// The hint under the crosshair (issue #259): <see cref="AmmoHint.Reload"/> while the ranged weapon in the hand is
+    /// empty and not being reloaded. The melee weapon needs no ammunition and never brings a hint.
+    /// </summary>
+    public AmmoHint AmmoHint =>
+        !IsDead && Ranged.Magazine is { Rounds: 0, IsReloading: false } ? AmmoHint.Reload : AmmoHint.None;
+
+    /// <summary>
     /// Puts <paramref name="kind"/> into ranged place <paramref name="slot"/> (ready and full), replacing what was there.
     /// The inventory (#193) and loot use this; so do tests.
     /// </summary>
