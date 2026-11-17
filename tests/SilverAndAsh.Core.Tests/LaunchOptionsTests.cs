@@ -293,4 +293,42 @@ public class LaunchOptionsTests
 
         Assert.Contains("leave out '--look'", error.Message);
     }
+
+    [Fact]
+    public void Without_showroom_the_game_is_played()
+    {
+        Assert.False(LaunchOptions.Parse([]).Showroom);
+    }
+
+    [Fact]
+    public void Showroom_opens_the_showroom_and_goes_with_look()
+    {
+        Assert.True(LaunchOptions.Parse(["--showroom"]).Showroom);
+
+        var options = LaunchOptions.Parse(["--showroom", "--look", "3"]);
+        Assert.True(options.Showroom);
+        Assert.Equal(3, options.Look);
+    }
+
+    [Theory]
+    [InlineData("--level", "heights")]
+    [InlineData("--seed", "123")]
+    [InlineData("--give", "club")]
+    [InlineData("--photo", "ghoul-4m")]
+    [InlineData("--bench", "ghoul-4m")]
+    [InlineData("--clip", "all")]
+    public void Showroom_cannot_be_combined_with_a_level_weapons_or_pictures(string option, string value)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--showroom", option, value]));
+
+        Assert.Contains("'--showroom'", error.Message);
+    }
+
+    [Fact]
+    public void The_unknown_option_message_names_showroom()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--showrom"]));
+
+        Assert.Contains("--showroom", error.Message);
+    }
 }
