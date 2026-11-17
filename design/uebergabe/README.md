@@ -21,7 +21,7 @@ Die Skripte erzeugen nur Modell und Textur, keine Bilder. Die Probebilder entste
 | Datei | Skript | Datum |
 |---|---|---|
 | `assets/models/ghoul.glb`, `assets/models/ghoul.png` | `tools/models/ghoul.py` | 2026-11-16 |
-| `assets/models/chest_beggar.glb`, `chest_guard.glb`, `chest_king.glb`, `chest_vampire.glb` und je `.png` | `tools/models/chest.py` | 2026-11-16 |
+| `assets/models/chest_beggar.glb`, `chest_guard.glb`, `chest_king.glb`, `chest_vampire.glb` und je `.png` | `tools/models/chest.py` | 2026-11-17 |
 | `assets/models/pistol.glb`, `assets/models/pistol_hand.glb`, `assets/models/pistol.png` | `tools/models/pistol.py` | 2026-11-17 |
 | `assets/models/blade.glb`, `assets/models/blade_hand.glb`, `assets/models/blade.png` | `tools/models/blade.py` | 2026-11-17 |
 | `assets/models/bat.glb`, `assets/models/bat.png` | `tools/models/bat.py` | 2026-11-16 |
@@ -71,7 +71,7 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | Was | Wert |
 |---|---|
 | Format | PNG, sRGB, eingebettet in die glb und zusätzlich als `.png` daneben |
-| Größe | Figuren und Waffen 128 × 128, Kisten 64 × 64; höchstens 32 Farben (Kisten 24) |
+| Größe | Figuren, Waffen und Kisten 128 × 128; höchstens 32 Farben |
 | Filterung | **keine**. Raylib: `TEXTURE_FILTER_POINT`, **keine Mipmaps** erzeugen. Der Exporter schreibt `magFilter NEAREST`, `minFilter NEAREST_MIPMAP_NEAREST`; das Mipmap-Feld bitte ignorieren |
 | Vertex-Farben | **keine**. Die Datei hat nur Position, Normale und UV (`TEXCOORD_0`). Die Umrechnung linear → sRGB, die bei Vertex-Farben nötig gewesen wäre, entfällt |
 
@@ -131,6 +131,12 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | `base` | 0, 0, 0 | – | 48 / 80 / 80 / 80 |
 | `lid` | 0, 0,455, −0,365 (Scharnier hinten unten am Deckel) | base | 60 / 96 / 84 / 84 |
 | `lock` | 0, 0,47, 0,39 (Oberkante der Schlossplatte) | base | 12 |
+
+**Was sich gegenüber den Dateien im Spiel ändert (Probestück 12, Issue #258):** alle acht Dateien tauschen (`chest_<stufe>.glb` und `.png`), danach `python tools/models/checksums.py`. Sonst nichts:
+- **Namen, Knoten, Drehpunkte, Eltern, Größe, Dreieckszahlen:** unverändert.
+- **Atlas 128 × 128 statt 64 × 64**, höchstens 32 Farben statt 24. Felder: `planks` (Kasten, 128 × 64), `lidplanks` (Deckel, 64 × 64), `lidband` (Band über die Wölbung, 16 × 64), `band` (Band am Kasten, 16 × 32), `metal`, `lock`, `inside`.
+- **Neue UV-Zuordnung des Deckels:** Die Bretter laufen über die Wölbung (v nach der Bogenlänge des Profils, zehn Reihen von hinten unten über den Deckel nach vorn unten, u quer), statt je Fläche ein Feld zu strecken. Die Deckelbänder haben ein eigenes Feld mit 14 Nieten. Die Stirnflächen und die Unterseite sind wie vorher.
+- **Farben: gedeckte Töne, Stufenfarbe nur Akzent.** Beggar graues rissiges Holz mit schmalen rostigen Bändern; Guard dunkle Eiche, graue Eisenbänder, Stahlblau als Akzent; King dunkles poliertes Holz, Messing und Gold als Akzent; Vampire schwarzes Holz mit hellen Brettkanten, breite Blutrot-Bänder und Siegel, geschwärztes Eisen mit Glanzkante an den Dornen. Die Spielfarben in `ChestView.cs` (Rahmen, Beute) bleiben davon unberührt; das Pulsieren der Vampir-Stufe geht bei den neuen Texturen nur noch über das Rot (Bänder, Siegel), nicht mehr über die ganze Kiste.
 
 **Haltungen:**
 

@@ -34,7 +34,7 @@ TIERS = {
     "beggar": {"wood": (100, 92, 84), "band": (92, 62, 46), "accent": (128, 80, 50)},       # graues Holz, Rost
     "guard": {"wood": (62, 46, 36), "band": (64, 66, 78), "accent": (132, 152, 180)},       # dunkle Eiche, Eisen, Stahl
     "king": {"wood": (58, 38, 30), "band": (150, 118, 60), "accent": (206, 164, 70)},       # poliertes Holz, Messing, Gold
-    "vampire": {"wood": (54, 45, 58), "band": (58, 54, 68), "accent": (150, 26, 40)},       # schwarz gebeizt, Rot als Siegel
+    "vampire": {"wood": (50, 42, 54), "band": (70, 66, 80), "accent": (156, 24, 38)},       # schwarz gebeizt, Rot als Siegel
 }
 BRASS = np.array((176, 140, 72), float)
 DARK = np.array((18, 14, 14), float)
@@ -95,7 +95,7 @@ def painters(tier):
                         m = (row == r) & (np.abs(f - (0.1 + 0.8 * ff)) < 0.04) & (np.abs(U - xs[fy]) < 0.012)
                         col = mix(col, DARK * 1.3, m.astype(float) * 0.9)
         col = mix(col, DARK, ((f < 0.08) | (f > 0.975)).astype(float) * 0.95)             # Fugen
-        col *= (1 + 0.32 * ((f >= 0.08) & (f < 0.17)))[..., None]                        # helle Kante unter der Fuge
+        col *= (1 + (0.8 if tier == "vampire" else 0.32) * ((f >= 0.08) & (f < 0.17)))[..., None]   # helle Kante unter der Fuge (Vampire kraeftiger: die Form muss stehen)
         if rows == 4:
             col = mix(col, DARK * 2.2, np.clip((0.18 - V_) * 2.0, 0, 0.4))               # Schmutz unten (Kasten)
         if tier == "king" and rows == 4:                                                 # Zierkante: Messinglinien
@@ -130,8 +130,9 @@ def painters(tier):
                 col = mix(col, accent, ((np.abs(U - 0.5) < 0.05) & (np.abs(rv - 0.5) > 0.3)).astype(float) * 0.35)
             if tier == "king":                                                           # Messing: Perlen
                 col = mix(col, accent, (blob(U, rv, 0.5, 0.5, 0.18, 0.1) > 0.5).astype(float) * 0.6)
-            if tier == "vampire":                                                        # tiefrote Einlage in der Mitte
-                col = mix(col, accent, (np.abs(U - 0.5) < 0.06).astype(float) * 0.85)
+            if tier == "vampire":                                                        # breites Blutrot, schwarze Raender
+                col = mix(col, accent, (np.abs(U - 0.5) < 0.3).astype(float) * 0.95)
+                col = mix(col, band * 2.0 + 20, ((np.abs(U - 0.5) > 0.3) & (np.abs(U - 0.5) < 0.38)).astype(float) * 0.8)
             return col
         return iron
 
@@ -162,8 +163,8 @@ def painters(tier):
         col = np.broadcast_to(band if tier != "king" else accent * 0.85, (h, w, 3)).copy()
         col *= (0.75 + 0.45 * np.abs(np.sin(V_ * 7 + U * 2)))[..., None]
         col *= (0.9 + 0.2 * vnoise(h, w, 10, 10, 51))[..., None]
-        if tier == "vampire":
-            col = mix(col, accent, (V_ > 0.8).astype(float) * 0.7)                       # rote Spitzen
+        if tier == "vampire":                                                            # geschwaerztes Eisen mit Glanzkante
+            col = mix(col, band * 2.3 + 30, (((V_ * 3) % 1.0) < 0.22).astype(float) * 0.85)
         return col
 
     return {"planks": planks, "lidplanks": lidplanks, "band": make_band(5), "lidband": make_band(14),

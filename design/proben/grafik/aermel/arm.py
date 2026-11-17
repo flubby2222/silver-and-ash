@@ -233,7 +233,7 @@ def paint_sleeve4(U, V_):
     return col
 
 
-def build_sleeve4(part, s, path, radii, mouth_cap=True):
+def build_sleeve4(part, s, path, radii, mouth_cap=True, lining=False):
     """Mantelaermel: path[0] ist die Oeffnung (Mitte, auf der Waffenachse), danach Punkte bis zum Ellbogen;
     radii dazu. Die Oeffnung ist mit einer dunklen Scheibe geschlossen, die Waffe steckt durch sie hindurch.
     Reihenfolge der Ringe: Ellbogen zuerst, damit die Flaechen nach aussen zeigen (an Foto geprueft)."""
@@ -241,3 +241,8 @@ def build_sleeve4(part, s, path, radii, mouth_cap=True):
     pts = [m(p) for p in path][::-1]
     rad = [(r,) * 3 for r in radii][::-1]
     part.loft(tube(pts, rad, 12, ref_up=V(1, 0, 0)), "sleeve", cap_start=True, cap_end=mouth_cap)
+    if lining:
+        # Futter (Runde 3): dieselbe Roehre etwas enger mit Flaechen nach innen. Schneidet die Nahebene den Aermel
+        # an, sieht man Stoff statt des Griffs dahinter.
+        inner = [(r * 0.93,) * 3 for r in radii]
+        part.loft(tube([m(p) for p in path], inner, 12, ref_up=V(1, 0, 0)), "sleeve", cap_start=False, cap_end=False)
