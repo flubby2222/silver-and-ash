@@ -202,6 +202,12 @@ public sealed record StoneHit(int PlayerId) : GameEvent;
 /// <summary>Gorm <paramref name="GormId"/> is dead.</summary>
 public sealed record GormDied(int GormId) : GameEvent;
 
+/// <summary>
+/// Gorm <paramref name="GormId"/> put a heavy foot down while walking (issue #298): one every
+/// <see cref="Gorm.StepLength"/> he covers. Only for the sound - it changes nothing.
+/// </summary>
+public sealed record GormStepped(int GormId) : GameEvent;
+
 /// <summary>A player entered the boss room while Gorm lives: the boss fight begins (his health bar shows).</summary>
 public sealed record BossFightStarted : GameEvent;
 
