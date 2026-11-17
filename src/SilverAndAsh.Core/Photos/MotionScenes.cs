@@ -1,5 +1,7 @@
+using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Photos;
@@ -98,6 +100,10 @@ public static class MotionScenes
                     },
                 };
             }),
+        Slam("gorm-slam", 8, TextureVariant.A, "close"),
+        Slam("gorm-slam-far", 14, TextureVariant.A, "from afar, just outside its reach"),
+        Slam("gorm-slam-far-b", 14, TextureVariant.B, "from afar on floor B"),
+        Slam("gorm-slam-far-c", 14, TextureVariant.C, "from afar on floor C, the cobbles (in the game never in a boss room)"),
         DoorOpening("door-normal-opening", DoorKind.Normal, "A wooden double door 6 m away, seen from the front"),
         DoorOpening("door-boss-opening", DoorKind.Boss, "The boss door 6 m away, seen from the front"),
         new("stairs-rising", "The spiral staircase rising in the boss room after Gorm's death, seen from 6 m: the whole rise until it stands and its lamp is lit (issue #300).",
@@ -109,6 +115,26 @@ public static class MotionScenes
 
     /// <summary>The clip called <paramref name="name"/>, or null.</summary>
     public static MotionScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
+
+    // Gorm's hammer blow and its shock wave (issue #299) in a hall as high as his boss room: Gorm left to fight until
+    // he has nearly wound up a hammer blow, then the player put `metres` away from him (behind him if the hall has room
+    // there, otherwise in front), looking at him. The clip shows the blow and the wave running out over the floor.
+    private static MotionScene Slam(string name, int metres, TextureVariant floor, string what) =>
+        new(name, $"Gorm's hammer blow and the shock wave over the floor, {what} ({metres} m away).",
+            studio =>
+            {
+                var world = studio.Arena('T', metres, RoomTemplate.RoomCeilingHeight, floor);
+                for (var tick = 0; tick < 3000 && !(world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Hammer, StateProgress: >= 0.85f }); tick++)
+                {
+                    world.Tick(PlayerInput.None);
+                }
+
+                var gorm = world.Gorm!;
+                var behind = gorm.Position.Z - metres >= 2f;
+                world.Player.PlaceAt(new Vector3(gorm.Position.X, 0f, behind ? gorm.Position.Z - metres : gorm.Position.Z + metres));
+                PhotoStudio.Face(world.Player, gorm.Position + new Vector3(0f, 1.5f, 0f));
+                return new PhotoSetup(world) { Ticks = 120 };
+            });
 
     // The door of `kind` opened by the player (F, as in the game, before the first tick - see PhotoStudio.DoorHall):
     // its whole swing and a little rest after it.

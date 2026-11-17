@@ -48,6 +48,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `gorm-swing` | Gorm im Kettenschwung von seiner Linken zu seiner Rechten, ein Drittel des Bogens; in einer 6 m hohen Halle wie sein Bossraum (#254) |
 | `gorm-throw-windup` | Gorm vor dem Hakenwurf, der Haken glüht rot: die Ankündigung, zur Hälfte vorbei; in einer 6 m hohen Halle wie sein Bossraum (#254) |
 | `gorm-hammer-windup` | Gorm reißt die Keule hoch über den Kopf: die Ankündigung des Hammerschlags, kurz vor dem Höhepunkt; in einer 6 m hohen Halle wie sein Bossraum (#254) |
+| `gorm-shockwave` | Gorms Schlagwelle halb ausgelaufen (Radius 6 m) aus 14 m, wie das Ende von `gorm-slam-far` angehalten; mit `--bench` misst man, was das Zeichnen der Welle kostet (#299) |
 | `gorm-phase2` | Gorm in Phase 2 (rote Male) aus 10 m in seinem Bossraum, am Ende seines Brüllens |
 | `hud-weapons` | das HUD mit allen Waffenplätzen belegt (Keule, Pistole, Gewehr, Donnerbüchse) |
 | `hud-rifle` | wie `hud-weapons`, aber mit dem Gewehr (2) in der Hand |
@@ -71,6 +72,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |
 | `showroom-a-corridor`, `showroom-a-room`, … `showroom-c-room` | je einen Teil des Musterraums (Issue #283, [musterraum.md](musterraum.md)): Wandvariante A, B oder C in Ganghöhe (3,5 m) bzw. Raumhöhe (6 m), vom Westende des Laufwegs schräg auf die Türwand und die Stücke, mit Schildern |
 | `stairs-4m`, `stairs-10m` | die Wendeltreppe im Bossraum der Ebene 0 nach Gorms Tod (Issue #300): Gorm stirbt vor dem ersten Tick, die Treppe steigt wie im Spiel auf; das Bild entsteht, sobald sie steht und ihre Lampe leuchtet, aus 4 m bzw. 10 m vom Fuß, mit Blick auf ihre halbe Höhe |
+| `showroom-a-corridor`, `showroom-a-room`, … `showroom-c-room` | je einen Teil des Musterraums (Issue #283, [musterraum.md](musterraum.md)): Wandvariante A, B oder C, der Gangteil (3,5 m) mit den Türen und der rissigen Wand bzw. der Raumteil (6 m) mit den Stücken, vom Westende des südlichen Laufwegs schräg auf die Nordwand, mit Schildern |
 
 ## Bild-Varianten vergleichen (`--look`, `--photo compare`)
 
@@ -172,6 +174,9 @@ powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\Silve
 | `door-normal-opening` | eine hölzerne Doppeltür aus 6 m von vorn, geöffnet (F): der ganze Schwung, bis sie offen steht |
 | `door-boss-opening` | dasselbe mit dem Bosstor |
 | `stairs-rising` | die Wendeltreppe im Bossraum nach Gorms Tod aus 6 m: der ganze Aufstieg aus dem Boden, bis sie steht und ihre Lampe leuchtet |
+| `gorm-slam` | Gorms Hammerschlag aus der Nähe: der Spieler steht 8 m vor ihm, hinter ihm stehend, Blick auf Gorm; die Welle aus aufbrechendem Stein läuft auf ihn zu und trifft ihn, sobald der rote Riss seine Füße erreicht (#299) |
+| `gorm-slam-far` | derselbe Schlag aus 14 m, außerhalb der Reichweite (12 m): die ganze Welle von vorn, bis sie vor dem Spieler ausläuft, Boden Variante A |
+| `gorm-slam-far-b`, `gorm-slam-far-c` | dasselbe auf Boden Variante B bzw. C (C, das Kopfsteinpflaster, liegt im Spiel nie im Bossraum) |
 
 **Eine Bewegungs-Szene ergänzen:** ein Eintrag in `MotionScenes.All` ([`MotionScenes.cs`](../src/SilverAndAsh.Core/Photos/MotionScenes.cs)) – dieselben Bausteine wie bei den Fotos, nur mit `Input` je Tick und genug `Ticks` für den ganzen Ablauf, zum Beispiel:
 

@@ -123,6 +123,11 @@ public static class PhotoScenes
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Hammer, StateProgress: >= 0.8f },
             }),
+        new("gorm-shockwave", "Gorm's shock wave half way out (6 m), seen from 14 m, just outside its reach; for --bench with the wave in view (issue #299).",
+            studio => MotionScenes.Find("gorm-slam-far")!.Build(studio) with
+            {
+                StopWhen = world => world.Gorm?.Shockwave is { Radius: >= 6f },
+            }),
         new("gorm-phase2", "Gorm in phase 2 (half his health gone, red marks), 10 m away in his boss room, at the end of his roar (issue #249).",
             studio => new PhotoSetup(HalfHealth(studio.BeforeGorm(10f)))
             {
@@ -182,17 +187,19 @@ public static class PhotoScenes
     /// <summary>The scene called <paramref name="name"/>, or null.</summary>
     public static PhotoScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
 
-    // The showroom (issue #283): every part of every section from its west end, across to its doors and pieces.
+    // The showroom (issue #283): every part of every section from its west end, across to its north wall and pieces.
     private static IEnumerable<PhotoScene> ShowroomScenes()
     {
         foreach (var section in ShowroomLayout.Build().Sections)
         {
             foreach (var part in Enum.GetValues<ShowroomPart>())
             {
-                var height = part == ShowroomPart.Corridor ? "corridor height (3.5 m)" : "room height (6 m)";
+                var shown = part == ShowroomPart.Corridor
+                    ? "the corridor (3.5 m) with its doors and cracked wall"
+                    : "the room (6 m) with its pieces";
                 yield return new(
                     $"showroom-{section.Variant.ToString().ToLowerInvariant()}-{part.ToString().ToLowerInvariant()}",
-                    $"The showroom, wall variant {section.Variant} at {height}: its doors, cracked wall and pieces.",
+                    $"The showroom, wall variant {section.Variant}: {shown}.",
                     studio => new PhotoSetup(ShowroomLayout.Build().ViewOf(section.Index, part, studio.Balance)));
             }
         }
