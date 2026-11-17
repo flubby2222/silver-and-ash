@@ -41,6 +41,7 @@ public class PhotoSceneTests
             "start-room", "room-combat", "room-corridor", "room-treasure", "room-secret", "room-boss",
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "hud-rifle",
+            "bat-screech", "bat-dive",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -145,6 +146,29 @@ public class PhotoSceneTests
         Assert.True(ticks < setup.Ticks, "The ghoul should start its blow long before the scene gives up.");
         Assert.Equal(GhoulState.WindingUp, setup.World.Ghouls[0].State);
         Assert.InRange(setup.World.Ghouls[0].WindUpProgress, 0.5f, 1f);
+    }
+
+    [Fact]
+    public void The_screech_scene_stops_halfway_through_the_screech()
+    {
+        var setup = Built("bat-screech");
+
+        var ticks = setup.Run();
+
+        Assert.True(ticks < setup.Ticks, "The bat should screech long before the scene gives up.");
+        Assert.Equal(BatState.Screeching, setup.World.Bats[0].State);
+        Assert.InRange(setup.World.Bats[0].ScreechProgress, 0.5f, 1f);
+    }
+
+    [Fact]
+    public void The_dive_scene_stops_while_the_bat_dives()
+    {
+        var setup = Built("bat-dive");
+
+        var ticks = setup.Run();
+
+        Assert.True(ticks < setup.Ticks, "The bat should dive long before the scene gives up.");
+        Assert.Equal(BatState.Diving, setup.World.Bats[0].State);
     }
 
     [Fact]

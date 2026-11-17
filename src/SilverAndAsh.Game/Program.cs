@@ -214,7 +214,9 @@ static void RunGame(
         Func<IGhoulView> newGhoulView = () => new PlaceholderGhoulView();
         IGhoulView ghoulView = newGhoulView();
         var gormView = new GormView();
-        IBatView batView = new PlaceholderBatView();
+        // Bats likewise: the model once loaded (below), the placeholder until then or for good.
+        Func<IBatView> newBatView = () => new PlaceholderBatView();
+        IBatView batView = newBatView();
         var projectileView = new ProjectileView();
         var pickupView = new PickupView();
         var impactMarks = new ImpactMarks();
@@ -260,7 +262,7 @@ static void RunGame(
             dummyView = new PlaceholderDummyView();
             ghoulView = newGhoulView();
             gormView = new GormView();
-            batView = new PlaceholderBatView();
+            batView = newBatView();
             projectileView = new ProjectileView();
             pickupView = new PickupView();
             impactMarks = new ImpactMarks();
@@ -301,6 +303,14 @@ static void RunGame(
         {
             newGhoulView = () => new ModelGhoulView(ghoulModel, levelShader);
             ghoulView = newGhoulView();
+        }
+
+        using var batModel = TexturedModel.TryLoad(
+            Path.Combine(AppContext.BaseDirectory, "assets", "models", "bat.glb"), BatPose.Parts, log);
+        if (batModel is not null)
+        {
+            newBatView = () => new ModelBatView(batModel, levelShader);
+            batView = newBatView();
         }
 
         // One chest model per tier (issue #249); a tier without one keeps the placeholder boxes.

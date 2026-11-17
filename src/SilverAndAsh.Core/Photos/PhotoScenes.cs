@@ -54,6 +54,21 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.Arena('B', 4))),
         new("bat-10m", "A bat 10 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('B', 10))),
+        new("bat-screech", "A bat screeching, the warning before its dive, halfway through (issue #249).",
+            studio => new PhotoSetup(studio.Arena('B', 4))
+            {
+                Ticks = 1200,
+                // No spit in the air: it would hide the bat.
+                StopWhen = world => world.Bats[0] is { State: BatState.Screeching, ScreechProgress: >= 0.5f } && world.Projectiles.Count == 0,
+            }),
+        new("bat-dive", "A bat diving at the player, within 4 m of its feet (issue #249).",
+            studio => new PhotoSetup(studio.Arena('B', 4))
+            {
+                Ticks = 1200,
+                // Within 4 m of the player's feet: well into the dive, coming closer.
+                StopWhen = world => world.Bats[0].State == BatState.Diving
+                    && System.Numerics.Vector3.Distance(world.Bats[0].Position, world.Player.Position) < 4f,
+            }),
         new("gorm", "Gorm, the Chained, 6 m away in his boss room.",
             studio => new PhotoSetup(studio.BeforeGorm(6f))),
         new("hud-weapons", "The HUD with every weapon place taken: club in hand, pistol, rifle and blunderbuss.",

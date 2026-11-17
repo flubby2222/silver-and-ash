@@ -1,11 +1,13 @@
 using System.Numerics;
 using Raylib_cs;
+using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// How bats are shown. Behind this interface so the placeholder can later be replaced by real models (v0.10).
+/// How bats are shown: the designer's model (<see cref="ModelBatView"/>), or boxes when it cannot be loaded.
 /// </summary>
 internal interface IBatView
 {
@@ -23,7 +25,129 @@ internal interface IBatView
 }
 
 /// <summary>
-/// Placeholder bat made of boxes: a dark body, two pointed ears and two wings that beat fast. It glows red before a
+/// The bat as the designer's model (assets/models/bat.glb, issue #249), with the movements of the placeholder: the wings
+/// beat, screeching it rears up with the wings high and shivers (the warning before a dive), diving it sweeps the wings
+/// back, it glows red before a spit, flashes when hit, and dead it folds its wings and tumbles while it falls.
+/// </summary>
+internal sealed class ModelBatView(TexturedModel model, LevelShader shader) : IBatView
+{
+    private const float FlashSeconds = 0.15f;
+    private const float WingBeatsPerSecond = 7f;
+    private const float TumbleDegreesPerSecond = 540f;
+
+    private static readonly Color FlashColor = new(255, 250, 235, 255);
+    private static readonly Color GlowColor = new(255, 60, 50, 255);
+
+    private readonly Dictionary<int, State> _states = [];
+    private readonly Matrix4x4[] _turns = new Matrix4x4[BatPose.Parts.Count];
+    private readonly Matrix4x4[] _frames = new Matrix4x4[BatPose.Parts.Count];
+    private float _time;
+
+    public void OnEvent(GameEvent gameEvent)
+    {
+        switch (gameEvent)
+        {
+            case BatHit hit:
+                StateOf(hit.BatId).Flash = 1f;
+                break;
+            case BatDied died:
+                StateOf(died.BatId).IsDead = true;
+                break;
+        }
+    }
+
+    public void Update(float frameSeconds)
+    {
+        _time += frameSeconds;
+        foreach (var state in _states.Values)
+        {
+            state.Flash = MathF.Max(0f, state.Flash - frameSeconds / FlashSeconds);
+            if (state.IsDead)
+            {
+                state.Tumble += TumbleDegreesPerSecond * frameSeconds;
+            }
+        }
+    }
+
+    public void Draw(Bat bat, Vector3 lookAt)
+    {
+        ArgumentNullException.ThrowIfNull(bat);
+        if (bat.IsGone)
+        {
+            return;
+        }
+
+        var state = StateOf(bat.Id);
+        var toViewer = (lookAt - bat.Position) with { Y = 0f };
+        var yaw = toViewer.LengthSquared() > 0.0001f ? MathF.Atan2(toViewer.X, toViewer.Z) : 0f;
+
+        // As the placeholder: a slight bob with the wing beat, the shiver while screeching, tumbling when dead.
+        var phase = _time * WingBeatsPerSecond * 2f * MathF.PI + bat.Id;
+        var stance = state.IsDead || bat.State == BatState.Diving ? BatStance.Diving
+            : bat.State == BatState.Screeching ? BatStance.Screeching
+            : BatStance.Hovering;
+        var bob = stance == BatStance.Hovering ? MathF.Sin(phase) * 0.04f : 0f;
+        var tumble = state.IsDead ? MathF.Min(state.Tumble, 160f) : 0f;
+        var shiver = bat.State == BatState.Screeching && !state.IsDead ? MathF.Sin(_time * 90f) * 0.025f : 0f;
+        var figure =
+            Matrix4x4.CreateRotationX(Deg(tumble)) *
+            Matrix4x4.CreateTranslation(shiver, BodySizes.Bat.Height / 2f + bob, 0f) *
+            Matrix4x4.CreateRotationY(yaw) *
+            Matrix4x4.CreateTranslation(bat.Position);
+
+        var angles = BatPose.Angles(stance, phase);
+        if (stance == BatStance.Screeching)
+        {
+            // The wings tremble with the shiver.
+            var tremble = MathF.Sin(_time * 70f) * 6f;
+            angles = angles with { InnerUp = angles.InnerUp + tremble, OuterUp = angles.OuterUp + tremble };
+        }
+
+        BatPose.Turns(angles, _turns);
+        model.Rig.Pose(_turns, figure, _frames);
+
+        // Before a spit it glows up red - the warning, a tint in code (the model has no red). A hit flash wins.
+        var glow = state.IsDead ? 0f : bat.SpitWindUpProgress;
+        var (tint, amount) = state.Flash > 0f ? (FlashColor, state.Flash)
+            : glow > 0f ? (GlowColor, 0.25f + 0.65f * glow)
+            : (FlashColor, 0f);
+        if (amount > 0f)
+        {
+            shader.SetFlash(tint, amount);
+            model.Draw(_frames);
+            shader.SetFlash(tint, 0f);
+        }
+        else
+        {
+            model.Draw(_frames);
+        }
+    }
+
+    private State StateOf(int id)
+    {
+        if (!_states.TryGetValue(id, out var state))
+        {
+            state = new State();
+            _states[id] = state;
+        }
+
+        return state;
+    }
+
+    private static float Deg(float degrees) => degrees * MathF.PI / 180f;
+
+    private sealed class State
+    {
+        public float Flash { get; set; }
+
+        public bool IsDead { get; set; }
+
+        public float Tumble { get; set; }
+    }
+}
+
+/// <summary>
+/// Placeholder bat made of boxes, drawn when the model cannot be loaded: a dark body, two pointed ears and two wings that beat fast. It glows red before a
 /// spit, raises its wings and shivers while screeching, sweeps them back in a dive and flashes when hit; dead, it
 /// folds its wings and tumbles while it falls.
 /// </summary>
