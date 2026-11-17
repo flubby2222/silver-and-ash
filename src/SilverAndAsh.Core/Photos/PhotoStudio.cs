@@ -257,6 +257,73 @@ public sealed class PhotoStudio
         return world;
     }
 
+    /// <summary>
+    /// Level 0 with the player before a cracked wall as the generator placed it (issue #246): the first one, from seed
+    /// <see cref="Seed"/> on, that fits. The player stands <paramref name="cells"/> cells (2 m each) straight out from the
+    /// wall's middle and <paramref name="along"/> cells along it (a flat angle onto the face), on the side away from the
+    /// secret room - or inside it with <paramref name="fromSecretRoom"/> - and looks at the middle of the face before them.
+    /// <paramref name="variant"/>: only a face of that wall variant. <paramref name="sideways"/>: only a wall of an
+    /// East/West door (its plates turned a quarter).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">If no seed gives such a wall with such a place before it.</exception>
+    public GameWorld BeforeCrackedWall(
+        int cells, int along = 0, bool fromSecretRoom = false, TextureVariant? variant = null, bool sideways = false)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(cells, 1);
+        for (var seed = Seed; seed < Seed + SeedsToTry; seed++)
+        {
+            var generated = _levelZero.Build(seed, Balance);
+            var surfaces = SurfaceVariants.For(generated);
+            var secretCells = generated.Rooms.Where(room => room.Kind == RoomKind.Secret).SelectMany(room => room.FloorCells).ToHashSet();
+            foreach (var plan in generated.Doors.Where(door => door.Kind == DoorKind.Cracked))
+            {
+                if (sideways != (plan.Side is RoomSide.East or RoomSide.West))
+                {
+                    continue;
+                }
+
+                var (front, back) = CrackedWallLook.FaceCells(plan.X, plan.Z, plan.Side);
+                var (frontVariant, backVariant) = CrackedWallLook.Variants(surfaces, plan.X, plan.Z, plan.Side);
+                var faceFront = secretCells.Contains(front) == fromSecretRoom;
+                var (face, faceVariant) = faceFront ? (front, frontVariant) : (back, backVariant);
+                if (variant is { } wanted && faceVariant != wanted)
+                {
+                    continue;
+                }
+
+                if (Place(generated, plan, face, cells, along) is { } place)
+                {
+                    var world = World(generated, place.Cell);
+                    Face(world.Player, place.Target);
+                    return world;
+                }
+            }
+        }
+
+        throw new InvalidOperationException(string.Create(CultureInfo.InvariantCulture,
+            $"No level 0 with seeds {Seed} to {Seed + SeedsToTry - 1} has a cracked wall with a place {cells} cells before it and {along} along it."));
+    }
+
+    // The cell `cells` out from the cracked wall `plan` on the side of its face cell `face` and `along` cells along the
+    // wall, and the middle of that face at look height - if the cell is floor, no door, and sees the face.
+    private static ((int X, int Z) Cell, Vector3 Target)? Place(GeneratedLevel generated, LevelDoor plan, (int X, int Z) face, int cells, int along)
+    {
+        var level = generated.Level;
+        var (outX, outZ) = (face.X - plan.X, face.Z - plan.Z);
+        var cell = (X: plan.X + (outX * cells) + (outZ * along), Z: plan.Z + (outZ * cells) + (outX * along));
+        if (cell.X < 0 || cell.Z < 0 || cell.X >= level.Width || cell.Z >= level.Depth || level[cell.X, cell.Z].IsSolid
+            || generated.Doors.Any(door => door.X == cell.X && door.Z == cell.Z))
+        {
+            return null;
+        }
+
+        // A hand's breadth in front of the face, so the line of sight does not end inside the wall.
+        var target = level.CellCenter(plan.X, plan.Z) + (new Vector3(outX, 0f, outZ) * ((Level.CellSize / 2f) + 0.1f))
+            + new Vector3(0f, LookHeight, 0f);
+        var eye = level.CellCenter(cell.X, cell.Z) + new Vector3(0f, BodySizes.Player.EyeHeight, 0f);
+        return LineOfSight.IsClear(level, eye, target) ? (cell, target) : null;
+    }
+
     // The map with rows and columns swapped.
     private static string Transposed(string map)
     {

@@ -12,8 +12,10 @@ namespace SilverAndAsh.Game.Rendering;
 /// door, a locked door with one iron-bound leaf and a padlock, a boss door with two heavy leaves, and the fine cracks of a
 /// cracked wall. The portal (posts, head panel, arch field) always stands; the leaves swing open away from the player
 /// who opened the door, as far as <see cref="Door.OpenFraction"/> says, starting and stopping slowly. The padlock is
-/// gone once the door is unlocked. A cracked wall is drawn as wall by the level itself; here it only gets its cracks,
-/// and once broken nothing.
+/// gone once the door is unlocked. A cracked wall is drawn as wall by the level itself; here it gets its plates (issue
+/// #246, see <see cref="CrackedWallLook"/>): on each face the wall texture of that face's variant with the cracks painted
+/// in, and a little debris at its foot - and once broken nothing. If a plate cannot be loaded, the fine lines of
+/// door_cracked.glb stand in, and without those the placeholder (<see cref="CrackedWallLook.Choose"/>).
 /// <para>
 /// A kind whose model is missing or broken gets the placeholder: a closed door fills its whole doorway cell (exactly what
 /// blocks you), an open one is gone. Wooden doors are brown planks with dark bands; the boss door is almost black with
@@ -35,23 +37,35 @@ internal sealed class DoorView : IDisposable
     private static readonly Color Brass = new(176, 140, 72, 255);
     private static readonly Color Crack = new(30, 26, 30, 255);
 
-    // Room for the parts of the largest door (portal and two leaves).
-    private const int MostParts = 3;
+    // Room for the parts of the largest model (the cracked wall: two plates, two heaps of debris, a chunk).
+    private const int MostParts = 5;
 
     // Every door model, open leaves and arena grate included, lies within x and z +-1 m of the cell's middle and
     // 0..3.5 m above its floor: its farthest corner is 2.25 m from the middle at half height. A little more, for safety.
     private const float PortalHeight = 3.5f;
     private const float BoundingRadius = 2.5f;
 
+    private static readonly int PanelFront = Index(CrackedWallLook.PanelFront);
+    private static readonly int PanelBack = Index(CrackedWallLook.PanelBack);
+    private static readonly int DebrisFront = Index(CrackedWallLook.DebrisFront);
+    private static readonly int DebrisBack = Index(CrackedWallLook.DebrisBack);
+    private static readonly int ChunkPart = Index(CrackedWallLook.Chunk);
+
     private readonly Dictionary<DoorKind, TexturedModel> _models;
+    private readonly Dictionary<TextureVariant, TexturedModel> _crackedWalls;
     private readonly Matrix4x4[] _turns = new Matrix4x4[MostParts];
     private readonly Matrix4x4[] _frames = new Matrix4x4[MostParts];
 
-    private DoorView(Dictionary<DoorKind, TexturedModel> models) => _models = models;
+    private DoorView(Dictionary<DoorKind, TexturedModel> models, Dictionary<TextureVariant, TexturedModel> crackedWalls)
+    {
+        _models = models;
+        _crackedWalls = crackedWalls;
+    }
 
     /// <summary>
-    /// Loads one model per kind from <paramref name="directory"/> (<see cref="DoorPose.FileName"/>). A missing or broken
-    /// one: a warning in the log and the placeholder for that kind. Needs the window.
+    /// Loads one model per kind from <paramref name="directory"/> (<see cref="DoorPose.FileName"/>), and the cracked
+    /// wall of every wall variant (<see cref="CrackedWallLook.FileName"/>). A missing or broken one: a warning in the log
+    /// and the fallback for it. Needs the window.
     /// </summary>
     public static DoorView Load(string directory, FileLog? log)
     {
@@ -65,14 +79,42 @@ internal sealed class DoorView : IDisposable
             }
         }
 
-        return new DoorView(models);
+        var crackedWalls = new Dictionary<TextureVariant, TexturedModel>();
+        foreach (var variant in Enum.GetValues<TextureVariant>())
+        {
+            var path = Path.Combine(directory, CrackedWallLook.FileName(variant));
+            if (TexturedModel.TryLoad(path, CrackedWallLook.Parts, log) is { } model)
+            {
+                crackedWalls[variant] = model;
+            }
+        }
+
+        return new DoorView(models, crackedWalls);
+    }
+
+    /// <summary>
+    /// Draws one stone of the cracked wall of <paramref name="variant"/> (the chunk of <see cref="CrackedWallLook"/>,
+    /// about <see cref="CrackedWallLook.ChunkSize"/> around its origin) at <paramref name="frame"/>, <paramref name="tint"/>
+    /// darker or brighter. False if that model is not loaded: draw something else. Call between BeginFigures and EndFigures.
+    /// </summary>
+    public bool DrawChunk(TextureVariant variant, Matrix4x4 frame, float tint)
+    {
+        if (!_crackedWalls.TryGetValue(variant, out var model))
+        {
+            return false;
+        }
+
+        model.DrawPart(ChunkPart, frame, tint);
+        return true;
     }
 
     /// <summary>
     /// Draws the doors <paramref name="view"/> may see; the others cost nothing (issue #245: all 25 doors of a level
-    /// every frame took 5.8 ms). Call between BeginFigures and EndFigures.
+    /// every frame took 5.8 ms). <paramref name="surfaces"/> and <paramref name="textures"/>: the wall variants of the
+    /// level and the ones really loaded - a cracked wall shows on each face the variant the level shows there. Call
+    /// between BeginFigures and EndFigures.
     /// </summary>
-    public void Draw(IReadOnlyList<Door> doors, float seconds, ViewCone view)
+    public void Draw(IReadOnlyList<Door> doors, float seconds, ViewCone view, SurfaceVariants surfaces, LevelTextures textures)
     {
         foreach (var door in doors)
         {
@@ -89,7 +131,11 @@ internal sealed class DoorView : IDisposable
             var width = alongX ? size.Z : size.X;
             var depth = alongX ? size.X : size.Z;
 
-            if (_models.TryGetValue(door.Kind, out var model))
+            if (door.Kind == DoorKind.Cracked)
+            {
+                DrawCrackedWall(door, turn, centre, size.Y, depth, surfaces, textures);
+            }
+            else if (_models.TryGetValue(door.Kind, out var model))
             {
                 // The model stands on the floor in the middle of the cell.
                 DrawModel(model, door, turn * Matrix4x4.CreateTranslation(centre.X, door.BoxMin.Y, centre.Z));
@@ -114,14 +160,66 @@ internal sealed class DoorView : IDisposable
         }
     }
 
-    private void DrawModel(TexturedModel model, Door door, Matrix4x4 place)
+    // A broken cracked wall leaves nothing behind. A standing one: the plates, else the lines, else the placeholder.
+    private void DrawCrackedWall(
+        Door door, Matrix4x4 turn, Vector3 centre, float height, float depth, SurfaceVariants surfaces, LevelTextures textures)
     {
-        // A broken cracked wall leaves nothing behind.
-        if (door.Kind == DoorKind.Cracked && door.IsOpen)
+        if (door.IsOpen)
         {
             return;
         }
 
+        // The variant the level really draws on each face (a missing B or C falls back to A there, too).
+        var (front, back) = CrackedWallLook.Variants(surfaces, door.X, door.Z, door.Side);
+        front = textures.Resolve(SurfaceKind.Wall, front);
+        back = textures.Resolve(SurfaceKind.Wall, back);
+        var drawing = CrackedWallLook.Choose(
+            _crackedWalls.ContainsKey(front),
+            _crackedWalls.ContainsKey(back),
+            textures.For(SurfaceKind.Wall, front) is not null && textures.For(SurfaceKind.Wall, back) is not null,
+            _models.ContainsKey(DoorKind.Cracked));
+        var place = turn * Matrix4x4.CreateTranslation(centre.X, door.BoxMin.Y, centre.Z);
+        switch (drawing)
+        {
+            case CrackedWallDrawing.Panels:
+                DrawPlate(_crackedWalls[front], PanelFront, DebrisFront, place);
+                DrawPlate(_crackedWalls[back], PanelBack, DebrisBack, place);
+                break;
+            case CrackedWallDrawing.Lines:
+                DrawModel(_models[DoorKind.Cracked], door, place);
+                break;
+            default:
+                DrawCracks(turn * Matrix4x4.CreateTranslation(centre), height, depth);
+                break;
+        }
+    }
+
+    // Nothing of the cracked wall moves: every part stands where it is in the file.
+    private void DrawPlate(TexturedModel model, int panel, int debris, Matrix4x4 place)
+    {
+        var turns = _turns.AsSpan(0, CrackedWallLook.Parts.Count);
+        var frames = _frames.AsSpan(0, CrackedWallLook.Parts.Count);
+        turns.Fill(Matrix4x4.Identity);
+        model.Rig.Pose(turns, place, frames);
+        model.DrawPart(panel, frames[panel]);
+        model.DrawPart(debris, frames[debris]);
+    }
+
+    private static int Index(string part)
+    {
+        for (var i = 0; i < CrackedWallLook.Parts.Count; i++)
+        {
+            if (CrackedWallLook.Parts[i].Name == part)
+            {
+                return i;
+            }
+        }
+
+        throw new ArgumentException($"The cracked wall has no part '{part}'.", nameof(part));
+    }
+
+    private void DrawModel(TexturedModel model, Door door, Matrix4x4 place)
+    {
         var parts = DoorPose.Parts(door.Kind);
         var turns = _turns.AsSpan(0, parts.Count);
         var frames = _frames.AsSpan(0, parts.Count);
@@ -145,11 +243,9 @@ internal sealed class DoorView : IDisposable
             return;
         }
 
+        // A cracked wall never comes here: DrawCrackedWall has its own fallbacks.
         switch (door.Kind)
         {
-            case DoorKind.Cracked:
-                DrawCracks(place, height, depth);
-                break;
             case DoorKind.Boss:
                 DrawBossDoor(place, width, height, depth, seconds);
                 break;

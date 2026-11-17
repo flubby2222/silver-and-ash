@@ -1,6 +1,8 @@
 using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Game.Rendering;
 
@@ -8,6 +10,11 @@ namespace SilverAndAsh.Game.Rendering;
 /// The cracked wall breaking (issue #185): stone chunks burst out of it, away from whoever struck, tumble to the floor,
 /// bounce once or twice and sink away; a cloud of dust rises and fades. Pure presentation - Core only reports
 /// <see cref="WallBroken"/>, and which wall it was. Its own random numbers: nothing here changes the game.
+/// <para>
+/// Each chunk is the stone of the cracked wall's model (issue #246, <see cref="CrackedWallLook.Chunk"/>), stretched to
+/// its size and a little darker or lighter, in the wall variant of the face the player struck - the stone of the wall
+/// they were looking at. Without that model, plain boxes in the wall colour as before.
+/// </para>
 /// </summary>
 internal sealed class WallBreakView
 {
@@ -32,6 +39,8 @@ internal sealed class WallBreakView
         public Vector3 Angle;
         public Vector3 Size;
         public Color Color;
+        public float Tint;
+        public TextureVariant Variant;
         public float Floor;
         public float Age;
     }
@@ -45,8 +54,11 @@ internal sealed class WallBreakView
         public float Delay;
     }
 
-    /// <summary>Starts the effect when a wall breaks. <paramref name="striker"/> is where the player stood.</summary>
-    public void OnEvent(GameEvent gameEvent, IReadOnlyList<Door> doors, Vector3 striker)
+    /// <summary>
+    /// Starts the effect when a wall breaks. <paramref name="striker"/> is where the player stood;
+    /// <paramref name="surfaces"/> the wall variants of the level (the chunks are of the face on the striker's side).
+    /// </summary>
+    public void OnEvent(GameEvent gameEvent, IReadOnlyList<Door> doors, Vector3 striker, SurfaceVariants surfaces)
     {
         if (gameEvent is not WallBroken broken || broken.DoorId < 0 || broken.DoorId >= doors.Count)
         {
@@ -54,6 +66,7 @@ internal sealed class WallBreakView
         }
 
         var wall = doors[broken.DoorId];
+        var variant = StruckVariant(wall, striker, surfaces);
         var centre = (wall.BoxMin + wall.BoxMax) / 2f;
         var size = wall.BoxMax - wall.BoxMin;
         var away = (centre - striker) with { Y = 0f };
@@ -73,6 +86,10 @@ internal sealed class WallBreakView
                 Spin = new Vector3(Range(-9f, 9f), Range(-9f, 9f), Range(-9f, 9f)),
                 Size = new Vector3(Range(0.12f, 0.38f), Range(0.1f, 0.3f), Range(0.12f, 0.34f)),
                 Color = Scale(LookSettings.WallColor, shade),
+
+                // The stone may only get darker (by up to a quarter): the same spread of shades, moved below 1.
+                Tint = 0.75f + ((shade - 0.75f) / 0.35f * 0.25f),
+                Variant = variant,
                 Floor = wall.BoxMin.Y,
             });
         }
@@ -123,7 +140,7 @@ internal sealed class WallBreakView
     }
 
     /// <summary>Draws chunks and dust. Call between BeginMode3D and EndMode3D, after the opaque world.</summary>
-    public void Draw()
+    public void Draw(DoorView stones)
     {
         foreach (var chunk in _chunks)
         {
@@ -131,7 +148,11 @@ internal sealed class WallBreakView
             var sink = MathF.Max(0f, chunk.Age - (ChunkSeconds - SinkSeconds)) / SinkSeconds;
             var place = Matrix4x4.CreateRotationX(chunk.Angle.X) * Matrix4x4.CreateRotationY(chunk.Angle.Y) * Matrix4x4.CreateRotationZ(chunk.Angle.Z)
                 * Matrix4x4.CreateTranslation(chunk.Position - new Vector3(0f, sink * chunk.Size.Y, 0f));
-            ShadedBox.Draw(place, chunk.Size, chunk.Color);
+            // The stone model is about ChunkSize on each edge: stretched to the chunk's size.
+            if (!stones.DrawChunk(chunk.Variant, Matrix4x4.CreateScale(chunk.Size / CrackedWallLook.ChunkSize) * place, chunk.Tint))
+            {
+                ShadedBox.Draw(place, chunk.Size, chunk.Color);
+            }
         }
 
         foreach (var puff in _puffs.Where(puff => puff.Age > puff.Delay))
@@ -143,6 +164,18 @@ internal sealed class WallBreakView
             Raylib.DrawCube(puff.Position, size, size, size, Dust with { A = alpha });
         }
     }
+
+    // The variant of the face nearer to the striker - the face they hit.
+    private static TextureVariant StruckVariant(Door wall, Vector3 striker, SurfaceVariants surfaces)
+    {
+        var (frontCell, backCell) = CrackedWallLook.FaceCells(wall.X, wall.Z, wall.Side);
+        var (front, back) = CrackedWallLook.Variants(surfaces, wall.X, wall.Z, wall.Side);
+        var toFront = Vector2.DistanceSquared(new Vector2(striker.X, striker.Z), Middle(frontCell));
+        var toBack = Vector2.DistanceSquared(new Vector2(striker.X, striker.Z), Middle(backCell));
+        return toFront <= toBack ? front : back;
+    }
+
+    private static Vector2 Middle((int X, int Z) cell) => new((cell.X + 0.5f) * Level.CellSize, (cell.Z + 0.5f) * Level.CellSize);
 
     private float Range(float min, float max) => min + (_random.NextSingle() * (max - min));
 

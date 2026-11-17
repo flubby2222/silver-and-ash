@@ -60,6 +60,12 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `door-normal-open`, `door-locked-open`, `door-boss-open` | dieselbe Tür ganz offen |
 | `door-normal-10m`, `door-locked-10m`, `door-boss-10m` | dieselbe Tür geschlossen aus 10 m: Ist die Türart noch zu erkennen? |
 | `door-cracked` | die rissige Wand zum Geheimraum, ungebrochen |
+| `cracked-wall-2m`, `cracked-wall-4m`, `cracked-wall-10m` | die erste rissige Wand der Ebene 0 (ab Seed 1), wie der Generator sie gesetzt hat, aus 2, 4 und 10 m von außen: sitzt die Platte ohne Naht in der Wand (Issue #246)? |
+| `cracked-wall-flat` | dieselbe Art Wand von 1 m vor der Fläche und 6 m daneben, also sehr flach (etwa 9°): flimmert die Platte? |
+| `cracked-wall-a-4m`, `cracked-wall-b-4m`, `cracked-wall-c-4m` | je eine rissige Wand, deren Fläche die Wandvariante A, B bzw. C zeigt, aus 4 m |
+| `cracked-wall-sideways-4m` | eine rissige Wand in einem Ost-West-Durchgang aus 4 m: die Platten um 90° gedreht |
+| `cracked-wall-secret-4m` | eine rissige Wand von innen, aus dem Geheimraum, aus 4 m |
+| `cracked-wall-break`, `cracked-wall-break-after` | eine rissige Wand aus 2 m vom Geheimraum aus mit voll aufgeladener Klinge zerschlagen: 8 bzw. 100 Ticks nach dem Schlag (Brocken im Flug bzw. am Boden). Im Geheimraum, weil kein Gegner hineinkommt und das Bild stört |
 | `door-sideways-half` | eine Holztür in einem Ost-West-Durchgang, halb offen: das Modell ist um 90° gedreht |
 | `door-level-seed1`, `door-level-seed2-boss` | die erste Holztür in Seed 1 bzw. das Bosstor in Seed 2, aus 2–3 Zellen Abstand |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |

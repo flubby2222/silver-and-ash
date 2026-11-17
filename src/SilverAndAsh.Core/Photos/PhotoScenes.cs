@@ -1,5 +1,6 @@
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Photos;
@@ -32,6 +33,7 @@ public static class PhotoScenes
         .. DoorScenes(DoorKind.Boss, "boss door"),
         new("door-cracked", "A cracked wall 6 m away in a bare hall: only its fine cracks give it away (issue #245).",
             studio => new PhotoSetup(studio.DoorHall(DoorKind.Cracked))),
+        .. CrackedWallScenes(),
         new("door-sideways-half", "A wooden double door in a wall running north/south, 6 m away, half open (issue #245).",
             studio => new PhotoSetup(studio.DoorHall(DoorKind.Normal, sideways: true, open: true)) { Ticks = 600, StopWhen = Swung(0.5f) }),
         new("door-level-seed1", "The first wooden door of level 0 with seed 1, from 4 to 6 m, closed (issue #245).",
@@ -181,6 +183,53 @@ public static class PhotoScenes
             new($"{file}-10m", $"A {name} 10 m away in a bare hall, closed: can its kind still be told apart (issue #245)?",
                 studio => new PhotoSetup(studio.DoorHall(kind, cells: 5))),
         ];
+    }
+
+    // The cracked wall in the level, its plates in the stone of the walls around (issue #246): does it sit in the wall
+    // without a seam, from near and far, at a flat angle, in every variant, turned, from inside - and how it breaks.
+    private static PhotoScene[] CrackedWallScenes() =>
+    [
+        new("cracked-wall-2m", "The first cracked wall of level 0 from 2 m, outside the secret room (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(1))),
+        new("cracked-wall-4m", "The first cracked wall of level 0 from 4 m (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2))),
+        new("cracked-wall-10m", "A cracked wall of level 0 from 10 m: does it still sit in the wall (issue #246)?",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(5))),
+        new("cracked-wall-flat", "A cracked wall from 2 m out and 6 m along: its plate at a flat angle (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(1, along: 3))),
+        new("cracked-wall-a-4m", "A cracked wall in wall variant A from 4 m (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, variant: TextureVariant.A))),
+        new("cracked-wall-b-4m", "A cracked wall in wall variant B from 4 m (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, variant: TextureVariant.B))),
+        new("cracked-wall-c-4m", "A cracked wall in wall variant C from 4 m (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, variant: TextureVariant.C))),
+        new("cracked-wall-sideways-4m", "A cracked wall of an East/West door from 4 m: the plates turned a quarter (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, sideways: true))),
+        new("cracked-wall-secret-4m", "A cracked wall from inside its secret room, 4 m away (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, fromSecretRoom: true))),
+        new("cracked-wall-break", "A cracked wall 2 m away, broken from inside its secret room: the stone chunks in flight, 8 ticks after the blow (issue #246).",
+            studio => Broken(studio, 8)),
+        new("cracked-wall-break-after", "The same wall 100 ticks after the blow: the dust gone, the stone chunks on the floor (issue #246).",
+            studio => Broken(studio, 100)),
+    ];
+
+    // The cracked wall 2 m before the player inside its secret room (no enemy gets in there to disturb the picture),
+    // struck with a fully charged blade - held until charged, then let go - and `ticks` more ticks after it broke.
+    private static PhotoSetup Broken(PhotoStudio studio, int ticks)
+    {
+        var world = studio.BeforeCrackedWall(1, fromSecretRoom: true);
+        var released = false;
+        var afterBreak = 0;
+        return new PhotoSetup(world)
+        {
+            Ticks = 600,
+            Input = _ =>
+            {
+                released |= world.Player.MeleeCharge is { IsCharging: true, Fraction: >= 1f };
+                return PlayerInput.None with { Melee = !released };
+            },
+            StopWhen = run => run.Doors.Any(door => door.Kind == DoorKind.Cracked && door.IsOpen) && ++afterBreak >= ticks,
+        };
     }
 
     private static Func<GameWorld, bool> Swung(float fraction) => world => world.Doors[0].OpenFraction >= fraction;
