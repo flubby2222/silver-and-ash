@@ -24,13 +24,22 @@ public class SoundPackTests
         { new PlayerStepped(0, Foot.Right), SoundKind.StepRight, ["p1-schritt-r1.wav", "p1-schritt-r2.wav", "p1-schritt-r3.wav"] },
         { new PlayerHit(0, 5), SoundKind.PlayerHurt, ["p1-schmerz.wav"] },
         { new GhoulWindUp(2), SoundKind.GhoulWindUp, ["p1-ghul-ankuendigung.wav"] },
-        { new GhoulDied(2), SoundKind.GhoulDied, ["p1-ghul-sterben.wav"] },
+        { new GhoulDied(2), SoundKind.GhoulDied, ["p1-ghul-sterben.wav", "p1-ghul-sterben-2.wav"] },
         { new DoorOpened(1), SoundKind.DoorOpened, ["p1-tuer-oeffnen.wav"] },
         { new ChestOpened(1, 0, ChestTier.Guard), SoundKind.ChestOpened, ["p1-kiste-oeffnen.wav"] },
         { new SilverTaken(1, 0, 10), SoundKind.SilverTaken, ["p1-aufheben-silber.wav"] },
         { new PickupTaken(1, 0, ConsumableKind.BloodVial), SoundKind.BloodVialTaken, ["p1-aufheben-phiole.wav"] },
         { new PickupTaken(1, 0, ConsumableKind.ConsecratedAmmo), SoundKind.ConsecratedAmmoTaken, ["p1-aufheben-weihmunition.wav"] },
         { new KeyTaken(1, 0), SoundKind.KeyTaken, ["p1-aufheben-schluessel.wav"] },
+
+        // Issue #291.
+        { new PlayerJumped(0), SoundKind.Jump, ["p1-sprung.wav"] },
+        { new PlayerDashed(0), SoundKind.Dash, ["p1-dash.wav"] },
+        { new PlayerDodged(0), SoundKind.Dash, ["p1-dash.wav"] },
+        { new PlayerLanded(0, SoundBoard.LandingSoundMinimumFallHeight), SoundKind.Land, ["p1-landung.wav"] },
+        { new PlayerLanded(0, 3f), SoundKind.Land, ["p1-landung.wav"] },
+        { new GhoulNoticed(2, 0), SoundKind.GhoulNoticed, ["p1-ghul-entdecken.wav", "p1-ghul-entdecken-2.wav"] },
+        { new ConsecrationEnded(0), SoundKind.ConsecrationEnded, ["p1-weihe-ende.wav"] },
     };
 
     [Theory]
@@ -44,6 +53,61 @@ public class SoundPackTests
         Assert.Equal(kind, cue.Kind);
         Assert.Contains(cue.File, files);
         Assert.Equal(SoundBoard.SoundVolume, cue.Volume);
+    }
+
+    [Theory]
+    [InlineData(0f)]
+    [InlineData(0.25f)]
+    [InlineData(0.4f)]
+    [InlineData(SoundBoard.LandingSoundMinimumFallHeight - 0.01f)]
+    public void A_landing_from_below_the_threshold_plays_nothing(float fallHeight)
+    {
+        Assert.Null(SoundBoard.KindFor(new PlayerLanded(0, fallHeight)));
+        Assert.Empty(new SoundCues(1).For([new PlayerLanded(0, fallHeight)], Pack1));
+    }
+
+    [Fact]
+    public void The_landing_threshold_lies_above_the_step_height_and_below_a_normal_jump()
+    {
+        Assert.True(SoundBoard.LandingSoundMinimumFallHeight > BodySizes.Player.StepHeight);
+        Assert.True(SoundBoard.LandingSoundMinimumFallHeight < Balance.Default.Player.JumpHeight);
+    }
+
+    [Theory]
+    [InlineData(SoundKind.GhoulNoticed)]
+    [InlineData(SoundKind.GhoulDied)]
+    public void The_two_ghoul_takes_take_turns(SoundKind kind)
+    {
+        var cues = new SoundCues(5);
+        GameEvent gameEvent = kind == SoundKind.GhoulDied ? new GhoulDied(1) : new GhoulNoticed(1, 0);
+
+        var files = Enumerable.Range(0, 20).Select(_ => Assert.Single(cues.For([gameEvent], Pack1)).File).ToList();
+
+        // Two files, never the same twice in a row: they alternate, decided by the seed.
+        Assert.All(files.Zip(files.Skip(1)), pair => Assert.NotEqual(pair.First, pair.Second));
+        Assert.Equal(Pack1.Variants(kind).Order(), files.Distinct().Order());
+    }
+
+    [Fact]
+    public void The_menu_click_plays_without_an_event_in_pack_1_only()
+    {
+        var cue = Assert.Single(new SoundCues(0).For(SoundKind.MenuClick, Pack1));
+        Assert.Equal("p1-menue-klick.wav", cue.File);
+        Assert.Equal(SoundBoard.SoundVolume, cue.Volume);
+
+        Assert.Empty(new SoundCues(0).For(SoundKind.MenuClick, SoundPack.Old));
+    }
+
+    [Fact]
+    public void The_menu_click_belongs_to_no_event_of_core()
+    {
+        GameEvent[] events =
+        [
+            new PlayerJumped(0), new PlayerDashed(0), new PlayerDodged(0), new PlayerLanded(0, 9f), new GhoulNoticed(1, 0),
+            new ConsecrationEnded(0), new PlayerStepped(0, Foot.Left), new GhoulDied(1),
+        ];
+
+        Assert.DoesNotContain(SoundKind.MenuClick, events.Select(SoundBoard.KindFor));
     }
 
     [Fact]
@@ -65,6 +129,12 @@ public class SoundPackTests
     {
         Assert.Empty(new SoundCues(1).For(
             [BladeSwing, new ReloadFinished(0), new GhoulDied(1), new DoorOpened(1), new KeyTaken(1, 0)], SoundPack.Old));
+
+        // Issue #291: silent in the old pack, too.
+        Assert.Empty(new SoundCues(1).For(
+            [new PlayerJumped(0), new PlayerDashed(0), new PlayerDodged(0), new PlayerLanded(0, 3f), new GhoulNoticed(1, 0),
+             new ConsecrationEnded(0)],
+            SoundPack.Old));
     }
 
     [Fact]
@@ -140,7 +210,8 @@ public class SoundPackTests
     [Fact]
     public void The_files_waiting_for_their_events_are_checked_in_but_not_played()
     {
-        Assert.Equal(7, SoundPack.Pack1WithoutEvent.Length);
+        // Since #291 only the equipment pickup waits - the game cannot pick up equipment before the loot system (#194).
+        Assert.Equal("p1-aufheben-ausruestung.wav", Assert.Single(SoundPack.Pack1WithoutEvent));
         Assert.All(SoundPack.Pack1WithoutEvent, file =>
         {
             Assert.Contains(file, SoundBoard.AllFiles);
