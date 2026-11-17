@@ -22,8 +22,8 @@ Die Skripte erzeugen nur Modell und Textur, keine Bilder. Die Probebilder entste
 |---|---|---|
 | `assets/models/ghoul.glb`, `assets/models/ghoul.png` | `tools/models/ghoul.py` | 2026-11-16 |
 | `assets/models/chest_beggar.glb`, `chest_guard.glb`, `chest_king.glb`, `chest_vampire.glb` und je `.png` | `tools/models/chest.py` | 2026-11-16 |
-| `assets/models/pistol.glb`, `assets/models/pistol_hand.glb`, `assets/models/pistol.png` | `tools/models/pistol.py` | 2026-11-16 |
-| `assets/models/blade.glb`, `assets/models/blade_hand.glb`, `assets/models/blade.png` | `tools/models/blade.py` | 2026-11-16 |
+| `assets/models/pistol.glb`, `assets/models/pistol_hand.glb`, `assets/models/pistol.png` | `tools/models/pistol.py` | 2026-11-17 |
+| `assets/models/blade.glb`, `assets/models/blade_hand.glb`, `assets/models/blade.png` | `tools/models/blade.py` | 2026-11-17 |
 | `assets/models/bat.glb`, `assets/models/bat.png` | `tools/models/bat.py` | 2026-11-16 |
 
 **Hilfsmodule** (keine eigenen Assets):
@@ -155,11 +155,11 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | Teil (pistol.glb) | Drehpunkt (Meter) | hängt an | Dreiecke |
 |---|---|---|---|
 | `barrel` | 0, 0, 0 | stock | 96 |
-| `cock` (Hahn) | −0,0126, 0,018, 0,0072 | stock | 40 |
+| `cock` (Hahn, Fassung 4: kleiner, mit hellem Stein) | −0,0126, 0,018, 0,0072 | stock | 114 |
 | `fittings` (Beschläge, Bügel, Ladestock, Batterie) | 0, 0, 0 | stock | 214 |
 | `flash` (Mündungsfeuer, unbeleuchtet) | 0, 0, 0 | stock | 42 |
 | `stock` | 0, 0, 0 | – | 144 |
-| `arm` (in `pistol_hand.glb`: Handschuh mit Fingern, Stulpe, Ärmel) | 0, 0, 0 | stock | 376 |
+| `arm` (in `pistol_hand.glb`: weiter Mantelärmel, ohne Hand) | 0, 0, 0 | stock | 156 |
 
 **Haltungen:**
 
@@ -179,7 +179,7 @@ Werkzeuge: nur Blender 5.3 mit den mitgelieferten Modulen (bpy, bmesh, mathutils
 | Teil | Drehpunkt | hängt an | Dreiecke |
 |---|---|---|---|
 | `sword` (Klinge, Parierstange, Griff, Knauf) | 0, 0, 0 | – | 152 |
-| `arm` (in `blade_hand.glb`, linke Hand: Handschuh mit Fingern, Stulpe, Ärmel) | 0, 0, 0 | sword | 396 |
+| `arm` (in `blade_hand.glb`, linker Mantelärmel, ohne Hand) | 0, 0, 0 | sword | 168 |
 
 **Haltungen** (aus `DrawBlade`; die Hand liegt bei (−0,11, −0,095, 0,19) im Kameraraum):
 
@@ -240,7 +240,17 @@ Erst schwenken, dann heben: `Drehung = Schwenken × Heben`.
 1. Lädt Raylib die Knoten-Verschiebungen in die Ecken ein? Bleibt die Reihenfolge der Meshes erhalten? Lassen sich Namen lesen?
 2. Kamera-Matrix der Waffen ohne Spiegelung (siehe Pistole).
 3. Shader mit Textur, Normale und Licht je Ecke; Point-Filter ohne Mipmaps.
-4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind in der zweiten Fassung: Finger einzeln um den Griff, Knöchel, Daumen, bei der Pistole der Zeigefinger am Abzug, Stulpe mit Naht und zwei Silbernieten. Sie hängen starr an der Waffe; Dateinamen und Drehpunkte sind gleich geblieben.
+4. Die Waffenhände (`pistol_hand.glb`, `blade_hand.glb`) sind seit Probestück 11 **Ärmel ohne Hand** (Issue #256, Stoff statt Handschuh). Sie hängen starr an der Waffe; Dateinamen, Knoten und Drehpunkte sind gleich geblieben.
+
+### Was sich gegenüber den Dateien im Spiel ändert (Probestück 11, Issues #256 und #257)
+
+Alle sechs Dateien tauschen (`pistol.glb`, `pistol_hand.glb`, `pistol.png`, `blade.glb`, `blade_hand.glb`, `blade.png`), danach `python tools/models/checksums.py`. Sonst nichts:
+- **Namen, Knoten, Drehpunkte, Eltern, Meshreihenfolge:** unverändert. `arm` ist weiter ein Teil mit einem Mesh.
+- **Geometrie:** `arm` ist ein Ärmel (Rohr aus 12 Seiten, Öffnung um den Griff, läuft aus dem Bild: Pistole nach rechts unten, Klinge nach links unten), Pistole 156 statt 376 Dreiecke, Klinge 168 statt 396. `cock` hat 114 statt 40 Dreiecke, ist ein Drittel kleiner als im Probestück 10 und trägt einen hellen Feuerstein.
+- **Texturen:** `pistol.png` und `blade.png` sind neu gemalt (128 × 128, 32 Farben); das Feld `glove` entfällt, die Pistole hat dafür die Felder `lock` (Hahn, Pfanne, Batterie) und `flint` (Stein), Ärmel und Saum liegen im Feld `sleeve`. Die Ursache der „seltsamen Linien“: der Stein benutzte das Lauf-Feld mit Silberlinien.
+- **Prüfsummen** ändern sich; `assets/HERKUNFT.md`: gleiche Skripte, neues Datum.
+- **Nicht lösbar im Modell:** Blade „aufgeladen“: das Heft liegt etwa 1 cm vor dem Auge, die Nahebene schneidet den Ärmel an (Blick ins Innere). Lösung nur über die Haltung (`WeaponPose.Blade` weiter vor oder Nahebene näher).
+- **Skripte:** `tools/models/arm.py` (neu: `build_sleeve4`, `paint_sleeve4`), `pistol.py`, `blade.py`, und `psx.py` mit der Funktion `bake_scale` (wie in `tools/models/psx.py` auf `main`). Aufruf wie bisher.
 
 ## Level-Texturen der Katakomben (Issue #233)
 

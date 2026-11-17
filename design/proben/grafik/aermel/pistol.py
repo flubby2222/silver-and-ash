@@ -239,9 +239,11 @@ def build_hand():
     part = Part("arm", (0, 0, 0), UV, parent="stock")
     # Fassung 4: weiter Mantelaermel, Oeffnung um den Griff unter dem Schloss (die Pistole ragt heraus), von dort
     # nach rechts unten zum Ellbogen ausserhalb des Bildes. Weiter als der Arm (Oeffnung ausgestellt).
-    path = [(0, -0.010, 0.003), (0, -0.017, 0.0), (0.0, -0.034, -0.008), (0.03, -0.052, -0.017), (0.08, -0.080, -0.03),
-            (0.16, -0.12, -0.06), (0.30, -0.17, -0.12)]
-    build_sleeve4(part, +1, path, [0.031, 0.0245, 0.030, 0.031, 0.033, 0.038, 0.044])
+    # Fassung 5: Rohr mit Achse. Kurz am Griff entlang, dann deutlich schraeg nach rechts unten aus dem Bild; die
+    # Oeffnung ist weiter als der Arm und gestaucht (Trichter), der Unterarm ist schmaler.
+    path = [(0, -0.010, 0.003), (0, -0.017, 0.0), (0.0, -0.030, -0.006), (0.045, -0.042, -0.014), (0.10, -0.052, -0.024),
+            (0.19, -0.070, -0.040), (0.32, -0.095, -0.065)]
+    build_sleeve4(part, +1, path, [0.029, 0.0235, 0.027, 0.027, 0.029, 0.034, 0.042], mouth_cap=False)
     return part
 
 
