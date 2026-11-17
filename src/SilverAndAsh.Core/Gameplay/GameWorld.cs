@@ -1,6 +1,7 @@
 using System.Numerics;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
@@ -35,6 +36,8 @@ public sealed class GameWorld
     private int _nextPickupId;
     private readonly List<Loot> _loot = [];
     private int _nextLootId;
+    private readonly List<WeaponDrop> _weaponDrops = [];
+    private int _nextWeaponDropId;
     private int _nextProjectileId;
     private readonly Level _levelWithOpenDoors;
     private readonly IReadOnlyList<LevelDoor> _doorPlan;
@@ -150,6 +153,12 @@ public sealed class GameWorld
 
     /// <summary>Name of the level, shown briefly at the start (e.g. "THE CATACOMBS"), or null for hand-made levels.</summary>
     public string? LevelName { get; init; }
+
+    /// <summary>
+    /// Which texture variant each wall, floor and ceiling shows (issue #244) - only how the level looks, never a rule.
+    /// Variant A everywhere unless the level was generated (see <see cref="SurfaceVariants.For"/>).
+    /// </summary>
+    public SurfaceVariants Surfaces { get; init; } = SurfaceVariants.Plain;
 
     /// <summary>
     /// The level as it was built, all doors open - for drawing - except unbroken cracked walls, which are drawn as
@@ -283,7 +292,10 @@ public sealed class GameWorld
     /// A fresh world for the same level: full health, every enemy back at its start - but with a new seed (taken
     /// from this one), so the bats fly differently than last time. The balancing values stay the same.
     /// </summary>
-    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan, _roomPlan, _chestPlan);
+    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan, _roomPlan, _chestPlan)
+    {
+        Surfaces = Surfaces,
+    };
 
     /// <summary>
     /// What <paramref name="player"/> would use with F right now: the nearest usable thing they look at, within
@@ -588,6 +600,9 @@ public sealed class GameWorld
 
     /// <summary>Silver and keys lying in the level (taken ones are removed after each tick).</summary>
     public IReadOnlyList<Loot> Loot => _loot;
+
+    /// <summary>Weapons lying in the level, dropped from an inventory (#193). Taking them up comes with #194.</summary>
+    public IReadOnlyList<WeaponDrop> WeaponDrops => _weaponDrops;
 
     /// <summary>The silver among <see cref="Loot"/>.</summary>
     public IReadOnlyList<Loot> SilverPiles => _loot.Where(loot => loot.Kind == LootKind.Silver).ToList();
@@ -1066,6 +1081,12 @@ public sealed class GameWorld
         Player.Tick(input);
         _events.AddRange(Player.Events);
 
+        // A weapon dropped from the inventory lies where the player stood.
+        foreach (var dropped in Player.Events.OfType<WeaponDropped>())
+        {
+            _weaponDrops.Add(new WeaponDrop(_nextWeaponDropId++, dropped.Kind, dropped.Position, dropped.Ranged));
+        }
+
         if (input.Interact)
         {
             Interact(Player);
@@ -1134,6 +1155,11 @@ public sealed class GameWorld
         DropGormsLoot();
         MovePickups();
         MoveLoot();
+        foreach (var weapon in _weaponDrops)
+        {
+            weapon.Fall(Level, Balance.Player.Gravity);
+        }
+
         foreach (var chest in _chests)
         {
             chest.Tick();

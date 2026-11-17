@@ -14,7 +14,7 @@ Hier steht nur, was sich nicht aus dem Code ablesen lässt. Die Hintergründe st
 2. **Jedes Issue nennt Abnahmekriterien** und sagt, wie es abgeschlossen wird (PR-Merge oder Schließen).
 3. **Pull-Request-Text auf Deutsch:** *Was*, *Warum*, *Wie testen*, *Bitte genauer ansehen*, dazu `Closes #<nr>`. PRs ohne Issue kommen als Karte aufs Board in die Spalte *Review*.
 4. **Sichtbare Änderungen** stehen im `CHANGELOG.md` unter *Unveröffentlicht*.
-5. **Merge:** GitHub merged per Auto-Merge nach drei Freigaben – CI grün, Reviewer ohne offene Befunde (Commit-Status `review`), Tester ohne Fehler (Commit-Status `tester`). Wer den PR geschrieben hat, setzt diese Status nie selbst.
+5. **Merge:** GitHub merged per Auto-Merge nach drei Freigaben – CI grün, Reviewer ohne offene Befunde (Commit-Status `review`), Tester ohne Fehler (Commit-Status `tester`). Wer den PR geschrieben hat, setzt diese Status nie selbst. Einzige Ausnahme ist `tools/pr-nachziehen.ps1`: Es bringt offene PRs nach einem Merge auf den neuesten `main` und überträgt `review` und `tester` auf den neuen Commit, wenn die eigenen Änderungen des PRs dabei gleich geblieben sind. Es vergibt nie eine Freigabe neu.
 6. **Leitplanken-PRs merged nur der Mensch:** alles an `CLAUDE.md`, `.claude/**`, `.github/**`, `docs/entscheidungen/**`. Auch Releases (Tags) löst nur der Mensch aus.
 7. **Tests nie verbiegen** (nicht löschen, abschwächen, überspringen). Ist ein Test selbst falsch: im PR begründen.
 8. **Notbremse:** nach etwa drei gescheiterten Versuchen am selben Fehler aufhören und die Leitung fragen.
@@ -57,6 +57,7 @@ Mehrere dieser Regeln erzwingen Hooks in [.claude/hooks/](.claude/hooks/). Block
 - **Figuren hinter einer austauschbaren Schnittstelle** dargestellt.
 - **Balancing-Werte** in `assets/balance.json`, nicht im Code.
 - **Logs nur lokal.**
+- **Online-Coop offen halten** (siehe [0003](docs/entscheidungen/0003-online-coop-offenhalten.md)): in `Core` nie „der Spieler“, sondern „ein Spieler“; alles, was das Spiel verändert, kommt als Eingabe in den Tick; Zufall nur mit Seed im Spielzustand; kein veränderlicher `static`-Zustand; Sound und Effekte über Ereignisse aus `Core`.
 
 ## Setting
 

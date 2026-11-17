@@ -100,6 +100,93 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public void Without_photo_the_game_is_played()
+    {
+        var options = LaunchOptions.Parse([]);
+
+        Assert.Null(options.Photo);
+        Assert.Null(options.PhotoFolder);
+    }
+
+    [Theory]
+    [InlineData("ghoul-4m")]
+    [InlineData("all")]
+    [InlineData("list")]
+    [InlineData("compare")]
+    public void Photo_takes_a_scene_all_or_list(string photo)
+    {
+        Assert.Equal(photo, LaunchOptions.Parse(["--photo", photo]).Photo);
+    }
+
+    [Fact]
+    public void Bench_takes_one_photo_scene()
+    {
+        var options = LaunchOptions.Parse(["--bench", "room-combat"]);
+
+        Assert.Equal("room-combat", options.Bench);
+        Assert.Null(options.Photo);
+        Assert.Null(LaunchOptions.Parse([]).Bench);
+    }
+
+    [Theory]
+    [InlineData]
+    [InlineData("all")]
+    [InlineData("ghoul-5m")]
+    public void Bench_without_a_known_scene_is_rejected_with_the_known_ones(params string[] scene)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--bench", .. scene]));
+
+        Assert.Contains("room-combat", error.Message);
+    }
+
+    [Fact]
+    public void Bench_and_photo_cannot_be_combined()
+    {
+        Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--bench", "room-combat", "--photo", "all"]));
+    }
+
+    [Fact]
+    public void Photo_with_out_names_the_folder()
+    {
+        var options = LaunchOptions.Parse(["--photo", "all", "--out", "some folder"]);
+
+        Assert.Equal("some folder", options.PhotoFolder);
+    }
+
+    [Fact]
+    public void An_unknown_photo_scene_is_rejected_with_the_known_ones()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo", "ghoul-5m"]));
+
+        Assert.Contains("ghoul-5m", error.Message);
+        Assert.Contains("ghoul-4m", error.Message);
+    }
+
+    [Fact]
+    public void Photo_without_a_scene_is_rejected()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo"]));
+
+        Assert.Contains("needs a scene", error.Message);
+    }
+
+    [Theory]
+    [InlineData]
+    [InlineData("  ")]
+    public void Out_without_a_folder_is_rejected(params string[] folder)
+    {
+        Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo", "all", "--out", .. folder]));
+    }
+
+    [Fact]
+    public void Out_without_photo_is_rejected()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--out", "photos"]));
+
+        Assert.Contains("only goes with '--photo'", error.Message);
+    }
+
+    [Fact]
     public void Without_give_no_weapon_is_given()
     {
         Assert.Empty(LaunchOptions.Parse([]).Give!);
@@ -131,5 +218,41 @@ public class LaunchOptionsTests
         var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--give"]));
 
         Assert.Contains("needs a weapon", error.Message);
+    }
+
+    [Fact]
+    public void Without_look_the_game_keeps_its_picture()
+    {
+        Assert.Null(LaunchOptions.Parse([]).Look);
+    }
+
+    [Theory]
+    [InlineData("1", 1)]
+    [InlineData("4", 4)]
+    public void Look_chooses_a_picture_variant(string text, int expected)
+    {
+        Assert.Equal(expected, LaunchOptions.Parse(["--look", text]).Look);
+        Assert.Equal(expected, LaunchOptions.Parse(["--photo", "ghoul-4m", "--look", text]).Look);
+    }
+
+    [Theory]
+    [InlineData]
+    [InlineData("0")]
+    [InlineData("5")]
+    [InlineData("-1")]
+    [InlineData("two")]
+    public void Look_without_a_variant_from_1_to_4_is_rejected(params string[] variant)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--look", .. variant]));
+
+        Assert.Contains("from 1 to 4", error.Message);
+    }
+
+    [Fact]
+    public void Compare_takes_every_variant_itself()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo", "compare", "--look", "2"]));
+
+        Assert.Contains("leave out '--look'", error.Message);
     }
 }

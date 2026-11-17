@@ -3,8 +3,10 @@ using System.Numerics;
 using System.Reflection;
 using Raylib_cs;
 using SilverAndAsh.Core;
+using SilverAndAsh.Core.Diagnostics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
+using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 using SilverAndAsh.Game.Input;
@@ -49,6 +51,8 @@ using (log)
     Func<int, Balance, GameWorld>? newWorld = null;
     Func<GameWorld, GameWorld>? nextWorld = null;
     int? seed = null;
+    int? look = null;
+    PhotoRequest? photos = null;
     try
     {
         var options = LaunchOptions.Parse(args);
@@ -81,6 +85,65 @@ using (log)
             nextWorld = world => WithGivenWeapons(plainNext(world), give);
             log?.Info($"Every run starts with: {string.Join(", ", give)}.");
         }
+
+        // Test option: --look 3 draws the world in one of the picture variants of issue #234 (decision record 0010).
+        look = options.Look;
+        if (look is not null)
+        {
+            log?.Info($"Picture variant {look}.");
+        }
+
+        // Test option: --photo <scene> takes fixed pictures for testers and designers and quits (issue #224,
+        // docs/foto-skript.md). Only in the debug version, like --give.
+        if (options.Photo is { } photo)
+        {
+            if (photo == LaunchOptions.ListPhotos)
+            {
+                foreach (var scene in PhotoScenes.All)
+                {
+                    Console.WriteLine($"{scene.Name,-16} {scene.Description}");
+                }
+
+                newWorld = null;
+            }
+            else
+            {
+                var folder = Path.GetFullPath(options.PhotoFolder ?? Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "photos"));
+                var compare = photo == LaunchOptions.ComparePhotos;
+                var scenes = photo == LaunchOptions.AllPhotos ? PhotoScenes.All
+                    : compare ? PhotoScenes.LookComparison
+                    : [PhotoScenes.Find(photo)!];
+                photos = new PhotoRequest(
+                    scenes, folder, RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), compare);
+                log?.Info($"Photo mode: {scenes.Count} scenes into '{folder}'.");
+            }
+        }
+
+        // Test option: --bench <scene> measures how long a frame of this photo scene takes, without VSync (issue #233,
+        // docs/foto-skript.md). Only in the debug version, like --photo.
+        if (options.Bench is { } bench)
+        {
+            photos = new PhotoRequest(
+                [PhotoScenes.Find(bench)!], Folder: string.Empty,
+                RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), Compare: false, Bench: true);
+            log?.Info($"Bench mode: scene '{bench}', {PhotoRequest.WarmUpFrames} frames to warm up, {PhotoRequest.MeasuredFrames} measured.");
+        }
+#else
+        if (options.Bench is not null)
+        {
+            throw new ArgumentException("'--bench' works only in the debug version (dotnet run).");
+        }
+
+        if (options.Photo is not null)
+        {
+            throw new ArgumentException("'--photo' works only in the debug version (dotnet run).");
+        }
+
+        if (options.Look is not null)
+        {
+            throw new ArgumentException("'--look' works only in the debug version (dotnet run).");
+        }
 #endif
     }
     catch (Exception exception) when (exception is ArgumentException or LevelFormatException or IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -88,6 +151,9 @@ using (log)
         log?.Error("Could not load the level.", exception);
         Console.Error.WriteLine($"Could not load the level: {exception.Message}");
         Environment.ExitCode = 1;
+
+        // No game after a failed start - also when the level was already loaded (e.g. '--photo' in the release version).
+        newWorld = null;
     }
 
     if (newWorld is not null && nextWorld is not null)
@@ -95,7 +161,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log);
+            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look));
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -108,11 +174,14 @@ using (log)
 }
 
 // newWorld builds a world from a seed and balancing values; nextWorld the one after a run ended (new layout on level 0).
+// look: how the 3D world is drawn - the standard variant 2 (issue #237) unless --look chose another (debug version, issue #234).
 static void RunGame(
-    Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log)
+    Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
+    PhotoRequest? photos, LookVariant look)
 {
-    // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted.
-    Raylib.SetConfigFlags(ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
+    // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted. The bench (--bench) draws as
+    // fast as it can: no VSync, and no frame rate limit is set anywhere.
+    Raylib.SetConfigFlags(photos is { Bench: true } ? ConfigFlags.ResizableWindow : ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
     Raylib.InitWindow(WindowWidth, WindowHeight, "Silver & Ash");
     BringWindowOnScreen(log);
 
@@ -140,14 +209,23 @@ static void RunGame(
         var gameWorld = newWorld(seed ?? Random.Shared.Next(), balance);
         var player = gameWorld.Player;
         IDummyView dummyView = new PlaceholderDummyView();
-        IGhoulView ghoulView = new PlaceholderGhoulView();
-        var gormView = new GormView();
-        IBatView batView = new PlaceholderBatView();
+        // Ghouls: the designer's model once it is loaded (after the shader, below), the placeholder until then - and for
+        // good if the model is missing or broken.
+        Func<IGhoulView> newGhoulView = () => new PlaceholderGhoulView();
+        IGhoulView ghoulView = newGhoulView();
+        // Gorm likewise: the model once loaded (below), the placeholder until then or for good.
+        Func<IGormView> newGormView = () => new PlaceholderGormView();
+        IGormView gormView = newGormView();
+        // Bats likewise: the model once loaded (below), the placeholder until then or for good.
+        Func<IBatView> newBatView = () => new PlaceholderBatView();
+        IBatView batView = newBatView();
         var projectileView = new ProjectileView();
         var pickupView = new PickupView();
         var impactMarks = new ImpactMarks();
         var wallBreakView = new WallBreakView();
-        IWeaponView weaponView = new PlaceholderWeaponView();
+        // Weapons: the designer's models once they are loaded (after the shader, below), boxes until then.
+        Func<IWeaponView> newWeaponView = () => new WeaponView();
+        IWeaponView weaponView = newWeaponView();
         var damageFeedback = new DamageFeedback();
         var input = new RaylibInput();
 
@@ -184,14 +262,14 @@ static void RunGame(
             LogRun(gameWorld, log);
             player = gameWorld.Player;
             dummyView = new PlaceholderDummyView();
-            ghoulView = new PlaceholderGhoulView();
-            gormView = new GormView();
-            batView = new PlaceholderBatView();
+            ghoulView = newGhoulView();
+            gormView = newGormView();
+            batView = newBatView();
             projectileView = new ProjectileView();
             pickupView = new PickupView();
             impactMarks = new ImpactMarks();
             wallBreakView = new WallBreakView();
-            weaponView = new PlaceholderWeaponView();
+            weaponView = newWeaponView();
             damageFeedback = new DamageFeedback();
         }
 
@@ -199,6 +277,11 @@ static void RunGame(
         var boonOpen = false;
         var boonOpenSeconds = 0f;
         Boon? chosenBoon = null;
+
+        // The inventory (G): Core keeps whether it is open; G and a click wait for the next tick, like a chosen bonus.
+        var inventoryToggle = false;
+        var inventoryOpenSeconds = 0f;
+        InventoryClick? inventoryClick = null;
 
         // F pressed in a frame without a tick must not get lost: it waits for the next tick, like a chosen bonus.
         // So do 1 / 2 / 3 and the mouse wheel (switching the ranged weapon).
@@ -208,14 +291,323 @@ static void RunGame(
         var seconds = 0f;
 
         var accumulator = new TickAccumulator();
-        using var picture = new LowResolutionTarget(LookSettings.RenderWidth, LookSettings.RenderHeight);
+        using var picture = new LowResolutionTarget(look.RenderWidth, look.RenderHeight);
 
-        // Lantern light and fog: a small program for the graphics card (assets/shaders/).
+        // Lantern light and fog: a small program for the graphics card (assets/shaders/), for everything in the 3D world.
         using var levelShader = new LevelShader(Path.Combine(AppContext.BaseDirectory, "assets", "shaders"));
+        levelShader.Apply(look);
+
+        // The models of the designers (assets/models/, docs/modelle.md). Missing or broken: a warning in the log and
+        // the placeholder - the game goes on.
+        using var ghoulModel = TexturedModel.TryLoad(
+            Path.Combine(AppContext.BaseDirectory, "assets", "models", "ghoul.glb"), GhoulPose.Parts, log);
+        if (ghoulModel is not null)
+        {
+            newGhoulView = () => new ModelGhoulView(ghoulModel, levelShader);
+            ghoulView = newGhoulView();
+        }
+
+        using var batModel = TexturedModel.TryLoad(
+            Path.Combine(AppContext.BaseDirectory, "assets", "models", "bat.glb"), BatPose.Parts, log);
+        if (batModel is not null)
+        {
+            newBatView = () => new ModelBatView(batModel, levelShader);
+            batView = newBatView();
+        }
+
+        using var gormModel = TexturedModel.TryLoad(
+            Path.Combine(AppContext.BaseDirectory, "assets", "models", "gorm.glb"), GormPose.Parts, log,
+            [ModelGormView.Phase2Texture]);
+        if (gormModel is not null)
+        {
+            newGormView = () => new ModelGormView(gormModel, levelShader);
+            gormView = newGormView();
+        }
+
+        // One chest model per tier (issue #249); a tier without one keeps the placeholder boxes.
+        using var chestView = ChestView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
+        // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
+        using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+        newWeaponView = () => new WeaponView(weaponModels, levelShader);
+        weaponView = newWeaponView();
 
         // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
-        using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, levelShader.Shader);
+        // The stones of walls, floors and ceilings (assets/textures/, issue #233). Only level 0, the catacombs, exists yet.
+        // Missing or broken: a warning in the log and plain surfaces as before. Each room shows its own variant of the
+        // three (issue #244); a missing variant falls back to the first.
+        using var levelTextures = LevelTextures.Load(
+            Path.Combine(AppContext.BaseDirectory, "assets", "textures"), LevelTextureSet.For(LevelLayer.Catacombs), log);
+        using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, gameWorld.Surfaces, levelShader.Shader, levelTextures);
         var renderedLevel = gameWorld.LevelAsBuilt;
+        var renderedSurfaces = gameWorld.Surfaces;
+
+        // Events must be read after EVERY tick - the next tick clears them.
+        void ReadEvents()
+        {
+            foreach (var gameEvent in gameWorld.Events)
+            {
+                dummyView.OnEvent(gameEvent, player.Position);
+                ghoulView.OnEvent(gameEvent);
+                gormView.OnEvent(gameEvent);
+                batView.OnEvent(gameEvent);
+                projectileView.OnEvent(gameEvent);
+                impactMarks.OnEvent(gameEvent);
+                wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position);
+                weaponView.OnEvent(gameEvent);
+                damageFeedback.OnEvent(gameEvent);
+                if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
+                {
+                    boonOpen = false;
+                }
+            }
+        }
+
+        void UpdateViews(float frameSeconds)
+        {
+            dummyView.Update(frameSeconds);
+            ghoulView.Update(frameSeconds);
+            batView.Update(frameSeconds);
+            projectileView.Update(frameSeconds);
+            pickupView.Update(frameSeconds);
+            impactMarks.Update(frameSeconds);
+            wallBreakView.Update(frameSeconds);
+            weaponView.Update(frameSeconds, player);
+            damageFeedback.Update(frameSeconds);
+        }
+
+        // 3a. The 3D world goes into the small low-resolution picture, blended between the last two ticks by alpha.
+        void DrawWorld(float alpha, float frameSeconds)
+        {
+            var eye = player.InterpolatedEyePosition(alpha);
+
+            // Looking direction, tilted down a little right after landing (the "nod"), jolted when hit.
+            var forward = player.View.ForwardTiltedDown(player.InterpolatedViewTilt(alpha));
+            var jolt = damageFeedback.Jolt();
+            forward += player.View.FlatRight * jolt.X + Vector3.UnitY * jolt.Y;
+            var camera = new Camera3D
+            {
+                Position = eye,
+                Target = eye + forward,
+                Up = Vector3.UnitY,
+                FovY = LookSettings.FieldOfViewDegrees,
+                Projection = CameraProjection.Perspective,
+            };
+
+            levelShader.SetCameraPosition(eye);
+            picture.BeginDrawing();
+            Raylib.ClearBackground(look.BackgroundColor);
+            Raylib.BeginMode3D(camera);
+            if (!ReferenceEquals(renderedLevel, gameWorld.LevelAsBuilt) || !ReferenceEquals(renderedSurfaces, gameWorld.Surfaces))
+            {
+                levelRenderer.Rebuild(gameWorld.LevelAsBuilt, gameWorld.Surfaces);
+                renderedLevel = gameWorld.LevelAsBuilt;
+                renderedSurfaces = gameWorld.Surfaces;
+            }
+
+            levelRenderer.Draw();
+            levelShader.BeginFigures();
+            DoorView.Draw(gameWorld.Doors, seconds);
+            chestView.Draw(gameWorld.Chests, seconds);
+            StairsView.Draw(gameWorld.Stairs, seconds);
+            foreach (var dummy in gameWorld.Dummies)
+            {
+                dummyView.Draw(dummy);
+            }
+
+            foreach (var ghoul in gameWorld.Ghouls)
+            {
+                ghoulView.Draw(ghoul);
+            }
+
+            if (gameWorld.Gorm is { } gorm)
+            {
+                gormView.Draw(gorm, frameSeconds);
+                gormView.DrawEffects(gorm);
+            }
+
+            foreach (var bat in gameWorld.Bats)
+            {
+                batView.Draw(bat, eye);
+            }
+
+            projectileView.Draw(gameWorld.Projectiles, alpha);
+            pickupView.Draw(gameWorld.Pickups, alpha);
+            pickupView.DrawLoot(gameWorld.Loot, alpha);
+            pickupView.DrawWeapons(gameWorld.WeaponDrops, alpha);
+
+            impactMarks.Draw();
+            wallBreakView.Draw();
+
+            // Last: the weapons in the hands, in front of everything else.
+            weaponView.Draw(camera.Position, camera.Target - camera.Position);
+
+            levelShader.EndFigures();
+            Raylib.EndMode3D();
+            picture.EndDrawing();
+        }
+
+        // 3b. The small picture scaled up onto the screen, the HUD on top at full resolution (sharp). Between
+        // Raylib.BeginDrawing and EndDrawing.
+        // debugInfo: the frame rate, and in the debug version the test display - not in photos.
+        void DrawScreen(float frameSeconds, bool frozen, bool showMap, bool mapKeptOpen, bool debugInfo)
+        {
+            Raylib.ClearBackground(LookSettings.BarColor);
+            picture.DrawToScreen();
+            if (endSummary is null)
+            {
+                damageFeedback.Draw();
+            }
+
+            DrawHud(displayVersion, fps: debugInfo);
+            DrawStaminaBar(player);
+            CombatHud.Draw(player);
+            BossBar.Draw(gameWorld);
+            if (!boonOpen && !player.IsInventoryOpen && !frozen)
+            {
+                InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);
+            }
+
+            levelNameSeconds = MathF.Max(0f, levelNameSeconds - frameSeconds);
+            if (!frozen)
+            {
+                LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
+            }
+
+            if (!frozen && !boonOpen && !player.IsInventoryOpen && showMap)
+            {
+                MapView.Draw(gameWorld, player, mapKeptOpen, (float)Raylib.GetTime());
+            }
+
+            if (player.IsInventoryOpen && !frozen)
+            {
+                InventoryWindow.Draw(player);
+            }
+            else if (boonOpen && !frozen)
+            {
+                BoonWindow.Draw(player, gameWorld.Balance.Boons);
+            }
+            else if (!frozen)
+            {
+                BoonWindow.DrawHint(player.PendingBoons, seconds);
+            }
+
+            if (menuOpen)
+            {
+                EscMenu.Draw(escMenu, settings);
+            }
+
+            if (endSummary is not null)
+            {
+                EndScreen.Draw(endMenu, endSummary);
+            }
+#if DEBUG
+            if (debugInfo)
+            {
+                DrawDebugInfo(player);
+                if (reloadedNoticeSeconds > 0f)
+                {
+                    Raylib.DrawText("Balancing reloaded", 20, 160, 20, new Color(230, 190, 90, 255));
+                }
+            }
+#endif
+        }
+
+        // Photo mode (--photo, issue #224): every scene is built in Core, ticked like the game ticks, drawn with the
+        // same code as above and saved twice - the small picture and the whole window with HUD. Then the game ends.
+        // With --photo compare every scene is taken in every picture variant, then put together 2 x 2 (issue #234).
+        if (photos is not null)
+        {
+            var studio = new PhotoStudio(photos.Templates, balance);
+            if (!photos.Bench)
+            {
+                Directory.CreateDirectory(photos.Folder);
+            }
+            IReadOnlyList<LookVariant> looks = photos.Compare ? LookVariants.All : [look];
+            foreach (var (variant, scene) in looks.SelectMany(variant => photos.Scenes.Select(scene => (variant, scene))))
+            {
+                if (variant != look)
+                {
+                    look = variant;
+                    levelShader.Apply(look);
+                    picture.Resize(look.RenderWidth, look.RenderHeight);
+                }
+
+                var suffix = photos.Compare ? $"-look{look.Number}" : string.Empty;
+                var setup = scene.Build(studio);
+                StartFresh(setup.World);
+                if (setup.IsModelProbe)
+                {
+                    // The single target of the model probe: the loaded model, as in the game.
+                    ghoulView = newGhoulView();
+                }
+
+                // One frame per tick: views and banners age exactly as in a game running at 60 frames per second.
+                var ticks = setup.Run(afterTick: () =>
+                {
+                    ReadEvents();
+                    UpdateViews(SimulationClock.SecondsPerTick);
+                    seconds += SimulationClock.SecondsPerTick;
+                    levelNameSeconds = MathF.Max(0f, levelNameSeconds - SimulationClock.SecondsPerTick);
+                });
+
+                // The cursor in the corner, so no box of the inventory is drawn as "under the mouse".
+                Raylib.SetMousePosition(0, 0);
+                if (photos.Bench)
+                {
+                    // The simulation stands still; every frame is drawn in full, as in the game: world, then screen.
+                    var times = new List<double>(PhotoRequest.MeasuredFrames);
+                    for (var frame = 0; frame < PhotoRequest.WarmUpFrames + PhotoRequest.MeasuredFrames; frame++)
+                    {
+                        var start = System.Diagnostics.Stopwatch.GetTimestamp();
+                        DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
+                        Raylib.BeginDrawing();
+                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
+                        Raylib.EndDrawing();
+                        if (frame >= PhotoRequest.WarmUpFrames)
+                        {
+                            times.Add(System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds);
+                        }
+                    }
+
+                    var statistics = FrameTimeStatistics.From(times);
+                    log?.Info($"Bench '{scene.Name}' after {ticks} ticks, {Raylib.GetScreenWidth()} x {Raylib.GetScreenHeight()}: {statistics}");
+                    Console.WriteLine($"{scene.Name}: {statistics}");
+                    continue;
+                }
+
+                DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
+                Raylib.BeginDrawing();
+                DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
+                Rlgl.DrawRenderBatchActive();
+                var screenPath = Path.Combine(photos.Folder, $"{scene.Name}{suffix}-screen.png");
+                var screen = Raylib.LoadImageFromScreen();
+                Raylib.ExportImage(screen, screenPath);
+                Raylib.UnloadImage(screen);
+                Raylib.EndDrawing();
+
+                var picturePath = Path.Combine(photos.Folder, $"{scene.Name}{suffix}.png");
+                picture.SaveAs(picturePath);
+                log?.Info($"Photo '{scene.Name}' after {ticks} ticks: {picturePath}, {screenPath}");
+                Console.WriteLine($"{scene.Name}: {picturePath} ({ticks} ticks)");
+            }
+
+            if (photos.Compare)
+            {
+                foreach (var scene in photos.Scenes)
+                {
+                    var comparePath = Path.Combine(photos.Folder, $"{scene.Name}-compare.png");
+                    ComparisonSheet.Save(
+                        [.. LookVariants.All.Select(variant =>
+                            (Path.Combine(photos.Folder, $"{scene.Name}-look{variant.Number}-screen.png"), variant.Label))],
+                        comparePath);
+                    log?.Info($"Comparison '{scene.Name}': {comparePath}");
+                    Console.WriteLine($"{scene.Name}: {comparePath}");
+                }
+            }
+
+            return;
+        }
 
         // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.
         while (!Raylib.WindowShouldClose() && !quit)
@@ -313,7 +705,8 @@ static void RunGame(
             // The mouse is captured only while playing: free in the menu, on the end screen and while the bonus choice
             // is open (a click chooses; you walk on with the keys; a hit closes it).
             var frozen = menuOpen || endSummary is not null;
-            var capture = !frozen && !onTitle && !boonOpen;
+            var inventoryOpen = player.IsInventoryOpen;
+            var capture = !frozen && !onTitle && !boonOpen && !inventoryOpen;
             if (capture && !input.IsMouseCaptured)
             {
                 input.CaptureMouse();
@@ -324,7 +717,7 @@ static void RunGame(
             }
 
             // 1. Input: looking around happens every frame, so it feels immediate.
-            var playerInput = input.Read(keysWithFreeMouse: boonOpen && !frozen);
+            var playerInput = input.Read(keysWithFreeMouse: (boonOpen || inventoryOpen) && !frozen);
             player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
             slotChosen = playerInput.SelectSlot ?? slotChosen;
@@ -332,7 +725,7 @@ static void RunGame(
 
             // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while
             // walking - only a hit closes it (see the events below). Several level ups come one after the other.
-            if (!frozen && Raylib.IsKeyPressed(KeyboardKey.X) && player.PendingBoons > 0)
+            if (!frozen && !inventoryOpen && Raylib.IsKeyPressed(KeyboardKey.X) && player.PendingBoons > 0)
             {
                 boonOpen = !boonOpen;
             }
@@ -348,6 +741,19 @@ static void RunGame(
                 chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, boonOpenSeconds);
             }
 
+            // The inventory (decision record 0008): G opens and closes it - not while the bonus choice is open. Moving or a
+            // hit closes it (Core). A click is picked only once it has been open for a moment.
+            if (!frozen && !boonOpen && Raylib.IsKeyPressed(KeyboardKey.G))
+            {
+                inventoryToggle = !inventoryToggle;
+            }
+
+            inventoryOpenSeconds = inventoryOpen ? inventoryOpenSeconds + Raylib.GetFrameTime() : 0f;
+            if (inventoryOpen && !frozen)
+            {
+                inventoryClick ??= InventoryWindow.Pick(inventoryOpenSeconds);
+            }
+
             // 2. Simulation: as many fixed ticks as fit into the real time of the last frame.
             //    A chosen bonus is kept until a tick has taken it - not every frame has a tick.
             var ticks = accumulator.Advance(Raylib.GetFrameTime());
@@ -357,29 +763,15 @@ static void RunGame(
                 {
                     ChooseBoon = chosenBoon, Interact = interactPressed, Paused = frozen,
                     SelectSlot = slotChosen, CycleSlot = Math.Sign(wheelSteps),
+                    ToggleInventory = inventoryToggle, InventoryClick = inventoryClick,
                 });
                 chosenBoon = null;
+                inventoryToggle = false;
+                inventoryClick = null;
                 interactPressed = false;
                 slotChosen = null;
                 wheelSteps = 0;
-
-                // Events must be read after EVERY tick - the next tick clears them.
-                foreach (var gameEvent in gameWorld.Events)
-                {
-                    dummyView.OnEvent(gameEvent, player.Position);
-                    ghoulView.OnEvent(gameEvent);
-                    gormView.OnEvent(gameEvent);
-                    batView.OnEvent(gameEvent);
-                    projectileView.OnEvent(gameEvent);
-                    impactMarks.OnEvent(gameEvent);
-                    wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position);
-                    weaponView.OnEvent(gameEvent);
-                    damageFeedback.OnEvent(gameEvent);
-                    if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
-                    {
-                        boonOpen = false;
-                    }
-                }
+                ReadEvents();
             }
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
@@ -413,145 +805,22 @@ static void RunGame(
             reloadedNoticeSeconds = MathF.Max(0f, reloadedNoticeSeconds - Raylib.GetFrameTime());
 #endif
 
-            dummyView.Update(Raylib.GetFrameTime());
-            ghoulView.Update(Raylib.GetFrameTime());
-            batView.Update(Raylib.GetFrameTime());
-            projectileView.Update(Raylib.GetFrameTime());
-            pickupView.Update(Raylib.GetFrameTime());
-            impactMarks.Update(Raylib.GetFrameTime());
-            wallBreakView.Update(Raylib.GetFrameTime());
-            weaponView.Update(Raylib.GetFrameTime(), player);
-            damageFeedback.Update(Raylib.GetFrameTime());
+            UpdateViews(Raylib.GetFrameTime());
 
             // 3. Rendering: draw the current state, blended between the last two ticks (no stutter
             //    on monitors faster than 60 Hz). No game rules in here.
-            var eye = player.InterpolatedEyePosition(accumulator.Alpha);
+            DrawWorld(accumulator.Alpha, Raylib.GetFrameTime());
 
-            // Looking direction, tilted down a little right after landing (the "nod"), jolted when hit.
-            var forward = player.View.ForwardTiltedDown(player.InterpolatedViewTilt(accumulator.Alpha));
-            var jolt = damageFeedback.Jolt();
-            forward += player.View.FlatRight * jolt.X + Vector3.UnitY * jolt.Y;
-            var camera = new Camera3D
-            {
-                Position = eye,
-                Target = eye + forward,
-                Up = Vector3.UnitY,
-                FovY = LookSettings.FieldOfViewDegrees,
-                Projection = CameraProjection.Perspective,
-            };
-
-            // 3a. The 3D world goes into the small low-resolution picture ...
-            levelShader.SetCameraPosition(eye);
-            picture.BeginDrawing();
-            Raylib.ClearBackground(LookSettings.BackgroundColor);
-            Raylib.BeginMode3D(camera);
-            if (!ReferenceEquals(renderedLevel, gameWorld.LevelAsBuilt))
-            {
-                levelRenderer.Rebuild(gameWorld.LevelAsBuilt);
-                renderedLevel = gameWorld.LevelAsBuilt;
-            }
-
-            levelRenderer.Draw();
-            levelShader.BeginFigures();
-            DoorView.Draw(gameWorld.Doors, seconds);
-            ChestView.Draw(gameWorld.Chests, seconds, camera.Position);
-            StairsView.Draw(gameWorld.Stairs, seconds);
-            foreach (var dummy in gameWorld.Dummies)
-            {
-                dummyView.Draw(dummy);
-            }
-
-            foreach (var ghoul in gameWorld.Ghouls)
-            {
-                ghoulView.Draw(ghoul);
-            }
-
-            if (gameWorld.Gorm is { } gorm)
-            {
-                gormView.Draw(gorm, Raylib.GetFrameTime());
-                gormView.DrawEffects(gorm);
-            }
-
-            foreach (var bat in gameWorld.Bats)
-            {
-                batView.Draw(bat, eye);
-            }
-
-            projectileView.Draw(gameWorld.Projectiles, accumulator.Alpha);
-            pickupView.Draw(gameWorld.Pickups, accumulator.Alpha);
-            pickupView.DrawLoot(gameWorld.Loot, accumulator.Alpha);
-
-            impactMarks.Draw();
-            wallBreakView.Draw();
-
-            // Last: the weapons in the hands, in front of everything else.
-            weaponView.Draw(camera.Position, camera.Target - camera.Position);
-
-            levelShader.EndFigures();
-            Raylib.EndMode3D();
-            picture.EndDrawing();
-
-            // 3b. ... which is scaled up onto the screen. The HUD is drawn afterwards at full resolution (sharp).
-            Raylib.BeginDrawing();
-            Raylib.ClearBackground(LookSettings.BarColor);
-            picture.DrawToScreen();
-            if (endSummary is null)
-            {
-                damageFeedback.Draw();
-            }
-
-            DrawHud(displayVersion);
-            DrawStaminaBar(player);
-            CombatHud.Draw(player);
-            BossBar.Draw(gameWorld);
-            if (!boonOpen && !frozen)
-            {
-                InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);
-            }
-
-            levelNameSeconds = MathF.Max(0f, levelNameSeconds - Raylib.GetFrameTime());
-            if (!frozen)
-            {
-                LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
-            }
-
-            // The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
+            // 3b. ... which is scaled up onto the screen, the HUD on top. The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
             // (no pause: online co-op).
-            if (!frozen && !boonOpen && Raylib.IsKeyPressed(KeyboardKey.M))
+            if (!frozen && !boonOpen && !player.IsInventoryOpen && Raylib.IsKeyPressed(KeyboardKey.M))
             {
                 mapKeptOpen = !mapKeptOpen;
             }
 
-            if (!frozen && !boonOpen && (mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab)))
-            {
-                MapView.Draw(gameWorld, player, mapKeptOpen, (float)Raylib.GetTime());
-            }
-
-            if (boonOpen && !frozen)
-            {
-                BoonWindow.Draw(player, gameWorld.Balance.Boons);
-            }
-            else if (!frozen)
-            {
-                BoonWindow.DrawHint(player.PendingBoons, seconds);
-            }
-
-            if (menuOpen)
-            {
-                EscMenu.Draw(escMenu, settings);
-            }
-
-            if (endSummary is not null)
-            {
-                EndScreen.Draw(endMenu, endSummary);
-            }
-#if DEBUG
-            DrawDebugInfo(player);
-            if (reloadedNoticeSeconds > 0f)
-            {
-                Raylib.DrawText("Balancing reloaded", 20, 160, 20, new Color(230, 190, 90, 255));
-            }
-#endif
+            Raylib.BeginDrawing();
+            DrawScreen(
+                Raylib.GetFrameTime(), frozen, showMap: mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab), mapKeptOpen, debugInfo: true);
             Raylib.EndDrawing();
         }
     }
@@ -589,14 +858,17 @@ static void BringWindowOnScreen(FileLog? log)
 }
 
 // Texts on top of the 3D world, in full window resolution - always sharp, whatever the window size.
-static void DrawHud(string displayVersion)
+static void DrawHud(string displayVersion, bool fps)
 {
     var screenWidth = Raylib.GetScreenWidth();
     var screenHeight = Raylib.GetScreenHeight();
     var textColor = new Color(200, 200, 210, 255);
 
     Raylib.DrawText("Silver & Ash", 20, 20, 30, textColor);
-    Raylib.DrawFPS(20, screenHeight - 30);
+    if (fps)
+    {
+        Raylib.DrawFPS(20, screenHeight - 30);
+    }
 
     var versionText = $"v{displayVersion}";
     var versionWidth = Raylib.MeasureText(versionText, 20);
@@ -604,20 +876,28 @@ static void DrawHud(string displayVersion)
 }
 
 #if DEBUG
-// Test option --give: a melee weapon goes into the hand, a ranged one into the first free place (or the last one).
-// Only in the debug version, like the option itself.
+// Test option --give: a melee weapon goes into the hand (the one before into the bag), a ranged one into the first free
+// place, or into the bag when all are taken. Only in the debug version, like the option itself.
 static GameWorld WithGivenWeapons(GameWorld world, IReadOnlyList<WeaponKind> give)
 {
     foreach (var kind in give)
     {
         if (Weapons.Info(kind).Hand == WeaponHand.Melee)
         {
+            world.Player.Stow(world.Player.Melee);
             world.Player.EquipMelee(kind);
             continue;
         }
 
         var free = world.Player.RangedSlots.ToList().FindIndex(weapon => weapon is null);
-        world.Player.Equip(free >= 0 ? free : Player.RangedSlotCount - 1, kind);
+        if (free >= 0)
+        {
+            world.Player.Equip(free, kind);
+        }
+        else
+        {
+            world.Player.Stow(kind);
+        }
     }
 
     return world;
@@ -710,3 +990,16 @@ static string CooldownText(Cooldown cooldown) =>
         ? "ready"
         : string.Create(CultureInfo.InvariantCulture, $"{cooldown.RemainingSeconds:0.00} s");
 #endif
+
+/// <summary>What the photo mode (--photo) is to take: these scenes, saved into this folder, built from these room templates.</summary>
+/// <remarks>Compare: take every scene in every picture variant and put them together 2 x 2 (--photo compare, issue #234).</remarks>
+/// <remarks>Bench: take no picture but draw the scene again and again and print the frame times (--bench, issue #233).</remarks>
+internal sealed record PhotoRequest(
+    IReadOnlyList<PhotoScene> Scenes, string Folder, IReadOnlyList<RoomTemplate> Templates, bool Compare, bool Bench = false)
+{
+    /// <summary>Frames drawn before measuring (shaders, textures and caches settle).</summary>
+    public const int WarmUpFrames = 100;
+
+    /// <summary>Frames measured by --bench.</summary>
+    public const int MeasuredFrames = 1000;
+}

@@ -181,4 +181,39 @@ public class ChestPlacementTests
         Assert.Same(level.Rooms, placed.Rooms);
         Assert.Same(level.Doors, placed.Doors);
     }
+
+    [Fact]
+    public void Every_chest_looks_with_its_front_towards_the_middle_of_its_room()
+    {
+        var all = Levels.Value.Select(level => ChestPlacement.Place(level, InEveryRoom))
+            .SelectMany(level => level.Chests!.Select(chest => (level, chest)))
+            .ToList();
+
+        Assert.NotEmpty(all);
+        foreach (var (level, chest) in all)
+        {
+            var room = level.Rooms[chest.Room];
+            var middle = room.Z + (room.Depth / 2f);
+            var centre = chest.Z + 0.5f;
+
+            // On the middle row either way would do; it looks towards +Z there.
+            var expected = centre <= middle ? ChestFront.PlusZ : ChestFront.MinusZ;
+            Assert.Equal(expected, chest.Front);
+        }
+
+        // Both ways come up: the front is not simply always the same.
+        Assert.Contains(all, pair => pair.chest.Front == ChestFront.PlusZ);
+        Assert.Contains(all, pair => pair.chest.Front == ChestFront.MinusZ);
+    }
+
+    [Fact]
+    public void The_same_seed_gives_the_same_fronts()
+    {
+        var level = Levels.Value[11];
+
+        var first = ChestPlacement.Place(level, InEveryRoom).Chests!.Select(chest => chest.Front);
+        var again = ChestPlacement.Place(level, InEveryRoom).Chests!.Select(chest => chest.Front);
+
+        Assert.Equal(first, again);
+    }
 }
