@@ -1,0 +1,71 @@
+GIMP Palette
+Name: Silver and Ash Hauptpalette
+Columns: 8
+#
+ 16  11  20 grund:Stein 0
+ 38  34  40 grund:Stein 1
+ 45  40  47 grund:Stein 2
+ 52  46  54 grund:Stein 3
+ 61  52  56 grund:Stein 4
+ 71  61  66 grund:Stein 5
+ 79  67  73 grund:Stein 6
+ 86  74  80 grund:Stein 7
+ 95  81  88 grund:Stein 8
+105  91  97 grund:Stein 9
+113  97 104 grund:Stein 10
+123 105 113 grund:Stein 11
+132 113 121 grund:Stein 12
+140 120 129 grund:Stein 13
+151 127 137 grund:Stein 14
+ 16  25  20 grund:Haut/Knochen 0
+ 40  58  43 grund:Haut/Knochen 1
+ 72  89  67 grund:Haut/Knochen 2
+109 118  96 grund:Haut/Knochen 3
+140 148 115 grund:Haut/Knochen 4
+170 172 139 grund:Haut/Knochen 5
+195 192 164 grund:Haut/Knochen 6
+216 210 192 grund:Haut/Knochen 7
+ 18  17  34 grund:Stoff 0
+ 23  24  48 grund:Stoff 1
+ 30  34  62 grund:Stoff 2
+ 36  45  76 grund:Stoff 3
+ 60  75 116 grund:Stoff 4
+ 86 107 154 grund:Stoff 5
+126 145 178 grund:Stoff 6
+168 181 199 grund:Stoff 7
+ 30  19  26 akzent:Holz 0
+ 52  27  34 akzent:Holz 1
+ 80  41  37 akzent:Holz 2
+110  76  46 akzent:Holz 3
+138  99  58 akzent:Holz 4
+167 125  69 akzent:Holz 5
+187 150  89 akzent:Holz 6
+199 172 117 akzent:Holz 7
+ 20  18  28 akzent:Eisen 0
+ 38  36  56 akzent:Eisen 1
+ 55  57  84 akzent:Eisen 2
+ 73  83 112 akzent:Eisen 3
+ 92 112 140 akzent:Eisen 4
+126 144 165 akzent:Eisen 5
+163 175 187 akzent:Eisen 6
+198 205 210 akzent:Eisen 7
+ 38  21  13 akzent:Messing/Gold 0
+ 74  44  23 akzent:Messing/Gold 1
+111  70  31 akzent:Messing/Gold 2
+149 100  39 akzent:Messing/Gold 3
+188 135  45 akzent:Messing/Gold 4
+214 170  64 akzent:Messing/Gold 5
+227 202 111 akzent:Messing/Gold 6
+238 228 160 akzent:Messing/Gold 7
+ 27   9  15 akzent:Blutrot 0
+ 64  17  28 akzent:Blutrot 1
+105  20  34 akzent:Blutrot 2
+150  20  30 akzent:Blutrot 3
+175  25  35 akzent:Blutrot 4
+200  30  40 akzent:Blutrot 5
+225  58  48 akzent:Blutrot 6
+231 110  85 akzent:Blutrot 7
+171 159 164 akzent:Werkstein 0
+183 171 176 akzent:Werkstein 1
+195 182 188 akzent:Werkstein 2
+209 193 200 akzent:Werkstein 3

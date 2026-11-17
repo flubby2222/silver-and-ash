@@ -186,6 +186,44 @@ public class LaunchOptionsTests
         Assert.Contains("only goes with '--photo'", error.Message);
     }
 
+    [Theory]
+    [InlineData("blade-charge")]
+    [InlineData("all")]
+    [InlineData("list")]
+    public void Clip_takes_a_motion_scene_all_or_list(string clip)
+    {
+        var options = LaunchOptions.Parse(["--clip", clip]);
+
+        Assert.Equal(clip, options.Clip);
+        Assert.Null(options.Photo);
+        Assert.Null(LaunchOptions.Parse([]).Clip);
+    }
+
+    [Fact]
+    public void Clip_with_out_names_the_folder()
+    {
+        Assert.Equal("clips", LaunchOptions.Parse(["--clip", "all", "--out", "clips"]).PhotoFolder);
+    }
+
+    [Theory]
+    [InlineData]
+    [InlineData("ghoul-4m")]
+    [InlineData("compare")]
+    public void Clip_without_a_known_motion_scene_is_rejected_with_the_known_ones(params string[] clip)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--clip", .. clip]));
+
+        Assert.Contains("blade-charge", error.Message);
+    }
+
+    [Theory]
+    [InlineData("--photo", "ghoul-4m")]
+    [InlineData("--bench", "room-combat")]
+    public void Clip_cannot_be_combined_with_photo_or_bench(string option, string scene)
+    {
+        Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--clip", "all", option, scene]));
+    }
+
     [Fact]
     public void Without_give_no_weapon_is_given()
     {
@@ -254,5 +292,43 @@ public class LaunchOptionsTests
         var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo", "compare", "--look", "2"]));
 
         Assert.Contains("leave out '--look'", error.Message);
+    }
+
+    [Fact]
+    public void Without_showroom_the_game_is_played()
+    {
+        Assert.False(LaunchOptions.Parse([]).Showroom);
+    }
+
+    [Fact]
+    public void Showroom_opens_the_showroom_and_goes_with_look()
+    {
+        Assert.True(LaunchOptions.Parse(["--showroom"]).Showroom);
+
+        var options = LaunchOptions.Parse(["--showroom", "--look", "3"]);
+        Assert.True(options.Showroom);
+        Assert.Equal(3, options.Look);
+    }
+
+    [Theory]
+    [InlineData("--level", "heights")]
+    [InlineData("--seed", "123")]
+    [InlineData("--give", "club")]
+    [InlineData("--photo", "ghoul-4m")]
+    [InlineData("--bench", "ghoul-4m")]
+    [InlineData("--clip", "all")]
+    public void Showroom_cannot_be_combined_with_a_level_weapons_or_pictures(string option, string value)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--showroom", option, value]));
+
+        Assert.Contains("'--showroom'", error.Message);
+    }
+
+    [Fact]
+    public void The_unknown_option_message_names_showroom()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--showrom"]));
+
+        Assert.Contains("--showroom", error.Message);
     }
 }

@@ -9,6 +9,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
 using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.Showroom;
 using SilverAndAsh.Core.World;
 using SilverAndAsh.Game.Audio;
 using SilverAndAsh.Game.Input;
@@ -88,6 +89,17 @@ using (log)
             log?.Info($"Every run starts with: {string.Join(", ", give)}.");
         }
 
+        // Test option: --showroom - instead of a run, the showroom: every door, chest, enemy and loot side by side in
+        // every wall variant, for designers and code sessions (issue #283, docs/musterraum.md). Only in the debug
+        // version, like --give: the player there cannot die and has every weapon.
+        if (options.Showroom)
+        {
+            var showroom = ShowroomLayout.Build();
+            newWorld = (_, balance) => showroom.NewWorld(balance);
+            nextWorld = world => showroom.NewWorld(world.Balance);
+            log?.Info($"Showroom: {showroom.Placed.Count} pieces in {showroom.Sections.Count} sections.");
+        }
+
         // Test option: --look 3 draws the world in one of the picture variants of issue #234 (decision record 0010).
         look = options.Look;
         if (look is not null)
@@ -122,6 +134,33 @@ using (log)
             }
         }
 
+        // Test option: --clip <scene> films a motion scene into numbered pictures, one folder per scene, and quits
+        // (issue #286, docs/foto-skript.md); tools/clip.ps1 puts them together. Only in the debug version, like --photo.
+        if (options.Clip is { } clip)
+        {
+            if (clip == LaunchOptions.ListPhotos)
+            {
+                foreach (var scene in MotionScenes.All)
+                {
+                    Console.WriteLine($"{scene.Name,-20} {scene.FramesPerSecond,3:0} fps  {scene.Description}");
+                }
+
+                newWorld = null;
+            }
+            else
+            {
+                var folder = Path.GetFullPath(options.PhotoFolder ?? Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "clips"));
+                IReadOnlyList<MotionScene> clips = clip == LaunchOptions.AllPhotos ? MotionScenes.All : [MotionScenes.Find(clip)!];
+                photos = new PhotoRequest(
+                    [], folder, RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), Compare: false)
+                {
+                    Clips = clips,
+                };
+                log?.Info($"Clip mode: {clips.Count} motion scenes into '{folder}'.");
+            }
+        }
+
         // Test option: --bench <scene> measures how long a frame of this photo scene takes, without VSync (issue #233,
         // docs/foto-skript.md). Only in the debug version, like --photo.
         if (options.Bench is { } bench)
@@ -132,6 +171,11 @@ using (log)
             log?.Info($"Bench mode: scene '{bench}', {PhotoRequest.WarmUpFrames} frames to warm up, {PhotoRequest.MeasuredFrames} measured.");
         }
 #else
+        if (options.Showroom)
+        {
+            throw new ArgumentException("'--showroom' works only in the debug version (dotnet run).");
+        }
+
         if (options.Bench is not null)
         {
             throw new ArgumentException("'--bench' works only in the debug version (dotnet run).");
@@ -140,6 +184,11 @@ using (log)
         if (options.Photo is not null)
         {
             throw new ArgumentException("'--photo' works only in the debug version (dotnet run).");
+        }
+
+        if (options.Clip is not null)
+        {
+            throw new ArgumentException("'--clip' works only in the debug version (dotnet run).");
         }
 
         if (options.Look is not null)
@@ -249,6 +298,12 @@ static void RunGame(
 
         // The level name ("THE CATACOMBS") shows for a few seconds whenever a run starts.
         var levelNameSeconds = 0f;
+
+        // The showroom (--showroom, issue #283): the labels of its pieces, built once it is shown; L hides and shows them.
+        // The camera of the last 3D picture places them on the screen.
+        IReadOnlyList<ShowroomLabel>? showroomLabels = null;
+        var showroomLabelsShown = true;
+        var lastCamera = default(Camera3D);
 
         // The end of a run: its numbers while "YOU DIED" / "VICTORY" is shown (null while the run is on), and how long
         // the victory is already there (the screen waits a moment, so the rising grates can be seen).
@@ -402,6 +457,7 @@ static void RunGame(
                 FovY = LookSettings.FieldOfViewDegrees,
                 Projection = CameraProjection.Perspective,
             };
+            lastCamera = camera;
 
             levelShader.SetCameraPosition(eye);
             picture.BeginDrawing();
@@ -471,6 +527,12 @@ static void RunGame(
             if (endSummary is null)
             {
                 damageFeedback.Draw();
+            }
+
+            if (gameWorld.IsShowroom && showroomLabelsShown && endSummary is null && !frozen)
+            {
+                showroomLabels ??= ShowroomLayout.Build().Labels;
+                ShowroomLabelView.Draw(showroomLabels, gameWorld.Level, lastCamera, picture.Width, picture.Height);
             }
 
             DrawHud(displayVersion, fps: debugInfo);
@@ -606,6 +668,50 @@ static void RunGame(
                 Console.WriteLine($"{scene.Name}: {picturePath} ({ticks} ticks)");
             }
 
+            // Clip mode (--clip, issue #286): the same as a photo, but a picture of the whole window before the first
+            // tick and after every n-th one, into <folder>/<scene>/frame-0000.png and on.
+            foreach (var clip in photos.Clips)
+            {
+                var setup = clip.Build(studio);
+                StartFresh(setup.World);
+                var clipFolder = Path.Combine(photos.Folder, clip.Name);
+                Directory.CreateDirectory(clipFolder);
+                foreach (var old in Directory.EnumerateFiles(clipFolder, "frame-*.png"))
+                {
+                    // Pictures of an earlier, longer take would end up in the clip.
+                    File.Delete(old);
+                }
+
+                // The views take the world as it is, without time passing: the first picture comes before any tick, and
+                // fresh views would still show the boxes instead of the weapons in hand.
+                UpdateViews(0f);
+                Raylib.SetMousePosition(0, 0);
+                var frames = 0;
+                var taken = setup.Film(
+                    clip.FrameEvery,
+                    frame: _ =>
+                    {
+                        DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
+                        Raylib.BeginDrawing();
+                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
+                        Rlgl.DrawRenderBatchActive();
+                        var screen = Raylib.LoadImageFromScreen();
+                        Raylib.ExportImage(screen, Path.Combine(clipFolder, $"frame-{frames++:0000}.png"));
+                        Raylib.UnloadImage(screen);
+                        Raylib.EndDrawing();
+                    },
+                    afterTick: () =>
+                    {
+                        ReadEvents();
+                        UpdateViews(SimulationClock.SecondsPerTick);
+                        seconds += SimulationClock.SecondsPerTick;
+                        levelNameSeconds = MathF.Max(0f, levelNameSeconds - SimulationClock.SecondsPerTick);
+                    });
+                var fps = clip.FramesPerSecond.ToString("0", CultureInfo.InvariantCulture);
+                log?.Info($"Clip '{clip.Name}': {taken.Count} pictures over {taken[^1]} ticks, {fps} per second: {clipFolder}");
+                Console.WriteLine($"{clip.Name}: {clipFolder} ({taken.Count} pictures, {fps} fps)");
+            }
+
             if (photos.Compare)
             {
                 foreach (var scene in photos.Scenes)
@@ -627,6 +733,20 @@ static void RunGame(
         // missing or broken file: a warning in the log, the game runs silent or without that sound.
         using var sounds = SoundPlayer.Open(Path.Combine(AppContext.BaseDirectory, "assets", "audio"), log);
 
+        // Which sound pack plays (issue #290): K switches between sound pack 1 and the old sounds. Presentation only,
+        // never part of the world.
+        var soundPacks = new SoundPackSwitch();
+
+        // The menu click (issue #291): its own choice of variants, so the run's sounds do not depend on the menus.
+        var menuCues = new SoundCues(0);
+        void PlayMenuClick(MenuView menu)
+        {
+            if (menu.Clicked)
+            {
+                sounds.Play(menuCues.For(SoundKind.MenuClick, soundPacks.Current));
+            }
+        }
+
         // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.
         while (!Raylib.WindowShouldClose() && !quit)
         {
@@ -636,6 +756,21 @@ static void RunGame(
             if (Raylib.IsKeyPressed(KeyboardKey.N))
             {
                 sounds.ToggleMute();
+            }
+
+            // K switches the sound pack (issue #290), so the human can compare old and new in the game.
+            if (Raylib.IsKeyPressed(KeyboardKey.K))
+            {
+                soundPacks.Toggle();
+                log?.Info($"Sound pack: {soundPacks.Current.Name}.");
+            }
+
+            soundPacks.Update(Raylib.GetFrameTime());
+
+            // L hides and shows the labels of the showroom (issue #283). Presentation only, never part of the world.
+            if (gameWorld.IsShowroom && Raylib.IsKeyPressed(KeyboardKey.L))
+            {
+                showroomLabelsShown = !showroomLabelsShown;
             }
 
             // The music (issue #271): the title theme on the title screen, the catacomb music in a run (held in the Esc
@@ -662,8 +797,11 @@ static void RunGame(
                         break;
                 }
 
+                PlayMenuClick(titleMenu);
+
                 Raylib.BeginDrawing();
                 TitleScreen.Draw(titleMenu, displayVersion);
+                SoundPackNotice.Draw(soundPacks);
                 Raylib.EndDrawing();
                 continue;
             }
@@ -705,6 +843,8 @@ static void RunGame(
                         break;
                 }
 
+                PlayMenuClick(escMenu);
+
                 if (changed != settings)
                 {
                     settings = changed;
@@ -728,6 +868,8 @@ static void RunGame(
                         titleMenu.Open();
                         break;
                 }
+
+                PlayMenuClick(endMenu);
             }
 
             // The mouse is captured only while playing: free in the menu, on the end screen and while the bonus choice
@@ -800,7 +942,8 @@ static void RunGame(
                 slotChosen = null;
                 wheelSteps = 0;
                 ReadEvents();
-                sounds.Play(soundCues.For(gameWorld.Events));
+                // Heard at this player's eyes: far-off wing beats stay silent (issue #297, no spatial sound yet).
+                sounds.Play(soundCues.For(gameWorld.Events, soundPacks.Current, player.EyePosition));
             }
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
@@ -850,6 +993,7 @@ static void RunGame(
             Raylib.BeginDrawing();
             DrawScreen(
                 Raylib.GetFrameTime(), frozen, showMap: mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab), mapKeptOpen, debugInfo: true);
+            SoundPackNotice.Draw(soundPacks);
             Raylib.EndDrawing();
         }
     }
@@ -1026,6 +1170,9 @@ static string CooldownText(Cooldown cooldown) =>
 internal sealed record PhotoRequest(
     IReadOnlyList<PhotoScene> Scenes, string Folder, IReadOnlyList<RoomTemplate> Templates, bool Compare, bool Bench = false)
 {
+    /// <summary>The motion scenes to film (--clip, issue #286), after the photo scenes; usually there are only these.</summary>
+    public IReadOnlyList<MotionScene> Clips { get; init; } = [];
+
     /// <summary>Frames drawn before measuring (shaders, textures and caches settle).</summary>
     public const int WarmUpFrames = 100;
 

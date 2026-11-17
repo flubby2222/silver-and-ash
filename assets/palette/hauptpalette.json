@@ -1,0 +1,570 @@
+{
+ "name": "Silver & Ash, Hauptpalette (Fassung A, Runde 3)",
+ "stand": "2026-11-17",
+ "regeln": [
+  "Der heutige Stein ist der Maßstab: Die Reihe Stein (15 Stufen, ein Farbton) füllt Wände, Böden und Decken.",
+  "Eine Fläche bleibt in einer Rampe: Abwechslung über Helligkeit und Varianten, nie über eingestreute Farbtöne.",
+  "Reihen 'grund' dürfen Flächen füllen; Reihen 'akzent' nur kleine Flächen mit Zweck (Beute, Türen, Gefahr, später Props und Licht).",
+  "Die Palette gilt zunächst für die Umgebung; Spielfigur, Waffen, Ärmel, Gegner und Kisten bleiben unverändert.",
+  "Jede Ebene bekommt eine eigene Stein-Reihe mit demselben Aufbau; Blutrot und die Stufenfarben sind in allen Ebenen gleich."
+ ],
+ "grund": [
+  {
+   "name": "Stein",
+   "farben": [
+    [
+     16,
+     11,
+     20
+    ],
+    [
+     38,
+     34,
+     40
+    ],
+    [
+     45,
+     40,
+     47
+    ],
+    [
+     52,
+     46,
+     54
+    ],
+    [
+     61,
+     52,
+     56
+    ],
+    [
+     71,
+     61,
+     66
+    ],
+    [
+     79,
+     67,
+     73
+    ],
+    [
+     86,
+     74,
+     80
+    ],
+    [
+     95,
+     81,
+     88
+    ],
+    [
+     105,
+     91,
+     97
+    ],
+    [
+     113,
+     97,
+     104
+    ],
+    [
+     123,
+     105,
+     113
+    ],
+    [
+     132,
+     113,
+     121
+    ],
+    [
+     140,
+     120,
+     129
+    ],
+    [
+     151,
+     127,
+     137
+    ]
+   ],
+   "verwendung": "Wände, Böden, Decken (Fläche)"
+  },
+  {
+   "name": "Haut/Knochen",
+   "farben": [
+    [
+     16,
+     25,
+     20
+    ],
+    [
+     40,
+     58,
+     43
+    ],
+    [
+     72,
+     89,
+     67
+    ],
+    [
+     109,
+     118,
+     96
+    ],
+    [
+     140,
+     148,
+     115
+    ],
+    [
+     170,
+     172,
+     139
+    ],
+    [
+     195,
+     192,
+     164
+    ],
+    [
+     216,
+     210,
+     192
+    ]
+   ],
+   "verwendung": "Untote, Knochen (Figuren; unverändert bis der Mensch anderes entscheidet)"
+  },
+  {
+   "name": "Stoff",
+   "farben": [
+    [
+     18,
+     17,
+     34
+    ],
+    [
+     23,
+     24,
+     48
+    ],
+    [
+     30,
+     34,
+     62
+    ],
+    [
+     36,
+     45,
+     76
+    ],
+    [
+     60,
+     75,
+     116
+    ],
+    [
+     86,
+     107,
+     154
+    ],
+    [
+     126,
+     145,
+     178
+    ],
+    [
+     168,
+     181,
+     199
+    ]
+   ],
+   "verwendung": "Ärmel, Mäntel, Lumpen (Figuren; unverändert bis der Mensch anderes entscheidet)"
+  }
+ ],
+ "akzent": [
+  {
+   "name": "Holz",
+   "farben": [
+    [
+     30,
+     19,
+     26
+    ],
+    [
+     52,
+     27,
+     34
+    ],
+    [
+     80,
+     41,
+     37
+    ],
+    [
+     110,
+     76,
+     46
+    ],
+    [
+     138,
+     99,
+     58
+    ],
+    [
+     167,
+     125,
+     69
+    ],
+    [
+     187,
+     150,
+     89
+    ],
+    [
+     199,
+     172,
+     117
+    ]
+   ],
+   "zweck": "Türen, Kisten der Stufe Worn; später Balken und Möbel"
+  },
+  {
+   "name": "Eisen",
+   "farben": [
+    [
+     20,
+     18,
+     28
+    ],
+    [
+     38,
+     36,
+     56
+    ],
+    [
+     55,
+     57,
+     84
+    ],
+    [
+     73,
+     83,
+     112
+    ],
+    [
+     92,
+     112,
+     140
+    ],
+    [
+     126,
+     144,
+     165
+    ],
+    [
+     163,
+     175,
+     187
+    ],
+    [
+     198,
+     205,
+     210
+    ]
+   ],
+   "zweck": "Beschläge, Gitter, Kisten der Stufe Forged; später Ketten und Werkzeug"
+  },
+  {
+   "name": "Messing/Gold",
+   "farben": [
+    [
+     38,
+     21,
+     13
+    ],
+    [
+     74,
+     44,
+     23
+    ],
+    [
+     111,
+     70,
+     31
+    ],
+    [
+     149,
+     100,
+     39
+    ],
+    [
+     188,
+     135,
+     45
+    ],
+    [
+     214,
+     170,
+     64
+    ],
+    [
+     227,
+     202,
+     111
+    ],
+    [
+     238,
+     228,
+     160
+    ]
+   ],
+   "zweck": "Beute der Stufe Royal, Schlüssel, Zierrat; später Kerzenleuchter"
+  },
+  {
+   "name": "Blutrot",
+   "farben": [
+    [
+     27,
+     9,
+     15
+    ],
+    [
+     64,
+     17,
+     28
+    ],
+    [
+     105,
+     20,
+     34
+    ],
+    [
+     150,
+     20,
+     30
+    ],
+    [
+     175,
+     25,
+     35
+    ],
+    [
+     200,
+     30,
+     40
+    ],
+    [
+     225,
+     58,
+     48
+    ],
+    [
+     231,
+     110,
+     85
+    ]
+   ],
+   "zweck": "Blut, Treffer, Gefahr, Beute der Stufe Vampiric; nie als bloße Zierde"
+  },
+  {
+   "name": "Werkstein",
+   "farben": [
+    [
+     171,
+     159,
+     164
+    ],
+    [
+     183,
+     171,
+     176
+    ],
+    [
+     195,
+     182,
+     188
+    ],
+    [
+     209,
+     193,
+     200
+    ]
+   ],
+   "zweck": "besondere Portale: Bogenläufe, Kämpfer und Sockel des Bosstors; nie als Wandfläche"
+  }
+ ],
+ "katakomben": [
+  [
+   "Stein",
+   0
+  ],
+  [
+   "Stein",
+   1
+  ],
+  [
+   "Stein",
+   2
+  ],
+  [
+   "Stein",
+   3
+  ],
+  [
+   "Stein",
+   4
+  ],
+  [
+   "Stein",
+   5
+  ],
+  [
+   "Stein",
+   6
+  ],
+  [
+   "Stein",
+   7
+  ],
+  [
+   "Stein",
+   8
+  ],
+  [
+   "Stein",
+   9
+  ],
+  [
+   "Stein",
+   10
+  ],
+  [
+   "Stein",
+   11
+  ],
+  [
+   "Stein",
+   12
+  ],
+  [
+   "Stein",
+   13
+  ],
+  [
+   "Stein",
+   14
+  ],
+  [
+   "Holz",
+   1
+  ],
+  [
+   "Holz",
+   2
+  ],
+  [
+   "Holz",
+   3
+  ],
+  [
+   "Holz",
+   4
+  ],
+  [
+   "Eisen",
+   1
+  ],
+  [
+   "Eisen",
+   2
+  ],
+  [
+   "Eisen",
+   3
+  ],
+  [
+   "Haut/Knochen",
+   6
+  ],
+  [
+   "Haut/Knochen",
+   7
+  ]
+ ],
+ "stufenfarben": [
+  {
+   "stufe": "Worn",
+   "kiste": "Beggar",
+   "reihe": "Holz",
+   "body": [
+    110,
+    76,
+    46
+   ],
+   "band": [
+    56,
+    44,
+    36
+   ]
+  },
+  {
+   "stufe": "Forged",
+   "kiste": "Guard",
+   "reihe": "Eisen",
+   "body": [
+    92,
+    112,
+    140
+   ],
+   "band": [
+    52,
+    58,
+    70
+   ]
+  },
+  {
+   "stufe": "Royal",
+   "kiste": "King",
+   "reihe": "Messing/Gold",
+   "body": [
+    214,
+    170,
+    64
+   ],
+   "band": [
+    140,
+    100,
+    36
+   ]
+  },
+  {
+   "stufe": "Vampiric",
+   "kiste": "Vampire",
+   "reihe": "Blutrot",
+   "body": [
+    150,
+    20,
+    30
+   ],
+   "body_hell": [
+    200,
+    30,
+    40
+   ],
+   "band": [
+    40,
+    10,
+    14
+   ],
+   "hinweis": "pulsiert zwischen body und body_hell"
+  }
+ ],
+ "nebelfarbe": [
+  16,
+  11,
+  20
+ ],
+ "hinweis": "Stufenfarben und Nebelfarbe sind feste Ankerpunkte und stehen genau so im Spiel (ChestView.Colours, TierColours, LookSettings.FogColor). Die Bänder der Kistenplatzhalter (band) liegen nicht in den Reihen."
+}

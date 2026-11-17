@@ -55,10 +55,23 @@ public sealed class Bat : ITarget
     private readonly int _turnRoundMinTicks;
     private readonly int _turnRoundMaxTicks;
 
+    /// <summary>
+    /// Seconds between two wing beats that are reported (<see cref="BatFlapped"/>, issue #297) - the rhythm of the
+    /// flapping sound, within the 0.3 to 0.5 s the audio designer asked for. Presentation only, not a game rule: no
+    /// value of balance.json, and nothing the bat does depends on it.
+    /// </summary>
+    public const float FlapInterval = 0.4f;
+
+    private static readonly int FlapTicks = SimulationClock.SecondsToTicks(FlapInterval);
+
     private readonly Random _random;
     private int _corpseTicksLeft;
     private Vector3 _velocity;
     private int _turnTicksLeft;
+
+    // Ticks to the next reported wing beat. Starts from the bat's number, not from the world's random numbers (those
+    // would change the run): several bats flap out of step with each other.
+    private int _flapTicksLeft;
 
     private bool _alerted;
     private Player? _target;
@@ -99,6 +112,7 @@ public sealed class Bat : ITarget
         _turnRoundMinTicks = SimulationClock.SecondsToTicks(_bat.TurnRoundMin);
         _turnRoundMaxTicks = SimulationClock.SecondsToTicks(_bat.TurnRoundMax);
         Health = _bat.MaxHealth;
+        _flapTicksLeft = 1 + Math.Abs(id) % FlapTicks;
 
         // Always drawn in this order - the same seed must give the same bats.
         _random = random ?? new Random(id);
@@ -186,6 +200,8 @@ public sealed class Bat : ITarget
             return;
         }
 
+        Flap(events);
+
         // Flung away by a heavy blow: it flies with the push (walls stop it) and does nothing else meanwhile.
         if (Knockback.IsActive)
         {
@@ -250,6 +266,24 @@ public sealed class Bat : ITarget
                 }
 
                 break;
+        }
+    }
+
+    /// <summary>
+    /// Reports a wing beat every <see cref="FlapInterval"/> while it is awake (anything but hanging still unnoticed) -
+    /// only for the sound; the counter keeps running while it lurks, so waking up does not flap at once.
+    /// </summary>
+    private void Flap(ICollection<GameEvent> events)
+    {
+        if (--_flapTicksLeft > 0)
+        {
+            return;
+        }
+
+        _flapTicksLeft = FlapTicks;
+        if (State != BatState.Lurking)
+        {
+            events.Add(new BatFlapped(Id, Centre));
         }
     }
 
