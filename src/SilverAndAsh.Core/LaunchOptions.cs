@@ -25,9 +25,13 @@ namespace SilverAndAsh.Core;
 /// <c>--bench &lt;scene&gt;</c>: build this photo scene, draw it a fixed number of times without VSync and print the frame
 /// times (issue #233) - to see whether a new model or texture costs frame rate. Only in the debug version. Null: play.
 /// </param>
+/// <param name="Clip">
+/// <c>--clip &lt;scene&gt;</c>: film this motion scene into numbered pictures (or <see cref="AllPhotos"/>, or
+/// <see cref="ListPhotos"/> to name them) and quit (issue #286). Only in the debug version. Null: play.
+/// </param>
 public sealed partial record LaunchOptions(
     string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null, string? Photo = null, string? PhotoFolder = null,
-    int? Look = null, string? Bench = null)
+    int? Look = null, string? Bench = null, string? Clip = null)
 {
     /// <summary><c>--photo compare</c> takes the comparison scenes in every picture variant, plus one 2 x 2 sheet per scene.</summary>
     public const string ComparePhotos = "compare";
@@ -64,6 +68,7 @@ public sealed partial record LaunchOptions(
         string? photoFolder = null;
         int? look = null;
         string? bench = null;
+        string? clip = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -149,6 +154,21 @@ public sealed partial record LaunchOptions(
                     bench = args[++i];
                     break;
 
+                case "--clip":
+                    var clips = string.Join(", ", Photos.MotionScenes.All.Select(scene => scene.Name));
+                    if (i + 1 >= args.Count)
+                    {
+                        throw new ArgumentException($"'--clip' needs a motion scene, '{AllPhotos}' or '{ListPhotos}'. Scenes: {clips}.");
+                    }
+
+                    clip = args[++i];
+                    if (clip is not (AllPhotos or ListPhotos) && Photos.MotionScenes.Find(clip) is null)
+                    {
+                        throw new ArgumentException($"Unknown motion scene '{clip}'. Scenes: {clips}.");
+                    }
+
+                    break;
+
                 case "--out":
                     if (i + 1 >= args.Count || string.IsNullOrWhiteSpace(args[i + 1]))
                     {
@@ -172,13 +192,18 @@ public sealed partial record LaunchOptions(
 
                 default:
                     throw new ArgumentException(
-                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --out <folder>, --look <1-4>.");
+                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>.");
             }
         }
 
-        if (photoFolder is not null && photo is null)
+        if (photoFolder is not null && photo is null && clip is null)
         {
-            throw new ArgumentException("'--out' only goes with '--photo'.");
+            throw new ArgumentException("'--out' only goes with '--photo' or '--clip'.");
+        }
+
+        if (clip is not null && (photo is not null || bench is not null))
+        {
+            throw new ArgumentException("'--clip' cannot be combined with '--photo' or '--bench' - one after the other.");
         }
 
         if (bench is not null && photo is not null)
@@ -191,7 +216,7 @@ public sealed partial record LaunchOptions(
             throw new ArgumentException($"'--photo {ComparePhotos}' takes every picture variant; leave out '--look'.");
         }
 
-        return new LaunchOptions(levelName, seed, give, photo, photoFolder, look, bench);
+        return new LaunchOptions(levelName, seed, give, photo, photoFolder, look, bench, clip);
     }
 
     /// <summary>The level file for these options inside <paramref name="levelDirectory"/>.</summary>

@@ -122,6 +122,33 @@ using (log)
             }
         }
 
+        // Test option: --clip <scene> films a motion scene into numbered pictures, one folder per scene, and quits
+        // (issue #286, docs/foto-skript.md); tools/clip.ps1 puts them together. Only in the debug version, like --photo.
+        if (options.Clip is { } clip)
+        {
+            if (clip == LaunchOptions.ListPhotos)
+            {
+                foreach (var scene in MotionScenes.All)
+                {
+                    Console.WriteLine($"{scene.Name,-20} {scene.FramesPerSecond,3:0} fps  {scene.Description}");
+                }
+
+                newWorld = null;
+            }
+            else
+            {
+                var folder = Path.GetFullPath(options.PhotoFolder ?? Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "clips"));
+                IReadOnlyList<MotionScene> clips = clip == LaunchOptions.AllPhotos ? MotionScenes.All : [MotionScenes.Find(clip)!];
+                photos = new PhotoRequest(
+                    [], folder, RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), Compare: false)
+                {
+                    Clips = clips,
+                };
+                log?.Info($"Clip mode: {clips.Count} motion scenes into '{folder}'.");
+            }
+        }
+
         // Test option: --bench <scene> measures how long a frame of this photo scene takes, without VSync (issue #233,
         // docs/foto-skript.md). Only in the debug version, like --photo.
         if (options.Bench is { } bench)
@@ -140,6 +167,11 @@ using (log)
         if (options.Photo is not null)
         {
             throw new ArgumentException("'--photo' works only in the debug version (dotnet run).");
+        }
+
+        if (options.Clip is not null)
+        {
+            throw new ArgumentException("'--clip' works only in the debug version (dotnet run).");
         }
 
         if (options.Look is not null)
@@ -606,6 +638,50 @@ static void RunGame(
                 Console.WriteLine($"{scene.Name}: {picturePath} ({ticks} ticks)");
             }
 
+            // Clip mode (--clip, issue #286): the same as a photo, but a picture of the whole window before the first
+            // tick and after every n-th one, into <folder>/<scene>/frame-0000.png and on.
+            foreach (var clip in photos.Clips)
+            {
+                var setup = clip.Build(studio);
+                StartFresh(setup.World);
+                var clipFolder = Path.Combine(photos.Folder, clip.Name);
+                Directory.CreateDirectory(clipFolder);
+                foreach (var old in Directory.EnumerateFiles(clipFolder, "frame-*.png"))
+                {
+                    // Pictures of an earlier, longer take would end up in the clip.
+                    File.Delete(old);
+                }
+
+                // The views take the world as it is, without time passing: the first picture comes before any tick, and
+                // fresh views would still show the boxes instead of the weapons in hand.
+                UpdateViews(0f);
+                Raylib.SetMousePosition(0, 0);
+                var frames = 0;
+                var taken = setup.Film(
+                    clip.FrameEvery,
+                    frame: _ =>
+                    {
+                        DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
+                        Raylib.BeginDrawing();
+                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
+                        Rlgl.DrawRenderBatchActive();
+                        var screen = Raylib.LoadImageFromScreen();
+                        Raylib.ExportImage(screen, Path.Combine(clipFolder, $"frame-{frames++:0000}.png"));
+                        Raylib.UnloadImage(screen);
+                        Raylib.EndDrawing();
+                    },
+                    afterTick: () =>
+                    {
+                        ReadEvents();
+                        UpdateViews(SimulationClock.SecondsPerTick);
+                        seconds += SimulationClock.SecondsPerTick;
+                        levelNameSeconds = MathF.Max(0f, levelNameSeconds - SimulationClock.SecondsPerTick);
+                    });
+                var fps = clip.FramesPerSecond.ToString("0", CultureInfo.InvariantCulture);
+                log?.Info($"Clip '{clip.Name}': {taken.Count} pictures over {taken[^1]} ticks, {fps} per second: {clipFolder}");
+                Console.WriteLine($"{clip.Name}: {clipFolder} ({taken.Count} pictures, {fps} fps)");
+            }
+
             if (photos.Compare)
             {
                 foreach (var scene in photos.Scenes)
@@ -1026,6 +1102,9 @@ static string CooldownText(Cooldown cooldown) =>
 internal sealed record PhotoRequest(
     IReadOnlyList<PhotoScene> Scenes, string Folder, IReadOnlyList<RoomTemplate> Templates, bool Compare, bool Bench = false)
 {
+    /// <summary>The motion scenes to film (--clip, issue #286), after the photo scenes; usually there are only these.</summary>
+    public IReadOnlyList<MotionScene> Clips { get; init; } = [];
+
     /// <summary>Frames drawn before measuring (shaders, textures and caches settle).</summary>
     public const int WarmUpFrames = 100;
 

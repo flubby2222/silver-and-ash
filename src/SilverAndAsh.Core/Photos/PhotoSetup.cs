@@ -47,4 +47,37 @@ public sealed record PhotoSetup(GameWorld World)
 
         return ticks;
     }
+
+    /// <summary>
+    /// Films this scene (issue #286): the same ticks as <see cref="Run"/>, but <paramref name="frame"/> is called with the
+    /// number of ticks run so far before the first tick (0) and after every <paramref name="frameEvery"/>-th tick - so
+    /// the pictures stand evenly apart in game time. <paramref name="afterTick"/> is called after every tick, before a
+    /// picture. Returns the ticks at which pictures were taken.
+    /// </summary>
+    public IReadOnlyList<int> Film(int frameEvery, Action<int> frame, Action? afterTick = null)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(frameEvery, 1);
+        ArgumentNullException.ThrowIfNull(frame);
+        var taken = new List<int> { 0 };
+        frame(0);
+        var ticks = Math.Max(1, Ticks);
+        for (var tick = 0; tick < ticks; tick++)
+        {
+            World.Tick(Input?.Invoke(tick) ?? PlayerInput.None);
+            afterTick?.Invoke();
+            var done = tick + 1;
+            if (done % frameEvery == 0)
+            {
+                frame(done);
+                taken.Add(done);
+            }
+
+            if (StopWhen?.Invoke(World) == true)
+            {
+                break;
+            }
+        }
+
+        return taken;
+    }
 }
