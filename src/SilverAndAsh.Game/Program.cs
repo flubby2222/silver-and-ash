@@ -737,6 +737,16 @@ static void RunGame(
         // never part of the world.
         var soundPacks = new SoundPackSwitch();
 
+        // The menu click (issue #291): its own choice of variants, so the run's sounds do not depend on the menus.
+        var menuCues = new SoundCues(0);
+        void PlayMenuClick(MenuView menu)
+        {
+            if (menu.Clicked)
+            {
+                sounds.Play(menuCues.For(SoundKind.MenuClick, soundPacks.Current));
+            }
+        }
+
         // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.
         while (!Raylib.WindowShouldClose() && !quit)
         {
@@ -787,6 +797,8 @@ static void RunGame(
                         break;
                 }
 
+                PlayMenuClick(titleMenu);
+
                 Raylib.BeginDrawing();
                 TitleScreen.Draw(titleMenu, displayVersion);
                 SoundPackNotice.Draw(soundPacks);
@@ -831,6 +843,8 @@ static void RunGame(
                         break;
                 }
 
+                PlayMenuClick(escMenu);
+
                 if (changed != settings)
                 {
                     settings = changed;
@@ -854,6 +868,8 @@ static void RunGame(
                         titleMenu.Open();
                         break;
                 }
+
+                PlayMenuClick(endMenu);
             }
 
             // The mouse is captured only while playing: free in the menu, on the end screen and while the bonus choice

@@ -1,6 +1,6 @@
 # Geräuschpaket 1 – Übersicht
 
-Alle 34 Dateien aus der neuen Palette ([palette-neu.md](../soundcraft-versuch/palette-neu.md)), nach der Methode aus dem Video ([video.md](../soundcraft-versuch/video.md)): fünf Quell-Samples (Schlag, Hauch, Pfeife, Glocke, Stimme), je einmal in SoundCraft gebaut, auf 22 050 Hz in VAG gewandelt und je Geräusch vom Sampler in der Tonhöhe verschoben gespielt; ein gemeinsamer kurzer Raum (Hall 0,8 s, 22 %). **Ungehört**; alle Zahlen sind gemessen. Erzeugung: `python paket1.py` (zweimal gerechnet, bitgleich); Dateien in `dateien/` und als Übergabe in [design/uebergabe/assets/audio/](../../uebergabe/assets/audio/) (Präfix `p1-`, Prüfsummen in `audio-paket-1.sha256`); Zuordnung zu den Spielereignissen und fehlende Ereignisse: [README-audio-paket-1.md](../../uebergabe/README-audio-paket-1.md).
+Alle 36 Dateien aus der neuen Palette ([palette-neu.md](../soundcraft-versuch/palette-neu.md)), nach der Methode aus dem Video ([video.md](../soundcraft-versuch/video.md)): sechs Quell-Samples (Schlag, Hauch, Pfeife, Glocke, Stimme, seit Paket 1.1 dazu die erweiterte Stimme `stimme2`), je einmal in SoundCraft gebaut, auf 22 050 Hz in VAG gewandelt und je Geräusch vom Sampler in der Tonhöhe verschoben gespielt; ein gemeinsamer kurzer Raum (Hall 0,8 s, 22 %). **Ungehört**; alle Zahlen sind gemessen. Erzeugung: `python paket1.py` (zweimal gerechnet, bitgleich); Dateien in `dateien/` und als Übergabe in [design/uebergabe/assets/audio/](../../uebergabe/assets/audio/) (Präfix `p1-`, Prüfsummen in `audio-paket-1.sha256`); Zuordnung zu den Spielereignissen und fehlende Ereignisse: [README-audio-paket-1.md](../../uebergabe/README-audio-paket-1.md).
 
 ## Je Geräusch eine Zeile
 
@@ -18,17 +18,19 @@ Alle 34 Dateien aus der neuen Palette ([palette-neu.md](../soundcraft-versuch/pa
 | `p1-treffer-3.wav` | schlag | Cis5 (+13) | 0.45 s | -4.5 | -27.6 | treffer |
 | `p1-schritt-l1.wav` | schlag | A2 (-15) | 0.28 s | -12.0 | -33.0 | schritt |
 | `p1-schritt-l2.wav` | schlag | Gis2 (-16) | 0.28 s | -12.0 | -32.8 | schritt |
-| `p1-schritt-l3.wav` | schlag | B2 (-14) | 0.28 s | -12.0 | -33.1 | schritt |
+| `p1-schritt-l3.wav` | schlag | G2 (-17) | 0.28 s | -12.0 | -32.6 | schritt |
 | `p1-schritt-r1.wav` | schlag | H2 (-13) | 0.28 s | -12.0 | -33.3 | schritt |
 | `p1-schritt-r2.wav` | schlag | B2 (-14) | 0.28 s | -12.0 | -33.1 | schritt |
 | `p1-schritt-r3.wav` | schlag | C3 (-12) | 0.28 s | -12.0 | -33.4 | schritt |
 | `p1-sprung.wav` | hauch | C5 (+12) | 0.30 s | -11.0 | -30.5 | bewegung |
 | `p1-dash.wav` | hauch | G3 (-5) | 0.60 s | -11.0 | -30.1 | bewegung |
 | `p1-landung.wav` | schlag | Fis2 (-18) | 0.35 s | -11.0 | -30.6 | bewegung |
-| `p1-schmerz.wav` | stimme | G3 (+3) | 0.60 s | -5.0 | -19.1 | schmerz |
+| `p1-schmerz.wav` | stimme | H2 (-5) | 0.40 s | -5.0 | -18.9 | schmerz |
 | `p1-ghul-entdecken.wav` | stimme | E3 (+0) | 0.90 s | -6.0 | -19.8 | ghul |
-| `p1-ghul-ankuendigung.wav` | stimme | E4 (+12) | 1.00 s | -1.5 | -19.3 | ankuendigung |
+| `p1-ghul-entdecken-2.wav` | stimme2 | D3 (-2) | 0.85 s | -6.0 | -19.6 | ghul |
+| `p1-ghul-ankuendigung.wav` | stimme | D3 (-2) | 1.00 s | -1.5 | -20.2 | ankuendigung |
 | `p1-ghul-sterben.wav` | stimme | A2 (-7) | 1.30 s | -6.0 | -21.4 | ghul |
+| `p1-ghul-sterben-2.wav` | stimme2 | G2 (-9) | 1.30 s | -6.0 | -20.5 | ghul |
 | `p1-tuer-oeffnen.wav` | hauch | G2 (-17) | 1.30 s | -7.0 | -26.6 | tuer_kiste |
 | `p1-kiste-oeffnen.wav` | schlag | B2 (-14) | 0.50 s | -7.0 | -28.6 | tuer_kiste |
 | `p1-menue-klick.wav` | schlag | C5 (+12) | 0.12 s | -12.0 | -34.5 | menue |
@@ -49,28 +51,28 @@ Die Spitze richtet sich nach den bisherigen Dateien im Spiel (Schuss −1,5, Kli
 
 | Kategorie | Dateien | Spitze dBFS | Mittel (RMS) dBFS |
 |---|---|---|---|
-| ankuendigung | 1 | -1.5 | -19.3 … -19.3 |
+| ankuendigung | 1 | -1.5 | -20.2 … -20.2 |
 | schuss | 5 | -1.5 | -20.4 … -19.4 |
-| schmerz | 1 | -5.0 | -19.1 … -19.1 |
-| ghul | 2 | -6.0 | -21.4 … -19.8 |
+| schmerz | 1 | -5.0 | -18.9 … -18.9 |
+| ghul | 4 | -6.0 | -21.4 … -19.6 |
 | treffer | 3 | -4.5 | -27.6 … -26.5 |
 | nachladen | 2 | -8.0 | -31.9 … -31.5 |
 | schwung | 2 | -9.0 | -29.5 … -29.4 |
 | bewegung | 3 | -11.0 | -30.6 … -30.1 |
 | tuer_kiste | 2 | -7.0 | -28.6 … -26.6 |
 | aufheben | 5 | -8.0 | -31.4 … -27.1 |
-| schritt | 6 | -12.0 | -33.4 … -32.8 |
+| schritt | 6 | -12.0 | -33.4 … -32.6 |
 | menue | 1 | -12.0 | -34.5 … -34.5 |
 | marke | 1 | -10.0 | -31.2 … -31.2 |
 
-Reihenfolge von laut nach leise: Ankündigung, Schuss, Schmerz, Ghul, Treffer, Nachladen, Schwung, Bewegung, Tür/Kiste, Aufheben, Schritte, Menü. Die **Ankündigung** (`p1-ghul-ankuendigung`) hat mit dem Schuss die höchste Spitze (−1,5 dBFS), liegt aber in einem **eigenen Band**: 300 bis 3 000 Hz tragen praktisch die ganze Energie, unter 300 Hz liegt sie 29 dB tiefer (die Katakomben-Musik liegt in dieser Mitte mindestens 15 dB unter ihrem Gesamtpegel). Sie hat genau einen Einsatz (gemessen nach Regel 2 der Audio Bible).
+Reihenfolge von laut nach leise: Ankündigung, Schuss, Schmerz, Ghul, Treffer, Nachladen, Schwung, Bewegung, Tür/Kiste, Aufheben, Schritte, Menü. Die **Ankündigung** (`p1-ghul-ankuendigung`) hat mit dem Schuss die höchste Spitze (−1,5 dBFS). **Paket 1.1** (Fassung A): sie ist deutlich tiefer (D3 statt E4, Anstieg +3 statt +7 Halbtöne, Tiefpass 1 800 Hz, Hochpass 200 Hz); 300 bis 3 000 Hz tragen noch die meiste Energie (Mitte −1,9 dB, unter 300 Hz −4,6 dB unter der Gesamtenergie), der Abstand zum tiefen Band ist knapp. Nach der 30-ms-Messung hat sie genau einen Einsatz (Regel 2 der Audio Bible). Die leisere Fassung B (`-leise`) ist nicht im Spiel.
 
 ## Wo ich am unsichersten bin
 
-1. **Stimme (Ghul, Schmerz):** Die Stimme ist eine Säge mit zwei Formant-Spitzen (700 und 1 150 Hz), als Sample bei E3; Tonhöhenfahrten macht der SoundCraft-`pitch_shifter` per Automation (Anstieg der Ankündigung, Fall beim Sterben und beim Schmerz). Ob das „menschlich“ oder wie ein Synthesizer klingt und ob der Tonhöhen-Effekt Artefakte hat, kann ich nicht hören. Der Mensch wollte Ghul „menschlich und sehr einfach“; dafür ist eine **vierte und fünfte Quelle** (Hauch, Stimme) nötig geworden, weil Schlag, Pfeife und Glocke keine Stimme und keinen Luftklang liefern.
+1. **Stimme (Ghul, Schmerz):** Paket 1.1: Ghul entdecken und sterben gibt es in je zwei Varianten; Variante 2 nutzt die erweiterte Quelle `stimme2` (drei Formanten 600/1 050/2 400 Hz, zweite Schwingung leicht verstimmt, kleine Tonhöhenschwankungen, leiser Hauch darunter). Der Schmerzlaut ist tiefer (H2 statt G3, 0,4 s statt 0,6 s) und liegt nicht höher als die Ghul-Laute. Die ursprüngliche Stimme ist eine Säge mit zwei Formant-Spitzen (700 und 1 150 Hz), als Sample bei E3; Tonhöhenfahrten macht der SoundCraft-`pitch_shifter` per Automation (Anstieg der Ankündigung, Fall beim Sterben und beim Schmerz). Ob das „menschlich“ oder wie ein Synthesizer klingt und ob der Tonhöhen-Effekt Artefakte hat, kann ich nicht hören. Der Mensch wollte Ghul „menschlich und sehr einfach“; dafür ist eine **vierte und fünfte Quelle** (Hauch, Stimme) nötig geworden, weil Schlag, Pfeife und Glocke keine Stimme und keinen Luftklang liefern.
 2. **Klingenschwung (Hauch):** Charakter von 2a (luftig, kein Anschlag) in der neuen Palette gebaut: weißes Rauschen, Bandpass fährt von 900 auf 3 800 Hz (0,35 s), Pegel steigt sanft und fällt (45 dB unter, 0,15 s hoch, 0,5 s Ende), **kein** Tiefpass-Sturz wie beim Rauschschlag. Gemessen sitzt er hell (Schwerpunkt etwa 2,8 kHz) und hat anders als der Treffer keinen Anschlag. Ob er wie ein Schwung klingt und nicht wie ein Zischen, ist offen; ebenso, ob er zu 2b (Treffer) „gleichzeitig“ abgespielt noch trennt.
 3. **Gleiche Quelle für Schuss, Treffer, Schritte, Nachladen, Landung, Kiste, Menü-Klick:** Alle sind derselbe Rauschschlag bei anderer Tonhöhe und Länge. Das macht sie zu einer Familie, kann aber heißen, dass man sie bei schnellem Wechsel schwer auseinanderhält (Schritt, Landung und Kiste sind alle dumpfe Schläge, 12 bis 18 Halbtöne unter der Aufnahme). Unterscheidung nur über Tonhöhe und Länge.
 4. **Sprung, Dash, Tür:** Dasselbe Hauch-Sample in drei Tonlagen (hoch/kurz, mittel, sehr tief/lang). Als „Tür“ ist ein tief gespieltes Rauschen vielleicht nicht schwer genug; die Messung zeigt bei Dash und Tür mehrere Pegelanstiege (Rauschen mit Bandpassfahrt), was als Zucken zu hören sein kann.
 5. **Aufheben je Verbrauchsgut:** Unterscheidung nur durch Zahl, Richtung und Lage der Töne (Silber ein Ton E4; Phiole zwei aufsteigend G3→H3; Weihmunition E4 und H3 **zugleich** als ein längerer Klang, 1,4 s; Schlüssel drei E3→H3→E4; Ausrüstung ein tiefer langer Ton E2). Ob man Phiole (Folge) und Weihmunition (Zusammenklang) mit Hören auseinanderhält, ist ungeprüft; ob sie bei vielen Pickups hintereinander nerven, auch.
-7. **Vorschlag geweihte Munition (nicht bestellt, getrennt zu bewerten):** `p1-schuss-geweiht-1`, `-2` sind der Rauschschlag des Schusses mit einem kurzen Glockenton (E4) als zweiter Spur (zwei Schichten, eine Geste); `p1-weihe-ende` ist ein leiser tiefer Glockenton (E3) als Marke fürs Ende der Wirkung – es gibt im Core **kein** Ereignis dafür. Da geweihte Munition die Feuerrate verdoppelt, überlappen die Schüsse bei Dauerfeuer; ob der Glockenanteil dann klingelt oder nervt, ist offen.
-6. **Fehlende Ereignisse im Spiel:** `p1-ghul-entdecken`, Sprung, Dash, Landung, Menü-Klick und das Aufheben von Ausrüstung haben noch kein Ereignis (Liste in der Übergabe); die Dateien sind gebaut, aber nicht auslösbar.
+7. **Vorschlag geweihte Munition (nicht bestellt, getrennt zu bewerten):** `p1-schuss-geweiht-1`, `-2` sind der Rauschschlag des Schusses mit einem kurzen Glockenton (E4) als zweiter Spur (zwei Schichten, eine Geste); `p1-weihe-ende` ist ein leiser tiefer Glockenton (E3) als Marke fürs Ende der Wirkung – seit #291 löst ihn das Core-Ereignis `ConsecrationEnded` aus. Da geweihte Munition die Feuerrate verdoppelt, überlappen die Schüsse bei Dauerfeuer; ob der Glockenanteil dann klingelt oder nervt, ist offen.
+6. **Fehlende Ereignisse im Spiel:** Seit #291 haben Ghul entdecken, Sprung, Dash (auch Ausweichen), Landung (ab 0,6 m Fallhöhe), Ende der Weihe und Menü-Klick ihr Ereignis. Nur das Aufheben von Ausrüstung bleibt ohne Ereignis, bis es Ausrüstung im Spiel gibt (#194).
