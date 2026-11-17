@@ -47,7 +47,7 @@ KATA_BELL = [(0, 8, 40, 0.6), (32, 8, 45, 0.5)]
 KATA_HEART = [(t + (0.38 if dub else 0.0), 0.5, 41 if dub else 40, (0.3 if dub else 0.5)) for t in (22, 46, 58) for dub in (0, 1)]
 
 PIECES = {
-    "menue": dict(name="musik-hauptmenue", beats=72, chords=MENU_CHORDS, bell=MENU_BELL, heart=MENU_HEART,
+    "menue": dict(name="musik-hauptmenue", beats=72, chords=MENU_CHORDS, bell=MENU_BELL, heart=[], ref_heart=MENU_HEART,
                   mix=dict(bell=-9.0, choir=-13.0, heart=-7.0), formant=(1.0, 0.5, 0.2), low=0.6, target_mean=-21.0),
     "katakomben": dict(name="musik-katakomben", beats=64, chords=KATA_CHORDS, bell=KATA_BELL, heart=KATA_HEART,
                        mix=dict(bell=-12.0, choir=0.0, heart=-14.0), formant=(0.3, 0.15, 0.06), low=0.5, target_mean=-34.0),
@@ -93,26 +93,16 @@ def pan(x, p):
     return [v * math.cos(a) for v in x], [v * math.sin(a) for v in x]
 
 
-def build_piece(spec, cache=None):
-    n = n_of(spec["beats"])
-    cached = None
-    if cache and Path(cache).exists():
-        cached = pickle.loads(Path(cache).read_bytes())
-    if cached:
-        bell, choir_raw, heart = cached
-    else:
-        bell = render_loop(spec["bell"], lambda m, d, v, k: K.bell(m, max(d, 7.0), v, seed=k), n)
-        choir_notes = [(s, d + 0.3, m, 0.9) for s, d, ch in spec["chords"] for m in ch]
-        choir_raw = render_loop(choir_notes, lambda m, d, v, k: K.choir_raw(m, d, v, attack=1.6, release=1.8, seed=k), n)
-        heart = render_loop(spec["heart"], lambda m, d, v, k: K.drum(120.0 if m == 41 else 100.0, 61.7 if m == 41 else 41.2,
-                                                                      0.6, v, seed=k), n)
-        if cache:
-            Path(cache).write_bytes(pickle.dumps((bell, choir_raw, heart)))
+def chain(spec, bell, choir_raw, heart, peak_ref=None, g_ref=None):
+    """Mischung, Hall, Gleichanteil, PS1-Kette. heart=None: Spur weglassen. Mit peak_ref/g_ref (Bezug aus einer anderen Mischung)
+    werden dieselben Skalierungen benutzt, damit die uebrigen Spuren nicht lauter oder leiser werden."""
+    n = len(bell)
     pad = 4.0
     choir = choir_post(choir_raw[-n_of(pad):] + choir_raw, spec["formant"], spec["low"], pad)
     mix = spec["mix"]
-    tracks = {"bell": (normalize(bell, 1.0), mix["bell"], -0.25), "choir": (normalize(choir, 1.0), mix["choir"], 0.0),
-              "heart": (normalize(heart, 1.0), mix["heart"], 0.0)}
+    tracks = {"bell": (normalize(bell, 1.0), mix["bell"], -0.25), "choir": (normalize(choir, 1.0), mix["choir"], 0.0)}
+    if heart is not None:
+        tracks["heart"] = (normalize(heart, 1.0), mix["heart"], 0.0)
     left, right = zeros(n), zeros(n)
     delay = n_of(0.013)    # Haas-Versatz fuer den Chor: breiter, ohne zweiten Klangerzeuger
     for name, (x, db, p) in tracks.items():
@@ -130,12 +120,37 @@ def build_piece(spec, cache=None):
     full = [[a + K.WET * b for a, b in zip(left, wet_l)], [a + K.WET * b for a, b in zip(right, wet_r)]]
     pad8 = n_of(8.0)    # Gleichanteil (die Stimmquelle ist einseitig) entfernen, kreisfoermig: Vorlauf aus dem Ende, danach abschneiden
     full = [hp1(c[-pad8:] + c, 20.0)[pad8:] for c in full]
-    peak = max(max(abs(v) for v in c) for c in full)
+    peak = peak_ref if peak_ref is not None else max(max(abs(v) for v in c) for c in full)
     full = [[v * lin(K.PEAK_DB) / peak for v in c] for c in full]
     out = AMB.ps1_loop(full)                           # PS1-Kette, kreisfoermig
-    mean_db = 10.0 * math.log10(sum(v * v for c in out for v in c) / (2 * n))
-    g = min(1.0, lin(spec["target_mean"] - mean_db))
-    return [[v * g for v in c] for c in out]
+    if g_ref is None:
+        mean_db = 10.0 * math.log10(sum(v * v for c in out for v in c) / (2 * n))
+        g_ref = min(1.0, lin(spec["target_mean"] - mean_db))
+    return [[v * g_ref for v in c] for c in out], peak, g_ref
+
+
+def build_piece(spec, cache=None):
+    n = n_of(spec["beats"])
+    cached = None
+    if cache and Path(cache).exists():
+        cached = pickle.loads(Path(cache).read_bytes())
+    if cached:
+        bell, choir_raw, heart = cached
+    else:
+        bell = render_loop(spec["bell"], lambda m, d, v, k: K.bell(m, max(d, 7.0), v, seed=k), n)
+        choir_notes = [(s, d + 0.3, m, 0.9) for s, d, ch in spec["chords"] for m in ch]
+        choir_raw = render_loop(choir_notes, lambda m, d, v, k: K.choir_raw(m, d, v, attack=1.6, release=1.8, seed=k), n)
+        heart = None
+        if cache:
+            Path(cache).write_bytes(pickle.dumps((bell, choir_raw, heart)))
+
+    def drum_track(notes):
+        return render_loop(notes, lambda m, d, v, k: K.drum(120.0 if m == 41 else 100.0, 61.7 if m == 41 else 41.2, 0.6, v, seed=k), n)
+    if spec.get("ref_heart"):
+        # Bezug: die fruehere Mischung MIT Herzschlag; die Spur wird weggelassen, alles andere behaelt Skalierung und Pegel
+        _, peak_ref, g_ref = chain(spec, bell, choir_raw, drum_track(spec["ref_heart"]))
+        return chain(spec, bell, choir_raw, None, peak_ref, g_ref)[0]
+    return chain(spec, bell, choir_raw, drum_track(spec["heart"]) if spec["heart"] else None)[0]
 
 
 def write_ogg(chans, path):
