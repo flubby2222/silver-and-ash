@@ -97,6 +97,18 @@ public class CrackedWallTests
     }
 
     [Fact]
+    public void A_broken_wall_does_not_swing_it_is_gone_at_once()
+    {
+        // Issue #245: only doors swing open; the cracked wall is wall until broken, then nothing of it is left.
+        var world = World();
+
+        Swing(world, FullCharge + 5);
+
+        Assert.True(world.Doors[0].IsOpen);
+        Assert.Equal(1f, world.Doors[0].OpenFraction);
+    }
+
+    [Fact]
     public void A_fully_charged_club_breaks_it_too()
     {
         // Every melee weapon can be charged, and every full charge breaks the wall (decision record 0008).

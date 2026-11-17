@@ -2,6 +2,8 @@ using System.Numerics;
 using System.Text.RegularExpressions;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Photos;
+using SilverAndAsh.Core.Physics;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Photos;
@@ -42,6 +44,13 @@ public class PhotoSceneTests
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "hud-rifle",
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload",
+            "gorm-hammer-windup",
+            "door-normal", "door-normal-half", "door-normal-open", "door-locked", "door-locked-half", "door-locked-open",
+            "door-boss", "door-boss-half", "door-boss-open", "door-cracked", "door-sideways-half", "door-level-seed1",
+            "door-level-seed2-boss", "door-normal-10m", "door-locked-10m", "door-boss-10m",
+            "cracked-wall-2m", "cracked-wall-4m", "cracked-wall-10m", "cracked-wall-flat", "cracked-wall-a-4m",
+            "cracked-wall-b-4m", "cracked-wall-c-4m", "cracked-wall-sideways-4m", "cracked-wall-secret-4m", "cracked-wall-break",
+            "cracked-wall-break-after",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -107,6 +116,20 @@ public class PhotoSceneTests
         var middle = target.Body.Position + new Vector3(0f, target.Body.Height / 2f, 0f);
         var towards = Vector3.Normalize(middle - world.Player.EyePosition);
         Assert.Equal(1f, Vector3.Dot(world.Player.View.Forward, towards), 0.001f);
+    }
+
+    [Fact]
+    public void An_arena_can_be_as_high_as_gorms_boss_room()
+    {
+        var level = Studio().Arena('T', 8, RoomTemplate.RoomCeilingHeight).Level;
+        var open = (from x in Enumerable.Range(0, level.Width)
+                    from z in Enumerable.Range(0, level.Depth)
+                    where !level[x, z].IsSolid
+                    select level[x, z]).ToList();
+
+        Assert.NotEmpty(open);
+        Assert.All(open, cell => Assert.Equal(RoomTemplate.RoomCeilingHeight, cell.CeilingHeight));
+        Assert.All(open, cell => Assert.Equal(0f, cell.FloorHeight));
     }
 
     [Theory]
@@ -260,4 +283,103 @@ public class PhotoSceneTests
             Assert.Equal(4f, chest.Position.Z - world.Player.Body.Position.Z, 0.001f);
         });
     }
+
+    [Theory]
+    [InlineData(DoorKind.Normal, false)]
+    [InlineData(DoorKind.Locked, false)]
+    [InlineData(DoorKind.Boss, false)]
+    [InlineData(DoorKind.Normal, true)]
+    public void The_open_door_hall_is_opened_the_regular_way_and_the_player_looks_at_it_from_the_start(DoorKind kind, bool sideways)
+    {
+        var world = Studio().DoorHall(kind, sideways, open: true);
+        var door = world.Doors[0];
+        var middle = (door.BoxMin + door.BoxMax) / 2f;
+
+        Assert.True(door.IsOpen);
+        Assert.True(door.OpenedFromLowSide, "The player opened it from their side: the leaves swing away from them.");
+        Assert.False(world.Level[door.X, door.Z].IsSolid);
+        Assert.Equal(0, world.Player.Keys);
+        Assert.Equal(6f, sideways ? middle.X - world.Player.Position.X : middle.Z - world.Player.Position.Z, 0.001f);
+        var towards = Vector3.Normalize(middle - world.Player.EyePosition);
+        Assert.Equal(1f, Vector3.Dot(world.Player.View.Forward, towards), 0.001f);
+    }
+
+    [Fact]
+    public void The_10_m_door_scenes_stand_10_m_before_a_closed_door()
+    {
+        foreach (var name in new[] { "door-normal-10m", "door-locked-10m", "door-boss-10m" })
+        {
+            var world = Built(name).World;
+            var door = world.Doors[0];
+
+            Assert.False(door.IsOpen);
+            Assert.Equal(10f, ((door.BoxMin.Z + door.BoxMax.Z) / 2f) - world.Player.Position.Z, 0.001f);
+        }
+    }
+
+    [Theory]
+    [InlineData("cracked-wall-2m", 2f, null, false, false)]
+    [InlineData("cracked-wall-4m", 4f, null, false, false)]
+    [InlineData("cracked-wall-10m", 10f, null, false, false)]
+    [InlineData("cracked-wall-a-4m", 4f, TextureVariant.A, false, false)]
+    [InlineData("cracked-wall-b-4m", 4f, TextureVariant.B, false, false)]
+    [InlineData("cracked-wall-c-4m", 4f, TextureVariant.C, false, false)]
+    [InlineData("cracked-wall-sideways-4m", 4f, null, true, false)]
+    [InlineData("cracked-wall-secret-4m", 4f, null, false, true)]
+    public void A_cracked_wall_scene_looks_straight_at_the_face_it_promises(
+        string name, float metres, TextureVariant? variant, bool sideways, bool fromSecretRoom)
+    {
+        var world = Built(name).World;
+        var player = world.Player;
+        var wall = world.Doors.Single(door => door.Kind == DoorKind.Cracked
+            && Raycast.AgainstBox(player.EyePosition, player.View.Forward, door.BoxMin, door.BoxMax) is not null);
+        var middle = (wall.BoxMin + wall.BoxMax) / 2f;
+        var (front, back) = CrackedWallLook.FaceCells(wall.X, wall.Z, wall.Side);
+        var (frontVariant, backVariant) = CrackedWallLook.Variants(world.Surfaces, wall.X, wall.Z, wall.Side);
+        var playerCell = ((int)MathF.Floor(player.Position.X / Level.CellSize), (int)MathF.Floor(player.Position.Z / Level.CellSize));
+        var faceCell = Vector2.Distance(Cell(front), Flat(player.Position)) < Vector2.Distance(Cell(back), Flat(player.Position)) ? front : back;
+        var secret = world.Rooms.Where(room => room.Kind == RoomKind.Secret).SelectMany(room => room.Cells).ToHashSet();
+
+        Assert.False(wall.IsOpen);
+        Assert.Equal(metres, Vector2.Distance(Flat(middle), Flat(player.Position)), 0.001f);
+        Assert.Equal(sideways, wall.Side is RoomSide.East or RoomSide.West);
+        Assert.Equal(fromSecretRoom, secret.Contains(playerCell));
+        Assert.Equal(fromSecretRoom, secret.Contains(faceCell));
+        if (variant is { } wanted)
+        {
+            Assert.Equal(wanted, faceCell == front ? frontVariant : backVariant);
+        }
+    }
+
+    [Fact]
+    public void The_flat_cracked_wall_scene_looks_at_the_face_at_a_flat_angle()
+    {
+        var world = Built("cracked-wall-flat").World;
+        var player = world.Player;
+        var wall = world.Doors.First(door => door.Kind == DoorKind.Cracked
+            && Raycast.AgainstBox(player.EyePosition, player.View.Forward, door.BoxMin, door.BoxMax) is not null);
+        var (front, _) = CrackedWallLook.FaceCells(wall.X, wall.Z, wall.Side);
+        var normal = Vector2.Normalize(Cell(front) - Flat((wall.BoxMin + wall.BoxMax) / 2f));
+        var look = Vector2.Normalize(Flat(player.View.Forward));
+
+        // 1 m before the face (2 m from the wall's middle) and 6 m along: about 9 degrees between the line of sight and the face.
+        Assert.InRange(MathF.Abs(Vector2.Dot(normal, look)), 0.1f, 0.2f);
+    }
+
+    [Fact]
+    public void The_break_scene_breaks_the_wall_with_a_charged_blow_and_waits_a_moment()
+    {
+        var setup = Built("cracked-wall-break");
+        var broken = new List<int>();
+
+        var ticks = setup.Run(() => broken.AddRange(setup.World.Events.OfType<WallBroken>().Select(wall => wall.DoorId)));
+
+        var wall = Assert.Single(broken);
+        Assert.True(setup.World.Doors[wall].IsOpen);
+        Assert.True(ticks < setup.Ticks);
+    }
+
+    private static Vector2 Flat(Vector3 point) => new(point.X, point.Z);
+
+    private static Vector2 Cell((int X, int Z) cell) => new((cell.X + 0.5f) * Level.CellSize, (cell.Z + 0.5f) * Level.CellSize);
 }

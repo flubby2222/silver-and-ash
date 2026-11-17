@@ -1,6 +1,7 @@
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Presentation;
 
@@ -61,13 +62,13 @@ public class GormPoseTests
     public void Winding_up_the_swing_he_whirls_the_chain_above_his_head_but_below_the_ceiling()
     {
         // The whirled chain lies level at his fist: above his head (and his mask), with room for the links (their
-        // half width) below the lowest ceiling of a room. Phase 2 bends him forward, the fist must stay up.
+        // half width) below the ceiling of his boss room. Phase 2 bends him forward, the fist must stay up.
         var linkHalf = 0.12f;
         foreach (var phase2 in new[] { false, true })
         {
             var fist = FistAt(Motion(GormState.WindingUp, GormAttack.Swing) with { Progress = 1f, Phase2 = phase2 });
 
-            Assert.InRange(fist.Y, BodySizes.Gorm.Height - BodySizes.Gorm.HeadHeight + linkHalf, SilverAndAsh.Core.World.Cell.DefaultCeilingHeight - linkHalf);
+            Assert.InRange(fist.Y, BodySizes.Gorm.Height - BodySizes.Gorm.HeadHeight + linkHalf, RoomTemplate.RoomCeilingHeight - linkHalf);
         }
     }
 
@@ -81,7 +82,87 @@ public class GormPoseTests
 
         var top = Corners(part).Max(corner => Vector3.Transform(corner, frames[club]).Y);
 
-        Assert.InRange(top, BodySizes.Gorm.Height, SilverAndAsh.Core.World.Cell.DefaultCeilingHeight);
+        Assert.InRange(top, BodySizes.Gorm.Height, RoomTemplate.RoomCeilingHeight);
+    }
+
+    [Theory]
+    [InlineData(GormState.WindingUp, GormAttack.Swing)]
+    [InlineData(GormState.Swinging, GormAttack.Swing)]
+    [InlineData(GormState.WindingUp, GormAttack.Hammer)]
+    [InlineData(GormState.Slamming, GormAttack.Hammer)]
+    [InlineData(GormState.Stuck, GormAttack.Hammer)]
+    [InlineData(GormState.WindingUp, GormAttack.Throw)]
+    [InlineData(GormState.Throwing, GormAttack.Throw)]
+    [InlineData(GormState.Roaring, null)]
+    public void In_every_attack_phase_the_club_stays_between_the_floor_and_the_ceiling_of_his_room(GormState state, GormAttack? attack)
+    {
+        // Every corner of the club (not just its box), the whole way through the phase, in both phases of the fight;
+        // swinging, with the chain anywhere from his left to his right.
+        var club = GormPose.IndexOf(GormPose.Club);
+        var corners = GormCorners()[GormPose.Club];
+        foreach (var motion in Through(state, attack))
+        {
+            var frame = Frames(motion)[club];
+            var heights = corners.Select(corner => Vector3.Transform(corner, frame).Y).ToList();
+
+            Assert.True(heights.Min() >= 0f, $"{motion}: the club reaches {heights.Min():0.000} m, into the floor.");
+            Assert.True(heights.Max() <= RoomTemplate.RoomCeilingHeight, $"{motion}: the club reaches {heights.Max():0.000} m, into the ceiling.");
+        }
+    }
+
+    [Fact]
+    public void Whirling_the_chain_above_his_head_its_links_and_hook_stay_below_the_ceiling_of_his_room()
+    {
+        foreach (var motion in Through(GormState.WindingUp, GormAttack.Swing).Where(motion => motion.Progress >= GormPose.SwingArmRaised))
+        {
+            var fist = FistAt(motion);
+            foreach (var direction in new[] { Vector3.UnitZ, -Vector3.UnitX, Vector3.Normalize(new Vector3(1f, 0f, -1f)) })
+            {
+                var end = GormChain.WhirlEnd(Vector3.Zero, fist, direction, Balance.Default.Gorm.SwingReach);
+                var along = Vector3.Normalize(end - fist);
+                var links = new List<Matrix4x4>();
+                GormChain.Lay(fist, GormChain.HookEye(end, along), links);
+
+                AssertChainInRoom(links, GormChain.HookAt(end, along, Vector3.UnitY), $"{motion}");
+            }
+        }
+    }
+
+    [Fact]
+    public void Sweeping_the_chain_its_links_and_hook_stay_between_the_floor_and_the_ceiling()
+    {
+        var gorm = Balance.Default.Gorm;
+        foreach (var motion in Through(GormState.Swinging, GormAttack.Swing))
+        {
+            var fist = FistAt(motion);
+            var angle = motion.SwingAngle!.Value;
+            var sweep = new Vector3(-MathF.Sin(angle), 0f, MathF.Cos(angle));
+            var end = GormChain.SwingEnd(Vector3.Zero, sweep, (gorm.SwingReach, gorm.SwingLow, gorm.SwingHigh));
+            var along = Vector3.Normalize(end - fist);
+            var links = new List<Matrix4x4>();
+            GormChain.Lay(fist, GormChain.HookEye(end, along), links);
+
+            AssertChainInRoom(links, GormChain.HookAt(end, along, Vector3.UnitY), $"{motion}");
+        }
+    }
+
+    [Fact]
+    public void Winding_up_the_throw_the_ready_hook_never_sinks_into_the_floor()
+    {
+        // At first his fist is still low (he draws his arm back only in the first third): the hook then reaches forward
+        // over the floor instead of hanging through it. Once there is room, it hangs straight down.
+        foreach (var motion in Through(GormState.WindingUp, GormAttack.Throw))
+        {
+            var links = new List<Matrix4x4>();
+            var hook = GormChain.Ready(FistAt(motion), 0f, Vector3.UnitZ, links);
+
+            AssertChainInRoom(links, hook, $"{motion}");
+        }
+
+        var high = new Vector3(0.3f, 2f, 0.1f);
+        var hanging = GormChain.Ready(high, 0f, Vector3.UnitZ, new List<Matrix4x4>());
+        var tip = high - (Vector3.UnitY * (GormChain.ReadyChain + GormChain.HookLength));
+        Assert.Equal(GormChain.HookEye(tip, -Vector3.UnitY), hanging.Translation, new VectorComparer());
     }
 
     [Fact]
@@ -215,6 +296,36 @@ public class GormPoseTests
 
         Assert.Equal(new Vector3(2f, 4.1f, -5f), end, new VectorComparer());
     }
+
+    // The motions all the way through a phase (progress in steps of 0.05), in both phases of the fight; swinging, with
+    // the chain from his left to his right.
+    private static IEnumerable<GormMotion> Through(GormState state, GormAttack? attack)
+    {
+        foreach (var phase2 in new[] { false, true })
+        {
+            for (var step = 0; step <= 20; step++)
+            {
+                var progress = step / 20f;
+                var angle = state == GormState.Swinging ? (progress - 0.5f) * MathF.PI : (float?)null;
+                yield return new GormMotion(state, attack, progress, phase2, 0f, 0f, angle);
+            }
+        }
+    }
+
+    // Every corner of the links and the hook lies between the floor (0) and the ceiling of his boss room.
+    private static void AssertChainInRoom(IEnumerable<Matrix4x4> links, Matrix4x4 hook, string what)
+    {
+        var corners = GormCorners();
+        var heights = links.SelectMany(link => corners[GormPose.ChainLink].Select(corner => Vector3.Transform(corner, link).Y))
+            .Concat(corners[GormPose.Hook].Select(corner => Vector3.Transform(corner, hook).Y))
+            .ToList();
+
+        Assert.True(heights.Min() >= 0f, $"{what}: the chain reaches {heights.Min():0.000} m, into the floor.");
+        Assert.True(heights.Max() <= RoomTemplate.RoomCeilingHeight, $"{what}: the chain reaches {heights.Max():0.000} m, into the ceiling.");
+    }
+
+    private static IReadOnlyDictionary<string, Vector3[]> GormCorners() =>
+        GlbVertices.Read(File.ReadAllBytes(RepositoryFiles.Find("assets/models/gorm.glb")));
 
     private static void AssertInHeadZone(Vector3 mask, float top)
     {

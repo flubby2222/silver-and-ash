@@ -330,6 +330,9 @@ static void RunGame(
             gormView = newGormView();
         }
 
+        // One door model per kind (issue #245); a kind without one keeps the placeholder boxes.
+        using var doorView = DoorView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // One chest model per tier (issue #249); a tier without one keeps the placeholder boxes.
         using var chestView = ChestView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
@@ -359,7 +362,7 @@ static void RunGame(
                 batView.OnEvent(gameEvent);
                 projectileView.OnEvent(gameEvent);
                 impactMarks.OnEvent(gameEvent);
-                wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position);
+                wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position, gameWorld.Surfaces);
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
                 if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
@@ -413,7 +416,12 @@ static void RunGame(
 
             levelRenderer.Draw();
             levelShader.BeginFigures();
-            DoorView.Draw(gameWorld.Doors, seconds);
+            doorView.Draw(
+                gameWorld.Doors,
+                seconds,
+                new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)look.RenderWidth / look.RenderHeight),
+                gameWorld.Surfaces,
+                levelTextures);
             chestView.Draw(gameWorld.Chests, seconds);
             StairsView.Draw(gameWorld.Stairs, seconds);
             foreach (var dummy in gameWorld.Dummies)
@@ -443,7 +451,7 @@ static void RunGame(
             pickupView.DrawWeapons(gameWorld.WeaponDrops, alpha);
 
             impactMarks.Draw();
-            wallBreakView.Draw();
+            wallBreakView.Draw(doorView);
 
             // Last: the weapons in the hands, in front of everything else.
             weaponView.Draw(camera.Position, camera.Target - camera.Position);

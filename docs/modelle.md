@@ -57,7 +57,7 @@ python tools/models/checksums.py
 
 Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_model_file`) wird rot, wenn Liste und Dateien nicht zusammenpassen.
 
-## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus, Gorm)
+## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus, Gorm, Tür)
 
 1. `.glb`, `.png` und Skript an ihren Platz, Zeile in `assets/HERKUNFT.md`, `python tools/models/checksums.py`.
 2. Im Core eine Haltungs-Klasse wie `GhoulPose`: Teile mit Eltern (`RigPart`) und die Winkel je Zustand, mit Tests.
@@ -79,3 +79,9 @@ Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_mode
    - **Die Kette ist so lang, wie sie im Spiel reicht.** Die Glieder legt `GormChain.Lay` einzeln von der Faust zum Ziel; das Ziel kommt immer aus dem Core: beim Schwung `GormChain.SwingEnd` aus `Gorm.SwingArea` (Reichweite, Höhe des Treffers), beim Wirbeln vorher `WhirlEnd` mit derselben Reichweite, beim Wurf die Stelle des Hakens in der Simulation (seine Mitte liegt dort). Getestet in `GormPoseTests`.
    - **Decke:** Räume sind 3,5 m hoch, Gorm 3,2 m. Erhobene Keule und gewirbelte Kette bleiben darunter (getestet). Nur das Brüllen reckt die Fäuste noch in die Decke.
    - Kreis am Boden für den Hammer und Schockwelle zeichnet weiter `GormFloorEffects` aus dem Core-Zustand, wie beim Platzhalter.
+9. **Türen** ([`DoorPose`](../src/SilverAndAsh.Core/Presentation/DoorPose.cs) im Core, [`DoorView`](../src/SilverAndAsh.Game/Rendering/DoorView.cs) im Game, Skript `tools/models/door.py`, Issue #245):
+   - **Eine Datei je Türart** (`door_normal.glb`, `door_locked.glb`, `door_boss.glb`, `door_cracked.glb`). Ursprung ist die Mitte des Durchgangs am Boden, der Durchgang läuft entlang z. Das Portal (`portal`) steht fest; `leaf_a` hängt rechts (+x), `leaf_b` links, die Eisentür hat einen Flügel `leaf` mit dem Schloss `lock` daran. Die rissige Wand ist nur `cracks` – die Wand selbst zeichnet der Level.
+   - **Rissige Wand im Gemäuer** (Skript `tools/models/cracked_wall.py`, Issue #246): je Wand-Spielart eine Datei `cracked_wall_a.glb`, `_b`, `_c` mit den Platten `panel_front`/`panel_back` (Riss im Stein der Mauer), `debris_front`/`debris_back` (Schutt am Fuß) und `chunk` (Brocken beim Zerschlagen). Welche Spielart auf welcher Seite liegt, sagt [`CrackedWallLook`](../src/SilverAndAsh.Core/Presentation/CrackedWallLook.cs) im Core. Fehlt eine Datei, zeichnet `DoorView` wie bisher `door_cracked`, fehlt auch das, den Platzhalter.
+   - **Öffnen:** Der Core zählt den Fortschritt (`Door.OpenFraction`, 0..1) gleichmäßig je Tick über die Zeit aus `balance.json` (`doors`). Geglättet (`DoorPose.Ease`) wird nur im Bild. Die Flügel schwingen von dem weg, der geöffnet hat (`Door.OpenedFromLowSide`); 90° bei Holz- und Bosstür, 80° bei der Eisentür.
+   - **Ost-West:** `DoorPose.Yaw` dreht die ganze Tür um 90°, so wird +z der Datei zu +x der Welt; die Regel für die Seite bleibt dieselbe.
+   - **Durchgang:** Die Zelle ist wie bisher im Tick des Öffnens frei; die Flügel sind nur Bild.

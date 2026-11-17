@@ -1,5 +1,6 @@
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Photos;
@@ -27,6 +28,18 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeGorm(12f))),
         new("chests-4m", "The chests of all four tiers side by side 4 m away, closed and locked, and an open one.",
             studio => new PhotoSetup(studio.ChestRow())),
+        .. DoorScenes(DoorKind.Normal, "wooden double door"),
+        .. DoorScenes(DoorKind.Locked, "locked door"),
+        .. DoorScenes(DoorKind.Boss, "boss door"),
+        new("door-cracked", "A cracked wall 6 m away in a bare hall: only its fine cracks give it away (issue #245).",
+            studio => new PhotoSetup(studio.DoorHall(DoorKind.Cracked))),
+        .. CrackedWallScenes(),
+        new("door-sideways-half", "A wooden double door in a wall running north/south, 6 m away, half open (issue #245).",
+            studio => new PhotoSetup(studio.DoorHall(DoorKind.Normal, sideways: true, open: true)) { Ticks = 600, StopWhen = Swung(0.5f) }),
+        new("door-level-seed1", "The first wooden door of level 0 with seed 1, from 4 to 6 m, closed (issue #245).",
+            studio => new PhotoSetup(studio.BeforeDoor(1, DoorKind.Normal))),
+        new("door-level-seed2-boss", "The boss door of level 0 with seed 2, from 4 to 6 m, closed (issue #245).",
+            studio => new PhotoSetup(studio.BeforeDoor(2, DoorKind.Boss))),
         new("ghoul-4m", "A ghoul 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('G', 4))),
         new("ghoul-10m", "A ghoul 10 m away in a bare hall.",
@@ -85,23 +98,29 @@ public static class PhotoScenes
             }),
         new("gorm", "Gorm, the Chained, 6 m away in his boss room.",
             studio => new PhotoSetup(studio.BeforeGorm(6f))),
-        new("gorm-swing-windup", "Gorm whirling his chain above his head, the warning before the swing, the chain out to his right (issue #249).",
-            studio => new PhotoSetup(studio.Arena('T', 8))
+        new("gorm-swing-windup", "Gorm whirling his chain above his head, the warning before the swing, the chain out to his right; in a hall as high as his boss room (issues #249, #254).",
+            studio => new PhotoSetup(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight))
             {
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Swing, StateProgress: >= 0.82f },
             }),
-        new("gorm-swing", "Gorm sweeping his chain from his left to his right, a third of the way (issue #249).",
-            studio => new PhotoSetup(studio.Arena('T', 8))
+        new("gorm-swing", "Gorm sweeping his chain from his left to his right, a third of the way; in a hall as high as his boss room (issues #249, #254).",
+            studio => new PhotoSetup(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight))
             {
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.Swinging, StateProgress: >= 0.3f },
             }),
-        new("gorm-throw-windup", "Gorm about to throw his hook, which glows red: the warning, halfway through (issue #249).",
-            studio => new PhotoSetup(studio.Arena('T', 10))
+        new("gorm-throw-windup", "Gorm about to throw his hook, which glows red: the warning, halfway through; in a hall as high as his boss room (issues #249, #254).",
+            studio => new PhotoSetup(studio.Arena('T', 10, RoomTemplate.RoomCeilingHeight))
             {
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Throw, StateProgress: >= 0.5f },
+            }),
+        new("gorm-hammer-windup", "Gorm with his club raised high, the warning before the hammer, near its top; in a hall as high as his boss room (issue #254).",
+            studio => new PhotoSetup(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight))
+            {
+                Ticks = 3000,
+                StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Hammer, StateProgress: >= 0.8f },
             }),
         new("gorm-phase2", "Gorm in phase 2 (half his health gone, red marks), 10 m away in his boss room, at the end of his roar (issue #249).",
             studio => new PhotoSetup(HalfHealth(studio.BeforeGorm(10f)))
@@ -148,6 +167,72 @@ public static class PhotoScenes
 
     /// <summary>The scene called <paramref name="name"/>, or null.</summary>
     public static PhotoScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
+
+    // Closed, half open and fully open, 6 m away in a bare hall (issue #245).
+    private static PhotoScene[] DoorScenes(DoorKind kind, string name)
+    {
+        var file = $"door-{kind.ToString().ToLowerInvariant()}";
+        return
+        [
+            new(file, $"A {name} 6 m away in a bare hall, closed (issue #245).",
+                studio => new PhotoSetup(studio.DoorHall(kind))),
+            new($"{file}-half", $"A {name} 6 m away, opened by the player, halfway through its swing (issue #245).",
+                studio => new PhotoSetup(studio.DoorHall(kind, open: true)) { Ticks = 600, StopWhen = Swung(0.5f) }),
+            new($"{file}-open", $"A {name} 6 m away, opened by the player and fully swung open (issue #245).",
+                studio => new PhotoSetup(studio.DoorHall(kind, open: true)) { Ticks = 600, StopWhen = Swung(1f) }),
+            new($"{file}-10m", $"A {name} 10 m away in a bare hall, closed: can its kind still be told apart (issue #245)?",
+                studio => new PhotoSetup(studio.DoorHall(kind, cells: 5))),
+        ];
+    }
+
+    // The cracked wall in the level, its plates in the stone of the walls around (issue #246): does it sit in the wall
+    // without a seam, from near and far, at a flat angle, in every variant, turned, from inside - and how it breaks.
+    private static PhotoScene[] CrackedWallScenes() =>
+    [
+        new("cracked-wall-2m", "The first cracked wall of level 0 from 2 m, outside the secret room (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(1))),
+        new("cracked-wall-4m", "The first cracked wall of level 0 from 4 m (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2))),
+        new("cracked-wall-10m", "A cracked wall of level 0 from 10 m: does it still sit in the wall (issue #246)?",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(5))),
+        new("cracked-wall-flat", "A cracked wall from 2 m out and 6 m along: its plate at a flat angle (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(1, along: 3))),
+        new("cracked-wall-a-4m", "A cracked wall in wall variant A from 4 m (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, variant: TextureVariant.A))),
+        new("cracked-wall-b-4m", "A cracked wall in wall variant B from 4 m (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, variant: TextureVariant.B))),
+        new("cracked-wall-c-4m", "A cracked wall in wall variant C from 4 m (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, variant: TextureVariant.C))),
+        new("cracked-wall-sideways-4m", "A cracked wall of an East/West door from 4 m: the plates turned a quarter (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, sideways: true))),
+        new("cracked-wall-secret-4m", "A cracked wall from inside its secret room, 4 m away (issue #246).",
+            studio => new PhotoSetup(studio.BeforeCrackedWall(2, fromSecretRoom: true))),
+        new("cracked-wall-break", "A cracked wall 2 m away, broken from inside its secret room: the stone chunks in flight, 8 ticks after the blow (issue #246).",
+            studio => Broken(studio, 8)),
+        new("cracked-wall-break-after", "The same wall 100 ticks after the blow: the dust gone, the stone chunks on the floor (issue #246).",
+            studio => Broken(studio, 100)),
+    ];
+
+    // The cracked wall 2 m before the player inside its secret room (no enemy gets in there to disturb the picture),
+    // struck with a fully charged blade - held until charged, then let go - and `ticks` more ticks after it broke.
+    private static PhotoSetup Broken(PhotoStudio studio, int ticks)
+    {
+        var world = studio.BeforeCrackedWall(1, fromSecretRoom: true);
+        var released = false;
+        var afterBreak = 0;
+        return new PhotoSetup(world)
+        {
+            Ticks = 600,
+            Input = _ =>
+            {
+                released |= world.Player.MeleeCharge is { IsCharging: true, Fraction: >= 1f };
+                return PlayerInput.None with { Melee = !released };
+            },
+            StopWhen = run => run.Doors.Any(door => door.Kind == DoorKind.Cracked && door.IsOpen) && ++afterBreak >= ticks,
+        };
+    }
+
+    private static Func<GameWorld, bool> Swung(float fraction) => world => world.Doors[0].OpenFraction >= fraction;
 
     private static GameWorld AllWeapons(GameWorld world)
     {

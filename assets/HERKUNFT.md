@@ -10,6 +10,8 @@ Alles unter `assets/` ist per Skript erzeugt, nichts heruntergeladen (`CLAUDE.md
 | `models/blade.glb`, `models/blade_hand.glb`, `models/blade.png` | `tools/models/blade.py` (mit `tools/models/arm.py` und `tools/models/psx.py`) | 2026-11-17 |
 | `models/bat.glb`, `models/bat.png` | `tools/models/bat.py` (mit `tools/models/psx.py`) | 2026-11-17 |
 | `models/gorm.glb`, `models/gorm_body.png`, `models/gorm_body_phase2.png`, `models/gorm_limbs.png` | `tools/models/gorm.py` (mit `tools/models/gorm_base.py`, `tools/models/gorm_heads.py` und `tools/models/psx.py`) | 2026-11-17 |
+| `models/door_normal.glb`, `models/door_locked.glb`, `models/door_boss.glb`, `models/door_cracked.glb`, `models/door_normal.png`, `models/door_locked.png`, `models/door_boss.png`, `models/door_cracked.png` | `tools/models/door.py` (mit `tools/models/psx.py`) | 2026-11-17 |
+| `models/cracked_wall_a.glb`, `models/cracked_wall_b.glb`, `models/cracked_wall_c.glb`, `models/cracked_wall_a.png`, `models/cracked_wall_b.png`, `models/cracked_wall_c.png` | `tools/models/cracked_wall.py` (mit `tools/models/psx.py`; liest `textures/catacomb_wall*.png`) | 2026-11-17 |
 | `textures/catacomb_wall.png`, `textures/catacomb_floor.png`, `textures/catacomb_ceiling.png` | `tools/textures/catacomb.py` (mit `tools/models/psx.py`) | 2026-11-16 |
 | `textures/catacomb_wall_b.png`, `textures/catacomb_wall_c.png`, `textures/catacomb_floor_b.png`, `textures/catacomb_floor_c.png`, `textures/catacomb_ceiling_b.png`, `textures/catacomb_ceiling_c.png` | `tools/textures/catacomb_variants.py` (mit `tools/textures/catacomb.py` und `tools/models/psx.py`) | 2026-11-17 |
 | `audio/pistole.wav`, `audio/schritt-1.wav`, `audio/schritt-2.wav`, `audio/schritt-3.wav`, `audio/schritt-4.wav`, `audio/ghul-ankuendigung.wav` | `tools/audio/erzeugen.py` (mit `geraeusche_hp3.py`, `synth.py`, `ps1_klang.py`, `ableiten.py`); rein synthetisch | 2026-11-17 |
@@ -28,6 +30,8 @@ Modelle mit Blender 5.3 ohne Oberfläche; das Skript schreibt nach `assets/model
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/blade.py
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/bat.py
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/gorm.py
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/door.py
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/cracked_wall.py
 ```
 
 Level-Texturen ebenso; das Skript schreibt nach `assets/textures/`:
@@ -78,3 +82,7 @@ Am 2026-11-17 geprüft: Die sechs Varianten (`catacomb_*_b.png`, `catacomb_*_c.p
 Am 2026-11-17 übernommen (Issue #267): Die zehn Klangdateien und die Skripte unter `tools/audio/` kommen aus der Übergabe des Audiodesigners (Commit `5c9bf66`), byte-gleich. Laut Übergabe ergeben zwei Läufe von `erzeugen.py` byte-gleiche Dateien (dort mit SHA-256 geprüft); in diesem Schritt nicht erneut erzeugt.
 
 Am 2026-11-17 übernommen (Issue #271): `musik-hauptmenue.ogg` und `musik-katakomben.ogg` sowie `musik_erzeugen.py`, `musik_klang.py`, `musik_pruefen.py` und die angepasste `pruefen.py` kommen aus der Übergabe des Audiodesigners, byte-gleich: `musik-katakomben.ogg`, `musik_klang.py`, `musik_pruefen.py` und `pruefen.py` aus Commit `fb2aee3`, `musik-hauptmenue.ogg` (Fassung ohne Herzschlag) und `musik_erzeugen.py` aus Commit `77eac53`. Ein erneuter Lauf von `musik_erzeugen.py` ergab byte-gleiche Dateien (SHA-256 verglichen).
+
+Am 2026-11-17 übernommen (Issue #245): Die Türen kommen aus den Probestücken des Grafikdesigners (Commit `412096d`): Normal, Locked und Boss aus Runde 2 (`design/proben/grafik/tueren2/door2.py`, Bosstür Entwurf A, im Spiel `door_boss`), die Risswand aus Runde 1 (`design/proben/grafik/tueren/door.py`). `tools/models/door.py` fasst beide zusammen; Entwurf B (Fallgitter) ist verworfen und fehlt. Alle Bilder und `door_normal.glb`, `door_locked.glb`, `door_cracked.glb` kommen byte-gleich zur Übergabe heraus (SHA-256 verglichen). `door_boss.glb` ist 4 Byte kürzer: Nur der Name der Textur heißt `door_boss` statt `door_boss_a`; Geometrie und Binärteil sind byte-gleich.
+
+Am 2026-11-17 übernommen (Issue #246): Die rissige Wand (`cracked_wall_a/b/c`) kommt aus dem Probestück des Grafikdesigners (Commit `2769789`, `design/proben/grafik/risswand/risswand.py`, Stärke „deutlich“). `tools/models/cracked_wall.py` erzeugt nur noch diese Stärke und teilt Platte und Brocken in Vorder- und Rückseite (`panel_front`, `panel_back`, `debris_front`, `debris_back`), weil beide Flächen der Zelle verschiedene Varianten zeigen können; Geometrie und Zufallszahlen sind unverändert. Die drei Bilder kommen byte-gleich zur Übergabe heraus (SHA-256 verglichen), ein zweiter Lauf ergibt byte-gleiche Modelle und Bilder. Die Texturen sind aus `textures/catacomb_wall*.png` gemalt: Ändert sich eine Wand-Textur, muss `cracked_wall.py` neu laufen. Das prüft ein Test (`tools/models/cracked_wall_sources.sha256` gegen `textures/textures.sha256`).

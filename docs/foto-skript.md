@@ -44,9 +44,10 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `blade-swing-half` | ein schneller Klingenhieb halb ausgeholt: der Unterarm dreht sich zur Schulter (#265) |
 | `blade-swing-full` | ein schneller Klingenhieb auf dem Höhepunkt: der Unterarm dreht sich zur Schulter (#265) |
 | `gorm` | Gorm aus 6 m in seinem Bossraum |
-| `gorm-swing-windup` | Gorm wirbelt die Kette über dem Kopf: die Ankündigung des Kettenschwungs, die Kette gerade zu seiner Rechten |
-| `gorm-swing` | Gorm im Kettenschwung von seiner Linken zu seiner Rechten, ein Drittel des Bogens |
-| `gorm-throw-windup` | Gorm vor dem Hakenwurf, der Haken glüht rot: die Ankündigung, zur Hälfte vorbei |
+| `gorm-swing-windup` | Gorm wirbelt die Kette über dem Kopf: die Ankündigung des Kettenschwungs, die Kette gerade zu seiner Rechten; in einer 6 m hohen Halle wie sein Bossraum (#254) |
+| `gorm-swing` | Gorm im Kettenschwung von seiner Linken zu seiner Rechten, ein Drittel des Bogens; in einer 6 m hohen Halle wie sein Bossraum (#254) |
+| `gorm-throw-windup` | Gorm vor dem Hakenwurf, der Haken glüht rot: die Ankündigung, zur Hälfte vorbei; in einer 6 m hohen Halle wie sein Bossraum (#254) |
+| `gorm-hammer-windup` | Gorm reißt die Keule hoch über den Kopf: die Ankündigung des Hammerschlags, kurz vor dem Höhepunkt; in einer 6 m hohen Halle wie sein Bossraum (#254) |
 | `gorm-phase2` | Gorm in Phase 2 (rote Male) aus 10 m in seinem Bossraum, am Ende seines Brüllens |
 | `hud-weapons` | das HUD mit allen Waffenplätzen belegt (Keule, Pistole, Gewehr, Donnerbüchse) |
 | `hud-rifle` | wie `hud-weapons`, aber mit dem Gewehr (2) in der Hand |
@@ -54,6 +55,19 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `inventory` | das offene Inventar (G) mit voller Tasche |
 | `map` | die offene Karte (M) zu Beginn eines Durchlaufs |
 | `chests-4m` | die Kisten aller vier Stufen nebeneinander aus 4 m, geschlossen und verschlossen, dazu eine offene (Issue #249) |
+| `door-normal`, `door-locked`, `door-boss` | die Tür dieser Art geschlossen in einer leeren Halle aus 6 m (Issue #245) |
+| `door-normal-half`, `door-locked-half`, `door-boss-half` | dieselbe Tür halb aufgeschwungen (Fortschritt 0,5, im Bild geglättet) |
+| `door-normal-open`, `door-locked-open`, `door-boss-open` | dieselbe Tür ganz offen |
+| `door-normal-10m`, `door-locked-10m`, `door-boss-10m` | dieselbe Tür geschlossen aus 10 m: Ist die Türart noch zu erkennen? |
+| `door-cracked` | die rissige Wand zum Geheimraum, ungebrochen |
+| `cracked-wall-2m`, `cracked-wall-4m`, `cracked-wall-10m` | die erste rissige Wand der Ebene 0 (ab Seed 1), wie der Generator sie gesetzt hat, aus 2, 4 und 10 m von außen: sitzt die Platte ohne Naht in der Wand (Issue #246)? |
+| `cracked-wall-flat` | dieselbe Art Wand von 1 m vor der Fläche und 6 m daneben, also sehr flach (etwa 9°): flimmert die Platte? |
+| `cracked-wall-a-4m`, `cracked-wall-b-4m`, `cracked-wall-c-4m` | je eine rissige Wand, deren Fläche die Wandvariante A, B bzw. C zeigt, aus 4 m |
+| `cracked-wall-sideways-4m` | eine rissige Wand in einem Ost-West-Durchgang aus 4 m: die Platten um 90° gedreht |
+| `cracked-wall-secret-4m` | eine rissige Wand von innen, aus dem Geheimraum, aus 4 m |
+| `cracked-wall-break`, `cracked-wall-break-after` | eine rissige Wand aus 2 m vom Geheimraum aus mit voll aufgeladener Klinge zerschlagen: 8 bzw. 100 Ticks nach dem Schlag (Brocken im Flug bzw. am Boden). Im Geheimraum, weil kein Gegner hineinkommt und das Bild stört |
+| `door-sideways-half` | eine Holztür in einem Ost-West-Durchgang, halb offen: das Modell ist um 90° gedreht |
+| `door-level-seed1`, `door-level-seed2-boss` | die erste Holztür in Seed 1 bzw. das Bosstor in Seed 2, aus 2–3 Zellen Abstand |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |
 
 ## Bild-Varianten vergleichen (`--look`, `--photo compare`)

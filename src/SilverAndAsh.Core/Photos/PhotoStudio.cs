@@ -83,9 +83,10 @@ public sealed class PhotoStudio
 
     /// <summary>
     /// A bare hall (hand-made, so its enemies are awake) with one figure - 'G' ghoul, 'B' bat, 'T' Gorm, 'D' dummy -
-    /// <paramref name="metres"/> in front of the player (a multiple of 2, the cell size), looking at it.
+    /// <paramref name="metres"/> in front of the player (a multiple of 2, the cell size), looking at it. The ceiling
+    /// lies at <paramref name="ceiling"/> (default: as high as a corridor; Gorm's boss room: <see cref="RoomTemplate.RoomCeilingHeight"/>).
     /// </summary>
-    public GameWorld Arena(char figure, int metres)
+    public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight)
     {
         if (metres <= 0 || metres % (int)Level.CellSize != 0)
         {
@@ -112,7 +113,17 @@ public sealed class PhotoStudio
             text.Append('\n');
         }
 
-        var world = new GameWorld(LevelParser.Parse(text.ToString()), Seed, Balance);
+        var level = LevelParser.Parse(text.ToString());
+        if (ceiling != Cell.DefaultCeilingHeight)
+        {
+            level = level.WithCells(
+                from x in Enumerable.Range(0, level.Width)
+                from z in Enumerable.Range(0, level.Depth)
+                where !level[x, z].IsSolid
+                select (x, z, level[x, z] with { CeilingHeight = ceiling }));
+        }
+
+        var world = new GameWorld(level, Seed, Balance);
         var target = world.Targets.Single();
         Face(world.Player, Middle(target.Body));
         return world;
@@ -152,6 +163,178 @@ public sealed class PhotoStudio
         open.Open();
         Face(world.Player, world.Chests[2].Position + new Vector3(0f, Chest.Height / 2f, 0f));
         return world;
+    }
+
+    /// <summary>
+    /// A bare hall cut in two by a wall with one door of <paramref name="kind"/> in it, <paramref name="cells"/> cells
+    /// (2 m each, so 6 m by default, at most 5 cells) in front of the player, who looks at its middle (issue #245).
+    /// <paramref name="sideways"/>: the wall runs North/South and the passage along X (the door model turned a quarter).
+    /// <paramref name="open"/>: the door is opened by the player before the first tick - its leaves swing away from them
+    /// while the scene's ticks run.
+    /// </summary>
+    public GameWorld DoorHall(DoorKind kind, bool sideways = false, bool open = false, int cells = 3)
+    {
+        const int Width = 9;
+        const int Depth = 10;
+        const int Middle = Width / 2;
+        const int DoorRow = 6;
+        ArgumentOutOfRangeException.ThrowIfLessThan(cells, 2);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(cells, DoorRow - 1);
+        var playerRow = DoorRow - cells;
+        var text = new StringBuilder();
+        for (var row = 0; row < Depth; row++)
+        {
+            for (var column = 0; column < Width; column++)
+            {
+                // Built along Z; sideways the map is mirrored on its diagonal afterwards (rows become columns).
+                var outer = row == 0 || column == 0 || row == Depth - 1 || column == Width - 1;
+                var wall = outer || (row == DoorRow && column != Middle);
+                text.Append(wall ? '#' : row == playerRow && column == Middle ? 'P' : '.');
+            }
+
+            text.Append('\n');
+        }
+
+        var map = sideways ? Transposed(text.ToString()) : text.ToString();
+        var (x, z) = sideways ? (DoorRow, Middle) : (Middle, DoorRow);
+        LevelDoor[] doors = [new(x, z, 0, 1, sideways ? RoomSide.East : RoomSide.South, kind)];
+        var world = new GameWorld(LevelParser.Parse(map), Seed, Balance, doors);
+        var door = world.Doors[0];
+        var doorMiddle = (door.BoxMin + door.BoxMax) / 2f;
+        if (open)
+        {
+            // The regular way, as in the game: one cell before the door, a key in hand for a locked one, F for one
+            // tick - so the level, the events and the key are exactly as after a real opening. Then back to the start.
+            var start = world.Player.Position;
+            var (beforeX, beforeZ) = sideways ? (DoorRow - 1, Middle) : (Middle, DoorRow - 1);
+            world.Player.PlaceAt(world.Level.CellCenter(beforeX, beforeZ));
+            Face(world.Player, doorMiddle);
+            if (kind == DoorKind.Locked)
+            {
+                world.Player.AddKeys(1);
+            }
+
+            world.Tick(PlayerInput.None with { Interact = true });
+            if (!door.IsOpen)
+            {
+                throw new InvalidOperationException($"The {kind} door of the door hall did not open on F.");
+            }
+
+            world.Player.PlaceAt(start);
+        }
+
+        Face(world.Player, doorMiddle);
+        return world;
+    }
+
+    /// <summary>
+    /// Level 0 from <paramref name="seed"/> with the player before its first door of <paramref name="kind"/>, on the
+    /// floor cell 4 to 6 m in front of it (along its passage) that sees it, looking at it - a door as the generator
+    /// placed it, between its rooms (issue #245).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">If the level has no such door or no place before it.</exception>
+    public GameWorld BeforeDoor(int seed, DoorKind kind)
+    {
+        var generated = _levelZero.Build(seed, Balance);
+        var plan = generated.Doors.FirstOrDefault(door => door.Kind == kind)
+            ?? throw new InvalidOperationException($"Level 0 with seed {seed} has no {kind} door.");
+        var level = generated.Level;
+        var target = level.CellCenter(plan.X, plan.Z) + new Vector3(0f, LookHeight, 0f);
+        var alongX = plan.Side is RoomSide.East or RoomSide.West;
+        var eye = new Vector3(0f, BodySizes.Player.EyeHeight, 0f);
+        var place = new[] { 2, 3, -2, -3 }
+            .Select(step => alongX ? (X: plan.X + step, Z: plan.Z) : (X: plan.X, Z: plan.Z + step))
+            .Where(cell => cell.X >= 0 && cell.Z >= 0 && cell.X < level.Width && cell.Z < level.Depth && !level[cell.X, cell.Z].IsSolid)
+            .Where(cell => !generated.Doors.Any(door => door.X == cell.X && door.Z == cell.Z))
+            .Where(cell => LineOfSight.IsClear(level, level.CellCenter(cell.X, cell.Z) + eye, target))
+            .Select(cell => ((int X, int Z)?)cell)
+            .FirstOrDefault()
+            ?? throw new InvalidOperationException($"No place before the first {kind} door of level 0 with seed {seed}.");
+
+        var world = World(generated, place);
+        var door = world.Doors.First(door => door.X == plan.X && door.Z == plan.Z);
+        Face(world.Player, (door.BoxMin + door.BoxMax) / 2f);
+        return world;
+    }
+
+    /// <summary>
+    /// Level 0 with the player before a cracked wall as the generator placed it (issue #246): the first one, from seed
+    /// <see cref="Seed"/> on, that fits. The player stands <paramref name="cells"/> cells (2 m each) straight out from the
+    /// wall's middle and <paramref name="along"/> cells along it (a flat angle onto the face), on the side away from the
+    /// secret room - or inside it with <paramref name="fromSecretRoom"/> - and looks at the middle of the face before them.
+    /// <paramref name="variant"/>: only a face of that wall variant. <paramref name="sideways"/>: only a wall of an
+    /// East/West door (its plates turned a quarter).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">If no seed gives such a wall with such a place before it.</exception>
+    public GameWorld BeforeCrackedWall(
+        int cells, int along = 0, bool fromSecretRoom = false, TextureVariant? variant = null, bool sideways = false)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(cells, 1);
+        for (var seed = Seed; seed < Seed + SeedsToTry; seed++)
+        {
+            var generated = _levelZero.Build(seed, Balance);
+            var surfaces = SurfaceVariants.For(generated);
+            var secretCells = generated.Rooms.Where(room => room.Kind == RoomKind.Secret).SelectMany(room => room.FloorCells).ToHashSet();
+            foreach (var plan in generated.Doors.Where(door => door.Kind == DoorKind.Cracked))
+            {
+                if (sideways != (plan.Side is RoomSide.East or RoomSide.West))
+                {
+                    continue;
+                }
+
+                var (front, back) = CrackedWallLook.FaceCells(plan.X, plan.Z, plan.Side);
+                var (frontVariant, backVariant) = CrackedWallLook.Variants(surfaces, plan.X, plan.Z, plan.Side);
+                var faceFront = secretCells.Contains(front) == fromSecretRoom;
+                var (face, faceVariant) = faceFront ? (front, frontVariant) : (back, backVariant);
+                if (variant is { } wanted && faceVariant != wanted)
+                {
+                    continue;
+                }
+
+                if (Place(generated, plan, face, cells, along) is { } place)
+                {
+                    var world = World(generated, place.Cell);
+                    Face(world.Player, place.Target);
+                    return world;
+                }
+            }
+        }
+
+        throw new InvalidOperationException(string.Create(CultureInfo.InvariantCulture,
+            $"No level 0 with seeds {Seed} to {Seed + SeedsToTry - 1} has a cracked wall with a place {cells} cells before it and {along} along it."));
+    }
+
+    // The cell `cells` out from the cracked wall `plan` on the side of its face cell `face` and `along` cells along the
+    // wall, and the middle of that face at look height - if the cell is floor, no door, and sees the face.
+    private static ((int X, int Z) Cell, Vector3 Target)? Place(GeneratedLevel generated, LevelDoor plan, (int X, int Z) face, int cells, int along)
+    {
+        var level = generated.Level;
+        var (outX, outZ) = (face.X - plan.X, face.Z - plan.Z);
+        var cell = (X: plan.X + (outX * cells) + (outZ * along), Z: plan.Z + (outZ * cells) + (outX * along));
+        if (cell.X < 0 || cell.Z < 0 || cell.X >= level.Width || cell.Z >= level.Depth || level[cell.X, cell.Z].IsSolid
+            || generated.Doors.Any(door => door.X == cell.X && door.Z == cell.Z))
+        {
+            return null;
+        }
+
+        // A hand's breadth in front of the face, so the line of sight does not end inside the wall.
+        var target = level.CellCenter(plan.X, plan.Z) + (new Vector3(outX, 0f, outZ) * ((Level.CellSize / 2f) + 0.1f))
+            + new Vector3(0f, LookHeight, 0f);
+        var eye = level.CellCenter(cell.X, cell.Z) + new Vector3(0f, BodySizes.Player.EyeHeight, 0f);
+        return LineOfSight.IsClear(level, eye, target) ? (cell, target) : null;
+    }
+
+    // The map with rows and columns swapped.
+    private static string Transposed(string map)
+    {
+        var lines = map.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var text = new StringBuilder();
+        for (var column = 0; column < lines[0].Length; column++)
+        {
+            text.Append(string.Concat(lines.Select(line => line[column]))).Append('\n');
+        }
+
+        return text.ToString();
     }
 
     /// <summary>
