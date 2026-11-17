@@ -1,4 +1,4 @@
-"""Hoerprobe 9: dieselben vier Stuecke nach der Methode des Videos "How to make PS1 samples for FREE!" (SoundFontGuy), in SoundCraft.
+"""Hoerprobe 9 (zweite Fassung, neue Palette, siehe palette-neu.md): dieselben vier Stuecke nach der Methode des Videos "How to make PS1 samples for FREE!" (SoundFontGuy), in SoundCraft.
 
 Methode (siehe video.md): kurze Quelle -> mono, 16 Bit -> 22,05 kHz -> (bei Schleifen: Anfang, Ende und Laenge je Vielfaches von 28,
 Ueberblendung der Schleife) -> VAG (ADPCM) -> als Sample in einen Sampler laden und mit Tonhoehenverschiebung (Transposition) spielen.
@@ -27,12 +27,12 @@ BLOCK = 28
 
 # --- Quellen in SoundCraft rendern ------------------------------------------------------------------------------
 
-def quelle_rauschen(name, laenge_s, filter_freq, filter_zeit_s, abfall_db, abfall_zeit_s, filter_typ=4, q=0.7):
+def quelle_rauschen(name, laenge_s, filter_freq, filter_zeit_s, abfall_db, abfall_zeit_s, filter_typ=4, q=0.7, welle=4):
     """Weisses Rauschen (Signalgenerator auf einer Audiospur) mit fallendem Tiefpass und fallender Lautstaerke (Automation)."""
     n = int(laenge_s * 44100)
     z = B.kopf(name)
     z += ['track.new ' + j(kind="audio", format="mono", name="N"),
-          'audiosuite.process ' + j(process="signal_generator", params={"waveform": 4, "freq": 1000.0, "level": -6.0},
+          'audiosuite.process ' + j(process="signal_generator", params={"waveform": welle, "freq": 1000.0, "level": -6.0},
                                     tracks=["N"], start=0, end=n),
           'mix.insert ' + j(track="N", slot=0, plugin="eq_1band", params={"type": filter_typ, "freq": filter_freq[0], "q": q}),
           'automation.set_point ' + j(track="N", param="plugin:0:freq", at=0, value=filter_freq[0]),
@@ -43,12 +43,13 @@ def quelle_rauschen(name, laenge_s, filter_freq, filter_zeit_s, abfall_db, abfal
     return B.b_aus_wav(wav, True)[0], h
 
 
-def quelle_synth(name, params, pitch, laenge_s, vel=100):
+def quelle_synth(name, params, pitch, laenge_s, vel=100, inserts=()):
     """Eine gehaltene Note des Subtractive Synth, trocken (ohne Hall)."""
     z = B.kopf(name)
     z += ['track.new ' + j(kind="instrument", format="stereo", name="Q", instrument="subtractive_synth"),
-          'mix.instrument ' + j(track="Q", plugin="subtractive_synth", params=params),
-          'midi.new_clip ' + j(track="Q", start=0, end=int(laenge_s * 44100)),
+          'mix.instrument ' + j(track="Q", plugin="subtractive_synth", params=params)]
+    z += ['mix.insert ' + j(track="Q", slot=k, plugin=pl, params=pa) for k, (pl, pa) in enumerate(inserts)]
+    z += ['midi.new_clip ' + j(track="Q", start=0, end=int(laenge_s * 44100)),
           "@NOTEN Q " + json.dumps([(pitch, 0, int((laenge_s - 0.2) * 1920), vel)])]
     wav, h = B.lauf(name, z, laenge_s)
     return B.b_aus_wav(wav, True)[0], h
@@ -72,9 +73,17 @@ def vag(x, name, schleife=None, ein_ms=2.0):
     if schleife:
         s_s, len_s, xf_s = schleife
         l0 = (int(s_s * RATE) // BLOCK) * BLOCK
-        ln = (int(len_s * RATE) // BLOCK) * BLOCK
-        l1 = l0 + ln
         xf = min(int(xf_s * RATE), l0)
+        mitte = (int(len_s * RATE) // BLOCK) * BLOCK
+        best = None
+        for ln in range(mitte - 12 * BLOCK * 10, mitte + 1, BLOCK):  # bis 0,2 s kuerzer: Ende passt in der Phase zum Anfang
+            if l0 + ln > len(low) or ln <= xf:
+                continue
+            e = sum((low[l0 + ln - xf + i] - low[l0 - xf + i]) ** 2 for i in range(0, xf, 3))
+            if best is None or e < best[0]:
+                best = (e, ln)
+        ln = best[1]
+        l1 = l0 + ln
         low = low[:l1]
         assert len(low) == l1 and l0 % BLOCK == 0 and l1 % BLOCK == 0 and (l1 - l0) % BLOCK == 0
         y = list(low)
@@ -103,68 +112,82 @@ def sampler_spur(name, pfad, lade, notes, ende_s, raum_par, inserts=(), gain_db=
     return z
 
 
-# --- die vier Stuecke --------------------------------------------------------------------------------------------
+# --- neue Palette (palette-neu.md): drei Instrumente, je ein Sample ------------------------------------------------
+
+RAUM9 = {"mix": 28, "pre_delay": 8, "decay": 1.1, "size": 40, "damping": 3500, "diffusion": 75, "low_cut": 150}
+SAMPLER_EINSCHLAG = {"play_mode": 1, "loop_mode": 0, "attack": 0.1, "sustain": 100.0, "release": 150.0}
+
+PFEIFE = {"osc1_wave": 1, "osc2_wave": 3, "osc2_semitones": 12.0, "osc2_detune": 0.0, "osc_mix": 35.0, "cutoff": 900.0,
+          "resonance": 5.0, "filter_env_amount": 0.0, "amp_attack": 30.0, "amp_decay": 500.0, "amp_sustain": 100.0,
+          "amp_release": 300.0, "level": -6.0}
+GLOCKE = {"osc1_wave": 3, "osc2_wave": 2, "osc2_semitones": 12.0, "osc2_detune": 0.0, "osc_mix": 30.0, "cutoff": 3000.0,
+          "resonance": 0.0, "filter_env_amount": 0.0, "amp_attack": 3.0, "amp_decay": 5000.0, "amp_sustain": 0.0,
+          "amp_release": 3000.0, "level": -3.0}
+RINGMOD = ("ring_mod", {"effect": 0, "frequency": 395.0, "resonance": 50.0, "mod_depth": 0.0, "mix": 60.0})
+
+
+def instrument_pfeife():
+    x, h = quelle_synth("q-pfeife", PFEIFE, 52, 3.4)
+    return vag(x, "pfeife", schleife=(0.8, 2.0, 0.5)), h
+
+
+def instrument_glocke():
+    x, h = quelle_synth("q-glocke", GLOCKE, 52, 6.2, inserts=[RINGMOD])
+    return vag(x, "glocke"), h
+
+
+def instrument_rausch():
+    x, h = quelle_rauschen("q-rausch", 0.5, (8000.0, 1500.0), 0.06, -50.0, 0.35, welle=4)
+    return vag(x, "rausch"), h
+
+
+def _lade(inst, root, **extra):
+    d = dict(SAMPLER_EINSCHLAG, root_note=root)
+    d.update(extra)
+    return inst[0], d
+
 
 def neu_schuss():
-    """Rauschen (Tiefpass 9 kHz -> 500 Hz in 60 ms, Pegel -45 dB in 0,22 s) -> 22,05 kHz VAG -> Sampler, eine Oktave tiefer gespielt."""
-    x, h = quelle_rauschen("q-schuss", 0.5, (9000.0, 500.0), 0.06, -45.0, 0.22)
-    pfad, n, a, b = vag(x, "schuss")
-    z = B.kopf("schuss9") + sampler_spur("Schuss", pfad, {"root_note": 60, "play_mode": 1, "loop_mode": 0, "attack": 0.1,
-                                                         "decay": 400.0, "sustain": 100.0, "release": 100.0},
-                                         [(48, 0, 120, 127)], 1.0, RAUM_SOUND)
+    """Rauschschlag (rosa Rauschen, fallender Tiefpass) eine Oktave tiefer gespielt: schwerer, laenger, dumpfer."""
+    (pfad, n, a, b), h = instrument_rausch()
+    z = B.kopf("schuss9") + sampler_spur("Schuss", *_lade((pfad,), 60, decay=400.0), [(48, 0, 120, 127)], 1.0, RAUM9)
     return z, 0.8, {"quelle_sha256": h[0][:12], "sample_frames": n}
 
 
 def neu_klinge():
-    """Rauschen mit schnell fallendem Tiefpass (6 kHz -> 300 Hz in 15 ms), 22,05 kHz VAG, eine Quinte hoeher gespielt."""
-    x, h = quelle_rauschen("q-klinge", 0.4, (6000.0, 300.0), 0.015, -40.0, 0.24)
-    pfad, n, a, b = vag(x, "klinge")
-    z = B.kopf("klinge9") + sampler_spur("Klinge", pfad, {"root_note": 60, "play_mode": 1, "loop_mode": 0, "attack": 0.1,
-                                                         "decay": 300.0, "sustain": 100.0, "release": 100.0},
-                                         [(67, 0, 120, 127)], 1.0, RAUM_SOUND)
+    """Derselbe Rauschschlag eine Oktave hoeher gespielt: kuerzer und schaerfer."""
+    (pfad, n, a, b), h = instrument_rausch()
+    z = B.kopf("klinge9") + sampler_spur("Klinge", *_lade((pfad,), 60, decay=300.0), [(72, 0, 120, 127)], 1.0, RAUM9)
     return z, 0.8, {"quelle_sha256": h[0][:12], "sample_frames": n}
 
 
-GLOCKE = {"osc1_wave": 2, "osc2_wave": 2, "osc2_semitones": 15.0, "osc2_detune": 0.0, "osc_mix": 30.0, "cutoff": 1800.0,
-          "resonance": 0.0, "filter_env_amount": 0.0, "amp_attack": 3.0, "amp_decay": 5000.0, "amp_sustain": 0.0,
-          "amp_release": 3000.0, "level": -3.0}
-
-
 def neu_aufheben():
-    """Glocken-Sample (zwei Sinus, 15 Halbtoene Abstand) bei H3 aufgenommen, bei H4 gespielt (eine Oktave hoeher, Sample spielt doppelt so schnell)."""
-    p = dict(GLOCKE, amp_decay=1800.0, cutoff=6000.0)
-    x, h = quelle_synth("q-aufheben", p, 59, 2.0)
-    pfad, n, a, b = vag(x, "aufheben")
-    z = B.kopf("aufheben9") + sampler_spur("Aufheben", pfad, {"root_note": 59, "play_mode": 1, "loop_mode": 0, "attack": 0.1,
-                                                             "decay": 4000.0, "sustain": 100.0, "release": 200.0},
-                                           [(71, 0, 960, 100)], 1.2, RAUM_SOUND)
+    """Metallglocke (Ringmodulator) bei E3 aufgenommen, bei E4 gespielt (eine Oktave hoeher, Grundton der Tonart)."""
+    (pfad, n, a, b), h = instrument_glocke()
+    z = B.kopf("aufheben9") + sampler_spur("Aufheben", *_lade((pfad,), 52, decay=4000.0), [(64, 0, 960, 100)], 1.2, RAUM9)
     return z, 1.2, {"quelle_sha256": h[0][:12], "sample_frames": n}
 
 
-CHOR = {"osc1_wave": 0, "osc2_wave": 0, "osc2_semitones": 0.0, "osc2_detune": 14.0, "osc_mix": 50.0, "cutoff": 520.0,
-        "resonance": 12.0, "filter_env_amount": 0.0, "amp_attack": 40.0, "amp_decay": 500.0, "amp_sustain": 100.0,
-        "amp_release": 300.0, "level": -6.0}
+GLOCKE_PEGEL = 4.0
+PFEIFE_PEGEL = -13.0
 
 
 def neu_skizze():
-    """Zwei Sample-Instrumente: Glocke (bei E2 aufgenommen, ausklingend, als Einzelschlag) und Chor (bei E3 aufgenommen, 2,8 s lang,
-    Schleife 0,8 s ... 2,8 s auf Vielfache von 28 gelegt, 0,5 s linear ueberblendet); beide durch die Tonhoehenverschiebung des Samplers
-    auf die Akkordtoene gebracht (wie auf der PS1: ein Sample je Klang, viele Tonhoehen). Dieselben Noten wie in Hoerprobe 8."""
+    """Pfeife (bei E3, Schleife 2 s) auf den Akkordtoenen von Teil A des Menue-Themas, Metallglocke zwei Oktaven bis eineinhalb Oktaven tiefer als
+    aufgenommen auf E2, E2, H1 (Schlaege bei 0, 8, 16 s). Dieselben Akkorde wie in Hoerprobe 8."""
     t = B.TICKS_PRO_SCHLAG
     akkorde = [(0, 8, [52, 55, 59, 64]), (8, 8, [52, 55, 60, 64]), (16, 4, [52, 57, 60, 64])]
-    bell = [(0, 8, 52, 1.0), (8, 8, 52, 0.9), (16, 8, 47, 1.0)]
-    xg, h1 = quelle_synth("q-glocke", GLOCKE, 40, 6.0)
-    pg, ng, _, _ = vag(xg, "glocke")
-    xc, h2 = quelle_synth("q-chor", CHOR, 52, 3.4)
-    pc, nc, a, b = vag(xc, "chor", schleife=(0.8, 2.0, 0.5))
-    chor = [(m, s * t, int((d + 0.3) * t), 90) for s, d, ch in akkorde for m in ch]
+    bell = [(0, 8, 40, 1.0), (8, 8, 40, 0.9), (16, 8, 35, 1.0)]
+    (pg, ng, _, _), h1 = instrument_glocke()
+    (pc, nc, a, b), h2 = instrument_pfeife()
+    pfeife = [(m, s * t, int((d + 0.3) * t), 90) for s, d, ch in akkorde for m in ch]
     glocke = [(m, s * t, int(min(d, 20 - s) * t), int(100 * v)) for s, d, m, v in bell]
     z = B.kopf("skizze9", bpm=60)
-    z += sampler_spur("Glocke", pg, {"root_note": 40, "play_mode": 1, "loop_mode": 0, "attack": 0.1, "decay": 5000.0,
-                                      "sustain": 100.0, "release": 1500.0, "level": -1.0}, glocke, 20.0, RAUM_SKIZZE)
-    z += sampler_spur("Chor", pc, {"root_note": 52, "play_mode": 0, "loop_mode": 1, "loop_start": a, "loop_end": b,
-                                    "attack": 1600.0, "decay": 1000.0, "sustain": 100.0, "release": 1800.0, "level": -13.0},
-                      chor, 20.0, RAUM_SKIZZE)
+    z += sampler_spur("Glocke", pg, dict(SAMPLER_EINSCHLAG, root_note=52, decay=5000.0, release=1500.0, level=GLOCKE_PEGEL),
+                      glocke, 20.0, RAUM9)
+    z += sampler_spur("Pfeife", pc, {"root_note": 52, "play_mode": 0, "loop_mode": 1, "loop_start": a, "loop_end": b,
+                                      "attack": 1600.0, "decay": 1000.0, "sustain": 100.0, "release": 1800.0,
+                                      "level": PFEIFE_PEGEL}, pfeife, 20.0, RAUM9)
     return z, 20.0, {"quelle_sha256": h1[0][:12] + "/" + h2[0][:12], "sample_frames": f"{ng}/{nc}", "schleife_pct": [round(a, 2), b]}
 
 

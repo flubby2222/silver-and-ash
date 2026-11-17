@@ -2,7 +2,8 @@
 session.new {"name":"q-glocke","sample_rate":44100,"bit_depth":16}
 event.tempo {"bpm":120}
 track.new {"kind":"instrument","format":"stereo","name":"Q","instrument":"subtractive_synth"}
-mix.instrument {"track":"Q","plugin":"subtractive_synth","params":{"osc1_wave":2,"osc2_wave":2,"osc2_semitones":15.0,"osc2_detune":0.0,"osc_mix":30.0,"cutoff":1800.0,"resonance":0.0,"filter_env_amount":0.0,"amp_attack":3.0,"amp_decay":5000.0,"amp_sustain":0.0,"amp_release":3000.0,"level":-3.0}}
-midi.new_clip {"track":"Q","start":0,"end":264600}
-midi.note_add {"clip":2,"pitch":40,"start_ticks":0,"length_ticks":11136,"velocity":100}
-file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/q-glocke.wav","format":"wav","bit_depth":16,"start":0,"end":264600,"dither":false}
+mix.instrument {"track":"Q","plugin":"subtractive_synth","params":{"osc1_wave":3,"osc2_wave":2,"osc2_semitones":12.0,"osc2_detune":0.0,"osc_mix":30.0,"cutoff":3000.0,"resonance":0.0,"filter_env_amount":0.0,"amp_attack":3.0,"amp_decay":5000.0,"amp_sustain":0.0,"amp_release":3000.0,"level":-3.0}}
+mix.insert {"track":"Q","slot":0,"plugin":"ring_mod","params":{"effect":0,"frequency":395.0,"resonance":50.0,"mod_depth":0.0,"mix":60.0}}
+midi.new_clip {"track":"Q","start":0,"end":273420}
+midi.note_add {"clip":2,"pitch":52,"start_ticks":0,"length_ticks":11520,"velocity":100}
+file.bounce_mix {"path":"C:/Users/flubb/AppData/Local/Temp/sc-versuch/q-glocke.wav","format":"wav","bit_depth":16,"start":0,"end":273420,"dither":false}
