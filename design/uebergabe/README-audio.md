@@ -10,7 +10,7 @@ Ablage im Spiel: Dateien aus `design/uebergabe/assets/audio/` nach `assets/audio
 |---|---|---|---|
 | `pistole.wav` | `ShotFired` (nur `Weapon == Pistol`; andere Fernwaffen später mit eigener Datei) | 1,0 | lauteste Datei (Spitze −1,5 dBFS) |
 | `klinge-1.wav` … `klinge-3.wav` | Treffer auf Gegner: `GhoulHit`, `BatHit`, `GormHit`, `DummyHit`; zufällig eine der drei, nie dieselbe zweimal hintereinander | 1,0 | Anmerkung 1 |
-| `ghul-ankuendigung.wav` | `GhoulWindUp` (Ort: der Ghul mit dieser Id) | 0,9 | Anmerkung 2; **vorläufig** |
+| `ghul-ankuendigung.wav` | `GhoulWindUp` (Ort: der Ghul mit dieser Id) | 0,9 | Anmerkung 2; **vorläufig, wird später überarbeitet** |
 | `schritt-1.wav` … `schritt-4.wav` | kein Ereignis in Core (Anmerkung 3); abwechselnd zufällig | 1,0 | leise Dateien (Spitze −12 dBFS) |
 | `ambiente-katakomben.ogg` | Schleife, solange ein Lauf läuft; als Stream (`LoadMusicStream`, `UpdateMusicStream` je Bild, `SetMusicVolume`) | 1,0 | sehr leise Fläche (Mittel −38 dBFS) |
 
@@ -53,7 +53,7 @@ Die Dateien tragen das Pegelverhältnis schon in sich (Schuss −1,5, Klinge −
 
 ## Was mir nicht gefällt oder was ich nicht prüfen konnte
 
-- Alles ist ungehört. Das Urteil „b“ des Menschen galt in allen vier Kategorien; der Ghul ist unbeurteilt (vorläufig).
+- Alles ist ungehört. Das Urteil „b“ des Menschen galt in allen vier Kategorien; zum Ghul sagte er am 2026-11-17 „Passt“, präzisiert: „Den Ghoul-Sound passen wir später nochmal an. Zum Testen ist er ok.“ Er ist also **vorläufig und wird später überarbeitet**, nicht bestätigt. Die Datei ist byte-gleich zur Fassung `5-ghul.wav` der Kurzprobe.
 - Die Klinge ist die Hörprobe-3-Klinge mit helleren Parametern. Die drei Varianten hier hat der Mensch nicht gehört, nur die eine aus der Kurzprobe.
 - Der Ghul-Laut ist sehr dunkel (fast nichts über 2 kHz) und hat zwei Schichten plus gesättigte Kopie.
 - Die Tropfen aus der Blech-Aufnahme klingen vielleicht nicht nach Wasser; er hat sie in der Kurzprobe trotzdem gewählt.

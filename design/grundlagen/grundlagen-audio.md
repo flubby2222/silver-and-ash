@@ -236,7 +236,7 @@ Hörprobe 5 (alle Kandidaten): siehe [Messwerte Hörprobe 5](../proben/audio/hoe
 
 # Nachtrag nach Hörprobe 5 kurz (2026-11-17)
 
-**Urteil des Menschen (über die Leitung):** „b“ – ein Wort, ohne Zusatz, gelesen als b in allen vier Kategorien: Schuss synthetisch (Hörprobe 3), Klinge synthetisch (heller), Schritte synthetisch (Hörprobe 3), Tropfen aus der Blech-Aufnahme. Zum Ghul-Laut hat er nichts gesagt; er gilt als vorläufig.
+**Urteil des Menschen (über die Leitung):** „b“ – ein Wort, ohne Zusatz, gelesen als b in allen vier Kategorien: Schuss synthetisch (Hörprobe 3), Klinge synthetisch (heller), Schritte synthetisch (Hörprobe 3), Tropfen aus der Blech-Aufnahme. Zum Ghul-Laut sagte er danach „Passt“, präzisiert: „Den Ghoul-Sound passen wir später nochmal an. Zum Testen ist er ok.“ – der Ghul ist vorläufig und wird später überarbeitet, nicht bestätigt.
 
 **Festgehalten (sein Urteil, keine Regel):** In drei von vier Kategorien hat die synthetische Fassung gegen die echte Aufnahme gewonnen. Die Klangbibliothek aus Aufnahmen ist damit nicht verworfen, aber kein Selbstläufer: Die echte Aufnahme setzte sich nur beim Tropfen durch, wo es für Wasser ohnehin keine Aufnahme gab. **[Schluss, nicht belegt]** Die synthetischen Fassungen waren durch drei Hörproben schon auf sein Urteil abgestimmt, die Aufnahmen waren ein erster Versuch.
 
