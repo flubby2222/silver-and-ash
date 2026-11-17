@@ -478,6 +478,10 @@ public sealed partial class Player
     private int _ticksInAir;
     private bool _perfectJumpQueued;
 
+    // The highest point (feet) of the current stay in the air - for the fall height of PlayerLanded (issue #291).
+    // NaN = no stay in the air measured yet (spawned in the air): then the height of the last tick counts.
+    private float _airPeakY = float.NaN;
+
     // A drop must last at least this long to count as a "landing" for the perfect window -
     // stepping down a small step is not a landing (code review finding). 0.25 s rules out drops up to
     // about 0.5 m; a real jump (0.8 s) or falling into a pit still counts.
@@ -510,7 +514,11 @@ public sealed partial class Player
         _events.Clear();
         UseInventory(input);
         MeleeCooldown.Tick();
-        _consecratedTicksLeft = Math.Max(0, _consecratedTicksLeft - 1);
+        if (_consecratedTicksLeft > 0 && --_consecratedTicksLeft == 0)
+        {
+            // Ran out by itself (death sets it to 0 in TakeDamage, without this event) - issue #291.
+            _events.Add(new ConsecrationEnded(Id));
+        }
         foreach (var weapon in _rangedSlots.OfType<RangedWeapon>())
         {
             weapon.Cooldown.Tick();
@@ -628,6 +636,7 @@ public sealed partial class Player
             var timed = wasQueued || afterDodge || _ticksSinceLanding <= _perfectWindowTicks;
             _perfectJumpQueued = false;
             vertical = _player.JumpSpeed;
+            _events.Add(new PlayerJumped(Id));
 
             // Every jump costs stamina. Timed and paid = perfect (bonus). Not paid = exhausted (slower).
             // A normal, paid jump changes nothing about bonus or exhaustion.
@@ -731,8 +740,16 @@ public sealed partial class Player
         Crouch.Tick(IsDodging);
         CountSteps(wasGrounded && grounded, pulled);
 
+        if (!grounded)
+        {
+            _airPeakY = MathF.Max(wasGrounded || float.IsNaN(_airPeakY) ? PreviousPosition.Y : _airPeakY, Position.Y);
+        }
+
         if (!wasGrounded && grounded)
         {
+            var peak = float.IsNaN(_airPeakY) ? PreviousPosition.Y : MathF.Max(_airPeakY, PreviousPosition.Y);
+            _events.Add(new PlayerLanded(Id, MathF.Max(0f, peak - Position.Y)));
+            _airPeakY = float.NaN;
             LandingDip.Land(fallSpeed);
 
             // Only real drops open the perfect window (see MinimumAirTicksForLanding).
@@ -875,6 +892,7 @@ public sealed partial class Player
         _dashTicksLeft = _dashTicks;
         _perfectJumpQueued = false;
         _ticksSinceJumpPressedInAir = Never;
+        _events.Add(new PlayerDashed(Id));
 
         _airDashUsed = true;
     }
@@ -894,6 +912,7 @@ public sealed partial class Player
         _dodgeDirection = wish.LengthSquared() > 0f ? Vector3.Normalize(wish) : View.FlatForward;
         _dodgeTicksLeft = _dodgeTicks;
         _perfectJumpQueued = false;
+        _events.Add(new PlayerDodged(Id));
 
         // If the dodge runs off a ledge, that stay in the air already had its move - no dash on top
         // (code review finding: dodge + dash = about 8 m of evading).

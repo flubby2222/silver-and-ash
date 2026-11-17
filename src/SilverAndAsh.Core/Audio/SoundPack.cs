@@ -57,13 +57,21 @@ public sealed class SoundPack
         [SoundKind.StepRight] = ["p1-schritt-r1.wav", "p1-schritt-r2.wav", "p1-schritt-r3.wav"],
         [SoundKind.PlayerHurt] = ["p1-schmerz.wav"],
         [SoundKind.GhoulWindUp] = ["p1-ghul-ankuendigung.wav"],
-        [SoundKind.GhoulDied] = ["p1-ghul-sterben.wav"],
+        [SoundKind.GhoulDied] = ["p1-ghul-sterben.wav", "p1-ghul-sterben-2.wav"],
         [SoundKind.DoorOpened] = ["p1-tuer-oeffnen.wav"],
         [SoundKind.ChestOpened] = ["p1-kiste-oeffnen.wav"],
         [SoundKind.SilverTaken] = ["p1-aufheben-silber.wav"],
         [SoundKind.BloodVialTaken] = ["p1-aufheben-phiole.wav"],
         [SoundKind.ConsecratedAmmoTaken] = ["p1-aufheben-weihmunition.wav"],
         [SoundKind.KeyTaken] = ["p1-aufheben-schluessel.wav"],
+
+        // Issue #291: the events that came after the pack. Sound pack 1.1 added a second take for noticing and dying.
+        [SoundKind.Jump] = ["p1-sprung.wav"],
+        [SoundKind.Dash] = ["p1-dash.wav"],
+        [SoundKind.Land] = ["p1-landung.wav"],
+        [SoundKind.GhoulNoticed] = ["p1-ghul-entdecken.wav", "p1-ghul-entdecken-2.wav"],
+        [SoundKind.ConsecrationEnded] = ["p1-weihe-ende.wav"],
+        [SoundKind.MenuClick] = ["p1-menue-klick.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>
@@ -73,15 +81,10 @@ public sealed class SoundPack
     public static ImmutableArray<SoundPack> All => [Pack1, Old];
 
     /// <summary>
-    /// The files of sound pack 1 that no event plays yet - Core has no event for them (jump, dash, landing, a ghoul
-    /// noticing a player, picking up a weapon, the end of the consecration, a menu click). Checked in with the pack, so
-    /// the follow-up issue #291 only adds the events.
+    /// The files of sound pack 1 that no event plays yet: picking up a weapon or armour - the game cannot do that before
+    /// the loot system (#194). Checked in with the pack, so that issue only adds the event.
     /// </summary>
-    public static ImmutableArray<string> Pack1WithoutEvent =>
-    [
-        "p1-ghul-entdecken.wav", "p1-sprung.wav", "p1-dash.wav", "p1-landung.wav", "p1-aufheben-ausruestung.wav",
-        "p1-weihe-ende.wav", "p1-menue-klick.wav",
-    ];
+    public static ImmutableArray<string> Pack1WithoutEvent => ["p1-aufheben-ausruestung.wav"];
 
     /// <summary>
     /// The files of <paramref name="kind"/> in this pack: one of them plays each time, never the same twice in a row.
