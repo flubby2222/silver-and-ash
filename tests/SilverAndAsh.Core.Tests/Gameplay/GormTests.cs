@@ -79,6 +79,17 @@ public class GormTests
     }
 
     [Fact]
+    public void A_sleeping_gorm_takes_no_step()
+    {
+        // Issue #298: his steps are heard only once he walks.
+        var world = World(NoAttacks);
+
+        var events = Run(world, PlayerInput.None, 3 * Second);
+
+        Assert.DoesNotContain(events, e => e is GormStepped);
+    }
+
+    [Fact]
     public void Entering_starts_the_boss_fight()
     {
         var world = World();

@@ -83,6 +83,21 @@ public sealed class SoundPack
         [SoundKind.BatDiveMissed] = ["p1-fledermaus-fehlsturz.wav"],
         [SoundKind.BatHurt] = ["p1-fledermaus-treffer.wav"],
         [SoundKind.BatDied] = ["p1-fledermaus-sterben.wav"],
+
+        // Issue #298: Gorm, from sound pack 1.1 (commit db7c912) - deep and heavy. Each attack has a warning from
+        // another source (a swelling low whistle, a whirling rush, a low bell), so the three can be told apart.
+        [SoundKind.GormStep] = ["p1-gorm-schritt-1.wav", "p1-gorm-schritt-2.wav"],
+        [SoundKind.GormHammerWindUp] = ["p1-gorm-ankuendigung-hammer.wav"],
+        [SoundKind.GormSwingWindUp] = ["p1-gorm-ankuendigung-schwung.wav"],
+        [SoundKind.GormThrowWindUp] = ["p1-gorm-ankuendigung-wurf.wav"],
+        [SoundKind.GormSlam] = ["p1-gorm-aufschlag.wav"],
+        [SoundKind.GormChain] = ["p1-gorm-kette.wav"],
+        [SoundKind.GormThrow] = ["p1-gorm-haken-wurf.wav"],
+        [SoundKind.GormHookHit] = ["p1-gorm-haken-treffer.wav"],
+        [SoundKind.GormHurt] = ["p1-gorm-treffer-1.wav", "p1-gorm-treffer-2.wav"],
+        [SoundKind.GormHeadHurt] = ["p1-gorm-treffer-kopf.wav"],
+        [SoundKind.GormRoar] = ["p1-gorm-bruellen.wav"],
+        [SoundKind.GormDied] = ["p1-gorm-sterben.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>

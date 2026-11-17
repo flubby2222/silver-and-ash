@@ -102,6 +102,42 @@ public enum SoundKind
 
     /// <summary>A bat dies (issue #297).</summary>
     BatDied,
+
+    /// <summary>Gorm puts a heavy foot down (issue #298).</summary>
+    GormStep,
+
+    /// <summary>Gorm raises his club - the warning before the hammer blow: jump (issue #298).</summary>
+    GormHammerWindUp,
+
+    /// <summary>Gorm spins up his chain - the warning before the swing: duck in a dodge (issue #298).</summary>
+    GormSwingWindUp,
+
+    /// <summary>Gorm's hook glows - the warning before the throw: step aside (issue #298).</summary>
+    GormThrowWindUp,
+
+    /// <summary>Gorm's hammer strikes the floor, the shock wave starts (issue #298).</summary>
+    GormSlam,
+
+    /// <summary>Gorm's chain sweeps round (issue #298) - from the start of the sweep, not when it is over.</summary>
+    GormChain,
+
+    /// <summary>Gorm throws his hook (issue #298).</summary>
+    GormThrow,
+
+    /// <summary>Gorm's hook hits a player (issue #298).</summary>
+    GormHookHit,
+
+    /// <summary>Gorm is hit on his body (issue #298).</summary>
+    GormHurt,
+
+    /// <summary>Gorm is hit on his head - a critical hit (issue #298).</summary>
+    GormHeadHurt,
+
+    /// <summary>Gorm roars at half health: phase 2 (issue #298).</summary>
+    GormRoar,
+
+    /// <summary>Gorm dies (issue #298).</summary>
+    GormDied,
 }
 
 /// <summary>One sound to play now: which file, at which volume (0 to 1, before <see cref="SoundBoard.MasterVolume"/>).</summary>
@@ -177,7 +213,8 @@ public static class SoundBoard
     /// of the same tick does not: both are short knocks and would smear into one, and the creature's own one says what
     /// was hit. (Without a file for it in a pack, the blade's hit plays as before.)
     /// </summary>
-    public static ImmutableArray<SoundKind> OwnHitKinds => [SoundKind.BatHurt];
+    public static ImmutableArray<SoundKind> OwnHitKinds =>
+        [SoundKind.BatHurt, SoundKind.GormHurt, SoundKind.GormHeadHurt];
 
     /// <summary>The seconds that must at least pass between two sounds of <paramref name="kind"/> (0: no limit).</summary>
     public static float MinimumGap(SoundKind kind) => kind == SoundKind.BatFlap ? BatFlapMinimumGap : 0f;
@@ -243,7 +280,8 @@ public static class SoundBoard
     /// a ghoul's wind-up and death, a door or chest opening, picking up silver, a consumable or a key; a jump, a dash or
     /// dodge, a landing from high enough (<see cref="LandingSoundMinimumFallHeight"/>), a ghoul noticing a player and
     /// the end of the consecration (issue #291); a bat's wing beat, warnings, spit, bite, missed dive, hit and death
-    /// (issue #297).
+    /// (issue #297); Gorm's steps, a warning of its own for each of his three attacks, the hammer's impact, the chain,
+    /// the throw and the hook's hit, a hit on his body or head, his roar and his death (issue #298).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -280,6 +318,18 @@ public static class SoundBoard
         BatDiveMissed => SoundKind.BatDiveMissed,
         BatHit => SoundKind.BatHurt,
         BatDied => SoundKind.BatDied,
+        GormStepped => SoundKind.GormStep,
+        GormWindUp { Attack: GormAttack.Hammer } => SoundKind.GormHammerWindUp,
+        GormWindUp { Attack: GormAttack.Swing } => SoundKind.GormSwingWindUp,
+        GormWindUp => SoundKind.GormThrowWindUp,
+        GormSlammed => SoundKind.GormSlam,
+        GormSwingStarted => SoundKind.GormChain,
+        GormThrew => SoundKind.GormThrow,
+        HookHit => SoundKind.GormHookHit,
+        GormHit { Critical: true } => SoundKind.GormHeadHurt,
+        GormHit => SoundKind.GormHurt,
+        GormRoared => SoundKind.GormRoar,
+        GormDied => SoundKind.GormDied,
         _ => null,
     };
 }
@@ -293,8 +343,8 @@ public static class SoundBoard
 /// <item>A blade swing that hits something in the same tick plays only the hit: Core resolves the swing in the tick it
 /// is made, so a <see cref="TargetHitBy"/> with the blade comes in the same events. The swing sound is the sound of a
 /// miss; both together would smear into one.</item>
-/// <item>A creature's own hit sound (<see cref="SoundBoard.OwnHitKinds"/>, e.g. a bat's) replaces the blade's hit of
-/// the same tick (issue #297).</item>
+/// <item>A creature's own hit sound (<see cref="SoundBoard.OwnHitKinds"/>, e.g. a bat's or Gorm's) replaces the
+/// blade's hit of the same tick (issues #297, #298).</item>
 /// <item>Of several files it picks one at random, never the one it picked last time from that set.</item>
 /// <item>A wing beat plays only near the listener (<see cref="SoundBoard.IsInEarshot"/>) and not sooner than
 /// <see cref="SoundBoard.MinimumGap"/> after the last one, from whichever bat (issue #297). For that it counts the

@@ -169,7 +169,10 @@ public sealed record GormSlammed(int GormId) : GameEvent;
 /// <summary>The shock wave hit player <paramref name="PlayerId"/> (who was on the ground).</summary>
 public sealed record ShockwaveHit(int PlayerId) : GameEvent;
 
-/// <summary>Gorm's chain swung round; <paramref name="Hit"/> tells whether it hit anyone.</summary>
+/// <summary>Gorm's chain starts its sweep - the end of his wind-up (issue #298, for the sound of the chain).</summary>
+public sealed record GormSwingStarted(int GormId) : GameEvent;
+
+/// <summary>Gorm's chain swung round; <paramref name="Hit"/> tells whether it hit anyone. Comes at the end of the sweep.</summary>
 public sealed record GormSwung(int GormId, bool Hit) : GameEvent;
 
 /// <summary>Gorm threw his hook from <paramref name="From"/> along <paramref name="Direction"/>.</summary>
@@ -201,6 +204,12 @@ public sealed record StoneHit(int PlayerId) : GameEvent;
 
 /// <summary>Gorm <paramref name="GormId"/> is dead.</summary>
 public sealed record GormDied(int GormId) : GameEvent;
+
+/// <summary>
+/// Gorm <paramref name="GormId"/> put a heavy foot down while walking (issue #298): one every
+/// <see cref="Gorm.StepLength"/> he covers. Only for the sound - it changes nothing.
+/// </summary>
+public sealed record GormStepped(int GormId) : GameEvent;
 
 /// <summary>A player entered the boss room while Gorm lives: the boss fight begins (his health bar shows).</summary>
 public sealed record BossFightStarted : GameEvent;
