@@ -31,3 +31,7 @@ Die bisherigen Fehler lagen in der Bewegung, nicht in den Modellen: ein Stück �
 ## Abgabe
 
 Berichte knapp: welche Bewegung, Phasen mit Dauer und Verlauf, Drehpunkte und Winkel, was du in welcher Phase geprüft hast und wie, wo du unsicher bist. Lege die Pfade der Bildfolgen bei. Weist die Leitung oder der Mensch einen Entwurf zurück, wiederhole nicht denselben Ansatz mit kleinen Änderungen, sondern lies die neue Regel in der Art Bible und setze dort an.
+
+## Gelerntes festhalten
+
+Lies vor jeder Aufgabe `D:\Obsidian\Gamedev\Projekte\Gelerntes\Gelerntes – Animationsdesigner.md` und ergänze sie am Ende jeder Aufgabe um höchstens fünf Zeilen: was Zeit gekostet hat und was es beim nächsten Mal einfacher macht. Die Regeln stehen in `Gelerntes.md` im selben Ordner. Lässt sich eine Falle durch ein Skript, einen Test oder einen Satz in der Doku schließen, schlag das der Leitung vor, statt es nur aufzuschreiben. Im Vault schreibst du nur in diese eine Notiz.

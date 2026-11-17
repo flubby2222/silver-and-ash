@@ -39,6 +39,7 @@ Mehrere dieser Regeln erzwingen Hooks in [.claude/hooks/](.claude/hooks/). Block
 
 ## Nach dem Merge
 
+- **Gelerntes:** Jede Sitzung liest vor der Aufgabe die Notiz ihrer Rolle in `D:\Obsidian\Gamedev\Projekte\Gelerntes\` und ergänzt sie am Ende um höchstens fünf Zeilen (was Zeit gekostet hat, was es nächstes Mal einfacher macht). Wiederkehrende Handgriffe werden zu Skript, Test oder Doku im Repository; die Leitung macht daraus Issues.
 - **Neues Konzept:** Notiz im Obsidian-Vault `D:\Obsidian\Gamedev` (`Konzepte/`, `Werkzeuge/` oder `Design/`, Frontmatter `autor: claude`, auf Deutsch, mit Links zum Code).
 - **Ende eines Meilensteins:** Retro in `Retros/` mit freiem Abschnitt „Meine Sicht“, Meilenstein schließen, Release-Vorstellung im Chat.
 - **Vor jedem Release eine Balancing-Runde:** Balance-Report mit Vorher/Nachher, Bot-Durchläufe des Testers, `runs.log`, Werte in `balance.json`; Ergebnis in [docs/balancing.md](docs/balancing.md). Tests rechnen mit `Balance.Default`, nie mit festen Balancing-Zahlen.
