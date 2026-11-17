@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 
 namespace SilverAndAsh.Core.Audio;
@@ -77,6 +78,30 @@ public enum SoundKind
 
     /// <summary>A menu button is selected or chosen - played by the game itself, no event of Core (issue #291).</summary>
     MenuClick,
+
+    /// <summary>A bat's wing beat, near enough to be heard (issue #297).</summary>
+    BatFlap,
+
+    /// <summary>A bat starts glowing before a spit - the warning (issue #297).</summary>
+    BatSpitWindUp,
+
+    /// <summary>A bat spits a blood bolt (issue #297).</summary>
+    BatSpat,
+
+    /// <summary>A bat screeches before its dive - the warning (issue #297).</summary>
+    BatScreech,
+
+    /// <summary>A bat bites a player in its dive (issue #297).</summary>
+    BatBite,
+
+    /// <summary>A bat dives into empty air (issue #297).</summary>
+    BatDiveMissed,
+
+    /// <summary>A bat is hit (issue #297).</summary>
+    BatHurt,
+
+    /// <summary>A bat dies (issue #297).</summary>
+    BatDied,
 }
 
 /// <summary>One sound to play now: which file, at which volume (0 to 1, before <see cref="SoundBoard.MasterVolume"/>).</summary>
@@ -133,6 +158,40 @@ public static class SoundBoard
     /// </summary>
     public const float LandingSoundMinimumFallHeight = 0.6f;
 
+    /// <summary>
+    /// Metres from the listener (a player's eyes) within which a bat's wing beat is heard (issue #297). The game has no
+    /// spatial sound yet (#225), so this is a plain threshold: a bat circling a player (4 to 6 m) is heard, one across
+    /// the room is not. Presentation, not a game rule - so not in balance.json.
+    /// </summary>
+    public const float BatFlapHearingDistance = 8f;
+
+    /// <summary>
+    /// Seconds at least between two wing beats that are heard (issue #297), whichever bat beats: several bats round a
+    /// player flap out of step, and without this they would add up to a rattle. One bat beats every
+    /// <see cref="Bat.FlapInterval"/>, which is longer, so a single bat is heard on every beat.
+    /// </summary>
+    public const float BatFlapMinimumGap = 0.25f;
+
+    /// <summary>
+    /// The kinds that are a creature's own sound of being hit (issue #297). When one of them plays, the blade's hit
+    /// of the same tick does not: both are short knocks and would smear into one, and the creature's own one says what
+    /// was hit. (Without a file for it in a pack, the blade's hit plays as before.)
+    /// </summary>
+    public static ImmutableArray<SoundKind> OwnHitKinds => [SoundKind.BatHurt];
+
+    /// <summary>The seconds that must at least pass between two sounds of <paramref name="kind"/> (0: no limit).</summary>
+    public static float MinimumGap(SoundKind kind) => kind == SoundKind.BatFlap ? BatFlapMinimumGap : 0f;
+
+    /// <summary>
+    /// Whether <paramref name="gameEvent"/> happens near enough to <paramref name="listener"/> to be heard. Only the
+    /// wing beat has a range (<see cref="BatFlapHearingDistance"/>); without a listener everything counts as near.
+    /// </summary>
+    public static bool IsInEarshot(GameEvent gameEvent, Vector3? listener) => gameEvent switch
+    {
+        BatFlapped flap when listener is { } ear => Vector3.Distance(flap.At, ear) <= BatFlapHearingDistance,
+        _ => true,
+    };
+
     /// <summary>Every short sound the game loads from assets/audio/: the files of every <see cref="SoundPack"/>.</summary>
     public static ImmutableArray<string> SoundFiles => [.. SoundPack.All.SelectMany(pack => pack.Files).Distinct()];
 
@@ -183,7 +242,8 @@ public static class SoundBoard
     /// a swing and a hit of the silver blade (not one with the pistol or the club), a footstep per foot, a hurt player,
     /// a ghoul's wind-up and death, a door or chest opening, picking up silver, a consumable or a key; a jump, a dash or
     /// dodge, a landing from high enough (<see cref="LandingSoundMinimumFallHeight"/>), a ghoul noticing a player and
-    /// the end of the consecration (issue #291).
+    /// the end of the consecration (issue #291); a bat's wing beat, warnings, spit, bite, missed dive, hit and death
+    /// (issue #297).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -212,6 +272,14 @@ public static class SoundBoard
         PlayerLanded { FallHeight: >= LandingSoundMinimumFallHeight } => SoundKind.Land,
         GhoulNoticed => SoundKind.GhoulNoticed,
         ConsecrationEnded => SoundKind.ConsecrationEnded,
+        BatFlapped => SoundKind.BatFlap,
+        BatSpitWindUp => SoundKind.BatSpitWindUp,
+        BatSpat => SoundKind.BatSpat,
+        BatScreeched => SoundKind.BatScreech,
+        BatBit => SoundKind.BatBite,
+        BatDiveMissed => SoundKind.BatDiveMissed,
+        BatHit => SoundKind.BatHurt,
+        BatDied => SoundKind.BatDied,
         _ => null,
     };
 }
@@ -225,7 +293,12 @@ public static class SoundBoard
 /// <item>A blade swing that hits something in the same tick plays only the hit: Core resolves the swing in the tick it
 /// is made, so a <see cref="TargetHitBy"/> with the blade comes in the same events. The swing sound is the sound of a
 /// miss; both together would smear into one.</item>
+/// <item>A creature's own hit sound (<see cref="SoundBoard.OwnHitKinds"/>, e.g. a bat's) replaces the blade's hit of
+/// the same tick (issue #297).</item>
 /// <item>Of several files it picks one at random, never the one it picked last time from that set.</item>
+/// <item>A wing beat plays only near the listener (<see cref="SoundBoard.IsInEarshot"/>) and not sooner than
+/// <see cref="SoundBoard.MinimumGap"/> after the last one, from whichever bat (issue #297). For that it counts the
+/// ticks: call it once per tick.</item>
 /// </list>
 /// <para>
 /// The random choice has its own generator, started from the world's seed: the world's own random numbers (spread,
@@ -242,21 +315,32 @@ public sealed class SoundCues
     // The last pick of each set of files, keyed by the files themselves: kinds sharing them share it, too.
     private readonly Dictionary<string, int> _lastVariant = new(StringComparer.Ordinal);
 
+    // Ticks seen so far (one call of For with events per tick) and the tick each kind with a minimum gap last played.
+    private long _tick;
+    private readonly Dictionary<SoundKind, long> _lastPlayedTick = [];
+
     /// <summary>Starts the choice of variants from <paramref name="seed"/> (the world's seed).</summary>
     public SoundCues(int seed) => _random = new Random(seed ^ SeedSalt);
 
     /// <summary>
     /// The sounds of <paramref name="pack"/> to play for <paramref name="events"/> (the events of one tick), in the order
-    /// they first appear.
+    /// they first appear. <paramref name="listener"/>: where the listening player's ears are (their eyes) - sounds
+    /// with a range (<see cref="SoundBoard.IsInEarshot"/>) farther away stay silent; without one, all count as near.
     /// </summary>
-    public IReadOnlyList<SoundCue> For(IEnumerable<GameEvent> events, SoundPack pack)
+    public IReadOnlyList<SoundCue> For(IEnumerable<GameEvent> events, SoundPack pack, Vector3? listener = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(pack);
-        var kinds = events.Select(SoundBoard.KindFor).OfType<SoundKind>().Distinct().ToList();
+        _tick++;
+        var kinds = events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener))
+            .Select(SoundBoard.KindFor).OfType<SoundKind>().Distinct().ToList();
         if (kinds.Contains(SoundKind.Blade))
         {
             kinds.Remove(SoundKind.BladeSwing);
+            if (kinds.Any(kind => SoundBoard.OwnHitKinds.Contains(kind) && !pack.Variants(kind).IsEmpty))
+            {
+                kinds.Remove(SoundKind.Blade);
+            }
         }
 
         var cues = new List<SoundCue>();
@@ -265,9 +349,14 @@ public sealed class SoundCues
         {
             var files = pack.Variants(kind);
             var set = string.Join('|', files);
-            if (files.IsEmpty || !setsPlayed.Add(set))
+            if (files.IsEmpty || TooSoon(kind) || !setsPlayed.Add(set))
             {
                 continue;
+            }
+
+            if (SoundBoard.MinimumGap(kind) > 0f)
+            {
+                _lastPlayedTick[kind] = _tick;
             }
 
             cues.Add(new SoundCue(kind, files[NextVariant(set, files.Length)], SoundBoard.SoundVolume));
@@ -285,6 +374,14 @@ public sealed class SoundCues
         ArgumentNullException.ThrowIfNull(pack);
         var files = pack.Variants(kind);
         return files.IsEmpty ? [] : [new SoundCue(kind, files[NextVariant(string.Join('|', files), files.Length)], SoundBoard.SoundVolume)];
+    }
+
+    /// <summary>True if <paramref name="kind"/> played less than its <see cref="SoundBoard.MinimumGap"/> ago.</summary>
+    private bool TooSoon(SoundKind kind)
+    {
+        var gap = SoundBoard.MinimumGap(kind);
+        return gap > 0f && _lastPlayedTick.TryGetValue(kind, out var last)
+            && _tick - last < SimulationClock.SecondsToTicks(gap);
     }
 
     /// <summary>A random one of the <paramref name="count"/> files of <paramref name="set"/>, never the same as last time (if it has more than one).</summary>

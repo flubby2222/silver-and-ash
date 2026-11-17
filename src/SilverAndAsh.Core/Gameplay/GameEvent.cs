@@ -257,3 +257,10 @@ public sealed record ConsecrationEnded(int PlayerId) : GameEvent;
 
 /// <summary>Ghoul <paramref name="GhoulId"/> noticed player <paramref name="PlayerId"/> and starts chasing (once per noticing; issue #291).</summary>
 public sealed record GhoulNoticed(int GhoulId, int PlayerId) : GameEvent;
+
+/// <summary>
+/// Bat <paramref name="BatId"/> beat its wings once, its body's middle at <paramref name="At"/> (issue #297): every
+/// <see cref="Bat.FlapInterval"/> while it is awake and alive, never while it hangs still unnoticed. Only for the
+/// sound - which flaps are near enough to be heard is up to the presentation.
+/// </summary>
+public sealed record BatFlapped(int BatId, Vector3 At) : GameEvent;

@@ -72,6 +72,17 @@ public sealed class SoundPack
         [SoundKind.GhoulNoticed] = ["p1-ghul-entdecken.wav", "p1-ghul-entdecken-2.wav"],
         [SoundKind.ConsecrationEnded] = ["p1-weihe-ende.wav"],
         [SoundKind.MenuClick] = ["p1-menue-klick.wav"],
+
+        // Issue #297: the bat, from sound pack 1.1 (commit db7c912). Its warnings come from other sources than the
+        // ghoul's voice - a bell before the spit, a whistle before the dive - and lie higher.
+        [SoundKind.BatFlap] = ["p1-fledermaus-flattern-1.wav", "p1-fledermaus-flattern-2.wav"],
+        [SoundKind.BatSpitWindUp] = ["p1-fledermaus-spuck-ankuendigung.wav"],
+        [SoundKind.BatSpat] = ["p1-fledermaus-spucken.wav"],
+        [SoundKind.BatScreech] = ["p1-fledermaus-kreischen.wav"],
+        [SoundKind.BatBite] = ["p1-fledermaus-biss.wav"],
+        [SoundKind.BatDiveMissed] = ["p1-fledermaus-fehlsturz.wav"],
+        [SoundKind.BatHurt] = ["p1-fledermaus-treffer.wav"],
+        [SoundKind.BatDied] = ["p1-fledermaus-sterben.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>
