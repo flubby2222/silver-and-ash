@@ -19,7 +19,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SC = HERE.parent / "soundcraft-versuch"
 sys.path.insert(0, str(SC))
-sys.path.insert(0, str(HERE.parents[1] / "uebergabe" / "tools" / "audio"))
+sys.path.insert(0, str(HERE.parents[2] / "uebergabe" / "tools" / "audio"))
 
 import bauen as B  # noqa: E402
 import bauen9 as N  # noqa: E402
@@ -27,7 +27,7 @@ from bauen import j  # noqa: E402
 from synth import SR  # noqa: E402
 
 DATEIEN = HERE / "dateien"
-UEBERGABE = HERE.parents[1] / "uebergabe" / "assets" / "audio"
+UEBERGABE = HERE.parents[2] / "uebergabe" / "assets" / "audio"
 RAUM_P1 = dict(N.RAUM9, decay=0.8, size=30, mix=22)  # kuerzer als in Hoerprobe 9: bei winzigen Geraeuschen wuchs der Hall nach dem trockenen Ton zu einem zweiten Einsatz
 TPS = 1920  # Ticks je Sekunde bei 120/min und 960 je Viertel
 
