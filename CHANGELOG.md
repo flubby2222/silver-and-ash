@@ -7,6 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Kisten mit Textur:** Alle vier Kistenstufen sind neu gemalt (Atlas 128 × 128): gedecktes Holz mit Metallbändern und Nieten, die Bretter laufen über die Deckelwölbung. Die Stufe zeigt sich nur noch als Akzent (Stahlblau, Gold, Blutrot). Form, Größe und Deckel bleiben gleich (#258).
 - **Nachlade-Hinweis:** Ist das Magazin der Fernwaffe in der Hand leer, steht „Reload [R]“ gut lesbar knapp unter dem Fadenkreuz. Er verschwindet, sobald du nachlädst oder zu einer geladenen Waffe wechselst
 - **Jeder Raum hat sein eigenes Gemäuer:** Wände, Böden und Decken der Katakomben gibt es jetzt in drei Spielarten, und jeder Raum wählt für jede Fläche eine davon – derselbe Seed zeigt immer dasselbe Bild. Ein Gang sieht aus wie der Raum, an dem er beginnt. Kopfsteinpflaster liegt nur im Startraum, in Schatzkammern und Geheimräumen, nie dort, wo gekämpft wird
 - **Gorm hat Gestalt:** Statt Quadern stapft ein grüner Riese mit eiserner Maske, Keule und schwerer bleicher Kette auf dich zu; in Ruhe schleift die Kette mit dem Haken über den Boden. Vor dem Kettenschwung wirbelt er sie über dem Kopf, beim Schwung reicht sie genau so weit, wie sie trifft. Vor dem Wurf glüht der Haken rot, im Flug zieht er die Kette hinter sich her. Vor dem Hammerschlag reißt er die Keule hoch, eine festgesteckte Keule glüht. In Phase 2 brechen rote Male auf Körper und Maske auf. Er blitzt bei Treffern (rot am Kopf) und fällt tot auf den Rücken
