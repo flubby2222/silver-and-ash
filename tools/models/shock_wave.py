@@ -14,9 +14,18 @@ Lokale Achsen eines Bausteins wie beim alten Ring aus Kaesten: x nach aussen (ra
 Ursprung = Punkt auf dem Ring am Boden, Drehpunkt 0;0;0. Das Spiel setzt die Bausteine so, dass ihr aeusserster Punkt
 genau auf dem Radius der Trefferzone liegt (ShockwaveLook im Core).
   shard  Gruppe von drei schraeg nach aussen aufgeworfenen Steinplatten (0,6 m am Kreis entlang, 0,36 bis 0,56 m hoch)
-         aus der Wandkachel, mit einem roten Riss (Blutrot, Akzent fuer die Gefahr) am Fuss
+         aus der Wandkachel; davor eine niedrige Bruchkante, dahinter eine dunkle Furche (Issue #314, ohne Rot)
   puff   kleiner Staubhaufen aus Kantenstuecken (hellste Stufen der Stein-Reihe), hinter dem Rand
-Textur 128 x 128, Farben aus der Wandkachel und den Reihen Stein und Blutrot von assets/palette/hauptpalette.json.
+Textur 128 x 128, Farben aus der Wandkachel und der Reihe Stein von assets/palette/hauptpalette.json.
+
+Issue #314 (Urteil des Menschen: kein Rot auf der Welle): Der rote Riss ist weg. Die Gefahr zeigt der Stein selbst,
+nur ueber Helligkeit und Form, ohne Signalfarbe und ohne Leuchten:
+  - Bruchkante: ein 0,16 m hoher Streifen frisch gebrochener Stein (hellste Stufen 12 bis 14 der Stein-Reihe) liegt
+    vorn am Fuss der Platten; seine Vorderkante ist der aeusserste Punkt (ShardReach), also der Trefferradius.
+  - Die Aussenseite jeder Platte (zum Spieler hin, die frisch aufgerissene Unterseite) und ihr oberes Bruchende sind
+    ebenso hell.
+  - Furche: dahinter ein dunkler Streifen (Stufen 1 bis 3), damit die helle Kante gegen den Boden absetzt.
+Werkstein bleibt besonderen Portalen vorbehalten (Art Bible, Farben, Regel 6) und wird hier nicht benutzt.
 """
 import json
 import math
@@ -38,10 +47,10 @@ NAME = "shock_wave"
 Part, V = psx.Part, psx.V
 PAL = json.load(open(os.path.join(ROOT, "assets", "palette", "hauptpalette.json"), encoding="utf-8"))
 ROWS = {r["name"]: r["farben"] for r in PAL["grund"] + PAL["akzent"]}
-BLUT = ROWS["Blutrot"]
+STEIN = ROWS["Stein"]
 
 # Pixel-Rechtecke (x0, y0, x1, y1) im Atlas 128 x 128, wie im Probestueck.
-RECTS = {"stone": (0, 64, 64, 128), "dust": (64, 96, 96, 128), "crack": (96, 64, 128, 96)}
+RECTS = {"stone": (0, 64, 64, 128), "dust": (64, 96, 96, 128), "fresh": (96, 64, 128, 96), "furrow": (96, 96, 128, 128)}
 UV = psx.rects_from_pixels(RECTS, 128)
 
 
@@ -59,10 +68,16 @@ def atlas():
     x0, y0, x1, y1 = RECTS["dust"]
     pick = rng.choice(3, (y1 - y0, x1 - x0), p=[0.3, 0.45, 0.25])
     a[y0:y1, x0:x1] = np.array([ROWS["Stein"][11], ROWS["Stein"][12], ROWS["Stein"][14]])[pick]
-    x0, y0, x1, y1 = RECTS["crack"]
+    # frische Bruchflaechen: die hellsten Stufen der Stein-Reihe, zur Mitte hin am hellsten (feste Muster, kein Zufall)
+    x0, y0, x1, y1 = RECTS["fresh"]
     for r in range(y0, y1):
         for c in range(x0, x1):
-            a[r, c] = BLUT[3 + ((r + c // 2) % 3 == 0) + ((r * 3 + c) % 7 == 0)]
+            a[r, c] = STEIN[min(14, 13 + ((r + c // 2) % 3 == 0) + ((r * 3 + c) % 7 == 0) - ((r * 5 + c * 3) % 11 == 0))]
+    # Furche hinter der Kante: dunkle Stufen der Stein-Reihe
+    x0, y0, x1, y1 = RECTS["furrow"]
+    for r in range(y0, y1):
+        for c in range(x0, x1):
+            a[r, c] = STEIN[2 + ((r * 2 + c) % 5 == 0) - ((r + c * 3) % 7 == 0)]
     return a, len({tuple(p) for p in a.reshape(-1, 3).astype(int)})
 
 
@@ -85,12 +100,19 @@ def rbox(part, centre, size, rot, rect):
     part.convex(quads, rect)
 
 
+def plate_face(normal):
+    """Aussenseite (zum Spieler hin, die aufgerissene Unterseite) und oberes Bruchende frisch und hell, der Rest Wandstein."""
+    return "fresh" if normal.x > 0.5 or normal.y > 0.5 else "stone"
+
+
 def parts():
     shard = Part("shard", (0, 0, 0), UV)
     # drei aufgeworfene Platten, nach aussen geneigt, unterschiedlich hoch und breit (Gruppe 0,6 m breit)
     for z, h, w, tilt, spin in ((-0.2, 0.42, 0.22, -24, 8), (0.02, 0.56, 0.26, -30, -6), (0.22, 0.36, 0.2, -20, 12)):
-        rbox(shard, (0.0, h / 2 - 0.02, z), (0.1, h, w), (tilt, spin), "stone")
-    shard.box((0.1, 0.0, -0.28), (0.2, 0.02, 0.28), "crack")                  # roter Riss am Fuss (Akzent Blutrot, Gefahr)
+        rbox(shard, (0.0, h / 2 - 0.02, z), (0.1, h, w), (tilt, spin), plate_face)
+    # Bruchkante vorn, 0,16 m hoch (unter der Trefferhoehe 0,4 m); ihre Vorderkante ist der Trefferradius
+    shard.box((0.08, 0.0, -0.29), (0.2, 0.16, 0.29), "fresh")
+    shard.box((-0.42, 0.0, -0.3), (-0.06, 0.012, 0.3), "furrow")  # dunkle Furche hinter den Platten
     puff = Part("puff", (0, 0, 0), UV)
     for x, y, z, s, r in ((0, 0.1, -0.12, 0.24, 20), (0.06, 0.08, 0.1, 0.2, -35), (-0.08, 0.2, 0.0, 0.2, 55), (0.1, 0.22, -0.02, 0.14, 15)):
         rbox(puff, (x, y, z), (s, s, s), (r, r * 1.3), "dust")
@@ -103,6 +125,12 @@ def main():
     coll = bpy.data.collections.new("Welle")
     bpy.context.scene.collection.children.link(coll)
     tex, colours = atlas()
+    # Issue #314: nur Stein - jede benutzte Farbe kommt aus der Wandkachel oder der Stein-Reihe (also kein Blutrot);
+    # der ungenutzte Rest des Atlas bleibt schwarz
+    allowed = {tuple(c) for c in load_tile().reshape(-1, 3)} | {tuple(c) for c in STEIN}
+    used = {tuple(c) for x0, y0, x1, y1 in RECTS.values() for c in tex[y0:y1, x0:x1].reshape(-1, 3).astype(int)}
+    stray = used - allowed
+    assert not stray, f"Farben ausserhalb von Wandkachel und Stein-Reihe: {sorted(stray)}"
     image = psx.save_image(NAME, tex, os.path.join(OUT_DIR, NAME + ".png"))
     mat = psx.export_material(NAME, image)
     objs = [p.build(coll, mat, smooth=False) for p in parts()]
