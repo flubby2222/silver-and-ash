@@ -2,8 +2,9 @@
 # "review" and "tester" over to the new commit - but only if the pull request's own
 # changes are identical before and after. If anything differs, the statuses are NOT
 # copied and a fresh review and test are needed.
-# In the list files (CHANGELOG.md, assets/HERKUNFT.md, docs/**/*.md) only the pull
-# request's own added and removed lines count, not the neighbouring entries from main.
+# In the list files ($ListFiles in pr-nachziehen.lib.ps1: CHANGELOG.md, assets/HERKUNFT.md
+# and three lists in docs/) only the pull request's own added and removed lines count,
+# not the neighbouring entries from main.
 # A pull request with a merge conflict (DIRTY) is merged here if the conflicts lie only
 # in those list files: both sides' entries are kept. That merge is pushed only if the
 # pull request's own changes stay identical; otherwise it is left for a person.
@@ -12,6 +13,9 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tools/pr-nachziehen.ps1            # all open PRs against main
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tools/pr-nachziehen.ps1 -Number 235
 #   ... -DryRun    # only report what would happen
+# It may be started from any folder: it works at the root of the repository it lives in,
+# and git runs with the caller's GIT_* environment removed (see the lib). If anything
+# cannot be checked, it stops for that pull request without setting a status.
 #
 # Keep this file ASCII-only: Windows PowerShell 5.1 reads scripts without BOM as ANSI.
 
@@ -25,8 +29,19 @@ param(
 $ErrorActionPreference = 'Stop'
 $carried = 'review', 'tester'
 
+$root = Get-RepositoryRoot $PSScriptRoot
+if (-not $root) { 'Cannot find the repository of this script - nothing done.'; exit 1 }
+Set-Location -LiteralPath $root
+
+function Update-Main {
+    # Explicit refspec: origin/main is updated no matter how the remote is configured.
+    Invoke-CleanGit @('fetch', '--quiet', 'origin', "+refs/heads/main:$MainRef") | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'git fetch of main failed - nothing carried over.' }
+    Invoke-CleanGit @('fetch', '--quiet', 'origin') | Out-Null
+}
+
 $repo = (gh repo view --json nameWithOwner | ConvertFrom-Json).nameWithOwner
-git fetch origin --quiet
+Update-Main
 
 $list = gh pr list --base main --state open --json number,headRefOid,headRefName,isDraft,isCrossRepository,title --limit 100 | ConvertFrom-Json
 if ($Number -gt 0) { $list = @($list | Where-Object { $_.number -eq $Number }) }
@@ -41,7 +56,8 @@ foreach ($pr in $list) {
     }
 
     $oldHead = $pr.headRefOid
-    $oldId = Get-PullRequestPatchId -Base 'origin/main' -Head $oldHead
+    if ($oldHead -notmatch '^[0-9a-f]{40}$') { "#$($pr.number): unexpected head '$oldHead' - skipped."; continue }
+    $oldId = Get-PullRequestPatchId -Base $MainRef -Head $oldHead
     $oldStatus = (gh api "repos/$repo/commits/$oldHead/status" | ConvertFrom-Json).statuses
 
     if ($state -eq 'DIRTY') {
@@ -50,7 +66,8 @@ foreach ($pr in $list) {
             "#$($pr.number) $($pr.headRefName): merge conflict, branch is not ours to push - resolve by hand."
             continue
         }
-        $mainHead = (git rev-parse origin/main).Trim()
+        $mainHead = ([string](Invoke-CleanGit @('rev-parse', '--verify', '--quiet', "$MainRef^{commit}"))).Trim()
+        if (-not $mainHead) { "#$($pr.number) $($pr.headRefName): main not found locally - nothing done."; continue }
         $merge = New-ListUnionMergeCommit -Base $mainHead -Head $oldHead -Message "Merge origin/main into $($pr.headRefName)`n`nList files merged by tools/pr-nachziehen.ps1 (union: both sides' entries kept)."
         if (-not $merge) {
             "#$($pr.number) $($pr.headRefName): merge conflict outside the list files - resolve by hand, then review and test again."
@@ -65,7 +82,7 @@ foreach ($pr in $list) {
             "#$($pr.number) $($pr.headRefName): DIRTY - conflicts only in list files, would push merge $($merge.Substring(0,7)) and carry the statuses over."
             continue
         }
-        git push --quiet origin "$($merge):refs/heads/$($pr.headRefName)"
+        Invoke-CleanGit @('push', '--quiet', 'origin', "$($merge):refs/heads/$($pr.headRefName)") | Out-Null
         if ($LASTEXITCODE -ne 0) {
             "#$($pr.number) $($pr.headRefName): push of the merge failed (branch moved?). Statuses not carried over."
             continue
@@ -93,8 +110,12 @@ foreach ($pr in $list) {
             continue
         }
 
-        git fetch origin --quiet
-        $newId = Get-PullRequestPatchId -Base 'origin/main' -Head $newHead
+        Update-Main
+        if ($newHead -notmatch '^[0-9a-f]{40}$' -or -not (Test-UpdateMergeOf -OldHead $oldHead -NewHead $newHead)) {
+            "#$($pr.number) $($pr.headRefName): new head $newHead is not GitHub's merge on top of $($oldHead.Substring(0,7)) (pushed meanwhile?). Statuses NOT carried over."
+            continue
+        }
+        $newId = Get-PullRequestPatchId -Base $MainRef -Head $newHead
     }
 
     if (-not $oldId -or $oldId -ne $newId) {
