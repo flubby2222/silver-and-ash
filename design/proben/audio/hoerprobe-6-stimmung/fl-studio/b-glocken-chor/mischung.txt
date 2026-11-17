@@ -1,0 +1,15 @@
+Skizze b Glocken und Chor - Mischung (Spuren je auf -6 dBFS Spitze normalisiert)
+
+Tempo: 60 Schlaege/min, Taktart 4/4. Alle Dateien: mono, 44 100 Hz, 16 Bit, gleich lang, beginnen bei Sample 0.
+
+Meine Mischung (Regler je Spur; 0 dB = Datei wie geliefert):
+  b-glocken-chor_1_glocke.wav: -3.0 dB
+  b-glocken-chor_2_chor.wav: -7.0 dB
+  b-glocken-chor_3_herzschlag.wav: -1.0 dB
+  b-glocken-chor_9_hall-bus.wav: nur der Hall (mein Schroeder-Hall, RT60 2.8 s, aus der Summe aller Spuren); +0 dB; ersetzbar durch einen eigenen Hall-Bus mit 50% Send je Spur und 70% Hallanteil
+
+Danach habe ich alles durch meine PS1-Kette geschickt (22 050 Hz, ADPCM, Gauss-Interpolation); das Ergebnis ist b-glocken-chor.wav im Ordner darueber.
+
+Tonart: e-Moll (E Fis G A H C D). Glocke E3 - E3 - H2 (laeuft je 8 Schlaege aus), Chor in vier Stimmen,
+Herzschlag-Trommel nur in den Schlaegen 12-22, Tonhoehe faellt auf E1 (Grundton) bzw. H1 (die zweite Note).
+In der MIDI-Datei liegt die Trommel auf Kanal 10 (Taste 40); sie ist dort nur ein Platzhalter.

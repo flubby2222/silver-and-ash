@@ -1,0 +1,14 @@
+Skizze a Gruft-Orgel - Mischung (Spuren je auf -6 dBFS Spitze normalisiert)
+
+Tempo: 50 Schlaege/min, Taktart 4/4. Alle Dateien: mono, 44 100 Hz, 16 Bit, gleich lang, beginnen bei Sample 0.
+
+Meine Mischung (Regler je Spur; 0 dB = Datei wie geliefert):
+  a-gruft-orgel_1_pedal-orgel.wav: +3.0 dB
+  a-gruft-orgel_2_streicher.wav: -5.0 dB
+  a-gruft-orgel_3_orgel-gang.wav: -9.0 dB
+  a-gruft-orgel_9_hall-bus.wav: nur der Hall (mein Schroeder-Hall, RT60 2.8 s, aus der Summe aller Spuren); +0 dB; ersetzbar durch einen eigenen Hall-Bus mit 50% Send je Spur und 70% Hallanteil
+
+Danach habe ich alles durch meine PS1-Kette geschickt (22 050 Hz, ADPCM, Gauss-Interpolation); das Ergebnis ist a-gruft-orgel.wav im Ordner darueber.
+
+Tonart: D-phrygisch (D Es F G A B C). Pedal-Orgel liegt auf D1 - G1 - B1 - D1, Streicher in vier Stimmen,
+Orgel-Gang (einstimmig, 8' mit 4' und 2 2/3') nur in Takt 4-5.
