@@ -1,3 +1,4 @@
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
@@ -24,7 +25,11 @@ public sealed class LevelZero
     public GameWorld NewRun(int seed, Balance balance)
     {
         var generated = Build(seed, balance);
-        return new GameWorld(generated.Level, seed, balance, generated.Doors, generated.Rooms, generated.Chests) { LevelName = Name };
+        return new GameWorld(generated.Level, seed, balance, generated.Doors, generated.Rooms, generated.Chests)
+        {
+            LevelName = Name,
+            Surfaces = SurfaceVariants.For(generated),
+        };
     }
 
     /// <summary>

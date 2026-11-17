@@ -84,6 +84,23 @@ public static class LevelGeometry
         return faces;
     }
 
+    /// <summary>
+    /// The walkable cell <paramref name="face"/> belongs to: the cell under a floor or ceiling, the cell in front of a
+    /// wall (on the side its normal points to). That cell's room decides the face's texture (issue #244).
+    /// </summary>
+    public static (int X, int Z) CellOf(Face face)
+    {
+        var middle = (face.A + face.B + face.C + face.D) / 4f;
+
+        // A wall's middle lies on the border between two cells: half a cell along the normal is the middle of its cell.
+        if (face.Kind == SurfaceKind.Wall)
+        {
+            middle += face.Normal * (Level.CellSize / 2f);
+        }
+
+        return ((int)MathF.Floor(middle.X / Level.CellSize), (int)MathF.Floor(middle.Z / Level.CellSize));
+    }
+
     private static void AddFloorAndCeiling(List<Face> faces, int x, int z, Cell cell)
     {
         var x0 = x * Level.CellSize;
