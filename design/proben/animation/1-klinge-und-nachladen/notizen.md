@@ -1,5 +1,7 @@
 # Animation, Probe 1: Klingenschlag und Nachladen
 
+> **Stand nach PR #294:** Dies ist das Probe-Protokoll; einzelne Sätze unten sind überholt ("Kein PR", Szenen "nicht als eigene Szene gerendert", Variante B mit −7 cm). Gilt jetzt: Variante B mit Verschiebung +1 / 0 / −2 cm (sonst verdeckt sie die Nachlade-Anzeige), drei plus eine Szene (`rifle-reload-to-pistol`) als Bewegungs-Szenen, Nachladebewegung gehört zur gezeichneten Waffe. Offen: grauer Knauf mit braunem Dreieck im Höhepunkt des Schlags (Modell, #263).
+
 Branch `claude/animation-1-a59795`, Entwurf in `src/SilverAndAsh.Core/Presentation/WeaponPose.cs` und `src/SilverAndAsh.Game/Rendering/WeaponViews.cs`. Kein PR, nichts in `assets/`, keine Regeln, Trefferzeiten oder Balancing angefasst.
 
 Filme (halbe Geschwindigkeit, nicht im Repo): `D:\Game\bilder\animation-1\` – `vorher\…`, `nachher1\blade-quick-half.mp4`, `nachher1\blade-charge-half.mp4`, `nachher1-r0\pistol-reload-half.mp4` (Variante A), `nachher1-r1\pistol-reload-half.mp4` (Variante B). Übersichtsbilder (`-Sheet`) stehen neben dieser Datei.

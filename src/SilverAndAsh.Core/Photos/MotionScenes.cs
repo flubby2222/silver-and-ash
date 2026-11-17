@@ -81,6 +81,23 @@ public static class MotionScenes
                     },
                 };
             }),
+        new("rifle-reload-to-pistol", "The rifle chosen (2) and fired, reloaded (R), the pistol chosen (1) half way through: the pistol must not show the reload.",
+            studio =>
+            {
+                var world = studio.Arena('D', 10);
+                world.Player.Equip(1, WeaponKind.Rifle);
+                world.Tick(PlayerInput.None with { SelectSlot = 1 });
+                OneRoundFired(world);
+                return new PhotoSetup(world)
+                {
+                    Ticks = Rest + 90,
+                    Input = tick => PlayerInput.None with
+                    {
+                        Reload = tick == Rest,
+                        SelectSlot = tick == Rest + 40 ? 0 : null,
+                    },
+                };
+            }),
         DoorOpening("door-normal-opening", DoorKind.Normal, "A wooden double door 6 m away, seen from the front"),
         DoorOpening("door-boss-opening", DoorKind.Boss, "The boss door 6 m away, seen from the front"),
     ];

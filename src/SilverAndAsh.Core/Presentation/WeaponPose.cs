@@ -188,7 +188,7 @@ public static class WeaponPose
     /// The reload motion at <paramref name="p"/> (0..1): extra roll (degrees, the top turning away to the right), extra
     /// lift of the muzzle (degrees) and the shift of the hand (camera space). Away in the first 20 %, held (with two
     /// small taps where the rounds go in) until 80 %, back by 92 %, then the hammer click and a small nudge. At 0 and 1
-    /// everything is zero. The hand dips down and out to the right and the muzzle rises steeply.
+    /// everything is zero. The pistol tilts to the right and the muzzle rises steeply; the hand itself hardly moves (see <see cref="ReloadShift"/>).
     /// </summary>
     public static (float Roll, float Lift, Vector3 Shift) ReloadOffsets(float p)
     {
@@ -228,7 +228,7 @@ public static class WeaponPose
     /// <summary>... the muzzle rises this far (degrees) ...</summary>
     public const float ReloadLiftDegrees = 40f;
 
-    /// <summary>... and the hand dips down and out to the right, a little back (camera space, metres).</summary>
+    /// <summary>... and the hand moves a little to the right and back, not down (camera space, metres): more would cover the reload display of the HUD.</summary>
     public static Vector3 ReloadShift { get; } = new(0.01f, 0.0f, -0.02f);
 
     /// <summary>How fast the reload motion fades in and out (per second): a tenth of a second from nothing to all.</summary>

@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Core.Tests.Presentation;
@@ -138,6 +139,8 @@ public class ReloadAndSwingPoseTests
                     triangles.SelectMany(triangle => triangle).All(corner => corner.X >= ScreenWidth / 2f),
                     $"{name}: the pistol reaches into the left half of the picture.");
 
+                // Only the pistol body (pistol.glb) is tested, not the hand and sleeve (pistol_hand.glb): the sleeve already
+                // covers the box at (1100, 640) at rest, so the display is not free of the whole picture of the hand.
                 // The line "Reloading..." and its bar (CombatHud) stay free: no sample point of that box is covered.
                 for (var x = ReloadDisplay.Left; x <= ReloadDisplay.Right; x += 4f)
                 {
@@ -327,6 +330,58 @@ public class ReloadAndSwingPoseTests
     }
 
     // The direction and roll of the forearm change by at most `limit` degrees per step.
+    [Fact]
+    public void A_reload_of_the_rifle_never_moves_the_pistol_after_the_switch()
+    {
+        var motion = new ReloadMotion();
+        const float Frame = 1f / 60f;
+
+        // The rifle reloads for a while: no motion of its own, so nothing shows.
+        for (var i = 0; i < 60; i++)
+        {
+            motion.Step(WeaponKind.Rifle, true, i / 150f, Frame);
+            Assert.Equal(0f, motion.Weight);
+            Assert.Equal(0f, motion.Progress);
+        }
+
+        // Switched to the pistol (which does not reload): rest, from the first frame on.
+        for (var i = 0; i < 10; i++)
+        {
+            motion.Step(WeaponKind.Pistol, false, 0f, Frame);
+            Assert.Equal(0f, motion.Weight);
+            Assert.Equal(0f, motion.Progress);
+        }
+    }
+
+    [Fact]
+    public void Switching_the_weapon_resets_a_running_reload_at_once()
+    {
+        var motion = new ReloadMotion();
+        for (var i = 0; i < 40; i++)
+        {
+            motion.Step(WeaponKind.Pistol, true, i / 90f, 1f / 60f);
+        }
+
+        Assert.Equal(1f, motion.Weight);
+
+        motion.Step(WeaponKind.Rifle, true, 0.5f, 1f / 60f);
+        motion.Step(WeaponKind.Pistol, false, 0f, 1f / 60f);
+
+        Assert.Equal(0f, motion.Weight);
+        Assert.Equal(0f, motion.Progress);
+    }
+
+    [Fact]
+    public void The_pistol_reload_follows_the_magazine_and_fades_in()
+    {
+        var motion = new ReloadMotion();
+
+        motion.Step(WeaponKind.Pistol, true, 0.3f, 1f / 60f);
+
+        Assert.Equal(0.3f, motion.Progress);
+        Assert.InRange(motion.Weight, 0.1f, 0.2f);
+    }
+
     private static void AssertSmooth(IEnumerable<Matrix4x4> turns, string name, float limit = 3f)
     {
         Matrix4x4? last = null;
