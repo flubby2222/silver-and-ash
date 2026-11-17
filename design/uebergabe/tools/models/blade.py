@@ -27,6 +27,7 @@ from psx import (V, G, Part, tube, rects_from_pixels, vnoise, blob, mix, paint_a
                  setup_render, camera, aim, render_passes, compose, save_png)
 
 # Modelle und Texturen landen in assets/models (vom Skript in tools/models aus zwei Ebenen hoch).
+import arm as _arm  # noqa: E402
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                        "assets", "models")
 TEX = 128
@@ -41,8 +42,6 @@ RECTS = {
     "blade": (0, 64, 128, 128),
     "silver": (0, 48, 64, 64),
     "grip": (64, 48, 128, 64),
-    "cuff": (0, 0, 64, 16),
-    "sleeve": (64, 0, 128, 48),
 }
 UV = rects_from_pixels(RECTS, TEX)
 
@@ -87,7 +86,7 @@ def paint_grip(U, V_):
 
 
 PAINTERS = {"blade": paint_blade, "silver": paint_silver, "grip": paint_grip,
-            "cuff": paint_cuff, "sleeve": paint_sleeve}
+            }
 
 
 def build_sword():
@@ -111,14 +110,8 @@ def build_sword():
 
 
 def build_hand():
-    part = Part("arm", (0, 0, 0), UV, parent="sword")
-    # Fassung 3: kein Handschuh. Der linke Aermel (Punkte fuer rechts, s = -1 spiegelt) umschliesst Griff, Knauf und
-    # Heft bis dicht an die Parierstange; die Stulpe endet vorn mit umgeschlagenem Rand.
-    # Fassung 4: weiter Mantelaermel, Oeffnung an der Parierstange; er verschluckt Griff und Knauf und faellt nach
-    # links unten aus dem Bild (links = s = -1). Kurz hinter dem Knauf biegt er seitlich ab (Nahebene im Blick).
-    path = [(0, 0, -0.003), (0, 0, -0.011), (0.0, -0.004, -0.04), (0.035, -0.02, -0.07), (0.09, -0.06, -0.09),
-            (0.18, -0.11, -0.12), (0.30, -0.17, -0.16)]
-    build_sleeve4(part, -1, path, [0.030, 0.024, 0.029, 0.031, 0.036, 0.040, 0.046])
+    part = Part("arm", (0, 0, 0), _arm.UV_ARM, parent="sword")
+    _arm.build_design(part, "blade")
     return part
 
 
@@ -141,7 +134,10 @@ def main():
     bpy.context.scene.collection.children.link(coll)
     mat = export_material("blade", image)
     sword = build_sword().build(coll, mat, smooth=False)
-    hand = build_hand().build(coll, mat, smooth=True)
+    arm_tex = paint_atlas(_arm.ARM_RECTS, _arm.ARM_PAINTERS, 64, colors=32, seed=11)
+    arm_image = save_image("blade_hand", arm_tex, os.path.join(OUT_DIR, "blade_hand.png"))
+    arm_mat = export_material("blade_hand", arm_image)
+    hand = build_hand().build(coll, arm_mat, smooth=True)
     pose([sword, hand], {}, root=Matrix.Scale(SCALE, 4))
     bake_scale([sword, hand])
     export_glb([sword], os.path.join(OUT_DIR, "blade.glb"))
