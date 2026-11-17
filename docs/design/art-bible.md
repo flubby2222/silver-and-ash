@@ -70,21 +70,42 @@ Die Formeln aus dem Shader, mit Entfernung `d` in Metern zur Kamera:
 
 ## Farben
 
-**Die Welt** ist entsättigt und kühl. Die Grundfarben der Flächen heute (sie werden mit den Level-Texturen zur Palette des Steins):
+Die Palette steht in [`assets/palette/hauptpalette.json`](../../assets/palette/hauptpalette.json) (dazu `hauptpalette.gpl` für Bildprogramme); sie entsteht aus [`tools/palette/hauptpalette.py`](../../tools/palette/hauptpalette.py). Sie ist das Ergebnis von drei Vergleichsrunden (Issue [#279](https://github.com/flubby2222/silver-and-ash/issues/279)); der Mensch hat am 2026-11-17 Fassung A aus Runde 3 gewählt. Fertige Texturen und Modelle sollen nur Farben daraus verwenden.
 
-| Fläche | RGB |
-|---|---|
-| Wand | 122, 104, 112 |
-| Boden | 84, 72, 78 |
-| Decke | 64, 56, 66 |
+**Urteile des Menschen, 2026-11-17** (Tippfehler berichtigt):
 
-**Figuren und Gegenstände** müssen sich davon abheben:
+- Zu Runde 1: „Die Paletten ändern auch Player Model und Waffen (dachte, das machen wir nicht?)“
+- Zu Runde 2: „Die ersten drei Paletten sehen sehr bunt aus und bilden ein regenbogenartiges Muster aufgrund der Wiederholung der Texturen. Geht das subtiler, homogener? Verglichen mit den ersten dreien ist der ursprüngliche Stand recht gut. Nur weil man so viele Farben hat, muss man nicht gleich alle nutzen. Man kann sich Kontraste, die nicht so gut ins Leitbild passen, für Akzente aufsparen.“
+- Zu Runde 3 (Fassung A, B oder heutiger Stand): „A“.
+
+**Regeln daraus:**
+
+1. **Der heutige Stein ist der Maßstab.** Die Reihe *Stein* ist aus ihm gebildet: 15 Stufen, ein Farbton (violettgrau bis rosagrau), gleichmäßig in der Helligkeit; Stufe 0 ist die Nebelfarbe (16, 11, 20), Stufe 14 die hellste (151, 127, 137). Wände, Böden und Decken bestehen nur aus dieser Reihe. Fassung A bedeutet: der Stein sieht im Spiel praktisch aus wie heute, nur liegen seine Farben jetzt in der Rampe.
+2. **Eine Fläche bleibt in einer Rampe.** Abwechslung entsteht über Helligkeit (Stufen) und über die Varianten a/b/c, nicht über eingestreute Farbtöne. Warm und kalt in einer Fläche haben mit der Kachelwiederholung (eine Kachel ist 1 m) ein Regenbogenmuster erzeugt. Neue Bausteine malen ihren Stein mit der Rampe, nie mit einem eigenen Farbton.
+3. **Akzente aufsparen.** Die Reihen *Holz*, *Eisen*, *Messing/Gold* und *Blutrot* sind **Akzent**: nur kleine Flächen mit Zweck (Beute, Türen, Gefahr, später Props und Licht), nie Wand, Boden oder Decke. Dass die Palette mehr Farben kann, heißt nicht, dass jede Szene sie nutzt. *Grund*-Reihen (Stein, Haut/Knochen, Stoff) dürfen Flächen füllen.
+4. **Die Palette gilt zunächst für die Umgebung.** Spielfigur, Waffen, Ärmel, Gegner und Kisten bleiben unverändert, bis der Mensch anderes entscheidet. Vergleiche ändern daran nichts.
+5. **Je Ebene eine eigene Stein-Reihe mit demselben Aufbau** (15 Stufen, ein Farbton); Kerker und Schlosshalle folgen später. Die Reihen für Blutrot und die Stufenfarben der Beute sind in allen Ebenen gleich.
+
+**Aufbau der Datei:** `grund` und `akzent` mit je Reihe Name, Farben und Verwendung bzw. Zweck; `katakomben` ist die Auswahl der Katakomben-Texturen (Stein, Holz 1–4, Eisen 1–3, Haut/Knochen 6–7, 24 Farben); `stufenfarben` sind die festen Ankerpunkte der Beute. Die Reihen außer Stein haben 8 Stufen (dunkel nach hell, Farbton-Verschiebung), Methode wie bei Slynyrd „Pixelblog 1: Color Palettes“.
+
+**Stufenfarben der Beute** (festgelegt in [`ChestView.cs`](../../src/SilverAndAsh.Game/Rendering/ChestView.cs) und [`TierColours.cs`](../../src/SilverAndAsh.Game/Rendering/TierColours.cs); die Palette übernimmt sie genau, Stand des Codes 2026-11-17):
+
+| Stufe (Kiste) | Reihe | Farbe (RGB) |
+|---|---|---|
+| Worn (Beggar) | Holz, Stufe 3 | 110, 76, 46 |
+| Forged (Guard) | Eisen, Stufe 4 | 92, 112, 140 |
+| Royal (King) | Messing/Gold, Stufe 5 | 214, 170, 64 |
+| Vampiric (Vampire) | Blutrot, Stufen 3 und 5 | 150, 20, 30 bis 200, 30, 40 (pulsiert) |
+
+Abweichung: Die dunklen Bänder der Kistenplatzhalter im Code (56, 44, 36; 52, 58, 70; 140, 100, 36; 40, 10, 14) liegen nicht in der Palette. Sie gehören dem Platzhalter ohne Modell; die Kistenmodelle bleiben ohnehin unverändert (Regel 4).
+
+**Figuren und Gegenstände** müssen sich vom Stein abheben:
 
 - Untote: **kränklich, kalt, etwas heller als die Wand** (Haut um 124, 132, 112).
 - **Rot ist reserviert** für Blut, Treffer, Gefahr (Blitz bei kritischem Treffer 230, 40, 50; der normale Treffer-Blitz ist fast weiß) und die höchste Stufe *Vampiric* (blutrot, pulsierend). Kein Rot als bloße Zierde.
 - **Warmes Licht** (Gelb, Orange) gehört der Laterne und allem, was der Spieler haben will.
 - **Silber** – hell, kühl, fast weiß – gehört dem Jäger und seinen Waffen.
-- **Die vier Stufen von Ausrüstung und Kisten haben eigene Farben:** *Worn* = Holzbraun, *Forged* = Stahlblau, *Royal* = Gold, *Vampiric* = Blutrot (bei Kisten heißen sie *Beggar*, *Guard*, *King*, *Vampire*). Festgelegt in [`ChestView.cs`](../../src/SilverAndAsh.Game/Rendering/ChestView.cs) und [`TierColours.cs`](../../src/SilverAndAsh.Game/Rendering/TierColours.cs). Lies sie dort nach, bevor du Kisten oder Beute gestaltest, und verwende sie für nichts anderes.
+- **Die vier Stufen von Ausrüstung und Kisten haben eigene Farben** (Tabelle oben). Lies sie im Code nach, bevor du Kisten oder Beute gestaltest, und verwende sie für nichts anderes.
 
 ## Form
 
@@ -140,3 +161,4 @@ Das ist eine Annäherung an das Spiel, kein Ersatz. Sobald das Spiel Modelle lad
 | 5 | 2026-11-16 | Ghul, erste und zweite Fassung | Urteil des Menschen: „überhaupt nicht, was ich mir vorgestellt habe“ – Gestalt, Detailgrad, Farbflächen ohne Textur, Gesicht | Der ganze Stil wurde ersetzt (ADR 0010). Lehre für die Leitung: Stilvorgaben herleiten und früh am Bild beim Menschen prüfen, statt sie zu schätzen |
 | 6 | 2026-11-16 | Ghul, zweiter Entwurf | Von vorn standen die Oberschenkel als zweites Paar langer Säulen hinter den Armen; die Figur las sich als Stelzenwesen | Eine Figur muss auch von vorn als das erkennbar sein, was sie ist; jede Haltung wird in der Ansicht geprüft, aus der der Spieler sie sieht |
 | 7 | 2026-11-16 | Ghul, zweiter Entwurf | Aus 10 m waren die Glieder ein bis zwei Pixel breit und die Figur fast weg | Aus 10 m ist eine Figur als Masse mit erkennbarer Haltung lesbar; Glieder mindestens zwei bis drei Pixel breit, im Bild nachgemessen |
+| 8 | 2026-11-17 | Hauptpalette, Runde 1 und 2 | Runde 1 färbte auch Spielfigur und Waffen um (nicht gewollt); Runde 2 mischte warme und kalte Töne in die Flächen, und mit der Kachelwiederholung entstand ein Regenbogenmuster | Ein Vergleichsblatt ändert nur die eine Sache, die beurteilt wird; alles andere bleibt wie in `main`. Eine Fläche bleibt in einer Rampe, kräftige Reihen sind Akzente (siehe Farben) |
