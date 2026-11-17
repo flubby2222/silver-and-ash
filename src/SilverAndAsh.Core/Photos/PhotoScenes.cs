@@ -71,6 +71,30 @@ public static class PhotoScenes
             }),
         new("gorm", "Gorm, the Chained, 6 m away in his boss room.",
             studio => new PhotoSetup(studio.BeforeGorm(6f))),
+        new("gorm-swing-windup", "Gorm whirling his chain above his head, the warning before the swing, the chain out to his right (issue #249).",
+            studio => new PhotoSetup(studio.Arena('T', 8))
+            {
+                Ticks = 3000,
+                StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Swing, StateProgress: >= 0.82f },
+            }),
+        new("gorm-swing", "Gorm sweeping his chain from his left to his right, a third of the way (issue #249).",
+            studio => new PhotoSetup(studio.Arena('T', 8))
+            {
+                Ticks = 3000,
+                StopWhen = world => world.Gorm is { State: GormState.Swinging, StateProgress: >= 0.3f },
+            }),
+        new("gorm-throw-windup", "Gorm about to throw his hook, which glows red: the warning, halfway through (issue #249).",
+            studio => new PhotoSetup(studio.Arena('T', 10))
+            {
+                Ticks = 3000,
+                StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Throw, StateProgress: >= 0.5f },
+            }),
+        new("gorm-phase2", "Gorm in phase 2 (half his health gone, red marks), 10 m away in his boss room, at the end of his roar (issue #249).",
+            studio => new PhotoSetup(HalfHealth(studio.BeforeGorm(10f)))
+            {
+                Ticks = 600,
+                StopWhen = world => world.Gorm is { IsInPhase2: true, State: GormState.Roaring, StateProgress: >= 0.95f },
+            }),
         new("hud-weapons", "The HUD with every weapon place taken: club in hand, pistol, rifle and blunderbuss.",
             studio => new PhotoSetup(AllWeapons(studio.StartRun()))),
         new("hud-rifle", "Like hud-weapons, but the rifle chosen (2): a placeholder next to the club (issue #249).",
@@ -108,6 +132,14 @@ public static class PhotoScenes
         world.Player.EquipMelee(WeaponKind.Club);
         world.Player.Equip(1, WeaponKind.Rifle);
         world.Player.Equip(2, WeaponKind.Blunderbuss);
+        return world;
+    }
+
+    // Half his health gone (as by the player's hits): Gorm roars into phase 2.
+    private static GameWorld HalfHealth(GameWorld world)
+    {
+        var gorm = world.Gorm!;
+        gorm.TakeDamage(gorm.MaxHealth - (int)(gorm.MaxHealth * world.Balance.Gorm.Phase2Health), new List<GameEvent>());
         return world;
     }
 

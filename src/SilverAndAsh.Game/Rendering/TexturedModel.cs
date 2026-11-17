@@ -6,7 +6,7 @@ using SilverAndAsh.Core.Presentation;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// A model of the designers (assets/models/*.glb, docs/modelle.md): rigid parts with one texture, turned by code around
+/// A model of the designers (assets/models/*.glb, docs/modelle.md): rigid parts with the textures of their materials, turned by code around
 /// their pivots and drawn with soft shading through the world shader (lantern, fog - like the level).
 /// <para>
 /// How it is loaded: raylib's <c>LoadModel</c> reads the meshes and the texture, one mesh per part in the order of the
@@ -31,16 +31,16 @@ internal sealed class TexturedModel : IDisposable
 
     private readonly Model _model;
     private readonly Part[] _parts;
-    private readonly Texture2D _texture;
+    private readonly Texture2D[] _alternates;
     private readonly Vector3[] _worldCorners;
     private readonly Color[] _cornerColors;
 
-    private TexturedModel(Model model, Rig rig, Part[] parts, Texture2D texture)
+    private TexturedModel(Model model, Rig rig, Part[] parts, Texture2D[] alternates)
     {
         _model = model;
         Rig = rig;
         _parts = parts;
-        _texture = texture;
+        _alternates = alternates;
         var mostCorners = parts.Max(part => part.Positions.Length);
         _worldCorners = new Vector3[mostCorners];
         _cornerColors = new Color[mostCorners];
@@ -57,7 +57,12 @@ internal sealed class TexturedModel : IDisposable
     /// the parts - it writes a warning to the log and returns null; the caller keeps its placeholder.
     /// Needs the window (the texture goes to the graphics card).
     /// </summary>
-    public static TexturedModel? TryLoad(string path, IReadOnlyList<RigPart> parts, FileLog? log)
+    /// <para>
+    /// <paramref name="alternates"/>: further pictures next to the model (file names, checked against the same list) that
+    /// can stand in for a part's own texture when drawing (<see cref="DrawPart"/>) - Gorm's phase 2. If one of them is
+    /// missing or broken, the whole model counts as broken.
+    /// </para>
+    public static TexturedModel? TryLoad(string path, IReadOnlyList<RigPart> parts, FileLog? log, IReadOnlyList<string>? alternates = null)
     {
         ArgumentNullException.ThrowIfNull(parts);
         var started = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -109,11 +114,19 @@ internal sealed class TexturedModel : IDisposable
             return null;
         }
 
-        var texture = TextureOf(model);
-
         // Hard pixels as in the PlayStation era (decision record 0010). Raylib makes no mipmaps when loading a model's
-        // texture (checked in Check), and point filtering never blends neighbouring texels.
-        Raylib.SetTextureFilter(texture, TextureFilter.Point);
+        // textures (checked in Check), and point filtering never blends neighbouring texels.
+        foreach (var texture in Textures(model))
+        {
+            Raylib.SetTextureFilter(texture, TextureFilter.Point);
+        }
+
+        var extra = LoadAlternates(path, alternates ?? [], log);
+        if (extra is null)
+        {
+            Unload(model);
+            return null;
+        }
 
         var meshes = model.MeshesAsSpan();
         var ordered = new Part[parts.Count];
@@ -122,11 +135,12 @@ internal sealed class TexturedModel : IDisposable
         {
             var index = file.Select(part => part.Name).ToList().IndexOf(parts[i].Name);
             pivots[i] = file[index].Pivot;
-            ordered[i] = Part.Copy(meshes[index], file[index].Pivot);
+            ordered[i] = Part.Copy(meshes[index], file[index].Pivot, TextureOf(model, index));
         }
 
-        var loaded = new TexturedModel(model, new Rig(parts, pivots), ordered, texture);
-        log?.Info($"Model '{path}' loaded: {parts.Count} parts, {loaded.TriangleCount} triangles, texture {texture.Width} x {texture.Height}.");
+        var loaded = new TexturedModel(model, new Rig(parts, pivots), ordered, extra);
+        var sizes = string.Join(", ", Textures(model).Select(texture => $"{texture.Width} x {texture.Height}"));
+        log?.Info($"Model '{path}' loaded: {parts.Count} parts, {loaded.TriangleCount} triangles, textures {sizes}, {extra.Length} alternate(s).");
         return loaded;
     }
 
@@ -151,7 +165,9 @@ internal sealed class TexturedModel : IDisposable
     /// Draws one part only (index in the order of <see cref="Rig"/>) - for parts that are not always there, like the
     /// lock of a chest. <paramref name="tint"/> makes the part brighter or darker (1: as it is; capped at full white).
     /// </summary>
-    public void DrawPart(int index, Matrix4x4 frame, float tint = 1f)
+    /// <paramref name="alternate"/>: index of a picture given to <see cref="TryLoad"/> as an alternate, drawn instead of
+    /// the part's own texture (null: its own).
+    public void DrawPart(int index, Matrix4x4 frame, float tint = 1f, int? alternate = null)
     {
         var part = _parts[index];
 
@@ -166,7 +182,7 @@ internal sealed class TexturedModel : IDisposable
 
         // Room for all corners of this part in the current batch; otherwise raylib draws what it has first.
         Rlgl.CheckRenderBatchLimit(part.Indices.Length);
-        Rlgl.SetTexture(_texture.Id);
+        Rlgl.SetTexture(alternate is { } chosen ? _alternates[chosen].Id : part.Texture.Id);
         Rlgl.Begin(DrawMode.Triangles);
         foreach (var corner in part.Indices)
         {
@@ -184,7 +200,58 @@ internal sealed class TexturedModel : IDisposable
         Rlgl.SetTexture(Rlgl.GetTextureIdDefault());
     }
 
-    public void Dispose() => Unload(_model);
+    public void Dispose()
+    {
+        foreach (var texture in _alternates)
+        {
+            Raylib.UnloadTexture(texture);
+        }
+
+        Unload(_model);
+    }
+
+    // The alternate pictures next to the model: checked against the checksum list like the model, hard pixels, no
+    // mipmaps. Null (and a warning) if one is missing or broken; those loaded so far are unloaded again.
+    private static Texture2D[]? LoadAlternates(string path, IReadOnlyList<string> names, FileLog? log)
+    {
+        var folder = Path.GetDirectoryName(path) ?? ".";
+        var loaded = new List<Texture2D>();
+        foreach (var name in names)
+        {
+            var picture = Path.Combine(folder, name);
+            string? problem;
+            try
+            {
+                problem = ModelChecksums.Parse(File.ReadAllText(Path.Combine(folder, ModelChecksums.FileName))).Check(picture);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
+            {
+                problem = exception.Message;
+            }
+
+            var texture = problem is null ? Raylib.LoadTexture(picture) : default;
+            if (problem is null && (!Raylib.IsTextureValid(texture) || texture.Mipmaps != 1))
+            {
+                problem = "raylib could not load it as a texture without mipmaps";
+                if (Raylib.IsTextureValid(texture))
+                {
+                    Raylib.UnloadTexture(texture);
+                }
+            }
+
+            if (problem is not null)
+            {
+                log?.Warning($"Model '{path}': picture '{name}': {problem} - the placeholder is drawn instead.");
+                loaded.ForEach(Raylib.UnloadTexture);
+                return null;
+            }
+
+            Raylib.SetTextureFilter(texture, TextureFilter.Point);
+            loaded.Add(texture);
+        }
+
+        return [.. loaded];
+    }
 
     // UnloadModel frees meshes and material maps, but not the textures (raylib lets models share them) - those as well.
     private static unsafe void Unload(Model model)
@@ -246,32 +313,60 @@ internal sealed class TexturedModel : IDisposable
             }
         }
 
-        var texture = TextureOf(model);
-        if (!Raylib.IsTextureValid(texture) || texture.Id == Rlgl.GetTextureIdDefault())
+        // Every part needs the texture of its material (a model may have several materials - Gorm has two).
+        for (var i = 0; i < file.Count; i++)
         {
-            return "it has no texture";
+            var texture = TextureOf(model, i);
+            if (!Raylib.IsTextureValid(texture) || texture.Id == Rlgl.GetTextureIdDefault())
+            {
+                return $"part '{file[i].Name}' has no texture";
+            }
+
+            if (texture.Mipmaps != 1)
+            {
+                return $"the texture of part '{file[i].Name}' has {texture.Mipmaps} mipmap levels, expected none";
+            }
         }
 
-        return texture.Mipmaps == 1 ? null : $"its texture has {texture.Mipmaps} mipmap levels, expected none";
+        return null;
     }
 
     // The arrays raylib did not find in the file stay empty (null) - reading them would crash.
     private static unsafe bool HasAllData(Mesh mesh) =>
         mesh.Vertices != null && mesh.Normals != null && mesh.TexCoords != null && mesh.Indices != null;
 
-    private static unsafe Texture2D TextureOf(Model model)
+    // The texture of the material of mesh `mesh`.
+    private static unsafe Texture2D TextureOf(Model model, int mesh)
     {
-        var material = model.MaterialsAsSpan()[model.MeshMaterialAsSpan()[0]];
+        var material = model.MaterialsAsSpan()[model.MeshMaterialAsSpan()[mesh]];
         return material.Maps[(int)MaterialMapIndex.Albedo].Texture;
     }
 
-    // One part as copied from raylib: corners relative to the pivot, normals, texture coordinates, triangles.
-    private sealed record Part(Vector3[] Positions, Vector3[] Normals, Vector2[] TexCoords, ushort[] Indices)
+    // Each texture the meshes use, once.
+    private static List<Texture2D> Textures(Model model)
     {
-        public static Part Copy(Mesh mesh, Vector3 pivot) => new(
+        var textures = new List<Texture2D>();
+        for (var mesh = 0; mesh < model.MeshCount; mesh++)
+        {
+            var texture = TextureOf(model, mesh);
+            if (textures.TrueForAll(known => known.Id != texture.Id))
+            {
+                textures.Add(texture);
+            }
+        }
+
+        return textures;
+    }
+
+    // One part as copied from raylib: corners relative to the pivot, normals, texture coordinates, triangles, and the
+    // texture of its material.
+    private sealed record Part(Vector3[] Positions, Vector3[] Normals, Vector2[] TexCoords, ushort[] Indices, Texture2D Texture)
+    {
+        public static Part Copy(Mesh mesh, Vector3 pivot, Texture2D texture) => new(
             [.. mesh.VerticesAs<Vector3>().ToArray().Select(corner => corner - pivot)],
             mesh.NormalsAs<Vector3>().ToArray(),
             mesh.TexCoordsAs<Vector2>().ToArray(),
-            mesh.IndicesAs<ushort>().ToArray());
+            mesh.IndicesAs<ushort>().ToArray(),
+            texture);
     }
 }

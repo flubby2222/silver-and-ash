@@ -213,7 +213,9 @@ static void RunGame(
         // good if the model is missing or broken.
         Func<IGhoulView> newGhoulView = () => new PlaceholderGhoulView();
         IGhoulView ghoulView = newGhoulView();
-        var gormView = new GormView();
+        // Gorm likewise: the model once loaded (below), the placeholder until then or for good.
+        Func<IGormView> newGormView = () => new PlaceholderGormView();
+        IGormView gormView = newGormView();
         // Bats likewise: the model once loaded (below), the placeholder until then or for good.
         Func<IBatView> newBatView = () => new PlaceholderBatView();
         IBatView batView = newBatView();
@@ -261,7 +263,7 @@ static void RunGame(
             player = gameWorld.Player;
             dummyView = new PlaceholderDummyView();
             ghoulView = newGhoulView();
-            gormView = new GormView();
+            gormView = newGormView();
             batView = newBatView();
             projectileView = new ProjectileView();
             pickupView = new PickupView();
@@ -311,6 +313,15 @@ static void RunGame(
         {
             newBatView = () => new ModelBatView(batModel, levelShader);
             batView = newBatView();
+        }
+
+        using var gormModel = TexturedModel.TryLoad(
+            Path.Combine(AppContext.BaseDirectory, "assets", "models", "gorm.glb"), GormPose.Parts, log,
+            [ModelGormView.Phase2Texture]);
+        if (gormModel is not null)
+        {
+            newGormView = () => new ModelGormView(gormModel, levelShader);
+            gormView = newGormView();
         }
 
         // One chest model per tier (issue #249); a tier without one keeps the placeholder boxes.
