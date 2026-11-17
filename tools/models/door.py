@@ -1,21 +1,40 @@
-"""Tueren (Issue #245): Normal, Locked, Boss (Stufenportal) und die Risswand.
+"""Tueren (Issue #245, Rahmen #303): Normal, Locked, Boss und die Risswand.
 
-Erzeuger fuer das Spiel (Uebergabe aus den Probestuecken tueren und tueren2, Branch claude/design-probe-ghul-45a8c4,
-Commit 412096d: design/proben/grafik/tueren2/door2.py und, fuer die Risswand, design/proben/grafik/tueren/door.py).
-Erzeugt nur Modell und Textur nach assets/models/, keine Probebilder. Der Entwurf B der Bosstuer (Fallgitter) ist verworfen
-und fehlt hier; Entwurf A heisst im Spiel door_boss.
+Erzeuger fuer das Spiel. Fluegel und Beschlag: Uebergabe aus den Probestuecken tueren und tueren2 (Branch
+claude/design-probe-ghul-45a8c4, Commit 412096d). Rahmen nach der Formenlehre (#281): Uebergabe aus dem Probestueck
+tuerrahmen (derselbe Branch, Commit 39886aa, design/proben/grafik/tuerrahmen/rahmen.py); fuer das Bosstor die Fassung
+"blau" (heller Werkstein), die der Mensch am 2026-11-17 am Bild gewaehlt hat. Erzeugt nur Modelle und Texturen nach
+assets/models/, keine Probebilder, dazu die Liste der gelesenen Wand-Texturen (tools/models/door_frame_sources.sha256).
 
-Aufruf (aus dem Repository-Wurzelverzeichnis):
-    "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/door.py
+Aufruf (aus dem Repository-Wurzelverzeichnis), danach python tools/models/checksums.py:
+    "D:\\Program Files\\Blender Foundation\\Blender 5.3\\blender.exe" --background --python tools/models/door.py
 
 Alles per Skript, nichts heruntergeladen. Spiel-Achsen (x seitlich, y oben, z vorn), Meter. Ursprung: Mitte des Durchgangs
-auf dem Boden, Tuerflaeche in der x/y-Ebene, Dicke in z. Durchgang = Zelle des Spiels: 2 m breit, 3,5 m hoch.
+auf dem Boden, Tuerflaeche in der x/y-Ebene, Dicke in z. Durchgang = Zelle des Spiels: 2 m breit, 2 m tief, 3,5 m hoch.
 
-Aufbau jeder Tuer: Knoten "portal" (fest: Steinfeld ueber dem Bogen, Pfosten, Kopffeld) und die beweglichen Teile. Die
-beweglichen Teile sind unterhalb des Bogenansatzes rechteckig, damit sie ohne Durchdringung schwingen koennen; der Spitzbogen
-entsteht aus dem festen Kopffeld. Jedes Teil ist ein eigener, nicht verschachtelter Knoten mit einem Mesh. Die Risswand hat
-nur den Knoten "cracks". Wie das Spiel die Teile bewegt: docs/modelle.md (Tueren).
+Je Tuerart zwei Sorten Dateien:
+  door_<art>.glb               Knoten "portal" (fest: Kopffeld, Beschlag, beim Boss die leuchtende Scheibe; kein Stein) und
+                               die beweglichen Teile (leaf_a, leaf_b bzw. leaf, lock). Eigener Atlas 128 x 128, 32 Farben.
+  door_frame_<art>_<v>.glb     der Steinrahmen fuer die Wandvariante v (a, b, c): Knoten "portal_front" (Stein der +z-Seite)
+                               und "portal_back" (Stein der -z-Seite), beide fest. Atlas 128 x 64: links die echte
+                               Wand-Textur der Variante (assets/textures/catacomb_wall*.png, bitgleich, nur gelesen), rechts
+                               dieselbe Kachel als Werkstein (heller, siehe werk_tile).
+Getrennt, weil die Wand-Textur allein 24 Farben hat: in einem Atlas mit Holz, Eisen und Glas blieben nur 8 Farben fuer die
+Fluegel. Und weil die beiden Seiten einer Tuer in verschiedene Raeume schauen, zeigt jede Seite ihre eigene Wandvariante
+(wie die rissige Wand, cracked_wall.py): das Spiel zeichnet portal_front aus der Datei der Variante der +z-Seite und
+portal_back aus der der -z-Seite (DoorFrameLook im Core).
+
+Steinflaechen bekommen ihre Textur-Koordinaten aus der Weltposition wie SurfaceTexturing (eine 64-px-Kachel je Meter, u am
+Wandverlauf, v mit der Hoehe) und sind an den Metergrenzen geteilt: die Fugen laufen im Raster der Wand weiter. Aendert sich
+eine Wand-Textur oder die Palette, passt der Rahmen nicht mehr; ein Test vergleicht door_frame_sources.sha256 mit
+assets/textures/textures.sha256 und schlaegt fehl, bis dieses Skript neu gelaufen ist.
+
+Die beweglichen Teile sind unterhalb des Bogenansatzes rechteckig, damit sie ohne Durchdringung schwingen koennen; der
+Spitzbogen entsteht aus dem festen Kopffeld. Die Risswand hat nur den Knoten "cracks". Wie das Spiel die Teile bewegt:
+docs/modelle.md (Tueren).
 """
+import hashlib
+import json
 import math
 import os
 import sys
@@ -24,15 +43,17 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
-from psx import (V, Part, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
+from psx import (V, G, Part, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
                  export_material, export_glb, report_parts)
 
-# Modelle und Texturen landen in assets/models (vom Skript in tools/models aus zwei Ebenen hoch).
-OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                       "assets", "models")
+TOOLS = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(TOOLS))
+OUT_DIR = os.path.join(ROOT, "assets", "models")
+TEXTURES = os.path.join(ROOT, "assets", "textures")
+PALETTE = os.path.join(ROOT, "assets", "palette", "hauptpalette.json")
+SOURCES = os.path.join(TOOLS, "door_frame_sources.sha256")
 TEX = 128
 H = 3.5                                # Zellhoehe
-Z_FACE = 0.97                          # Vorderflaeche des Steins (die Zelle ist +-1 tief)
 
 RECTS = {
     "planks": (0, 0, 40, 128),         # Bretter (1 m x 3,5 m)
@@ -42,15 +63,19 @@ RECTS = {
     "lock": (40, 32, 88, 64),          # Schlossplatte
     "dark": (88, 32, 104, 64),         # dunkel
     "glass": (104, 32, 128, 64),       # leuchtendes Glas
-    "stone": (40, 64, 104, 128),       # Stein wie die Wand (Bogenfeld)
-    "arch": (104, 64, 128, 128),       # heller Werkstein (ein Wolbstein, jedes Stueck bekommt das ganze Feld)
 }
 UV = rects_from_pixels(RECTS, TEX)
 
+# Rahmen-Atlas: links die Wandkachel, rechts der Werkstein (je 64 x 64 = 1 m)
+FRAME_SIZE = (128, 64)
+FRAME_RECTS = {"stone": (0, 0, 64, 64), "werk": (64, 0, 128, 64)}
+FRAME_UV = rects_from_pixels(FRAME_RECTS, FRAME_SIZE)
+WALL_FILES = {"a": "catacomb_wall.png", "b": "catacomb_wall_b.png", "c": "catacomb_wall_c.png"}
+
 PAL = {
-    "normal": {"wood": (96, 80, 66), "iron": (112, 116, 130), "stone": (122, 104, 112), "arch": (176, 168, 156)},
-    "locked": {"wood": (54, 56, 66), "iron": (104, 108, 122), "stone": (122, 104, 112), "arch": (176, 168, 156)},
-    "boss": {"wood": (40, 34, 42), "iron": (112, 108, 126), "stone": (122, 104, 112), "arch": (196, 188, 172)},
+    "normal": {"wood": (96, 80, 66), "iron": (112, 116, 130)},
+    "locked": {"wood": (54, 56, 66), "iron": (104, 108, 122)},
+    "boss": {"wood": (40, 34, 42), "iron": (112, 108, 126)},
 }
 BRASS = np.array((158, 126, 66), float)
 DARK = np.array((16, 12, 16), float)
@@ -61,7 +86,7 @@ GLOW = np.array((226, 92, 52), float)
 
 def painters(kind):
     P = PAL[kind]
-    wood, iron, stone, arch = (np.array(P[k], float) for k in ("wood", "iron", "stone", "arch"))
+    wood, iron = (np.array(P[k], float) for k in ("wood", "iron"))
     seed = list(PAL).index(kind) * 11
 
     def planks(U, V_):
@@ -135,29 +160,53 @@ def painters(kind):
     def dark(U, V_):
         return np.broadcast_to(DARK, U.shape + (3,)).copy()
 
-    def stone_p(U, V_):
-        """Mauerwerk wie die Wand: Quader in zwei Reihen, dunkle Fuge, leichte Fleckung."""
-        h, w = U.shape
-        col = np.broadcast_to(stone, (h, w, 3)).copy() * (0.86 + 0.26 * vnoise(h, w, 6, 6, 1100 + seed))[..., None]
-        rows = 4
-        r = np.floor(V_ * rows).astype(int)
-        fy = (V_ * rows) % 1.0
-        fx = ((U * 2) + 0.5 * (r % 2)) % 1.0
-        col = mix(col, stone * 0.45, ((fy < 0.09) | (fx < 0.05)).astype(float))
-        col = mix(col, stone * 1.18, ((fy > 0.82) & (fy < 0.95) & (fx > 0.06)).astype(float) * 0.5)
-        return col
+    return {"planks": planks, "plate": plate, "iron": iron_band, "edge": edge, "lock": lock, "dark": dark, "glass": glass}
 
-    def arch_p(U, V_):
-        """Ein Wolbstein aus hellem Stein: Fuge am Rand, Lichtkante oben, ein paar dunkle Flecken."""
-        h, w = U.shape
-        col = np.broadcast_to(arch, (h, w, 3)).copy() * (0.88 + 0.22 * vnoise(h, w, 5, 3, 1200 + seed))[..., None]
-        edge = (np.minimum(np.minimum(U, 1 - U), np.minimum(V_, 1 - V_)) < 0.07)
-        col = mix(col, arch * 0.5, edge.astype(float))
-        col = mix(col, arch * 1.1 + 6, ((V_ > 0.8) & (V_ < 0.92) & (U > 0.1) & (U < 0.9)).astype(float) * 0.5)
-        return col
 
-    return {"planks": planks, "plate": plate, "iron": iron_band, "edge": edge, "lock": lock, "dark": dark, "glass": glass,
-            "stone": stone_p, "arch": arch_p}
+def palette_rows():
+    """Stein (15 Stufen) und Werkstein (4 Stufen) aus assets/palette/hauptpalette.json."""
+    with open(PALETTE, encoding="utf-8") as f:
+        data = json.load(f)
+    rows = {r["name"]: np.array(r["farben"], int) for r in data["grund"] + data["akzent"]}
+    return rows["Stein"], rows["Werkstein"]
+
+
+def load_tile(name):
+    """Wand-Kachel 64 x 64, Zeile 0 oben (wie das Bild aussieht), ganze Zahlen 0..255."""
+    im = bpy.data.images.load(os.path.join(TEXTURES, name))
+    w, h = im.size
+    a = np.array(im.pixels[:], dtype=float).reshape(h, w, 4)[..., :3] * 255.0
+    return np.round(a[::-1]).astype(int)
+
+
+def werk_tile(tile, kind, stein, werkstein):
+    """Dieselbe Kachel als Werkstein: gleiche Fugen und Verhaeltnisse, nur heller. Jede Farbe auf die naechste Stein-Stufe,
+    dann so weit hinauf, dass die hellste Farbe der Kachel auf die hellste Stufe faellt (mindestens 4 Stufen). Normal und
+    Verschlossen bleiben in der Stein-Reihe (oberste Stufen), das Bosstor nimmt die Stufen aus der Reihe Werkstein
+    (Fassung "blau")."""
+    flat = tile.reshape(-1, 3)
+    colours = sorted({tuple(int(c) for c in p) for p in flat})
+    idx = {c: int(((stein - np.array(c)) ** 2).sum(1).argmin()) for c in colours}
+    top = len(stein) - 1
+    shift = max(4, top - max(idx.values()))
+    lifted = {c: min(i + shift, top) for c, i in idx.items()}
+    if kind == "boss":
+        first = len(stein) - len(werkstein)
+        out = {c: werkstein[max(i - first, 0)] for c, i in lifted.items()}
+    else:
+        out = {c: stein[i] for c, i in lifted.items()}
+    return np.array([out[tuple(int(c) for c in p)] for p in flat]).reshape(tile.shape)
+
+
+def frame_atlas(variant, kind, stein, werkstein):
+    tile = load_tile(WALL_FILES[variant])
+    werk = werk_tile(tile, kind, stein, werkstein)
+    w, h = FRAME_SIZE
+    atlas = np.zeros((h, w, 3))
+    for name, t in (("stone", tile), ("werk", werk)):
+        x0, y0, x1, y1 = FRAME_RECTS[name]
+        atlas[y0:y1, x0:x1] = t[::-1]                                       # Feld: Zeile 0 unten
+    return atlas
 
 
 # --- Geometrie-Bausteine ------------------------------------------------------------------------------------------
@@ -183,32 +232,10 @@ def head_panel(part, hw, spring, apex, z0, z1, rect, n=6):
     extrude(part, [(0, spring)] + [(-x, y) for x, y in right], z0, z1, rect)
 
 
-def spandrel(part, hw, spring, apex, outer_x, top, z0, z1, rect, n=6):
-    """Bogenfeld: die Ecken ueber dem Bogen bis zur Zellkante outer_x / Decke top, beidseitig (Faecher von der Ecke aus)."""
-    right = arc(hw, spring, apex, n)
-    ring = [(outer_x, spring)] + right + [(0, top)]
-    ring = [p for i, p in enumerate(ring) if i == 0 or abs(p[0] - ring[i - 1][0]) + abs(p[1] - ring[i - 1][1]) > 1e-6]
-    corner = (outer_x, top)
-    for s in (1, -1):
-        pts = [(s * x, y) for x, y in ring]
-        c = (s * corner[0], corner[1])
-        for a, b in zip(pts, pts[1:]):
-            extrude(part, [c, a, b] if s > 0 else [c, b, a], z0, z1, rect)
-
-
-def order(part, hw_o, hw_i, spring, apex_o, apex_i, z, rect, n=6):
-    """Ein Bogenlauf (Archivolte): Pfosten unter dem Ansatz und ein Ring zwischen Aussen- und Innenbogen, durch z0..z1 (|z|)."""
-    for s in (1, -1):
-        lo, hi = sorted((s * hw_i, s * hw_o))
-        part.box((lo, 0, -z), (hi, spring, z), rect)
-    ao, ai = arc(hw_o, spring, apex_o, n), arc(hw_i, spring, apex_i, n)
-    for s in (1, -1):
-        for j in range(n):
-            q = [(ao[j][0], ao[j][1]), (ao[j + 1][0], ao[j + 1][1]), (ai[j + 1][0], ai[j + 1][1]), (ai[j][0], ai[j][1])]
-            extrude(part, [(s * x, y) for x, y in q] if s > 0 else [(s * x, y) for x, y in reversed(q)], -z, z, rect)
-
-
 def strap(part, x_hinge, side, y, length, half, z0, z1, rect="iron"):
+    """Beschlagband vom Scharnier aus, spitz zulaufend; hoechstens bis 2 cm vor die Mitte (sonst stossen die Baender zweier
+    Fluegel oder die beiden Baender im Kopffeld aneinander)."""
+    length = min(length, abs(x_hinge) - 0.02)
     xe = x_hinge - side * length
     pts = [(x_hinge, y - half), (xe + side * 0.12, y - half * 0.55), (xe, y), (xe + side * 0.12, y + half * 0.55), (x_hinge, y + half)]
     part.prism([(x, y_, z0) for x, y_ in pts], (0, 0, z1 - z0), rect)
@@ -229,8 +256,8 @@ def faces(t, proud):
 
 
 def leaf_rect(name, side, x_j, thick, top, kind, inner=0.005):
-    """Rechteckiger Fluegel; Scharnierkante bei side * (x_j - thick/2 - 0.005); der Fluegel schwingt dort um y. Der Pfosten
-    (Teil von portal) fuellt den Rest bis x_j. Beschlag wie in Runde 1, hellere Baender."""
+    """Rechteckiger Fluegel; Scharnierkante bei side * (x_j - thick/2 - 0.035); der Fluegel schwingt dort um y. Der
+    Steinpfosten (im Rahmen) fuellt den Rest bis x_j. Beschlag wie in Runde 1, hellere Baender."""
     proud = 0.03
     px = side * (x_j - thick / 2 - proud - 0.005)
     part = Part(name, (px, 0, 0), UV)
@@ -247,32 +274,246 @@ def leaf_rect(name, side, x_j, thick, top, kind, inner=0.005):
     return part
 
 
+# --- Steinflaechen mit Welt-UV (Rahmen) ---------------------------------------------------------------------------
+
+def _clip(poly, axis, bound, keep_ge):
+    """poly: Liste (u, v, P); beschneidet an u (axis 0) oder v (axis 1) = bound."""
+    out = []
+    for i, cur in enumerate(poly):
+        prev = poly[i - 1]
+        c_in = cur[axis] >= bound - 1e-9 if keep_ge else cur[axis] <= bound + 1e-9
+        p_in = prev[axis] >= bound - 1e-9 if keep_ge else prev[axis] <= bound + 1e-9
+        if c_in != p_in:
+            t = (bound - prev[axis]) / (cur[axis] - prev[axis])
+            out.append((prev[0] + t * (cur[0] - prev[0]), prev[1] + t * (cur[1] - prev[1]), prev[2] + (cur[2] - prev[2]) * t))
+        if c_in:
+            out.append(cur)
+    return out
+
+
+def emit(part, pts, hint, field):
+    """Konvexe ebene Flaeche (Spiel-Achsen, Datei-Koordinaten) mit Normale nach `hint`; Textur-Koordinaten aus der Welt
+    (u am Wandverlauf, v mit der Hoehe, eine Kachel je Meter), an den Metergrenzen geteilt."""
+    P = [V(*p) for p in pts]
+    n = None
+    for i in range(1, len(P) - 1):
+        c = (P[i] - P[0]).cross(P[i + 1] - P[0])
+        if c.length > 1e-9:
+            n = c
+            break
+    if n is None:
+        return
+    if n.dot(V(*hint)) < 0:
+        P.reverse()
+        n = -n
+    n = n.normalized()
+    ax = max(range(3), key=lambda i: abs(n[i]))
+    if ax == 2:
+        pu, pv = (lambda p: p.x if n.z > 0 else -p.x), (lambda p: p.y)
+    elif ax == 0:
+        pu, pv = (lambda p: -p.z if n.x > 0 else p.z), (lambda p: p.y)
+    else:
+        pu, pv = (lambda p: p.x if n.y > 0 else -p.x), (lambda p: p.z)
+    poly = [(pu(p), pv(p), p) for p in P]
+    i0, i1 = math.floor(min(q[0] for q in poly) + 1e-9), math.ceil(max(q[0] for q in poly) - 1e-9)
+    j0, j1 = math.floor(min(q[1] for q in poly) + 1e-9), math.ceil(max(q[1] for q in poly) - 1e-9)
+    u0, v0, u1, v1 = part.rects[field]
+    for i in range(i0, max(i1, i0 + 1)):
+        for j in range(j0, max(j1, j0 + 1)):
+            cell = _clip(_clip(_clip(_clip(poly, 0, i, True), 0, i + 1, False), 1, j, True), 1, j + 1, False)
+            cell = [q for k, q in enumerate(cell) if k == 0 or abs(q[0] - cell[k - 1][0]) + abs(q[1] - cell[k - 1][1]) > 1e-7]
+            if len(cell) >= 2 and abs(cell[0][0] - cell[-1][0]) + abs(cell[0][1] - cell[-1][1]) < 1e-7:
+                cell = cell[:-1]
+            if len(cell) < 3:
+                continue
+            area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(cell, cell[1:] + cell[:1])) / 2
+            if abs(area) < 1e-6:
+                continue
+            verts = [part.bm.verts.new(G(q[2] - part.pivot)) for q in cell]
+            uvs = [(u0 + (u1 - u0) * min(max(q[0] - i, 0), 1), v0 + (v1 - v0) * min(max(q[1] - j, 0), 1)) for q in cell]
+            part._face(verts, uvs)
+
+
+def quad(part, a, b, c, d, hint, field):
+    emit(part, [a, b, c, d], hint, field)
+
+
+def arc_pts(xc, R, spring, n=6):
+    """Rechte Haelfte eines Spitzbogens (Kreismittelpunkt (xc, spring), xc < 0) vom Ansatz bis zum Scheitel x = 0."""
+    rise = math.sqrt(R * R - xc * xc)
+    a_end = math.atan2(rise, -xc)
+    return [(xc + R * math.cos(a_end * j / n), spring + R * math.sin(a_end * j / n)) for j in range(n + 1)]
+
+
+def to3(side_x, side_z, x, y, z):
+    return (side_x * x, y, side_z * z)
+
+
+def arch_ring(part, xc, R_out, R_in, spring, z, side_z, field, n=6):
+    """Bogenring zwischen den Radien R_out und R_in (gleiche Mitte) in der Ebene |z| = z, beide Haelften."""
+    a, b = arc_pts(xc, R_out, spring, n), arc_pts(xc, R_in, spring, n)
+    for sx in (1, -1):
+        for j in range(n):
+            quad(part, to3(sx, side_z, a[j][0], a[j][1], z), to3(sx, side_z, a[j + 1][0], a[j + 1][1], z),
+                 to3(sx, side_z, b[j + 1][0], b[j + 1][1], z), to3(sx, side_z, b[j][0], b[j][1], z), (0, 0, side_z), field)
+
+
+def arc_reveal(part, xc, R, spring, z_from, z_to, side_z, field, n=6):
+    """Leibung des Bogens vom Radius R zwischen den Tiefen z_from und z_to (Normale ins Innere)."""
+    a = arc_pts(xc, R, spring, n)
+    for sx in (1, -1):
+        for j in range(n):
+            mx, my = (a[j][0] + a[j + 1][0]) / 2, (a[j][1] + a[j + 1][1]) / 2
+            hint = (sx * (xc - mx), spring - my, 0)
+            quad(part, to3(sx, side_z, a[j][0], a[j][1], z_from), to3(sx, side_z, a[j + 1][0], a[j + 1][1], z_from),
+                 to3(sx, side_z, a[j + 1][0], a[j + 1][1], z_to), to3(sx, side_z, a[j][0], a[j][1], z_to), hint, field)
+
+
+def spandrel_caps(part, xc, R, spring, top, side_z, z, field, n=6):
+    """Bogenfeld: Ecken ueber dem Bogen bis zur Zellkante x = +-1 und zur Decke, buendig in der Wandebene |z| = z."""
+    a = arc_pts(xc, R, spring, n)
+    ring = [(a[0][0], spring)] + a + [(0.0, top)]
+    ring = [p for k, p in enumerate(ring) if k == 0 or abs(p[0] - ring[k - 1][0]) + abs(p[1] - ring[k - 1][1]) > 1e-7]
+    corner = (a[0][0], top)
+    for sx in (1, -1):
+        for p, q in zip(ring, ring[1:]):
+            emit(part, [to3(sx, side_z, corner[0], corner[1], z), to3(sx, side_z, p[0], p[1], z), to3(sx, side_z, q[0], q[1], z)],
+                 (0, 0, side_z), field)
+
+
+def plan_prism(part, pts, y0, y1, skip, field, top=True, bottom=False):
+    """Prisma aus einem konvexen Grundriss (x, z), Hoehe y0..y1; Seitenkanten in `skip` entfallen (liegen an der Wand)."""
+    cx, cz = sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)
+    for i, (a, b) in enumerate(zip(pts, pts[1:] + pts[:1])):
+        if i in skip:
+            continue
+        mx, mz = (a[0] + b[0]) / 2 - cx, (a[1] + b[1]) / 2 - cz
+        quad(part, (a[0], y0, a[1]), (b[0], y0, b[1]), (b[0], y1, b[1]), (a[0], y1, a[1]), (mx, 0, mz), field)
+    if top:
+        emit(part, [(p[0], y1, p[1]) for p in pts], (0, 1, 0), field)
+    if bottom:
+        emit(part, [(p[0], y0, p[1]) for p in pts], (0, -1, 0), field)
+
+
+def plate(part, x_in, x_out, y0, y1, sx, sz, field, top=True, bottom=False, depth=0.125):
+    """Kaempfer- oder Sockelplatte vor der Wand (z von 1 bis 1 + depth), Fase 1/16 an den freien senkrechten Kanten."""
+    c = 0.0625
+    pts = [(x_out, 1.0), (x_out - c, 1.0 + depth), (x_in + c, 1.0 + depth), (x_in, 1.0 + depth - c), (x_in, 1.0)]
+    pts = [(sx * x, sz * z) for x, z in pts]
+    plan_prism(part, pts, y0, y1, {4}, field, top, bottom)
+
+
+def box_faces(part, lo, hi, field, sides):
+    """Quader (Datei-Koordinaten) mit den genannten Seiten: '+z', '-z', '+x', '-x', '+y', '-y'."""
+    x0, y0, z0 = lo
+    x1, y1, z1 = hi
+    d = {"+z": ([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], (0, 0, 1)),
+         "-z": ([(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)], (0, 0, -1)),
+         "+x": ([(x1, y0, z0), (x1, y0, z1), (x1, y1, z1), (x1, y1, z0)], (1, 0, 0)),
+         "-x": ([(x0, y0, z0), (x0, y0, z1), (x0, y1, z1), (x0, y1, z0)], (-1, 0, 0)),
+         "+y": ([(x0, y1, z0), (x1, y1, z0), (x1, y1, z1), (x0, y1, z1)], (0, 1, 0)),
+         "-y": ([(x0, y0, z0), (x1, y0, z0), (x1, y0, z1), (x0, y0, z1)], (0, -1, 0))}
+    for f in sides:
+        emit(part, d[f][0], d[f][1], field)
+
+
+SOCKEL = 0.5
+
+
+def stufenportal(parts, hw0, R0, spring, zs, z_door, plate_x_in, vertical_reveals, top=H, width=0.125):
+    """Alles aus Stein: Bogenfeld (buendig mit der Wand), Bogenlaeufe aus Werkstein (je Lauf eine Stufe nach hinten, alle aus
+    denselben Kreismittelpunkten, Ringbreite `width`), Leibungen, Kaempfer- und Sockelplatte aus Werkstein."""
+    xc = hw0 - R0
+    n = len(zs)
+    for sz in (1, -1):
+        part = parts[0] if sz > 0 else parts[1]                              # Vorderseite (+z) und Rueckseite (-z) je ein Knoten
+        spandrel_caps(part, xc, R0, spring, top, sz, 1.0, "stone")
+        depths = [1.0] + list(zs) + [z_door]
+        for k in range(n):
+            ro, ri = R0 - width * k, R0 - width * (k + 1)
+            arch_ring(part, xc, ro, ri, spring, zs[k], sz, "werk")
+            for sx in (1, -1):                                              # Pfostenband des Laufs bis zum Sockel
+                quad(part, (sx * (hw0 - width * k), SOCKEL, sz * zs[k]), (sx * (hw0 - width * (k + 1)), SOCKEL, sz * zs[k]),
+                     (sx * (hw0 - width * (k + 1)), spring, sz * zs[k]), (sx * (hw0 - width * k), spring, sz * zs[k]), (0, 0, sz), "werk")
+        for k in range(n + 1):
+            arc_reveal(part, xc, R0 - width * k, spring, depths[k], depths[k + 1], sz, "stone")
+            if vertical_reveals and k >= 1:
+                for sx in (1, -1):
+                    x = sx * (hw0 - width * k)
+                    quad(part, (x, SOCKEL, sz * depths[k]), (x, SOCKEL, sz * depths[k + 1]), (x, spring, sz * depths[k + 1]),
+                         (x, spring, sz * depths[k]), (-sx, 0, 0), "stone")
+        for sx in (1, -1):
+            plate(part, plate_x_in, 1.0, spring - 0.125, spring, sx, sz, "werk", top=False, bottom=True)
+            plate(part, plate_x_in, 1.0, 0.0, SOCKEL, sx, sz, "werk", top=True, bottom=False)
+
+
 # --- Tuerarten ----------------------------------------------------------------------------------------------------
 
-SPRING_N = 2.0
-APEX_N = 3.45
 LEAF_TOP_N = 1.94
+SPRING_N = 2.0                  # Normal und Verschlossen: Bogenansatz, Lauf R = 1,5625 (Scheitel 3,458), Oeffnung 1,75 m
 POST_N = 0.105                  # Pfosten an der Scharnierseite (Normal): Dicke 0,14 / 2 + Beschlag 0,03 + Luft
 POST_L = 0.135                  # Locked: Dicke 0,14 / 2 + Platten und Baender 0,06 + Luft
+SPRING_B = 1.875                # Boss: drei Laeufe, innerster Lauf bei x = 0,625; Fluegel drehen bei +-0,49
+
+
+def frame_nodes():
+    return Part("portal_front", (0, 0, 0), FRAME_UV), Part("portal_back", (0, 0, 0), FRAME_UV)
+
+
+def frame_normal(kind):
+    """Ein Lauf 0,125 breit, 1/16 hinter der Wandebene; Steinpfosten an der Scharnierseite (hinter dem Pfostenband)."""
+    front, back = frame_nodes()
+    stufenportal((front, back), 1.0, 1.5625, SPRING_N, [0.9375], 0.07, 0.875, False)
+    post = POST_N if kind == "normal" else POST_L
+    zp = 0.1 if kind == "normal" else 0.15
+    for sx in (1, -1):
+        lo, hi = sorted((sx * (1.0 - post), sx * 1.0))
+        inner = "+x" if sx < 0 else "-x"
+        box_faces(front, (lo, 0, 0), (hi, SPRING_N, zp), "stone", ["+z", inner])
+        box_faces(back, (lo, 0, -zp), (hi, SPRING_N, 0), "stone", ["-z", inner])
+    return [front, back]
+
+
+def frame_boss():
+    """Drei konzentrische Laeufe (Laeufe 1,00 / 0,875 / 0,75 / 0,625; Tiefen 0,9375 / 0,625 / 0,3125), senkrechte Leibungen."""
+    front, back = frame_nodes()
+    stufenportal((front, back), 1.0, 1.75, SPRING_B, [0.9375, 0.625, 0.3125], 0.1, 0.625, True)
+    for sx in (1, -1):
+        lo, hi = sorted((sx * 0.49, sx * 0.625))
+        inner = "+x" if sx < 0 else "-x"
+        box_faces(front, (lo, 0, 0), (hi, SPRING_B, 0.14), "stone", ["+z", inner])
+        box_faces(back, (lo, 0, -0.14), (hi, SPRING_B, 0), "stone", ["-z", inner])
+    return [front, back]
 
 
 def portal_normal(kind):
+    """Fest, ohne Stein: Kopffeld (Holz oder Eisenplatten) im Bogen des Laufs, Querband auf der Fuge zu den Fluegeln."""
     part = Part("portal", (0, 0, 0), UV)
-    t = 0.07
-    x_j = 1.0
-    POST = POST_N if kind == "normal" else POST_L
-    # Pfosten (Rest bis zur Zellkante, an der Scharnierseite) und Bogenfeld
-    for s in (1, -1):
-        lo, hi = sorted((s * (x_j - POST), s * x_j))
-        part.box((lo, 0, -0.1), (hi, LEAF_TOP_N, 0.1), "iron")
-    spandrel(part, 1.0, SPRING_N, APEX_N, 1.0, H, -Z_FACE, Z_FACE, "stone")
-    # Kopffeld (Holz oder Eisenplatten) in den Bogen, Querband auf der Fuge zu den Fluegeln
-    head_panel(part, 1.0, SPRING_N, APEX_N, -t, t, "planks" if kind == "normal" else "plate")
+    hw = 0.875
+    apex = SPRING_N + math.sqrt(1.4375 ** 2 - 0.5625 ** 2)
+    head_panel(part, hw, SPRING_N, apex, -0.07, 0.07, "planks" if kind == "normal" else "plate")
     for z0, z1 in faces(0.14, 0.025):
-        part.box((-1.0, LEAF_TOP_N, z0), (1.0, SPRING_N + 0.06, z1), "iron")
+        part.box((-hw, LEAF_TOP_N, z0), (hw, SPRING_N + 0.06, z1), "iron")
         if kind == "normal":
             for s in (1, -1):                                                           # zwei Baender im Kopf, spitz zulaufend
-                strap(part, s * 0.99, s, 2.5, 0.9, 0.065, z0, z1)
+                strap(part, s * (hw - 0.01), s, 2.5, 0.9, 0.065, z0, z1)
+    return part
+
+
+def portal_boss():
+    """Fest, ohne Stein: Kopffeld im innersten Lauf mit leuchtender Scheibe, Eisenband ueber den Fluegeln."""
+    part = Part("portal", (0, 0, 0), UV)
+    xc, hw = 1.0 - 1.75, 0.625
+    r = 1.75 - 0.375
+    apex = SPRING_B + math.sqrt(r * r - xc * xc)
+    head_panel(part, hw, SPRING_B, apex, -0.1, 0.1, "planks")
+    for z0, z1 in faces(0.2, 0.03):
+        part.box((-hw, SPRING_B, z0), (hw, SPRING_B + 0.0625, z1), "iron")
+    cy = 2.375
+    for f in (-1, 1):
+        z0, z1 = sorted((f * 0.095, f * 0.14))
+        pts = [(0.21 * math.cos(2 * math.pi * k / 10), cy + 0.21 * math.sin(2 * math.pi * k / 10)) for k in range(10)]
+        extrude(part, pts, z0, z1, "glass")
     return part
 
 
@@ -312,41 +553,18 @@ def lock_node():
     return part
 
 
-# Boss (Entwurf A): Stufenportal. Torbogen hw 0.66 (Fluegel darin), drei Laeufe nach aussen, Kopffeld mit Scheibe.
-A_SPRING = 1.9
-A_ORDERS = [(1.0, 3.45), (0.89, 3.30), (0.78, 3.12), (0.66, 2.85)]       # (hw, Scheitel) von aussen nach innen
-A_Z = [0.97, 0.65, 0.33]
-
-
-def boss_portal():
-    part = Part("portal", (0, 0, 0), UV)
-    spandrel(part, 1.0, A_SPRING, 3.45, 1.0, H, -Z_FACE, Z_FACE, "stone")
-    for k in range(3):
-        (hw_o, ap_o), (hw_i, ap_i) = A_ORDERS[k], A_ORDERS[k + 1]
-        order(part, hw_o, hw_i, A_SPRING, ap_o, ap_i, A_Z[k], "arch")
-    hw, apex = A_ORDERS[3]
-    # Pfosten fuer die Scharniere (bis zum Rand des Torbogens) und Kopffeld mit leuchtender Scheibe
-    for s in (1, -1):
-        lo, hi = sorted((s * (hw - 0.135), s * hw))
-        part.box((lo, 0, -0.11), (hi, 1.88, 0.11), "iron")
-    head_panel(part, hw, A_SPRING, apex, -0.1, 0.1, "planks")
-    for z0, z1 in faces(0.2, 0.03):
-        part.box((-hw, 1.88, z0), (hw, A_SPRING + 0.06, z1), "iron")
-    cy = 2.38
-    for f in (-1, 1):
-        z0, z1 = sorted((f * 0.095, f * 0.14))
-        pts = [(0.21 * math.cos(2 * math.pi * k / 10), cy + 0.21 * math.sin(2 * math.pi * k / 10)) for k in range(10)]
-        extrude(part, pts, z0, z1, "glass")
-    return part
-
-
 def parts_for(kind):
     if kind == "normal":
         return [portal_normal("normal"), leaf_rect("leaf_a", +1, 1.0, 0.14, LEAF_TOP_N, "normal"),
                 leaf_rect("leaf_b", -1, 1.0, 0.14, LEAF_TOP_N, "normal")]
     if kind == "locked":
         return [portal_normal("locked"), locked_leaf(), lock_node()]
-    return [boss_portal(), leaf_rect("leaf_a", +1, 0.66, 0.2, 1.88, "boss"), leaf_rect("leaf_b", -1, 0.66, 0.2, 1.88, "boss")]
+    return [portal_boss(), leaf_rect("leaf_a", +1, 0.625, 0.2, SPRING_B, "boss"),
+            leaf_rect("leaf_b", -1, 0.625, 0.2, SPRING_B, "boss")]
+
+
+def frame_for(kind):
+    return frame_boss() if kind == "boss" else frame_normal(kind)
 
 
 # --- Risswand (aus Runde 1 unveraendert: eigener Atlas, alles dunkel) -------------------------------------------------
@@ -389,24 +607,57 @@ def cracked_node():
     return part
 
 
-def build(kind, rects, painters_, parts):
+# --- Ausgabe ------------------------------------------------------------------------------------------------------
+
+def colours_of(tex):
+    return len({tuple(p) for p in np.round(tex).reshape(-1, 3).astype(int)})
+
+
+def write(name, tex, parts):
+    """Ein Modell mit eigener Textur nach assets/models/<name>.glb und .png."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
     coll = bpy.data.collections.new("Tuer")
     bpy.context.scene.collection.children.link(coll)
-    tex = paint_atlas(rects, painters_, TEX, colors=32, seed=7)
-    image = save_image(f"door_{kind}", tex, os.path.join(OUT_DIR, f"door_{kind}.png"))
-    mat = export_material(f"door_{kind}", image)
+    image = save_image(name, tex, os.path.join(OUT_DIR, name + ".png"))
+    mat = export_material(name, image)
     objs = [p.build(coll, mat, smooth=False) for p in parts]
-    export_glb(objs, os.path.join(OUT_DIR, f"door_{kind}.glb"))
-    report_parts(f"door_{kind}", objs)
-    print(f"TEXTUR door_{kind} {TEX}x{TEX} Farben {len({tuple(p) for p in tex.reshape(-1, 3).astype(int)})}")
+    export_glb(objs, os.path.join(OUT_DIR, name + ".glb"))
+    report_parts(name, objs)
+    h, w = tex.shape[:2]
+    print(f"TEXTUR {name} {w}x{h} Farben {colours_of(tex)}")
+
+
+def build(kind, rects, painters_, parts):
+    write(f"door_{kind}", paint_atlas(rects, painters_, TEX, colors=32, seed=7), parts)
+
+
+def build_frame(kind, variant, stein, werkstein):
+    tex = frame_atlas(variant, kind, stein, werkstein)
+    assert colours_of(tex) <= 32, f"door_frame_{kind}_{variant}: {colours_of(tex)} Farben (hoechstens 32)"
+    write(f"door_frame_{kind}_{variant}", tex, frame_for(kind))
+
+
+def write_sources():
+    """SHA-256 und Groesse jeder gelesenen Wand-Textur (wie cracked_wall_sources.sha256)."""
+    lines = ["# sha256 size name - the wall textures tools/models/door.py built the door frames from"]
+    for name in sorted(WALL_FILES.values()):
+        with open(os.path.join(TEXTURES, name), "rb") as f:
+            data = f.read()
+        lines.append(f"{hashlib.sha256(data).hexdigest()} {len(data)} {name}")
+    with open(SOURCES, "w", encoding="ascii", newline="\n") as f:
+        f.write("\n".join(lines) + "\n")
+    print("Quellen:", os.path.relpath(SOURCES, ROOT))
 
 
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
+    stein, werkstein = palette_rows()
     for kind in PAL:
         build(kind, RECTS, painters(kind), parts_for(kind))
+        for variant in WALL_FILES:
+            build_frame(kind, variant, stein, werkstein)
     build("cracked", CRACKED_RECTS, cracked_painters(), [cracked_node()])
+    write_sources()
 
 
 main()
