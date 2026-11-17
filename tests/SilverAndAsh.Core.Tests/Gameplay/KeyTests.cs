@@ -293,6 +293,25 @@ public class KeyTests
     }
 
     [Fact]
+    public void An_unlocked_door_swings_open_over_the_time_of_a_locked_door()
+    {
+        // Issue #245: the heavy leaf takes longer than a wooden door - but the way is free at once.
+        var world = LockedDoorWorld(keys: 1);
+        var door = world.Doors[0];
+        var total = SimulationClock.SecondsToTicks(Balance.Default.Doors.LockedOpenTime);
+
+        Run(world, PressF, 1);
+        Assert.False(world.Level[1, 4].IsSolid);
+        Assert.Equal(1f / total, door.OpenFraction, 0.0001f);
+        Assert.True(door.OpenedFromLowSide);
+
+        Run(world, PlayerInput.None, total - 2);
+        Assert.True(door.OpenFraction < 1f);
+        Run(world, PlayerInput.None, 1);
+        Assert.Equal(1f, door.OpenFraction);
+    }
+
+    [Fact]
     public void With_a_key_F_unlocks_the_door_and_uses_up_the_key()
     {
         var world = LockedDoorWorld(keys: 1);

@@ -42,6 +42,9 @@ public class PhotoSceneTests
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "hud-rifle",
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload",
+            "door-normal", "door-normal-half", "door-normal-open", "door-locked", "door-locked-half", "door-locked-open",
+            "door-boss", "door-boss-half", "door-boss-open", "door-cracked", "door-sideways-half", "door-level-seed1",
+            "door-level-seed2-boss", "door-normal-10m", "door-locked-10m", "door-boss-10m",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -259,5 +262,38 @@ public class PhotoSceneTests
             Assert.True(chest.Position.Z > world.Player.EyePosition.Z, "The chests stand in front of the player, on the -z side of their fronts.");
             Assert.Equal(4f, chest.Position.Z - world.Player.Body.Position.Z, 0.001f);
         });
+    }
+
+    [Theory]
+    [InlineData(DoorKind.Normal, false)]
+    [InlineData(DoorKind.Locked, false)]
+    [InlineData(DoorKind.Boss, false)]
+    [InlineData(DoorKind.Normal, true)]
+    public void The_open_door_hall_is_opened_the_regular_way_and_the_player_looks_at_it_from_the_start(DoorKind kind, bool sideways)
+    {
+        var world = Studio().DoorHall(kind, sideways, open: true);
+        var door = world.Doors[0];
+        var middle = (door.BoxMin + door.BoxMax) / 2f;
+
+        Assert.True(door.IsOpen);
+        Assert.True(door.OpenedFromLowSide, "The player opened it from their side: the leaves swing away from them.");
+        Assert.False(world.Level[door.X, door.Z].IsSolid);
+        Assert.Equal(0, world.Player.Keys);
+        Assert.Equal(6f, sideways ? middle.X - world.Player.Position.X : middle.Z - world.Player.Position.Z, 0.001f);
+        var towards = Vector3.Normalize(middle - world.Player.EyePosition);
+        Assert.Equal(1f, Vector3.Dot(world.Player.View.Forward, towards), 0.001f);
+    }
+
+    [Fact]
+    public void The_10_m_door_scenes_stand_10_m_before_a_closed_door()
+    {
+        foreach (var name in new[] { "door-normal-10m", "door-locked-10m", "door-boss-10m" })
+        {
+            var world = Built(name).World;
+            var door = world.Doors[0];
+
+            Assert.False(door.IsOpen);
+            Assert.Equal(10f, ((door.BoxMin.Z + door.BoxMax.Z) / 2f) - world.Player.Position.Z, 0.001f);
+        }
     }
 }

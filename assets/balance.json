@@ -234,6 +234,12 @@
     "vampire": { "combatShareNear": 0,    "combatShareFar": 0,    "treasureShare": 0.05, "lockedTreasureShare": 0.1, "secretShare": 0.15, "lockedChance": 1,    "silverMin": 80, "silverMax": 120, "bloodVialChance": 1 }
   },
 
+  "doors": {
+    "normalOpenTime": 0.9,              // seconds a wooden double door takes to swing fully open (only the picture: the way is free at once)
+    "lockedOpenTime": 1.3,              // the same for a locked door (one heavy leaf)
+    "bossOpenTime": 2.2                 // the same for a boss door (two heavy iron leaves)
+  },
+
   "bloodVial": {
     "heal": 30                          // health it gives back (never above the maximum)
   },
