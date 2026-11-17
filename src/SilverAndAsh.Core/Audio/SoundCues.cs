@@ -59,6 +59,24 @@ public enum SoundKind
 
     /// <summary>A player picks up a key.</summary>
     KeyTaken,
+
+    /// <summary>A player jumps (issue #291).</summary>
+    Jump,
+
+    /// <summary>A player dashes in the air or dodges on the ground - both are the Shift move (issue #291).</summary>
+    Dash,
+
+    /// <summary>A player lands after a drop of at least <see cref="SoundBoard.LandingSoundMinimumFallHeight"/> (issue #291).</summary>
+    Land,
+
+    /// <summary>A ghoul notices a player and starts to chase (issue #291).</summary>
+    GhoulNoticed,
+
+    /// <summary>A player's consecrated ammunition runs out (issue #291).</summary>
+    ConsecrationEnded,
+
+    /// <summary>A menu button is selected or chosen - played by the game itself, no event of Core (issue #291).</summary>
+    MenuClick,
 }
 
 /// <summary>One sound to play now: which file, at which volume (0 to 1, before <see cref="SoundBoard.MasterVolume"/>).</summary>
@@ -108,6 +126,13 @@ public static class SoundBoard
     /// </summary>
     public const float SoundVolume = 1f;
 
+    /// <summary>
+    /// Metres a player must drop (from the highest point in the air) for a landing to be heard (issue #291). Above the
+    /// step height of 0.4 m (<see cref="BodySizes.Player"/>), so walking up and down steps stays silent; a normal jump
+    /// on flat ground drops about 1.3 m and is heard. Presentation, not a game rule - so not in balance.json.
+    /// </summary>
+    public const float LandingSoundMinimumFallHeight = 0.6f;
+
     /// <summary>Every short sound the game loads from assets/audio/: the files of every <see cref="SoundPack"/>.</summary>
     public static ImmutableArray<string> SoundFiles => [.. SoundPack.All.SelectMany(pack => pack.Files).Distinct()];
 
@@ -156,7 +181,9 @@ public static class SoundBoard
     /// <summary>
     /// Which sound <paramref name="gameEvent"/> asks for, or null for none: a pistol shot (consecrated or not), reloading,
     /// a swing and a hit of the silver blade (not one with the pistol or the club), a footstep per foot, a hurt player,
-    /// a ghoul's wind-up and death, a door or chest opening, picking up silver, a consumable or a key.
+    /// a ghoul's wind-up and death, a door or chest opening, picking up silver, a consumable or a key; a jump, a dash or
+    /// dodge, a landing from high enough (<see cref="LandingSoundMinimumFallHeight"/>), a ghoul noticing a player and
+    /// the end of the consecration (issue #291).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -180,6 +207,11 @@ public static class SoundBoard
         PickupTaken { Kind: ConsumableKind.BloodVial } => SoundKind.BloodVialTaken,
         PickupTaken { Kind: ConsumableKind.ConsecratedAmmo } => SoundKind.ConsecratedAmmoTaken,
         KeyTaken => SoundKind.KeyTaken,
+        PlayerJumped => SoundKind.Jump,
+        PlayerDashed or PlayerDodged => SoundKind.Dash,
+        PlayerLanded { FallHeight: >= LandingSoundMinimumFallHeight } => SoundKind.Land,
+        GhoulNoticed => SoundKind.GhoulNoticed,
+        ConsecrationEnded => SoundKind.ConsecrationEnded,
         _ => null,
     };
 }
@@ -242,6 +274,17 @@ public sealed class SoundCues
         }
 
         return cues;
+    }
+
+    /// <summary>
+    /// The sound of <paramref name="pack"/> for <paramref name="kind"/> without an event of Core - the game's own
+    /// sounds such as <see cref="SoundKind.MenuClick"/> (issue #291). Empty if the pack has none.
+    /// </summary>
+    public IReadOnlyList<SoundCue> For(SoundKind kind, SoundPack pack)
+    {
+        ArgumentNullException.ThrowIfNull(pack);
+        var files = pack.Variants(kind);
+        return files.IsEmpty ? [] : [new SoundCue(kind, files[NextVariant(string.Join('|', files), files.Length)], SoundBoard.SoundVolume)];
     }
 
     /// <summary>A random one of the <paramref name="count"/> files of <paramref name="set"/>, never the same as last time (if it has more than one).</summary>

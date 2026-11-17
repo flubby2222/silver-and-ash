@@ -9,6 +9,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
 using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.Showroom;
 using SilverAndAsh.Core.World;
 using SilverAndAsh.Game.Audio;
 using SilverAndAsh.Game.Input;
@@ -88,6 +89,17 @@ using (log)
             log?.Info($"Every run starts with: {string.Join(", ", give)}.");
         }
 
+        // Test option: --showroom - instead of a run, the showroom: every door, chest, enemy and loot side by side in
+        // every wall variant, for designers and code sessions (issue #283, docs/musterraum.md). Only in the debug
+        // version, like --give: the player there cannot die and has every weapon.
+        if (options.Showroom)
+        {
+            var showroom = ShowroomLayout.Build();
+            newWorld = (_, balance) => showroom.NewWorld(balance);
+            nextWorld = world => showroom.NewWorld(world.Balance);
+            log?.Info($"Showroom: {showroom.Placed.Count} pieces in {showroom.Sections.Count} sections.");
+        }
+
         // Test option: --look 3 draws the world in one of the picture variants of issue #234 (decision record 0010).
         look = options.Look;
         if (look is not null)
@@ -159,6 +171,11 @@ using (log)
             log?.Info($"Bench mode: scene '{bench}', {PhotoRequest.WarmUpFrames} frames to warm up, {PhotoRequest.MeasuredFrames} measured.");
         }
 #else
+        if (options.Showroom)
+        {
+            throw new ArgumentException("'--showroom' works only in the debug version (dotnet run).");
+        }
+
         if (options.Bench is not null)
         {
             throw new ArgumentException("'--bench' works only in the debug version (dotnet run).");
@@ -281,6 +298,12 @@ static void RunGame(
 
         // The level name ("THE CATACOMBS") shows for a few seconds whenever a run starts.
         var levelNameSeconds = 0f;
+
+        // The showroom (--showroom, issue #283): the labels of its pieces, built once it is shown; L hides and shows them.
+        // The camera of the last 3D picture places them on the screen.
+        IReadOnlyList<ShowroomLabel>? showroomLabels = null;
+        var showroomLabelsShown = true;
+        var lastCamera = default(Camera3D);
 
         // The end of a run: its numbers while "YOU DIED" / "VICTORY" is shown (null while the run is on), and how long
         // the victory is already there (the screen waits a moment, so the rising grates can be seen).
@@ -434,6 +457,7 @@ static void RunGame(
                 FovY = LookSettings.FieldOfViewDegrees,
                 Projection = CameraProjection.Perspective,
             };
+            lastCamera = camera;
 
             levelShader.SetCameraPosition(eye);
             picture.BeginDrawing();
@@ -503,6 +527,12 @@ static void RunGame(
             if (endSummary is null)
             {
                 damageFeedback.Draw();
+            }
+
+            if (gameWorld.IsShowroom && showroomLabelsShown && endSummary is null && !frozen)
+            {
+                showroomLabels ??= ShowroomLayout.Build().Labels;
+                ShowroomLabelView.Draw(showroomLabels, gameWorld.Level, lastCamera, picture.Width, picture.Height);
             }
 
             DrawHud(displayVersion, fps: debugInfo);
@@ -707,6 +737,16 @@ static void RunGame(
         // never part of the world.
         var soundPacks = new SoundPackSwitch();
 
+        // The menu click (issue #291): its own choice of variants, so the run's sounds do not depend on the menus.
+        var menuCues = new SoundCues(0);
+        void PlayMenuClick(MenuView menu)
+        {
+            if (menu.Clicked)
+            {
+                sounds.Play(menuCues.For(SoundKind.MenuClick, soundPacks.Current));
+            }
+        }
+
         // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.
         while (!Raylib.WindowShouldClose() && !quit)
         {
@@ -726,6 +766,12 @@ static void RunGame(
             }
 
             soundPacks.Update(Raylib.GetFrameTime());
+
+            // L hides and shows the labels of the showroom (issue #283). Presentation only, never part of the world.
+            if (gameWorld.IsShowroom && Raylib.IsKeyPressed(KeyboardKey.L))
+            {
+                showroomLabelsShown = !showroomLabelsShown;
+            }
 
             // The music (issue #271): the title theme on the title screen, the catacomb music in a run (held in the Esc
             // menu), none on the end screen - as it stood after the latest frame.
@@ -750,6 +796,8 @@ static void RunGame(
                         quit = true;
                         break;
                 }
+
+                PlayMenuClick(titleMenu);
 
                 Raylib.BeginDrawing();
                 TitleScreen.Draw(titleMenu, displayVersion);
@@ -795,6 +843,8 @@ static void RunGame(
                         break;
                 }
 
+                PlayMenuClick(escMenu);
+
                 if (changed != settings)
                 {
                     settings = changed;
@@ -818,6 +868,8 @@ static void RunGame(
                         titleMenu.Open();
                         break;
                 }
+
+                PlayMenuClick(endMenu);
             }
 
             // The mouse is captured only while playing: free in the menu, on the end screen and while the bonus choice

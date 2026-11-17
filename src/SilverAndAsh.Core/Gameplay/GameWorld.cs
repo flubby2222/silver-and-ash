@@ -54,6 +54,7 @@ public sealed class GameWorld
     private readonly List<Chest> _chests;
     private bool _lossReported;
     private bool _endSummaryTaken;
+    private ShowroomExhibits? _showroom;
 
     /// <summary>
     /// Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.
@@ -159,6 +160,51 @@ public sealed class GameWorld
     /// Variant A everywhere unless the level was generated (see <see cref="SurfaceVariants.For"/>).
     /// </summary>
     public SurfaceVariants Surfaces { get; init; } = SurfaceVariants.Plain;
+
+    /// <summary>
+    /// The exhibits of the showroom (issue #283, see <see cref="ShowroomExhibits"/>), placed when set - or null in a
+    /// normal game, which this never changes.
+    /// </summary>
+    public ShowroomExhibits? Showroom
+    {
+        get => _showroom;
+        init
+        {
+            _showroom = value;
+            if (value is null)
+            {
+                return;
+            }
+
+            if (value.Stairs is { } stairs)
+            {
+                // It stands from the start: one tick of rising is all it needs.
+                _stairs = new Stairs(stairs, 0f);
+                _stairs.Tick();
+            }
+
+            foreach (var loot in value.Loot)
+            {
+                _loot.Add(new Loot(_nextLootId++, loot.Kind, loot.Amount, loot.Position));
+            }
+
+            foreach (var consumable in value.Consumables)
+            {
+                _pickups.Add(new Pickup(_nextPickupId++, consumable.Kind, consumable.Position));
+            }
+
+            foreach (var weapon in value.Weapons)
+            {
+                _weaponDrops.Add(new WeaponDrop(_nextWeaponDropId++, weapon.Kind, weapon.Position));
+            }
+        }
+    }
+
+    /// <summary>
+    /// True in the showroom: enemies are exhibits that neither move, attack nor take damage, and the staircase cannot be
+    /// climbed - so nobody dies and the level never changes there.
+    /// </summary>
+    public bool IsShowroom => _showroom is not null;
 
     /// <summary>
     /// The level as it was built, all doors open - for drawing - except unbroken cracked walls, which are drawn as
@@ -331,7 +377,9 @@ public sealed class GameWorld
     }
 
     /// <summary>Everything that can be used with F: doors and chests today, people later.</summary>
-    private IEnumerable<IInteractable> Interactables => _doors.Concat<IInteractable>(_chests).Concat(_stairs is null ? [] : [_stairs]);
+    // The showroom's staircase is only on display: it is never offered (no level change there).
+    private IEnumerable<IInteractable> Interactables =>
+        _doors.Concat<IInteractable>(_chests).Concat(_stairs is null || IsShowroom ? [] : [_stairs]);
 
     private void Interact(Player player)
     {
@@ -906,7 +954,10 @@ public sealed class GameWorld
                 // A melee weapon hits the whole body at once - it has no hit zone (and so no headshot bonus).
                 var weapon = swing.Weapon == WeaponKind.Club ? Weapon.Club : Weapon.Blade;
                 Damage(target, new Hit(weapon, HitZone.Body, values.Damage, swing.Charge), attacker);
-                KnockBack(target, attacker, values, swing.Charge);
+                if (!IsShowroom)
+                {
+                    KnockBack(target, attacker, values, swing.Charge);
+                }
             }
         }
     }
@@ -1033,6 +1084,12 @@ public sealed class GameWorld
     /// </summary>
     private void Damage(ITarget target, Hit hit, Player attacker)
     {
+        // The showroom's enemies are exhibits: hits do nothing to them.
+        if (IsShowroom)
+        {
+            return;
+        }
+
         var result = DamageRules.Calculate(hit with { DamageBoons = attacker.BoonCount(Boon.Damage) });
         var wasAlive = target.IsHittable;
         var eventsBefore = _events.Count;
@@ -1124,7 +1181,7 @@ public sealed class GameWorld
                 .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, ghoul)).Select(target => target.Body))
                 .Concat(StandingChests.Select(chest => chest.RoundBody))
                 .ToList();
-            if (!_asleep.Contains(ghoul.Id))
+            if (!_asleep.Contains(ghoul.Id) && !IsShowroom)
             {
                 ghoul.Act(_enemyLevel, Players, obstacles, _events, EnemyPaths());
             }
@@ -1132,7 +1189,7 @@ public sealed class GameWorld
             ghoul.Tick(_events);
         }
 
-        if (_gorm is not null && !_asleep.Contains(_gorm.Id))
+        if (_gorm is not null && !_asleep.Contains(_gorm.Id) && !IsShowroom)
         {
             var obstacles = Players.Select(player => player.Body)
                 .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, _gorm)).Select(target => target.Body))
@@ -1144,7 +1201,7 @@ public sealed class GameWorld
         var batEventsFrom = _events.Count;
         foreach (var bat in _bats)
         {
-            if (!_asleep.Contains(bat.Id))
+            if (!_asleep.Contains(bat.Id) && !IsShowroom)
             {
                 bat.Act(_enemyLevel, Players, _events);
             }

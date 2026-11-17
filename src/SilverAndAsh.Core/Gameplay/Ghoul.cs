@@ -184,6 +184,7 @@ public sealed class Ghoul : ITarget
             }
 
             State = GhoulState.Chasing;
+            events.Add(new GhoulNoticed(Id, _target.Id));
         }
 
         var target = _target!;

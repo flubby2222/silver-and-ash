@@ -26,6 +26,12 @@ internal sealed class MenuView
     public int Selected { get; private set; }
 
     /// <summary>
+    /// True for the frame in which the selection moved, a value row was nudged or a button was chosen - the menu click
+    /// sounds then (issue #291).
+    /// </summary>
+    public bool Clicked { get; private set; }
+
+    /// <summary>
     /// Call when the menu appears: the selection starts at the top, and wherever the pointer happens to rest counts
     /// as "not moved" - so it does not snatch the selection before the player touches the mouse.
     /// </summary>
@@ -42,8 +48,16 @@ internal sealed class MenuView
     /// </summary>
     public int Update(IReadOnlyList<string> items, int top, out int step)
     {
-        step = 0;
         Selected = Math.Clamp(Selected, 0, items.Count - 1);
+        var before = Selected;
+        var chosen = Read(items, top, out step);
+        Clicked = Selected != before || step != 0 || chosen >= 0;
+        return chosen;
+    }
+
+    private int Read(IReadOnlyList<string> items, int top, out int step)
+    {
+        step = 0;
 
         if (Raylib.IsKeyPressed(KeyboardKey.Down))
         {
