@@ -57,8 +57,7 @@ public class SoundPackTests
         { new GormWindUp(9, GormAttack.Swing), SoundKind.GormSwingWindUp, ["p1-gorm-ankuendigung-schwung.wav"] },
         { new GormWindUp(9, GormAttack.Throw), SoundKind.GormThrowWindUp, ["p1-gorm-ankuendigung-wurf.wav"] },
         { new GormSlammed(9), SoundKind.GormSlam, ["p1-gorm-aufschlag.wav"] },
-        { new GormSwung(9, Hit: false), SoundKind.GormChain, ["p1-gorm-kette.wav"] },
-        { new GormSwung(9, Hit: true), SoundKind.GormChain, ["p1-gorm-kette.wav"] },
+        { new GormSwingStarted(9), SoundKind.GormChain, ["p1-gorm-kette.wav"] },
         { new GormThrew(9, Vector3.Zero, Vector3.UnitZ), SoundKind.GormThrow, ["p1-gorm-haken-wurf.wav"] },
         { new HookHit(0), SoundKind.GormHookHit, ["p1-gorm-haken-treffer.wav"] },
         { new GormHit(9, 40), SoundKind.GormHurt, ["p1-gorm-treffer-1.wav", "p1-gorm-treffer-2.wav"] },
@@ -76,7 +75,7 @@ public class SoundPackTests
     private static readonly GameEvent[] GormEvents =
     [
         new GormStepped(9), new GormWindUp(9, GormAttack.Hammer), new GormWindUp(9, GormAttack.Swing),
-        new GormWindUp(9, GormAttack.Throw), new GormSlammed(9), new GormSwung(9, Hit: true),
+        new GormWindUp(9, GormAttack.Throw), new GormSlammed(9), new GormSwingStarted(9),
         new GormThrew(9, Vector3.Zero, Vector3.UnitZ), new HookHit(0), new GormHit(9, 40), new GormHit(9, 40, Critical: true),
         new GormRoared(9), new GormDied(9),
     ];
@@ -202,12 +201,20 @@ public class SoundPackTests
         foreach (var attack in new[] { GormAttack.Hammer, GormAttack.Swing, GormAttack.Throw })
         {
             var cues = new SoundCues(1).For(
-                [new GormStepped(9), new PlayerStepped(0, Foot.Left), new GormSwung(9, Hit: false), new GormHit(9, 10),
+                [new GormStepped(9), new PlayerStepped(0, Foot.Left), new GormSwingStarted(9), new GormHit(9, 10),
                  new GormWindUp(9, attack)],
                 Pack1, new Vector3(100f, 0f, 0f));
 
             Assert.Contains(cues, cue => cue.Kind == SoundBoard.KindFor(new GormWindUp(9, attack)));
         }
+    }
+
+    [Fact]
+    public void The_end_of_gorms_swing_plays_nothing()
+    {
+        // Review of #310: the chain sounds as the sweep starts (GormSwingStarted); its end only tells whether it hit.
+        Assert.Null(SoundBoard.KindFor(new GormSwung(9, Hit: true)));
+        Assert.Null(SoundBoard.KindFor(new GormSwung(9, Hit: false)));
     }
 
     [Fact]

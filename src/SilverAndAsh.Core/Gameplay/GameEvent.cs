@@ -169,7 +169,10 @@ public sealed record GormSlammed(int GormId) : GameEvent;
 /// <summary>The shock wave hit player <paramref name="PlayerId"/> (who was on the ground).</summary>
 public sealed record ShockwaveHit(int PlayerId) : GameEvent;
 
-/// <summary>Gorm's chain swung round; <paramref name="Hit"/> tells whether it hit anyone.</summary>
+/// <summary>Gorm's chain starts its sweep - the end of his wind-up (issue #298, for the sound of the chain).</summary>
+public sealed record GormSwingStarted(int GormId) : GameEvent;
+
+/// <summary>Gorm's chain swung round; <paramref name="Hit"/> tells whether it hit anyone. Comes at the end of the sweep.</summary>
 public sealed record GormSwung(int GormId, bool Hit) : GameEvent;
 
 /// <summary>Gorm threw his hook from <paramref name="From"/> along <paramref name="Direction"/>.</summary>

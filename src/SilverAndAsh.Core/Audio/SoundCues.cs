@@ -118,7 +118,7 @@ public enum SoundKind
     /// <summary>Gorm's hammer strikes the floor, the shock wave starts (issue #298).</summary>
     GormSlam,
 
-    /// <summary>Gorm's chain sweeps round (issue #298).</summary>
+    /// <summary>Gorm's chain sweeps round (issue #298) - from the start of the sweep, not when it is over.</summary>
     GormChain,
 
     /// <summary>Gorm throws his hook (issue #298).</summary>
@@ -323,7 +323,7 @@ public static class SoundBoard
         GormWindUp { Attack: GormAttack.Swing } => SoundKind.GormSwingWindUp,
         GormWindUp => SoundKind.GormThrowWindUp,
         GormSlammed => SoundKind.GormSlam,
-        GormSwung => SoundKind.GormChain,
+        GormSwingStarted => SoundKind.GormChain,
         GormThrew => SoundKind.GormThrow,
         HookHit => SoundKind.GormHookHit,
         GormHit { Critical: true } => SoundKind.GormHeadHurt,

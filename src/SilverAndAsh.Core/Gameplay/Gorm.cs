@@ -509,6 +509,7 @@ public sealed class Gorm : ITarget
                 _swingAngle = -SwingHalfArc;
                 _sweptPlayers.Clear();
                 Begin(GormState.Swinging, Quicker(_gorm.SwingTime));
+                events.Add(new GormSwingStarted(Id));
                 break;
 
             default:

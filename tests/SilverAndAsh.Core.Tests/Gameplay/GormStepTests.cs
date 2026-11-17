@@ -142,10 +142,48 @@ public class GormStepTests
             var stepped = world.Events.Any(e => e is GormStepped);
             steps += stepped ? 1 : 0;
             warnings += world.Events.Count(e => e is GormWindUp);
-            Assert.False(stepped && world.Events.Any(e => e is GormWindUp or GormSlammed or GormSwung or GormThrew));
+            Assert.False(stepped && world.Events.Any(e => e is GormWindUp or GormSlammed or GormSwingStarted or GormSwung or GormThrew));
         }
 
         Assert.True(steps > 0 && warnings > 0, $"{steps} steps, {warnings} warnings - the test would prove nothing");
+    }
+
+    [Fact]
+    public void After_standing_his_first_step_comes_after_a_whole_step_length()
+    {
+        // Gorm alone in a corridor (cells of 2 m), driven directly: a player far off to walk to, one right in front of
+        // him to stop for. He walks part of a step length, stops - and then needs a whole step length for his next step.
+        var level = LevelParser.Parse("P" + new string('.', 39));
+        var far = new List<Player> { new(LevelParser.Parse("P" + new string('.', 39)), balance: NoAttacks) };
+        var gorm = new Gorm(9, level.CellCenter(30, 0), -Vector3.UnitX, NoAttacks, new Random(1));
+        var near = new List<Player> { new(LevelParser.Parse(new string('.', 28) + "P" + new string('.', 11)), balance: NoAttacks) };
+
+        (float Walked, int Steps) Act(List<Player> players, int ticks)
+        {
+            var walked = 0f;
+            var steps = 0;
+            for (var tick = 0; tick < ticks && steps == 0; tick++)
+            {
+                var before = gorm.Position;
+                var events = new List<GameEvent>();
+                gorm.Act(level, players, players.Select(player => player.Body).ToList(), events);
+                walked += FlatDistance(before, gorm.Position);
+                steps += events.OfType<GormStepped>().Count();
+            }
+
+            return (walked, steps);
+        }
+
+        var part = Act(far, (int)(0.6f * Gorm.StepLength / (Balance.Default.Gorm.Speed * SimulationClock.SecondsPerTick)));
+        Assert.Equal(0, part.Steps);
+        Assert.InRange(part.Walked, 0.5f * Gorm.StepLength, 0.7f * Gorm.StepLength);
+
+        var standing = Act(near, Second);
+        Assert.Equal((0f, 0), standing);
+
+        var again = Act(far, 4 * Second);
+        Assert.Equal(1, again.Steps);
+        Assert.InRange(again.Walked, Gorm.StepLength - 0.001f, Gorm.StepLength + (Balance.Default.Gorm.Speed * SimulationClock.SecondsPerTick));
     }
 
     [Fact]
