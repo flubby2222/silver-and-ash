@@ -6,15 +6,16 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The textures of the walls, floors and ceilings of one layer (assets/textures/, issue #233), on the graphics card.
-/// Like the models, every file is first compared with the checked-in checksum list; a missing or broken file costs a
-/// warning in the log, and that kind of surface is drawn plain as before.
+/// The textures of the walls, floors and ceilings of one layer (assets/textures/, issue #233), on the graphics card -
+/// each kind of surface in up to three variants (issue #244). Like the models, every file is first compared with the
+/// checked-in checksum list; a missing or broken file costs a warning in the log. A missing variant B or C falls back
+/// to A for just the surfaces that chose it; a missing A means that kind of surface is drawn plain as before.
 /// </summary>
 internal sealed class LevelTextures : IDisposable
 {
-    private readonly Dictionary<SurfaceKind, Texture2D> _textures;
+    private readonly Dictionary<(SurfaceKind Kind, TextureVariant Variant), Texture2D> _textures;
 
-    private LevelTextures(LevelTextureSet set, Dictionary<SurfaceKind, Texture2D> textures)
+    private LevelTextures(LevelTextureSet set, Dictionary<(SurfaceKind Kind, TextureVariant Variant), Texture2D> textures)
     {
         Set = set;
         _textures = textures;
@@ -30,7 +31,7 @@ internal sealed class LevelTextures : IDisposable
     public static LevelTextures Load(string directory, LevelTextureSet set, FileLog? log)
     {
         ArgumentNullException.ThrowIfNull(set);
-        var textures = new Dictionary<SurfaceKind, Texture2D>();
+        var textures = new Dictionary<(SurfaceKind Kind, TextureVariant Variant), Texture2D>();
         ModelChecksums? list = null;
         try
         {
@@ -45,10 +46,13 @@ internal sealed class LevelTextures : IDisposable
         {
             foreach (var kind in Enum.GetValues<SurfaceKind>())
             {
-                var texture = TryLoad(Path.Combine(directory, set.FileFor(kind)), list, log);
-                if (texture is { } loaded)
+                foreach (var variant in Enum.GetValues<TextureVariant>())
                 {
-                    textures[kind] = loaded;
+                    var texture = TryLoad(Path.Combine(directory, set.FileFor(kind, variant)), list, variant, log);
+                    if (texture is { } loaded)
+                    {
+                        textures[(kind, variant)] = loaded;
+                    }
                 }
             }
         }
@@ -56,8 +60,16 @@ internal sealed class LevelTextures : IDisposable
         return new LevelTextures(set, textures);
     }
 
-    /// <summary>The texture for surfaces of kind <paramref name="kind"/>, or null: draw them plain.</summary>
-    public Texture2D? For(SurfaceKind kind) => _textures.TryGetValue(kind, out var texture) ? texture : null;
+    /// <summary>
+    /// The variant that surfaces of kind <paramref name="kind"/> which chose <paramref name="variant"/> are really drawn
+    /// with: the variant itself if it was loaded, else A.
+    /// </summary>
+    public TextureVariant Resolve(SurfaceKind kind, TextureVariant variant) =>
+        _textures.ContainsKey((kind, variant)) ? variant : TextureVariant.A;
+
+    /// <summary>The texture of <paramref name="variant"/> for surfaces of kind <paramref name="kind"/> (or of A in its place), or null: draw them plain.</summary>
+    public Texture2D? For(SurfaceKind kind, TextureVariant variant) =>
+        _textures.TryGetValue((kind, Resolve(kind, variant)), out var texture) ? texture : null;
 
     public void Dispose()
     {
@@ -69,20 +81,22 @@ internal sealed class LevelTextures : IDisposable
         _textures.Clear();
     }
 
-    private static Texture2D? TryLoad(string path, ModelChecksums list, FileLog? log)
+    private static Texture2D? TryLoad(string path, ModelChecksums list, TextureVariant variant, FileLog? log)
     {
+        var fallback = variant == TextureVariant.A ? "this surface is drawn plain" : "its surfaces show variant A instead";
+
         // Byte for byte the file in the repository - a broken picture never reaches raylib.
         var mismatch = list.Check(path);
         if (mismatch is not null)
         {
-            log?.Warning($"Level texture '{path}': {mismatch} - this surface is drawn plain.");
+            log?.Warning($"Level texture '{path}': {mismatch} - {fallback}.");
             return null;
         }
 
         var texture = Raylib.LoadTexture(path);
         if (!Raylib.IsTextureValid(texture))
         {
-            log?.Warning($"Level texture '{path}' could not be loaded - this surface is drawn plain.");
+            log?.Warning($"Level texture '{path}' could not be loaded - {fallback}.");
             return null;
         }
 

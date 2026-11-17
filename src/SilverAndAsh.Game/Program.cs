@@ -334,11 +334,13 @@ static void RunGame(
 
         // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
         // The stones of walls, floors and ceilings (assets/textures/, issue #233). Only level 0, the catacombs, exists yet.
-        // Missing or broken: a warning in the log and plain surfaces as before.
+        // Missing or broken: a warning in the log and plain surfaces as before. Each room shows its own variant of the
+        // three (issue #244); a missing variant falls back to the first.
         using var levelTextures = LevelTextures.Load(
             Path.Combine(AppContext.BaseDirectory, "assets", "textures"), LevelTextureSet.For(LevelLayer.Catacombs), log);
-        using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, levelShader.Shader, levelTextures);
+        using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, gameWorld.Surfaces, levelShader.Shader, levelTextures);
         var renderedLevel = gameWorld.LevelAsBuilt;
+        var renderedSurfaces = gameWorld.Surfaces;
 
         // Events must be read after EVERY tick - the next tick clears them.
         void ReadEvents()
@@ -396,10 +398,11 @@ static void RunGame(
             picture.BeginDrawing();
             Raylib.ClearBackground(look.BackgroundColor);
             Raylib.BeginMode3D(camera);
-            if (!ReferenceEquals(renderedLevel, gameWorld.LevelAsBuilt))
+            if (!ReferenceEquals(renderedLevel, gameWorld.LevelAsBuilt) || !ReferenceEquals(renderedSurfaces, gameWorld.Surfaces))
             {
-                levelRenderer.Rebuild(gameWorld.LevelAsBuilt);
+                levelRenderer.Rebuild(gameWorld.LevelAsBuilt, gameWorld.Surfaces);
                 renderedLevel = gameWorld.LevelAsBuilt;
+                renderedSurfaces = gameWorld.Surfaces;
             }
 
             levelRenderer.Draw();

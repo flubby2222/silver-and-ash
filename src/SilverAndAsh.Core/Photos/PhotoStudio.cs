@@ -4,6 +4,7 @@ using System.Text;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Photos;
@@ -175,7 +176,10 @@ public sealed class PhotoStudio
     // player inside them.
     private GameWorld World(GeneratedLevel generated, (int X, int Z) cell)
     {
-        var world = new GameWorld(generated.Level, generated.Seed, Balance, generated.Doors, generated.Rooms, generated.Chests);
+        var world = new GameWorld(generated.Level, generated.Seed, Balance, generated.Doors, generated.Rooms, generated.Chests)
+        {
+            Surfaces = SurfaceVariants.For(generated),
+        };
         world.Player.PlaceAt(generated.Level.CellCenter(cell.X, cell.Z));
         return world;
     }

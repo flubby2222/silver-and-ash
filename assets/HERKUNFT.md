@@ -11,6 +11,7 @@ Alles unter `assets/` ist per Skript erzeugt, nichts heruntergeladen (`CLAUDE.md
 | `models/bat.glb`, `models/bat.png` | `tools/models/bat.py` (mit `tools/models/psx.py`) | 2026-11-17 |
 | `models/gorm.glb`, `models/gorm_body.png`, `models/gorm_body_phase2.png`, `models/gorm_limbs.png` | `tools/models/gorm.py` (mit `tools/models/gorm_base.py`, `tools/models/gorm_heads.py` und `tools/models/psx.py`) | 2026-11-17 |
 | `textures/catacomb_wall.png`, `textures/catacomb_floor.png`, `textures/catacomb_ceiling.png` | `tools/textures/catacomb.py` (mit `tools/models/psx.py`) | 2026-11-16 |
+| `textures/catacomb_wall_b.png`, `textures/catacomb_wall_c.png`, `textures/catacomb_floor_b.png`, `textures/catacomb_floor_c.png`, `textures/catacomb_ceiling_b.png`, `textures/catacomb_ceiling_c.png` | `tools/textures/catacomb_variants.py` (mit `tools/textures/catacomb.py` und `tools/models/psx.py`) | 2026-11-17 |
 
 ## Neu erzeugen
 
@@ -29,6 +30,7 @@ Level-Texturen ebenso; das Skript schreibt nach `assets/textures/`:
 
 ```
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/textures/catacomb.py
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/textures/catacomb_variants.py
 ```
 
 **Danach immer die Prüfsummen-Listen `models/models.sha256` und `textures/textures.sha256` neu schreiben** (normales Python 3, ein Aufruf für beide). Ohne passenden Eintrag lädt das Spiel die Datei nicht und zeichnet den Platzhalter bzw. die Fläche einfarbig; ein Test wird rot:
@@ -48,3 +50,5 @@ Am 2026-11-17 geprüft: Pistole und Klinge mit ihren Händen (`pistol*.glb`, `bl
 Am 2026-11-17 geprüft: Die Fledermaus (`bat.glb`, `bat.png`) kommt aus `tools/models/bat.py` byte-gleich zur eingecheckten Fassung heraus (SHA-256 vor und nach dem Lauf verglichen).
 
 Am 2026-11-17 geprüft: Gorm (`gorm.glb`, `gorm_body.png`, `gorm_body_phase2.png`, `gorm_limbs.png`) kommt aus `tools/models/gorm.py` byte-gleich zur eingecheckten Fassung heraus (SHA-256 vor und nach dem Lauf verglichen).
+
+Am 2026-11-17 geprüft: Die sechs Varianten (`catacomb_*_b.png`, `catacomb_*_c.png`) kommen aus `tools/textures/catacomb_variants.py` byte-gleich zur Übergabe des Designers heraus (Commit `a54272f`, SHA-256 vor und nach dem Lauf verglichen).
