@@ -8,10 +8,10 @@ public class MusicTests
 {
     private const float Frame = 1f / 60f;
 
-    private static readonly MusicWish Title = SoundBoard.MusicFor(onTitle: true, paused: false, runOver: false);
-    private static readonly MusicWish Run = SoundBoard.MusicFor(onTitle: false, paused: false, runOver: false);
-    private static readonly MusicWish Paused = SoundBoard.MusicFor(onTitle: false, paused: true, runOver: false);
-    private static readonly MusicWish End = SoundBoard.MusicFor(onTitle: false, paused: false, runOver: true);
+    private static readonly MusicWish Title = SoundBoard.MusicFor(new MusicSituation(OnTitle: true, Paused: false, RunOver: false));
+    private static readonly MusicWish Run = SoundBoard.MusicFor(new MusicSituation(OnTitle: false, Paused: false, RunOver: false));
+    private static readonly MusicWish Paused = SoundBoard.MusicFor(new MusicSituation(OnTitle: false, Paused: true, RunOver: false));
+    private static readonly MusicWish End = SoundBoard.MusicFor(new MusicSituation(OnTitle: false, Paused: false, RunOver: true));
 
     [Fact]
     public void The_title_screen_plays_the_title_theme()
@@ -44,8 +44,8 @@ public class MusicTests
     public void Back_on_the_title_screen_the_title_theme_plays_again()
     {
         // The title wins over a menu or an end screen that was open when the player went back.
-        Assert.Equal(Title, SoundBoard.MusicFor(onTitle: true, paused: true, runOver: false));
-        Assert.Equal(Title, SoundBoard.MusicFor(onTitle: true, paused: false, runOver: true));
+        Assert.Equal(Title, SoundBoard.MusicFor(new MusicSituation(OnTitle: true, Paused: true, RunOver: false)));
+        Assert.Equal(Title, SoundBoard.MusicFor(new MusicSituation(OnTitle: true, Paused: false, RunOver: true)));
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public class MusicTests
     {
         var folder = RepositoryFiles.Find("assets/audio");
         var list = ModelChecksums.Parse(File.ReadAllText(Path.Combine(folder, SoundBoard.ChecksumFileName)));
-        foreach (var track in new[] { MusicTrack.Title, MusicTrack.Catacombs })
+        foreach (var track in SoundBoard.MusicTracks)
         {
             var path = Path.Combine(folder, SoundBoard.MusicFile(track)!);
             Assert.True(File.Exists(path), path);

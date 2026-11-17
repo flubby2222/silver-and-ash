@@ -13,6 +13,12 @@ public enum MusicTrack
     Catacombs,
 }
 
+/// <summary>
+/// Where the game stands, as far as the music cares (issue #271): on the title screen, in the Esc menu that holds the
+/// world, on the end screen of a run - otherwise in a run.
+/// </summary>
+public readonly record struct MusicSituation(bool OnTitle, bool Paused, bool RunOver);
+
 /// <summary>Which music the screen asks for: this track, and whether it holds where it is (the Esc menu).</summary>
 public readonly record struct MusicWish(MusicTrack Track, bool Paused);
 

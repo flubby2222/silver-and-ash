@@ -76,3 +76,5 @@ Am 2026-11-17 geprüft: Gorm (`gorm.glb`, `gorm_body.png`, `gorm_body_phase2.png
 Am 2026-11-17 geprüft: Die sechs Varianten (`catacomb_*_b.png`, `catacomb_*_c.png`) kommen aus `tools/textures/catacomb_variants.py` byte-gleich zur Übergabe des Designers heraus (Commit `a54272f`, SHA-256 vor und nach dem Lauf verglichen).
 
 Am 2026-11-17 übernommen (Issue #267): Die zehn Klangdateien und die Skripte unter `tools/audio/` kommen aus der Übergabe des Audiodesigners (Commit `5c9bf66`), byte-gleich. Laut Übergabe ergeben zwei Läufe von `erzeugen.py` byte-gleiche Dateien (dort mit SHA-256 geprüft); in diesem Schritt nicht erneut erzeugt.
+
+Am 2026-11-17 übernommen (Issue #271): `musik-hauptmenue.ogg` und `musik-katakomben.ogg` sowie `musik_erzeugen.py`, `musik_klang.py`, `musik_pruefen.py` und die angepasste `pruefen.py` kommen aus der Übergabe des Audiodesigners (Commit `fb2aee3`), byte-gleich. Ein erneuter Lauf von `musik_erzeugen.py` ergab byte-gleiche Dateien (SHA-256 verglichen).

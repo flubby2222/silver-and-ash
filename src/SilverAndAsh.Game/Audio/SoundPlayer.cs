@@ -87,7 +87,7 @@ internal sealed class SoundPlayer : IDisposable
 
             log?.Info($"Sounds loaded ({sounds.Count} of {SoundBoard.SoundFiles.Length}): {string.Join(", ", sounds.Keys.Order(StringComparer.Ordinal))}.");
 
-            foreach (var track in new[] { MusicTrack.Title, MusicTrack.Catacombs })
+            foreach (var track in SoundBoard.MusicTracks)
             {
                 var name = SoundBoard.MusicFile(track)!;
                 if (Checked(directory, name, list, log) is { } path)

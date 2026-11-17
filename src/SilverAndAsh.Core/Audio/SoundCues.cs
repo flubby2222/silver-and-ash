@@ -93,18 +93,25 @@ public static class SoundBoard
         _ => throw new ArgumentOutOfRangeException(nameof(track), track, "No volume for this track."),
     };
 
+    /// <summary>Every piece of music the game loads (every <see cref="MusicTrack"/> but <see cref="MusicTrack.None"/>).</summary>
+    public static ImmutableArray<MusicTrack> MusicTracks => [.. Enum.GetValues<MusicTrack>().Where(track => track != MusicTrack.None)];
+
     /// <summary>Every file of assets/audio/: the short sounds, the music and the old ambience (no longer played).</summary>
-    public static ImmutableArray<string> AllFiles => [.. SoundFiles, TitleMusic, CatacombsMusic, Ambience];
+    public static ImmutableArray<string> AllFiles => [.. SoundFiles, .. MusicTracks.Select(track => MusicFile(track)!), Ambience];
 
     /// <summary>
-    /// Which music the screen asks for (issue #271): the title theme on the title screen; the catacomb music while a
-    /// run is played, held where it is while the Esc menu holds the world; none on the end screen - the run is over,
-    /// the silence marks it, and the title theme belongs to the title.
+    /// Which music <paramref name="situation"/> asks for (issue #271): the title theme on the title screen; the catacomb
+    /// music while a run is played, held where it is while the Esc menu holds the world; none on the end screen - the
+    /// run is over, the silence marks it, and the title theme belongs to the title.
+    /// <para>
+    /// More pieces for parts of a run (a boss fight, the merchant) come in as a value of <see cref="MusicTrack"/>, a field
+    /// of <see cref="MusicSituation"/> and one line here before the catacombs.
+    /// </para>
     /// </summary>
-    public static MusicWish MusicFor(bool onTitle, bool paused, bool runOver) =>
-        onTitle ? new MusicWish(MusicTrack.Title, false)
-        : runOver ? new MusicWish(MusicTrack.None, false)
-        : new MusicWish(MusicTrack.Catacombs, paused);
+    public static MusicWish MusicFor(MusicSituation situation) =>
+        situation.OnTitle ? new MusicWish(MusicTrack.Title, false)
+        : situation.RunOver ? new MusicWish(MusicTrack.None, false)
+        : new MusicWish(MusicTrack.Catacombs, situation.Paused);
 
     /// <summary>
     /// Which sound <paramref name="gameEvent"/> asks for, or null for none: a pistol shot, a hit with the silver blade
