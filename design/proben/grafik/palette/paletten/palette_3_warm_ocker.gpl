@@ -1,0 +1,68 @@
+GIMP Palette
+Name: Silver and Ash Warm mit Braun und Ocker
+Columns: 8
+#
+ 16  11  20 Stein kalt 0
+ 44  29  42 Stein kalt 1
+ 69  52  57 Stein kalt 2
+ 90  81  78 Stein kalt 3
+117 107 101 Stein kalt 4
+143 134 125 Stein kalt 5
+166 161 151 Stein kalt 6
+189 186 178 Stein kalt 7
+ 28  18  28 Stein warm 0
+ 52  35  44 Stein warm 1
+ 76  51  52 Stein warm 2
+101  81  67 Stein warm 3
+138 112  85 Stein warm 4
+170 146 108 Stein warm 5
+193 177 139 Stein warm 6
+215 206 173 Stein warm 7
+ 27  14  16 Holz 0
+ 53  27  26 Holz 1
+ 81  48  37 Holz 2
+110  76  46 Holz 3
+139  99  55 Holz 4
+168 124  63 Holz 5
+192 151  77 Holz 6
+204 173 102 Holz 7
+ 28  24  30 Eisen 0
+ 45  39  54 Eisen 1
+ 60  57  82 Eisen 2
+ 75  80 111 Eisen 3
+ 92 112 140 Eisen 4
+127 146 163 Eisen 5
+165 177 184 Eisen 6
+200 206 208 Eisen 7
+ 40  18  11 Messing/Gold 0
+ 76  39  21 Messing/Gold 1
+113  65  29 Messing/Gold 2
+151  96  37 Messing/Gold 3
+189 133  43 Messing/Gold 4
+214 170  64 Messing/Gold 5
+229 199 109 Messing/Gold 6
+241 224 157 Messing/Gold 7
+ 23  18  33 Stoff 0
+ 29  25  46 Stoff 1
+ 33  32  60 Stoff 2
+ 39  44  73 Stoff 3
+ 64  71 109 Stoff 4
+ 91 101 144 Stoff 5
+128 137 168 Stoff 6
+167 173 190 Stoff 7
+ 28  22  20 Haut/Knochen 0
+ 58  48  40 Haut/Knochen 1
+ 91  84  66 Haut/Knochen 2
+122 122  92 Haut/Knochen 3
+155 151 108 Haut/Knochen 4
+179 171 132 Haut/Knochen 5
+202 191 158 Haut/Knochen 6
+221 210 187 Haut/Knochen 7
+ 27   9  12 Blutrot 0
+ 64  17  23 Blutrot 1
+105  20  29 Blutrot 2
+150  20  30 Blutrot 3
+175  25  35 Blutrot 4
+200  30  40 Blutrot 5
+228  63  45 Blutrot 6
+236 119  81 Blutrot 7
