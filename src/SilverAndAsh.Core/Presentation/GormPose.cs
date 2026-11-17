@@ -110,21 +110,26 @@ public static class GormPose
         [ClubForearm] = new(24f), [ChainForearm] = new(24f),
     };
 
-    /// <summary>Winding up the swing: the chain arm raised, whirling the chain just above his head and below the ceiling.</summary>
+    /// <summary>
+    /// Winding up the swing: the chain arm raised high above his head, whirling the chain there - below the ceiling of
+    /// his boss room (<see cref="World.RoomTemplate.RoomCeilingHeight"/>, 6 m; he is 3.2 m tall).
+    /// </summary>
     public static IReadOnlyDictionary<string, GormJoint> SwingWindUp { get; } = new Dictionary<string, GormJoint>
     {
-        [ChainUpperArm] = new(110f, 35f), [ChainForearm] = new(20f), [Head] = new(8f), [Jaw] = new(-20f),
+        [ChainUpperArm] = new(160f, 25f), [ChainForearm] = new(20f), [Head] = new(8f), [Jaw] = new(-20f),
         [Torso] = new(6f), [ClubForearm] = new(14f),
     };
 
     /// <summary>
     /// The swing: the chain arm out to the side, low enough that the fist holds the chain at the height it hits
     /// (the designer had 85 degrees - his fist would then hang above the band the chain hits in). Turned after the chain.
+    /// The club forearm is bent a little more than the designer's 14 degrees: with the arm back and the torso forward,
+    /// the club would otherwise dip into the floor.
     /// </summary>
     public static IReadOnlyDictionary<string, GormJoint> Swing { get; } = new Dictionary<string, GormJoint>
     {
         [ChainUpperArm] = new(15f, 52f), [ChainForearm] = new(0f), [Torso] = new(-6f), [Jaw] = new(-25f),
-        [ClubUpperArm] = new(-10f, -15f), [ClubForearm] = new(14f),
+        [ClubUpperArm] = new(-10f, -15f), [ClubForearm] = new(20f),
     };
 
     /// <summary>Winding up the throw: the chain arm drawn back, the hook hanging ready (it glows).</summary>
@@ -149,10 +154,13 @@ public static class GormPose
         [ClubForearm] = new(20f), [ChainForearm] = new(20f),
     };
 
-    /// <summary>The club raised high in front of him, angled up - below the ceiling (3.5 m; he is 3.2 m tall) - the top of the hammer's wind-up.</summary>
+    /// <summary>
+    /// The club raised high above his head - below the ceiling of his boss room (<see cref="World.RoomTemplate.RoomCeilingHeight"/>,
+    /// 6 m) - the top of the hammer's wind-up.
+    /// </summary>
     public static IReadOnlyDictionary<string, GormJoint> HammerUp { get; } = new Dictionary<string, GormJoint>
     {
-        [ClubUpperArm] = new(60f, 10f), [ClubForearm] = new(10f), [Torso] = new(8f), [Jaw] = new(-15f),
+        [ClubUpperArm] = new(150f, 10f), [ClubForearm] = new(30f), [Torso] = new(8f), [Jaw] = new(-15f),
         [ChainForearm] = new(10f),
     };
 
@@ -354,6 +362,31 @@ public static class GormChain
 
     /// <summary>Where the hook's eye is (the chain's end) when its far end lies at <paramref name="tip"/>.</summary>
     public static Vector3 HookEye(Vector3 tip, Vector3 along) => tip - (Vector3.Normalize(along) * HookLength);
+
+    /// <summary>How much chain hangs between his fist and the hook while he winds up the throw (metres).</summary>
+    public const float ReadyChain = 0.5f;
+
+    /// <summary>How high above the floor the hook's tip stays while it hangs ready (metres), as the hook at rest.</summary>
+    public const float ReadyClearance = 0.03f;
+
+    /// <summary>
+    /// The hook hanging ready below his fist while he winds up the throw (it glows): <see cref="ReadyChain"/> of chain,
+    /// then the hook, straight down - or, while his fist is still too low for that (he only draws his arm back), reaching
+    /// forward along <paramref name="facing"/> to just above the floor at <paramref name="floor"/>, never into it.
+    /// Lays the links into <paramref name="links"/> and gives the frame of the hook.
+    /// </summary>
+    public static Matrix4x4 Ready(Vector3 fist, float floor, Vector3 facing, ICollection<Matrix4x4> links)
+    {
+        var length = ReadyChain + HookLength;
+        var drop = MathF.Max(0f, fist.Y - (floor + ReadyClearance));
+        var tip = drop >= length
+            ? fist - (Vector3.UnitY * length)
+            : (fist with { Y = floor + ReadyClearance }) +
+                (Vector3.Normalize(facing with { Y = 0f }) * MathF.Sqrt((length * length) - (drop * drop)));
+        var along = Vector3.Normalize(tip - fist);
+        Lay(fist, HookEye(tip, along), links);
+        return HookAt(tip, along, facing);
+    }
 
     /// <summary>
     /// The far end of the sweeping chain: as far from his upright axis as the swing reaches, at the middle of the

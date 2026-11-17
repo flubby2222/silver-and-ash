@@ -29,9 +29,6 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
     // At rest the chain hangs from his fist to the floor and lies there this far (metres), out and forward.
     private const float DragLength = 1.1f;
 
-    // While he winds up the throw the hook hangs this far below his fist, ready (metres of chain).
-    private const float ReadyChain = 0.5f;
-
     private static readonly Color FlashColor = new(255, 250, 235, 255);
     private static readonly Color CriticalFlashColor = new(230, 40, 50, 255);
     private static readonly Color Warning = new(200, 30, 30, 255);
@@ -182,11 +179,8 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
         }
         else if (hookGlows)
         {
-            // Ready to throw: the hook hangs short below his fist and glows.
-            var down = -Vector3.UnitY;
-            var tip = fist + (down * (ReadyChain + GormChain.HookLength));
-            GormChain.Lay(fist, GormChain.HookEye(tip, down), _links);
-            hook = GormChain.HookAt(tip, down, gorm.Facing);
+            // Ready to throw: the hook hangs short below his fist and glows (forward over the floor while the fist is low).
+            hook = GormChain.Ready(fist, gorm.Position.Y, gorm.Facing, _links);
         }
         else
         {
