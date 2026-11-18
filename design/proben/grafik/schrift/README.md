@@ -1,12 +1,16 @@
 # Eigene Pixelschrift für HUD und Menüs (Issue #355)
 
 Drei Richtungen für eine Schrift, die nicht Cinzel ist. Alles per Skript erzeugt: Jedes Zeichen ist ein Bitmuster aus `.` und `#`
-in [glyphen.py](glyphen.py), keine Schriftdatei geladen, nichts nachgezeichnet, kein Systemschrift-Text. **Noch keine Wahl in die
-Art-Bible eingetragen**, nichts unter `assets/`.
+in [glyphen.py](glyphen.py), keine Schriftdatei geladen, nichts nachgezeichnet, kein Systemschrift-Text. Nichts unter `assets/`.
 
 **Blatt:** [blatt-schrift.png](blatt-schrift.png) (alle drei untereinander, 1744 × 2652). Je Variante auch einzeln:
 [A](schrift-a-kapitell.png), [B](schrift-b-textura.png), [C](schrift-c-schmal.png) sowie der reine HUD-Ausschnitt
 `hud-<variante>-854.png` (854 × 480, 1×).
+
+## Entscheidung
+
+Der Mensch hat am 2026-11-18 **A Kapitell** gewählt („Schrift a ists“); B und C sind nicht gewählt. Eingetragen in der [Art-Bible](../../../../docs/design/art-bible.md).
+**Offen für den Einbau:** eine größere Zahlengröße für Stufe und Munition fehlt noch.
 
 ## Was das Blatt zeigt (je Variante gleich, nur die Schrift ändert sich)
 
