@@ -125,6 +125,8 @@
     "repathTime": 0.5,                  // s between path searches
     "silverMin": 100,                   // silver he leaves behind ...
     "silverMax": 150,
+    "equipmentVampiricChance": 0.2,     // he always leaves a piece of equipment: Vampiric in 20 % of cases, else Royal ...
+    "extraSilver": 100,                 // ... or this much silver if the loot pool has nothing of that tier or above
     "stairsRiseTime": 3,                // s the spiral staircase takes to rise after his death
     "nearRange": 8,                     // m: this close he uses hammer or chain swing (50/50) ...
     "farRange": 30,                     // ... up to this far he throws his chain. Never the same attack twice in a row
@@ -223,15 +225,16 @@
   // Chests (decision record 0006). About every fourth combat room gets one; it rises from the floor once the room is cleared.
   // Per tier: its share among combat-room chests (near the start / farthest away, rising in between), in a treasure room,
   // in a locked treasure room and in a secret room (the shares of all tiers count in proportion), how often it is locked, the silver
-  // inside (min to max) and the chance of a blood vial.
+  // inside (min to max), the chance of a blood vial and the chance of a piece of equipment from the loot pool (at least of the
+  // chest's tier; if the pool has nothing of that tier or above: the chest's silver once more).
   "chests": {
     "combatRoomChance": 0.25,
     "treasureChestsMin": 1,             // a treasure room holds 1 to 2 chests
     "treasureChestsMax": 2,
-    "beggar":  { "combatShareNear": 0.7,  "combatShareFar": 0.55, "treasureShare": 0.2, "lockedTreasureShare": 0.15, "secretShare": 0, "lockedChance": 0.1,  "silverMin": 10, "silverMax": 20,  "bloodVialChance": 0.1 },
-    "guard":   { "combatShareNear": 0.27, "combatShareFar": 0.37, "treasureShare": 0.45, "lockedTreasureShare": 0.3, "secretShare": 0.35, "lockedChance": 0.35, "silverMin": 20, "silverMax": 35,  "bloodVialChance": 0.25 },
-    "king":    { "combatShareNear": 0.03, "combatShareFar": 0.08, "treasureShare": 0.3, "lockedTreasureShare": 0.45, "secretShare": 0.5, "lockedChance": 0.7,  "silverMin": 40, "silverMax": 60,  "bloodVialChance": 0.5 },
-    "vampire": { "combatShareNear": 0,    "combatShareFar": 0,    "treasureShare": 0.05, "lockedTreasureShare": 0.1, "secretShare": 0.15, "lockedChance": 1,    "silverMin": 80, "silverMax": 120, "bloodVialChance": 1 }
+    "beggar":  { "combatShareNear": 0.7,  "combatShareFar": 0.55, "treasureShare": 0.2, "lockedTreasureShare": 0.15, "secretShare": 0, "lockedChance": 0.1,  "silverMin": 10, "silverMax": 20,  "bloodVialChance": 0.1, "equipmentChance": 0.3 },
+    "guard":   { "combatShareNear": 0.27, "combatShareFar": 0.37, "treasureShare": 0.45, "lockedTreasureShare": 0.3, "secretShare": 0.35, "lockedChance": 0.35, "silverMin": 20, "silverMax": 35,  "bloodVialChance": 0.25, "equipmentChance": 0.5 },
+    "king":    { "combatShareNear": 0.03, "combatShareFar": 0.08, "treasureShare": 0.3, "lockedTreasureShare": 0.45, "secretShare": 0.5, "lockedChance": 0.7,  "silverMin": 40, "silverMax": 60,  "bloodVialChance": 0.5, "equipmentChance": 0.8 },
+    "vampire": { "combatShareNear": 0,    "combatShareFar": 0,    "treasureShare": 0.05, "lockedTreasureShare": 0.1, "secretShare": 0.15, "lockedChance": 1,    "silverMin": 80, "silverMax": 120, "bloodVialChance": 1, "equipmentChance": 1 }
   },
 
   // Equipment as loot (decision records 0006 and 0008): every weapon and item lies once in the loot pool of a run, a draw takes it out.

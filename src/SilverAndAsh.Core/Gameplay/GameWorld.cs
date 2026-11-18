@@ -449,7 +449,7 @@ public sealed class GameWorld
     }
 
     // The contents jump out towards the opener and fall to the floor in front of the chest - still in its cell, so
-    // never into a wall: silver straight towards them, a blood vial a little to the side.
+    // never into a wall: silver straight towards them, a blood vial a little to one side, equipment to the other.
     private void OpenChest(Chest chest, Player opener)
     {
         chest.Open();
@@ -474,6 +474,39 @@ public sealed class GameWorld
             _pickups.Add(vial);
             _events.Add(new PickupDropped(vial.Id, vial.Kind, place));
         }
+
+        // Equipment from the loot pool (decision record 0008), at least of the chest's tier. Both the chance and the
+        // draw come from the pool's own generator, so silver, keys and fights roll as before.
+        if (LootPool.Roll(Balance.Chests.Of(chest.Tier).EquipmentChance))
+        {
+            var side = Vector3.Transform(towards, Matrix4x4.CreateRotationY(-MathF.PI / 5f));
+            DropEquipment(LootPool.Draw(chest.Tier.LootTier()), chest.Plan.Silver, chest.Position + (side * Out) + lid);
+        }
+    }
+
+    /// <summary>
+    /// Lays <paramref name="piece"/> at <paramref name="place"/> - or, if the loot pool had nothing left
+    /// (<paramref name="piece"/> is null), <paramref name="extraSilver"/> instead (decision record 0006).
+    /// </summary>
+    private void DropEquipment(Equipment? piece, int extraSilver, Vector3 place)
+    {
+        if (piece is null)
+        {
+            if (extraSilver > 0)
+            {
+                var pile = new Loot(_nextLootId++, LootKind.Silver, extraSilver, place);
+                _loot.Add(pile);
+                _events.Add(new SilverDropped(pile.Id, extraSilver, place));
+            }
+
+            return;
+        }
+
+        EquipmentDrop drop = piece.Weapon is { } weapon
+            ? new WeaponDrop(_nextEquipmentDropId++, weapon, place)
+            : new ItemDrop(_nextEquipmentDropId++, piece.Item!.Value, place);
+        _equipmentDrops.Add(drop);
+        _events.Add(new EquipmentDropped(drop.Id, piece, place));
     }
 
     // A cleared combat room lets its chest rise from the floor.
@@ -711,7 +744,10 @@ public sealed class GameWorld
         }
     }
 
-    /// <summary>Once Gorm is dead: a big silver pile and a blood vial where he fell (decision record 0007).</summary>
+    /// <summary>
+    /// Once Gorm is dead: a big silver pile, a blood vial and a piece of equipment (Royal or Vampiric, decision record
+    /// 0008) where he fell (decision record 0007).
+    /// </summary>
     private void DropGormsLoot()
     {
         if (_gorm is not { IsDead: true } || _gormLootDropped)
@@ -732,7 +768,16 @@ public sealed class GameWorld
         var vial = new Pickup(_nextPickupId++, ConsumableKind.BloodVial, vialPlace);
         _pickups.Add(vial);
         _events.Add(new PickupDropped(vial.Id, vial.Kind, vialPlace));
+
+        // Behind him and closer than his own radius: his body kept that spot clear of walls, so the piece never lies in
+        // one. The tier and the draw come from the loot pool's own generator; the tier is already rolled, so no bonus.
+        var tier = LootPool.Roll(Balance.Gorm.EquipmentVampiricChance) ? ItemTier.Vampiric : ItemTier.Royal;
+        var equipmentPlace = _gorm.Position - (_gorm.Facing * GormEquipmentDistance);
+        DropEquipment(LootPool.Draw(tier, mayRise: false), Balance.Gorm.ExtraSilver, equipmentPlace);
     }
+
+    /// <summary>How far behind Gorm his equipment lies (metres) - less than his body's radius, so never in a wall.</summary>
+    public const float GormEquipmentDistance = BodySizes.Gorm.Radius * 0.7f;
 
     /// <summary>
     /// With <paramref name="chance"/>, drops a pile worth between <paramref name="min"/> and <paramref name="max"/>

@@ -45,13 +45,20 @@ public sealed class LootPool
     public bool Contains(Equipment equipment) => _left.Contains(equipment);
 
     /// <summary>
-    /// Draws one piece of at least <paramref name="leastTier"/> and takes it out of the pool - or returns null if
-    /// nothing from that tier up is left (the caller gives extra silver then).
+    /// True with <paramref name="chance"/> (0 = never, 1 = always), rolled with the pool's own generator - e.g. whether a
+    /// chest holds equipment at all. Kept here so that loot decisions never use the world's other generators.
     /// </summary>
-    public Equipment? Draw(ItemTier leastTier)
+    public bool Roll(float chance) => _random.NextDouble() < chance;
+
+    /// <summary>
+    /// Draws one piece of at least <paramref name="leastTier"/> and takes it out of the pool - or returns null if
+    /// nothing from that tier up is left (the caller gives extra silver then). Without <paramref name="mayRise"/> the
+    /// draw never tries the higher tier (the boss, whose tier is already rolled, decision record 0008).
+    /// </summary>
+    public Equipment? Draw(ItemTier leastTier, bool mayRise = true)
     {
         // Both rolls come first and always, so how full the pool is never changes how many numbers a draw uses.
-        var higher = _random.NextDouble() < _values.HigherTierChance && leastTier < ItemTier.Vampiric;
+        var higher = _random.NextDouble() < _values.HigherTierChance && mayRise && leastTier < ItemTier.Vampiric;
         var wantItem = _random.NextDouble() < _values.ItemShare;
 
         // The higher tier is a bonus: only that one tier is tried, then the search starts again at the least tier.
