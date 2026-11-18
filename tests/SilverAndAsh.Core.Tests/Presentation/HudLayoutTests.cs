@@ -842,40 +842,52 @@ public class HudLayoutTests
 
         var picture = Arrange(readout, canvas: HudCanvas.For(pictureWidth));
 
+        // Issue #389: at the start the veil is exactly the dark ground inside the silver rim - not on the rim, not beyond.
         var veil = Assert.Single(picture.ReloadVeils);
-        var frame = Layout.Bounds(picture.Parts.Single(part => part.Name == "frame_weapon_1_active"));
-        Assert.Equal(frame.X + HudLayout.VeilInset, veil.X);
-        Assert.Equal(HudLayout.VeilWidth, veil.Width);
-        Assert.Equal(HudLayout.VeilHeight, veil.Height);
-        Assert.True(veil.Right <= frame.Right - HudLayout.VeilInset + 1, $"veil ends at {veil.Right}, frame at {frame.Right}");
-        Assert.True(veil.Bottom <= frame.Bottom, $"veil ends at {veil.Bottom}, frame at {frame.Bottom}");
-        Assert.True(veil.Y > frame.Y, $"veil starts at {veil.Y}, frame at {frame.Y}");
+        var ground = Layout.BodyOf(picture.Parts.Single(part => part.Name == "frame_weapon_1_active")).Inset(HudLayout.Rim);
+        Assert.Equal(ground, veil);
+    }
+
+    [Theory]
+    [InlineData(0.1f)]
+    [InlineData(0.5f)]
+    [InlineData(0.9f)]
+    public void The_reload_veil_stays_inside_the_frame_ground_at_every_share(float progress)
+    {
+        var ground = new HudRect(731, 447, 32, 24);
+
+        var veil = HudLayout.ReloadVeil(ground, progress)!.Value;
+
+        Assert.True(veil.X >= ground.X && veil.Right <= ground.Right, $"veil {veil.X}..{veil.Right}, ground {ground.X}..{ground.Right}");
+        Assert.Equal(ground.Y, veil.Y);
+        Assert.Equal(ground.Height, veil.Height);
     }
 
     [Fact]
-    public void The_reload_veil_shrinks_from_the_right_as_the_reload_comes_on()
+    public void The_reload_veil_front_travels_from_left_to_right_as_the_reload_comes_on()
     {
-        var start = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 0f);
-        var half = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 0.5f);
-        var nearlyDone = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 0.9f);
-        var done = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 1f);
+        var ground = new HudRect(731, 447, 32, 24);
+        var start = HudLayout.ReloadVeil(ground, 0f)!.Value;
+        var half = HudLayout.ReloadVeil(ground, 0.5f)!.Value;
+        var nearlyDone = HudLayout.ReloadVeil(ground, 0.9f)!.Value;
 
-        Assert.Equal(HudLayout.VeilWidth, start!.Value.Width);
-        Assert.Equal(HudLayout.VeilWidth / 2, half!.Value.Width);
-        Assert.Equal(start.Value.X, half.Value.X);
-        Assert.True(nearlyDone!.Value.Width < half.Value.Width);
-        Assert.Null(done);
-        Assert.Equal(HudLayout.BottomBaseline - HudLayout.BottomBodyHeight + HudLayout.VeilInset, start.Value.Y);
+        // The left edge (the light front) moves right; the right end stays at the rim.
+        Assert.Equal(ground.X, start.X);
+        Assert.True(start.X < half.X && half.X < nearlyDone.X, $"front at {start.X}, {half.X}, {nearlyDone.X}");
+        Assert.All([start, half, nearlyDone], veil => Assert.Equal(ground.Right, veil.Right));
+        Assert.Equal(ground.Width / 2, half.Width);
+        Assert.Null(HudLayout.ReloadVeil(ground, 1f));
     }
 
     [Fact]
     public void The_reload_veil_width_is_rounded_not_cut_off()
     {
         // 32 * 0.8 = 25.6: rounded 26, cut off 25. The example must tell the two apart.
-        var exact = HudLayout.VeilWidth * 0.8f;
+        var ground = new HudRect(731, 447, 32, 24);
+        var exact = ground.Width * 0.8f;
         Assert.NotEqual((int)exact, (int)MathF.Round(exact));
 
-        var veil = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 0.2f);
+        var veil = HudLayout.ReloadVeil(ground, 0.2f);
 
         Assert.Equal((int)MathF.Round(exact), veil!.Value.Width);
     }

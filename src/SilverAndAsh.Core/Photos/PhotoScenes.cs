@@ -202,7 +202,7 @@ public static class PhotoScenes
             }),
         new("hud-reload-start", "The pistol just started reloading (R) with one round gone: the veil covers its picture (issue #370).",
             studio => ReloadingPistol(studio, 0.1f)),
-        new("hud-reload-mid", "The pistol half way through its reload: the veil has shrunk to half (issue #370).",
+        new("hud-reload-mid", "The pistol half way through its reload: the veil has shrunk to the right half of the frame (issues #370, #389).",
             studio => ReloadingPistol(studio, 0.5f)),
         new("hud-hit", "A ghoul's blow has just landed: the picture darkened for a moment, the ghoul still visible (issue #370).",
             studio => new PhotoSetup(studio.Arena('G', 4))

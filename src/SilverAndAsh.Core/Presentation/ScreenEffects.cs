@@ -31,6 +31,15 @@ public sealed class ScreenEffects
     /// <summary>How long the gold shine of a new skill point lasts, in seconds.</summary>
     public const float SkillPointSeconds = 0.8f;
 
+    /// <summary>
+    /// The gold shine at its start (0 to 1, issue #389): half of a full edge, so it stays below the dark red edge at
+    /// low life even at its weakest. Provisional, until the next playtest.
+    /// </summary>
+    public const float SkillPointStrength = 0.5f;
+
+    /// <summary>How far the gold shine reaches into the picture, as a share of its height: half the band of the red edge.</summary>
+    public const float SkillPointBand = 0.06f;
+
     /// <summary>How far the edge effects reach into the picture, as a share of its height.</summary>
     public const float EdgeBand = 0.12f;
 
@@ -107,14 +116,26 @@ public sealed class ScreenEffects
     /// to the edge, the more pixels, set in the pattern of the dithering - hard pixels, no soft glow. Nothing lies further
     /// in than <see cref="EdgeBand"/> of the height, so the middle of the picture stays clear.
     /// </summary>
-    public static bool IsEdgePixelOn(int x, int y, int width, int height, float strength)
+    public static bool IsEdgePixelOn(int x, int y, int width, int height, float strength) =>
+        IsBandPixelOn(x, y, width, height, strength, EdgeBandPixels(height));
+
+    /// <summary>
+    /// True if the pixel at <paramref name="x"/>, <paramref name="y"/> belongs to the gold shine of a new skill point
+    /// at <paramref name="shine"/> (<see cref="SkillPoint"/>, 1 at its start): the same pattern as
+    /// <see cref="IsEdgePixelOn"/>, but at <see cref="SkillPointStrength"/> and in the narrower
+    /// <see cref="SkillPointBand"/> (issue #389: the full edge was too much).
+    /// </summary>
+    public static bool IsSkillPointPixelOn(int x, int y, int width, int height, float shine) =>
+        IsBandPixelOn(x, y, width, height, Math.Min(shine, 1f) * SkillPointStrength,
+            Math.Max(1, (int)MathF.Round(height * SkillPointBand)));
+
+    private static bool IsBandPixelOn(int x, int y, int width, int height, float strength, int band)
     {
         if (strength <= 0f || width <= 0 || height <= 0)
         {
             return false;
         }
 
-        var band = EdgeBandPixels(height);
         var distance = Math.Min(Math.Min(x, width - 1 - x), Math.Min(y, height - 1 - y));
         if (distance >= band)
         {
