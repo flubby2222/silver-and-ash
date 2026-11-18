@@ -33,10 +33,20 @@ namespace SilverAndAsh.Core;
 /// <c>--showroom</c>: walk through the showroom instead of playing - every door, chest, enemy and loot side by side
 /// in every wall variant (issue #283, docs/musterraum.md). Only in the debug version.
 /// </param>
+/// <param name="Window">
+/// <c>--window &lt;width&gt;x&lt;height&gt;</c>: open the window in this size instead of 1280 x 720 - for photos and tries
+/// in other window shapes, e.g. 21:9 (issue #350). Only in the debug version. Null: the standard size.
+/// </param>
 public sealed partial record LaunchOptions(
     string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null, string? Photo = null, string? PhotoFolder = null,
-    int? Look = null, string? Bench = null, string? Clip = null, bool Showroom = false)
+    int? Look = null, string? Bench = null, string? Clip = null, bool Showroom = false, WindowSize? Window = null)
 {
+    /// <summary>Smallest window <c>--window</c> accepts, in pixels per side.</summary>
+    public const int SmallestWindowSide = 200;
+
+    /// <summary>Largest window <c>--window</c> accepts, in pixels per side (8K).</summary>
+    public const int LargestWindowSide = 7680;
+
     /// <summary><c>--photo compare</c> takes the comparison scenes in every picture variant, plus one 2 x 2 sheet per scene.</summary>
     public const string ComparePhotos = "compare";
 
@@ -74,6 +84,7 @@ public sealed partial record LaunchOptions(
         string? bench = null;
         string? clip = null;
         var showroom = false;
+        WindowSize? window = null;
         var levelOrSeed = false;
 
         for (var i = 0; i < args.Count; i++)
@@ -202,9 +213,14 @@ public sealed partial record LaunchOptions(
                     showroom = true;
                     break;
 
+                case "--window":
+                    window = ParseWindowSize(i + 1 < args.Count ? args[i + 1] : null);
+                    i++;
+                    break;
+
                 default:
                     throw new ArgumentException(
-                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom.");
+                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom, --window <width>x<height>.");
             }
         }
 
@@ -234,8 +250,28 @@ public sealed partial record LaunchOptions(
             throw new ArgumentException($"'--photo {ComparePhotos}' takes every picture variant; leave out '--look'.");
         }
 
-        return new LaunchOptions(levelName, seed, give, photo, photoFolder, look, bench, clip, showroom);
+        return new LaunchOptions(levelName, seed, give, photo, photoFolder, look, bench, clip, showroom, window);
     }
+
+    private static WindowSize ParseWindowSize(string? text)
+    {
+        var error = new ArgumentException(
+            $"'--window' needs a size like '2520x1080', each side from {SmallestWindowSide} to {LargestWindowSide} pixels.");
+        var match = text is null ? null : WindowSizeText().Match(text);
+        if (match is not { Success: true }
+            || !int.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var width)
+            || !int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var height)
+            || width is < SmallestWindowSide or > LargestWindowSide
+            || height is < SmallestWindowSide or > LargestWindowSide)
+        {
+            throw error;
+        }
+
+        return new WindowSize(width, height);
+    }
+
+    [GeneratedRegex(@"^([0-9]{1,5})x([0-9]{1,5})\z")]
+    private static partial Regex WindowSizeText();
 
     /// <summary>The level file for these options inside <paramref name="levelDirectory"/>.</summary>
     public string LevelPath(string levelDirectory) => Path.Combine(levelDirectory, LevelName + ".txt");
@@ -251,3 +287,6 @@ public sealed partial record LaunchOptions(
         "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
     ];
 }
+
+/// <summary>A window size in pixels, chosen with <c>--window</c> (issue #350).</summary>
+public readonly record struct WindowSize(int Width, int Height);

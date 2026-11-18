@@ -55,6 +55,7 @@ using (log)
     Func<GameWorld, GameWorld>? nextWorld = null;
     int? seed = null;
     int? look = null;
+    WindowSize? window = null;
     PhotoRequest? photos = null;
     try
     {
@@ -99,6 +100,9 @@ using (log)
             nextWorld = world => showroom.NewWorld(world.Balance);
             log?.Info($"Showroom: {showroom.Placed.Count} pieces in {showroom.Sections.Count} sections.");
         }
+
+        // Test option: --window 2520x1080 opens the window in another shape, e.g. for photos in 21:9 (issue #350).
+        window = options.Window;
 
         // Test option: --look 3 draws the world in one of the picture variants of issue #234 (decision record 0010).
         look = options.Look;
@@ -195,6 +199,11 @@ using (log)
         {
             throw new ArgumentException("'--look' works only in the debug version (dotnet run).");
         }
+
+        if (options.Window is not null)
+        {
+            throw new ArgumentException("'--window' works only in the debug version (dotnet run).");
+        }
 #endif
     }
     catch (Exception exception) when (exception is ArgumentException or LevelFormatException or IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -212,7 +221,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look));
+            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look), window);
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -228,12 +237,12 @@ using (log)
 // look: how the 3D world is drawn - the standard variant 2 (issue #237) unless --look chose another (debug version, issue #234).
 static void RunGame(
     Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
-    PhotoRequest? photos, LookVariant look)
+    PhotoRequest? photos, LookVariant look, WindowSize? window)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted. The bench (--bench) draws as
     // fast as it can: no VSync, and no frame rate limit is set anywhere.
     Raylib.SetConfigFlags(photos is { Bench: true } ? ConfigFlags.ResizableWindow : ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
-    Raylib.InitWindow(WindowWidth, WindowHeight, "Silver & Ash");
+    Raylib.InitWindow(window?.Width ?? WindowWidth, window?.Height ?? WindowHeight, "Silver & Ash");
     BringWindowOnScreen(log);
 
     // Esc must not close the game - it opens the Esc menu.
@@ -354,7 +363,7 @@ static void RunGame(
         var seconds = 0f;
 
         var accumulator = new TickAccumulator();
-        using var picture = new LowResolutionTarget(look.RenderWidth, look.RenderHeight);
+        using var picture = new LowResolutionTarget(look.RenderHeight);
 
         // Lantern light and fog: a small program for the graphics card (assets/shaders/), for everything in the 3D world.
         using var levelShader = new LevelShader(Path.Combine(AppContext.BaseDirectory, "assets", "shaders"));
@@ -466,6 +475,9 @@ static void RunGame(
             lastCamera = camera;
 
             levelShader.SetCameraPosition(eye);
+
+            // The picture follows the window: 480 lines, as wide as the window's shape (issue #350).
+            picture.FitToWindow(look.RenderHeight);
             picture.BeginDrawing();
             Raylib.ClearBackground(look.BackgroundColor);
             Raylib.BeginMode3D(camera);
@@ -478,7 +490,7 @@ static void RunGame(
 
             levelRenderer.Draw();
             levelShader.BeginFigures();
-            var viewCone = new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)look.RenderWidth / look.RenderHeight);
+            var viewCone = new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)picture.Width / picture.Height);
             doorView.Draw(gameWorld.Doors, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             chestView.Draw(gameWorld.Chests, seconds);
             stairsView.Draw(gameWorld.Stairs, seconds, viewCone, gameWorld.Surfaces, levelTextures);
@@ -614,7 +626,7 @@ static void RunGame(
                 {
                     look = variant;
                     levelShader.Apply(look);
-                    picture.Resize(look.RenderWidth, look.RenderHeight);
+                    picture.FitToWindow(look.RenderHeight);
                 }
 
                 var suffix = photos.Compare ? $"-look{look.Number}" : string.Empty;
@@ -759,6 +771,22 @@ static void RunGame(
         while (!Raylib.WindowShouldClose() && !quit)
         {
             seconds += Raylib.GetFrameTime();
+
+            // Alt + Enter: window or borderless full screen (issue #350). A captured mouse is captured again in the new
+            // window, so the view does not jump.
+            if (FullScreenToggle.Update())
+            {
+                if (input.IsMouseCaptured)
+                {
+                    input.CaptureMouse();
+                }
+
+                var monitor = Raylib.GetCurrentMonitor();
+                log?.Info(
+                    $"{(Raylib.IsWindowState(ConfigFlags.BorderlessWindowMode) ? "Full screen" : "Window")}: "
+                    + $"{Raylib.GetScreenWidth()} x {Raylib.GetScreenHeight()}, monitor "
+                    + $"{Raylib.GetMonitorWidth(monitor)} x {Raylib.GetMonitorHeight(monitor)}.");
+            }
 
             // N mutes the game and turns it on again - anywhere, also on the title screen. Pure presentation, not tick input.
             if (Raylib.IsKeyPressed(KeyboardKey.N))
