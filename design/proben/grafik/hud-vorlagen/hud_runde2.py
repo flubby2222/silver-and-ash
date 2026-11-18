@@ -302,4 +302,5 @@ def main2():
     save_png(os.path.join(OUT2, "blatt-runde2.png"), sheet(nat))
 
 
-main2()
+if __name__ == "__main__":
+    main2()
