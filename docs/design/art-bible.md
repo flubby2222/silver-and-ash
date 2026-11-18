@@ -203,3 +203,33 @@ Die Proben liegen in `design/proben/effekte/fackel/` (Runde 1) und `design/probe
 | 8 | 2026-11-17 | Hauptpalette, Runde 1 und 2 | Runde 1 färbte auch Spielfigur und Waffen um (nicht gewollt); Runde 2 mischte warme und kalte Töne in die Flächen, und mit der Kachelwiederholung entstand ein Regenbogenmuster | Ein Vergleichsblatt ändert nur die eine Sache, die beurteilt wird; alles andere bleibt wie in `main`. Eine Fläche bleibt in einer Rampe, kräftige Reihen sind Akzente (siehe Farben) |
 | 9 | 2026-11-18 | Fackel, Runde 1, Variante B | Die Flamme aus groben Quadraten war auf den Bildern klein und unförmig | Eine Flamme ist eine kleine gemalte Textur mit wenigen Bildern, kein Haufen Teilchen. Teilchen nur für einzelne Funken, Staub und Ähnliches |
 | 10 | 2026-11-18 | Fackel, Runde 1, Variante C | Das Licht fiel in harten Stufenringen ab; die Kreise an der Wand wirkten künstlich | Licht fällt weich ab und ist nicht in Stufen geteilt. Die Pixel-Härte entsteht durch die Körnung, nicht durch Ringe |
+| 11 | 2026-11-18 | HUD, Runde 3 | Urteil des Menschen: Layout A gefällt, aber Steintextur nein, Farbe Silber, „so viel vom Spiel sichtbar wie möglich“; Runde 3 A verdeckte 23,2 % des Bildes | HUD-Metall ist Silber aus der Hauptpalette (Reihe IRON): harte Helligkeitsstufen, Körnung, 1 px helle Kante oben und dunkle unten, kein Chrom-Glanz, kein weiches Leuchten. Keine Steintextur im HUD. Das HUD verdeckt so wenig Bild wie möglich; der verdeckte Anteil wird aus dem Bild gemessen und auf dem Blatt genannt. Leben und Ausdauer ohne Zahl im HUD; die Zahlen stehen auf der Tab-Seite (Issue #347, Urteil des Menschen: „Die Zahlen nehmen wir doch raus und ins Tab Menü auf“; ersetzt die Zwischenregel „Zahlen drin“). Zahlen, die man zum Spielen braucht (Munition, Silber, Stufe, Schlüssel), bleiben |
+| 12 | 2026-11-18 | HUD, Schrift | Die Vorlagen nutzen Cinzel (Windows-Schrift) | Cinzel kommt nicht ins Spiel; der Mensch will eine eigene Pixelschrift (Issue #355). Für die Vorlagen reicht Cinzel |
+
+## HUD (entschieden, Issue #341)
+
+**Gewählt: A3, Silberfassungen auf einer Linie, mit reicher Verzierung (V3); vom Menschen am 18.11.2026 in der überarbeiteten Fassung von Runde 6 abgenommen.** Vorlage: `design/proben/grafik/hud-vorlagen/hud_runde4.py` (`main6`, Endbild `runde6/r6-V3-final-854.png`, 854 × 480; Blatt `runde6/blatt-runde6.png`). Das Layout stammt aus Runde 3 A.
+
+**Maße (854 × 480):**
+
+- Alle unteren Fassungen enden auf **einer gemeinsamen Grundlinie, y = 477**; jede ist 30 px hoch, der Silberrahmen 3 px, innen dunkler Grund.
+- Links zwei Gegenstände (je 30 px breit, Abstand 4, ab x = 12), Mitte eine Fassung x 247 bis 607 mit Leben (Balken) und fünf Ausdauer-Segmenten, beide ohne Zahl, rechts vier Waffen (je 38 px, Abstand 3, ab x = 690).
+- Oben: Stufe, Erfahrung und zwei Fähigkeiten links; Boss mit Namen und dünnem Balken in der Mitte; Silber und Schlüssel rechts. Aufnahme-Meldung (einzige Goldfläche) über der linken Gruppe.
+- **Verdeckt: 9,3 % des Bildes** mit Verzierung (gemessen: Unterschied zum Foto ohne HUD); A3 ohne Verzierung waren 9,0 %, Runde 3 A 23,2 %.
+
+**Silber (Palettenstufen):** Reihe Eisen `IRON3` bis `IRON7` plus ein helles Silber (226, 228, 230), jeweils zu 80 % zu Grau entsättigt, damit es nicht bläulich wirkt. Fünf feste Stufen je nach Flächenneigung: Lichtkante oben und links hell, Schattenkante unten und rechts dunkel, dazu Punktkörnung. Kein Verlauf, kein Chrom-Glanz, kein weiches Leuchten. Rot nur für Leben, Gold nur für die Aufnahme-Meldung.
+
+**Regeln:**
+
+- **Silber statt Stein.** Die Steintextur im HUD ist abgelehnt (Urteil des Menschen).
+- **So wenig Spielbild verdecken wie möglich**; Richtwert **unter 10 %**, gemessen am fertigen Bild.
+- Layout von Runde 3 A; **Leben und Ausdauer ohne Zahl im HUD, Zahlen auf der Tab-Seite** (#347); Munition, Silber, Stufe und Schlüssel behalten ihre Zahl.
+- **Alle Fassungen auf einer Grundlinie**; jede Anzeige hat ihren eigenen dunklen Grund, damit Zeichen auf jedem Spielbild lesbar bleiben.
+
+**Abgelehnt:** A1 (geschlossene Leiste, 12,9 %): verdeckt zu viel. A2 (offener Rahmen, 6,1 %): Zeichen stehen ungeschützt auf dem Spielbild.
+
+**Offen:** Eine eigene Pixelschrift (Issue #355). Cinzel (Windows-Schrift der Vorlagen) kommt nicht ins Spiel.
+- **Verzierung (Runde 5 und 6, Urteil des Menschen: V3, dann überarbeiten):** Ein Motiv an allen Fassungen ab 24 px Breite, immer im selben Silber: Rautenniete in den vier Ecken, Spitzgiebel mit Auge oben in der Mitte, dünner Doppelrahmen innen, an Fassungen über 100 px Breite zusätzlich Fialen mittig an den Enden. Rot und Gold bleiben, wie sie sind; kein Rot als Signalfarbe in der Verzierung.
+- **Regeln aus dem Feinschliff (Runde 6):** Licht kommt überall von oben links, auch an den kleinen Teilen (Nieten, Giebel, Fialen nutzen dieselbe Lichtregel wie der Rahmen). Alle Mittelpunkte liegen auf dem Pixelraster, die Giebelbreite passt zur Fassung (gerade oder ungerade), damit die Form spiegelgleich bleibt. Verzierung ragt nie aus dem Bild; Fialen sitzen mittig auf der Fassungskante. Zeichen in kleinen Fassungen so groß, dass sie im 4-fachen Ausschnitt eindeutig lesbar sind (Waffenzeichen 10,5 statt 9,5).
+
+**Nicht gewählt:** V1 (nur Eckrauten): wirkt kaum anders als ohne Verzierung, das HUD bleibt zusammengewürfelt. V2 (Ecken und Giebel): gut, aber ohne Doppelrahmen und Fialen wirken die langen Fassungen noch kahl. Beide bleiben verworfen; wer die Verzierung später ändert, geht von V3 aus.
