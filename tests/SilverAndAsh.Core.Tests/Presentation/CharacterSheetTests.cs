@@ -48,7 +48,7 @@ public class CharacterSheetTests
             [
                 new("Level", "1"),
                 new("Health", Text($"{Default.Player.MaxHealth} / {Default.Player.MaxHealth}")),
-                new("Stamina", Text($"{world.Player.Stamina.Segments} bars")),
+                new("Stamina", Text($"{world.Player.Stamina.Segments} / {world.Player.Stamina.Segments} bars")),
                 new("Stamina regen", "100 %"),
                 new("Melee", Text($"{Default.Blade.Damage}  Silver Blade")),
                 new("Ranged", Text($"{Default.Pistol.Damage}  Pistol")),
@@ -67,6 +67,41 @@ public class CharacterSheetTests
         world.Player.TakeDamage(30, []);
 
         Assert.Equal(Text($"{Default.Player.MaxHealth - 30} / {Default.Player.MaxHealth}"), Value(world, "Health"));
+    }
+
+    [Fact]
+    public void A_jump_lowers_the_stamina_shown_and_it_fills_up_again()
+    {
+        var world = World();
+        var segments = world.Player.Stamina.Segments;
+        var full = Text($"{segments} / {segments} bars");
+        Assert.Equal(full, Value(world, "Stamina"));
+
+        world.Tick(PlayerInput.None with { Jump = true });
+
+        var after = Value(world, "Stamina");
+        Assert.NotEqual(full, after);
+        var now = float.Parse(after.Split(" / ")[0], CultureInfo.InvariantCulture);
+        Assert.InRange(now, segments - 1, segments - 0.1f);
+
+        for (var tick = 0; tick < 20 * SimulationClock.TicksPerSecond; tick++)
+        {
+            world.Tick(PlayerInput.None);
+        }
+
+        Assert.Equal(full, Value(world, "Stamina"));
+    }
+
+    [Fact]
+    public void Stamina_just_short_of_a_bar_does_not_show_a_whole_bar()
+    {
+        var world = World();
+        var stamina = world.Player.Stamina;
+
+        Assert.True(stamina.TryPayPart(stamina.Amount - stamina.CostPerSegment + 1));
+
+        Assert.False(stamina.CanPay);
+        Assert.Equal(Text($"0.9 / {stamina.Segments} bars"), Value(world, "Stamina"));
     }
 
     [Fact]

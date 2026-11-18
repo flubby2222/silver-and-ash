@@ -14,7 +14,8 @@ public readonly record struct SheetLine(string Label, string Value);
 public static class CharacterSheet
 {
     /// <summary>
-    /// The values of <paramref name="player"/> in <paramref name="world"/>: level, health, stamina, the damage of the
+    /// The values of <paramref name="player"/> in <paramref name="world"/>: level, health and stamina (now / most - the HUD
+    /// shows no numbers for them), stamina regen, the damage of the
     /// melee weapon and of the ranged weapon in hand (one body hit, uncharged), walking speed and the experience bonus.
     /// </summary>
     public static IReadOnlyList<SheetLine> Stats(GameWorld world, Player player)
@@ -31,7 +32,7 @@ public static class CharacterSheet
         [
             new("Level", Text($"{player.Level}")),
             new("Health", Text($"{player.Health} / {player.MaxHealth}")),
-            new("Stamina", Text($"{player.Stamina.Segments} bars")),
+            new("Stamina", StaminaBars(player.Stamina)),
             new("Stamina regen", Percent(player.Stamina.RegenMultiplier)),
             new("Melee", Text($"{meleeDamage}  {Weapons.Info(player.Melee).Name}")),
             new("Ranged", Text($"{perShot}  {player.Ranged.Info.Name}")),
@@ -69,6 +70,14 @@ public static class CharacterSheet
         WeaponKind.Blunderbuss => Weapon.Blunderbuss,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
+
+    // In bars, as the HUD draws it (one bar = one jump or dash): rounded down to a tenth, so "1" never shows while a
+    // jump cannot be paid yet - e.g. "2.4 / 5 bars".
+    private static string StaminaBars(Stamina stamina)
+    {
+        var bars = MathF.Floor(stamina.Amount * 10f / stamina.CostPerSegment) / 10f;
+        return Text($"{bars:0.#} / {stamina.Segments} bars");
+    }
 
     private static string Percent(float multiplier) => Text($"{multiplier * 100f:0.#} %");
 
