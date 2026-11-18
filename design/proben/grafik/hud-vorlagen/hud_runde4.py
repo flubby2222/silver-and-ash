@@ -107,6 +107,14 @@ def trough(L, x0, y0, x1, y1, frac, c0, c1, style, back=IRON0, hi=None, p=None):
     L.shape(bb, lambda px, py: f(px, py) + 0.9, silver(y0, y1, 3), stroke=1.8)
 
 
+HPV, STV = 64, 62  # wie Runde 3 A: 50 % von 128, Ausdauer in Prozent
+
+
+def nums(L, xl, xr, yc):
+    tx(L, 15, str(HPV), xl, yc + 5.5, BONE, "c")
+    tx(L, 13, str(STV), xr, yc + 4.5, BONE, "c")
+
+
 def segs(L, x0, x1, y0, y1, style, n=5, gap=3):
     sw = (x1 - x0 - (n - 1) * gap) / n
     for i in range(n):
@@ -186,8 +194,9 @@ def build(L, V):
         cy0, cy1 = BY + 4, 477
         item_cells(L, 14, cy0, cy1, 30, 4, sty, 8)
         weapon_cells(L, 692, cy0, cy1, 38, 3, sty, 9.5, 10)
-        trough(L, 190, BY + 6, 664, BY + 17, HP, RED5, RED2, sty, back=RED0, hi=RED6, p=5)
-        segs(L, 190, 664, BY + 21, BY + 26, sty, 5, 4)
+        nums(L, 206, 648, BY + 14)
+        trough(L, 224, BY + 6, 630, BY + 17, HP, RED5, RED2, sty, back=RED0, hi=RED6, p=5)
+        segs(L, 224, 630, BY + 21, BY + 26, sty, 5, 4)
         toast(L, 8, 424, 172, 440, sty)
     elif V == 2:
         BY = 446
@@ -203,16 +212,18 @@ def build(L, V):
             L.shape((x - 4, BY - 3, x + 4, 484), lambda px, py, fp=fp: fp(px, py) - 1.0, IRON0, stroke=1.0, alpha=0.8)
         item_cells(L, 14, BY + 6, 477, 32, 4, sty, 8.5)
         weapon_cells(L, 690, BY + 6, 477, 38, 3, sty, 9.5, 10)
-        trough(L, 190, BY + 8, 664, BY + 20, HP, RED5, RED2, sty, hi=RED6, p=5)
-        segs(L, 190, 664, BY + 25, BY + 30, sty, 5, 4)
+        nums(L, 206, 648, BY + 17)
+        trough(L, 224, BY + 8, 630, BY + 20, HP, RED5, RED2, sty, hi=RED6, p=5)
+        segs(L, 224, 630, BY + 25, BY + 30, sty, 5, 4)
         toast(L, 8, 420, 172, 436, sty)
     else:
         GY = 477   # gemeinsame Grundlinie: alle Fassungen enden hier
         item_cells(L, 12, GY - 30, GY, 30, 4, sty, 8)
         weapon_cells(L, 690, GY - 30, GY, 38, 3, sty, 9.5, 10)
         cell(L, 247, GY - 30, 607, GY, "socket", False, seed=10)
-        trough(L, 257, GY - 24, 597, GY - 14, HP, RED5, RED2, "recess", back=RED0, hi=RED6, p=4)
-        segs(L, 257, 597, GY - 10, GY - 5, "recess", 5, 4)
+        nums(L, 265, 589, GY - 15)
+        trough(L, 283, GY - 24, 571, GY - 14, HP, RED5, RED2, "recess", back=RED0, hi=RED6, p=4)
+        segs(L, 283, 571, GY - 10, GY - 5, "recess", 5, 4)
         toast(L, 8, 438, 172, 454, sty)
 
     # ---------------------------------------------------------------- oben: dieselben Anzeigen, Huelle je Variante
@@ -278,7 +289,7 @@ def sheet(nat, pct, p3):
     L.sx = L.sy = L.s = 1.0
     notes = [
         ["Geschlossene Leiste, 32 px hoch (Runde 3: 60 px); oben schmale Platten.",
-         "Die Fläche bleibt Silber mit Körnung, Anzeigen liegen in dunklen Nischen."],
+         "Die Fläche bleibt Silber mit Körnung, Anzeigen liegen in dunklen Nischen; Leben und Ausdauer mit Zahlen."],
         ["Nur Schiene, Pfeiler und Zellenränder aus Silber, nichts gefüllt:",
          "das Spiel scheint durch; Zeichen haben einen dunklen Schatten."],
         ["Keine Leiste und keine Pfeiler; jede Anzeige hat ihre eigene Fassung,",
