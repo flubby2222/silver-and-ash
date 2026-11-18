@@ -59,7 +59,7 @@ public class PhotoSceneTests
         string[] wanted =
         [
             "start-room", "room-combat", "room-corridor", "room-treasure", "room-secret", "room-boss",
-            "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
+            "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map", "map-skillpoint",
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "hud-rifle",
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload", "hud-texts",
             "hud-calm", "hud-items", "hud-boss", "hud-skillpoint", "hud-pickup",
@@ -367,12 +367,23 @@ public class PhotoSceneTests
     }
 
     [Fact]
-    public void Only_the_map_scene_shows_the_map_and_only_the_model_probes_are_probes()
+    public void The_map_scene_with_a_skill_point_opens_the_map_page_while_a_boon_waits()
+    {
+        var setup = Built("map-skillpoint");
+
+        setup.Run();
+
+        Assert.Equal(PlayerMenuPage.Map, setup.World.Player.Menu.Page);
+        Assert.True(setup.World.Player.PendingBoons > 0);
+    }
+
+    [Fact]
+    public void Only_the_map_scenes_show_the_map_and_only_the_model_probes_are_probes()
     {
         var studio = Studio();
         var setups = PhotoScenes.All.ToDictionary(scene => scene.Name, scene => scene.Build(studio));
 
-        Assert.Equal(["map"], setups.Where(pair => pair.Value.Input?.Invoke(0).PressMenu == MenuKey.Map).Select(pair => pair.Key));
+        Assert.Equal(["map", "map-skillpoint"], setups.Where(pair => pair.Value.Input?.Invoke(0).PressMenu == MenuKey.Map).Select(pair => pair.Key).Order());
         Assert.Equal(
             ["model-probe-10m", "model-probe-4m"],
             setups.Where(pair => pair.Value.IsModelProbe).Select(pair => pair.Key).Order());

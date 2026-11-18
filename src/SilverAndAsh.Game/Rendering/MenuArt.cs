@@ -20,9 +20,25 @@ internal static class MenuArt
     private static readonly Color PlainGold = new(224, 172, 64, 255);
     private static readonly Color PlainTrough = new(10, 8, 12, 255);
 
+    // Panels and tabs let the game shine through a little (issue #390): 70 % opaque - texts, cursors and sliders stay whole.
+    private static readonly Color PanelTint = new(255, 255, 255, 179);
+
+    // The frame of values has no ground, only this edge (issue #390).
+    private static readonly Color SheetEdge = new(163, 175, 187, 170);
+
     private static MenuParts? _parts;
     private static Texture2D _texture;
     private static MenuLayout? _layout;
+
+    // Where the frame of values starts: under the HUD's top left group once the HUD is loaded (issue #387).
+    private static int _sheetTop = MenuLayout.SheetLeft;
+
+    /// <summary>Puts the frame of values under the top left group of <paramref name="hud"/> (at the top without a HUD).</summary>
+    public static void PlaceUnder(HudView? hud)
+    {
+        _sheetTop = hud is null ? MenuLayout.SheetLeft : MenuLayout.SheetTopUnder(hud.Layout);
+        _layout = null;
+    }
 
     /// <summary>Loads the parts after the window is open (the picture becomes a texture on the graphics card).</summary>
     public static void Load(string menuDirectory, FileLog? log)
@@ -69,7 +85,7 @@ internal static class MenuArt
     }
 
     /// <summary>The layout, measuring with the font the texts are drawn in.</summary>
-    public static MenuLayout Layout => _layout ??= new MenuLayout(PixelText.MeasureScaled, PixelText.CapHeight(1));
+    public static MenuLayout Layout => _layout ??= new MenuLayout(PixelText.MeasureScaled, PixelText.CapHeight(1), _sheetTop);
 
     /// <summary>The canvas of the window as it is now.</summary>
     public static MenuCanvas Canvas => MenuCanvas.For(Raylib.GetScreenWidth(), Raylib.GetScreenHeight());
@@ -118,6 +134,23 @@ internal static class MenuArt
         End();
     }
 
+    /// <summary>
+    /// The frame of values (issue #390) on <paramref name="canvas"/>: only its edge and the texts with their shadow - no
+    /// dark ground, the game shows through.
+    /// </summary>
+    public static void DrawSheet(ValuesSheet sheet, MenuCanvas canvas)
+    {
+        ArgumentNullException.ThrowIfNull(sheet);
+        Begin(canvas);
+        Raylib.DrawRectangleLinesEx(ToRectangle(sheet.Frame), 1f, SheetEdge);
+        foreach (var text in sheet.Texts)
+        {
+            DrawText(text);
+        }
+
+        End();
+    }
+
     /// <summary>A text with its shadow one pixel below and right, in canvas pixels.</summary>
     public static void DrawText(MenuText text)
     {
@@ -159,15 +192,15 @@ internal static class MenuArt
     {
         if (_parts is not { } parts)
         {
-            Raylib.DrawRectangleRec(ToRectangle(panel.Rect), PlainPanel);
+            Raylib.DrawRectangleRec(ToRectangle(panel.Rect), PlainPanel with { A = PanelTint.A });
             Raylib.DrawRectangleLinesEx(ToRectangle(panel.Rect), 1f, PlainEdge);
             return;
         }
 
-        DrawPieces(parts.Panel(panel.Rect));
+        DrawPieces(parts.Panel(panel.Rect), PanelTint);
         if (panel.Gable)
         {
-            DrawPiece(parts.Gable(panel.Rect));
+            DrawPiece(parts.Gable(panel.Rect), PanelTint);
         }
     }
 
@@ -208,30 +241,30 @@ internal static class MenuArt
         if (_parts is not { } parts)
         {
             var outline = MenuLayout.TabOutline(tab.Index, tab.Open, tab.Left, tab.Top);
-            Raylib.DrawRectangleRec(ToRectangle(outline), PlainPanel);
+            Raylib.DrawRectangleRec(ToRectangle(outline), PlainPanel with { A = PanelTint.A });
             Raylib.DrawRectangleLinesEx(ToRectangle(outline), 1f, tab.Open ? PlainGold : PlainEdge);
             return;
         }
 
-        DrawPiece(parts.Tab(tab.Index, tab.Open, tab.Left, tab.Top));
+        DrawPiece(parts.Tab(tab.Index, tab.Open, tab.Left, tab.Top), PanelTint);
     }
 
-    private static void DrawPieces(IReadOnlyList<MenuPiece> pieces)
+    private static void DrawPieces(IReadOnlyList<MenuPiece> pieces, Color? tint = null)
     {
         foreach (var piece in pieces)
         {
-            DrawPiece(piece);
+            DrawPiece(piece, tint);
         }
     }
 
-    private static void DrawPiece(MenuPiece piece)
+    private static void DrawPiece(MenuPiece piece, Color? tint = null)
     {
         if (piece.Target.Width <= 0 || piece.Target.Height <= 0)
         {
             return;
         }
 
-        Raylib.DrawTexturePro(_texture, ToRectangle(piece.Source), ToRectangle(piece.Target), Vector2.Zero, 0f, Color.White);
+        Raylib.DrawTexturePro(_texture, ToRectangle(piece.Source), ToRectangle(piece.Target), Vector2.Zero, 0f, tint ?? Color.White);
     }
 
     private static Rectangle ToRectangle(MenuRect rect) => new(rect.X, rect.Y, rect.Width, rect.Height);

@@ -38,6 +38,9 @@ internal sealed class HudView : IDisposable
         _texture = texture;
     }
 
+    /// <summary>Where the HUD puts its parts - the menus read the top left group from it (issue #387).</summary>
+    public HudLayout Layout => _layout;
+
     /// <summary>
     /// Loads the parts after the window is open (the picture becomes a texture on the graphics card). Null - with a
     /// warning in the log - if a file is missing or broken: the game then runs without a HUD.
@@ -136,11 +139,6 @@ internal sealed class HudView : IDisposable
             Raylib.DrawRectangle(veil.Right - 1, veil.Y, 1, veil.Height, veilEdge);
         }
 
-        if (picture.LifeEdge is { } edge)
-        {
-            Raylib.DrawRectangle(edge.X, edge.Y, edge.Width, edge.Height, ColorOf(_parts.LifeEdge));
-        }
-
         var shadow = ColorOf(_parts.TextShadow);
         foreach (var text in picture.Texts)
         {
@@ -186,6 +184,7 @@ internal sealed class HudView : IDisposable
     {
         HudTextColor.Second => _parts.TextSecond,
         HudTextColor.Pickup => _parts.TextPickup,
+        HudTextColor.Hint => _parts.TextHint,
         _ => _parts.TextMain,
     });
 

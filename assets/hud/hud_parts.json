@@ -10,6 +10,8 @@
   "NAME_empty und NAME_full (life, boss, xp, stamina_N) haben dieselbe Groesse: erst _empty, darueber _full links vom Fuellstand beschnitten.",
   "frame_weapon_N_active und icon_<waffe>_active fuer die gewaehlte Waffe; Schrift, Zahlen, Nachladeschleier und Hervorhebung am Fuellstand zeichnet das Spiel.",
   "icon_skillpoint ist neu (Stern aus dem Zeichensatz der Vorlage), icon_toast_eye ist golden (nur Aufnahme-Meldung).",
+  "body (nur Fassungen): Koerper der Fassung relativ zur linken oberen Ecke des Teils (x, y, w, h), ohne Nieten, Giebel und Fialen. Die Abstandsregel des Spiels (HudLayout.Spacing) misst daran.",
+  "Issue #387: ohne Doppelrahmen innen, Erfahrungsleiste golden, keine Kante am Fuellstand der Lebensleiste.",
   "layoutX/Y von icon_coin, icon_key, frame_prompt und frame_toast gelten nur fuer die Beispielwerte der Vorlage (Silber 128, Schluessel 2, Text 'to open', Meldung 'Picked up Hunter's Eye')."
  ],
  "game": {
@@ -28,15 +30,6 @@
    "edgeAlpha": 0.9,
    "edgeWidth": 1.2,
    "note": "ueber das Waffenbild von links, Anteil = Nachladefortschritt; Rand der Fassung innen"
-  },
-  "lifeEdge": {
-   "color": [
-    225,
-    58,
-    48
-   ],
-   "width": 1,
-   "note": "Vorlage: 1 px helle Kante am Fuellstand der Lebensleiste, nicht Teil der Bilder"
   },
   "text": {
    "main": [
@@ -58,6 +51,11 @@
     214,
     170,
     64
+   ],
+   "hint": [
+    227,
+    202,
+    111
    ]
   }
  },
@@ -69,7 +67,13 @@
    "w": 36,
    "h": 38,
    "layoutX": 9,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    30,
+    30
+   ]
   },
   {
    "name": "frame_item_1",
@@ -78,7 +82,13 @@
    "w": 36,
    "h": 38,
    "layoutX": 43,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    30,
+    30
+   ]
   },
   {
    "name": "icon_flask",
@@ -105,7 +115,13 @@
    "w": 44,
    "h": 38,
    "layoutX": 687,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    38,
+    30
+   ]
   },
   {
    "name": "frame_weapon_0_active",
@@ -114,7 +130,13 @@
    "w": 44,
    "h": 38,
    "layoutX": 687,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    38,
+    30
+   ]
   },
   {
    "name": "icon_blade",
@@ -141,7 +163,13 @@
    "w": 44,
    "h": 38,
    "layoutX": 728,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    38,
+    30
+   ]
   },
   {
    "name": "frame_weapon_1_active",
@@ -150,7 +178,13 @@
    "w": 44,
    "h": 38,
    "layoutX": 728,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    38,
+    30
+   ]
   },
   {
    "name": "icon_pistol",
@@ -177,7 +211,13 @@
    "w": 44,
    "h": 38,
    "layoutX": 769,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    38,
+    30
+   ]
   },
   {
    "name": "frame_weapon_2_active",
@@ -186,7 +226,13 @@
    "w": 44,
    "h": 38,
    "layoutX": 769,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    38,
+    30
+   ]
   },
   {
    "name": "icon_rifle",
@@ -213,7 +259,13 @@
    "w": 44,
    "h": 38,
    "layoutX": 810,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    38,
+    30
+   ]
   },
   {
    "name": "frame_weapon_3_active",
@@ -222,7 +274,13 @@
    "w": 44,
    "h": 38,
    "layoutX": 810,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    38,
+    30
+   ]
   },
   {
    "name": "icon_blunder",
@@ -249,7 +307,13 @@
    "w": 366,
    "h": 38,
    "layoutX": 244,
-   "layoutY": 442
+   "layoutY": 442,
+   "body": [
+    3,
+    5,
+    360,
+    30
+   ]
   },
   {
    "name": "life_empty",
@@ -366,7 +430,13 @@
    "w": 166,
    "h": 18,
    "layoutX": 7,
-   "layoutY": 423
+   "layoutY": 423,
+   "body": [
+    1,
+    1,
+    164,
+    16
+   ]
   },
   {
    "name": "icon_toast_eye",
@@ -384,7 +454,13 @@
    "w": 32,
    "h": 36,
    "layoutX": 5,
-   "layoutY": 0
+   "layoutY": 0,
+   "body": [
+    3,
+    5,
+    26,
+    28
+   ]
   },
   {
    "name": "frame_xp",
@@ -393,7 +469,13 @@
    "w": 66,
    "h": 21,
    "layoutX": 36,
-   "layoutY": 7
+   "layoutY": 7,
+   "body": [
+    2,
+    5,
+    62,
+    14
+   ]
   },
   {
    "name": "xp_empty",
@@ -420,7 +502,13 @@
    "w": 30,
    "h": 36,
    "layoutX": 103,
-   "layoutY": 0
+   "layoutY": 0,
+   "body": [
+    3,
+    5,
+    24,
+    28
+   ]
   },
   {
    "name": "icon_flame",
@@ -438,7 +526,13 @@
    "w": 30,
    "h": 36,
    "layoutX": 131,
-   "layoutY": 0
+   "layoutY": 0,
+   "body": [
+    3,
+    5,
+    24,
+    28
+   ]
   },
   {
    "name": "icon_shield",
@@ -465,7 +559,13 @@
    "w": 132,
    "h": 36,
    "layoutX": 721,
-   "layoutY": 0
+   "layoutY": 0,
+   "body": [
+    3,
+    5,
+    126,
+    28
+   ]
   },
   {
    "name": "icon_coin",
@@ -492,7 +592,13 @@
    "w": 262,
    "h": 36,
    "layoutX": 296,
-   "layoutY": 0
+   "layoutY": 0,
+   "body": [
+    4,
+    4,
+    254,
+    29
+   ]
   },
   {
    "name": "boss_empty",
@@ -528,7 +634,13 @@
    "w": 19,
    "h": 20,
    "layoutX": 389,
-   "layoutY": 252
+   "layoutY": 252,
+   "body": [
+    1,
+    1,
+    17,
+    18
+   ]
   },
   {
    "name": "icon_club",
