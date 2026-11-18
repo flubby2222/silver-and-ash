@@ -18,7 +18,10 @@ public class MenuLayoutTests
     private static readonly PixelFont Font =
         PixelFont.Parse(File.ReadAllText(RepositoryFiles.Find("assets/fonts/kapitell.json")));
 
-    private static readonly MenuLayout Layout = MenuLayout.For(Font);
+    private static readonly HudLayout HudLayout = new(
+        HudParts.Parse(File.ReadAllText(RepositoryFiles.Find("assets/hud/hud_parts.json"))), Font);
+
+    private static readonly MenuLayout Layout = MenuLayout.For(Font, HudLayout);
 
     /// <summary>16:9 (the photo window), 16:10, 21:9, 32:9, 4:3, 5:4, a large 16:9 and one dragged upright.</summary>
     public static TheoryData<int, int> Windows => new()
@@ -505,17 +508,21 @@ public class MenuLayoutTests
     [MemberData(nameof(Windows))]
     public void The_frame_of_values_lies_under_the_experience_zone_and_off_the_hud(int windowWidth, int windowHeight)
     {
-        // The HUD stays visible behind the menu: the frame of values starts under the level, the experience bar and the
-        // waiting boons (top left), and touches no other part of the HUD either - with everything shown at its widest.
+        // The HUD stays visible behind the menu: the frame of values starts under the level, the experience bar, the
+        // waiting boon and the yellow hint to level up under them (top left), and touches no other part of the HUD
+        // either - with everything shown at its widest.
         var canvas = MenuCanvas.For(windowWidth, windowHeight);
         var hud = HudLayout.Arrange(BusyHud(), "Picked up Hunter's Eye", new HudCanvas(canvas.Width, canvas.Height));
         var frame = WidestSheet().Frame;
-        string[] zone = ["frame_level", "frame_xp", "xp_empty", "xp_full", "frame_skill_0", "frame_skill_1", "icon_skillpoint", "frame_prompt"];
+        string[] zone = ["frame_level", "frame_xp", "xp_empty", "xp_full", "frame_skill_0", "frame_skill_1", "icon_skillpoint"];
 
         var zoneParts = hud.Parts.Where(part => zone.Contains(part.Name)).ToList();
-        Assert.Contains(zoneParts, part => part.Name == "frame_prompt");
+        var hint = Assert.Single(hud.Texts, text => text.Text == HudLayout.LevelUpHint);
+        Assert.Contains(zoneParts, part => part.Name == "icon_skillpoint");
         Assert.All(zoneParts, part => Assert.True(frame.Y >= HudLayout.Bounds(part).Y + HudLayout.Bounds(part).Height,
             $"the frame of values starts above the end of {part.Name}"));
+        Assert.True(frame.Y >= HudLayout.Bounds(hint).Y + HudLayout.Bounds(hint).Height + HudLayout.Spacing,
+            $"the frame of values starts less than the spacing under '{hint.Text}'");
         Assert.All(hud.Parts, part => Assert.False(frame.Overlaps(ToMenu(HudLayout.Bounds(part))), $"the frame of values covers {part.Name}"));
         Assert.All(hud.Texts, text => Assert.False(frame.Overlaps(ToMenu(HudLayout.Bounds(text))), $"the frame of values covers '{text.Text}'"));
     }
@@ -673,9 +680,6 @@ public class MenuLayoutTests
     // True if a and b are at least gap apart (side by side or one over the other) - touching is not apart.
     private static bool Apart(MenuRect a, MenuRect b, float gap) =>
         a.Right + gap <= b.X || b.Right + gap <= a.X || a.Bottom + gap <= b.Y || b.Bottom + gap <= a.Y;
-
-    private static readonly HudLayout HudLayout = new(
-        HudParts.Parse(File.ReadAllText(RepositoryFiles.Find("assets/hud/hud_parts.json"))), Font);
 
     // The HUD with everything shown at its widest (as HudLayoutTests.Busy): waiting boons, a boss, items, the toast.
     private static HudReadout BusyHud() => new(

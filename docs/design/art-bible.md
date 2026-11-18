@@ -260,7 +260,7 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 
 **Feinschliff nach dem Spieltest (Urteile des Menschen, Issue #387):**
 
-- **Kein Innenrahmen:** Im dunklen Grund einer Fassung steht kein zweiter, grauer Rahmen.
+- **Kein Innenrahmen:** Im dunklen Grund einer Fassung steht kein zweiter, grauer Rahmen, auch nicht der helle Ring der aktiven Fassung an der Stufe. Den Ring trägt nur noch die gewählte Waffe, weil er dort die Wahl anzeigt.
 - **Keine Markierung auf dem Lebensbalken:** kein senkrechter roter Strich am Füllstand; der Balken selbst zeigt das Leben.
 - **Erfahrung golden**, der Hinweis „[X] to level up“ gelb in derselben Goldfarbe, links unter Stufe und Erfahrung.
 - **Ein Abstand für alles (6 px):** zwischen den Körpern benachbarter Fassungen (Silberrahmen ohne Nieten und Giebel) und vom Körper zum Bildrand. Die Nieten ragen 3 px über, bei 6 px berühren sich die Verzierungen gerade. Was über oder unter einer Reihe steht (Aufnahme-Meldung, Hinweis, „Consecrated“), hält 6 px zur Verzierung dieser Reihe.
@@ -289,6 +289,6 @@ Wer die Menüs später ändert, geht von C2 aus. Die Darstellung im Spiel ist Sa
 ### Karte und Ausrüstung als ein Menü (Issue #390, vorläufig)
 
 - **Reiter deckungsgleich:** „[Tab] Map“ und „[G] Equipment“ stehen auf beiden Seiten an genau derselben Stelle, über dem linken Ende der Seitentafel. Beim Blättern wechselt nur, welcher Reiter offen (gold, 8 px höher) ist.
-- **Werte-Tafel auf beiden Seiten:** „HUNTER“ und „BOONS“ links, ohne Grund, nur mit 1-px-Rahmen in gedämpftem Silber. Sie beginnt 8 px unter der Erfahrungs-Zone des HUD (Level, Leiste, wartende Boni) und deckt kein HUD-Teil zu. Überschriften 2×, Zeilen 1× wie die HUD-Texte, Namen in der zweiten Farbe, Werte in der Hauptfarbe, alle mit Schatten.
+- **Werte-Tafel auf beiden Seiten:** „HUNTER“ und „BOONS“ links, ohne Grund, nur mit 1-px-Rahmen in gedämpftem Silber. Sie beginnt im Abstand der HUD-Regel (6 px) unter der linken oberen HUD-Gruppe einschließlich des gelben Hinweises „[X] to level up“ (`MenuLayout.SheetTopUnder`, aus `HudLayout` gerechnet, seit Issue #387 keine feste Zeile mehr) und deckt kein HUD-Teil und keinen HUD-Text zu. Überschriften 2×, Zeilen 1× wie die HUD-Texte, Namen in der zweiten Farbe, Werte in der Hauptfarbe, alle mit Schatten.
 - **Die Seiten stehen rechts davon:** Karte und Ausrüstungstafel beginnen rechts der Werte-Tafel, damit nichts sie verdeckt.
 - **Tafeln zu 70 % deckend** (Tafel, Giebel, Reiter, in allen Menüs): Die Szene scheint durch, Schrift und Felder bleiben lesbar. Wird ein Menü damit unlesbar, geht die Deckkraft wieder hoch, nicht die Schrift auf schwarzen Grund.

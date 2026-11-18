@@ -30,6 +30,16 @@ internal static class MenuArt
     private static Texture2D _texture;
     private static MenuLayout? _layout;
 
+    // Where the frame of values starts: under the HUD's top left group once the HUD is loaded (issue #387).
+    private static int _sheetTop = MenuLayout.SheetLeft;
+
+    /// <summary>Puts the frame of values under the top left group of <paramref name="hud"/> (at the top without a HUD).</summary>
+    public static void PlaceUnder(HudView? hud)
+    {
+        _sheetTop = hud is null ? MenuLayout.SheetLeft : MenuLayout.SheetTopUnder(hud.Layout);
+        _layout = null;
+    }
+
     /// <summary>Loads the parts after the window is open (the picture becomes a texture on the graphics card).</summary>
     public static void Load(string menuDirectory, FileLog? log)
     {
@@ -75,7 +85,7 @@ internal static class MenuArt
     }
 
     /// <summary>The layout, measuring with the font the texts are drawn in.</summary>
-    public static MenuLayout Layout => _layout ??= new MenuLayout(PixelText.MeasureScaled, PixelText.CapHeight(1));
+    public static MenuLayout Layout => _layout ??= new MenuLayout(PixelText.MeasureScaled, PixelText.CapHeight(1), _sheetTop);
 
     /// <summary>The canvas of the window as it is now.</summary>
     public static MenuCanvas Canvas => MenuCanvas.For(Raylib.GetScreenWidth(), Raylib.GetScreenHeight());

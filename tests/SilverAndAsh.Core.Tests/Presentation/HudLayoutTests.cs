@@ -21,7 +21,8 @@ public class HudLayoutTests
     private static readonly HudCanvas Design = new(854, 480);
 
     /// <summary>16:9, 16:10, 21:9, 32:9 and the narrow 4:3 and 5:4 (taller canvas).</summary>
-    public static TheoryData<int> PictureWidths => new() { 854, 768, 1120, 1706, 640, 600 };
+    // 792: the life frame then starts so that a sixth item would end on it without spacing (VitalsBodyX mod 36 < 6).
+    public static TheoryData<int> PictureWidths => new() { 854, 768, 1120, 1706, 640, 600, 792 };
 
     /// <summary>The groups of the HUD, each by the frames that make it.</summary>
     private static readonly Dictionary<string, string[]> Groups = new()
@@ -281,6 +282,32 @@ public class HudLayoutTests
         Assert.Equal(coin.Right + HudLayout.SignGap, Assert.Single(picture.Texts, text => text.Text == "99999").X);
         Assert.Equal(key.Right + HudLayout.SignGap, picture.Texts.Single(text => text.Text == "99" && text.X > key.X).X);
         Assert.Equal(eye.Right + HudLayout.SignGap, Assert.Single(picture.Texts, text => text.Text == "Picked up Hunter's Eye").X);
+    }
+
+    [Theory]
+    [MemberData(nameof(PictureWidths))]
+    public void Signs_and_numbers_beside_each_other_each_stand_in_the_middle_of_the_ground_from_top_to_bottom(int pictureWidth)
+    {
+        // A sign row (coin and silver, key and keys, eye and toast) is spread across, so each of its pieces is centred
+        // up and down on its own - a sign 1 px lower than its number is off.
+        var picture = Arrange(Busy(), "Picked up Hunter's Eye", HudCanvas.For(pictureWidth));
+        foreach (var (frame, signs, texts) in new[]
+                 {
+                     ("frame_currency", new[] { "icon_coin", "icon_key" }, new[] { "99999", "99" }),
+                     ("frame_toast", new[] { "icon_toast_eye" }, new[] { "Picked up Hunter's Eye" }),
+                 })
+        {
+            var ground = Layout.BodyOf(Single(picture, frame)).Inset(HudLayout.Rim);
+            var pieces = signs.Select(sign => (sign, Layout.Bounds(Single(picture, sign))))
+                .Concat(picture.Texts.Where(text => texts.Contains(text.Text) && Layout.Bounds(text).Overlaps(ground))
+                    .Select(text => (text.Text, Layout.Bounds(text))))
+                .ToList();
+
+            Assert.Equal(signs.Length + texts.Length, pieces.Count);
+            Assert.All(pieces, piece => Assert.True(
+                piece.Item2.Y == HudLayout.Spread(ground.Y, ground.Height, [piece.Item2.Height])[0],
+                $"{piece.Item1} at line {piece.Item2.Y} is not in the middle of {frame} ({ground}) on {pictureWidth}"));
+        }
     }
 
     [Theory]

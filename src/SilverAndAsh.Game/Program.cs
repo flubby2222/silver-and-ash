@@ -258,6 +258,7 @@ static void RunGame(
 
         // The HUD from its parts picture (issue #369).
         hud = HudView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "hud"), fontsDirectory, log);
+        MenuArt.PlaceUnder(hud);
 
         // Balancing values from assets/balance.json - a broken file only costs warnings in the log, never the game.
         var balancePath = Path.Combine(AppContext.BaseDirectory, "assets", "balance.json");

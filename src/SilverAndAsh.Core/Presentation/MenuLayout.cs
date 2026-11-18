@@ -152,11 +152,12 @@ public sealed class MenuLayout
     public const int SheetLeft = 8;
 
     /// <summary>
-    /// Top of the frame of values: under the HUD's experience zone (level, experience bar, waiting boons), which ends at
-    /// line 36 - tested against <see cref="HudLayout"/>. The HUD keeps that zone at the top left on every canvas, so the
-    /// frame does not move with the menus' middle.
+    /// Top of the frame of values: <see cref="HudLayout.Spacing"/> under the HUD's top left group - level, experience,
+    /// waiting boons and the yellow hint to level up (<see cref="SheetTopUnder"/>, issue #387) - so the hint stays
+    /// readable with a menu open. The HUD keeps that group at the top left on every canvas, so the frame does not move
+    /// with the menus' middle.
     /// </summary>
-    public const int SheetTop = 44;
+    public int SheetTop { get; }
 
     /// <summary>Width of the frame of values - the same for every player, so the tabs never move.</summary>
     public const int SheetWidth = 184;
@@ -210,20 +211,30 @@ public sealed class MenuLayout
 
     /// <summary>
     /// A layout measuring texts with <paramref name="width"/> (text, enlargement) and capitals
-    /// <paramref name="capHeight"/> pixels high at 1x.
+    /// <paramref name="capHeight"/> pixels high at 1x, its frame of values starting on line <paramref name="sheetTop"/>
+    /// (<see cref="SheetTopUnder"/> with a HUD).
     /// </summary>
-    public MenuLayout(Func<string, int, int> width, int capHeight)
+    public MenuLayout(Func<string, int, int> width, int capHeight, int sheetTop)
     {
         _width = width ?? throw new ArgumentNullException(nameof(width));
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(capHeight);
+        ArgumentOutOfRangeException.ThrowIfNegative(sheetTop);
         _capHeight = capHeight;
+        SheetTop = sheetTop;
     }
 
-    /// <summary>A layout measuring with the pixel font <paramref name="font"/>.</summary>
-    public static MenuLayout For(PixelFont font)
+    /// <summary>A layout measuring with the pixel font <paramref name="font"/>, its frame of values under <paramref name="hud"/>.</summary>
+    public static MenuLayout For(PixelFont font, HudLayout hud)
     {
         ArgumentNullException.ThrowIfNull(font);
-        return new MenuLayout(font.Width, font.CapHeight);
+        return new MenuLayout(font.Width, font.CapHeight, SheetTopUnder(hud));
+    }
+
+    /// <summary>Where the frame of values starts under the HUD <paramref name="hud"/>: the spacing below its top left group.</summary>
+    public static int SheetTopUnder(HudLayout hud)
+    {
+        ArgumentNullException.ThrowIfNull(hud);
+        return hud.TopLeftBottom + HudLayout.Spacing;
     }
 
     /// <summary>The rectangle a text covers, with its shadow one pixel below and right.</summary>

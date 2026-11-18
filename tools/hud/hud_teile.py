@@ -31,7 +31,7 @@ ATLAS_W = 512
 # Stand der Endfassung (main6 der Vorlage)
 H.NEU, H.NUMS, H.ORN, H.GW = True, False, 3, 10.5
 
-GY = 477  # gemeinsame Grundlinie (Art-Bible)
+GY = 477  # gemeinsame Grundlinie im 854 x 480 grossen Musterbild; nur die Zeichenlage, im Spiel legt HudLayout die Teile hin
 WEAPONS = ("blade", "pistol", "rifle", "blunder")
 AMMO_HAS = (False, True, True, True)  # Klinge ohne Munition: Zeichen mittig, sonst links (Platz fuer die Zahl)
 
@@ -179,7 +179,9 @@ add([("frame_toast", _toast)])
 add([("icon_toast_eye", lambda L: H.glyph(L, "eye", 18, 432, 4.2, H.ROYAL, H.BRASS_M, detail=(40, 20, 10)))])
 
 # oben links: Stufe (aktive Fassung 26 x 28), Erfahrung (Fassung 62 x 14, Leiste 52 x 6), zwei Faehigkeiten (24 x 28)
-frame("frame_level", 8, 5, 34, 33, True, 14)
+# Stufe ohne den hellen inneren Ring der aktiven Fassung (Issue #387: keine inneren Rahmen in HUD-Fenstern); den Ring
+# behaelt nur die gewaehlte Waffe, dort zeigt er die Wahl an.
+frame("frame_level", 8, 5, 34, 33, False, 14)
 frame("frame_xp", 38, 12, 100, 26, False, 15)
 # Erfahrung golden (Issue #387, Urteil des Menschen); Gold sonst nur fuer die Aufnahme-Meldung und den Hinweis zum Aufsteigen
 add([("xp_empty", lambda L: H.trough(L, 43, 16, 95, 22, 0.0, H.BRASS_L, H.BRASS_M, "recess", back=H.IRON0, p=3)),

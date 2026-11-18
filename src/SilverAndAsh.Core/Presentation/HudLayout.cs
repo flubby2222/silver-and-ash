@@ -1,4 +1,4 @@
-﻿using System.Collections.Frozen;
+using System.Collections.Frozen;
 using System.Globalization;
 using SilverAndAsh.Core.Gameplay;
 
@@ -163,6 +163,13 @@ public sealed class HudLayout
 
     /// <summary>The name of the part for item <paramref name="kind"/>, or null if it has none yet.</summary>
     public static string? IconOf(ItemKind kind) => ItemIcons.GetValueOrDefault(kind);
+
+    /// <summary>
+    /// The line under the top left group (issue #387): level, experience and skill frames and, while a boon waits, the
+    /// yellow hint under them with its shadow. The same on every canvas - the group keeps to the top left corner. The
+    /// menus start their frame of values <see cref="Spacing"/> below it (<see cref="MenuLayout.SheetTopUnder"/>).
+    /// </summary>
+    public int TopLeftBottom => LevelHintTop() + _font.CapHeight + 1;
 
     /// <summary>The rectangle a placed part covers.</summary>
     public HudRect Bounds(HudPlacedPart part) => new(part.X, part.Y, part.Width, _parts[part.Name].Height);
@@ -396,9 +403,21 @@ public sealed class HudLayout
         var skill = picture.Frame("frame_skill_0", xp.Right + Spacing, Spacing);
         picture.CentredPart("icon_skillpoint", skill.Inset(Rim));
 
-        var ornamentBottom = new[] { "frame_level", "frame_xp", "frame_skill_0" }
-            .Max(name => picture.Parts.Where(part => part.Name == name).Max(part => part.Y + _parts[name].Height));
-        picture.Text(LevelUpHint, Spacing, ornamentBottom + Spacing, 1, HudTextColor.Hint);
+        picture.Text(LevelUpHint, Spacing, LevelHintTop(), 1, HudTextColor.Hint);
+    }
+
+    // Where the hint to level up starts: Spacing under the ornament of the level, experience and skill frames, placed as
+    // ArrangeLevel places them (bodies on line Spacing, the experience body centred on the level body).
+    private int LevelHintTop()
+    {
+        var level = _parts["frame_level"];
+        var xp = _parts["frame_xp"];
+        var skill = _parts["frame_skill_0"];
+        var xpBodyY = Spread(Spacing, level.Body.Height, [xp.Body.Height])[0];
+        var ornamentBottom = Math.Max(
+            Spacing - level.Body.Y + level.Height,
+            Math.Max(xpBodyY - xp.Body.Y + xp.Height, Spacing - skill.Body.Y + skill.Height));
+        return ornamentBottom + Spacing;
     }
 
     // Top middle, only in a boss fight: the boss's name above a thin bar of his health.

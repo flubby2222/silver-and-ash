@@ -38,6 +38,9 @@ internal sealed class HudView : IDisposable
         _texture = texture;
     }
 
+    /// <summary>Where the HUD puts its parts - the menus read the top left group from it (issue #387).</summary>
+    public HudLayout Layout => _layout;
+
     /// <summary>
     /// Loads the parts after the window is open (the picture becomes a texture on the graphics card). Null - with a
     /// warning in the log - if a file is missing or broken: the game then runs without a HUD.
