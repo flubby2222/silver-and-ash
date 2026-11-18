@@ -109,6 +109,16 @@ public sealed record ChestOpened(int ChestId, int PlayerId, ChestTier Tier) : Ga
 /// <summary>Player <paramref name="PlayerId"/> picked up pickup <paramref name="PickupId"/> of <paramref name="Kind"/>.</summary>
 public sealed record PickupTaken(int PickupId, int PlayerId, ConsumableKind Kind) : GameEvent;
 
+/// <summary>
+/// Player <paramref name="PlayerId"/> took the equipment <paramref name="DropId"/> - <paramref name="Piece"/> - with F
+/// at <paramref name="Position"/> (issue #317). The game celebrates it by <see cref="Tier"/>: a card, and more the higher it is.
+/// </summary>
+public sealed record EquipmentTaken(int DropId, int PlayerId, Equipment Piece, Vector3 Position) : GameEvent
+{
+    /// <summary>The tier of the piece taken.</summary>
+    public ItemTier Tier => Piece.Tier;
+}
+
 /// <summary>Player <paramref name="PlayerId"/> gained <paramref name="Amount"/> experience (for a kill).</summary>
 public sealed record ExperienceGained(int PlayerId, int Amount) : GameEvent;
 

@@ -27,12 +27,14 @@ Der Rundgang ist eine Schleife aus **drei Abschnitten**, einer je Wandvariante *
 - **Einmal je Wandvariante**, im Gangteil, stehen in der Nordwand alle Wandstücke: Holztür, verschlossene Tür (Schlüssel davor am Boden), Bosstor und rissige Wand. Hinter jeder steht eine kleine Kammer, so dass sie sich öffnen bzw. zerschlagen lässt (die rissige Wand mit einem voll aufgeladenen Nahkampfschlag).
   - **Warum im Gang:** Im Spiel haben alle Türzellen Ganghöhe, auch die des Bosstors (geprüft an 100 erzeugten Ebenen). So sieht man jede Tür, wie sie im Spiel steht.
   - **Warum schmal:** Der Gang ist drei Zellen breit. Wer in der Mitte geht, ist höchstens zwei Zellen von jeder Tür entfernt. Die Laterne ist das einzige Licht, also liegt keine Tür im Dunkeln.
-- **Einmal**, verteilt auf die drei Raum-Teile, mit mindestens 6 m Abstand: die vier Kisten (offen zu öffnen), die Wendeltreppe (steht, ist aber kein Ausgang), Ghul, Fledermaus und Gorm, die Waffen in ihrer Stufenfarbe, Silber, Blutphiole und Weihmunition.
+- **Einmal**, verteilt auf die drei Raum-Teile, mit mindestens 6 m Abstand: die vier Kisten (offen zu öffnen), die Wendeltreppe (steht, ist aber kein Ausgang), Ghul, Fledermaus und Gorm, die Waffen und vier Gegenstände (je einer jeder Stufe) in ihrer Stufenfarbe, Silber, Blutphiole und Weihmunition.
 - Über jedem Stück steht sein englischer Name, an jedem Teil „Wall A - corridor 3.5 m“ usw. Schilder hinter Wänden, weiter als 16 m entfernt oder nicht ganz im Bild werden nicht gezeichnet.
 
 **Gegner sind Ausstellungsstücke:** Sie bewegen sich nicht, greifen nicht an und nehmen keinen Schaden. Es gibt keine Arenen, keine Siegel, keinen Bosskampf und keinen Ebenenwechsel. Silber, Schlüssel, Phiole und Munition nimmst du wie im Spiel beim Darüberlaufen auf – dann fehlen sie bis zum nächsten Start.
 
-**Stufenfarben:** Es gibt bisher nur Waffen der Stufen *Worn* und *Forged*. *Royal* und *Vampiric* zeigt der Musterraum erst, wenn es Waffen dieser Stufen gibt.
+**Ausrüstung nimmst du mit F** (Issue #317): Waffen und Gegenstände nimmst du wie im Spiel mit F, nicht beim Darüberlaufen. Danach zeigt links eine Karte Name und Wirkung.
+
+**Stufenfarben:** Es gibt bisher nur Waffen der Stufen *Worn* und *Forged*. Alle vier Stufen zeigen die Gegenstände: Hunter's Boots (*Worn*), Silver Rosary (*Forged*), Hunter's Eye (*Royal*) und Leech (*Vampiric*). Sie sind Platzhalter: ein Würfel in der Stufenfarbe, noch ohne eigenes Modell und ohne Wirkung.
 
 ## Ein Stück ergänzen
 

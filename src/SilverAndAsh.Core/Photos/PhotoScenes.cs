@@ -1,3 +1,4 @@
+using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Presentation;
@@ -174,6 +175,21 @@ public static class PhotoScenes
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 10)) { IsModelProbe = true }),
         .. ShowroomScenes(),
+        new("equipment-rifle", "The rifle (Forged) lying in the showroom, 0.8 m away: \"[F] Take Rifle (Forged)\" in steel blue (issue #317).",
+            studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle }))),
+        .. EquipmentTierScenes(),
+        new("equipment-taken-royal", "Hunter's Eye (Royal) just taken with F: its card on the left, framed in gold (issue #317).",
+            studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is ItemPiece { Item: ItemKind.HuntersEye }))
+            {
+                Ticks = 45,
+                Input = tick => PlayerInput.None with { Interact = tick == 0 },
+            }),
+        new("equipment-taken-vampiric", "The Leech (Vampiric) just taken with F: its card and the short blood-red glow from the edges (issue #317).",
+            studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is ItemPiece { Item: ItemKind.Leech }))
+            {
+                Ticks = 15,
+                Input = tick => PlayerInput.None with { Interact = tick == 0 },
+            }),
     ];
 
     /// <summary>
@@ -203,6 +219,32 @@ public static class PhotoScenes
                     studio => new PhotoSetup(ShowroomLayout.Build().ViewOf(section.Index, part, studio.Balance)));
             }
         }
+    }
+
+    // One item of each tier lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in its colour (issue #317).
+    private static IEnumerable<PhotoScene> EquipmentTierScenes()
+    {
+        foreach (var tier in Enum.GetValues<ItemTier>())
+        {
+            var item = ShowroomPieces.All.OfType<ItemPiece>().First(piece => Items.Info(piece.Item).Tier == tier).Item;
+            yield return new(
+                $"equipment-{tier.ToString().ToLowerInvariant()}",
+                $"{Items.Info(item).Name} ({tier}) lying in the showroom, 0.8 m away: its glow and \"[F] Take ...\" in the colour of its tier (issue #317).",
+                studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is ItemPiece shown && shown.Item == item)));
+        }
+    }
+
+    // The showroom with a player 0.8 m south of the first piece that is `isPiece`, looking at it - close enough for F
+    // (issue #317).
+    private static GameWorld BeforeEquipment(PhotoStudio studio, Func<ShowroomPiece, bool> isPiece)
+    {
+        var layout = ShowroomLayout.Build();
+        var placed = layout.Placed.First(place => isPiece(place.Piece));
+        var spot = layout.Level.CellCenter(placed.X, placed.Z);
+        var world = layout.NewWorldAt(placed.X, placed.Z + 1, spot, studio.Balance);
+        world.Player.PlaceAt(spot + new Vector3(0f, 0f, 0.8f));
+        PhotoStudio.Face(world.Player, spot + new Vector3(0f, EquipmentDrop.BoxHeight / 2f, 0f));
+        return world;
     }
 
     // Closed, half open and fully open, 6 m away in a bare hall (issue #245).

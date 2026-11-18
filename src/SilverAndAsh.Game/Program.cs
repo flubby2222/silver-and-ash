@@ -281,6 +281,7 @@ static void RunGame(
         Func<IWeaponView> newWeaponView = () => new WeaponView();
         IWeaponView weaponView = newWeaponView();
         var damageFeedback = new DamageFeedback();
+        var equipmentCard = new EquipmentCard();
         var input = new RaylibInput();
 
         // Title screen first; during a run Esc opens the menu (the world stands still - alone).
@@ -332,6 +333,7 @@ static void RunGame(
             wallBreakView = new WallBreakView();
             weaponView = newWeaponView();
             damageFeedback = new DamageFeedback();
+            equipmentCard = new EquipmentCard();
         }
 
         // Choosing a level-up bonus: is the window open (X), and which boon is waiting for the next tick?
@@ -426,6 +428,7 @@ static void RunGame(
                 wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position, gameWorld.Surfaces);
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
+                equipmentCard.OnEvent(gameEvent, player.Id);
                 if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
                 {
                     boonOpen = false;
@@ -444,6 +447,7 @@ static void RunGame(
             wallBreakView.Update(frameSeconds);
             weaponView.Update(frameSeconds, player);
             damageFeedback.Update(frameSeconds);
+            equipmentCard.Update(frameSeconds);
         }
 
         // 3a. The 3D world goes into the small low-resolution picture, blended between the last two ticks by alpha.
@@ -507,7 +511,7 @@ static void RunGame(
             projectileView.Draw(gameWorld.Projectiles, alpha);
             pickupView.Draw(gameWorld.Pickups, alpha);
             pickupView.DrawLoot(gameWorld.Loot, alpha);
-            pickupView.DrawWeapons(gameWorld.WeaponDrops, alpha);
+            pickupView.DrawEquipment(gameWorld.EquipmentDrops, alpha);
 
             impactMarks.Draw();
             wallBreakView.Draw(doorView);
@@ -542,6 +546,11 @@ static void RunGame(
             DrawStaminaBar(player);
             CombatHud.Draw(player);
             BossBar.Draw(gameWorld);
+            if (!frozen)
+            {
+                equipmentCard.Draw();
+            }
+
             if (!boonOpen && !player.IsInventoryOpen && !frozen)
             {
                 InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);

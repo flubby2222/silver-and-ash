@@ -28,5 +28,6 @@ public interface IInteractable
 /// <summary>
 /// What a player is offered when looking at something usable: the <paramref name="Text"/> next to the key ("[F] Open"),
 /// and whether F does something now (<paramref name="IsPossible"/>). If not, the text says why and shows without "[F]".
+/// Equipment (issue #317) gives its <paramref name="Tier"/>: the prompt shows in that colour.
 /// </summary>
-public sealed record InteractionOffer(string Text, bool IsPossible);
+public sealed record InteractionOffer(string Text, bool IsPossible, ItemTier? Tier = null);

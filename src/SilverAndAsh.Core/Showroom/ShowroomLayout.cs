@@ -243,6 +243,7 @@ public sealed class ShowroomLayout
         var loot = new List<ExhibitLoot>();
         var consumables = new List<ExhibitConsumable>();
         var weapons = new List<ExhibitWeapon>();
+        var items = new List<ExhibitItem>();
         foreach (var place in placed)
         {
             var (x, z) = (place.X, place.Z);
@@ -255,6 +256,7 @@ public sealed class ShowroomLayout
                 EnemyPiece { Enemy: ShowroomEnemy.Bat } => BodySizes.Bat.HoverHeight + 1f,
                 EnemyPiece => BodySizes.Gorm.Height + 0.6f,
                 WeaponPiece weapon => Add(weapons, new ExhibitWeapon(weapon.Weapon, level.CellCenter(x, z))),
+                ItemPiece item => Add(items, new ExhibitItem(item.Item, level.CellCenter(x, z))),
                 LootPiece pile => Add(loot, new ExhibitLoot(pile.Loot, pile.Amount, level.CellCenter(x, z))),
                 ConsumablePiece consumable => Add(consumables, new ExhibitConsumable(consumable.Consumable, level.CellCenter(x, z))),
                 _ => throw new ArgumentException($"The showroom cannot place {place.Piece.GetType().Name}.", nameof(pieces)),
@@ -284,7 +286,7 @@ public sealed class ShowroomLayout
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
             level, doors, chests, SurfaceVariants.Of(looks, lookOfCell),
-            new ShowroomExhibits(stairs, loot, consumables, weapons), labels, sections, placed);
+            new ShowroomExhibits(stairs, loot, consumables, weapons, items), labels, sections, placed);
     }
 
     /// <summary>

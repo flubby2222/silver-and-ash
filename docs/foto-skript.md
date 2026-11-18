@@ -71,6 +71,9 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `door-level-seed1`, `door-level-seed2-boss` | die erste Holztür in Seed 1 bzw. das Bosstor in Seed 2, aus 2–3 Zellen Abstand |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |
 | `stairs-4m`, `stairs-10m` | die Wendeltreppe im Bossraum der Ebene 0 nach Gorms Tod (Issue #300): Gorm stirbt vor dem ersten Tick, die Treppe steigt wie im Spiel auf; das Bild entsteht, sobald sie steht und ihre Lampe leuchtet, aus 4 m bzw. 10 m vom Fuß, mit Blick auf ihre halbe Höhe |
+| `equipment-rifle` | das Gewehr (Forged) im Musterraum aus 0,8 m: „[F] Take Rifle (Forged)“ in Stahlblau (Issue #317) |
+| `equipment-worn`, `equipment-forged`, `equipment-royal`, `equipment-vampiric` | je einen Gegenstand dieser Stufe im Musterraum aus 0,8 m: sein Schein und „[F] Take …“ in der Farbe seiner Stufe |
+| `equipment-taken-royal`, `equipment-taken-vampiric` | Hunter's Eye (Royal) bzw. Leech (Vampiric) im Musterraum mit F genommen: die Karte links, 45 bzw. 15 Ticks danach – beim vampirischen Fund noch mit dem blutroten Schein vom Rand |
 | `showroom-a-corridor`, `showroom-a-room`, … `showroom-c-room` | je einen Teil des Musterraums (Issue #283, [musterraum.md](musterraum.md)): Wandvariante A, B oder C, der Gangteil (3,5 m) mit den Türen und der rissigen Wand bzw. der Raumteil (6 m) mit den Stücken, vom Westende des südlichen Laufwegs schräg auf die Nordwand, mit Schildern |
 
 ## Bild-Varianten vergleichen (`--look`, `--photo compare`)
