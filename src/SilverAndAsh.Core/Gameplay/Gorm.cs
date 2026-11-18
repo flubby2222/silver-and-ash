@@ -72,6 +72,13 @@ public sealed class Gorm : ITarget
     /// <summary>... and this radius (metres) touches a player.</summary>
     public const float HookRadius = 0.3f;
 
+    /// <summary>
+    /// Metres he covers between two heavy steps (<see cref="GormStepped"/>, issue #298): at his walking speed of
+    /// 2.5 m/s a step every 0.8 s - slow and heavy, slower than a player's two per second. In phase 2 he walks faster,
+    /// so his steps come more often. Presentation, not a game rule - so not in balance.json.
+    /// </summary>
+    public const float StepLength = 2f;
+
     private readonly GormBalance _gorm;
     private readonly float _gravity;
     private readonly int _repathTicks;
@@ -90,6 +97,9 @@ public sealed class Gorm : ITarget
     private float _swingAngle;
     private readonly HashSet<Player> _sweptPlayers = new(ReferenceEqualityComparer.Instance);
     private float _hookTravelled;
+
+    // Distance walked since his latest step (issue #298); standing still starts the count anew.
+    private float _strideDistance;
 
     private readonly IReadOnlySet<(int X, int Z)>? _arena;
     private readonly int _stoneTicks;
@@ -413,7 +423,21 @@ public sealed class Gorm : ITarget
         }
 
         FaceTowards(point);
+        var before = Position;
         Move(level, Facing * (IsInPhase2 ? _gorm.Speed * _gorm.Phase2SpeedUp : _gorm.Speed), obstacles);
+        CountSteps(before, events);
+    }
+
+    // Issue #298: a step for every full StepLength walked on the floor. Only counts - draws no random number and
+    // changes nothing about where he goes.
+    private void CountSteps(Vector3 before, ICollection<GameEvent> events)
+    {
+        _strideDistance += FlatDistance(before, Position);
+        while (_strideDistance >= StepLength)
+        {
+            _strideDistance -= StepLength;
+            events.Add(new GormStepped(Id));
+        }
     }
 
     // Close up hammer or chain swing (50/50), farther away the throw - never the same twice in a row.
@@ -485,6 +509,7 @@ public sealed class Gorm : ITarget
                 _swingAngle = -SwingHalfArc;
                 _sweptPlayers.Clear();
                 Begin(GormState.Swinging, Quicker(_gorm.SwingTime));
+                events.Add(new GormSwingStarted(Id));
                 break;
 
             default:
@@ -617,7 +642,11 @@ public sealed class Gorm : ITarget
         return _waypoints.Count > 0 ? _waypoints[0] : null;
     }
 
-    private void Stand(Level level, IReadOnlyList<CylinderBody> obstacles) => Move(level, Vector3.Zero, obstacles);
+    private void Stand(Level level, IReadOnlyList<CylinderBody> obstacles)
+    {
+        _strideDistance = 0f;
+        Move(level, Vector3.Zero, obstacles);
+    }
 
     private void Move(Level level, Vector3 flatVelocity, IReadOnlyList<CylinderBody> obstacles)
     {

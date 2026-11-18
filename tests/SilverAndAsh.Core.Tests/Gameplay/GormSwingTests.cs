@@ -131,6 +131,29 @@ public class GormSwingTests
     }
 
     [Fact]
+    public void The_start_of_the_sweep_is_reported_in_the_tick_his_wind_up_ends_and_once()
+    {
+        // Issue #298 (review of #310): the chain sounds as it starts to sweep, not when the sweep is over.
+        var fight = new Fight((GormX, GormZ - 3));
+        var swings = 0;
+        for (var tick = 0; tick < 40 * Second; tick++)
+        {
+            var before = fight.Gorm.State;
+            var count = fight.Events.Count;
+            fight.Tick();
+            var started = fight.Events.Skip(count).OfType<GormSwingStarted>().ToList();
+            var begins = before == GormState.WindingUp && fight.Gorm.State == GormState.Swinging;
+
+            Assert.Equal(begins ? 1 : 0, started.Count);
+            Assert.All(started, e => Assert.Equal(9, e.GormId));
+            swings += started.Count;
+        }
+
+        Assert.True(swings >= 2, $"only {swings} swings - the test would prove nothing");
+        Assert.Equal(swings, fight.Events.OfType<GormSwung>().Count() + (fight.Gorm.State == GormState.Swinging ? 1 : 0));
+    }
+
+    [Fact]
     public void Standing_in_front_the_chain_hits_once_halfway_through_the_sweep()
     {
         var fight = new Fight((GormX, GormZ - 3));

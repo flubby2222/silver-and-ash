@@ -1,0 +1,12 @@
+# p1-gorm-ankuendigung-hammer - SoundCraft-Skript (soundcraft-cli script). Erzeugt von bauen.py, nicht von Hand aendern.
+session.new {"name":"p1-gorm-ankuendigung-hammer","sample_rate":44100,"bit_depth":16}
+event.tempo {"bpm":120}
+track.new {"kind":"instrument","format":"stereo","name":"S","instrument":"sampler"}
+mix.sampler_load {"track":"S","path":"{TMP}/pfeife-vag.wav","params":{"play_mode":0,"loop_mode":0,"attack":5.0,"decay":500.0,"sustain":100.0,"release":60.0,"root_note":52}}
+mix.insert {"track":"S","slot":0,"plugin":"eq_1band","params":{"type":0,"freq":500.0,"gain":12.0,"q":1.0}}
+mix.insert {"track":"S","slot":1,"plugin":"room_reverb","params":{"mix":22,"pre_delay":8,"decay":0.8,"size":30,"damping":3500,"diffusion":75,"low_cut":150}}
+midi.new_clip {"track":"S","start":0,"end":61739}
+midi.note_add {"clip":3,"pitch":47,"start_ticks":0,"length_ticks":1728,"velocity":127}
+automation.set_point {"track":"S","param":"volume","at":0,"value":-20.0}
+automation.set_point {"track":"S","param":"volume","at":35280,"value":0.0}
+file.bounce_mix {"path":"{TMP}/p1-gorm-ankuendigung-hammer.wav","format":"wav","bit_depth":16,"start":0,"end":61739,"dither":false}

@@ -281,6 +281,7 @@ static void RunGame(
         Func<IWeaponView> newWeaponView = () => new WeaponView();
         IWeaponView weaponView = newWeaponView();
         var damageFeedback = new DamageFeedback();
+        var equipmentCard = new EquipmentCard();
         var input = new RaylibInput();
 
         // Title screen first; during a run Esc opens the menu (the world stands still - alone).
@@ -332,6 +333,7 @@ static void RunGame(
             wallBreakView = new WallBreakView();
             weaponView = newWeaponView();
             damageFeedback = new DamageFeedback();
+            equipmentCard = new EquipmentCard();
         }
 
         // Choosing a level-up bonus: is the window open (X), and which boon is waiting for the next tick?
@@ -385,11 +387,17 @@ static void RunGame(
             gormView = newGormView();
         }
 
+        // The shock wave of Gorm's hammer as breaking stone (issue #299); without its model the plain ring.
+        using var shockwaveView = ShockwaveView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // One door model per kind (issue #245); a kind without one keeps the placeholder boxes.
         using var doorView = DoorView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
         // One chest model per tier (issue #249); a tier without one keeps the placeholder boxes.
         using var chestView = ChestView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
+        // The spiral staircase of every wall variant (issue #300); without one the placeholder boxes.
+        using var stairsView = StairsView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
@@ -420,6 +428,7 @@ static void RunGame(
                 wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position, gameWorld.Surfaces);
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
+                equipmentCard.OnEvent(gameEvent, player.Id);
                 if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
                 {
                     boonOpen = false;
@@ -438,6 +447,7 @@ static void RunGame(
             wallBreakView.Update(frameSeconds);
             weaponView.Update(frameSeconds, player);
             damageFeedback.Update(frameSeconds);
+            equipmentCard.Update(frameSeconds);
         }
 
         // 3a. The 3D world goes into the small low-resolution picture, blended between the last two ticks by alpha.
@@ -472,14 +482,10 @@ static void RunGame(
 
             levelRenderer.Draw();
             levelShader.BeginFigures();
-            doorView.Draw(
-                gameWorld.Doors,
-                seconds,
-                new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)look.RenderWidth / look.RenderHeight),
-                gameWorld.Surfaces,
-                levelTextures);
+            var viewCone = new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)look.RenderWidth / look.RenderHeight);
+            doorView.Draw(gameWorld.Doors, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             chestView.Draw(gameWorld.Chests, seconds);
-            StairsView.Draw(gameWorld.Stairs, seconds);
+            stairsView.Draw(gameWorld.Stairs, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
@@ -494,6 +500,7 @@ static void RunGame(
             {
                 gormView.Draw(gorm, frameSeconds);
                 gormView.DrawEffects(gorm);
+                shockwaveView.Draw(gorm);
             }
 
             foreach (var bat in gameWorld.Bats)
@@ -504,7 +511,7 @@ static void RunGame(
             projectileView.Draw(gameWorld.Projectiles, alpha);
             pickupView.Draw(gameWorld.Pickups, alpha);
             pickupView.DrawLoot(gameWorld.Loot, alpha);
-            pickupView.DrawWeapons(gameWorld.WeaponDrops, alpha);
+            pickupView.DrawEquipment(gameWorld.EquipmentDrops, alpha);
 
             impactMarks.Draw();
             wallBreakView.Draw(doorView);
@@ -539,6 +546,11 @@ static void RunGame(
             DrawStaminaBar(player);
             CombatHud.Draw(player);
             BossBar.Draw(gameWorld);
+            if (!frozen)
+            {
+                equipmentCard.Draw();
+            }
+
             if (!boonOpen && !player.IsInventoryOpen && !frozen)
             {
                 InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);

@@ -32,8 +32,11 @@ public enum ShowroomEnemy
 /// <summary>An enemy as a harmless exhibit: it neither moves, attacks nor takes damage. At most one Gorm.</summary>
 public sealed record EnemyPiece(string Label, ShowroomEnemy Enemy) : ShowroomPiece(Label);
 
-/// <summary>A weapon lying on the floor, framed in the colour of its tier.</summary>
+/// <summary>A weapon lying on the floor, glowing in the colour of its tier - taken with F, as in the game.</summary>
 public sealed record WeaponPiece(string Label, WeaponKind Weapon) : ShowroomPiece(Label);
+
+/// <summary>An item lying on the floor, glowing in the colour of its tier - taken with F, as in the game (issue #317).</summary>
+public sealed record ItemPiece(string Label, ItemKind Item) : ShowroomPiece(Label);
 
 /// <summary>Silver or a key lying on the floor (taken when walked over, as in the game).</summary>
 public sealed record LootPiece(string Label, LootKind Loot, int Amount) : ShowroomPiece(Label);
@@ -67,6 +70,10 @@ public static class ShowroomPieces
         new WeaponPiece("Pistol (Worn)", WeaponKind.Pistol),
         new WeaponPiece("Rifle (Forged)", WeaponKind.Rifle),
         new WeaponPiece("Blunderbuss (Forged)", WeaponKind.Blunderbuss),
+        new ItemPiece("Hunter's Boots (Worn)", ItemKind.HuntersBoots),
+        new ItemPiece("Silver Rosary (Forged)", ItemKind.SilverRosary),
+        new ItemPiece("Hunter's Eye (Royal)", ItemKind.HuntersEye),
+        new ItemPiece("Leech (Vampiric)", ItemKind.Leech),
         new LootPiece("Silver", LootKind.Silver, 10),
         new ConsumablePiece("Blood vial", ConsumableKind.BloodVial),
         new ConsumablePiece("Consecrated ammo", ConsumableKind.ConsecratedAmmo),

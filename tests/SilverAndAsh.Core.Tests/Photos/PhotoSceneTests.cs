@@ -44,7 +44,7 @@ public class PhotoSceneTests
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "hud-rifle",
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload",
-            "gorm-hammer-windup",
+            "gorm-hammer-windup", "gorm-shockwave",
             "door-normal", "door-normal-half", "door-normal-open", "door-locked", "door-locked-half", "door-locked-open",
             "door-boss", "door-boss-half", "door-boss-open", "door-cracked", "door-sideways-half", "door-level-seed1",
             "door-level-seed2-boss", "door-normal-10m", "door-locked-10m", "door-boss-10m",
@@ -52,7 +52,8 @@ public class PhotoSceneTests
             "cracked-wall-b-4m", "cracked-wall-c-4m", "cracked-wall-sideways-4m", "cracked-wall-secret-4m", "cracked-wall-break",
             "cracked-wall-break-after",
             "showroom-a-corridor", "showroom-a-room", "showroom-b-corridor", "showroom-b-room", "showroom-c-corridor",
-            "showroom-c-room",
+            "showroom-c-room", "stairs-4m", "stairs-10m",
+            "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -194,6 +195,18 @@ public class PhotoSceneTests
 
         Assert.True(ticks < setup.Ticks, "The bat should dive long before the scene gives up.");
         Assert.Equal(BatState.Diving, setup.World.Bats[0].State);
+    }
+
+    [Fact]
+    public void The_shockwave_scene_stops_with_the_wave_half_way_out()
+    {
+        var setup = PhotoScenes.Find("gorm-shockwave")!.Build(Studio());
+
+        var ticks = setup.Run();
+
+        Assert.True(ticks < setup.Ticks, "Gorm should strike long before the scene gives up.");
+        Assert.InRange(setup.World.Gorm!.Shockwave!.Value.Radius, 6f, 6.2f);
+        Assert.False(setup.World.Player.IsDead);
     }
 
     [Theory]
@@ -379,6 +392,65 @@ public class PhotoSceneTests
         var wall = Assert.Single(broken);
         Assert.True(setup.World.Doors[wall].IsOpen);
         Assert.True(ticks < setup.Ticks);
+    }
+
+    [Theory]
+    [InlineData("stairs-4m", 4f)]
+    [InlineData("stairs-10m", 10f)]
+    public void The_stairs_scenes_wait_until_the_stairs_stand_and_look_at_them_from_their_distance(string name, float metres)
+    {
+        var setup = Built(name);
+        var start = setup.World.Player.Body.Position;
+
+        var ticks = setup.Run();
+
+        // The stairs rose the regular way: Gorm dead, the room cleared on the first tick, the whole rise gone by.
+        var stairs = Assert.IsType<Stairs>(setup.World.Stairs);
+        Assert.True(stairs.CanInteract);
+        Assert.True(ticks < setup.Ticks, "The stairs should stand long before the scene gives up.");
+        Assert.InRange(Vector2.Distance(Flat(start), Flat(stairs.Position)), metres - Level.CellSize, metres + Level.CellSize);
+
+        var middle = stairs.Position + new Vector3(0f, Stairs.Height / 2f, 0f);
+        var towards = Vector3.Normalize(middle - setup.World.Player.EyePosition);
+        Assert.Equal(1f, Vector3.Dot(setup.World.Player.View.Forward, towards), 0.01f);
+    }
+
+    [Fact]
+    public void The_equipment_rifle_scene_looks_at_the_rifle_within_reach()
+    {
+        var world = Built("equipment-rifle").World;
+
+        var target = Assert.IsType<WeaponDrop>(world.InteractionTarget(world.Player));
+        Assert.Equal(WeaponKind.Rifle, target.Kind);
+        Assert.Equal(new InteractionOffer("Take Rifle (Forged)", true, ItemTier.Forged), target.OfferFor(world.Player));
+    }
+
+    [Theory]
+    [InlineData("equipment-worn", ItemTier.Worn)]
+    [InlineData("equipment-forged", ItemTier.Forged)]
+    [InlineData("equipment-royal", ItemTier.Royal)]
+    [InlineData("equipment-vampiric", ItemTier.Vampiric)]
+    public void Each_tier_scene_looks_at_an_item_of_its_tier_within_reach(string name, ItemTier tier)
+    {
+        var world = Built(name).World;
+
+        var target = Assert.IsType<ItemDrop>(world.InteractionTarget(world.Player));
+        Assert.Equal(tier, target.Piece.Tier);
+        Assert.True(target.OfferFor(world.Player).IsPossible);
+    }
+
+    [Theory]
+    [InlineData("equipment-taken-royal", ItemKind.HuntersEye)]
+    [InlineData("equipment-taken-vampiric", ItemKind.Leech)]
+    public void The_equipment_taken_scenes_take_their_item_with_f(string name, ItemKind kind)
+    {
+        var setup = Built(name);
+        var taken = new List<EquipmentTaken>();
+
+        setup.Run(() => taken.AddRange(setup.World.Events.OfType<EquipmentTaken>()));
+
+        Assert.Equal(Equipment.Of(kind), Assert.Single(taken).Piece);
+        Assert.Equal([kind], setup.World.Player.Items);
     }
 
     private static Vector2 Flat(Vector3 point) => new(point.X, point.Z);

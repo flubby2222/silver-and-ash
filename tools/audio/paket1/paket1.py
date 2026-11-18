@@ -1,4 +1,4 @@
-"""Geraeuschpaket 1 (Praefix p1-) aus der neuen Palette - alles in SoundCraft, alles Samples (Uebergabe des Audiodesigners, Issue #290; Paket 1.1 fuer Issue #291, Fledermaus fuer #297).
+"""Geraeuschpaket 1 (Praefix p1-) aus der neuen Palette - alles in SoundCraft, alles Samples (Uebergabe des Audiodesigners, Issue #290; Paket 1.1 fuer Issue #291, Fledermaus fuer #297, Gorm fuer #298).
 
 BRAUCHT SOUNDCRAFT: soundcraft-cli.exe 0.20.1 unter "C:/Program Files/ArtCraft/SoundCraft/" (Pfad: CLI in bauen.py), dazu ffmpeg und
 Python 3.12 (nur Standardbibliothek). Laeuft NICHT in der CI und wird dort nie aufgerufen - die fertigen Dateien sind eingecheckt.
@@ -92,6 +92,7 @@ QUELLEN = {"schlag": N.instrument_rausch, "hauch": q_hauch, "pfeife": N.instrume
 PEGEL = {
     "ankuendigung": -1.5, "schuss": -1.5, "schmerz": -5.0, "ghul": -6.0, "treffer": -4.5, "nachladen": -8.0, "schwung": -9.0,
     "bewegung": -11.0, "tuer_kiste": -7.0, "aufheben": -8.0, "schritt": -12.0, "menue": -12.0, "marke": -10.0,
+    "boss": -2.5, "boss_schritt": -8.0,  # Gorm (Issue #298)
 }
 
 SCHLAG = dict(play_mode=1, loop_mode=0, attack=0.1, sustain=100.0, release=100.0)
@@ -209,6 +210,34 @@ GERAEUSCHE.append(G("p1-fledermaus-fehlsturz", "hauch", "bewegung", [(58, 0, 0.1
 GERAEUSCHE.append(G("p1-fledermaus-treffer", "schlag", "treffer", [(70, 0, 0.04, 110)], 0.5, adsr(80.0, 40.0), max_s=0.3))
 GERAEUSCHE.append(G("p1-fledermaus-sterben", "pfeife", "ghul", [(62, 0, 0.5, 105)], 1.0, adsr(350.0, 150.0, 100.0, 4.0),
                     auto=glide_s([(0.0, 0.0), (0.5, -12.0)]) + lautstaerke("S", [(0.2, 0.0), (0.6, -30.0)]), inserts=[PS], max_s=0.7))
+
+# --- Gorm (Issue #298): tief und schwer, nie schrill. Die drei Ankuendigungen unterscheiden sich in der Klangart:
+# Hammer = tiefer Pfeifton (schwillt an), Kettenschwung = Rauschen (wirbelt), Wurf = ein Glockenschlag mit Abklingen.
+GERAEUSCHE.append(G("p1-gorm-ankuendigung-hammer", "pfeife", "ankuendigung", [(47, 0, 0.9, 127)], 1.4, adsr(500.0, 60.0, 100.0, 5.0),
+                    auto=lautstaerke("S", [(0.0, -20.0), (0.8, 0.0)]), inserts=[("eq_1band", {"type": 0, "freq": 500.0, "gain": 12.0, "q": 1.0})], max_s=1.0))
+GERAEUSCHE.append(G("p1-gorm-ankuendigung-schwung", "hauch", "ankuendigung", [(46, 0, 0.9, 127)], 1.4,
+                    dict(play_mode=0, loop_mode=0, attack=0.1, decay=500.0, sustain=100.0, release=60.0),
+                    auto=lautstaerke("S", [(0.0, -4.0), (0.8, 0.0)]), max_s=1.0))
+GERAEUSCHE.append(G("p1-gorm-ankuendigung-wurf", "glocke", "ankuendigung", [(45, 0, 0.5, 127)], 1.0, adsr(450.0, 120.0), max_s=0.8))
+GERAEUSCHE.append(G("p1-gorm-aufschlag", "schlag", "boss", [(30, 0, 0.1, 127)], 1.4, adsr(500.0, 150.0), max_s=1.0,
+                    zusatz=[("glocke", [(40, 0.0, 0.4, 100)], dict(adsr(500.0, 150.0), level=-2.0))]))
+GERAEUSCHE.append(G("p1-gorm-kette", "glocke", "boss", [(40, 0, 0.3, 120)], 0.9, adsr(300.0, 100.0), max_s=0.6,
+                    zusatz=[("hauch", [(44, 0.0, 0.4, 100)], dict(SCHLAG, level=-6.0))]))
+GERAEUSCHE.append(G("p1-gorm-haken-wurf", "hauch", "schwung", [(52, 0, 0.1, 120)], 0.7, adsr(180.0, 80.0), max_s=0.4))
+GERAEUSCHE.append(G("p1-gorm-haken-treffer", "schlag", "boss", [(33, 0, 0.08, 127)], 0.9, adsr(300.0, 100.0), max_s=0.6,
+                    zusatz=[("glocke", [(47, 0.0, 0.25, 110)], dict(adsr(250.0, 100.0), level=-2.0))]))
+for i, p in enumerate((52, 50), 1):
+    GERAEUSCHE.append(G(f"p1-gorm-treffer-{i}", "schlag", "treffer", [(p, 0, 0.05, 120)], 0.6, adsr(120.0, 50.0), max_s=0.35))
+GERAEUSCHE.append(G("p1-gorm-treffer-kopf", "schlag", "treffer", [(58, 0, 0.05, 127)], 0.7, adsr(140.0, 60.0), max_s=0.4,
+                    zusatz=[("glocke", [(52, 0.0, 0.3, 100)], dict(adsr(250.0, 100.0), level=0.0))]))
+GERAEUSCHE.append(G("p1-gorm-bruellen", "stimme", "boss", [(31, 0, 1.2, 127)], 1.8, adsr(400.0, 250.0, 100.0, 120.0),
+                    auto=glide("V", 0, "semitones", [(0.0, 2.0), (0.5, 0.0), (1.2, -3.0)])
+                    + lautstaerke("V", [(0.0, -12.0), (0.4, 0.0), (1.0, 0.0), (1.5, -30.0)]), inserts=[PS], max_s=1.5))
+GERAEUSCHE.append(G("p1-gorm-sterben", "stimme", "boss", [(28, 0, 1.2, 120)], 1.8, adsr(400.0, 400.0, 100.0, 20.0),
+                    auto=glide("V", 0, "semitones", [(0.0, 0.0), (1.3, -9.0)]) + lautstaerke("V", [(0.6, 0.0), (1.5, -35.0)]),
+                    inserts=[PS], max_s=1.5))
+for i, p in enumerate((30, 29), 1):
+    GERAEUSCHE.append(G(f"p1-gorm-schritt-{i}", "schlag", "boss_schritt", [(p, 0, 0.06, 120)], 0.7, adsr(200.0, 80.0), max_s=0.45))
 
 
 def stueck(g, quellen):

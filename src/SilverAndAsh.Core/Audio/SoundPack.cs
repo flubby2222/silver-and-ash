@@ -83,6 +83,26 @@ public sealed class SoundPack
         [SoundKind.BatDiveMissed] = ["p1-fledermaus-fehlsturz.wav"],
         [SoundKind.BatHurt] = ["p1-fledermaus-treffer.wav"],
         [SoundKind.BatDied] = ["p1-fledermaus-sterben.wav"],
+
+        // Issue #298: Gorm, from sound pack 1.1 (commit db7c912) - deep and heavy. Each attack has a warning from
+        // another source (a swelling low whistle, a whirling rush, a low bell), so the three can be told apart.
+        [SoundKind.GormStep] = ["p1-gorm-schritt-1.wav", "p1-gorm-schritt-2.wav"],
+        [SoundKind.GormHammerWindUp] = ["p1-gorm-ankuendigung-hammer.wav"],
+        [SoundKind.GormSwingWindUp] = ["p1-gorm-ankuendigung-schwung.wav"],
+        [SoundKind.GormThrowWindUp] = ["p1-gorm-ankuendigung-wurf.wav"],
+        [SoundKind.GormSlam] = ["p1-gorm-aufschlag.wav"],
+        [SoundKind.GormChain] = ["p1-gorm-kette.wav"],
+        [SoundKind.GormThrow] = ["p1-gorm-haken-wurf.wav"],
+        [SoundKind.GormHookHit] = ["p1-gorm-haken-treffer.wav"],
+        [SoundKind.GormHurt] = ["p1-gorm-treffer-1.wav", "p1-gorm-treffer-2.wav"],
+        [SoundKind.GormHeadHurt] = ["p1-gorm-treffer-kopf.wav"],
+        [SoundKind.GormRoar] = ["p1-gorm-bruellen.wav"],
+        [SoundKind.GormDied] = ["p1-gorm-sterben.wav"],
+
+        // Issue #317: taking equipment with F. The Vampiric tier is to get a sound of its own - an open job for the
+        // audio designer (a file like "p1-aufheben-vampirisch.wav"); until then it plays the same file.
+        [SoundKind.EquipmentTaken] = ["p1-aufheben-ausruestung.wav"],
+        [SoundKind.VampiricEquipmentTaken] = ["p1-aufheben-ausruestung.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>
@@ -92,10 +112,10 @@ public sealed class SoundPack
     public static ImmutableArray<SoundPack> All => [Pack1, Old];
 
     /// <summary>
-    /// The files of sound pack 1 that no event plays yet: picking up a weapon or armour - the game cannot do that before
-    /// the loot system (#194). Checked in with the pack, so that issue only adds the event.
+    /// The files of sound pack 1 that no event plays yet. Empty since #317: the last one, picking up equipment, has its
+    /// event now. A file checked in ahead of its event goes here until the event comes.
     /// </summary>
-    public static ImmutableArray<string> Pack1WithoutEvent => ["p1-aufheben-ausruestung.wav"];
+    public static ImmutableArray<string> Pack1WithoutEvent => [];
 
     /// <summary>
     /// The files of <paramref name="kind"/> in this pack: one of them plays each time, never the same twice in a row.

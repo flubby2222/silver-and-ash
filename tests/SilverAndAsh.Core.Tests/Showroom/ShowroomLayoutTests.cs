@@ -36,16 +36,16 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
-    public void Every_wall_piece_stands_in_every_part_and_every_other_piece_once()
+    public void Every_wall_piece_stands_once_per_section_in_the_corridor_part_and_every_other_piece_once()
     {
         foreach (var piece in ShowroomPieces.All)
         {
             var places = Layout.Placed.Where(place => ReferenceEquals(place.Piece, piece)).ToList();
             if (piece is WallPiece)
             {
-                var parts = places.Select(place => (place.Section, place.Part)).ToHashSet();
-                Assert.Equal(6, places.Count);
-                Assert.Equal(6, parts.Count);
+                Assert.Equal(3, places.Count);
+                Assert.Equal([0, 1, 2], places.Select(place => place.Section).Order());
+                Assert.All(places, place => Assert.Equal(ShowroomPart.Corridor, place.Part));
             }
             else
             {
@@ -53,7 +53,7 @@ public class ShowroomLayoutTests
             }
         }
 
-        Assert.Equal(ShowroomPieces.All.OfType<WallPiece>().Count() * 6, Layout.Doors.Count);
+        Assert.Equal(ShowroomPieces.All.OfType<WallPiece>().Count() * 3, Layout.Doors.Count);
         Assert.Equal(ShowroomPieces.All.OfType<ChestPiece>().Count(), Layout.Chests.Count);
     }
 
@@ -76,6 +76,25 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void Equipment_of_all_four_tiers_lies_in_the_showroom_and_can_be_taken()
+    {
+        // Issue #317: an item of each tier besides the weapons (Worn and Forged only so far), all taken with F.
+        var pieces = ShowroomPieces.All;
+        Assert.Equal(Enum.GetValues<ItemTier>().Order(), pieces.OfType<ItemPiece>().Select(piece => Items.Info(piece.Item).Tier).Order());
+        Assert.Equal(pieces.OfType<ItemPiece>().Count(), Layout.Exhibits.Items.Count);
+
+        var world = Layout.NewWorld();
+        Assert.Equal(Enum.GetValues<ItemTier>().Order(), world.EquipmentDrops.Select(drop => drop.Piece.Tier).Distinct().Order());
+        Assert.All(world.EquipmentDrops, drop =>
+        {
+            var offer = drop.OfferFor(world.Player);
+            Assert.True(offer.IsPossible);
+            Assert.Equal($"Take {drop.Piece.Name} ({drop.Piece.Tier})", offer.Text);
+            Assert.Equal(drop.Piece.Tier, offer.Tier);
+        });
+    }
+
+    [Fact]
     public void Three_sections_show_the_variants_A_B_and_C_at_corridor_and_room_height()
     {
         Assert.Equal([TextureVariant.A, TextureVariant.B, TextureVariant.C], Layout.Sections.Select(section => section.Variant));
@@ -86,7 +105,7 @@ public class ShowroomLayoutTests
                 var start = section.StartOf(part);
                 for (var x = start; x < start + section.Length; x++)
                 {
-                    for (var z = section.NorthRow; z <= section.SouthRow; z++)
+                    for (var z = section.NorthRow; z <= section.SouthRowOf(part); z++)
                     {
                         Assert.False(Layout.Level[x, z].IsSolid);
                         Assert.Equal(ShowroomSection.CeilingOf(part), Layout.Level[x, z].CeilingHeight);
@@ -121,7 +140,27 @@ public class ShowroomLayoutTests
             Assert.False(Layout.Level[door.X, door.Z - 1].IsSolid);
             Assert.Equal(section.Variant, Layout.Surfaces.At(door.X, door.Z - 1, SurfaceKind.Wall));
             Assert.Equal(section.Variant, Layout.Surfaces.At(door.X, door.Z, SurfaceKind.Wall));
+
+            // As in the game, where every door cell - the boss gate's too - has the corridor ceiling.
+            Assert.Equal(Cell.DefaultCeilingHeight, Layout.Level[door.X, door.Z].CeilingHeight);
         }
+    }
+
+    [Fact]
+    public void Walking_along_a_corridor_one_passes_every_door_within_lantern_reach()
+    {
+        // The lantern is the only light and the fog starts a few metres out (issue #302): from the middle row of the
+        // corridor, every door in its north wall is at most two cells away, and the corridor is narrower than the room.
+        foreach (var place in Layout.Placed.Where(place => place.Piece is WallPiece))
+        {
+            var section = Layout.Sections[place.Section];
+            var walkway = Layout.Level.CellCenter(place.X, section.MiddleRowOf(ShowroomPart.Corridor));
+            Assert.True(Vector3.Distance(walkway, Layout.Level.CellCenter(place.X, place.Z)) <= 2 * Level.CellSize);
+            Assert.True(Layout.Level[place.X, section.SouthRowOf(ShowroomPart.Corridor) + 1].IsSolid);
+        }
+
+        Assert.All(Layout.Sections, section =>
+            Assert.True(section.SouthRowOf(ShowroomPart.Corridor) < section.SouthRowOf(ShowroomPart.Room)));
     }
 
     [Fact]
@@ -205,7 +244,7 @@ public class ShowroomLayoutTests
                 .ToHashSet();
             var reachable = Reachable(Layout.NewWorld().Level, wall);
 
-            Assert.Contains((section.CorridorX + 1, section.SouthRow), reachable);
+            Assert.Contains((section.CorridorX + 1, section.SouthRowOf(ShowroomPart.Corridor)), reachable);
             Assert.Contains((section.RoomX + 1, section.SouthRow), reachable);
         }
     }
@@ -346,6 +385,7 @@ public class ShowroomLayoutTests
         Assert.Null(world.Stairs);
         Assert.Empty(world.Loot);
         Assert.Empty(world.WeaponDrops);
+        Assert.Empty(world.EquipmentDrops);
         Assert.True(Layout.NewWorld().IsShowroom);
     }
 }

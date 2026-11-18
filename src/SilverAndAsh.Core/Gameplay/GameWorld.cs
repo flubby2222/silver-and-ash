@@ -36,8 +36,8 @@ public sealed class GameWorld
     private int _nextPickupId;
     private readonly List<Loot> _loot = [];
     private int _nextLootId;
-    private readonly List<WeaponDrop> _weaponDrops = [];
-    private int _nextWeaponDropId;
+    private readonly List<EquipmentDrop> _equipmentDrops = [];
+    private int _nextEquipmentDropId;
     private int _nextProjectileId;
     private readonly Level _levelWithOpenDoors;
     private readonly IReadOnlyList<LevelDoor> _doorPlan;
@@ -114,6 +114,10 @@ public sealed class GameWorld
             Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random,
             () => StandingChests.Select(chest => chest.Body));
 
+        // The equipment still to be found, shared by all players. What they start with is not in it (no doubles).
+        // It rolls with its own generator, so having it changes no other roll of the world.
+        LootPool = new LootPool(seed, Balance.Loot, [Equipment.Of(Player.Melee), .. Player.RangedSlots.OfType<RangedWeapon>().Select(weapon => Equipment.Of(weapon.Kind))]);
+
         _chestPlan = chests ?? [];
         _chests = _chestPlan.Select((plan, index) => new Chest(index, plan, level)).ToList();
 
@@ -151,6 +155,12 @@ public sealed class GameWorld
             }
         }
     }
+
+    /// <summary>
+    /// The weapons and items still to be found in this run (decision records 0006 and 0008) - one pool for the whole
+    /// world, not one per player. Chests and the boss will draw from it (#318).
+    /// </summary>
+    public LootPool LootPool { get; }
 
     /// <summary>Name of the level, shown briefly at the start (e.g. "THE CATACOMBS"), or null for hand-made levels.</summary>
     public string? LevelName { get; init; }
@@ -195,7 +205,12 @@ public sealed class GameWorld
 
             foreach (var weapon in value.Weapons)
             {
-                _weaponDrops.Add(new WeaponDrop(_nextWeaponDropId++, weapon.Kind, weapon.Position));
+                _equipmentDrops.Add(new WeaponDrop(_nextEquipmentDropId++, weapon.Kind, weapon.Position));
+            }
+
+            foreach (var item in value.Items)
+            {
+                _equipmentDrops.Add(new ItemDrop(_nextEquipmentDropId++, item.Kind, item.Position));
             }
         }
     }
@@ -376,10 +391,10 @@ public sealed class GameWorld
         return nearest;
     }
 
-    /// <summary>Everything that can be used with F: doors and chests today, people later.</summary>
+    /// <summary>Everything that can be used with F: doors, chests, the stairs and equipment on the floor; people later.</summary>
     // The showroom's staircase is only on display: it is never offered (no level change there).
     private IEnumerable<IInteractable> Interactables =>
-        _doors.Concat<IInteractable>(_chests).Concat(_stairs is null || IsShowroom ? [] : [_stairs]);
+        _doors.Concat<IInteractable>(_chests).Concat(_equipmentDrops).Concat(_stairs is null || IsShowroom ? [] : [_stairs]);
 
     private void Interact(Player player)
     {
@@ -409,7 +424,28 @@ public sealed class GameWorld
 
                 OpenChest(chest, player);
                 break;
+            case EquipmentDrop drop when drop.OfferFor(player).IsPossible:
+                Take(drop, player);
+                break;
         }
+    }
+
+    // Whoever takes a piece first gets it: it leaves the floor at once, so in online co-op a second player pressing F
+    // in the same tick (later in the order of Players) finds nothing there any more. A weapon goes into the bag with its
+    // magazine; an item needs no place.
+    private void Take(EquipmentDrop drop, Player taker)
+    {
+        switch (drop)
+        {
+            case WeaponDrop weapon when !taker.Stow(weapon.Kind, weapon.Ranged):
+                return;
+            case ItemDrop item:
+                taker.Take(item.Kind);
+                break;
+        }
+
+        _equipmentDrops.Remove(drop);
+        _events.Add(new EquipmentTaken(drop.Id, taker.Id, drop.Piece, drop.Position));
     }
 
     // The contents jump out towards the opener and fall to the floor in front of the chest - still in its cell, so
@@ -566,13 +602,7 @@ public sealed class GameWorld
             return;
         }
 
-        var x = room.Cells.Average(cell => cell.X);
-        var z = room.Cells.Average(cell => cell.Z);
-        var (cellX, cellZ) = room.Cells
-            .OrderBy(cell => ((cell.X - x) * (cell.X - x)) + ((cell.Z - z) * (cell.Z - z)))
-            .ThenBy(cell => cell.Z)
-            .ThenBy(cell => cell.X)
-            .First();
+        var (cellX, cellZ) = Stairs.CellIn(room.Cells);
         _stairs = new Stairs(Level.CellCenter(cellX, cellZ), Balance.Gorm.StairsRiseTime);
         _events.Add(new StairsRose());
     }
@@ -649,8 +679,11 @@ public sealed class GameWorld
     /// <summary>Silver and keys lying in the level (taken ones are removed after each tick).</summary>
     public IReadOnlyList<Loot> Loot => _loot;
 
-    /// <summary>Weapons lying in the level, dropped from an inventory (#193). Taking them up comes with #194.</summary>
-    public IReadOnlyList<WeaponDrop> WeaponDrops => _weaponDrops;
+    /// <summary>Equipment lying in the level - weapons and items, in the order they came there. Taken with F (#317).</summary>
+    public IReadOnlyList<EquipmentDrop> EquipmentDrops => _equipmentDrops;
+
+    /// <summary>The weapons among <see cref="EquipmentDrops"/> - e.g. dropped from an inventory (#193).</summary>
+    public IReadOnlyList<WeaponDrop> WeaponDrops => _equipmentDrops.OfType<WeaponDrop>().ToList();
 
     /// <summary>The silver among <see cref="Loot"/>.</summary>
     public IReadOnlyList<Loot> SilverPiles => _loot.Where(loot => loot.Kind == LootKind.Silver).ToList();
@@ -954,10 +987,7 @@ public sealed class GameWorld
                 // A melee weapon hits the whole body at once - it has no hit zone (and so no headshot bonus).
                 var weapon = swing.Weapon == WeaponKind.Club ? Weapon.Club : Weapon.Blade;
                 Damage(target, new Hit(weapon, HitZone.Body, values.Damage, swing.Charge), attacker);
-                if (!IsShowroom)
-                {
-                    KnockBack(target, attacker, values, swing.Charge);
-                }
+                KnockBack(target, attacker, values, swing.Charge);
             }
         }
     }
@@ -1149,7 +1179,7 @@ public sealed class GameWorld
         // A weapon dropped from the inventory lies where the player stood.
         foreach (var dropped in Player.Events.OfType<WeaponDropped>())
         {
-            _weaponDrops.Add(new WeaponDrop(_nextWeaponDropId++, dropped.Kind, dropped.Position, dropped.Ranged));
+            _equipmentDrops.Add(new WeaponDrop(_nextEquipmentDropId++, dropped.Kind, dropped.Position, dropped.Ranged));
         }
 
         if (input.Interact)
@@ -1220,9 +1250,9 @@ public sealed class GameWorld
         DropGormsLoot();
         MovePickups();
         MoveLoot();
-        foreach (var weapon in _weaponDrops)
+        foreach (var drop in _equipmentDrops)
         {
-            weapon.Fall(Level, Balance.Player.Gravity);
+            drop.Fall(Level, Balance.Player.Gravity);
         }
 
         foreach (var chest in _chests)

@@ -234,6 +234,13 @@
     "vampire": { "combatShareNear": 0,    "combatShareFar": 0,    "treasureShare": 0.05, "lockedTreasureShare": 0.1, "secretShare": 0.15, "lockedChance": 1,    "silverMin": 80, "silverMax": 120, "bloodVialChance": 1 }
   },
 
+  // Equipment as loot (decision records 0006 and 0008): every weapon and item lies once in the loot pool of a run, a draw takes it out.
+  // A draw gives at least the tier asked for (a chest's own tier); used up tiers go to the next higher one.
+  "loot": {
+    "higherTierChance": 0.1,            // a draw rises one tier in 10 % of cases (0 = never, 1 = always)
+    "itemShare": 0.7                    // 70 % of the draws are items, 30 % weapons (if that kind is used up in the tier: the other)
+  },
+
   "doors": {
     "normalOpenTime": 0.9,              // seconds a wooden double door takes to swing fully open (only the picture: the way is free at once)
     "lockedOpenTime": 1.3,              // the same for a locked door (one heavy leaf)

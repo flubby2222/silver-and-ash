@@ -22,15 +22,19 @@ Nach dem Titelbildschirm stehst du am Anfang des Rundgangs. Dazu passt nur `--lo
 
 ## Was zu sehen ist
 
-Der Rundgang ist eine Schleife aus **drei Abschnitten**, einer je Wandvariante **A, B, C** (Wände, Boden und Decke in derselben Variante). Jeder Abschnitt hat zwei Teile nebeneinander: zuerst einen in **Ganghöhe (3,5 m)**, dann einen in **Raumhöhe (6 m)**. Gänge in Ganghöhe (Variante A) verbinden die Abschnitte, so dass man im Kreis gehen kann.
+Der Rundgang ist eine Schleife aus **drei Abschnitten**, einer je Wandvariante **A, B, C** (Wände, Boden und Decke in derselben Variante). Jeder Abschnitt hat zwei Teile nebeneinander: zuerst einen schmalen Gang in **Ganghöhe (3,5 m)**, dann einen breiteren Raum in **Raumhöhe (6 m)**. Gänge in Ganghöhe (Variante A) verbinden die Abschnitte, so dass man im Kreis gehen kann.
 
-- **In jedem Teil** stehen in der Nordwand alle Wandstücke: Holztür, verschlossene Tür (Schlüssel davor am Boden), Bosstor und rissige Wand. Hinter jeder steht eine kleine Kammer, so dass sie sich öffnen bzw. zerschlagen lässt (die rissige Wand mit einem voll aufgeladenen Nahkampfschlag).
-- **Einmal**, verteilt auf die drei Raum-Teile, mit mindestens 6 m Abstand: die vier Kisten (offen zu öffnen), die Wendeltreppe (steht, ist aber kein Ausgang), Ghul, Fledermaus und Gorm, die Waffen in ihrer Stufenfarbe, Silber, Blutphiole und Weihmunition.
-- Über jedem Stück steht sein englischer Name, an jedem Teil „Wall A - corridor 3.5 m“ usw. Schilder hinter Wänden und weiter als 16 m entfernt werden nicht gezeichnet.
+- **Einmal je Wandvariante**, im Gangteil, stehen in der Nordwand alle Wandstücke: Holztür, verschlossene Tür (Schlüssel davor am Boden), Bosstor und rissige Wand. Hinter jeder steht eine kleine Kammer, so dass sie sich öffnen bzw. zerschlagen lässt (die rissige Wand mit einem voll aufgeladenen Nahkampfschlag).
+  - **Warum im Gang:** Im Spiel haben alle Türzellen Ganghöhe, auch die des Bosstors (geprüft an 100 erzeugten Ebenen). So sieht man jede Tür, wie sie im Spiel steht.
+  - **Warum schmal:** Der Gang ist drei Zellen breit. Wer in der Mitte geht, ist höchstens zwei Zellen von jeder Tür entfernt. Die Laterne ist das einzige Licht, also liegt keine Tür im Dunkeln.
+- **Einmal**, verteilt auf die drei Raum-Teile, mit mindestens 6 m Abstand: die vier Kisten (offen zu öffnen), die Wendeltreppe (steht, ist aber kein Ausgang), Ghul, Fledermaus und Gorm, die Waffen und vier Gegenstände (je einer jeder Stufe) in ihrer Stufenfarbe, Silber, Blutphiole und Weihmunition.
+- Über jedem Stück steht sein englischer Name, an jedem Teil „Wall A - corridor 3.5 m“ usw. Schilder hinter Wänden, weiter als 16 m entfernt oder nicht ganz im Bild werden nicht gezeichnet.
 
 **Gegner sind Ausstellungsstücke:** Sie bewegen sich nicht, greifen nicht an und nehmen keinen Schaden. Es gibt keine Arenen, keine Siegel, keinen Bosskampf und keinen Ebenenwechsel. Silber, Schlüssel, Phiole und Munition nimmst du wie im Spiel beim Darüberlaufen auf – dann fehlen sie bis zum nächsten Start.
 
-**Stufenfarben:** Es gibt bisher nur Waffen der Stufen *Worn* und *Forged*. *Royal* und *Vampiric* zeigt der Musterraum erst, wenn es Waffen dieser Stufen gibt.
+**Ausrüstung nimmst du mit F** (Issue #317): Waffen und Gegenstände nimmst du wie im Spiel mit F, nicht beim Darüberlaufen. Danach zeigt links eine Karte Name und Wirkung.
+
+**Stufenfarben:** Es gibt bisher nur Waffen der Stufen *Worn* und *Forged*. Alle vier Stufen zeigen die Gegenstände: Hunter's Boots (*Worn*), Silver Rosary (*Forged*), Hunter's Eye (*Royal*) und Leech (*Vampiric*). Sie sind Platzhalter: ein Würfel in der Stufenfarbe, noch ohne eigenes Modell und ohne Wirkung.
 
 ## Ein Stück ergänzen
 
@@ -38,7 +42,7 @@ Alle Stücke stehen in **einer Liste**: `ShowroomPieces.All` in [src/SilverAndAs
 
 ```csharp
 new ChestPiece("Bone chest", ChestTier.Bone),       // eine neue Kistenstufe
-new WallPiece("Iron gate", DoorKind.IronGate),      // eine neue Türart: steht in allen sechs Teilen
+new WallPiece("Iron gate", DoorKind.IronGate),      // eine neue Türart: steht in jedem Gangteil (A, B, C)
 new WeaponPiece("Crossbow (Royal)", WeaponKind.Crossbow),
 ```
 
@@ -54,7 +58,7 @@ Je Teil gibt es eine Foto-Szene mit genau diesem Aufbau (siehe [foto-skript.md](
 dotnet run --project src/SilverAndAsh.Game -- --photo showroom-a-corridor --out fotos
 ```
 
-Szenen: `showroom-a-corridor`, `showroom-a-room`, `showroom-b-corridor`, `showroom-b-room`, `showroom-c-corridor`, `showroom-c-room`. Der Blick geht vom Westende des Laufwegs schräg auf die Türwand; weit entfernte Stücke liegen – wie im Spiel – im Dunkeln. Für ein bestimmtes Stück aus der Nähe baut `ShowroomLayout.NewWorldAt(x, z, blickziel)` eine Welt mit dem Spieler an einer Zelle.
+Szenen: `showroom-a-corridor`, `showroom-a-room`, `showroom-b-corridor`, `showroom-b-room`, `showroom-c-corridor`, `showroom-c-room`. Der Blick geht vom Westende des südlichen Laufwegs schräg auf die Nordwand; weit entfernte Stücke liegen – wie im Spiel – im Dunkeln. Für ein bestimmtes Stück aus der Nähe baut `ShowroomLayout.NewWorldAt(x, z, blickziel)` eine Welt mit dem Spieler an einer Zelle.
 
 ## Wie es funktioniert
 

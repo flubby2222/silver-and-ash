@@ -50,12 +50,40 @@ public class SoundPackTests
         { new BatDiveMissed(4), SoundKind.BatDiveMissed, ["p1-fledermaus-fehlsturz.wav"] },
         { new BatHit(4, 10), SoundKind.BatHurt, ["p1-fledermaus-treffer.wav"] },
         { new BatDied(4), SoundKind.BatDied, ["p1-fledermaus-sterben.wav"] },
+
+        // Issue #298: Gorm.
+        { new GormStepped(9), SoundKind.GormStep, ["p1-gorm-schritt-1.wav", "p1-gorm-schritt-2.wav"] },
+        { new GormWindUp(9, GormAttack.Hammer), SoundKind.GormHammerWindUp, ["p1-gorm-ankuendigung-hammer.wav"] },
+        { new GormWindUp(9, GormAttack.Swing), SoundKind.GormSwingWindUp, ["p1-gorm-ankuendigung-schwung.wav"] },
+        { new GormWindUp(9, GormAttack.Throw), SoundKind.GormThrowWindUp, ["p1-gorm-ankuendigung-wurf.wav"] },
+        { new GormSlammed(9), SoundKind.GormSlam, ["p1-gorm-aufschlag.wav"] },
+        { new GormSwingStarted(9), SoundKind.GormChain, ["p1-gorm-kette.wav"] },
+        { new GormThrew(9, Vector3.Zero, Vector3.UnitZ), SoundKind.GormThrow, ["p1-gorm-haken-wurf.wav"] },
+        { new HookHit(0), SoundKind.GormHookHit, ["p1-gorm-haken-treffer.wav"] },
+        { new GormHit(9, 40), SoundKind.GormHurt, ["p1-gorm-treffer-1.wav", "p1-gorm-treffer-2.wav"] },
+        { new GormHit(9, 40, Critical: true), SoundKind.GormHeadHurt, ["p1-gorm-treffer-kopf.wav"] },
+        { new GormRoared(9), SoundKind.GormRoar, ["p1-gorm-bruellen.wav"] },
+        { new GormDied(9), SoundKind.GormDied, ["p1-gorm-sterben.wav"] },
+
+        // Issue #317: taking equipment - every tier; the Vampiric one has a kind of its own (same file until its own comes).
+        { new EquipmentTaken(3, 0, Equipment.Of(WeaponKind.Club), Vector3.Zero), SoundKind.EquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
+        { new EquipmentTaken(3, 0, Equipment.Of(WeaponKind.Rifle), Vector3.Zero), SoundKind.EquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
+        { new EquipmentTaken(3, 0, Equipment.Of(ItemKind.HuntersEye), Vector3.Zero), SoundKind.EquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
+        { new EquipmentTaken(3, 0, Equipment.Of(ItemKind.Leech), Vector3.Zero), SoundKind.VampiricEquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
     };
 
     private static readonly GameEvent[] BatEvents =
     [
         new BatFlapped(4, Vector3.Zero), new BatSpitWindUp(4), new BatSpat(4, Vector3.Zero, Vector3.UnitZ), new BatScreeched(4),
         new BatBit(4, 0), new BatDiveMissed(4), new BatHit(4, 10), new BatDied(4),
+    ];
+
+    private static readonly GameEvent[] GormEvents =
+    [
+        new GormStepped(9), new GormWindUp(9, GormAttack.Hammer), new GormWindUp(9, GormAttack.Swing),
+        new GormWindUp(9, GormAttack.Throw), new GormSlammed(9), new GormSwingStarted(9),
+        new GormThrew(9, Vector3.Zero, Vector3.UnitZ), new HookHit(0), new GormHit(9, 40), new GormHit(9, 40, Critical: true),
+        new GormRoared(9), new GormDied(9),
     ];
 
     [Theory]
@@ -154,6 +182,84 @@ public class SoundPackTests
 
         // Issue #297: the bat is silent in the old pack.
         Assert.All(BatEvents, gameEvent => Assert.Empty(new SoundCues(1).For([gameEvent], SoundPack.Old)));
+
+        // Issue #298: so is Gorm.
+        Assert.All(GormEvents, gameEvent => Assert.Empty(new SoundCues(1).For([gameEvent], SoundPack.Old)));
+
+        // Issue #317: and taking equipment, of every tier.
+        Assert.All(Equipment.All, piece =>
+            Assert.Empty(new SoundCues(1).For([new EquipmentTaken(3, 0, piece, Vector3.Zero)], SoundPack.Old)));
+    }
+
+    [Fact]
+    public void Gorms_three_warnings_differ_from_each_other_and_from_the_other_enemies()
+    {
+        // Issue #298: each attack has its own answer (jump, duck, step aside) - so each has its own warning.
+        SoundKind[] gorm = [SoundKind.GormHammerWindUp, SoundKind.GormSwingWindUp, SoundKind.GormThrowWindUp];
+        SoundKind[] others = [SoundKind.GhoulWindUp, SoundKind.BatSpitWindUp, SoundKind.BatScreech];
+
+        var files = gorm.Select(kind => Pack1.Variants(kind)).ToList();
+        Assert.All(files, variants => Assert.NotEmpty(variants));
+        Assert.Equal(files.Sum(variants => variants.Length), files.SelectMany(variants => variants).Distinct().Count());
+        Assert.Empty(files.SelectMany(variants => variants).Intersect(others.SelectMany(kind => Pack1.Variants(kind))));
+    }
+
+    [Fact]
+    public void Every_warning_of_gorm_comes_through_in_a_busy_tick()
+    {
+        // Steps, a chain, a hit and a step of a player in the same tick hold back no warning.
+        foreach (var attack in new[] { GormAttack.Hammer, GormAttack.Swing, GormAttack.Throw })
+        {
+            var cues = new SoundCues(1).For(
+                [new GormStepped(9), new PlayerStepped(0, Foot.Left), new GormSwingStarted(9), new GormHit(9, 10),
+                 new GormWindUp(9, attack)],
+                Pack1, new Vector3(100f, 0f, 0f));
+
+            Assert.Contains(cues, cue => cue.Kind == SoundBoard.KindFor(new GormWindUp(9, attack)));
+        }
+    }
+
+    [Fact]
+    public void The_end_of_gorms_swing_plays_nothing()
+    {
+        // Review of #310: the chain sounds as the sweep starts (GormSwingStarted); its end only tells whether it hit.
+        Assert.Null(SoundBoard.KindFor(new GormSwung(9, Hit: true)));
+        Assert.Null(SoundBoard.KindFor(new GormSwung(9, Hit: false)));
+    }
+
+    [Fact]
+    public void Gorm_is_heard_from_anywhere()
+    {
+        // No range for Gorm: he only acts awake in his boss room, and his warnings must always come through.
+        var far = new Vector3(100f, 0f, 0f);
+
+        Assert.All(GormEvents, gameEvent => Assert.True(SoundBoard.IsInEarshot(gameEvent, far)));
+    }
+
+    [Fact]
+    public void A_blade_hit_on_gorm_plays_his_own_hit_in_pack_1()
+    {
+        var cues = new SoundCues(1).For([BladeSwing, new GormHit(9, 40), BladeHit with { TargetId = 9 }], Pack1);
+
+        Assert.Equal([SoundKind.GormHurt], cues.Select(cue => cue.Kind));
+    }
+
+    [Fact]
+    public void A_blade_hit_on_gorm_plays_the_blade_in_the_old_pack()
+    {
+        var cues = new SoundCues(1).For([BladeSwing, new GormHit(9, 40), BladeHit with { TargetId = 9 }], SoundPack.Old);
+
+        Assert.Equal([SoundKind.Blade], cues.Select(cue => cue.Kind));
+    }
+
+    [Fact]
+    public void A_pistol_shot_to_gorms_head_plays_the_shot_and_his_head_hit()
+    {
+        var cues = new SoundCues(1).For(
+            [new ShotFired(Vector3.Zero, Vector3.UnitZ), new GormHit(9, 10, Critical: true), new TargetHitBy(9, 0, Weapon.Pistol)],
+            Pack1);
+
+        Assert.Equal([SoundKind.Pistol, SoundKind.GormHeadHurt], cues.Select(cue => cue.Kind));
     }
 
     [Fact]
@@ -374,15 +480,12 @@ public class SoundPackTests
     }
 
     [Fact]
-    public void The_files_waiting_for_their_events_are_checked_in_but_not_played()
+    public void No_file_of_pack_1_waits_for_its_event_any_more()
     {
-        // Since #291 only the equipment pickup waits - the game cannot pick up equipment before the loot system (#194).
-        Assert.Equal("p1-aufheben-ausruestung.wav", Assert.Single(SoundPack.Pack1WithoutEvent));
-        Assert.All(SoundPack.Pack1WithoutEvent, file =>
-        {
-            Assert.Contains(file, SoundBoard.AllFiles);
-            Assert.DoesNotContain(file, SoundBoard.SoundFiles);
-        });
+        // Since #317 the last waiting file, the equipment pickup, has its event: it is played now and still checked in.
+        Assert.Empty(SoundPack.Pack1WithoutEvent);
+        Assert.Contains("p1-aufheben-ausruestung.wav", SoundBoard.SoundFiles);
+        Assert.Contains("p1-aufheben-ausruestung.wav", SoundBoard.AllFiles);
     }
 
     [Fact]

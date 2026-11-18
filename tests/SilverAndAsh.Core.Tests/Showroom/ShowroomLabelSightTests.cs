@@ -14,7 +14,7 @@ public class ShowroomLabelSightTests
     public void The_labels_of_the_own_part_are_seen()
     {
         var section = Layout.Sections[0];
-        var eye = EyeAt(section.CorridorX, section.SouthRow);
+        var eye = EyeAt(section.CorridorX, section.SouthRowOf(ShowroomPart.Corridor));
 
         // Every label of this part near enough to be shown at all.
         var own = Layout.Labels.Where(label =>
@@ -34,7 +34,7 @@ public class ShowroomLabelSightTests
     {
         var a = Layout.Sections[0];
         var b = Layout.Sections[1];
-        var eye = EyeAt(a.CorridorX + 2, a.SouthRow);
+        var eye = EyeAt(a.CorridorX + 2, a.SouthRowOf(ShowroomPart.Corridor));
 
         // Straight south, behind the wall between section A and section B.
         var behindWall = Layout.Level.CellCenter(a.CorridorX + 2, b.NorthRow) + new Vector3(0f, 1.6f, 0f);

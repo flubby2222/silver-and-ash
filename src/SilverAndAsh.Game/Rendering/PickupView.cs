@@ -83,20 +83,30 @@ internal sealed class PickupView
     }
 
     /// <summary>
-    /// Weapons lying in the level (dropped from the inventory): a flat bar on the floor in the colour of its tier - long and
-    /// thin for a melee weapon, short and thick for a ranged one - over a faint glow that pulses, so it can be found again.
+    /// Equipment lying in the level, over a faint glow in the colour of its tier that pulses, so it can be found (issue
+    /// #317). A weapon: a flat bar - long and thin for a melee weapon, short and thick for a ranged one. An item (until it
+    /// has a model of its own): a small box floating above the glow and turning slowly.
     /// </summary>
-    public void DrawWeapons(IReadOnlyList<WeaponDrop> weapons, float alpha)
+    public void DrawEquipment(IReadOnlyList<EquipmentDrop> drops, float alpha)
     {
-        foreach (var weapon in weapons)
+        foreach (var drop in drops)
         {
-            var bottom = Vector3.Lerp(weapon.PreviousPosition, weapon.Position, alpha);
-            var place = Matrix4x4.CreateRotationY(weapon.Id * 1.3f) * Matrix4x4.CreateTranslation(bottom);
-            var tier = TierColours.Of(weapon.Info.Tier, _time);
-            var glow = 0.35f + 0.25f * MathF.Sin(_time * 3f + weapon.Id);
-            var size = weapon.Info.Hand == WeaponHand.Melee ? new Vector3(0.8f, 0.05f, 0.08f) : new Vector3(0.55f, 0.09f, 0.12f);
-            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.005f, 0f) * place, new Vector3(size.X + 0.2f, 0.01f, size.Z + 0.2f), Blend(Dark, tier, glow));
-            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.01f + (size.Y / 2f), 0f) * place, size, tier);
+            var bottom = Vector3.Lerp(drop.PreviousPosition, drop.Position, alpha);
+            var place = Matrix4x4.CreateRotationY(drop.Id * 1.3f) * Matrix4x4.CreateTranslation(bottom);
+            var tier = TierColours.Of(drop.Piece.Tier, _time);
+            var glow = 0.35f + 0.25f * MathF.Sin(_time * 3f + drop.Id);
+            if (drop is WeaponDrop weapon)
+            {
+                var size = weapon.Info.Hand == WeaponHand.Melee ? new Vector3(0.8f, 0.05f, 0.08f) : new Vector3(0.55f, 0.09f, 0.12f);
+                ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.005f, 0f) * place, new Vector3(size.X + 0.2f, 0.01f, size.Z + 0.2f), Blend(Dark, tier, glow));
+                ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.01f + (size.Y / 2f), 0f) * place, size, tier);
+                continue;
+            }
+
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.005f, 0f) * place, new Vector3(0.45f, 0.01f, 0.45f), Blend(Dark, tier, glow));
+            var hover = 0.2f + MathF.Sin(_time * 2.5f + drop.Id) * 0.04f;
+            var turning = Matrix4x4.CreateRotationY(_time * 1.2f + drop.Id) * Matrix4x4.CreateTranslation(bottom + new Vector3(0f, hover, 0f));
+            ShadedBox.Draw(turning, new Vector3(0.16f, 0.16f, 0.16f), tier);
         }
     }
 

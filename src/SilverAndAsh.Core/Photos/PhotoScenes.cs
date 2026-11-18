@@ -1,3 +1,4 @@
+using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Presentation;
@@ -123,11 +124,28 @@ public static class PhotoScenes
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Hammer, StateProgress: >= 0.8f },
             }),
+        new("gorm-shockwave", "Gorm's shock wave half way out (6 m), seen from 14 m, just outside its reach; for --bench with the wave in view (issue #299).",
+            studio => MotionScenes.Find("gorm-slam-far")!.Build(studio) with
+            {
+                StopWhen = world => world.Gorm?.Shockwave is { Radius: >= 6f },
+            }),
         new("gorm-phase2", "Gorm in phase 2 (half his health gone, red marks), 10 m away in his boss room, at the end of his roar (issue #249).",
             studio => new PhotoSetup(HalfHealth(studio.BeforeGorm(10f)))
             {
                 Ticks = 600,
                 StopWhen = world => world.Gorm is { IsInPhase2: true, State: GormState.Roaring, StateProgress: >= 0.95f },
+            }),
+        new("stairs-4m", "The spiral staircase of stone, standing in the boss room after Gorm's death, seen from 4 m, its lamp lit (issue #300).",
+            studio => new PhotoSetup(studio.AfterGorm(4f))
+            {
+                Ticks = 600,
+                StopWhen = world => world.Stairs is { CanInteract: true },
+            }),
+        new("stairs-10m", "Like stairs-4m, from 10 m: what is left of its outline at that distance (issue #300).",
+            studio => new PhotoSetup(studio.AfterGorm(10f))
+            {
+                Ticks = 600,
+                StopWhen = world => world.Stairs is { CanInteract: true },
             }),
         new("hud-weapons", "The HUD with every weapon place taken: club in hand, pistol, rifle and blunderbuss.",
             studio => new PhotoSetup(AllWeapons(studio.StartRun()))),
@@ -157,6 +175,21 @@ public static class PhotoScenes
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 10)) { IsModelProbe = true }),
         .. ShowroomScenes(),
+        new("equipment-rifle", "The rifle (Forged) lying in the showroom, 0.8 m away: \"[F] Take Rifle (Forged)\" in steel blue (issue #317).",
+            studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle }))),
+        .. EquipmentTierScenes(),
+        new("equipment-taken-royal", "Hunter's Eye (Royal) just taken with F: its card on the left, framed in gold (issue #317).",
+            studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is ItemPiece { Item: ItemKind.HuntersEye }))
+            {
+                Ticks = 45,
+                Input = tick => PlayerInput.None with { Interact = tick == 0 },
+            }),
+        new("equipment-taken-vampiric", "The Leech (Vampiric) just taken with F: its card and the short blood-red glow from the edges (issue #317).",
+            studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is ItemPiece { Item: ItemKind.Leech }))
+            {
+                Ticks = 15,
+                Input = tick => PlayerInput.None with { Interact = tick == 0 },
+            }),
     ];
 
     /// <summary>
@@ -170,20 +203,48 @@ public static class PhotoScenes
     /// <summary>The scene called <paramref name="name"/>, or null.</summary>
     public static PhotoScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
 
-    // The showroom (issue #283): every part of every section from its west end, across to its doors and pieces.
+    // The showroom (issue #283): every part of every section from its west end, across to its north wall and pieces.
     private static IEnumerable<PhotoScene> ShowroomScenes()
     {
         foreach (var section in ShowroomLayout.Build().Sections)
         {
             foreach (var part in Enum.GetValues<ShowroomPart>())
             {
-                var height = part == ShowroomPart.Corridor ? "corridor height (3.5 m)" : "room height (6 m)";
+                var shown = part == ShowroomPart.Corridor
+                    ? "the corridor (3.5 m) with its doors and cracked wall"
+                    : "the room (6 m) with its pieces";
                 yield return new(
                     $"showroom-{section.Variant.ToString().ToLowerInvariant()}-{part.ToString().ToLowerInvariant()}",
-                    $"The showroom, wall variant {section.Variant} at {height}: its doors, cracked wall and pieces.",
+                    $"The showroom, wall variant {section.Variant}: {shown}.",
                     studio => new PhotoSetup(ShowroomLayout.Build().ViewOf(section.Index, part, studio.Balance)));
             }
         }
+    }
+
+    // One item of each tier lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in its colour (issue #317).
+    private static IEnumerable<PhotoScene> EquipmentTierScenes()
+    {
+        foreach (var tier in Enum.GetValues<ItemTier>())
+        {
+            var item = ShowroomPieces.All.OfType<ItemPiece>().First(piece => Items.Info(piece.Item).Tier == tier).Item;
+            yield return new(
+                $"equipment-{tier.ToString().ToLowerInvariant()}",
+                $"{Items.Info(item).Name} ({tier}) lying in the showroom, 0.8 m away: its glow and \"[F] Take ...\" in the colour of its tier (issue #317).",
+                studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is ItemPiece shown && shown.Item == item)));
+        }
+    }
+
+    // The showroom with a player 0.8 m south of the first piece that is `isPiece`, looking at it - close enough for F
+    // (issue #317).
+    private static GameWorld BeforeEquipment(PhotoStudio studio, Func<ShowroomPiece, bool> isPiece)
+    {
+        var layout = ShowroomLayout.Build();
+        var placed = layout.Placed.First(place => isPiece(place.Piece));
+        var spot = layout.Level.CellCenter(placed.X, placed.Z);
+        var world = layout.NewWorldAt(placed.X, placed.Z + 1, spot, studio.Balance);
+        world.Player.PlaceAt(spot + new Vector3(0f, 0f, 0.8f));
+        PhotoStudio.Face(world.Player, spot + new Vector3(0f, EquipmentDrop.BoxHeight / 2f, 0f));
+        return world;
     }
 
     // Closed, half open and fully open, 6 m away in a bare hall (issue #245).
