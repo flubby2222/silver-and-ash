@@ -295,6 +295,40 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public void Without_window_the_standard_size_is_used()
+    {
+        Assert.Null(LaunchOptions.Parse([]).Window);
+    }
+
+    [Fact]
+    public void Window_chooses_the_window_size()
+    {
+        Assert.Equal(new WindowSize(2520, 1080), LaunchOptions.Parse(["--window", "2520x1080"]).Window);
+
+        var options = LaunchOptions.Parse(["--photo", "room-combat", "--window", "1024x768"]);
+        Assert.Equal(new WindowSize(1024, 768), options.Window);
+        Assert.Equal("room-combat", options.Photo);
+    }
+
+    [Theory]
+    [InlineData]
+    [InlineData("1280")]
+    [InlineData("1280x")]
+    [InlineData("x720")]
+    [InlineData("1280*720")]
+    [InlineData("1280x720x3")]
+    [InlineData("-1280x720")]
+    [InlineData("199x720")]
+    [InlineData("1280x7681")]
+    [InlineData("99999x720")]
+    public void Window_without_a_sensible_size_is_rejected(params string[] size)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--window", .. size]));
+
+        Assert.Contains("'--window' needs a size", error.Message);
+    }
+
+    [Fact]
     public void Without_showroom_the_game_is_played()
     {
         Assert.False(LaunchOptions.Parse([]).Showroom);
