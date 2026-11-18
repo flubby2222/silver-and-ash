@@ -5,10 +5,11 @@ namespace SilverAndAsh.Core.Gameplay;
 /// and whatever is drawn leaves it - so there are no doubles. It belongs to the world, not to a player: in co-op all
 /// players find from the same pool.
 /// <para>
-/// A draw asks for a least tier (a chest's own tier). With a small chance it rises one tier; then it is an item or a
-/// weapon by their shares (<see cref="LootBalance"/>). If that kind is used up in the tier, the other kind of the same
-/// tier is taken; if the whole tier is used up, the next higher one; if everything from there up is used up, there is
-/// nothing - the caller then gives extra silver instead.
+/// A draw asks for a least tier (a chest's own tier) and always gives at least that. With a small chance it tries one
+/// tier higher first - a bonus, never a new floor: if that tier is used up, the draw goes back to the least tier. It is
+/// an item or a weapon by their shares (<see cref="LootBalance"/>). If that kind is used up in a tier, the other kind
+/// of the same tier is taken; if the whole least tier is used up, the next higher one; only if everything from the
+/// least tier up is used up, there is nothing - the caller then gives extra silver instead.
 /// </para>
 /// <para>
 /// All chance comes from the pool's own generator, started from the world's seed (online co-op rule 3): the same seed
@@ -50,26 +51,39 @@ public sealed class LootPool
     public Equipment? Draw(ItemTier leastTier)
     {
         // Both rolls come first and always, so how full the pool is never changes how many numbers a draw uses.
-        var tier = leastTier;
-        if (_random.NextDouble() < _values.HigherTierChance && tier < ItemTier.Vampiric)
+        var higher = _random.NextDouble() < _values.HigherTierChance && leastTier < ItemTier.Vampiric;
+        var wantItem = _random.NextDouble() < _values.ItemShare;
+
+        // The higher tier is a bonus: only that one tier is tried, then the search starts again at the least tier.
+        if (higher && TakeFrom(leastTier + 1, wantItem) is { } bonus)
         {
-            tier++;
+            return bonus;
         }
 
-        var wantItem = _random.NextDouble() < _values.ItemShare;
-        for (; tier <= ItemTier.Vampiric; tier++)
+        for (var tier = leastTier; tier <= ItemTier.Vampiric; tier++)
         {
-            var wanted = InTier(tier, wantItem);
-            var choice = wanted.Count > 0 ? wanted : InTier(tier, !wantItem);
-            if (choice.Count > 0)
+            if (TakeFrom(tier, wantItem) is { } drawn)
             {
-                var drawn = choice[_random.Next(choice.Count)];
-                _left.Remove(drawn);
                 return drawn;
             }
         }
 
         return null;
+    }
+
+    /// <summary>Takes a piece of the wanted kind from <paramref name="tier"/>, else of the other kind, else null.</summary>
+    private Equipment? TakeFrom(ItemTier tier, bool wantItem)
+    {
+        var wanted = InTier(tier, wantItem);
+        var choice = wanted.Count > 0 ? wanted : InTier(tier, !wantItem);
+        if (choice.Count == 0)
+        {
+            return null;
+        }
+
+        var drawn = choice[_random.Next(choice.Count)];
+        _left.Remove(drawn);
+        return drawn;
     }
 
     /// <summary>

@@ -76,6 +76,7 @@ public class LootPoolTests
             {
                 drawn.Add(piece);
                 Assert.False(pool.Contains(piece));
+                Assert.True(drawn.Count <= Equipment.All.Count, $"Seed {seed}: more draws than pieces - a piece came twice.");
             }
 
             Assert.Equal(Equipment.All.Count, drawn.Count);
@@ -116,6 +117,49 @@ public class LootPoolTests
             var onlyVampiric = new LootPool(seed, NeverHigher, Equipment.All.Where(piece => piece.Tier != ItemTier.Vampiric));
             // The Worn tier is used up: a Worn draw rises until it finds something.
             Assert.Equal(ItemTier.Vampiric, onlyVampiric.Draw(ItemTier.Worn)!.Tier);
+        }
+    }
+
+    [Fact]
+    public void A_higher_tier_roll_into_a_used_up_tier_falls_back_to_the_chests_own_tier()
+    {
+        // Review of #319: only the two Royal items are left; a King's Chest (Royal) that rolls "one tier higher" finds
+        // Vampiric empty - it must still give a Royal piece, not nothing (extra silver).
+        var always = Values with { HigherTierChance = 1f };
+        for (var seed = 0; seed < 50; seed++)
+        {
+            var onlyRoyal = new LootPool(seed, always, Equipment.All.Where(piece => piece.Tier != ItemTier.Royal));
+
+            Assert.Equal(ItemTier.Royal, onlyRoyal.Draw(ItemTier.Royal)?.Tier);
+            Assert.Equal(ItemTier.Royal, onlyRoyal.Draw(ItemTier.Royal)?.Tier);
+            Assert.Null(onlyRoyal.Draw(ItemTier.Royal));
+        }
+    }
+
+    [Fact]
+    public void A_higher_tier_roll_into_a_used_up_tier_never_skips_the_chests_own_tier()
+    {
+        // Royal is used up, Forged is full: a Forged chest that rolls "one tier higher" gives Forged, not Vampiric.
+        var always = Values with { HigherTierChance = 1f };
+        for (var seed = 0; seed < 50; seed++)
+        {
+            var royalGone = new LootPool(seed, always, Equipment.All.Where(piece => piece.Tier == ItemTier.Royal));
+
+            Assert.Equal(ItemTier.Forged, royalGone.Draw(ItemTier.Forged)!.Tier);
+        }
+    }
+
+    [Fact]
+    public void Only_if_the_chests_own_tier_is_used_up_too_the_draw_rises_further()
+    {
+        // Forged and Royal are used up: a Forged chest rolling higher (Royal, empty) goes back to Forged (empty), then
+        // up to Vampiric - the only tier with anything left.
+        var always = Values with { HigherTierChance = 1f };
+        for (var seed = 0; seed < 50; seed++)
+        {
+            var pool = new LootPool(seed, always, Equipment.All.Where(piece => piece.Tier is ItemTier.Forged or ItemTier.Royal));
+
+            Assert.Equal(ItemTier.Vampiric, pool.Draw(ItemTier.Forged)!.Tier);
         }
     }
 
@@ -184,6 +228,16 @@ public class LootPoolTests
     }
 
     [Fact]
+    public void A_piece_from_the_middle_goes_back_to_its_own_place()
+    {
+        var pool = new LootPool(1, Values, [Rifle]);
+
+        Assert.True(pool.PutBack(Rifle));
+
+        Assert.Equal(Equipment.All, pool.Left);
+    }
+
+    [Fact]
     public void Putting_back_gives_the_same_draws_as_if_it_had_never_left()
     {
         var untouched = new LootPool(3, Values);
@@ -245,6 +299,7 @@ public class LootPoolTests
         while (pool.Draw(ItemTier.Worn) is { } piece)
         {
             drawn.Add(piece);
+            Assert.True(drawn.Count <= Equipment.All.Count, $"Seed {seed}: more draws than pieces - a piece came twice.");
         }
 
         return drawn;
