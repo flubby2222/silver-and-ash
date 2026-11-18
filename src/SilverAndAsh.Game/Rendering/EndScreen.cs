@@ -42,8 +42,8 @@ internal static class EndScreen
         var y = StatsTop;
         foreach (var (label, value) in Lines(summary))
         {
-            Raylib.DrawText(label, centre - 200, y, FontSize, Label);
-            Raylib.DrawText(value, centre + 200 - Raylib.MeasureText(value, FontSize), y, FontSize, Value);
+            PixelText.Draw(label, centre - 200, y, FontSize, Label);
+            PixelText.Draw(value, centre + 200 - PixelText.Measure(value, FontSize), y, FontSize, Value);
             y += LineHeight;
         }
 

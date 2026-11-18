@@ -29,7 +29,7 @@ internal static class LevelBanner
 
     private static void DrawCentred(string text, int y, int fontSize, Color color)
     {
-        var width = Raylib.MeasureText(text, fontSize);
-        Raylib.DrawText(text, (Raylib.GetScreenWidth() - width) / 2, y, fontSize, color);
+        var width = PixelText.Measure(text, fontSize);
+        PixelText.Draw(text, (Raylib.GetScreenWidth() - width) / 2, y, fontSize, color);
     }
 }

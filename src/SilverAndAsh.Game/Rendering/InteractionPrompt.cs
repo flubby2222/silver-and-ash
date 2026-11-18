@@ -25,13 +25,13 @@ internal static class InteractionPrompt
         var offer = target.OfferFor(player);
         var key = offer.IsPossible ? "[F] " : string.Empty;
         var line = HudTextLines.Of(HudText.InteractionPrompt, Raylib.GetScreenHeight());
-        var keyWidth = Raylib.MeasureText(key, line.FontSize);
-        var total = keyWidth + Raylib.MeasureText(offer.Text, line.FontSize);
+        var keyWidth = PixelText.Measure(key, line.FontSize);
+        var total = keyWidth + PixelText.Measure(offer.Text, line.FontSize);
         var x = (Raylib.GetScreenWidth() - total) / 2;
-        Raylib.DrawText(key, x, line.Top, line.FontSize, Key);
+        PixelText.Draw(key, x, line.Top, line.FontSize, Key);
         var colour = !offer.IsPossible ? NotPossible
             : offer.Tier is { } tier ? EquipmentCard.Readable(TierColours.Of(tier, (float)Raylib.GetTime()))
             : Text;
-        Raylib.DrawText(offer.Text, x + keyWidth, line.Top, line.FontSize, colour);
+        PixelText.Draw(offer.Text, x + keyWidth, line.Top, line.FontSize, colour);
     }
 }

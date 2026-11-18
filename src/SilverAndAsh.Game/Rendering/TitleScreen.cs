@@ -39,6 +39,6 @@ internal static class TitleScreen
         menu.Draw(Items, Top);
 
         var version = $"v{displayVersion}";
-        Raylib.DrawText(version, Raylib.GetScreenWidth() - Raylib.MeasureText(version, 20) - 20, height - 30, 20, Version);
+        PixelText.Draw(version, Raylib.GetScreenWidth() - PixelText.Measure(version, 20) - 20, height - 30, 20, Version);
     }
 }

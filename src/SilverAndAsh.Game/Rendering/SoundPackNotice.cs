@@ -22,9 +22,9 @@ internal static class SoundPackNotice
         }
 
         var alpha = MathF.Min(1f, packs.NoticeSecondsLeft / FadeOutSeconds);
-        var width = Raylib.MeasureText(packs.Notice, FontSize);
+        var width = PixelText.Measure(packs.Notice, FontSize);
         var x = (Raylib.GetScreenWidth() - width) / 2;
-        Raylib.DrawText(packs.Notice, x + 2, Top + 2, FontSize, Raylib.Fade(Shadow, alpha));
-        Raylib.DrawText(packs.Notice, x, Top, FontSize, Raylib.Fade(Text, alpha));
+        PixelText.Draw(packs.Notice, x + 2, Top + 2, FontSize, Raylib.Fade(Shadow, alpha));
+        PixelText.Draw(packs.Notice, x, Top, FontSize, Raylib.Fade(Text, alpha));
     }
 }
