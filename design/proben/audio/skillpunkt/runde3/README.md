@@ -41,3 +41,9 @@ Mono, 44 100 Hz, 16 Bit. „Streuung“ = Standardabweichung des Pegels im Auskl
 | c-sanftes-vibrato.wav | 1,40 | 0,51 | 0,88 | −3,0 | −23,3 | 0,46 | 3,15 | 29,0 |
 
 Nach den Zahlen ist b die glatteste (Streuung auf ein Drittel), a die ähnlichste zur Endfassung. Ob es für das Ohr glatt klingt, kann nur der Mensch beurteilen. Der Unterschied der Zahlen ist mäßig (Spanne 4,7 → 2,1 dB); gemessen wurde die Hüllkurve, die Frequenzschwankung der Stimmen (13,8 Hz → 0,4 Hz) sagt mehr über die Ursache.
+
+## Urteil des Menschen
+
+Gewählt: „a“, also `a-ohne-vibrato.wav`; eine Begründung hat er nicht genannt. b und c sind nicht gewählt.
+
+*Deutung des Audiodesigners (nicht seine Worte):* Das Wummern kam vom Vibrato-Rechenfehler; mit weggelassenem Vibrato klingt der Ausklang für ihn glatt genug, auch wenn die Messung für b noch weniger Schwankung zeigt. Regel für Chor-Klänge: kein Vibrato im Ausklang. Der Einbau ins Spiel folgt über das Asset-Skript (Issue #377).
