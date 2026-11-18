@@ -1,20 +1,32 @@
+using Raylib_cs;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The two tabs of the menu (issue #348): "[Tab] Map" and "[G] Equipment", the open page lit - in the design "C2 Slim"
-/// (issue #371). Pure presentation - which page is open decides Core (<see cref="PlayerMenu"/>). The equipment page
-/// draws its tabs with its panel (<see cref="InventoryWindow"/>).
+/// What both pages of the menu share (issues #348, #390): the two tabs "[Tab] Map" and "[G] Equipment" at the same place
+/// on both pages (<see cref="MenuLayout.TabTarget"/>), and the frame of values on the left. Pure presentation - which page
+/// is open decides Core (<see cref="PlayerMenu"/>); a click on a tab goes to Core as input.
 /// </summary>
 internal static class MenuTabs
 {
-    /// <summary>Draws the tabs of the map page centred at the top; returns the window line under them.</summary>
-    public static float DrawMap()
+    /// <summary>The tab clicked in this frame as its menu key, or null without a click or off the tabs.</summary>
+    public static MenuKey? Pick()
     {
+        if (!Raylib.IsMouseButtonPressed(MouseButton.Left))
+        {
+            return null;
+        }
+
         var canvas = MenuArt.Canvas;
-        MenuArt.Draw(MenuArt.Layout.MapTabs(canvas, out var bottom), canvas);
-        return canvas.ToWindowY(bottom);
+        return MenuLayout.TabAt(canvas, canvas.ToCanvas(Raylib.GetMousePosition()));
+    }
+
+    /// <summary>Draws the frame of values of <paramref name="player"/> - the same on both pages.</summary>
+    public static void DrawSheet(GameWorld world, Player player)
+    {
+        var sheet = MenuArt.Layout.Sheet(CharacterSheet.Stats(world, player), CharacterSheet.Boons(player, world.Balance.Boons));
+        MenuArt.DrawSheet(sheet, MenuArt.Canvas);
     }
 }

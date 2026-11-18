@@ -25,6 +25,13 @@ public class PlayerMenuTests
     [InlineData(PlayerMenuPage.Equipment, MenuKey.Map, PlayerMenuPage.Map)]
     [InlineData(PlayerMenuPage.Equipment, MenuKey.Equipment, null)]
     [InlineData(PlayerMenuPage.Equipment, MenuKey.Close, null)]
+    // A click on a tab (issue #390) only turns the page of an open menu: it never opens nor closes it.
+    [InlineData(null, MenuKey.MapTab, null)]
+    [InlineData(null, MenuKey.EquipmentTab, null)]
+    [InlineData(PlayerMenuPage.Map, MenuKey.MapTab, PlayerMenuPage.Map)]
+    [InlineData(PlayerMenuPage.Map, MenuKey.EquipmentTab, PlayerMenuPage.Equipment)]
+    [InlineData(PlayerMenuPage.Equipment, MenuKey.MapTab, PlayerMenuPage.Map)]
+    [InlineData(PlayerMenuPage.Equipment, MenuKey.EquipmentTab, PlayerMenuPage.Equipment)]
     public void A_key_turns_the_menu_to_its_page(PlayerMenuPage? page, MenuKey key, PlayerMenuPage? after)
     {
         var menu = new PlayerMenu(page).Press(key);
@@ -61,6 +68,26 @@ public class PlayerMenuTests
 
         player.Tick(Press(MenuKey.Map));
         Assert.False(player.Menu.IsOpen);
+    }
+
+    [Fact]
+    public void Clicks_on_the_tabs_turn_the_pages_in_the_world_tick()
+    {
+        // Issue #390: the click on a tab comes into the tick as input, like Tab and G.
+        var world = new GameWorld(LevelParser.Parse("P"));
+
+        world.Tick(Press(MenuKey.EquipmentTab));
+        Assert.False(world.Player.Menu.IsOpen);
+
+        world.Tick(Press(MenuKey.Map));
+        world.Tick(Press(MenuKey.EquipmentTab));
+        Assert.Equal(PlayerMenuPage.Equipment, world.Player.Menu.Page);
+
+        world.Tick(Press(MenuKey.MapTab));
+        Assert.Equal(PlayerMenuPage.Map, world.Player.Menu.Page);
+
+        world.Tick(Press(MenuKey.MapTab));
+        Assert.Equal(PlayerMenuPage.Map, world.Player.Menu.Page);
     }
 
     [Theory]

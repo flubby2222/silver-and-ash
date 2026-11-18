@@ -65,6 +65,15 @@ public sealed record EquipmentPage(
     MenuText LastWeaponNote);
 
 /// <summary>
+/// The player's values and boons on both pages of the menu (issue #390): a see-through frame (no dark ground) under the
+/// HUD's experience zone, its texts with their shadow.
+/// </summary>
+public sealed record ValuesSheet(MenuRect Frame, IReadOnlyList<MenuText> Texts);
+
+/// <summary>The map page (issue #390): its tabs and hint, and the area the map is drawn in.</summary>
+public sealed record MapPage(MenuPicture Frame, MenuRect MapArea);
+
+/// <summary>
 /// The canvas the menus are laid out on, in design pixels - the same as the HUD's (<see cref="HudCanvas"/>): 480 lines
 /// over the picture of the 3D world, never narrower than 768. <see cref="Screen"/> is where it lies in the window.
 /// The design is 854 x 480; on another canvas the menus keep to its middle (<see cref="OffsetX"/>, <see cref="OffsetY"/>).
@@ -108,7 +117,8 @@ public readonly record struct MenuCanvas(int Width, int Height, ScreenRect Scree
 
 /// <summary>
 /// Where the menus draw what (issue #371): the approved design "C2 Slim" (art bible, section "Menus"), 854 x 480, kept
-/// in the middle of the canvas. Pure arithmetic - the Game project draws the result with the parts of
+/// in the middle of the canvas - except the map and equipment pages (issue #390), which stand right of the frame of
+/// values at the HUD's top left corner, with their tabs at the same place on both. Pure arithmetic - the Game project draws the result with the parts of
 /// <see cref="MenuParts"/>. Texts are measured with the width function given, so the layout works with any font.
 /// </summary>
 public sealed class MenuLayout
@@ -132,8 +142,24 @@ public sealed class MenuLayout
     /// <summary>The help line of the equipment page.</summary>
     public const string EquipmentHelp = "Left click: equip   Right click: drop   [G] or [Esc] close   [Tab] map";
 
+    /// <summary>The hint under the tabs of the map page.</summary>
+    public const string MapHint = "Tab or Esc: close   G: equipment";
+
     /// <summary>The note while the pointer is on the only ranged weapon left.</summary>
     public const string LastWeaponText = "Your last ranged weapon stays";
+
+    /// <summary>Left edge of the frame of values on both pages (issue #390), near the HUD's level frame.</summary>
+    public const int SheetLeft = 8;
+
+    /// <summary>
+    /// Top of the frame of values: under the HUD's experience zone (level, experience bar, waiting boons), which ends at
+    /// line 36 - tested against <see cref="HudLayout"/>. The HUD keeps that zone at the top left on every canvas, so the
+    /// frame does not move with the menus' middle.
+    /// </summary>
+    public const int SheetTop = 44;
+
+    /// <summary>Width of the frame of values - the same for every player, so the tabs never move.</summary>
+    public const int SheetWidth = 184;
 
     /// <summary>Distance between two entries of a column (art bible: 62 px).</summary>
     public const int RowPitch = 62;
@@ -160,10 +186,17 @@ public sealed class MenuLayout
     private const int ColumnWidth = 240;
     private const int ColumnCursorWidth = 208;
     private const int ColumnPadding = 18;
-    private const int EquipmentPadding = 20;
-    private const int BoxGap = 8;
+    private const int EquipmentPadding = 12;
+    private const int BoxGap = 6;
     private const int BoxColumns = 4;
     private const int TabsAbovePanel = 54;
+    private const int PagePanelWidth = 774;
+    private const int PagePanelTop = 62;
+    private const int PagePanelHeight = 390;
+    private const int PageMargin = 12;
+    private const int SheetGap = 6;
+    private const int SheetPadding = 8;
+    private const int SheetLinePitch = 11;
     private const int SettingsValueRight = 622;
 
     // The design's sliders start at 420; at full value the knob (to 587) would then cover "100%" at 584, so they sit
@@ -304,32 +337,116 @@ public sealed class MenuLayout
     }
 
     /// <summary>
-    /// The tabs of the map page: centred at the top of the canvas, over the map (the column of values stays free on the
-    /// left). <paramref name="bottom"/> is the canvas line under them.
+    /// The panel of the equipment page (issue #390): right of the frame of values, as wide as the design's (774) where the
+    /// canvas has room, never closer than 12 px to its right edge; the tabs of both pages stand over its left end.
     /// </summary>
-    public MenuPicture MapTabs(MenuCanvas canvas, out float bottom)
+    public static MenuRect PagePanel(MenuCanvas canvas)
     {
-        var picture = new Builder(this);
-        var shapes = TabShapes;
-        var left = (canvas.Width / 2f) - ((shapes[^1].Right - shapes[0].X) / 2f);
-        Tabs(picture, PlayerMenuPage.Map, MathF.Round(left), shapes[0].Y);
-        bottom = shapes[0].Bottom;
-        return picture.Build();
+        const int left = SheetLeft + SheetWidth + SheetGap;
+        var room = canvas.Width - PageMargin - left;
+        var width = Math.Min(PagePanelWidth, room);
+        return new MenuRect(left + ((room - width) / 2), PagePanelTop + canvas.OffsetY, width, PagePanelHeight);
     }
 
     /// <summary>
-    /// The equipment page with <paramref name="bagUsed"/> places of the bag taken: a wide panel in the middle of the
-    /// canvas (24 px narrower than the canvas at most), the tabs over its left end.
+    /// Where the mouse can click tab <paramref name="index"/> (0 map, 1 equipment): its outline as an open tab, at the same
+    /// place on both pages.
+    /// </summary>
+    public static MenuRect TabTarget(MenuCanvas canvas, int index)
+    {
+        var panel = PagePanel(canvas);
+        return TabOutline(index, open: true, panel.X, panel.Y - TabsAbovePanel);
+    }
+
+    /// <summary>The tab under the canvas point <paramref name="point"/> as the key of its click, or null.</summary>
+    public static MenuKey? TabAt(MenuCanvas canvas, Vector2 point)
+    {
+        for (var i = 0; i < TabLabels.Count; i++)
+        {
+            if (TabTarget(canvas, i).Contains(point))
+            {
+                return i == 0 ? MenuKey.MapTab : MenuKey.EquipmentTab;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The map page: the tabs where the equipment page has them, the hint under them, and the area for the map below -
+    /// right of the frame of values.
+    /// </summary>
+    public MapPage Map(MenuCanvas canvas)
+    {
+        var picture = new Builder(this);
+        var panel = PagePanel(canvas);
+        var tabsTop = panel.Y - TabsAbovePanel;
+        Tabs(picture, PlayerMenuPage.Map, panel.X, tabsTop);
+        var hintTop = tabsTop + TabShapes[0].Height + 8;
+        picture.Centred(MapHint, panel.CentreX, hintTop, 2, MenuTextColor.Quiet);
+        var area = MenuRect.FromEdges(panel.X, hintTop + (2 * _capHeight) + 12, panel.Right, panel.Bottom - 22);
+        return new MapPage(picture.Build(), area);
+    }
+
+    /// <summary>
+    /// The frame of values on both pages (issue #390): "HUNTER" over the values, "BOONS" over the chosen boons, names
+    /// left, values in a second column - small, as the HUD writes, in a frame without a ground.
+    /// </summary>
+    public ValuesSheet Sheet(IReadOnlyList<SheetLine> stats, IReadOnlyList<SheetLine> boons)
+    {
+        ArgumentNullException.ThrowIfNull(stats);
+        ArgumentNullException.ThrowIfNull(boons);
+        var texts = new List<MenuText>();
+        var left = SheetLeft + SheetPadding;
+        var labelWidth = stats.Concat(boons).Select(line => _width(line.Label, 1)).DefaultIfEmpty(0).Max();
+        var valueX = left + labelWidth + SheetPadding;
+        var y = SheetTop + SheetPadding;
+
+        void Heading(string text)
+        {
+            texts.Add(new MenuText(text, left, y, 2, MenuTextColor.Quiet));
+            y += (2 * _capHeight) + 6;
+        }
+
+        void Lines(IEnumerable<SheetLine> lines)
+        {
+            foreach (var line in lines)
+            {
+                texts.Add(new MenuText(line.Label, left, y, 1, MenuTextColor.Second));
+                texts.Add(new MenuText(line.Value, valueX, y, 1, MenuTextColor.Main));
+                y += SheetLinePitch;
+            }
+        }
+
+        Heading("HUNTER");
+        Lines(stats);
+        y += 4;
+        Heading("BOONS");
+        if (boons.Count == 0)
+        {
+            texts.Add(new MenuText("No boons yet", left, y, 1, MenuTextColor.Quiet));
+            y += SheetLinePitch;
+        }
+
+        Lines(boons);
+        var bottom = y - SheetLinePitch + _capHeight + 1 + SheetPadding;
+        return new ValuesSheet(new MenuRect(SheetLeft, SheetTop, SheetWidth, bottom - SheetTop), texts);
+    }
+
+    /// <summary>
+    /// The equipment page with <paramref name="bagUsed"/> places of the bag taken (issue #390): the panel right of the
+    /// frame of values (<see cref="PagePanel"/>), the tabs over its left end; the hands on top, the bag below, the items
+    /// under a line, the help at the bottom.
     /// </summary>
     public EquipmentPage Equipment(MenuCanvas canvas, int bagUsed)
     {
         var picture = new Builder(this);
-        var width = Math.Min(774, canvas.Width - 24);
-        var panel = new MenuRect((canvas.Width - width) / 2, 62 + canvas.OffsetY, width, 390);
+        var panel = PagePanel(canvas);
         picture.Panels.Add(new MenuPanel(panel, Gable: false));
         Tabs(picture, PlayerMenuPage.Equipment, panel.X, panel.Y - TabsAbovePanel);
 
-        var left = panel.X + EquipmentPadding;
+        const int gridWidth = (BoxColumns * BoxWidth) + ((BoxColumns - 1) * BoxGap);
+        var left = panel.X + MathF.Floor((panel.Width - gridWidth) / 2f);
         var handsTop = panel.Y + 38;
         var bagTop = panel.Y + 126;
         var hands = Enumerable.Range(0, 1 + Player.RangedSlotCount)
@@ -342,17 +459,16 @@ public sealed class MenuLayout
         picture.Text(string.Create(CultureInfo.InvariantCulture, $"BAG  {bagUsed} / {Player.InventorySlotCount}"),
             (int)left, (int)bagTop - 20, 2, MenuTextColor.Quiet);
 
-        var boxesRight = left + (BoxColumns * BoxWidth) + ((BoxColumns - 1) * BoxGap);
-        var itemsLeft = (int)boxesRight + 24;
         var lastBox = bag[^1].Bottom;
-        var divider = new MenuRect(boxesRight + 12, handsTop - 20, 1, lastBox - handsTop + 20);
-        picture.Text("ITEMS", itemsLeft, (int)handsTop - 20, 2, MenuTextColor.Quiet);
-        picture.Text("No items yet", itemsLeft, (int)handsTop, 2, MenuTextColor.Second);
-
-        var helpScale = _width(EquipmentHelp, 2) <= width - (2 * EquipmentPadding) ? 2 : 1;
-        picture.Centred(EquipmentHelp, panel.CentreX, panel.Bottom - 22 - (_capHeight * helpScale / 2), helpScale, MenuTextColor.Quiet);
-        var note = new MenuText(LastWeaponText, (int)MathF.Round(panel.CentreX - (_width(LastWeaponText, 2) / 2f)),
+        var note = new MenuText(LastWeaponText, (int)MathF.Round(left + (gridWidth / 2f) - (_width(LastWeaponText, 2) / 2f)),
             (int)lastBox + 18, 2, MenuTextColor.Selected);
+        var divider = new MenuRect(left, lastBox + 42, gridWidth, 1);
+        var itemsTop = (int)divider.Y + 10;
+        picture.Text("ITEMS", (int)left, itemsTop, 2, MenuTextColor.Quiet);
+        picture.Text("No items yet", (int)left, itemsTop + (2 * _capHeight) + 8, 2, MenuTextColor.Second);
+
+        var helpScale = _width(EquipmentHelp, 2) <= panel.Width - (2 * EquipmentPadding) ? 2 : 1;
+        picture.Centred(EquipmentHelp, panel.CentreX, panel.Bottom - 22 - (_capHeight * helpScale / 2), helpScale, MenuTextColor.Quiet);
         return new EquipmentPage(picture.Build(), hands, bag, divider, note);
     }
 

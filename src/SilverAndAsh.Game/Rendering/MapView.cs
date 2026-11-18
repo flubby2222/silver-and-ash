@@ -7,8 +7,9 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The map page of the menu (issues #347, #348), opened and closed with Tab, G turns to the equipment page: on the left the player's values and chosen boons (the lines
-/// come from Core, <see cref="CharacterSheet"/>), on the right the discovered rooms from above, the doors of those rooms
+/// The map page of the menu (issues #347, #348, #390), opened and closed with Tab, G or a click on the other tab turns to
+/// the equipment page: on the left the player's values and chosen boons in the see-through frame both pages share
+/// (<see cref="MenuTabs.DrawSheet"/>), on the right the discovered rooms from above, the doors of those rooms
 /// (coloured by state, a padlock on a locked one, a skull on the boss door), the unopened chests there (in their tier's
 /// colour, a padlock if locked), blood vials left behind and an arrow for the player's position and view
 /// direction. North is up (the first row of the level). It is see-through, so the game can be played with it open -
@@ -35,45 +36,28 @@ internal static class MapView
     private static readonly Color PlayerColor = new(230, 190, 90, 255);
     private static readonly Color Vial = new(220, 40, 50, 255);
     private static readonly Color VialRim = new(40, 8, 12, 255);
-    private static readonly Color Heading = new(214, 204, 180, 255);
     private static readonly Color Hint = new(150, 150, 160, 255);
-    private static readonly Color Panel = new(16, 12, 18, 255);
-    private static readonly Color Label = new(170, 166, 176, 255);
-    private static readonly Color Value = new(226, 222, 232, 255);
-    private static readonly Color Gold = new(232, 196, 96, 255);
-
-    // The column of values and boons on the left edge. Opaque and only as tall as its lines, so it covers the
-    // game's title behind it but leaves the level and health bars at the bottom free - even with all four boons
-    // chosen at the smallest window (480 high) it ends above them.
-    private const int HeadingGap = 6;
-    private const int Edge = 12;
-    private const int PanelTop = 12;
-    private const int LineHeight = 19;
-    private const int FontSize = 16;
-    private const int HeadingSize = 18;
-    private const int Padding = 10;
-    private const int ColumnGap = 16;
 
     /// <summary>Draws the page: values and boons on the left, the map on the right.</summary>
     public static void Draw(GameWorld world, Player player, float seconds)
     {
-        var width = Raylib.GetScreenWidth();
-        var height = Raylib.GetScreenHeight();
-        Raylib.DrawRectangle(0, 0, width, height, Shade);
-        var panelRight = DrawSheet(world, player);
+        MenuArt.Shade(Shade);
+        MenuTabs.DrawSheet(world, player);
 
-        // The map fills the rest of the screen, right of the column; the hint sits under its heading, away from the HUD.
-        var mapLeft = panelRight + 24;
-        var mapWidth = width - mapLeft - 40;
-        // The tabs grow with the window (issue #371): hint and map stay below them.
-        var tabsBottom = (int)MathF.Ceiling(MenuTabs.DrawMap());
-        DrawCentred("Tab or Esc: close   G: equipment", mapLeft, mapWidth, Math.Max(PanelTop + 52, tabsBottom + 6), 16, Hint);
-        var mapTop = Math.Max(90, tabsBottom + 32);
+        // Tabs, hint and the area of the map come from Core (issue #390): the tabs where the equipment page has them,
+        // the map below, right of the frame of values. The map itself is drawn in window pixels.
+        var canvas = MenuArt.Canvas;
+        var page = MenuArt.Layout.Map(canvas);
+        MenuArt.Draw(page.Frame, canvas);
+        var area = new Rectangle(
+            canvas.Screen.X + (page.MapArea.X * canvas.Scale), canvas.ToWindowY(page.MapArea.Y),
+            page.MapArea.Width * canvas.Scale, page.MapArea.Height * canvas.Scale);
 
         var discovered = world.Rooms.Where(room => room.IsDiscovered).ToList();
         if (discovered.Count == 0)
         {
-            DrawCentred("This level has no map.", mapLeft, mapWidth, height / 2, 24, Hint);
+            const string none = "This level has no map.";
+            PixelText.Draw(none, (int)(area.X + ((area.Width - PixelText.Measure(none, 24)) / 2)), (int)(area.Y + (area.Height / 2)), 24, Hint);
             return;
         }
 
@@ -83,7 +67,6 @@ internal static class MapView
         var minZ = cells.Min(cell => cell.Z) - 1;
         var spanX = cells.Max(cell => cell.X) - minX + 2;
         var spanZ = cells.Max(cell => cell.Z) - minZ + 2;
-        var area = new Rectangle(mapLeft, mapTop, mapWidth, height - mapTop - 50);
         var size = MathF.Min(MathF.Min(area.Width / spanX, area.Height / spanZ), 28f);
         var left = area.X + (area.Width - spanX * size) / 2f;
         var top = area.Y + (area.Height - spanZ * size) / 2f;
@@ -159,56 +142,6 @@ internal static class MapView
 
         DrawPlayer(player, ToScreen, size);
     }
-
-    // The values and the boons in a dark column on the left edge, names left, values in a second column. Returns the
-    // column's right edge, so the map starts beside it.
-    private static int DrawSheet(GameWorld world, Player player)
-    {
-        var stats = CharacterSheet.Stats(world, player);
-        var boons = CharacterSheet.Boons(player, world.Balance.Boons);
-        IEnumerable<SheetLine> all = [.. stats, .. boons];
-        var labelWidth = all.Max(line => PixelText.Measure(line.Label, FontSize));
-        var valueWidth = all.Max(line => PixelText.Measure(line.Value, FontSize));
-        var valueX = Edge + Padding + labelWidth + ColumnGap;
-        var right = valueX + Math.Max(valueWidth, PixelText.Measure("No boons yet", FontSize)) + Padding;
-        var lines = stats.Count + Math.Max(boons.Count, 1);
-        var bottom = PanelTop + Padding + (2 * (HeadingSize + HeadingGap)) + HeadingGap + (lines * LineHeight) + Padding;
-        Raylib.DrawRectangle(Edge, PanelTop, right - Edge, bottom - PanelTop, Panel);
-
-        var y = PanelTop + Padding;
-        PixelText.Draw("HUNTER", Edge + Padding, y, HeadingSize, Heading);
-        y += HeadingSize + HeadingGap;
-        foreach (var line in stats)
-        {
-            DrawLine(line, valueX, y, Value);
-            y += LineHeight;
-        }
-
-        y += HeadingGap;
-        PixelText.Draw("BOONS", Edge + Padding, y, HeadingSize, Heading);
-        y += HeadingSize + HeadingGap;
-        if (boons.Count == 0)
-        {
-            PixelText.Draw("No boons yet", Edge + Padding, y, FontSize, Hint);
-        }
-
-        foreach (var line in boons)
-        {
-            DrawLine(line, valueX, y, Gold);
-            y += LineHeight;
-        }
-
-        return right;
-    }
-
-    private static void DrawLine(SheetLine line, int valueX, int y, Color valueColor)
-    {
-        PixelText.Draw(line.Label, Edge + Padding, y, FontSize, Label);
-        PixelText.Draw(line.Value, valueX, y, FontSize, valueColor);
-    }
-
-    private static void DrawCentred(string text, int left, int width, int y, int fontSize, Color color) =>
-        PixelText.Draw(text, left + ((width - PixelText.Measure(text, fontSize)) / 2), y, fontSize, color);
 
     // A padlock, about `size` tall: a shackle (half ring) on a square body with a keyhole.
     private static void DrawPadlock(Vector2 centre, float size, Color color)

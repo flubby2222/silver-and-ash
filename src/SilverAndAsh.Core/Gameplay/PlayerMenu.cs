@@ -21,11 +21,18 @@ public enum MenuKey
 
     /// <summary>Esc: closes the menu, whichever page is open.</summary>
     Close,
+
+    /// <summary>A click on the map tab (issue #390): turns to the map page while the menu is open; never opens or closes it.</summary>
+    MapTab,
+
+    /// <summary>A click on the equipment tab: turns to the equipment page while the menu is open; never opens or closes it.</summary>
+    EquipmentTab,
 }
 
 /// <summary>
 /// The menu of one player with its two pages (issue #348): closed, or open on <see cref="Page"/>. The key of a page opens
-/// it, the same key closes it again, the key of the other page turns to that page; Esc closes. The world goes on
+/// it, the same key closes it again, the key of the other page turns to that page; Esc closes. A click on a tab turns to
+/// its page (issue #390). The world goes on
 /// meanwhile, and only the player closes it - neither moving nor a hit does (issue #346).
 /// </summary>
 /// <param name="Page">The page shown, or null while the menu is closed.</param>
@@ -40,6 +47,11 @@ public readonly record struct PlayerMenu(PlayerMenuPage? Page)
     /// <summary>The menu after <paramref name="key"/> was pressed.</summary>
     public PlayerMenu Press(MenuKey key)
     {
+        if (key is MenuKey.MapTab or MenuKey.EquipmentTab)
+        {
+            return IsOpen ? new PlayerMenu(key == MenuKey.MapTab ? PlayerMenuPage.Map : PlayerMenuPage.Equipment) : this;
+        }
+
         var page = key switch
         {
             MenuKey.Map => PlayerMenuPage.Map,
