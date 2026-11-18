@@ -21,9 +21,11 @@ Das Skript
 1. lässt die Tests von `SilverAndAsh.Core.Tests` einmal mit Coverlet laufen (Debug, dauert etwa drei Minuten statt einer halben, weil jede Zeile mitgezählt wird),
 2. rechnet aus der Cobertura-Datei je Methode Komplexität, Abdeckung und Score,
 3. lässt ReportGenerator auf dieselbe Datei los und vergleicht dessen Scores mit den eigenen (Zeile „Gegenprobe“ im Kopf),
-4. schreibt `docs/qualitaet/crap-<datum>.md` und vergleicht mit dem neuesten älteren Bericht im Ordner.
+4. schreibt `docs/qualitaet/crap-<datum>.md` und vergleicht mit dem neuesten älteren Bericht `crap-*.md` im selben Ordner wie die Ausgabedatei.
 
-Zwischendateien liegen in einem temporären Ordner außerhalb des Repositorys und werden danach gelöscht (`--keep` behält sie, z. B. für den HTML-Bericht von ReportGenerator). Weitere Schalter: `--out <datei>`, `--date <JJJJ-MM-TT>`, `--coverage <cobertura.xml>` (ohne neuen Testlauf). Zwei Läufe auf demselben Stand ergeben dieselbe Datei.
+Zwischendateien liegen in einem temporären Ordner außerhalb des Repositorys und werden danach gelöscht (`--keep` behält sie, z. B. für den HTML-Bericht von ReportGenerator). Weitere Schalter: `--out <datei>`, `--date <JJJJ-MM-TT>` (nur ISO-Datum), `--coverage <cobertura.xml>` (ohne neuen Testlauf) und `--no-check` (ohne ReportGenerator-Gegenprobe). Ungültige Werte für `--out` und `--date` und fehlende Werkzeuge meldet das Skript mit einem Satz, bevor es die Tests startet. Zwei Läufe auf demselben Stand ergeben dieselbe Datei.
+
+Die Tests in `tests/SilverAndAsh.Core.Tests/CrapReportScriptTests.cs` laufen in der CI mit: Sie schreiben mit `--coverage` und `--no-check` zwei Berichte hintereinander und prüfen den Vergleich, ohne den langen Abdeckungslauf.
 
 Der normale `dotnet test` misst **keine** Abdeckung; Coverlet sammelt nur, wenn das Skript `--collect "XPlat Code Coverage"` übergibt.
 
@@ -40,7 +42,7 @@ Der normale `dotnet test` misst **keine** Abdeckung; Coverlet sammelt nur, wenn 
 - **Auto-Properties** (`SkipAutoProps`): Getter und Setter ohne eigenen Rumpf, wie in Records und Balancing-Klassen, haben keine Logik.
 - Vom Compiler erzeugte Record-Methoden (`Equals`, `GetHashCode`, `ToString`) meldet Coverlet von sich aus nicht.
 
-Lambdas und lokale Funktionen stehen als eigene Einträge da (`Build › Carve`), Iteratoren als `Name (Iterator)`.
+Lambdas und lokale Funktionen stehen als eigene Einträge da (`Build › Carve`), Iteratoren als `Name (Iterator)`. Haben zwei Methoden denselben Namen und dieselbe Signatur (z. B. gleichnamige Lambdas aus verschiedenen Closures), bekommt die zweite den Zusatz ` #2` (nach Zeilennummer sortiert), damit sie im Datenblock nicht die erste überschreibt.
 
 ## Grenzen
 

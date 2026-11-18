@@ -73,6 +73,8 @@ class Method:
     branches_covered: int
     rg_class: str  # outer class full name, as ReportGenerator groups it
     rg_name: str  # method name as ReportGenerator shows it
+    first_line: int = 0  # first source line, orders methods that share a readable name
+    twin: int = 0  # 0 = name is unique; n > 0 = n-th further method with the same name
 
     @property
     def line_rate(self) -> float:
@@ -91,8 +93,17 @@ class Method:
         return crap(self.complexity, self.branch_rate)
 
     @property
+    def label(self) -> str:
+        # Lambdas from different closures of one method can share a readable name; the first keeps
+        # the plain name (so older reports stay comparable), the others get " #2", " #3", ... in
+        # source order.
+        twin = f" #{self.twin + 1}" if self.twin else ""
+        return f"{self.name}{self.signature}{twin}"
+
+    @property
     def key(self) -> str:
-        return f"{self.namespace}.{self.cls}.{self.name}{self.signature}"
+        """Unique key of the method in the data block."""
+        return f"{self.namespace}.{self.cls}.{self.label}"
 
 
 def crap(complexity: int, coverage: float) -> float:
@@ -102,12 +113,12 @@ def crap(complexity: int, coverage: float) -> float:
 # ---------------------------------------------------------------- helpers
 
 
-def run(cmd: list[str], cwd: Path, quiet: bool = False) -> str:
+def run(cmd: list[str], cwd: Path, quiet: bool = False, hint: str = "") -> str:
     result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         sys.stdout.write(result.stdout)
         sys.stderr.write(result.stderr)
-        raise SystemExit(f"Command failed ({result.returncode}): {' '.join(cmd[:3])} ...")
+        raise SystemExit(f"Command failed ({result.returncode}): {' '.join(cmd[:4])} ..." + (f"\n{hint}" if hint else ""))
     if not quiet:
         sys.stdout.write(result.stdout)
     return result.stdout
@@ -211,6 +222,7 @@ def read_cobertura(path: Path):
                     branches_covered=b_cov,
                     rg_class=cls.get("name").split("/")[0],
                     rg_name=rg_name,
+                    first_line=min((int(ln.get("number", "0")) for ln in line_elems), default=0),
                 )
             )
         for ln in cls.findall("./lines/line"):
@@ -232,6 +244,12 @@ def read_cobertura(path: Path):
     for m in methods:
         if seen[(m.namespace, m.cls, m.name)] == 1:
             m.signature = ""
+    twins: dict[str, list[Method]] = defaultdict(list)
+    for m in methods:
+        twins[m.key].append(m)
+    for group in twins.values():
+        for i, m in enumerate(sorted(group, key=lambda m: (m.first_line, m.complexity, m.lines_valid))):
+            m.twin = i
     return methods, excluded, totals
 
 
@@ -273,16 +291,27 @@ DATA_START = "<!-- crap-data"
 DATA_END = "-->"
 
 
-def read_previous(report_dir: Path, out: Path):
-    candidates = sorted(p for p in report_dir.glob("crap-*.md") if p.resolve() != out.resolve() and p.name < out.name)
-    if not candidates:
-        return None, None
-    text = candidates[-1].read_text(encoding="utf-8")
+def read_data_block(text: str) -> dict | None:
+    """The JSON between the marker line (which carries a description) and the closing '-->'."""
     start = text.find(DATA_START)
     if start < 0:
-        return candidates[-1].name, None
-    end = text.find(DATA_END, start)
-    return candidates[-1].name, json.loads(text[start + len(DATA_START) : end])
+        return None
+    first = text.find("{", start)
+    end = text.find(DATA_END, start + len(DATA_START))
+    if first < 0 or end < 0 or first > end:
+        return None
+    try:
+        return json.loads(text[first:end])
+    except json.JSONDecodeError:
+        return None
+
+
+def read_previous(out: Path):
+    """Newest earlier crap-*.md next to the new report (sorted by file name, i.e. by date)."""
+    candidates = sorted(p for p in out.parent.glob("crap-*.md") if p.resolve() != out.resolve() and p.name < out.name)
+    if not candidates:
+        return None, None
+    return candidates[-1].name, read_data_block(candidates[-1].read_text(encoding="utf-8"))
 
 
 # ---------------------------------------------------------------- writing
@@ -321,8 +350,8 @@ def write_report(out: Path, date: str, commit: str, ver: dict, methods: list[Met
     ranked = sorted(methods, key=lambda m: (-round(m.crap, 6), -m.complexity, m.key))
     top = ranked[:TOP]
     over = [m for m in methods if m.crap > CRAP_LIMIT]
-    line_rate = totals["lines_covered"] / totals["lines_valid"]
-    branch_rate = totals["branches_covered"] / totals["branches_valid"]
+    line_rate = totals["lines_covered"] / totals["lines_valid"] if totals["lines_valid"] else 1.0
+    branch_rate = totals["branches_covered"] / totals["branches_valid"] if totals["branches_valid"] else 1.0
 
     by_ns: dict[str, list[Method]] = defaultdict(list)
     for m in methods:
@@ -347,7 +376,7 @@ def write_report(out: Path, date: str, commit: str, ver: dict, methods: list[Met
     def short(m: Method) -> str:
         return f"{m.namespace[len(NAMESPACE_PREFIX):].lstrip('.')}.{m.cls}".lstrip(".")
 
-    compared, differences = check
+    compared, differences = check if check else (0, [])
     o = []
     o.append(f"# CRAP-Bericht SilverAndAsh.Core – {date}")
     o.append("")
@@ -361,8 +390,11 @@ def write_report(out: Path, date: str, commit: str, ver: dict, methods: list[Met
     dropped = f" – davon {len(excluded)} Methoden erst im Skript aussortiert" if excluded else ""
     o.append("- **Ausgenommen:** generierter Code (`[GeneratedCode]`, Quellgeneratoren in `obj/`)"
              f"{dropped}; Auto-Properties und vom Compiler erzeugte Record-Methoden (ohne eigene Logik)")
-    check_text = "alle gleich" if not differences else f"{len(differences)} Abweichungen (siehe unten)"
-    o.append(f"- **Gegenprobe ReportGenerator:** {compared} Methoden verglichen, {check_text}")
+    if check:
+        check_text = "alle gleich" if not differences else f"{len(differences)} Abweichungen (siehe unten)"
+        o.append(f"- **Gegenprobe ReportGenerator:** {compared} Methoden verglichen, {check_text}")
+    else:
+        o.append("- **Gegenprobe ReportGenerator:** nicht ausgeführt (`--no-check`)")
     o.append("")
     o.append(f"## Die {TOP} Methoden mit dem höchsten CRAP-Score")
     o.append("")
@@ -373,7 +405,7 @@ def write_report(out: Path, date: str, commit: str, ver: dict, methods: list[Met
     o.append("|--:|---|---|--:|--:|--:|--:|--:|--:|")
     for i, m in enumerate(top, 1):
         d = delta(m.crap, old_scores.get(m.key)) if prev else "–"
-        o.append(f"| {i} | {short(m)} | `{m.name}{m.signature}` | {m.complexity} | {pct(m.line_rate)} | "
+        o.append(f"| {i} | {short(m)} | `{m.label}` | {m.complexity} | {pct(m.line_rate)} | "
                  f"{pct(m.branch_rate)} | {de(m.crap)} | {de(m.crap_branches)} | {d} |")
     o.append("")
     o.append("## Summen je Namensraum")
@@ -388,7 +420,7 @@ def write_report(out: Path, date: str, commit: str, ver: dict, methods: list[Met
     if not prev_name:
         o.append("Kein voriger Bericht – dieser Bericht ist die Ausgangslage.")
     elif not prev:
-        o.append(f"Voriger Bericht `{prev_name}` hat keinen Datenblock; kein Vergleich möglich.")
+        o.append(f"Voriger Bericht `{prev_name}` hat keinen lesbaren Datenblock; kein Vergleich möglich.")
     else:
         o.append(f"Vorher: `{prev_name}`.")
         o.append("")
@@ -428,20 +460,55 @@ def write_report(out: Path, date: str, commit: str, ver: dict, methods: list[Met
 # ---------------------------------------------------------------- main
 
 
+TOOL_HINT = "Are the tools installed? Run 'dotnet tool restore' in the repository (manifest: dotnet-tools.json)."
+
+
+def check_date(text: str) -> str:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        raise SystemExit(f"--date must be an ISO date YYYY-MM-DD, e.g. 2026-11-18 (got '{text}').")
+    try:
+        dt.date.fromisoformat(text)
+    except ValueError:
+        raise SystemExit(f"--date '{text}' is not a valid calendar date.") from None
+    return text
+
+
+def check_out(out: Path) -> None:
+    """Fails early (before the long test run) if the report file cannot be written."""
+    if out.is_dir():
+        raise SystemExit(f"--out must be a file, not a folder: {out.name}")
+    probe = out.with_name(out.name + ".probe")
+    try:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        probe.write_bytes(b"")
+        probe.unlink()
+    except OSError as error:
+        raise SystemExit(f"--out: cannot write the report file '{out.name}': {error.strerror or error}") from None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--out", help="report file (default: docs/qualitaet/crap-<date>.md)")
-    parser.add_argument("--date", help="date in the report header (default: today)")
+    parser.add_argument("--out", help="report file (default: docs/qualitaet/crap-<date>.md); "
+                                      "compared with the newest earlier crap-*.md in the same folder")
+    parser.add_argument("--date", help="date in the report header, YYYY-MM-DD (default: today)")
     parser.add_argument("--coverage", help="existing coverage.cobertura.xml; skips the test run")
+    parser.add_argument("--no-check", action="store_true",
+                        help="skip the ReportGenerator cross check (used by the script's own test)")
     parser.add_argument("--keep", action="store_true", help="keep the temporary folder and print its path")
     args = parser.parse_args()
 
     root = repo_root()
-    date = args.date or dt.date.today().isoformat()
+    date = check_date(args.date) if args.date else dt.date.today().isoformat()
     out = Path(args.out).resolve() if args.out else root / REPORT_DIR / f"crap-{date}.md"
+    check_out(out)
+    if args.coverage and not Path(args.coverage).is_file():
+        raise SystemExit(f"--coverage: file not found: {Path(args.coverage).name}")
+    if not args.no_check and not (root / "dotnet-tools.json").is_file():
+        raise SystemExit("dotnet-tools.json is missing. " + TOOL_HINT)
     work = Path(tempfile.mkdtemp(prefix="silverash-crap-"))
     try:
-        run(["dotnet", "tool", "restore"], root, quiet=True)
+        if not args.no_check:
+            run(["dotnet", "tool", "restore"], root, quiet=True, hint=TOOL_HINT)
         if args.coverage:
             coverage = Path(args.coverage).resolve()
         else:
@@ -455,17 +522,19 @@ def main() -> int:
             if len(found) != 1:
                 raise SystemExit(f"Expected one coverage file, found {len(found)}")
             coverage = found[0]
-        run(["dotnet", "tool", "run", "reportgenerator", f"-reports:{coverage}", f"-targetdir:{work / 'rg'}",
-             "-reporttypes:Xml", "-verbosity:Warning"], root, quiet=True)
-
         methods, excluded, totals = read_cobertura(coverage)
-        check = cross_check(methods, read_reportgenerator(work / "rg"))
-        previous = read_previous(root / REPORT_DIR, out)
+        check = None
+        if not args.no_check:
+            run(["dotnet", "tool", "run", "reportgenerator", f"-reports:{coverage}", f"-targetdir:{work / 'rg'}",
+                 "-reporttypes:Xml", "-verbosity:Warning"], root, quiet=True, hint=TOOL_HINT)
+            check = cross_check(methods, read_reportgenerator(work / "rg"))
+        previous = read_previous(out)
         data = write_report(out, date, commit_info(root), versions(root), methods, excluded, totals, check, previous)
         print(f"Report: {out.relative_to(root) if out.is_relative_to(root) else out.name}")
         print(f"Lines {pct(data['line_rate'])}, branches {pct(data['branch_rate'])}, "
-              f"methods {data['methods']}, over {CRAP_LIMIT}: {data['over']}, "
-              f"ReportGenerator check: {check[0]} compared, {len(check[1])} different")
+              f"methods {data['methods']}, over {CRAP_LIMIT}: {data['over']}"
+              + (f", ReportGenerator check: {check[0]} compared, {len(check[1])} different" if check else
+                 ", ReportGenerator check skipped"))
     finally:
         if args.keep:
             print(f"Kept: {work}")
