@@ -55,7 +55,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `hud-reload` | die Pistole im Startraum leergeschossen: „Reload [R]“ unter dem Fadenkreuz (Issue #259) |
 | `hud-texts` | alle Schriftzüge zugleich, jeder in seiner Zeile: „Reload [R]“ und „[F] Take Rifle (Forged)“ unter dem Fadenkreuz, „[X] Choose boon“ und die Weihezeit unten links (Issue #340) |
 | `inventory` | das offene Inventar (G) mit voller Tasche |
-| `map` | die offene Karte (M) zu Beginn eines Durchlaufs |
+| `map` | die Kartenseite (Tab) früh im Durchlauf: links Werte und fünf gewählte Boons, rechts die Karte (Issue #347) |
 | `chests-4m` | die Kisten aller vier Stufen nebeneinander aus 4 m, geschlossen und verschlossen, dazu eine offene (Issue #249) |
 | `door-normal`, `door-locked`, `door-boss` | die Tür dieser Art geschlossen in einer leeren Halle aus 6 m (Issue #245) |
 | `door-normal-half`, `door-locked-half`, `door-boss-half` | dieselbe Tür halb aufgeschwungen (Fortschritt 0,5, im Bild geglättet) |

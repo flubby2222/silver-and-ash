@@ -287,7 +287,7 @@ static void RunGame(
         // Title screen first; during a run Esc opens the menu (the world stands still - alone).
         var onTitle = true;
         var menuOpen = false;
-        var mapKeptOpen = false;
+        var mapOpen = false;
         var quit = false;
         var titleMenu = new MenuView();
         titleMenu.Open();
@@ -523,7 +523,7 @@ static void RunGame(
         // 3b. The small picture scaled up onto the screen, the HUD on top at full resolution (sharp). Between
         // Raylib.BeginDrawing and EndDrawing.
         // debugInfo: the frame rate and the test display, both only in the debug version (issue #340) - not in photos.
-        void DrawScreen(float frameSeconds, bool frozen, bool showMap, bool mapKeptOpen, bool debugInfo)
+        void DrawScreen(float frameSeconds, bool frozen, bool showMap, bool debugInfo)
         {
             Raylib.ClearBackground(LookSettings.BarColor);
             picture.DrawToScreen();
@@ -560,7 +560,7 @@ static void RunGame(
 
             if (!frozen && !boonOpen && !player.IsInventoryOpen && showMap)
             {
-                MapView.Draw(gameWorld, player, mapKeptOpen, (float)Raylib.GetTime());
+                MapView.Draw(gameWorld, player, (float)Raylib.GetTime());
             }
 
             if (player.IsInventoryOpen && !frozen)
@@ -646,7 +646,7 @@ static void RunGame(
                         var start = System.Diagnostics.Stopwatch.GetTimestamp();
                         DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
                         Raylib.BeginDrawing();
-                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
+                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, debugInfo: false);
                         Raylib.EndDrawing();
                         if (frame >= PhotoRequest.WarmUpFrames)
                         {
@@ -662,7 +662,7 @@ static void RunGame(
 
                 DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
                 Raylib.BeginDrawing();
-                DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
+                DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, debugInfo: false);
                 Rlgl.DrawRenderBatchActive();
                 var screenPath = Path.Combine(photos.Folder, $"{scene.Name}{suffix}-screen.png");
                 var screen = Raylib.LoadImageFromScreen();
@@ -701,7 +701,7 @@ static void RunGame(
                     {
                         DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
                         Raylib.BeginDrawing();
-                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, mapKeptOpen: setup.MapOpen, debugInfo: false);
+                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, debugInfo: false);
                         Rlgl.DrawRenderBatchActive();
                         var screen = Raylib.LoadImageFromScreen();
                         Raylib.ExportImage(screen, Path.Combine(clipFolder, $"frame-{frames++:0000}.png"));
@@ -814,7 +814,7 @@ static void RunGame(
                 continue;
             }
 
-            // Esc first closes an open overlay (bonus choice, inventory, map kept open) and opens the menu only on the next
+            // Esc first closes an open overlay (bonus choice, inventory, map page) and opens the menu only on the next
             // press (issue #346); with the menu open it closes the menu. Leaving the window (Alt+Tab) opens the menu, too.
             // Not on the end screen.
             var wasMenuOpen = menuOpen;
@@ -825,12 +825,12 @@ static void RunGame(
             }
             else if (Raylib.IsKeyPressed(KeyboardKey.Escape))
             {
-                if (!menuOpen && (boonOpen || player.IsInventoryOpen || mapKeptOpen))
+                if (!menuOpen && (boonOpen || player.IsInventoryOpen || mapOpen))
                 {
                     // The inventory lives in Core: it closes with the next tick, like with G.
                     inventoryToggle = player.IsInventoryOpen;
                     boonOpen = false;
-                    mapKeptOpen = false;
+                    mapOpen = false;
                     escClosedOverlay = true;
                 }
                 else
@@ -1007,16 +1007,17 @@ static void RunGame(
             //    on monitors faster than 60 Hz). No game rules in here.
             DrawWorld(accumulator.Alpha, Raylib.GetFrameTime());
 
-            // 3b. ... which is scaled up onto the screen, the HUD on top. The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
-            // (no pause: online co-op).
-            if (!frozen && !boonOpen && !player.IsInventoryOpen && !escClosedOverlay && Raylib.IsKeyPressed(KeyboardKey.M))
+            // 3b. ... which is scaled up onto the screen, the HUD on top. Tab opens and closes the map page (issue #347) - the
+            // game goes on meanwhile (no pause: online co-op), and walking or a hit keep it open. Not with Alt held: Alt+Tab
+            // leaves the window.
+            if (!frozen && !boonOpen && !player.IsInventoryOpen && !escClosedOverlay && Raylib.IsKeyPressed(KeyboardKey.Tab)
+                && !Raylib.IsKeyDown(KeyboardKey.LeftAlt) && !Raylib.IsKeyDown(KeyboardKey.RightAlt))
             {
-                mapKeptOpen = !mapKeptOpen;
+                mapOpen = !mapOpen;
             }
 
             Raylib.BeginDrawing();
-            DrawScreen(
-                Raylib.GetFrameTime(), frozen, showMap: mapKeptOpen || Raylib.IsKeyDown(KeyboardKey.Tab), mapKeptOpen, debugInfo: true);
+            DrawScreen(Raylib.GetFrameTime(), frozen, showMap: mapOpen, debugInfo: true);
             SoundPackNotice.Draw(soundPacks);
             Raylib.EndDrawing();
         }

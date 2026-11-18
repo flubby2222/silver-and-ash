@@ -232,7 +232,7 @@ public sealed partial class Player
             return;
         }
 
-        var gained = (int)MathF.Round(amount * (1f + _boons.Experience * BoonCount(Boon.Experience)), MidpointRounding.AwayFromZero);
+        var gained = (int)MathF.Round(amount * ExperienceMultiplier, MidpointRounding.AwayFromZero);
         Experience += gained;
         events.Add(new ExperienceGained(Id, gained));
 
@@ -253,6 +253,9 @@ public sealed partial class Player
     }
 
     private readonly ExperienceBalance _experience;
+
+    /// <summary>Every kill's experience is multiplied by this (1 = base; every Experience boon adds a bit, counted from the base).</summary>
+    public float ExperienceMultiplier => 1f + (_boons.Experience * BoonCount(Boon.Experience));
 
     /// <summary>Level ups whose bonus has not been chosen yet. While above 0, the world waits.</summary>
     public int PendingBoons => _offers.Count;
