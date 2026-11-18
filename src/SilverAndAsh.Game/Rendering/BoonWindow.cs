@@ -3,14 +3,15 @@ using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// The bonus choice (decision record 0008): a level up only shows the hint "[X] Choose boon" - the game goes on.
 /// X opens the window with one box per boon of the offer Core drew; 1 - 4 or a click choose (the cursor shows while
-/// it is open). Several level ups wait in line and come one after the other. Walking keeps it open; only a hit closes it;
-/// the boon keeps waiting. It only reads and shows - the choice goes to Core as input
+/// it is open). Several level ups wait in line and come one after the other. Walking and hits keep it open; only X or Esc
+/// close it (issue #346), and the boon keeps waiting. It only reads and shows - the choice goes to Core as input
 /// (<see cref="Core.Input.PlayerInput.ChooseBoon"/>).
 /// </summary>
 internal static class BoonWindow
@@ -55,8 +56,8 @@ internal static class BoonWindow
     }
 
     /// <summary>
-    /// The hint while boons wait and the window is closed, flashing just below the level and its bar (bottom left):
-    /// "[X] Choose boon", with the number if several.
+    /// The hint while boons wait and the window is closed, flashing in its own line above the level (bottom left, issue
+    /// #340): "[X] Choose boon", with the number if several.
     /// </summary>
     public static void DrawHint(int pending, float seconds)
     {
@@ -67,7 +68,8 @@ internal static class BoonWindow
 
         var text = pending > 1 ? $"[X] Choose boon ({pending})" : "[X] Choose boon";
         var flash = 0.55f + (0.45f * MathF.Sin(seconds * 6f));
-        Raylib.DrawText(text, 20, Raylib.GetScreenHeight() - 104, 16, Gold with { A = (byte)(255 * flash) });
+        var line = HudTextLines.Of(HudText.BoonHint, Raylib.GetScreenHeight());
+        Raylib.DrawText(text, 20, line.Top, line.FontSize, Gold with { A = (byte)(255 * flash) });
     }
 
     /// <summary>Draws the window for <paramref name="player"/>'s waiting offer, with the values of <paramref name="boons"/>.</summary>
@@ -85,7 +87,7 @@ internal static class BoonWindow
         var titleWidth = Raylib.MeasureText(title, 32);
         Raylib.DrawText(title, (width - titleWidth) / 2, height / 2 - BoxHeight / 2 - 70, 32, Gold);
 
-        const string Close = "Walk on as you like - a hit closes it, the boon keeps waiting";
+        const string Close = "[X] or [Esc] close it - the boon keeps waiting";
         Raylib.DrawText(Close, (width - Raylib.MeasureText(Close, 16)) / 2, height / 2 + BoxHeight / 2 + 24, 16, Muted);
 
         var hovered = Hovered(offer);

@@ -45,8 +45,9 @@ public class InventoryTests
     [InlineData("walk")]
     [InlineData("jump")]
     [InlineData("shift")]
-    public void Moving_closes_the_inventory(string move)
+    public void Moving_keeps_the_inventory_open(string move)
     {
+        // Only the player closes it (issue #346): neither walking, jumping nor Shift does.
         var player = OpenPlayer();
 
         player.Tick(move switch
@@ -56,17 +57,20 @@ public class InventoryTests
             _ => PlayerInput.None with { Dash = true },
         });
 
-        Assert.False(player.IsInventoryOpen);
+        Assert.True(player.IsInventoryOpen);
     }
 
     [Fact]
-    public void A_hit_closes_the_inventory()
+    public void A_hit_keeps_the_inventory_open()
     {
+        // Only the player closes it (issue #346): a hit does not - also not in the tick after it.
         var player = OpenPlayer();
 
         player.TakeDamage(1, []);
+        Assert.True(player.IsInventoryOpen);
 
-        Assert.False(player.IsInventoryOpen);
+        player.Tick(PlayerInput.None);
+        Assert.True(player.IsInventoryOpen);
     }
 
     [Fact]
@@ -213,8 +217,9 @@ public class InventoryTests
     }
 
     [Fact]
-    public void A_held_move_closes_the_inventory_once_let_go_and_pressed_anew()
+    public void A_held_move_let_go_and_pressed_anew_keeps_the_inventory_open()
     {
+        // Only the player closes it (issue #346): a move pressed anew after opening does not.
         var player = NewPlayer();
         player.Tick(Forward with { ToggleInventory = true });
         player.Tick(Forward);
@@ -223,24 +228,26 @@ public class InventoryTests
         Assert.True(player.IsInventoryOpen);
 
         player.Tick(Forward);
-        Assert.False(player.IsInventoryOpen);
+        Assert.True(player.IsInventoryOpen);
     }
 
     [Fact]
-    public void Pressing_another_direction_while_running_closes_the_inventory()
+    public void Pressing_another_direction_while_running_keeps_the_inventory_open()
     {
+        // Only the player closes it (issue #346): a new direction while running does not.
         var player = NewPlayer();
         player.Tick(Forward with { ToggleInventory = true });
         player.Tick(Forward);
 
         player.Tick(Forward with { Move = new Vector2(1f, 1f) });
 
-        Assert.False(player.IsInventoryOpen);
+        Assert.True(player.IsInventoryOpen);
     }
 
     [Fact]
-    public void Jump_or_Shift_held_while_opening_close_it_only_when_pressed_anew()
+    public void Jump_or_Shift_pressed_anew_keep_the_inventory_open()
     {
+        // Only the player closes it (issue #346): Jump or Shift let go and pressed anew do not.
         var player = NewPlayer();
         player.Tick(PlayerInput.None with { Jump = true, Dash = true, ToggleInventory = true });
         player.Tick(PlayerInput.None with { Jump = true, Dash = true });
@@ -250,6 +257,9 @@ public class InventoryTests
         Assert.True(player.IsInventoryOpen);
 
         player.Tick(PlayerInput.None with { Jump = true, Dash = true });
+        Assert.True(player.IsInventoryOpen);
+
+        player.Tick(Toggle);
         Assert.False(player.IsInventoryOpen);
     }
 

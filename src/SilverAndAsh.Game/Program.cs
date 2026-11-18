@@ -429,10 +429,6 @@ static void RunGame(
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
                 equipmentCard.OnEvent(gameEvent, player.Id);
-                if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
-                {
-                    boonOpen = false;
-                }
             }
         }
 
@@ -526,7 +522,7 @@ static void RunGame(
 
         // 3b. The small picture scaled up onto the screen, the HUD on top at full resolution (sharp). Between
         // Raylib.BeginDrawing and EndDrawing.
-        // debugInfo: the frame rate, and in the debug version the test display - not in photos.
+        // debugInfo: the frame rate and the test display, both only in the debug version (issue #340) - not in photos.
         void DrawScreen(float frameSeconds, bool frozen, bool showMap, bool mapKeptOpen, bool debugInfo)
         {
             Raylib.ClearBackground(LookSettings.BarColor);
@@ -818,15 +814,29 @@ static void RunGame(
                 continue;
             }
 
-            // Esc opens and closes the menu; leaving the window (Alt+Tab) opens it, too. Not on the end screen.
+            // Esc first closes an open overlay (bonus choice, inventory, map kept open) and opens the menu only on the next
+            // press (issue #346); with the menu open it closes the menu. Leaving the window (Alt+Tab) opens the menu, too.
+            // Not on the end screen.
             var wasMenuOpen = menuOpen;
+            var escClosedOverlay = false;
             if (endSummary is not null)
             {
                 menuOpen = false;
             }
             else if (Raylib.IsKeyPressed(KeyboardKey.Escape))
             {
-                menuOpen = !menuOpen;
+                if (!menuOpen && (boonOpen || player.IsInventoryOpen || mapKeptOpen))
+                {
+                    // The inventory lives in Core: it closes with the next tick, like with G.
+                    inventoryToggle = player.IsInventoryOpen;
+                    boonOpen = false;
+                    mapKeptOpen = false;
+                    escClosedOverlay = true;
+                }
+                else
+                {
+                    menuOpen = !menuOpen;
+                }
             }
             else if (!Raylib.IsWindowFocused())
             {
@@ -885,7 +895,7 @@ static void RunGame(
             }
 
             // The mouse is captured only while playing: free in the menu, on the end screen and while the bonus choice
-            // is open (a click chooses; you walk on with the keys; a hit closes it).
+            // is open (a click chooses; you walk on with the keys; only the player closes it, issue #346).
             var frozen = menuOpen || endSummary is not null;
             var inventoryOpen = player.IsInventoryOpen;
             var capture = !frozen && !onTitle && !boonOpen && !inventoryOpen;
@@ -905,14 +915,16 @@ static void RunGame(
             slotChosen = playerInput.SelectSlot ?? slotChosen;
             wheelSteps += playerInput.CycleSlot;
 
-            // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while
-            // walking - only a hit closes it (see the events below). Several level ups come one after the other.
-            if (!frozen && !inventoryOpen && Raylib.IsKeyPressed(KeyboardKey.X) && player.PendingBoons > 0)
+            // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while walking
+            // and when hit - only X or Esc close it (issue #346). Several level ups come one after the other. A dead
+            // player takes no boon (Core), so the window closes and X stays locked - display only.
+            if (!frozen && !inventoryOpen && !escClosedOverlay && !player.IsDead && Raylib.IsKeyPressed(KeyboardKey.X)
+                && player.PendingBoons > 0)
             {
                 boonOpen = !boonOpen;
             }
 
-            if (player.PendingBoons == 0)
+            if (player.PendingBoons == 0 || player.IsDead)
             {
                 boonOpen = false;
             }
@@ -923,9 +935,9 @@ static void RunGame(
                 chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, boonOpenSeconds);
             }
 
-            // The inventory (decision record 0008): G opens and closes it - not while the bonus choice is open. Moving or a
-            // hit closes it (Core). A click is picked only once it has been open for a moment.
-            if (!frozen && !boonOpen && Raylib.IsKeyPressed(KeyboardKey.G))
+            // The inventory (decision record 0008): G opens and closes it - not while the bonus choice is open. Only G or
+            // Esc close it, neither moving nor a hit (issue #346). A click is picked only once it has been open for a moment.
+            if (!frozen && !boonOpen && !escClosedOverlay && Raylib.IsKeyPressed(KeyboardKey.G))
             {
                 inventoryToggle = !inventoryToggle;
             }
@@ -997,7 +1009,7 @@ static void RunGame(
 
             // 3b. ... which is scaled up onto the screen, the HUD on top. The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
             // (no pause: online co-op).
-            if (!frozen && !boonOpen && !player.IsInventoryOpen && Raylib.IsKeyPressed(KeyboardKey.M))
+            if (!frozen && !boonOpen && !player.IsInventoryOpen && !escClosedOverlay && Raylib.IsKeyPressed(KeyboardKey.M))
             {
                 mapKeptOpen = !mapKeptOpen;
             }
@@ -1050,7 +1062,9 @@ static void DrawHud(string displayVersion, bool fps)
     var textColor = new Color(200, 200, 210, 255);
 
     Raylib.DrawText("Silver & Ash", 20, 20, 30, textColor);
-    if (fps)
+
+    // The frame rate is a developer display: only in the debug build (issue #340).
+    if (fps && BuildInfo.ShowsDeveloperDisplays)
     {
         Raylib.DrawFPS(20, screenHeight - 30);
     }
