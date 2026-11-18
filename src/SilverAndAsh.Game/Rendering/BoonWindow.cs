@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core;
@@ -101,42 +100,15 @@ internal static class BoonWindow
             var x = (int)box.X + 16;
             var y = (int)box.Y + 14;
             Raylib.DrawText($"[{i + 1}]", x, y, 20, Muted);
-            Raylib.DrawText(Name(boon), x + 40, y, 20, Gold);
-            Raylib.DrawText(Effect(boon, boons), x, y + 44, 18, Text);
+            Raylib.DrawText(BoonTexts.Name(boon), x + 40, y, 20, Gold);
+            Raylib.DrawText(BoonTexts.Effect(boon, boons), x, y + 44, 18, Text);
             Raylib.DrawText(SoFar(boon, boons, player.BoonCount(boon)), x, y + 72, 16, Muted);
         }
     }
 
-    private static string Name(Boon boon) => boon switch
-    {
-        Boon.StaminaRegen => "STAMINA",
-        Boon.Health => "VITALITY",
-        Boon.Damage => "STRENGTH",
-        _ => "WISDOM",
-    };
-
-    private static string Effect(Boon boon, BoonBalance boons) => boon switch
-    {
-        Boon.StaminaRegen => Percent(boons.StaminaRegen, "stamina regen"),
-        Boon.Health => string.Create(CultureInfo.InvariantCulture, $"+{boons.Health} max health"),
-        Boon.Damage => Percent(boons.Damage, "damage"),
-        _ => Percent(boons.Experience, "experience"),
-    };
-
     /// <summary>What the player has of this boon so far, e.g. "now +10 %" - so stacking is visible.</summary>
-    private static string SoFar(Boon boon, BoonBalance boons, int count) => count == 0 ? "not chosen yet" : boon switch
-    {
-        Boon.Health => string.Create(CultureInfo.InvariantCulture, $"now +{boons.Health * count}"),
-        Boon.StaminaRegen => Total(boons.StaminaRegen, count),
-        Boon.Damage => Total(boons.Damage, count),
-        _ => Total(boons.Experience, count),
-    };
-
-    private static string Percent(float value, string what) =>
-        string.Create(CultureInfo.InvariantCulture, $"+{value * 100f:0.#} % {what}");
-
-    private static string Total(float value, int count) =>
-        string.Create(CultureInfo.InvariantCulture, $"now +{value * count * 100f:0.#} %");
+    private static string SoFar(Boon boon, BoonBalance boons, int count) =>
+        count == 0 ? "not chosen yet" : $"now {BoonTexts.Amount(boon, boons, count)}";
 
     /// <summary>The boon whose box is under the mouse cursor, or null.</summary>
     private static Boon? Hovered(IReadOnlyList<Boon> offer)

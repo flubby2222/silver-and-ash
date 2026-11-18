@@ -175,8 +175,8 @@ public static class PhotoScenes
             {
                 Input = tick => PlayerInput.None with { ToggleInventory = tick == 0 },
             }),
-        new("map", "The map kept open (M) at the start of a run.",
-            studio => new PhotoSetup(studio.StartRun()) { MapOpen = true }),
+        new("map", "The map page (Tab) early in a run: values and five chosen boons on the left, the map on the right (issue #347).",
+            studio => new PhotoSetup(WithBoons(studio.StartRun())) { MapOpen = true }),
         new("model-probe-4m", "One target on a bare floor, 4 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 4)) { IsModelProbe = true }),
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",
@@ -327,6 +327,21 @@ public static class PhotoScenes
         var world = BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle });
         world.Player.Consecrate(60f);
         world.Player.AddExperience(world.Player.ExperienceToNextLevel, new List<GameEvent>());
+        return world;
+    }
+
+    // Five level ups, each time the offered boon chosen least so far (the same seed, the same boons), then a few hits taken - so
+    // the map page shows changed values and several boons (issue #347).
+    private static GameWorld WithBoons(GameWorld world)
+    {
+        var player = world.Player;
+        for (var i = 0; i < 5; i++)
+        {
+            player.AddExperience(player.ExperienceToNextLevel - player.Experience, new List<GameEvent>());
+            player.Choose(player.CurrentOffer.MinBy(player.BoonCount), new List<GameEvent>());
+        }
+
+        player.TakeDamage(player.MaxHealth / 3, new List<GameEvent>());
         return world;
     }
 

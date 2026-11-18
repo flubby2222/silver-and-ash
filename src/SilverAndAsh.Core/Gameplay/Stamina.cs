@@ -39,6 +39,9 @@ public sealed class Stamina
 
     private float _regenCarry;
 
+    /// <summary>What is in the bar now, in the units of <see cref="Capacity"/> (0 to <see cref="Capacity"/>).</summary>
+    public int Amount => _amount;
+
     /// <summary>How full the bar is: 0 = empty, 1 = full.</summary>
     public float Fraction => (float)_amount / Capacity;
 
