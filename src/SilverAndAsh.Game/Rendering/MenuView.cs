@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using SilverAndAsh.Game.Input;
 
 namespace SilverAndAsh.Game.Rendering;
 
@@ -105,7 +106,9 @@ internal sealed class MenuView
             return hovered;
         }
 
-        return Raylib.IsKeyPressed(KeyboardKey.Enter) || Raylib.IsKeyPressed(KeyboardKey.Space) ? Selected : -1;
+        // Alt + Enter switches to full screen (issue #350) and must not also press the selected button.
+        var enter = Raylib.IsKeyPressed(KeyboardKey.Enter) && !FullScreenToggle.AltHeld;
+        return enter || Raylib.IsKeyPressed(KeyboardKey.Space) ? Selected : -1;
     }
 
     /// <summary>Draws the buttons; rows in <paramref name="valueRows"/> get small arrows left and right.</summary>

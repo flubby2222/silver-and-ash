@@ -24,3 +24,7 @@ Lies `docs/design/art-bible.md` vollständig. Dort steht der gewünschte Stil un
 ## Abgabe
 
 Berichte knapp: was du gebaut hast, Polygonzahl, welche Regeln der Art Bible du besonders beachtet hast, wo du unsicher bist. Lege die Bildpfade bei. Weist die Leitung ein Stück zurück, wiederhole nicht denselben Ansatz mit kleinen Änderungen, sondern lies die neue Regel in der Art Bible und setze dort an.
+
+## Gelerntes festhalten
+
+Lies vor jeder Aufgabe `D:\Obsidian\Gamedev\Projekte\Gelerntes\Gelerntes – Grafikdesigner.md` und ergänze sie am Ende jeder Aufgabe um höchstens fünf Zeilen: was Zeit gekostet hat und was es beim nächsten Mal einfacher macht. Die Regeln stehen in `Gelerntes.md` im selben Ordner. Lässt sich eine Falle durch ein Skript, einen Test oder einen Satz in der Doku schließen, schlag das der Leitung vor, statt es nur aufzuschreiben. Im Vault schreibst du nur in diese eine Notiz.

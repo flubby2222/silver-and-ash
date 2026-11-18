@@ -21,6 +21,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 - Pro Szene entstehen zwei Dateien:
   - `<szene>.png` – das 3D-Bild in Spielauflösung (854 × 480), so wie es die Grafikkarte zeichnet, ohne HUD.
   - `<szene>-screen.png` – das ganze Fenster (1280 × 720) mit HUD, Karte, Inventar usw.
+- `--window <breite>x<höhe>` – andere Fenstergröße, z. B. `--window 2240x960` für 21:9. Das 3D-Bild behält 480 Zeilen, seine Breite folgt der Form des Fensters (21:9 → 1120, 16:10 → 768, 4:3 → 640; #350). Das Fenster muss ganz auf den Bildschirm passen, sonst ist das Fensterbild abgeschnitten.
 - Für einen Durchlauf öffnet sich kurz ein Fenster; es schließt sich von selbst. `all` dauert wenige Sekunden.
 - Die FPS-Anzeige und die Debug-Anzeige (Geschwindigkeit, Abklingzeiten) fehlen auf den Fotos – sie würden nur Zufallswerte zeigen.
 
