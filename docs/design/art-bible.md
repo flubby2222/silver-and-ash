@@ -152,6 +152,35 @@ Das ist eine Annäherung an das Spiel, kein Ersatz. Sobald das Spiel Modelle lad
 - **Ins Spiel** kommt ein Stück erst, wenn **drei Stücke in Folge ohne Nacharbeit** angenommen wurden. Stand: noch keines.
 - Das Urteil des Menschen geht vor und wird ebenfalls zur Regel.
 
+## Effekte
+
+Effekte sind Flammen, Funken, Staub, Blut, Treffer und Licht, das sich bewegt. Den Effektdesigner beschreibt Issue [#352](https://github.com/flubby2222/silver-and-ash/issues/352); das erste Stück ist die Fackel ([#353](https://github.com/flubby2222/silver-and-ash/issues/353)).
+
+### Stilregeln
+
+- **Wenige, grobe Teilchen.** Lieber vier Funken, die man sieht, als vierzig, die im Punktmuster verschwinden. Aus 2 bis 4 m sind Teilchen mindestens zwei bis drei Pixel groß, im Bild nachgemessen.
+- **Harte Pixel.** Teilchen und gemalte Effekt-Texturen haben keine Kantenglättung und keine weichen Ränder.
+- **Nur Farben aus der Hauptpalette** (siehe „Farben“). Feuer und Glut nehmen die Reihe *Messing/Gold*, das Licht einer Fackel ist Messing 5.
+- **Mitgekörnt.** Effekte werden vor der 15-Bit-Körnung gezeichnet und bekommen dasselbe Punktmuster wie die Wand dahinter (siehe „Technischer Rahmen“).
+- **Kein weiches Glühen.** Kein Bloom, kein Leuchtschein um Flammen und Funken. Was hell sein soll, ist hell, weil das Licht die Umgebung aufhellt.
+- **Kein Rot als Signalfarbe an Gegnern.** Gegner werden nicht durch rote Effekte (Augen, Umrisse, Warnzeichen) hervorgehoben. Feuer und Glut sind Gold und Messing, nicht Rot. Wo Rot erlaubt ist, steht unter „Farben“.
+
+### Format der Probestücke
+
+Effekt-Probestücke entstehen außerhalb des Spiels, im Ordner `design/proben/effekte/<stück>/`, mit einem Skript, das alles neu erzeugt:
+
+1. **Drei Varianten** in derselben Szene unter Spielbedingungen (854 × 480, 70°, Augenhöhe 1,6 m, Texturen, Laterne, Nebel, Körnung). Zwischen den Varianten ändert sich nur das, was beurteilt wird.
+2. **Ein Streifen je Variante:** 8 bis 12 Einzelbilder aus einer Sekunde, als Ausschnitt um den Effekt. Ein Balken unter jedem Bild zeigt, wie hell das Licht gerade ist; so lässt sich Flackern auch im Standbild beurteilen.
+3. **Ein Blatt** mit allen Streifen untereinander, beschriftet.
+4. **Ein GIF je Variante** im vollen Bild, als nahtlose Schleife.
+5. **Eine README** mit Dateien, Varianten, Szene, Aufruf und Grenzen.
+
+### Fackel: Wahl und Ablehnungen (2026-11-18)
+
+- **Gewählt:** Die Flamme ist eine kleine gemalte Textur mit wenigen Bildern, als Daumenkino (Runde 1, Variante A). Das Licht flackert unruhig, und seine Mitte wandert, sodass es sich an der Wand bewegt (Runde 1, Variante B). Runde 2 vergleicht nur noch, wie stark es flackert.
+- **Abgelehnt:** eine Flamme aus groben Quadraten als Teilchen (Runde 1, B), weil sie auf den Bildern klein und unförmig wirkte.
+- **Abgelehnt:** Licht in harten Stufenringen (Runde 1, C), weil die Kreise an der Wand künstlich wirkten.
+
 ## Gelernte Regeln
 
 | Nr. | Datum | Stück | Was war falsch | Regel |
@@ -164,3 +193,5 @@ Das ist eine Annäherung an das Spiel, kein Ersatz. Sobald das Spiel Modelle lad
 | 6 | 2026-11-16 | Ghul, zweiter Entwurf | Von vorn standen die Oberschenkel als zweites Paar langer Säulen hinter den Armen; die Figur las sich als Stelzenwesen | Eine Figur muss auch von vorn als das erkennbar sein, was sie ist; jede Haltung wird in der Ansicht geprüft, aus der der Spieler sie sieht |
 | 7 | 2026-11-16 | Ghul, zweiter Entwurf | Aus 10 m waren die Glieder ein bis zwei Pixel breit und die Figur fast weg | Aus 10 m ist eine Figur als Masse mit erkennbarer Haltung lesbar; Glieder mindestens zwei bis drei Pixel breit, im Bild nachgemessen |
 | 8 | 2026-11-17 | Hauptpalette, Runde 1 und 2 | Runde 1 färbte auch Spielfigur und Waffen um (nicht gewollt); Runde 2 mischte warme und kalte Töne in die Flächen, und mit der Kachelwiederholung entstand ein Regenbogenmuster | Ein Vergleichsblatt ändert nur die eine Sache, die beurteilt wird; alles andere bleibt wie in `main`. Eine Fläche bleibt in einer Rampe, kräftige Reihen sind Akzente (siehe Farben) |
+| 9 | 2026-11-18 | Fackel, Runde 1, Variante B | Die Flamme aus groben Quadraten war auf den Bildern klein und unförmig | Eine Flamme ist eine kleine gemalte Textur mit wenigen Bildern, kein Haufen Teilchen. Teilchen nur für einzelne Funken, Staub und Ähnliches |
+| 10 | 2026-11-18 | Fackel, Runde 1, Variante C | Das Licht fiel in harten Stufenringen ab; die Kreise an der Wand wirkten künstlich | Licht fällt weich ab und ist nicht in Stufen geteilt. Die Pixel-Härte entsteht durch die Körnung, nicht durch Ringe |
