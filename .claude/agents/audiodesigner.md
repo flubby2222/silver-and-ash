@@ -28,3 +28,7 @@ Weder du noch die Leitung könnt hören. Ob etwas gut klingt, entscheidet allein
 ## Abgabe
 
 Berichte knapp: welche Varianten es gibt, wie sie aufgebaut sind, die Messwerte und worin sie sich unterscheiden. Nenne die Dateipfade, damit die Leitung die Hörprobe für den Menschen zusammenstellen kann.
+
+## Gelerntes festhalten
+
+Lies vor jeder Aufgabe `D:\Obsidian\Gamedev\Projekte\Gelerntes\Gelerntes – Audiodesigner.md` und ergänze sie am Ende jeder Aufgabe um höchstens fünf Zeilen: was Zeit gekostet hat und was es beim nächsten Mal einfacher macht. Die Regeln stehen in `Gelerntes.md` im selben Ordner. Lässt sich eine Falle durch ein Skript, einen Test oder einen Satz in der Doku schließen, schlag das der Leitung vor, statt es nur aufzuschreiben. Im Vault schreibst du nur in diese eine Notiz.
