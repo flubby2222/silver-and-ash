@@ -216,4 +216,128 @@ public class ChestPlacementTests
 
         Assert.Equal(first, again);
     }
+
+    // Hand-made cases (issue #324): generated levels never have them, but Place must handle them.
+
+    /// <summary>A generated level with a treasure room and a secret room, as a base for the hand-made cases.</summary>
+    private static GeneratedLevel WithTreasureAndSecret() => Levels.Value.First(level =>
+        level.Rooms.Any(room => room.Kind == RoomKind.Treasure) && level.Rooms.Any(room => room.Kind == RoomKind.Secret));
+
+    /// <summary><paramref name="level"/> with each room that <paramref name="change"/> touches replaced.</summary>
+    private static GeneratedLevel Changed(GeneratedLevel level, Func<PlacedRoom, PlacedRoom> change) =>
+        level with { Rooms = level.Rooms.Select(change).ToList() };
+
+    private static List<ChestPlan> ChestsIn(GeneratedLevel level, RoomKind kind) =>
+        level.Chests!.Where(chest => level.Rooms[chest.Room].Kind == kind).ToList();
+
+    [Fact]
+    public void A_level_without_combat_rooms_still_gets_its_treasure_and_secret_chests()
+    {
+        var level = Changed(WithTreasureAndSecret(), room => room.Kind == RoomKind.Combat ? room with { Kind = RoomKind.Corridor } : room);
+
+        var placed = ChestPlacement.Place(level, InEveryRoom);
+
+        Assert.DoesNotContain(placed.Chests!, chest => chest.RisesWhenCleared);
+        Assert.All(placed.Rooms.Where(room => room.Kind == RoomKind.Treasure), room => Assert.InRange(
+            placed.Chests!.Count(chest => chest.Room == room.Index),
+            Math.Min(Standard.TreasureChestsMin, room.ChestSlots!.Count),
+            Math.Min(Standard.TreasureChestsMax, room.ChestSlots!.Count)));
+        Assert.Single(ChestsIn(placed, RoomKind.Secret));
+    }
+
+    [Fact]
+    public void A_combat_room_without_chest_places_gets_no_chest_and_rolls_like_one_with_none()
+    {
+        var level = WithTreasureAndSecret();
+        var target = level.Rooms.First(room => room.Kind == RoomKind.Combat).Index;
+
+        var withoutList = ChestPlacement.Place(Changed(level, room => room.Index == target ? room with { ChestSlots = null } : room), InEveryRoom);
+        var emptyList = ChestPlacement.Place(Changed(level, room => room.Index == target ? room with { ChestSlots = [] } : room), InEveryRoom);
+
+        Assert.DoesNotContain(withoutList.Chests!, chest => chest.Room == target);
+        Assert.NotEmpty(ChestsIn(withoutList, RoomKind.Combat));
+        Assert.Equal(emptyList.Chests!, withoutList.Chests!);
+    }
+
+    [Fact]
+    public void With_a_single_combat_room_its_chest_follows_the_near_shares()
+    {
+        // Near: only Beggar's; far: only King's. The only combat room is both the nearest and the farthest - it counts as near.
+        var chests = InEveryRoom with
+        {
+            Beggar = Standard.Beggar with { CombatShareNear = 1f, CombatShareFar = 0f },
+            Guard = Standard.Guard with { CombatShareNear = 0f, CombatShareFar = 0f },
+            King = Standard.King with { CombatShareNear = 0f, CombatShareFar = 1f },
+            Vampire = Standard.Vampire with { CombatShareNear = 0f, CombatShareFar = 0f },
+        };
+
+        foreach (var generated in Levels.Value.Take(20))
+        {
+            var only = generated.Rooms.Where(room => room.Kind == RoomKind.Combat).MaxBy(room => room.DistanceFromStart)!.Index;
+            var level = Changed(generated, room => room.Kind == RoomKind.Combat && room.Index != only ? room with { Kind = RoomKind.Corridor } : room);
+
+            var chest = Assert.Single(ChestsIn(ChestPlacement.Place(level, chests), RoomKind.Combat));
+
+            Assert.Equal(only, chest.Room);
+            Assert.Equal(ChestTier.Beggar, chest.Tier);
+        }
+    }
+
+    [Fact]
+    public void A_treasure_room_on_the_inner_side_of_a_locked_door_counts_as_locked()
+    {
+        // Ordinary treasure rooms: only King's; locked ones: only Vampire's. The door is turned round: the treasure room is room A.
+        static ChestTierBalance Shares(ChestTierBalance values, float ordinary, float locked) =>
+            values with { TreasureShare = ordinary, LockedTreasureShare = locked };
+        var chests = Standard with
+        {
+            Beggar = Shares(Standard.Beggar, 0f, 0f),
+            Guard = Shares(Standard.Guard, 0f, 0f),
+            King = Shares(Standard.King, 1f, 0f),
+            Vampire = Shares(Standard.Vampire, 0f, 1f),
+        };
+        var generated = WithTreasureAndSecret();
+        var treasure = generated.Rooms.First(room => room.Kind == RoomKind.Treasure).Index;
+        var level = generated with
+        {
+            Doors = generated.Doors.Select(door => door.RoomA == treasure || door.RoomB == treasure
+                ? door with { RoomA = treasure, RoomB = door.RoomA == treasure ? door.RoomB : door.RoomA, Kind = DoorKind.Locked }
+                : door).ToList(),
+        };
+
+        var inTreasure = ChestPlacement.Place(level, chests).Chests!.Where(chest => chest.Room == treasure).ToList();
+
+        Assert.NotEmpty(inTreasure);
+        Assert.All(inTreasure, chest => Assert.Equal(ChestTier.Vampire, chest.Tier));
+    }
+
+    [Fact]
+    public void A_treasure_room_without_chest_places_gets_no_chest_and_rolls_like_one_with_none()
+    {
+        var level = WithTreasureAndSecret();
+        var target = level.Rooms.First(room => room.Kind == RoomKind.Treasure).Index;
+
+        var withoutList = ChestPlacement.Place(Changed(level, room => room.Index == target ? room with { ChestSlots = null } : room), Standard);
+        var emptyList = ChestPlacement.Place(Changed(level, room => room.Index == target ? room with { ChestSlots = [] } : room), Standard);
+
+        Assert.DoesNotContain(withoutList.Chests!, chest => chest.Room == target);
+        Assert.Single(ChestsIn(withoutList, RoomKind.Secret));
+        Assert.Equal(emptyList.Chests!, withoutList.Chests!);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_secret_room_without_chest_places_gets_no_chest_and_the_others_stay(bool emptyList)
+    {
+        var level = WithTreasureAndSecret();
+        var secret = level.Rooms.Single(room => room.Kind == RoomKind.Secret).Index;
+        var withoutPlaces = Changed(level, room => room.Index == secret ? room with { ChestSlots = emptyList ? [] : null } : room);
+
+        var before = ChestPlacement.Place(level, Standard).Chests!;
+        var after = ChestPlacement.Place(withoutPlaces, Standard).Chests!;
+
+        Assert.DoesNotContain(after, chest => chest.Room == secret);
+        Assert.Equal(before.Where(chest => chest.Room != secret), after);
+    }
 }
