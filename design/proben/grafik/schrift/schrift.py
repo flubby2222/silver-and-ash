@@ -230,15 +230,23 @@ CHARSET_DIG = "0123456789"
 CHARSET_PUN = ".,:;!?'\"-+=/\\()[]<>%&*#_|@~^"
 
 
-def check(font):
+def check(font, unique=False):
     for ch in CHARSET_UP + CHARSET_LOW + CHARSET_DIG + CHARSET_PUN:
         assert ch in font.glyphs, "%s fehlt: %r" % (font.name, ch)
+    if not unique:
+        return
+    # Kein Zeichen darf einem anderen gleichen (O und 0, I und l): in HUD-Zahlen entscheidet das die Lesbarkeit
+    seen = {}
+    for ch, (px, w) in font.glyphs.items():
+        key = (frozenset(px), w)
+        assert key not in seen, "%s: %r und %r haben dasselbe Muster" % (font.name, seen[key], ch)
+        seen[key] = ch
 
 
 def all_fonts():
     fs = [font_a(), font_b(), font_c()]
     for f in fs:
-        check(f)
+        check(f, unique=f.name.startswith("A"))  # Pflicht nur fuer die gewaehlte Schrift A (B hat O/0 und I/l gleich, nicht gewaehlt)
     return fs
 
 
