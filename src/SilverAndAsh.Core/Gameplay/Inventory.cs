@@ -33,22 +33,6 @@ public sealed partial class Player
 
     private readonly List<ItemKind> _items = [];
 
-    // The moves (walking directions, jump, Shift) held when the window opened: they close it only once let go and
-    // pressed anew - so opening it while running away keeps it open.
-    private MoveKeys _movesHeldAtOpen;
-
-    [Flags]
-    private enum MoveKeys
-    {
-        None = 0,
-        Forward = 1,
-        Back = 2,
-        Right = 4,
-        Left = 8,
-        Jump = 16,
-        Shift = 32,
-    }
-
     /// <summary>The weapons carried but not equipped: <see cref="InventorySlotCount"/> places, empty ones null.</summary>
     public IReadOnlyList<WeaponKind?> Bag => _bag.Select(entry => entry?.Kind).ToList();
 
@@ -65,8 +49,8 @@ public sealed partial class Player
     public IReadOnlyList<ItemKind> Items => _items;
 
     /// <summary>
-    /// True while the inventory window is open (G). The world goes on meanwhile; a move begun after opening (walking,
-    /// jumping, Shift) or a hit close it.
+    /// True while the inventory window is open (G). The world goes on meanwhile; only the player closes it - neither
+    /// moving nor a hit does (issue #346).
     /// </summary>
     public bool IsInventoryOpen { get; private set; }
 
@@ -108,8 +92,8 @@ public sealed partial class Player
     internal void Take(ItemKind kind) => _items.Add(kind);
 
     /// <summary>
-    /// Opens and closes the window (G), closes it on a new move, and carries out a click while it is open. Comes first in
-    /// every tick, so a click acts on the weapons before this tick's attacks.
+    /// Opens and closes the window (G) and carries out a click while it is open. Comes first in every tick, so a click acts
+    /// on the weapons before this tick's attacks. Only the player closes it - neither moving nor a hit does (issue #346).
     /// </summary>
     private void UseInventory(Input.PlayerInput input)
     {
@@ -119,19 +103,9 @@ public sealed partial class Player
             return;
         }
 
-        var held = MovesHeld(input);
         if (input.ToggleInventory)
         {
             IsInventoryOpen = !IsInventoryOpen;
-            _movesHeldAtOpen = held;
-        }
-
-        // Moving closes it (decision record 0008) - but only a move begun after opening: one already held then counts
-        // again once it was let go. Being pulled by Gorm's chain is no own move.
-        _movesHeldAtOpen &= held;
-        if ((held & ~_movesHeldAtOpen) != MoveKeys.None)
-        {
-            IsInventoryOpen = false;
         }
 
         if (IsInventoryOpen && input.InventoryClick is { } click)
@@ -139,21 +113,6 @@ public sealed partial class Player
             Click(click);
         }
     }
-
-    private static MoveKeys MovesHeld(Input.PlayerInput input)
-    {
-        var keys = MoveKeys.None;
-        keys |= input.Move.Y > 0f ? MoveKeys.Forward : MoveKeys.None;
-        keys |= input.Move.Y < 0f ? MoveKeys.Back : MoveKeys.None;
-        keys |= input.Move.X > 0f ? MoveKeys.Right : MoveKeys.None;
-        keys |= input.Move.X < 0f ? MoveKeys.Left : MoveKeys.None;
-        keys |= input.Jump ? MoveKeys.Jump : MoveKeys.None;
-        keys |= input.Dash ? MoveKeys.Shift : MoveKeys.None;
-        return keys;
-    }
-
-    /// <summary>A hit closes the window (decision record 0008).</summary>
-    private void CloseInventoryOnHit() => IsInventoryOpen = false;
 
     private void Click(InventoryClick click)
     {

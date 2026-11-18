@@ -211,6 +211,43 @@ public class BoonTests
     }
 
     [Fact]
+    public void A_dead_player_cannot_choose_health_to_live_again()
+    {
+        // The bonus choice stays open when hit (issue #346) - also by the deadly hit. Choosing then changes nothing.
+        var player = new Player(LevelParser.Parse("P"), balance: OfferAll);
+        player.AddExperience(100, []);
+        player.TakeDamage(player.MaxHealth, []);
+        var events = new List<GameEvent>();
+
+        var chosen = player.Choose(Boon.Health, events);
+
+        Assert.False(chosen);
+        Assert.True(player.IsDead);
+        Assert.Equal(0, player.Health);
+        Assert.Equal(1, player.PendingBoons);
+        Assert.Empty(events);
+    }
+
+    [Fact]
+    public void A_dead_player_choosing_health_in_the_world_stays_dead()
+    {
+        var world = new GameWorld(LevelParser.Parse("P"), balance: OfferAll);
+        world.Player.AddExperience(100, []);
+        world.Player.TakeDamage(world.Player.MaxHealth, []);
+
+        // Choosing in every tick until the end screen is due: the run still ends.
+        for (var tick = 0; tick < SimulationClock.SecondsToTicks(OfferAll.RestartDelay); tick++)
+        {
+            world.Tick(PlayerInput.None with { ChooseBoon = Boon.Health });
+            Assert.DoesNotContain(world.Events, e => e is BoonChosen);
+        }
+
+        Assert.True(world.Player.IsDead);
+        Assert.Equal(1, world.Player.PendingBoons);
+        Assert.True(world.ShouldRestart);
+    }
+
+    [Fact]
     public void Choosing_is_reported()
     {
         var world = new GameWorld(LevelParser.Parse("P"));
