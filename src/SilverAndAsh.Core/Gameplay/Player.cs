@@ -496,7 +496,9 @@ public sealed partial class Player
     /// perfect jumps, gravity, walls, floor and ceiling.
     /// </summary>
     /// <remarks>
-    /// The phases run in this order because each one reads what the ones before it left behind (issue #325):
+    /// The phases run in this order because most of them read what the ones before it left behind (issue #325).
+    /// Some neighbours share nothing and could swap without any effect - the timers and the jump chain, counting down
+    /// dash and dodge and the landing, crouch and steps; they keep the order they always had:
     /// <list type="number">
     ///   <item>Death and Gorm's chain first take away what the input may do - every later phase sees the cut input.</item>
     ///   <item>Inventory and timers (cooldowns, consecration, reloads) before the attack, so a weapon that just became
