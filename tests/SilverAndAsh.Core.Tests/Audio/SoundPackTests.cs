@@ -70,7 +70,24 @@ public class SoundPackTests
         { new EquipmentTaken(3, 0, Equipment.Of(WeaponKind.Rifle), Vector3.Zero), SoundKind.EquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
         { new EquipmentTaken(3, 0, Equipment.Of(ItemKind.HuntersEye), Vector3.Zero), SoundKind.EquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
         { new EquipmentTaken(3, 0, Equipment.Of(ItemKind.Leech), Vector3.Zero), SoundKind.VampiricEquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
+
+        // Issue #375: a skill point (level up) - the strike with choir from the listening test of #372.
+        { new LevelUp(0, 2), SoundKind.SkillPoint, ["skillpunkt.wav"] },
     };
+
+    [Fact]
+    public void Several_skill_points_in_one_tick_play_the_sound_once_and_the_next_tick_again()
+    {
+        // Issue #375: two levels from one kill would only add up to one louder strike.
+        var cues = new SoundCues(1);
+
+        var first = Assert.Single(cues.For([new LevelUp(0, 2), new LevelUp(0, 3)], Pack1));
+        var second = Assert.Single(cues.For([new LevelUp(0, 4)], Pack1));
+
+        Assert.Equal("skillpunkt.wav", first.File);
+        Assert.Equal("skillpunkt.wav", second.File);
+        Assert.Empty(cues.For([new ExperienceGained(0, 30)], Pack1));
+    }
 
     private static readonly GameEvent[] BatEvents =
     [
@@ -189,6 +206,9 @@ public class SoundPackTests
         // Issue #317: and taking equipment, of every tier.
         Assert.All(Equipment.All, piece =>
             Assert.Empty(new SoundCues(1).For([new EquipmentTaken(3, 0, piece, Vector3.Zero)], SoundPack.Old)));
+
+        // Issue #375: and the skill point.
+        Assert.Empty(new SoundCues(1).For([new LevelUp(0, 2)], SoundPack.Old));
     }
 
     [Fact]

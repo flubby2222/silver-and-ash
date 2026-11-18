@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Globalization;
 using SilverAndAsh.Core.Gameplay;
 
@@ -95,19 +96,19 @@ public sealed class HudLayout
     private const int DesignWidth = 854;
     private const int DesignHeight = 480;
 
-    private static readonly Dictionary<WeaponKind, string> WeaponIcons = new()
+    private static readonly FrozenDictionary<WeaponKind, string> WeaponIcons = new Dictionary<WeaponKind, string>
     {
         [WeaponKind.SilverBlade] = "icon_blade",
         [WeaponKind.Pistol] = "icon_pistol",
         [WeaponKind.Rifle] = "icon_rifle",
         [WeaponKind.Blunderbuss] = "icon_blunder",
-    };
+    }.ToFrozenDictionary();
 
-    private static readonly Dictionary<ItemKind, string> ItemIcons = new()
+    private static readonly FrozenDictionary<ItemKind, string> ItemIcons = new Dictionary<ItemKind, string>
     {
         [ItemKind.IronFlask] = "icon_flask",
         [ItemKind.HuntersEye] = "icon_eye",
-    };
+    }.ToFrozenDictionary();
 
     private readonly HudParts _parts;
     private readonly PixelFont _font;
