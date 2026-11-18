@@ -278,12 +278,22 @@ public class PhotoSceneTests
     }
 
     [Fact]
+    public void The_map_scene_opens_the_map_page()
+    {
+        var setup = Built("map");
+
+        setup.Run();
+
+        Assert.Equal(PlayerMenuPage.Map, setup.World.Player.Menu.Page);
+    }
+
+    [Fact]
     public void Only_the_map_scene_shows_the_map_and_only_the_model_probes_are_probes()
     {
         var studio = Studio();
         var setups = PhotoScenes.All.ToDictionary(scene => scene.Name, scene => scene.Build(studio));
 
-        Assert.Equal(["map"], setups.Where(pair => pair.Value.MapOpen).Select(pair => pair.Key));
+        Assert.Equal(["map"], setups.Where(pair => pair.Value.Input?.Invoke(0).PressMenu == MenuKey.Map).Select(pair => pair.Key));
         Assert.Equal(
             ["model-probe-10m", "model-probe-4m"],
             setups.Where(pair => pair.Value.IsModelProbe).Select(pair => pair.Key).Order());
