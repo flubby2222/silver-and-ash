@@ -64,7 +64,8 @@ internal static class CombatHud
         var top = Raylib.GetScreenHeight() - 136;
         var fraction = toNext > 0 ? Math.Clamp((float)experience / toNext, 0f, 1f) : 0f;
 
-        Raylib.DrawText(string.Create(CultureInfo.InvariantCulture, $"LV {level}"), 20, top, 16, Charged);
+        // The large numbers (issue #367): the pixel font twice as large, not a digit set of its own.
+        PixelText.DrawScaled(string.Create(CultureInfo.InvariantCulture, $"LV {level}"), 20, top + 2, PixelFont.NumberScale, Charged);
         var barTop = top + 20;
         Raylib.DrawRectangle(19, barTop - 1, Width + 2, Height + 2, Outline);
         Raylib.DrawRectangle(20, barTop, Width, Height, Track);
@@ -78,8 +79,8 @@ internal static class CombatHud
         const int Top = 20;
         var text = string.Create(CultureInfo.InvariantCulture, $"SILVER {silver}");
         var right = Raylib.GetScreenWidth() - 20;
-        var left = right - Raylib.MeasureText(text, FontSize);
-        Raylib.DrawText(text, left, Top, FontSize, SilverCoin);
+        var left = right - PixelText.Measure(text, FontSize);
+        PixelText.Draw(text, left, Top, FontSize, SilverCoin);
 
         var coinX = left - 14;
         var coinY = Top + FontSize / 2;
@@ -93,8 +94,8 @@ internal static class CombatHud
     {
         const int FontSize = 20;
         var text = string.Create(CultureInfo.InvariantCulture, $"KEYS {keys}");
-        var left = Raylib.GetScreenWidth() - 20 - Raylib.MeasureText(text, FontSize);
-        Raylib.DrawText(text, left, 48, FontSize, keys > 0 ? Charged : Cooling);
+        var left = Raylib.GetScreenWidth() - 20 - PixelText.Measure(text, FontSize);
+        PixelText.Draw(text, left, 48, FontSize, keys > 0 ? Charged : Cooling);
     }
 
     /// <summary>Consecrated ammunition: its time left, above the health - pale and holy, blinking in the last 3 s.</summary>
@@ -108,7 +109,7 @@ internal static class CombatHud
 
         var text = string.Create(CultureInfo.InvariantCulture, $"CONSECRATED {MathF.Ceiling(secondsLeft):0}s");
         var line = HudTextLines.Of(HudText.Consecrated, Raylib.GetScreenHeight());
-        Raylib.DrawText(text, 20, line.Top, line.FontSize, Consecrated);
+        PixelText.Draw(text, 20, line.Top, line.FontSize, Consecrated);
     }
 
     /// <summary>Four short lines with a gap in the middle and a dot, with a dark outline so it shows on any wall.</summary>
@@ -162,15 +163,15 @@ internal static class CombatHud
         {
             var empty = new Color(90, 88, 98, 255);
             Raylib.DrawRectangleLines(x, y, width, height, empty);
-            Raylib.DrawText(key, x + 4, y + 3, 10, empty);
-            Raylib.DrawText("-", x + 4, y + 15, 10, empty);
+            PixelText.Draw(key, x + 4, y + 3, 10, empty);
+            PixelText.Draw("-", x + 4, y + 15, 10, empty);
             return;
         }
 
         var frame = TierColours.Of(info.Tier, seconds);
         Raylib.DrawRectangleLinesEx(new Rectangle(x, y, width, height), selected ? 2f : 1f, frame);
-        Raylib.DrawText(key, x + 4, y + 3, 10, selected ? TextColor : new Color(150, 150, 160, 255));
-        Raylib.DrawText(info.Name, x + 4, y + 15, 10, selected ? TextColor : new Color(150, 150, 160, 255));
+        PixelText.Draw(key, x + 4, y + 3, 10, selected ? TextColor : new Color(150, 150, 160, 255));
+        PixelText.Draw(info.Name, x + 4, y + 15, 10, selected ? TextColor : new Color(150, 150, 160, 255));
     }
 
     /// <summary>
@@ -189,7 +190,8 @@ internal static class CombatHud
             : magazine.Rounds == 0 ? string.Create(CultureInfo.InvariantCulture, $"0 / {magazine.Size} [R]")
             : string.Create(CultureInfo.InvariantCulture, $"{magazine.Rounds} / {magazine.Size}");
         var color = magazine.Rounds == 0 && !magazine.IsReloading ? Blood : TextColor;
-        Raylib.DrawText(text, right - Raylib.MeasureText(text, Size), top, Size, color);
+        PixelText.DrawScaled(text, right - PixelText.MeasureScaled(text, PixelFont.NumberScale),
+            top + ((Size - PixelText.CapHeight(PixelFont.NumberScale)) / 2), PixelFont.NumberScale, color);
 
         if (magazine.IsReloading)
         {
@@ -207,13 +209,13 @@ internal static class CombatHud
     /// </summary>
     private static void DrawHint(int centreX, HudTextLine line, string text)
     {
-        var left = centreX - (Raylib.MeasureText(text, line.FontSize) / 2);
+        var left = centreX - (PixelText.Measure(text, line.FontSize) / 2);
         foreach (var (dx, dy) in new[] { (-1, 0), (1, 0), (0, -1), (0, 1) })
         {
-            Raylib.DrawText(text, left + dx, line.Top + dy, line.FontSize, Outline);
+            PixelText.Draw(text, left + dx, line.Top + dy, line.FontSize, Outline);
         }
 
-        Raylib.DrawText(text, left, line.Top, line.FontSize, TextColor);
+        PixelText.Draw(text, left, line.Top, line.FontSize, TextColor);
     }
 
     /// <summary>Health at the bottom left, above the frame counter: a blood-red bar with the number next to it.</summary>
@@ -224,9 +226,9 @@ internal static class CombatHud
         var top = Raylib.GetScreenHeight() - 56;
         var fraction = Math.Clamp((float)health / maxHealth, 0f, 1f);
 
-        Raylib.DrawText("HEALTH", 20, top - 20, 16, TextColor);
+        PixelText.Draw("HEALTH", 20, top - 20, 16, TextColor);
         Raylib.DrawRectangle(20, top, Width, Height, Track);
         Raylib.DrawRectangle(20, top, (int)MathF.Round(Width * fraction), Height, Blood);
-        Raylib.DrawText(health.ToString(CultureInfo.InvariantCulture), 20 + Width + 10, top - 3, 16, TextColor);
+        PixelText.Draw(health.ToString(CultureInfo.InvariantCulture), 20 + Width + 10, top - 3, 16, TextColor);
     }
 }

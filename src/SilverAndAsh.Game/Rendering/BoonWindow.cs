@@ -68,7 +68,7 @@ internal static class BoonWindow
         var text = pending > 1 ? $"[X] Choose boon ({pending})" : "[X] Choose boon";
         var flash = 0.55f + (0.45f * MathF.Sin(seconds * 6f));
         var line = HudTextLines.Of(HudText.BoonHint, Raylib.GetScreenHeight());
-        Raylib.DrawText(text, 20, line.Top, line.FontSize, Gold with { A = (byte)(255 * flash) });
+        PixelText.Draw(text, 20, line.Top, line.FontSize, Gold with { A = (byte)(255 * flash) });
     }
 
     /// <summary>Draws the window for <paramref name="player"/>'s waiting offer, with the values of <paramref name="boons"/>.</summary>
@@ -83,11 +83,11 @@ internal static class BoonWindow
 
         var pending = player.PendingBoons;
         var title = pending > 1 ? $"LEVEL UP - choose a boon ({pending} left)" : "LEVEL UP - choose a boon";
-        var titleWidth = Raylib.MeasureText(title, 32);
-        Raylib.DrawText(title, (width - titleWidth) / 2, height / 2 - BoxHeight / 2 - 70, 32, Gold);
+        var titleWidth = PixelText.Measure(title, 32);
+        PixelText.Draw(title, (width - titleWidth) / 2, height / 2 - BoxHeight / 2 - 70, 32, Gold);
 
         const string Close = "[X] or [Esc] close it - the boon keeps waiting";
-        Raylib.DrawText(Close, (width - Raylib.MeasureText(Close, 16)) / 2, height / 2 + BoxHeight / 2 + 24, 16, Muted);
+        PixelText.Draw(Close, (width - PixelText.Measure(Close, 16)) / 2, height / 2 + BoxHeight / 2 + 24, 16, Muted);
 
         var hovered = Hovered(offer);
         for (var i = 0; i < offer.Count; i++)
@@ -99,10 +99,10 @@ internal static class BoonWindow
 
             var x = (int)box.X + 16;
             var y = (int)box.Y + 14;
-            Raylib.DrawText($"[{i + 1}]", x, y, 20, Muted);
-            Raylib.DrawText(BoonTexts.Name(boon), x + 40, y, 20, Gold);
-            Raylib.DrawText(BoonTexts.Effect(boon, boons), x, y + 44, 18, Text);
-            Raylib.DrawText(SoFar(boon, boons, player.BoonCount(boon)), x, y + 72, 16, Muted);
+            PixelText.Draw($"[{i + 1}]", x, y, 20, Muted);
+            PixelText.Draw(BoonTexts.Name(boon), x + 40, y, 20, Gold);
+            PixelText.Draw(BoonTexts.Effect(boon, boons), x, y + 44, 18, Text);
+            PixelText.Draw(SoFar(boon, boons, player.BoonCount(boon)), x, y + 72, 16, Muted);
         }
     }
 

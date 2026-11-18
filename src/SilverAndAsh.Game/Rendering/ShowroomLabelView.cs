@@ -35,7 +35,7 @@ internal static class ShowroomLabelView
             var x = target.X + (point.X * target.Width / renderWidth);
             var y = target.Y + (point.Y * target.Height / renderHeight);
             var fontSize = toLabel.Length() < 6f ? 22 : 18;
-            var width = Raylib.MeasureText(label.Text, fontSize);
+            var width = PixelText.Measure(label.Text, fontSize);
             var left = (int)x - (width / 2);
             var top = (int)y - (fontSize / 2);
 
@@ -47,7 +47,7 @@ internal static class ShowroomLabelView
             }
 
             Raylib.DrawRectangle(left - 4, top - 2, width + 8, fontSize + 4, Shadow);
-            Raylib.DrawText(label.Text, left, top, fontSize, Text);
+            PixelText.Draw(label.Text, left, top, fontSize, Text);
         }
     }
 }
