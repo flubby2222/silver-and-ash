@@ -51,8 +51,8 @@ public readonly record struct HudPlacedText(string Text, int X, int Top, int Sca
 
 /// <summary>
 /// Everything the HUD draws in one frame, in drawing order: parts first, then the reload veils, then texts. A reload
-/// veil (issue #370) lies over the picture of a weapon being reloaded, from the left; its rightmost column is its light
-/// front edge.
+/// veil (issue #370) lies over the picture of a weapon being reloaded, only inside the frame's rim and on the part still
+/// to go at the right (issue #389); its leftmost column is its light front edge, travelling from left to right.
 /// </summary>
 public sealed record HudPicture(IReadOnlyList<HudPlacedPart> Parts, IReadOnlyList<HudPlacedText> Texts)
 {
@@ -108,15 +108,6 @@ public sealed class HudLayout
 
     /// <summary>Height of a bottom frame body (above <see cref="BottomBaseline"/>), its dark ground inside.</summary>
     public const int BottomBodyHeight = 30;
-
-    /// <summary>The reload veil inside a weapon frame (as in the design): this far in from the frame's top left ...</summary>
-    public const int VeilInset = 3;
-
-    /// <summary>... this wide when the reload starts ...</summary>
-    public const int VeilWidth = 32;
-
-    /// <summary>... and this high.</summary>
-    public const int VeilHeight = 24;
 
     /// <summary>Starts the small magazine size beside the large rounds number above the weapons ("/ 7", issue #388).</summary>
     public const string MagazineMark = "/ ";
@@ -222,14 +213,14 @@ public sealed class HudLayout
     }
 
     /// <summary>
-    /// The reload veil over a weapon frame whose left edge is <paramref name="frameX"/> and whose body ends on line
-    /// <paramref name="baseline"/>: inside the frame, covering the share still to go (1 - <paramref name="progress"/>)
-    /// from the left, so it shrinks as the reload comes on. Null once nothing is left to cover.
+    /// The reload veil over the dark ground <paramref name="ground"/> of a weapon frame (issue #389): only inside the
+    /// silver rim, covering the share still to go (1 - <paramref name="progress"/>) at the right, so its front edge
+    /// travels from left to right as the reload comes on. Null once nothing is left to cover.
     /// </summary>
-    public static HudRect? ReloadVeil(int frameX, int baseline, float progress)
+    public static HudRect? ReloadVeil(HudRect ground, float progress)
     {
-        var width = (int)MathF.Round(VeilWidth * (1f - Math.Clamp(progress, 0f, 1f)));
-        return width > 0 ? new HudRect(frameX + VeilInset, baseline - BottomBodyHeight + VeilInset, width, VeilHeight) : null;
+        var width = (int)MathF.Round(ground.Width * (1f - Math.Clamp(progress, 0f, 1f)));
+        return width > 0 ? ground with { X = ground.Right - width, Width = width } : null;
     }
 
     /// <summary>
@@ -337,7 +328,7 @@ public sealed class HudLayout
             var bodyX = canvas.Width - Spacing - ((count - i) * bodyWidth) - ((count - 1 - i) * Spacing);
             var body = picture.Frame(frameName, bodyX, BottomBodyTop(canvas));
             var ground = body.Inset(Rim);
-            if (weapon.IsReloading && ReloadVeil(body.X - _parts[frameName].Body.X, body.Bottom, weapon.ReloadProgress) is { } veil)
+            if (weapon.IsReloading && ReloadVeil(ground, weapon.ReloadProgress) is { } veil)
             {
                 picture.Veils.Add(veil);
             }

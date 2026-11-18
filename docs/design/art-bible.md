@@ -277,6 +277,13 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 - **Vorrat:** Munition ist unbegrenzt (ADR 0008); hinter dem Schrägstrich steht deshalb die Magazingröße, nicht ein Vorrat.
 - Verdeckt bei 854 × 480 in `HudLayoutTests` gerechnet: 7,2 % (Rechtecke der Teile und Texte, also eher zu viel). Fotos: `design/proben/grafik/hud-munition/`.
 
+**Nachlade-Schleier und Skillpunkt-Schein (Issue #389, nach dem Spieltest vom 18.11.2026):**
+
+- **Schleier nur im Waffenfenster (Urteil des Menschen):** Der dunkle Schleier beim Nachladen liegt nur auf dem dunklen Grund innerhalb des Silberrahmens, nie auf dem Rahmen oder darüber hinaus. Zu Beginn deckt er den ganzen Grund.
+- **Schleier wandert von links nach rechts (Urteil des Menschen):** Die helle Vorderkante ist die linke Spalte des Schleiers und wandert mit dem Nachladen nach rechts; links wird das Waffenbild frei, rechts bleibt der Rest bedeckt. Rechnung: `HudLayout.ReloadVeil` (Core).
+- **Skillpunkt-Schein dezent (Urteil des Menschen: „zu übertrieben“):** Der goldene Schein am Bildrand bleibt Gold (Messing 5), kein Rot. **Vorläufig (Leitung, bis zum nächsten Spieltest):** halbe Stärke (`SkillPointStrength` 0,5) und halbes Band (`SkillPointBand` 6 % der Bildhöhe statt 12 %), in `ScreenEffects` (Core). Regel: Der Schein setzt auch zu Beginn weniger Pixel als der rote Rand bei wenig Leben an seiner schwächsten Stelle.
+- Fotos vorher/nachher bei 854 × 480: `design/proben/grafik/effekte-389/`.
+
 ### HUD und Menü in höherer Auflösung (entschieden, Issue #393)
 
 **Gewählt: A „harte Pixel“; Urteil des Menschen am 18.11.2026.** Vorlage: `tools/hud/hud_hochaufgeloest.py`, Blatt `design/proben/grafik/hud-hochaufgeloest/blatt-a.png`.

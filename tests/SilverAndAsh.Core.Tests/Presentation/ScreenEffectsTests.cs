@@ -276,4 +276,42 @@ public class ScreenEffectsTests
         Assert.True(OnInEdge(ScreenEffects.LowLifeMin) < OnInEdge(ScreenEffects.LowLifeMax));
         Assert.True(OnInEdge(ScreenEffects.LowLifeMax) < OnInEdge(1f));
     }
+
+    [Theory]
+    [InlineData(854, 480)]
+    [InlineData(427, 240)]
+    public void The_gold_shine_at_its_start_is_weaker_than_the_red_edge_at_its_weakest(int width, int height)
+    {
+        // Issue #389: the shine was "too much". Even at its start it sets fewer pixels than the low-life edge ever does.
+        var shine = Count(width, height, (x, y) => ScreenEffects.IsSkillPointPixelOn(x, y, width, height, 1f));
+        var red = Count(width, height, (x, y) => ScreenEffects.IsEdgePixelOn(x, y, width, height, ScreenEffects.LowLifeMin));
+
+        Assert.True(shine > 0, "the shine must still be seen");
+        Assert.True(shine < red, $"shine {shine} pixels, red edge at its weakest {red}");
+        Assert.Equal(0, Count(width, height, (x, y) => ScreenEffects.IsSkillPointPixelOn(x, y, width, height, 0f)));
+    }
+
+    [Theory]
+    [InlineData(854, 480)]
+    [InlineData(427, 240)]
+    public void The_gold_shine_keeps_to_a_narrower_band_than_the_red_edge(int width, int height)
+    {
+        var band = (int)MathF.Round(height * ScreenEffects.SkillPointBand);
+        Assert.True(band < ScreenEffects.EdgeBandPixels(height), $"shine band {band}, red band {ScreenEffects.EdgeBandPixels(height)}");
+
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var distance = Math.Min(Math.Min(x, width - 1 - x), Math.Min(y, height - 1 - y));
+                if (distance >= band)
+                {
+                    Assert.False(ScreenEffects.IsSkillPointPixelOn(x, y, width, height, 1f), $"pixel {x},{y} lies inside the shine band");
+                }
+            }
+        }
+    }
+
+    private static int Count(int width, int height, Func<int, int, bool> on) =>
+        Enumerable.Range(0, height).Sum(y => Enumerable.Range(0, width).Count(x => on(x, y)));
 }
