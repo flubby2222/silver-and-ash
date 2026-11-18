@@ -48,6 +48,67 @@ public class ScreenEffectsTests
     }
 
     [Fact]
+    public void The_darkening_fades_evenly_over_the_whole_hit_time()
+    {
+        var player = FreshPlayer();
+        var effects = new ScreenEffects(player.Id);
+        var hitTicks = SimulationClock.SecondsToTicks(ScreenEffects.HitSeconds);
+
+        effects.OnEvent(new PlayerHit(player.Id, 5));
+        for (var tick = 1; tick < hitTicks; tick++)
+        {
+            effects.Tick(player);
+            Assert.Equal(ScreenEffects.HitDarkness * (hitTicks - tick) / hitTicks, effects.Darkness, 4);
+        }
+
+        // Still a little dark on the last tick of the hit time, gone right after.
+        Assert.True(effects.Darkness > 0f);
+        effects.Tick(player);
+        Assert.Equal(0f, effects.Darkness);
+    }
+
+    [Fact]
+    public void A_hit_starts_no_gold_shine_and_a_level_up_no_darkening()
+    {
+        var player = FreshPlayer();
+        var hit = new ScreenEffects(player.Id);
+        var levelUp = new ScreenEffects(player.Id);
+
+        hit.OnEvent(new PlayerHit(player.Id, 5));
+        levelUp.OnEvent(new LevelUp(player.Id, 2));
+        hit.Tick(player);
+        levelUp.Tick(player);
+
+        Assert.True(hit.Darkness > 0f);
+        Assert.Equal(0f, hit.SkillPoint);
+        Assert.True(levelUp.SkillPoint > 0f);
+        Assert.Equal(0f, levelUp.Darkness);
+    }
+
+    [Fact]
+    public void After_healing_the_red_edge_starts_again_at_its_weakest()
+    {
+        var player = FreshPlayer();
+        var effects = new ScreenEffects(player.Id);
+        var beat = SimulationClock.SecondsToTicks(ScreenEffects.LowLifePulseSeconds);
+        var events = new List<GameEvent>();
+
+        // First time at low life: run to the strongest point of the beat.
+        player.TakeDamage(player.MaxHealth - 1, events);
+        Run(effects, player, (beat / 2) + 1);
+        Assert.True(effects.LowLife > ScreenEffects.LowLifeMax - 0.01f);
+
+        player.Heal(player.MaxHealth, events);
+        effects.Tick(player);
+        Assert.Equal(0f, effects.LowLife);
+
+        // Second time: the pulse begins anew, not where it stopped.
+        player.TakeDamage(player.MaxHealth - 1, events);
+        effects.Tick(player);
+        Assert.Equal(ScreenEffects.LowLifeMin, effects.LowLife, 4);
+    }
+
+    [Fact]
     public void A_hit_on_another_player_or_without_damage_does_nothing()
     {
         var player = FreshPlayer();
@@ -166,8 +227,9 @@ public class ScreenEffectsTests
             }
         }
 
-        // The band is a small share of the picture: the target in the middle is far from it.
+        // The band is a small share of the picture: the target in the middle is far from it. But wide enough to be seen.
         Assert.True(band < height / 4);
+        Assert.True(band > height / 10, $"band {band} at height {height}");
     }
 
     [Fact]
@@ -182,6 +244,23 @@ public class ScreenEffectsTests
         Assert.Equal(Width, OnInRow(0));
         Assert.True(OnInRow(band / 2) < OnInRow(1));
         Assert.True(OnInRow(band / 2) > 0);
+    }
+
+    [Fact]
+    public void Halfway_into_the_band_only_about_a_quarter_of_the_pixels_are_set()
+    {
+        // The cover falls with the square of the way inwards: at half the band (1 - 1/2)^2 = 1/4, not 1/2.
+        const int Width = 854;
+        const int Height = 480;
+        var band = ScreenEffects.EdgeBandPixels(Height);
+        var middle = Enumerable.Range(band, Width - (2 * band)).ToArray();
+
+        // Four lines, one whole period of the 4 x 4 pattern: a single line holds only four of its 16 thresholds.
+        var rows = Enumerable.Range((band / 2) - 2, Dithering.PatternSize).ToArray();
+        var on = rows.Sum(y => middle.Count(x => ScreenEffects.IsEdgePixelOn(x, y, Width, Height, 1f)));
+        var expected = rows.Sum(y => MathF.Pow(1f - ((float)y / band), 2) * middle.Length);
+
+        Assert.InRange(on, expected * 0.8f, expected * 1.2f);
     }
 
     [Fact]

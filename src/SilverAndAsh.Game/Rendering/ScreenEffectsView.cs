@@ -17,6 +17,13 @@ internal sealed class ScreenEffectsView : IDisposable
     private static readonly Color SkillPointColor = new(214, 170, 64, 255);
     private static readonly Color DarkColor = new(16, 11, 20, 255);
 
+    // OpenGL blending values; Raylib-cs takes them as plain numbers.
+    private const int GlZero = 0;
+    private const int GlOne = 1;
+    private const int GlSrcAlpha = 0x0302;
+    private const int GlOneMinusSrcAlpha = 0x0303;
+    private const int GlFuncAdd = 0x8006;
+
     private Color[] _pixels = [];
     private Texture2D _texture;
     private int _width;
@@ -31,7 +38,12 @@ internal sealed class ScreenEffectsView : IDisposable
         ArgumentNullException.ThrowIfNull(effects);
         if (effects.Darkness > 0f)
         {
+            // Darken only the colour and keep the alpha of the small picture: the default blending would lower it too,
+            // the black behind the picture would then show through and the hit would look darker than allowed.
+            Rlgl.SetBlendFactorsSeparate(GlSrcAlpha, GlOneMinusSrcAlpha, GlZero, GlOne, GlFuncAdd, GlFuncAdd);
+            Raylib.BeginBlendMode(BlendMode.CustomSeparate);
             Raylib.DrawRectangle(0, 0, width, height, DarkColor with { A = (byte)MathF.Round(255f * effects.Darkness) });
+            Raylib.EndBlendMode();
         }
 
         if (effects.LowLife <= 0f && effects.SkillPoint <= 0f)

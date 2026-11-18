@@ -479,6 +479,18 @@ public class HudLayoutTests
     }
 
     [Fact]
+    public void The_reload_veil_width_is_rounded_not_cut_off()
+    {
+        // 32 * 0.8 = 25.6: rounded 26, cut off 25. The example must tell the two apart.
+        var exact = HudLayout.VeilWidth * 0.8f;
+        Assert.NotEqual((int)exact, (int)MathF.Round(exact));
+
+        var veil = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 0.2f);
+
+        Assert.Equal((int)MathF.Round(exact), veil!.Value.Width);
+    }
+
+    [Fact]
     public void The_reload_veil_takes_its_look_from_the_table()
     {
         using var json = System.Text.Json.JsonDocument.Parse(
