@@ -6,8 +6,9 @@ using SilverAndAsh.Core.Presentation;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The equipment page of the menu (G, decision record 0008, issues #193, #348), Tab turns to the map page: the weapons in hand on top (melee and the three ranged places),
-/// the six places of the bag below, the items with their effect on the right. The game goes on behind it; only G or Esc
+/// The equipment page of the menu (G, decision record 0008, issues #193, #348, #390), Tab or a click on the map tab turns
+/// to the map page: the frame of values on the left, the weapons in hand on top (melee and the three ranged places), the
+/// six places of the bag below, the items under them. The game goes on behind it; only G or Esc
 /// close it, neither moving nor a hit (issue #346). A left click equips, a right click drops - every frame is in the colour of the weapon's
 /// tier. It only reads and shows - the click goes to Core as input (<see cref="Core.Input.PlayerInput.InventoryClick"/>).
 /// Drawn in the design "C2 Slim" on the menu canvas (issue #371), so it fits every window; where what sits decides
@@ -44,12 +45,14 @@ internal static class InventoryWindow
         return Hovered(canvas, MenuArt.Layout.Equipment(canvas, 0)) is { } place ? place with { Drop = drop } : null;
     }
 
-    /// <summary>Draws the window for <paramref name="player"/>.</summary>
-    public static void Draw(Player player)
+    /// <summary>Draws the window for <paramref name="player"/>, with the frame of values both pages share (issue #390).</summary>
+    public static void Draw(GameWorld world, Player player)
     {
+        ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(player);
         var seconds = (float)Raylib.GetTime();
         MenuArt.Shade(Shade);
+        MenuTabs.DrawSheet(world, player);
 
         var canvas = MenuArt.Canvas;
         var layout = MenuArt.Layout;
