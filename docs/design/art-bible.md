@@ -175,11 +175,19 @@ Effekt-Probestücke entstehen außerhalb des Spiels, im Ordner `design/proben/ef
 4. **Ein GIF je Variante** im vollen Bild, als nahtlose Schleife.
 5. **Eine README** mit Dateien, Varianten, Szene, Aufruf und Grenzen.
 
-### Fackel: Wahl und Ablehnungen (2026-11-18)
+### Fackel: Wahl und Ablehnungen (Runde 1 und 2, 2026-11-18)
 
-- **Gewählt:** Die Flamme ist eine kleine gemalte Textur mit wenigen Bildern, als Daumenkino (Runde 1, Variante A). Das Licht flackert unruhig, und seine Mitte wandert, sodass es sich an der Wand bewegt (Runde 1, Variante B). Runde 2 vergleicht nur noch, wie stark es flackert.
-- **Abgelehnt:** eine Flamme aus groben Quadraten als Teilchen (Runde 1, B), weil sie auf den Bildern klein und unförmig wirkte.
-- **Abgelehnt:** Licht in harten Stufenringen (Runde 1, C), weil die Kreise an der Wand künstlich wirkten.
+Regel für Feuer an der Wand (Fackel, Kohlebecken und Ähnliches):
+
+- **Flamme:** eine kleine gemalte Textur mit wenigen Bildern, als Daumenkino (Runde 1, Variante A). Dazu nur wenige einzelne Funken.
+- **Licht:** Es flackert unruhig, und seine Mitte wandert, sodass sich der Lichtfleck an der Wand bewegt (Runde 1, Variante B). Die Stärke ist mittel: Die Helligkeit schwankt um etwa ±25 %, die Mitte wandert bis etwa 3,5 cm zur Seite und 2,7 cm in der Höhe (Runde 2, Variante B).
+- **Nicht gewählt:**
+  - Eine Flamme aus groben Quadraten als Teilchen (Runde 1, B): Sie war auf den Bildern klein und unförmig.
+  - Licht in harten Stufenringen (Runde 1, C): Die Kreise an der Wand wirkten künstlich.
+  - Ruhiges Flackern mit ±15 % und einer Mitte, die bis 2,1 / 1,6 cm wandert (Runde 2, A).
+  - Starkes Flackern mit ±32 % und einer Mitte, die bis 4,5 / 3,5 cm wandert (Runde 2, C).
+
+Die Proben liegen in `design/proben/effekte/fackel/` (Runde 1) und `design/proben/effekte/fackel/runde2/`.
 
 ## Gelernte Regeln
 
