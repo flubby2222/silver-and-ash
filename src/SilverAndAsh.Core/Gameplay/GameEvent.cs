@@ -110,6 +110,12 @@ public sealed record ChestOpened(int ChestId, int PlayerId, ChestTier Tier) : Ga
 public sealed record PickupTaken(int PickupId, int PlayerId, ConsumableKind Kind) : GameEvent;
 
 /// <summary>
+/// A chest or Gorm let the equipment <paramref name="DropId"/> - <paramref name="Piece"/> - fall at
+/// <paramref name="Position"/> (issue #318). It lies there glowing in its tier's colour until a player takes it with F.
+/// </summary>
+public sealed record EquipmentDropped(int DropId, Equipment Piece, Vector3 Position) : GameEvent;
+
+/// <summary>
 /// Player <paramref name="PlayerId"/> took the equipment <paramref name="DropId"/> - <paramref name="Piece"/> - with F
 /// at <paramref name="Position"/> (issue #317). The game celebrates it by <see cref="Tier"/>: a card, and more the higher it is.
 /// </summary>

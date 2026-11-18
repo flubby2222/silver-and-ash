@@ -28,7 +28,7 @@ Zum **Ausprobieren** die Kopie neben dem Spiel ändern. Ein Wert, der **bleiben*
   "drops":  { "ghoulChance": 0.3, "batChance": 0.15, "consecratedAmmoShare": 0.3 },   // 0 = nie, 1 = immer
   "silver": { "ghoulChance": 0.5, "batChance": 0.5, "ghoulMin": 1, "ghoulMax": 3, "batMin": 1, "batMax": 3 },   // Chance und Silber pro Kill
   "keys":   { "roomChance": 0.15, "enemyChance": 0.05 },                                // Schlüssel pro geräumtem Raum / Kill
-  "chests": { "combatRoomChance": 0.25, "beggar": { ... }, "guard": { ... }, "king": { ... }, "vampire": { ... } },   // Kisten je Stufe
+  "chests": { "combatRoomChance": 0.25, "beggar": { ... }, "guard": { ... }, "king": { ... }, "vampire": { ... } },   // Kisten je Stufe, mit Ausrüstungs-Chance (equipmentChance)
   "loot": { "higherTierChance": 0.1, "itemShare": 0.7 },   // Beute-Topf: Chance auf eine Stufe höher, Anteil Gegenstand statt Waffe
   "doors":  { "normalOpenTime": 0.9, "lockedOpenTime": 1.3, "bossOpenTime": 2.2 },  // Sekunden, bis eine Tür ganz aufgeschwungen ist
   "bloodVial": { "heal": 50 },
@@ -56,6 +56,7 @@ Der Report baut viele Ebenen genau wie das Spiel (Standard 500 Seeds) und zeigt,
 - Silber;
 - Schlüssel gegen Schlösser;
 - Kisten je Stufe;
+- Ausrüstung aus Kisten (erwartet) und von Gorm;
 - Heilung;
 - eine grobe Zeitschätzung.
 

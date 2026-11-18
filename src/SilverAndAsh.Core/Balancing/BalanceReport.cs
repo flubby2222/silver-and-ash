@@ -22,6 +22,7 @@ public static class BalanceReport
     public const string Silver = "Silver";
     public const string Keys = "Keys and locks";
     public const string Chests = "Chests";
+    public const string Equipment = "Equipment";
     public const string Healing = "Healing";
     public const string Time = "Time (rough estimate)";
 
@@ -119,8 +120,15 @@ public static class BalanceReport
             figures.Add(new(Chests, tier.ChestName(), chests.Count(chest => chest.Tier == tier)));
         }
 
+        // Every chest holds equipment with its tier's chance; Gorm always leaves one. When the loot pool has nothing of the
+        // tier asked for or above, extra silver comes instead - the report leaves that rarer case out and counts the piece.
+        var equipmentFromChests = chests.Sum(chest => (double)balance.Chests.Of(chest.Tier).EquipmentChance);
         figures.AddRange(
         [
+            new(Equipment, "From chests (expected)", equipmentFromChests),
+            new(Equipment, "From Gorm", gorms),
+            new(Equipment, "Total (expected)", equipmentFromChests + gorms),
+
             new(Healing, "Blood vials from enemies (expected)", vialsFromEnemies),
             new(Healing, "Blood vials in chests", vialsInChests),
             new(Healing, "Health healed (expected)", healing),
