@@ -43,9 +43,9 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | K | Klangpaket wechseln: Klangpaket 1 ↔ alte Geräusche (zum Vergleichen, oben steht kurz der Name) |
 | X, dann 1–4 oder Klick | Bonus nach einem Stufenaufstieg wählen – das Spiel läuft weiter; mehrere Aufstiege warten und kommen nacheinander; man kann dabei laufen und getroffen werden; X oder Esc schließt die Wahl |
 | Q | Blutrausch |
-| Esc | Schließt zuerst ein offenes Fenster (Bonus-Wahl, Menü mit Karte und Ausrüstung), sonst Menü: weiter, Mausempfindlichkeit, zum Titel, beenden (allein steht das Spiel solange still) |
+| Esc | Schließt zuerst ein offenes Fenster (Bonus-Wahl, Menü mit Karte und Ausrüstung), sonst Menü: weiter, Einstellungen, zum Titel, beenden (allein steht das Spiel solange still). In den Einstellungen und bei der Frage vor dem Beenden geht Esc einen Schritt zurück |
 
-**Einstellungen** (heute nur die Mausempfindlichkeit) speichert das Spiel lokal in `%LOCALAPPDATA%\SilverAndAsh\settings.json` – kein Spielstand, nichts wird verschickt. Fehlt die Datei oder ist sie kaputt, gelten die Standardwerte.
+**Einstellungen** erreichst du vom Titelbild und aus dem Esc-Menü: Mausempfindlichkeit, Gesamtlautstärke, Lautstärke der Effekte (alle kurzen Geräusche), Lautstärke der Atmosphäre (die Musik) und Fenster oder Vollbild. **Links/Rechts** (oder ein Klick auf die linke oder rechte Hälfte einer Zeile) ändert einen Wert; jede Änderung wirkt sofort. Das Spiel speichert sie lokal in `%LOCALAPPDATA%\SilverAndAsh\settings.json` – kein Spielstand, nichts wird verschickt – und startet beim nächsten Mal genauso. Fehlt die Datei oder ist sie kaputt, gelten die Standardwerte (volle Lautstärke, Fenster). **Beenden** fragt vorher nach; vorausgewählt ist „Cancel“.
 
 **Run-Statistik:** Jeder beendete Durchlauf (Tod oder Sieg) landet als eine Zeile in `%LOCALAPPDATA%\SilverAndAsh\runs.log`, z. B. `2026-11-15 18:40:12 | won | seed 123 | 12:34 | ghouls 31 | bats 9 | dealt 4210 | taken 380 | level 6 | rooms 9/9`. Auch das bleibt auf dem eigenen Rechner.
 

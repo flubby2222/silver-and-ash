@@ -91,6 +91,25 @@ public class PlayerMenuTests
         Assert.DoesNotContain(player.Events, e => e is WeaponDropped);
     }
 
+    [Theory]
+    [InlineData(null, MenuKey.Equipment)]
+    [InlineData(PlayerMenuPage.Map, MenuKey.Equipment)]
+    [InlineData(PlayerMenuPage.Map, MenuKey.Close)]
+    public void A_menu_key_in_a_paused_tick_does_nothing(PlayerMenuPage? page, MenuKey key)
+    {
+        // Tab and G over the pause or settings menu (issue #349): the world stands still, the menu stays as it was -
+        // the game drops the key after the paused tick, so it does not come back once the pause ends.
+        var world = new GameWorld(LevelParser.Parse("P"));
+        if (page is { } open)
+        {
+            world.Tick(Press(open == PlayerMenuPage.Map ? MenuKey.Map : MenuKey.Equipment));
+        }
+
+        world.Tick(Press(key) with { Paused = true });
+
+        Assert.Equal(page, world.Player.Menu.Page);
+    }
+
     [Fact]
     public void A_dead_player_has_the_menu_closed_and_cannot_open_it()
     {

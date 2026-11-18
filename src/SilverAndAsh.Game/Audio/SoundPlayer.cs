@@ -27,6 +27,11 @@ internal sealed class SoundPlayer : IDisposable
     private MusicTrack _playing = MusicTrack.None;
     private bool _paused;
 
+    // The player's volumes from the settings (issue #349), each 0 to 1.
+    private float _master = 1f;
+    private float _effects = 1f;
+    private float _ambience = 1f;
+
     private SoundPlayer(bool deviceOpen, Dictionary<string, Sound> sounds, Dictionary<MusicTrack, Music> music, FileLog? log)
     {
         _deviceOpen = deviceOpen;
@@ -121,7 +126,7 @@ internal sealed class SoundPlayer : IDisposable
         {
             if (_sounds.TryGetValue(cue.File, out var sound))
             {
-                Raylib.SetSoundVolume(sound, cue.Volume);
+                Raylib.SetSoundVolume(sound, cue.Volume * _effects);
                 Raylib.PlaySound(sound);
             }
         }
@@ -171,7 +176,7 @@ internal sealed class SoundPlayer : IDisposable
             _log?.Info(_paused ? $"Music held: {_playing}." : $"Music goes on: {_playing}.");
         }
 
-        Raylib.SetMusicVolume(stream, mix.Volume);
+        Raylib.SetMusicVolume(stream, mix.Volume * _ambience);
         if (!_paused)
         {
             Raylib.UpdateMusicStream(stream);
@@ -182,12 +187,28 @@ internal sealed class SoundPlayer : IDisposable
     public void ToggleMute()
     {
         IsMuted = !IsMuted;
+        ApplyMaster();
+        _log?.Info(IsMuted ? "Sound muted (N)." : "Sound on again (N).");
+    }
+
+    /// <summary>
+    /// Takes the player's volumes (issue #349): the master volume at once, effects with the next sound, the ambience
+    /// with the next frame of music.
+    /// </summary>
+    public void SetVolumes(float master, float effects, float ambience)
+    {
+        _master = master;
+        _effects = effects;
+        _ambience = ambience;
+        ApplyMaster();
+    }
+
+    private void ApplyMaster()
+    {
         if (_deviceOpen)
         {
-            Raylib.SetMasterVolume(IsMuted ? 0f : SoundBoard.MasterVolume);
+            Raylib.SetMasterVolume(IsMuted ? 0f : SoundBoard.MasterVolume * _master);
         }
-
-        _log?.Info(IsMuted ? "Sound muted (N)." : "Sound on again (N).");
     }
 
     public void Dispose()

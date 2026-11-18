@@ -254,10 +254,17 @@ static void RunGame(
         var balancePath = Path.Combine(AppContext.BaseDirectory, "assets", "balance.json");
         var balance = LoadBalance(balancePath, log);
 
-        // The player's own settings (mouse sensitivity), kept locally: %LOCALAPPDATA%\SilverAndAsh\settings.json.
+        // The player's own settings (sensitivity, volumes, full screen; issue #349), kept locally:
+        // %LOCALAPPDATA%\SilverAndAsh\settings.json. Photos, the bench and --window keep the window as it is.
         var settingsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "settings.json");
         var settings = SettingsFile.Load(settingsPath);
+        if (photos is null && window is null && FullScreenToggle.Set(settings.FullScreen))
+        {
+            LogDisplay(log);
+        }
+
+        settings = settings with { FullScreen = FullScreenToggle.IsFullScreen };
 
         // One line per finished run, also local: %LOCALAPPDATA%\SilverAndAsh\runs.log.
         var runLogPath = Path.Combine(
@@ -300,6 +307,12 @@ static void RunGame(
         var titleMenu = new MenuView();
         titleMenu.Open();
         var escMenu = new MenuView();
+
+        // The settings and the question before quitting open from the title screen and from the Esc menu (issue #349);
+        // menuPage says which page of the open menu is shown.
+        var menuPage = MenuPage.Main;
+        var settingsMenu = SettingsMenu.NewMenu();
+        var quitMenu = new MenuView();
 
 #if DEBUG
         var reloadedNoticeSeconds = 0f;
@@ -534,6 +547,31 @@ static void RunGame(
 
         // 3b. The small picture scaled up onto the screen, the HUD on top at full resolution (sharp). Between
         // Raylib.BeginDrawing and EndDrawing.
+        // The open page of the title screen or the Esc menu: its buttons, the settings or the question before quitting.
+        void DrawMenuPage(bool onTitle)
+        {
+            switch (menuPage)
+            {
+                case MenuPage.Settings:
+                    SettingsMenu.Draw(settingsMenu, settings);
+                    break;
+                case MenuPage.ConfirmQuit:
+                    QuitPrompt.Draw(quitMenu);
+                    break;
+                default:
+                    if (onTitle)
+                    {
+                        TitleScreen.Draw(titleMenu, displayVersion);
+                    }
+                    else
+                    {
+                        EscMenu.Draw(escMenu);
+                    }
+
+                    break;
+            }
+        }
+
         // debugInfo: the frame rate and the test display, both only in the debug version (issue #340) - not in photos.
         void DrawScreen(float frameSeconds, bool frozen, bool debugInfo)
         {
@@ -590,7 +628,7 @@ static void RunGame(
 
             if (menuOpen)
             {
-                EscMenu.Draw(escMenu, settings);
+                DrawMenuPage(onTitle: false);
             }
 
             if (endSummary is not null)
@@ -674,7 +712,7 @@ static void RunGame(
 
                 DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
                 Raylib.BeginDrawing();
-                DrawScreen(SimulationClock.SecondsPerTick, frozen: false, debugInfo: false);
+                DrawPhotoScreen(setup);
                 Rlgl.DrawRenderBatchActive();
                 var screenPath = Path.Combine(photos.Folder, $"{scene.Name}{suffix}-screen.png");
                 var screen = Raylib.LoadImageFromScreen();
@@ -686,6 +724,27 @@ static void RunGame(
                 picture.SaveAs(picturePath);
                 log?.Info($"Photo '{scene.Name}' after {ticks} ticks: {picturePath}, {screenPath}");
                 Console.WriteLine($"{scene.Name}: {picturePath} ({ticks} ticks)");
+            }
+
+            // A photo's screen: the game's, or a menu over it (issue #349) - drawn by the same code as in the game.
+            void DrawPhotoScreen(PhotoSetup setup)
+            {
+                titleMenu.Open();
+                escMenu.Open();
+                settingsMenu.Open();
+                menuPage = setup.Menu == PhotoMenu.Settings ? MenuPage.Settings : MenuPage.Main;
+                if (setup.Menu == PhotoMenu.Title)
+                {
+                    TitleScreen.Draw(titleMenu, displayVersion);
+                }
+                else
+                {
+                    menuOpen = setup.Menu != PhotoMenu.None;
+                    DrawScreen(SimulationClock.SecondsPerTick, frozen: menuOpen, debugInfo: false);
+                }
+
+                menuOpen = false;
+                menuPage = MenuPage.Main;
             }
 
             // Clip mode (--clip, issue #286): the same as a photo, but a picture of the whole window before the first
@@ -767,25 +826,80 @@ static void RunGame(
             }
         }
 
+        sounds.SetVolumes(settings.MasterVolume, settings.EffectsVolume, settings.AmbienceVolume);
+
+        // A changed setting counts at once (issue #349) and is written to the file, so it also counts after a restart.
+        void ChangeSettings(GameSettings changed)
+        {
+            if (changed == settings)
+            {
+                return;
+            }
+
+            settings = changed;
+            sounds.SetVolumes(settings.MasterVolume, settings.EffectsVolume, settings.AmbienceVolume);
+            if (FullScreenToggle.Set(settings.FullScreen))
+            {
+                AfterDisplaySwitch();
+            }
+
+            if (!SettingsFile.Save(settings, settingsPath))
+            {
+                log?.Warning($"Could not save the settings to '{settingsPath}'.");
+            }
+        }
+
+        // A captured mouse is captured again in the new window, so the view does not jump.
+        void AfterDisplaySwitch()
+        {
+            if (input.IsMouseCaptured)
+            {
+                input.CaptureMouse();
+            }
+
+            LogDisplay(log);
+        }
+
+        // The settings or the question before quitting, if one of them is open - the same on the title screen and in
+        // the Esc menu. True while one is open: the buttons below it read no input then. Esc going back is the caller's.
+        bool UpdateMenuPage()
+        {
+            switch (menuPage)
+            {
+                case MenuPage.Settings:
+                    var back = SettingsMenu.Update(settingsMenu, settings, out var changed) == SettingsMenu.Back;
+                    PlayMenuClick(settingsMenu);
+                    ChangeSettings(changed);
+                    menuPage = back ? MenuPage.Main : menuPage;
+                    return true;
+                case MenuPage.ConfirmQuit:
+                    var answer = QuitPrompt.Update(quitMenu);
+                    PlayMenuClick(quitMenu);
+                    quit = answer == QuitPrompt.Quit;
+                    menuPage = answer == QuitPrompt.Cancel ? MenuPage.Main : menuPage;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        void OpenMenuPage(MenuPage page)
+        {
+            menuPage = page;
+            (page == MenuPage.Settings ? settingsMenu : quitMenu).Open();
+        }
+
         // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.
         while (!Raylib.WindowShouldClose() && !quit)
         {
             seconds += Raylib.GetFrameTime();
 
-            // Alt + Enter: window or borderless full screen (issue #350). A captured mouse is captured again in the new
-            // window, so the view does not jump.
+            // Alt + Enter: window or borderless full screen (issue #350). The settings follow, so the menu shows it and the
+            // next start opens the same way (issue #349).
             if (FullScreenToggle.Update())
             {
-                if (input.IsMouseCaptured)
-                {
-                    input.CaptureMouse();
-                }
-
-                var monitor = Raylib.GetCurrentMonitor();
-                log?.Info(
-                    $"{(Raylib.IsWindowState(ConfigFlags.BorderlessWindowMode) ? "Full screen" : "Window")}: "
-                    + $"{Raylib.GetScreenWidth()} x {Raylib.GetScreenHeight()}, monitor "
-                    + $"{Raylib.GetMonitorWidth(monitor)} x {Raylib.GetMonitorHeight(monitor)}.");
+                AfterDisplaySwitch();
+                ChangeSettings(settings with { FullScreen = FullScreenToggle.IsFullScreen });
             }
 
             // N mutes the game and turns it on again - anywhere, also on the title screen. Pure presentation, not tick input.
@@ -821,30 +935,46 @@ static void RunGame(
                     input.ReleaseMouse();
                 }
 
-                switch (TitleScreen.Update(titleMenu))
+                // Esc leaves the settings or the question before quitting; on the title itself it does nothing.
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape))
                 {
-                    case TitleScreen.Start:
-                        StartFresh(newWorld(seed ?? Random.Shared.Next(), balance));
-                        onTitle = false;
-                        menuOpen = false;
-                        break;
-                    case TitleScreen.Quit:
-                        quit = true;
-                        break;
+                    menuPage = MenuPage.Main;
+                }
+                else if (!UpdateMenuPage())
+                {
+                    switch (TitleScreen.Update(titleMenu))
+                    {
+                        case TitleScreen.Start:
+                            StartFresh(newWorld(seed ?? Random.Shared.Next(), balance));
+                            onTitle = false;
+                            menuOpen = false;
+                            break;
+                        case TitleScreen.Settings:
+                            OpenMenuPage(MenuPage.Settings);
+                            break;
+                        case TitleScreen.Quit:
+                            OpenMenuPage(MenuPage.ConfirmQuit);
+                            break;
+                    }
+
+                    PlayMenuClick(titleMenu);
                 }
 
-                PlayMenuClick(titleMenu);
-
                 Raylib.BeginDrawing();
-                TitleScreen.Draw(titleMenu, displayVersion);
+                TitleScreen.Draw(titleMenu, displayVersion, buttons: menuPage == MenuPage.Main);
+                if (menuPage != MenuPage.Main)
+                {
+                    DrawMenuPage(onTitle: true);
+                }
+
                 SoundPackNotice.Draw(soundPacks);
                 Raylib.EndDrawing();
                 continue;
             }
 
-            // Esc first closes an open overlay (bonus choice, the menu with map and equipment page) and opens the menu only on the next
-            // press (issue #346); with the menu open it closes the menu. Leaving the window (Alt+Tab) opens the menu, too.
-            // Not on the end screen.
+            // Esc first closes an open overlay (bonus choice, the menu with map and equipment page) and opens the menu only on
+            // the next press (issue #346); with the menu open it closes the menu - or first goes back from the settings or the
+            // question before quitting (issue #349). Leaving the window (Alt+Tab) opens the menu, too. Not on the end screen.
             var wasMenuOpen = menuOpen;
             var escClosedOverlay = false;
             if (endSummary is not null)
@@ -864,6 +994,10 @@ static void RunGame(
                     boonOpen = false;
                     escClosedOverlay = true;
                 }
+                else if (menuOpen && menuPage != MenuPage.Main)
+                {
+                    menuPage = MenuPage.Main;
+                }
                 else
                 {
                     menuOpen = !menuOpen;
@@ -877,14 +1011,18 @@ static void RunGame(
             if (menuOpen && !wasMenuOpen)
             {
                 escMenu.Open();
+                menuPage = MenuPage.Main;
             }
 
-            if (menuOpen)
+            if (menuOpen && !UpdateMenuPage())
             {
-                switch (EscMenu.Update(escMenu, settings, out var changed))
+                switch (EscMenu.Update(escMenu))
                 {
                     case EscMenu.Resume:
                         menuOpen = false;
+                        break;
+                    case EscMenu.Settings:
+                        OpenMenuPage(MenuPage.Settings);
                         break;
                     case EscMenu.Title:
                         onTitle = true;
@@ -892,20 +1030,11 @@ static void RunGame(
                         titleMenu.Open();
                         break;
                     case EscMenu.Quit:
-                        quit = true;
+                        OpenMenuPage(MenuPage.ConfirmQuit);
                         break;
                 }
 
                 PlayMenuClick(escMenu);
-
-                if (changed != settings)
-                {
-                    settings = changed;
-                    if (!SettingsFile.Save(settings, settingsPath))
-                    {
-                        log?.Warning($"Could not save the settings to '{settingsPath}'.");
-                    }
-                }
             }
 
             if (endSummary is { } summary)
@@ -1059,6 +1188,16 @@ static void RunGame(
     {
         Raylib.CloseWindow();
     }
+}
+
+// The window or full screen as it is now, with the monitor's size - after every switch (issues #349, #350).
+static void LogDisplay(FileLog? log)
+{
+    var monitor = Raylib.GetCurrentMonitor();
+    log?.Info(
+        $"{(FullScreenToggle.IsFullScreen ? "Full screen" : "Window")}: "
+        + $"{Raylib.GetScreenWidth()} x {Raylib.GetScreenHeight()}, monitor "
+        + $"{Raylib.GetMonitorWidth(monitor)} x {Raylib.GetMonitorHeight(monitor)}.");
 }
 
 // Started on a monitor left of the main monitor, Raylib/GLFW put the window far outside every monitor

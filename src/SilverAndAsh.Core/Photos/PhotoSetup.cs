@@ -19,6 +19,9 @@ public sealed record PhotoSetup(GameWorld World)
     /// <summary>Checked after every tick: once true, the picture is taken at once. Null: all <see cref="Ticks"/> run.</summary>
     public Func<GameWorld, bool>? StopWhen { get; init; }
 
+    /// <summary>Which menu the picture shows over the scene (issue #349) - a matter of the screen, not of the world.</summary>
+    public PhotoMenu Menu { get; init; }
+
     /// <summary>
     /// True for the model probe: the single target stands for a model a designer wants to see under game conditions.
     /// The game may draw it with another view than the placeholder.
@@ -77,4 +80,13 @@ public sealed record PhotoSetup(GameWorld World)
 
         return taken;
     }
+}
+
+/// <summary>A menu a photo shows (issue #349): none, the title screen, the pause menu or the settings opened from it.</summary>
+public enum PhotoMenu
+{
+    None,
+    Title,
+    Pause,
+    Settings,
 }
