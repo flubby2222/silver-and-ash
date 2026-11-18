@@ -169,14 +169,14 @@ Das ist eine Annäherung an das Spiel, kein Ersatz. Sobald das Spiel Modelle lad
 
 ## HUD (entschieden, Issue #341)
 
-**Gewählt: A3, Silberfassungen auf einer Linie.** Vorlage: `design/proben/grafik/hud-vorlagen/hud_runde4.py` (Endfassung `main_final`, Bild `runde4/A3-final-854.png`, 854 × 480). Das Layout stammt aus Runde 3 A.
+**Gewählt: A3, Silberfassungen auf einer Linie, mit reicher Verzierung (V3).** Vorlage: `design/proben/grafik/hud-vorlagen/hud_runde4.py` (`main6`, Endbild `runde6/r6-V3-final-854.png`, 854 × 480; Blatt `runde6/blatt-runde6.png`). Das Layout stammt aus Runde 3 A.
 
 **Maße (854 × 480):**
 
 - Alle unteren Fassungen enden auf **einer gemeinsamen Grundlinie, y = 477**; jede ist 30 px hoch, der Silberrahmen 3 px, innen dunkler Grund.
 - Links zwei Gegenstände (je 30 px breit, Abstand 4, ab x = 12), Mitte eine Fassung x 247 bis 607 mit Leben (Balken) und fünf Ausdauer-Segmenten, beide ohne Zahl, rechts vier Waffen (je 38 px, Abstand 3, ab x = 690).
 - Oben: Stufe, Erfahrung und zwei Fähigkeiten links; Boss mit Namen und dünnem Balken in der Mitte; Silber und Schlüssel rechts. Aufnahme-Meldung (einzige Goldfläche) über der linken Gruppe.
-- **Verdeckt: 9,0 % des Bildes** (gemessen: Unterschied zum Foto ohne HUD); Runde 3 A waren 23,2 %.
+- **Verdeckt: 9,3 % des Bildes** mit Verzierung (gemessen: Unterschied zum Foto ohne HUD); A3 ohne Verzierung waren 9,0 %, Runde 3 A 23,2 %.
 
 **Silber (Palettenstufen):** Reihe Eisen `IRON3` bis `IRON7` plus ein helles Silber (226, 228, 230), jeweils zu 80 % zu Grau entsättigt, damit es nicht bläulich wirkt. Fünf feste Stufen je nach Flächenneigung: Lichtkante oben und links hell, Schattenkante unten und rechts dunkel, dazu Punktkörnung. Kein Verlauf, kein Chrom-Glanz, kein weiches Leuchten. Rot nur für Leben, Gold nur für die Aufnahme-Meldung.
 
@@ -190,4 +190,7 @@ Das ist eine Annäherung an das Spiel, kein Ersatz. Sobald das Spiel Modelle lad
 **Abgelehnt:** A1 (geschlossene Leiste, 12,9 %): verdeckt zu viel. A2 (offener Rahmen, 6,1 %): Zeichen stehen ungeschützt auf dem Spielbild.
 
 **Offen:** Eine eigene Pixelschrift (Issue #355). Cinzel (Windows-Schrift der Vorlagen) kommt nicht ins Spiel.
-- **Runde 5 (noch nicht entschieden):** Der Mensch will an den Silberfassungen Verzierung, damit das HUD homogener wirkt: ein wiederkehrendes Motiv an allen Fassungen, in drei Stufen. Vorlagen `runde4/blatt-runde5.png`; eine Wahl steht hier erst nach seinem Urteil.
+- **Verzierung (Runde 5 und 6, Urteil des Menschen: V3, dann überarbeiten):** Ein Motiv an allen Fassungen ab 24 px Breite, immer im selben Silber: Rautenniete in den vier Ecken, Spitzgiebel mit Auge oben in der Mitte, dünner Doppelrahmen innen, an Fassungen über 100 px Breite zusätzlich Fialen mittig an den Enden. Rot und Gold bleiben, wie sie sind; kein Rot als Signalfarbe in der Verzierung.
+- **Regeln aus dem Feinschliff (Runde 6):** Licht kommt überall von oben links, auch an den kleinen Teilen (Nieten, Giebel, Fialen nutzen dieselbe Lichtregel wie der Rahmen). Alle Mittelpunkte liegen auf dem Pixelraster, die Giebelbreite passt zur Fassung (gerade oder ungerade), damit die Form spiegelgleich bleibt. Verzierung ragt nie aus dem Bild; Fialen sitzen mittig auf der Fassungskante. Zeichen in kleinen Fassungen so groß, dass sie im 4-fachen Ausschnitt eindeutig lesbar sind (Waffenzeichen 10,5 statt 9,5).
+
+**Nicht gewählt:** V1 (nur Eckrauten): wirkt kaum anders als ohne Verzierung, das HUD bleibt zusammengewürfelt. V2 (Ecken und Giebel): gut, aber ohne Doppelrahmen und Fialen wirken die langen Fassungen noch kahl. Beide bleiben verworfen; wer die Verzierung später ändert, geht von V3 aus.

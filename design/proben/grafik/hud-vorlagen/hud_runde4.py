@@ -22,6 +22,7 @@ SILV_TOP, SILV_BOT = np.array(IRON6, np.float32) / 255, np.array(IRON4, np.float
 
 
 NUMS = True   # Zahlen bei Leben und Ausdauer (Runde 5: False)
+GW = 9.5      # Zeichengröße der Waffen (Runde 6: 10.5)
 ORN = 0       # Verzierung der Silberfassungen: 0 keine, 1 zurückhaltend, 2 mittel, 3 reich
 NEU = False  # False = Runde 4 (bläuliches Silber), True = Endfassung (neutral, harte Kanten)
 
@@ -102,12 +103,10 @@ def gl(L, name, cx, cy, s, c1, c2, mode, **kw):
 
 
 def _lit_poly(L, pts, seed=0):
-    """Kleines Silberteil: dunkler Rand, helle obere linke Hälfte, dunkle untere rechte (harte Kante)."""
+    """Kleines Silberteil: dunkler Rand, Flächen nach derselben Lichtregel wie die Fassung (Licht von oben links)."""
     f = sd_poly(pts); bb = bbox(pts, 3)
-    cx = sum(p[0] for p in pts) / len(pts); cy = sum(p[1] for p in pts) / len(pts)
     L.shape(bb, lambda px, py: f(px, py) - 1.0, IRON0, alpha=0.92)
-    L.shape(bb, f, tuple(N_LEVELS[4] * 255))
-    L.shape(bb, f, tuple(N_LEVELS[1] * 255), clipf=lambda px, py: -((px - cx) * 0.6 + (py - cy) * 0.8) + 0.2 - 0.0)
+    L.shape(bb, f, lit_ring(f, seed))
 
 
 def diamond4(L, cx, cy, r):
@@ -115,23 +114,28 @@ def diamond4(L, cx, cy, r):
 
 
 def ornament(L, x0, y0, x1, y1):
-    """Ein Motiv an allen Fassungen: Rautenniete an den Ecken (1), dazu Spitzgiebel oben (2), dazu Doppelrahmen, Giebelauge und Fialen an langen Fassungen (3)."""
+    """Ein Motiv an allen Fassungen: Rautenniete an den Ecken (1), dazu Spitzgiebel oben (2), dazu Doppelrahmen, Giebelauge und Fialen an langen Fassungen (3).
+    Runde 6: alle Mittelpunkte liegen auf dem Pixelraster (Giebelbreite gerade/ungerade passend zur Fassung), Fialen sitzen mittig auf der Fassungskante."""
     if ORN <= 0:
         return
+    tall = (y1 - y0) >= 20
+    r = 3.0 if ORN < 3 else (3.4 if tall else 2.6)
     for (cx, cy) in ((x0 + 1.5, y0 + 1.5), (x1 - 1.5, y0 + 1.5), (x0 + 1.5, y1 - 1.5), (x1 - 1.5, y1 - 1.5)):
-        diamond4(L, cx, cy, 3.0 if ORN < 3 else 3.4)
+        diamond4(L, cx, cy, r)
     if ORN >= 2:
         mx = (x0 + x1) / 2
-        _lit_poly(L, [(mx - 6.5, y0 + 1.5), (mx, y0 - 4.5), (mx + 6.5, y0 + 1.5)])
+        hw = 6.0 if abs(mx - round(mx)) < 0.01 else 6.5
+        _lit_poly(L, [(mx - hw, y0 + 1.5), (mx, y0 - 4.0), (mx + hw, y0 + 1.5)])
         if ORN >= 3:
-            L.shape((mx - 3, y0 - 2, mx + 3, y0 + 3), sd_circle(mx, y0 - 0.2, 1.1), IRON0)
+            L.shape((mx - 3, y0 - 2, mx + 3, y0 + 3), sd_circle(mx, y0 - 0.5, 1.1), IRON0)
     if ORN >= 3:
         bb = (x0, y0, x1, y1)
         q = sd_poly(chamfer(x0 + 5.5, y0 + 5.5, x1 - 5.5, y1 - 5.5, 1.0))
         L.shape(bb, lambda px, py: q(px, py) + 0.5, tuple(N_LEVELS[0] * 255), stroke=1.0, alpha=0.9)
-        if x1 - x0 > 100:  # lange Fassungen: Fialen an den Enden
-            for fx in (x0 - 2, x1 + 2):
-                _lit_poly(L, [(fx, y0 - 7), (fx + 2.6, y0 + 2), (fx, y0 + 8), (fx - 2.6, y0 + 2)])
+        if x1 - x0 > 100:  # lange Fassungen: Fialen mittig an den Enden
+            cy = (y0 + y1) / 2
+            for fx in (x0, x1):
+                _lit_poly(L, [(fx, cy - 8), (fx + 2.6, cy), (fx, cy + 8), (fx - 2.6, cy)])
 
 
 def cell(L, x0, y0, x1, y1, style, active=False, seed=2):
@@ -260,7 +264,7 @@ def build(L, V):
             L.shape((x - 4, BY, x + 4, 482), sd_box(x + 1, BY + 1, x + 2, 480), IRON7, alpha=0.85)
         cy0, cy1 = BY + 4, 477
         item_cells(L, 14, cy0, cy1, 30, 4, sty, 8)
-        weapon_cells(L, 692, cy0, cy1, 38, 3, sty, 9.5, 10)
+        weapon_cells(L, 692, cy0, cy1, 38, 3, sty, GW, 10)
         nums(L, 206, 648, BY + 14)
         trough(L, 224, BY + 6, 630, BY + 17, HP, RED5, RED2, sty, back=RED0, hi=RED6, p=5)
         segs(L, 224, 630, BY + 21, BY + 26, sty, 5, 4)
@@ -278,7 +282,7 @@ def build(L, V):
             L.shape((x - 4, BY - 3, x + 4, 484), fp, silver(BY, 480, 6))
             L.shape((x - 4, BY - 3, x + 4, 484), lambda px, py, fp=fp: fp(px, py) - 1.0, IRON0, stroke=1.0, alpha=0.8)
         item_cells(L, 14, BY + 6, 477, 32, 4, sty, 8.5)
-        weapon_cells(L, 690, BY + 6, 477, 38, 3, sty, 9.5, 10)
+        weapon_cells(L, 690, BY + 6, 477, 38, 3, sty, GW, 10)
         nums(L, 206, 648, BY + 17)
         trough(L, 224, BY + 8, 630, BY + 20, HP, RED5, RED2, sty, hi=RED6, p=5)
         segs(L, 224, 630, BY + 25, BY + 30, sty, 5, 4)
@@ -286,7 +290,7 @@ def build(L, V):
     else:
         GY = 477   # gemeinsame Grundlinie: alle Fassungen enden hier
         item_cells(L, 12, GY - 30, GY, 30, 4, sty, 8)
-        weapon_cells(L, 690, GY - 30, GY, 38, 3, sty, 9.5, 10)
+        weapon_cells(L, 690, GY - 30, GY, 38, 3, sty, GW, 10)
         cell(L, 247, GY - 30, 607, GY, "socket", False, seed=10)
         ta, tb = (283, 571) if NUMS else (257, 597)
         if NUMS:
@@ -448,10 +452,63 @@ def main5():
         print("R5", o, round(pct[-1], 2), "Basis", round(base, 2), flush=True)
     save_png(os.path.join(OUT4, "blatt-runde5.png"), sheet5(nat, pct, base))
 
+def sheet6(old, new, pct_old, pct_new):
+    """Blatt Runde 6: V3 alt | V3 neu, darunter 4x-Ausschnitte der Fassungen (alt oben, neu unten), unten das Endbild."""
+    gap = 14
+    crops = [("Unten links", 0, 416, 240, 480), ("Unten Mitte", 230, 440, 470, 480), ("Unten rechts", 600, 440, 854, 480),
+             ("Oben links", 0, 0, 240, 44), ("Boss", 290, 0, 560, 44), ("Oben rechts", 700, 0, 854, 44)]
+    k = 3
+    rows_h = [(c[4] - c[2]) * k for c in crops]
+    W = 2 * 854 + 3 * gap
+    H = 586 + sum(22 + h + 12 for h in rows_h) + 20
+    cv = np.tile(np.array((20, 16, 26), np.float32) / 255, (H, W, 1))
+    cv[46:526, gap:gap + 854] = old
+    cv[46:526, 2 * gap + 854:2 * gap + 1708] = new
+    L = Layer(W, H, False); L.sx = L.sy = L.s = 1.0
+    L.text(F_CINZEL, 20, "V3 aus Runde 5", gap + 427, 33, IRON7, "c")
+    L.text(F_CINZEL, 20, "V3 überarbeitet (Runde 6)", 2 * gap + 854 + 427, 33, IRON7, "c")
+    L.text(F_BELL, 16, f"Verdeckt: {pct_old:.1f} % des Bildes", gap + 4, 550, BONE)
+    L.text(F_BELL, 16, f"Verdeckt: {pct_new:.1f} % des Bildes (Grenze 10 %)", 2 * gap + 854 + 4, 550, BONE)
+    y = 586
+    # Raster: 3 Zeilen x 2 Spalten (links alt, rechts neu) je Ausschnitt-Paar
+    yy = y
+    for j, (name, x0, y0, x1, y1) in enumerate(crops):
+        h = (y1 - y0) * k
+        L.text(F_BELL, 15, f"{name} (3-fach): links alt, rechts neu", gap + 4, yy + 14, BONE2)
+        yy += 22
+        for side, im in enumerate((old, new)):
+            c = np.repeat(np.repeat(im[y0:y1, x0:x1], k, 0), k, 1)
+            cw = c.shape[1]
+            xx = gap + side * (854 + gap)
+            cv[yy:yy + h, xx:xx + cw] = c
+        yy += h + 12
+    out = np.clip(cv * (1 - L.a[..., None]) + L.rgb, 0, 1)
+    return out[:yy + 10]
+
+
+def main6():
+    """Runde 6: V3 überarbeitet. Alt = Stand Runde 5 (GW 9.5), neu = Feinschliff."""
+    global NEU, NUMS, ORN, GW
+    NEU, NUMS, ORN = True, False, 3
+    scene = load_png(os.path.join(HERE, "basis-854x480.png"))
+    GW = 10.5
+    new = r3.compose(scene, design(3))
+    pn = measure(new, scene)
+    old = load_png(os.path.join(HERE, "runde5", "r5-V3-reich-854.png"))
+    po = measure(old, scene)
+    out = os.path.join(HERE, "runde6"); os.makedirs(out, exist_ok=True)
+    save_png(os.path.join(out, "r6-V3-final-854.png"), new)
+    save_png(os.path.join(out, "r6-V3-final.png"), nearest(new, FINAL_H, FINAL_W))
+    save_png(os.path.join(out, "blatt-runde6.png"), sheet6(old, new, po, pn))
+    print("R6 alt", round(po, 2), "neu", round(pn, 2), flush=True)
+
+
 
 if __name__ == "__main__":
     import sys as _s
-    if "--runde5" in _s.argv:
+    if "--runde6" in _s.argv:
+        main6()
+    elif "--runde5" in _s.argv:
         main5()
     else:
         main4()
