@@ -114,6 +114,10 @@ public sealed class GameWorld
             Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random,
             () => StandingChests.Select(chest => chest.Body));
 
+        // The equipment still to be found, shared by all players. What they start with is not in it (no doubles).
+        // It rolls with its own generator, so having it changes no other roll of the world.
+        LootPool = new LootPool(seed, Balance.Loot, [Equipment.Of(Player.Melee), .. Player.RangedSlots.OfType<RangedWeapon>().Select(weapon => Equipment.Of(weapon.Kind))]);
+
         _chestPlan = chests ?? [];
         _chests = _chestPlan.Select((plan, index) => new Chest(index, plan, level)).ToList();
 
@@ -151,6 +155,12 @@ public sealed class GameWorld
             }
         }
     }
+
+    /// <summary>
+    /// The weapons and items still to be found in this run (decision records 0006 and 0008) - one pool for the whole
+    /// world, not one per player. Chests and the boss will draw from it (#318).
+    /// </summary>
+    public LootPool LootPool { get; }
 
     /// <summary>Name of the level, shown briefly at the start (e.g. "THE CATACOMBS"), or null for hand-made levels.</summary>
     public string? LevelName { get; init; }

@@ -136,6 +136,8 @@ public class BalanceFileTests
     [InlineData("""{ "silver": { "batChance": 2 } }""", "silver.batChance")]
     [InlineData("""{ "keys": { "roomChance": 1.5 } }""", "keys.roomChance")]
     [InlineData("""{ "keys": { "enemyChance": 3 } }""", "keys.enemyChance")]
+    [InlineData("""{ "loot": { "higherTierChance": 1.5 } }""", "loot.higherTierChance")]
+    [InlineData("""{ "loot": { "itemShare": 2 } }""", "loot.itemShare")]
     [InlineData("""{ "layout": { "corridorChance": 1.5 } }""", "layout.corridorChance")]
     [InlineData("""{ "gorm": { "phase2Health": 1.5 } }""", "gorm.phase2Health")]
     [InlineData("""{ "gorm": { "swingArc": 400 } }""", "gorm.swingArc")]
