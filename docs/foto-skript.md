@@ -71,6 +71,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `cracked-wall-break`, `cracked-wall-break-after` | eine rissige Wand aus 2 m vom Geheimraum aus mit voll aufgeladener Klinge zerschlagen: 8 bzw. 100 Ticks nach dem Schlag (Brocken im Flug bzw. am Boden). Im Geheimraum, weil kein Gegner hineinkommt und das Bild stört |
 | `door-sideways-half` | eine Holztür in einem Ost-West-Durchgang, halb offen: das Modell ist um 90° gedreht |
 | `door-level-seed1`, `door-level-seed2-boss` | die erste Holztür in Seed 1 bzw. das Bosstor in Seed 2, aus 2–3 Zellen Abstand |
+| `menu-title`, `menu-pause`, `menu-settings` | das Titelbild, das Esc-Menü und die Einstellungen (aus dem Esc-Menü) über dem Startraum, gezeichnet wie im Spiel (Issue #349) |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |
 | `stairs-4m`, `stairs-10m` | die Wendeltreppe im Bossraum der Ebene 0 nach Gorms Tod (Issue #300): Gorm stirbt vor dem ersten Tick, die Treppe steigt wie im Spiel auf; das Bild entsteht, sobald sie steht und ihre Lampe leuchtet, aus 4 m bzw. 10 m vom Fuß, mit Blick auf ihre halbe Höhe |
 | `equipment-rifle` | das Gewehr (Forged) im Musterraum aus 0,8 m: „[F] Take Rifle (Forged)“ in Stahlblau (Issue #317) |
