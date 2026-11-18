@@ -303,7 +303,6 @@ static void RunGame(
         // Title screen first; during a run Esc opens the menu (the world stands still - alone).
         var onTitle = true;
         var menuOpen = false;
-        var mapOpen = false;
         var quit = false;
         var titleMenu = new MenuView();
         titleMenu.Open();
@@ -363,8 +362,9 @@ static void RunGame(
         var boonOpenSeconds = 0f;
         Boon? chosenBoon = null;
 
-        // The inventory (G): Core keeps whether it is open; G and a click wait for the next tick, like a chosen bonus.
-        var inventoryToggle = false;
+        // The menu with the map page (Tab) and the equipment page (G), issue #348: Core keeps which page is open; the key
+        // and a click wait for the next tick, like a chosen bonus.
+        MenuKey? menuKey = null;
         var inventoryOpenSeconds = 0f;
         InventoryClick? inventoryClick = null;
 
@@ -573,7 +573,7 @@ static void RunGame(
         }
 
         // debugInfo: the frame rate and the test display, both only in the debug version (issue #340) - not in photos.
-        void DrawScreen(float frameSeconds, bool frozen, bool showMap, bool debugInfo)
+        void DrawScreen(float frameSeconds, bool frozen, bool debugInfo)
         {
             Raylib.ClearBackground(LookSettings.BarColor);
             picture.DrawToScreen();
@@ -597,7 +597,7 @@ static void RunGame(
                 equipmentCard.Draw();
             }
 
-            if (!boonOpen && !player.IsInventoryOpen && !frozen)
+            if (!boonOpen && !player.Menu.IsOpen && !frozen)
             {
                 InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);
             }
@@ -608,7 +608,7 @@ static void RunGame(
                 LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
             }
 
-            if (!frozen && !boonOpen && !player.IsInventoryOpen && showMap)
+            if (!frozen && !boonOpen && player.Menu.Page == PlayerMenuPage.Map)
             {
                 MapView.Draw(gameWorld, player, (float)Raylib.GetTime());
             }
@@ -696,7 +696,7 @@ static void RunGame(
                         var start = System.Diagnostics.Stopwatch.GetTimestamp();
                         DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
                         Raylib.BeginDrawing();
-                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, debugInfo: false);
+                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, debugInfo: false);
                         Raylib.EndDrawing();
                         if (frame >= PhotoRequest.WarmUpFrames)
                         {
@@ -740,7 +740,7 @@ static void RunGame(
                 else
                 {
                     menuOpen = setup.Menu != PhotoMenu.None;
-                    DrawScreen(SimulationClock.SecondsPerTick, frozen: menuOpen, showMap: setup.MapOpen, debugInfo: false);
+                    DrawScreen(SimulationClock.SecondsPerTick, frozen: menuOpen, debugInfo: false);
                 }
 
                 menuOpen = false;
@@ -772,7 +772,7 @@ static void RunGame(
                     {
                         DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
                         Raylib.BeginDrawing();
-                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, showMap: setup.MapOpen, debugInfo: false);
+                        DrawScreen(SimulationClock.SecondsPerTick, frozen: false, debugInfo: false);
                         Rlgl.DrawRenderBatchActive();
                         var screen = Raylib.LoadImageFromScreen();
                         Raylib.ExportImage(screen, Path.Combine(clipFolder, $"frame-{frames++:0000}.png"));
@@ -972,8 +972,8 @@ static void RunGame(
                 continue;
             }
 
-            // Esc first closes an open overlay (bonus choice, inventory, map page) and opens the menu only on the next
-            // press (issue #346); with the menu open it closes the menu - or first goes back from the settings or the
+            // Esc first closes an open overlay (bonus choice, the menu with map and equipment page) and opens the menu only on
+            // the next press (issue #346); with the menu open it closes the menu - or first goes back from the settings or the
             // question before quitting (issue #349). Leaving the window (Alt+Tab) opens the menu, too. Not on the end screen.
             var wasMenuOpen = menuOpen;
             var escClosedOverlay = false;
@@ -983,12 +983,15 @@ static void RunGame(
             }
             else if (Raylib.IsKeyPressed(KeyboardKey.Escape))
             {
-                if (!menuOpen && (boonOpen || player.IsInventoryOpen || mapOpen))
+                if (!menuOpen && (boonOpen || player.Menu.IsOpen))
                 {
-                    // The inventory lives in Core: it closes with the next tick, like with G.
-                    inventoryToggle = player.IsInventoryOpen;
+                    // The menu lives in Core: it closes with the next tick, like with Tab or G.
+                    if (player.Menu.IsOpen)
+                    {
+                        menuKey = MenuKey.Close;
+                    }
+
                     boonOpen = false;
-                    mapOpen = false;
                     escClosedOverlay = true;
                 }
                 else if (menuOpen && menuPage != MenuPage.Main)
@@ -1075,7 +1078,7 @@ static void RunGame(
             // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while walking
             // and when hit - only X or Esc close it (issue #346). Several level ups come one after the other. A dead
             // player takes no boon (Core), so the window closes and X stays locked - display only.
-            if (!frozen && !inventoryOpen && !escClosedOverlay && !player.IsDead && Raylib.IsKeyPressed(KeyboardKey.X)
+            if (!frozen && !player.Menu.IsOpen && !escClosedOverlay && !player.IsDead && Raylib.IsKeyPressed(KeyboardKey.X)
                 && player.PendingBoons > 0)
             {
                 boonOpen = !boonOpen;
@@ -1092,11 +1095,21 @@ static void RunGame(
                 chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, boonOpenSeconds);
             }
 
-            // The inventory (decision record 0008): G opens and closes it - not while the bonus choice is open. Only G or
-            // Esc close it, neither moving nor a hit (issue #346). A click is picked only once it has been open for a moment.
-            if (!frozen && !boonOpen && !escClosedOverlay && Raylib.IsKeyPressed(KeyboardKey.G))
+            // The menu (issue #348): Tab opens the map page, G the equipment page (the inventory of decision record 0008);
+            // the same key closes, the other turns the page - not while the bonus choice is open. Only the player closes it,
+            // neither moving nor a hit (issue #346). Not Tab with Alt held: Alt+Tab leaves the window. A click is picked
+            // only once the equipment page has been open for a moment.
+            if (!frozen && !boonOpen && !escClosedOverlay)
             {
-                inventoryToggle = !inventoryToggle;
+                if (Raylib.IsKeyPressed(KeyboardKey.G))
+                {
+                    menuKey ??= MenuKey.Equipment;
+                }
+                else if (Raylib.IsKeyPressed(KeyboardKey.Tab) && !Raylib.IsKeyDown(KeyboardKey.LeftAlt)
+                    && !Raylib.IsKeyDown(KeyboardKey.RightAlt))
+                {
+                    menuKey ??= MenuKey.Map;
+                }
             }
 
             inventoryOpenSeconds = inventoryOpen ? inventoryOpenSeconds + Raylib.GetFrameTime() : 0f;
@@ -1114,10 +1127,10 @@ static void RunGame(
                 {
                     ChooseBoon = chosenBoon, Interact = interactPressed, Paused = frozen,
                     SelectSlot = slotChosen, CycleSlot = Math.Sign(wheelSteps),
-                    ToggleInventory = inventoryToggle, InventoryClick = inventoryClick,
+                    PressMenu = menuKey, InventoryClick = inventoryClick,
                 });
                 chosenBoon = null;
-                inventoryToggle = false;
+                menuKey = null;
                 inventoryClick = null;
                 interactPressed = false;
                 slotChosen = null;
@@ -1164,17 +1177,9 @@ static void RunGame(
             //    on monitors faster than 60 Hz). No game rules in here.
             DrawWorld(accumulator.Alpha, Raylib.GetFrameTime());
 
-            // 3b. ... which is scaled up onto the screen, the HUD on top. Tab opens and closes the map page (issue #347) - the
-            // game goes on meanwhile (no pause: online co-op), and walking or a hit keep it open. Not with Alt held: Alt+Tab
-            // leaves the window.
-            if (!frozen && !boonOpen && !player.IsInventoryOpen && !escClosedOverlay && Raylib.IsKeyPressed(KeyboardKey.Tab)
-                && !Raylib.IsKeyDown(KeyboardKey.LeftAlt) && !Raylib.IsKeyDown(KeyboardKey.RightAlt))
-            {
-                mapOpen = !mapOpen;
-            }
-
+            // 3b. ... which is scaled up onto the screen, the HUD on top.
             Raylib.BeginDrawing();
-            DrawScreen(Raylib.GetFrameTime(), frozen, showMap: mapOpen, debugInfo: true);
+            DrawScreen(Raylib.GetFrameTime(), frozen, debugInfo: true);
             SoundPackNotice.Draw(soundPacks);
             Raylib.EndDrawing();
         }

@@ -10,7 +10,7 @@ public class InventoryTests
 {
     private static Player NewPlayer() => new(LevelParser.Parse("P"));
 
-    private static PlayerInput Toggle => PlayerInput.None with { ToggleInventory = true };
+    private static PlayerInput Toggle => PlayerInput.None with { PressMenu = MenuKey.Equipment };
 
     private static List<GameEvent> Click(Player player, InventoryPlace place, int index, bool drop = false)
     {
@@ -207,7 +207,7 @@ public class InventoryTests
     {
         var player = NewPlayer();
 
-        player.Tick(Forward with { ToggleInventory = true });
+        player.Tick(Forward with { PressMenu = MenuKey.Equipment });
         for (var tick = 0; tick < 30; tick++)
         {
             player.Tick(Forward);
@@ -221,7 +221,7 @@ public class InventoryTests
     {
         // Only the player closes it (issue #346): a move pressed anew after opening does not.
         var player = NewPlayer();
-        player.Tick(Forward with { ToggleInventory = true });
+        player.Tick(Forward with { PressMenu = MenuKey.Equipment });
         player.Tick(Forward);
 
         player.Tick(PlayerInput.None);
@@ -236,7 +236,7 @@ public class InventoryTests
     {
         // Only the player closes it (issue #346): a new direction while running does not.
         var player = NewPlayer();
-        player.Tick(Forward with { ToggleInventory = true });
+        player.Tick(Forward with { PressMenu = MenuKey.Equipment });
         player.Tick(Forward);
 
         player.Tick(Forward with { Move = new Vector2(1f, 1f) });
@@ -249,7 +249,7 @@ public class InventoryTests
     {
         // Only the player closes it (issue #346): Jump or Shift let go and pressed anew do not.
         var player = NewPlayer();
-        player.Tick(PlayerInput.None with { Jump = true, Dash = true, ToggleInventory = true });
+        player.Tick(PlayerInput.None with { Jump = true, Dash = true, PressMenu = MenuKey.Equipment });
         player.Tick(PlayerInput.None with { Jump = true, Dash = true });
         Assert.True(player.IsInventoryOpen);
 

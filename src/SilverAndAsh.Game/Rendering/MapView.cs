@@ -7,7 +7,7 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The map page (issue #347), opened and closed with Tab: on the left the player's values and chosen boons (the lines
+/// The map page of the menu (issues #347, #348), opened and closed with Tab, G turns to the equipment page: on the left the player's values and chosen boons (the lines
 /// come from Core, <see cref="CharacterSheet"/>), on the right the discovered rooms from above, the doors of those rooms
 /// (coloured by state, a padlock on a locked one, a skull on the boss door), the unopened chests there (in their tier's
 /// colour, a padlock if locked), blood vials left behind and an arrow for the player's position and view
@@ -65,8 +65,8 @@ internal static class MapView
         // The map fills the rest of the screen, right of the column; the hint sits under its heading, away from the HUD.
         var mapLeft = panelRight + 24;
         var mapWidth = width - mapLeft - 40;
-        DrawCentred("MAP", mapLeft, mapWidth, PanelTop + 12, 36, Heading);
-        DrawCentred("Tab or Esc: close", mapLeft, mapWidth, PanelTop + 52, 16, Hint);
+        MenuTabs.Draw(PlayerMenuPage.Map, width / 2);
+        DrawCentred("Tab or Esc: close   G: equipment", mapLeft, mapWidth, PanelTop + 52, 16, Hint);
 
         var discovered = world.Rooms.Where(room => room.IsDiscovered).ToList();
         if (discovered.Count == 0)
