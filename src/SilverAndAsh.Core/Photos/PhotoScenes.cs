@@ -186,6 +186,28 @@ public static class PhotoScenes
                 Ticks = 45,
                 Input = tick => PlayerInput.None with { Interact = tick == 0 },
             }),
+        new("hud-reload-start", "The pistol just started reloading (R) with one round gone: the veil covers its picture (issue #370).",
+            studio => ReloadingPistol(studio, 0.1f)),
+        new("hud-reload-mid", "The pistol half way through its reload: the veil has shrunk to half (issue #370).",
+            studio => ReloadingPistol(studio, 0.5f)),
+        new("hud-hit", "A ghoul's blow has just landed: the picture darkened for a moment, the ghoul still visible (issue #370).",
+            studio => new PhotoSetup(studio.Arena('G', 4))
+            {
+                Ticks = 1200,
+                StopWhen = TicksAfter<PlayerHit>(3),
+            }),
+        new("hud-lowlife", "Little life left: the dark red edge at the height of its slow pulse (issue #370).",
+            studio => new PhotoSetup(LowLife(studio.Arena('G', 10)))
+            {
+                Ticks = SimulationClock.SecondsToTicks(ScreenEffects.LowLifePulseSeconds) / 2,
+            }),
+        new("hud-skillpoint-glow", "A ghoul shot dead brings a level up: the short gold shine at the edge (issue #370).",
+            studio => new PhotoSetup(OneShortOfLevel(studio.Arena('G', 10)))
+            {
+                Ticks = 1200,
+                Input = tick => PlayerInput.None with { Shoot = tick % 4 == 0 },
+                StopWhen = TicksAfter<LevelUp>(4),
+            }),
         new("inventory", "The equipment page of the menu (G) open, every place of the bag taken (issue #348).",
             studio => new PhotoSetup(FullBag(AllWeapons(studio.StartRun())))
             {
@@ -344,6 +366,57 @@ public static class PhotoScenes
     }
 
     private static Func<GameWorld, bool> Swung(float fraction) => world => world.Doors[0].OpenFraction >= fraction;
+
+    // The start room, one pistol round fired, then R: the picture is taken when the reload has come <paramref name="share"/>
+    // of the way (issue #370).
+    private static PhotoSetup ReloadingPistol(PhotoStudio studio, float share)
+    {
+        const int ReloadAt = 10;
+        var world = studio.StartRun();
+        var reload = SimulationClock.SecondsToTicks(world.Balance.Pistol.ReloadTime);
+        return new PhotoSetup(world)
+        {
+            Ticks = ReloadAt + 1 + (int)MathF.Round(reload * share),
+            Input = tick => PlayerInput.None with { Shoot = tick == 0, Reload = tick == ReloadAt },
+        };
+    }
+
+    // Stops <paramref name="ticks"/> ticks after the first event of type T (issue #370: the edge effects need the
+    // event during the ticks, not before). One counter per built scene.
+    private static Func<GameWorld, bool> TicksAfter<T>(int ticks)
+        where T : GameEvent
+    {
+        int? seen = null;
+        return world =>
+        {
+            if (seen is null && world.Events.OfType<T>().Any())
+            {
+                seen = 0;
+            }
+            else if (seen is not null)
+            {
+                seen++;
+            }
+
+            return seen >= ticks;
+        };
+    }
+
+    // Just under the share of the life at which the dark red edge shows (issue #370).
+    private static GameWorld LowLife(GameWorld world)
+    {
+        var player = world.Player;
+        var left = Math.Max(1, (int)(player.MaxHealth * ScreenEffects.LowLifeShare) - 1);
+        player.TakeDamage(player.MaxHealth - left, new List<GameEvent>());
+        return world;
+    }
+
+    // One experience point short of the next level: the next ghoul shot dead brings the level up (issue #370).
+    private static GameWorld OneShortOfLevel(GameWorld world)
+    {
+        world.Player.AddExperience(world.Player.ExperienceToNextLevel - world.Player.Experience - 1, new List<GameEvent>());
+        return world;
+    }
 
     // In front of the rifle in the showroom (the "[F] Take" prompt), consecrated for a minute, one level up whose boon
     // waits: with the pistol fired empty, every HUD text shows at the same time (issue #340).

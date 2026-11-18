@@ -58,6 +58,18 @@ public sealed class HudParts
     /// <summary>Gold: only the pickup toast.</summary>
     public HudColor TextPickup { get; }
 
+    /// <summary>The reload veil over a weapon picture (issue #370): its colour and opacity (0 to 1) ...</summary>
+    public HudColor ReloadVeil { get; private init; }
+
+    /// <inheritdoc cref="ReloadVeil"/>
+    public float ReloadVeilAlpha { get; private init; }
+
+    /// <summary>... and the colour and opacity of its light front edge.</summary>
+    public HudColor ReloadVeilEdge { get; private init; }
+
+    /// <inheritdoc cref="ReloadVeilEdge"/>
+    public float ReloadVeilEdgeAlpha { get; private init; }
+
     /// <summary>Every part, in the order of the table.</summary>
     public IReadOnlyCollection<HudPart> All => _parts.Values;
 
@@ -93,6 +105,7 @@ public sealed class HudParts
 
         var game = root.GetProperty("game");
         var text = game.GetProperty("text");
+        var veil = game.GetProperty("reloadVeil");
         return new HudParts(
             root.GetProperty("image").GetString() ?? string.Empty,
             root.GetProperty("designWidth").GetInt32(),
@@ -102,7 +115,13 @@ public sealed class HudParts
             ColorOf(text.GetProperty("main")),
             ColorOf(text.GetProperty("second")),
             ColorOf(text.GetProperty("shadow")),
-            ColorOf(text.GetProperty("pickup")));
+            ColorOf(text.GetProperty("pickup")))
+        {
+            ReloadVeil = ColorOf(veil.GetProperty("color")),
+            ReloadVeilAlpha = Math.Clamp(veil.GetProperty("alpha").GetSingle(), 0f, 1f),
+            ReloadVeilEdge = ColorOf(veil.GetProperty("edgeColor")),
+            ReloadVeilEdgeAlpha = Math.Clamp(veil.GetProperty("edgeAlpha").GetSingle(), 0f, 1f),
+        };
     }
 
     private static HudColor ColorOf(JsonElement rgb) =>

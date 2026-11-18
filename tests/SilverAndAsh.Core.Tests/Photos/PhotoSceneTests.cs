@@ -62,6 +62,7 @@ public class PhotoSceneTests
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "hud-rifle",
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload", "hud-texts",
             "hud-calm", "hud-boss", "hud-skillpoint", "hud-pickup",
+            "hud-reload-start", "hud-reload-mid", "hud-hit", "hud-lowlife", "hud-skillpoint-glow",
             "gorm-hammer-windup", "gorm-shockwave",
             "door-normal", "door-normal-half", "door-normal-open", "door-locked", "door-locked-half", "door-locked-open",
             "door-boss", "door-boss-half", "door-boss-open", "door-cracked", "door-sideways-half", "door-level-seed1",
@@ -179,6 +180,72 @@ public class PhotoSceneTests
         var room = Assert.Single(setup.World.Rooms, room => room.Cells.Contains(cell));
         Assert.Equal(kind, room.Kind);
         Assert.True(room.IsDiscovered);
+    }
+
+    [Theory]
+    [InlineData("hud-reload-start", 0.1f)]
+    [InlineData("hud-reload-mid", 0.5f)]
+    public void The_reload_scenes_stop_at_their_share_of_the_reload(string name, float share)
+    {
+        var setup = Built(name);
+
+        setup.Run();
+
+        var weapon = HudReadout.Of(setup.World, setup.World.Player).Weapons.Single(weapon => weapon.IsReloading);
+        Assert.Equal(share, weapon.ReloadProgress, 0.05f);
+    }
+
+    [Fact]
+    public void The_hit_scene_stops_just_after_a_blow_while_the_picture_is_still_dark()
+    {
+        var setup = Built("hud-hit");
+        var effects = new ScreenEffects(setup.World.Player.Id);
+
+        var ticks = setup.Run(() =>
+        {
+            foreach (var gameEvent in setup.World.Events)
+            {
+                effects.OnEvent(gameEvent);
+            }
+
+            effects.Tick(setup.World.Player);
+        });
+
+        Assert.True(ticks < setup.Ticks, "The ghoul should land a blow long before the scene gives up.");
+        Assert.True(setup.World.Player.Health < setup.World.Player.MaxHealth);
+        Assert.True(effects.Darkness > 0f);
+    }
+
+    [Fact]
+    public void The_low_life_scene_shows_the_red_edge_at_its_strongest()
+    {
+        var setup = Built("hud-lowlife");
+        var effects = new ScreenEffects(setup.World.Player.Id);
+
+        setup.Run(() => effects.Tick(setup.World.Player));
+
+        Assert.Equal(ScreenEffects.LowLifeMax, effects.LowLife, 0.05f);
+    }
+
+    [Fact]
+    public void The_skill_point_scene_stops_while_the_gold_shine_is_strong()
+    {
+        var setup = Built("hud-skillpoint-glow");
+        var effects = new ScreenEffects(setup.World.Player.Id);
+
+        var ticks = setup.Run(() =>
+        {
+            foreach (var gameEvent in setup.World.Events)
+            {
+                effects.OnEvent(gameEvent);
+            }
+
+            effects.Tick(setup.World.Player);
+        });
+
+        Assert.True(ticks < setup.Ticks, "A shot ghoul should bring the level up long before the scene gives up.");
+        Assert.Equal(2, setup.World.Player.Level);
+        Assert.True(effects.SkillPoint > 0.5f);
     }
 
     [Fact]

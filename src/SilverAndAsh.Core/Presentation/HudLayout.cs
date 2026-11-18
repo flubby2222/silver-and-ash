@@ -43,8 +43,16 @@ public readonly record struct HudPlacedPart(string Name, int X, int Y, int Width
 /// </summary>
 public readonly record struct HudPlacedText(string Text, int X, int Top, int Scale, HudTextColor Color);
 
-/// <summary>Everything the HUD draws in one frame, in drawing order: parts first, then texts, then the life edge.</summary>
-public sealed record HudPicture(IReadOnlyList<HudPlacedPart> Parts, IReadOnlyList<HudPlacedText> Texts, HudRect? LifeEdge);
+/// <summary>
+/// Everything the HUD draws in one frame, in drawing order: parts first, then the reload veils, then texts, then the
+/// life edge. A reload veil (issue #370) lies over the picture of a weapon being reloaded, from the left; its rightmost
+/// column is its light front edge.
+/// </summary>
+public sealed record HudPicture(IReadOnlyList<HudPlacedPart> Parts, IReadOnlyList<HudPlacedText> Texts, HudRect? LifeEdge)
+{
+    /// <summary>The reload veils, one per weapon being reloaded.</summary>
+    public IReadOnlyList<HudRect> ReloadVeils { get; init; } = [];
+}
 
 /// <summary>
 /// The canvas the HUD is laid out on, in design pixels: as wide as the picture of the 3D world (issue #350) and
@@ -92,6 +100,15 @@ public sealed class HudLayout
 
     /// <summary>Middle row of the top frames' dark ground (level, skill point, currency).</summary>
     public const int TopMiddle = 20;
+
+    /// <summary>The reload veil inside a weapon frame (as in the design): this far in from the frame's top left ...</summary>
+    public const int VeilInset = 3;
+
+    /// <summary>... this wide when the reload starts ...</summary>
+    public const int VeilWidth = 32;
+
+    /// <summary>... and this high.</summary>
+    public const int VeilHeight = 24;
 
     private const int DesignWidth = 854;
     private const int DesignHeight = 480;
@@ -168,7 +185,18 @@ public sealed class HudLayout
             ArrangeToast(picture, toast);
         }
 
-        return new HudPicture(picture.Parts, picture.Texts, lifeEdge);
+        return new HudPicture(picture.Parts, picture.Texts, lifeEdge) { ReloadVeils = picture.Veils };
+    }
+
+    /// <summary>
+    /// The reload veil over a weapon frame whose left edge is <paramref name="frameX"/> and whose body ends on line
+    /// <paramref name="baseline"/>: inside the frame, covering the share still to go (1 - <paramref name="progress"/>)
+    /// from the left, so it shrinks as the reload comes on. Null once nothing is left to cover.
+    /// </summary>
+    public static HudRect? ReloadVeil(int frameX, int baseline, float progress)
+    {
+        var width = (int)MathF.Round(VeilWidth * (1f - Math.Clamp(progress, 0f, 1f)));
+        return width > 0 ? new HudRect(frameX + VeilInset, baseline - BottomBodyHeight + VeilInset, width, VeilHeight) : null;
     }
 
     // Bottom left: one frame per item, as many as fit before the life frame; more items end in a "+N" frame.
@@ -268,6 +296,11 @@ public sealed class HudLayout
                 var text = picture.CentredText(initial, frame.X + (frameWidth / 2), BottomMiddle(picture), PixelFont.NumberScale,
                     HudTextColor.Main);
                 iconRight = text.X + _font.Width(initial, PixelFont.NumberScale);
+            }
+
+            if (weapon.IsReloading && ReloadVeil(frame.X, picture.Y(BottomBaseline, Anchor.End), weapon.ReloadProgress) is { } veil)
+            {
+                picture.Veils.Add(veil);
             }
 
             if (weapon.Rounds is { } rounds)
@@ -405,6 +438,8 @@ public sealed class HudLayout
         public List<HudPlacedPart> Parts { get; } = [];
 
         public List<HudPlacedText> Texts { get; } = [];
+
+        public List<HudRect> Veils { get; } = [];
 
         public int X(int designX, Anchor anchor) => designX + Shift(anchor, canvas.Width, DesignWidth);
 
