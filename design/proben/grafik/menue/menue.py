@@ -330,4 +330,5 @@ def main():
     print("Blatt", sheet.shape, flush=True)
 
 
-main()
+if __name__ == "__main__":
+    main()
