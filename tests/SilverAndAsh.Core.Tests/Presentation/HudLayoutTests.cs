@@ -107,6 +107,31 @@ public class HudLayoutTests
         Assert.All(HudLayout.ItemsWithIcon, kind => Assert.True(Parts.Contains(HudLayout.IconOf(kind)!), $"{kind}"));
     }
 
+    [Fact]
+    public void Every_weapon_and_item_has_a_picture_in_the_table_so_no_initial_stands_in()
+    {
+        // Issue #381: the initial is only a safety net for a kind added later without a picture.
+        Assert.All(Enum.GetValues<WeaponKind>(), kind => Assert.True(HudLayout.IconOf(kind) is { } icon && Parts.Contains(icon),
+            $"{kind} has no picture in the table"));
+        Assert.All(Enum.GetValues<ItemKind>(), kind => Assert.True(HudLayout.IconOf(kind) is { } icon && Parts.Contains(icon),
+            $"{kind} has no picture in the table"));
+
+        var picture = Arrange(Busy());
+        var initials = Enum.GetValues<WeaponKind>().Select(kind => Weapons.Info(kind).Name[..1])
+            .Concat(Enum.GetValues<ItemKind>().Select(kind => Items.Info(kind).Name[..1]));
+        Assert.DoesNotContain(picture.Texts, text => initials.Contains(text.Text));
+    }
+
+    [Fact]
+    public void The_club_sits_in_the_melee_frame_where_the_design_puts_it()
+    {
+        var picture = Arrange(Busy());
+
+        var club = Single(picture, "icon_club");
+        Assert.Equal((Parts["icon_club"].LayoutX, Parts["icon_club"].LayoutY), (club.X, club.Y));
+        Assert.DoesNotContain(picture.Parts, part => part.Name == "icon_blade");
+    }
+
     [Theory]
     [InlineData(854, 854, 480)]
     [InlineData(768, 768, 480)]
@@ -410,7 +435,9 @@ public class HudLayoutTests
         AssertCentredIn(Layout.Bounds(frames[0]), flask);
         AssertCentredIn(Layout.Bounds(frames[1]), eye);
         Assert.InRange((2 * flask.Y) + flask.Height - ((2 * eye.Y) + eye.Height), -1, 1); // one line through both
-        Assert.Single(picture.Texts, text => text.Text == "L");
+        // Since issue #381 the leech has its picture too; before, its initial "L" stood in.
+        AssertCentredIn(Layout.Bounds(frames[2]), Layout.Bounds(Single(picture, "icon_leech")));
+        Assert.DoesNotContain(picture.Texts, text => text.Text == "L");
     }
 
     private static void AssertCentredIn(HudRect frame, HudRect icon)
