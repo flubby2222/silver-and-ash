@@ -285,3 +285,10 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 - **C1 „Fein“** und **C3 „Geordnet“** (Runde 2): abgelehnt, Gründe nannte er nicht. Einschätzung des Grafikdesigners, nicht sein Urteil: C1 hat den kleinsten Giebel und wirkt am wenigsten wie C; C3 behält viel Zierrat.
 
 Wer die Menüs später ändert, geht von C2 aus. Die Darstellung im Spiel ist Sache der Umsetzungs-Issues (u. a. #348, #349).
+
+### Karte und Ausrüstung als ein Menü (Issue #390, vorläufig)
+
+- **Reiter deckungsgleich:** „[Tab] Map“ und „[G] Equipment“ stehen auf beiden Seiten an genau derselben Stelle, über dem linken Ende der Seitentafel. Beim Blättern wechselt nur, welcher Reiter offen (gold, 8 px höher) ist.
+- **Werte-Tafel auf beiden Seiten:** „HUNTER“ und „BOONS“ links, ohne Grund, nur mit 1-px-Rahmen in gedämpftem Silber. Sie beginnt 8 px unter der Erfahrungs-Zone des HUD (Level, Leiste, wartende Boni) und deckt kein HUD-Teil zu. Überschriften 2×, Zeilen 1× wie die HUD-Texte, Namen in der zweiten Farbe, Werte in der Hauptfarbe, alle mit Schatten.
+- **Die Seiten stehen rechts davon:** Karte und Ausrüstungstafel beginnen rechts der Werte-Tafel, damit nichts sie verdeckt.
+- **Tafeln zu 70 % deckend** (Tafel, Giebel, Reiter, in allen Menüs): Die Szene scheint durch, Schrift und Felder bleiben lesbar. Wird ein Menü damit unlesbar, geht die Deckkraft wieder hoch, nicht die Schrift auf schwarzen Grund.
