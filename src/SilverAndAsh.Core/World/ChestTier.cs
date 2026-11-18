@@ -31,4 +31,14 @@ public static class ChestTierNames
         ChestTier.Vampire => "Vampire's Chest",
         _ => throw new ArgumentOutOfRangeException(nameof(tier), tier, "Unknown chest tier."),
     };
+
+    /// <summary>The item tier a chest of <paramref name="tier"/> gives at least: Beggar Worn, Guard Forged, King Royal, Vampire Vampiric.</summary>
+    public static Gameplay.ItemTier LootTier(this ChestTier tier) => tier switch
+    {
+        ChestTier.Beggar => Gameplay.ItemTier.Worn,
+        ChestTier.Guard => Gameplay.ItemTier.Forged,
+        ChestTier.King => Gameplay.ItemTier.Royal,
+        ChestTier.Vampire => Gameplay.ItemTier.Vampiric,
+        _ => throw new ArgumentOutOfRangeException(nameof(tier), tier, "Unknown chest tier."),
+    };
 }

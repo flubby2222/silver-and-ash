@@ -237,28 +237,28 @@ public sealed record ChestsBalance
     public ChestTierBalance Beggar { get; init; } = new()
     {
         CombatShareNear = 0.7f, CombatShareFar = 0.55f, TreasureShare = 0.2f, LockedTreasureShare = 0.15f, SecretShare = 0f,
-        LockedChance = 0.1f, SilverMin = 10, SilverMax = 20, BloodVialChance = 0.1f,
+        LockedChance = 0.1f, SilverMin = 10, SilverMax = 20, BloodVialChance = 0.1f, EquipmentChance = 0.3f,
     };
 
     /// <summary>Guard's Chest (metal).</summary>
     public ChestTierBalance Guard { get; init; } = new()
     {
         CombatShareNear = 0.27f, CombatShareFar = 0.37f, TreasureShare = 0.45f, LockedTreasureShare = 0.3f, SecretShare = 0.35f,
-        LockedChance = 0.35f, SilverMin = 20, SilverMax = 35, BloodVialChance = 0.25f,
+        LockedChance = 0.35f, SilverMin = 20, SilverMax = 35, BloodVialChance = 0.25f, EquipmentChance = 0.5f,
     };
 
     /// <summary>King's Chest (gold).</summary>
     public ChestTierBalance King { get; init; } = new()
     {
         CombatShareNear = 0.03f, CombatShareFar = 0.08f, TreasureShare = 0.3f, LockedTreasureShare = 0.45f, SecretShare = 0.5f,
-        LockedChance = 0.7f, SilverMin = 40, SilverMax = 60, BloodVialChance = 0.5f,
+        LockedChance = 0.7f, SilverMin = 40, SilverMax = 60, BloodVialChance = 0.5f, EquipmentChance = 0.8f,
     };
 
     /// <summary>Vampire's Chest (red).</summary>
     public ChestTierBalance Vampire { get; init; } = new()
     {
         CombatShareNear = 0f, CombatShareFar = 0f, TreasureShare = 0.05f, LockedTreasureShare = 0.1f, SecretShare = 0.15f,
-        LockedChance = 1f, SilverMin = 80, SilverMax = 120, BloodVialChance = 1f,
+        LockedChance = 1f, SilverMin = 80, SilverMax = 120, BloodVialChance = 1f, EquipmentChance = 1f,
     };
 
     /// <summary>The values of <paramref name="tier"/>.</summary>
@@ -305,6 +305,12 @@ public sealed record ChestTierBalance
 
     /// <summary>Chance that a blood vial lies inside too: 0 = never, 1 = always.</summary>
     public float BloodVialChance { get; init; }
+
+    /// <summary>
+    /// Chance that a piece of equipment lies inside too (decision record 0008), drawn from the loot pool at least of the
+    /// chest's tier: 0 = never, 1 = always. Rolled with the loot pool's own generator when the chest is opened.
+    /// </summary>
+    public float EquipmentChance { get; init; }
 }
 
 /// <summary>Balancing values of consecrated ammunition.</summary>
@@ -622,6 +628,15 @@ public sealed record GormBalance
 
     /// <summary>Most silver he leaves behind.</summary>
     public int SilverMax { get; init; } = 150;
+
+    /// <summary>
+    /// He always leaves a piece of equipment (decision record 0008): Vampiric with this chance, else Royal (0 = always
+    /// Royal, 1 = always Vampiric). Rolled with the loot pool's own generator.
+    /// </summary>
+    public float EquipmentVampiricChance { get; init; } = 0.2f;
+
+    /// <summary>Silver he leaves instead of the equipment when the loot pool has nothing of that tier or above (the worth of a Vampire's Chest).</summary>
+    public int ExtraSilver { get; init; } = 100;
 
     /// <summary>Seconds the spiral staircase takes to rise after his death.</summary>
     public float StairsRiseTime { get; init; } = 3f;

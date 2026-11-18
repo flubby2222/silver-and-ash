@@ -141,6 +141,8 @@ public class BalanceFileTests
     [InlineData("""{ "layout": { "corridorChance": 1.5 } }""", "layout.corridorChance")]
     [InlineData("""{ "gorm": { "phase2Health": 1.5 } }""", "gorm.phase2Health")]
     [InlineData("""{ "gorm": { "swingArc": 400 } }""", "gorm.swingArc")]
+    [InlineData("""{ "gorm": { "equipmentVampiricChance": 1.5 } }""", "gorm.equipmentVampiricChance")]
+    [InlineData("""{ "gorm": { "extraSilver": -1 } }""", "gorm.extraSilver")]
     [InlineData("""{ "difficulty": { "ghoulShareNear": 1.5 } }""", "difficulty.ghoulShareNear")]
     [InlineData("""{ "difficulty": { "ghoulShareFar": 2 } }""", "difficulty.ghoulShareFar")]
     [InlineData("""{ "difficulty": { "batShareNear": 1.1 } }""", "difficulty.batShareNear")]
@@ -223,6 +225,8 @@ public class BalanceFileTests
     [InlineData("""{ "chests": { "king": { "lockedChance": 2 } } }""", "chests.king.lockedChance")]
     [InlineData("""{ "chests": { "beggar": { "bloodVialChance": 1.1 } } }""", "chests.beggar.bloodVialChance")]
     [InlineData("""{ "chests": { "guard": { "silverMin": -5 } } }""", "chests.guard.silverMin")]
+    [InlineData("""{ "chests": { "vampire": { "equipmentChance": 1.5 } } }""", "chests.vampire.equipmentChance")]
+    [InlineData("""{ "chests": { "beggar": { "equipmentChance": -0.1 } } }""", "chests.beggar.equipmentChance")]
     public void Wrong_chest_values_fall_back_to_their_tiers_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);
@@ -244,7 +248,7 @@ public class BalanceFileTests
     public void Chests_may_hold_nothing_and_never_stand_in_combat_rooms()
     {
         var result = BalanceFile.Parse("""
-            { "chests": { "combatRoomChance": 0, "vampire": { "treasureShare": 0, "lockedTreasureShare": 0, "secretShare": 0, "lockedChance": 0, "silverMin": 0, "silverMax": 0, "bloodVialChance": 0 } } }
+            { "chests": { "combatRoomChance": 0, "vampire": { "treasureShare": 0, "lockedTreasureShare": 0, "secretShare": 0, "lockedChance": 0, "silverMin": 0, "silverMax": 0, "bloodVialChance": 0, "equipmentChance": 0 } } }
             """);
 
         Assert.Equal(0f, result.Balance.Chests.CombatRoomChance);
