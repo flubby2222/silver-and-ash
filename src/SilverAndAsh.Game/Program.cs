@@ -250,6 +250,9 @@ static void RunGame(
 
     try
     {
+        // The game's own pixel font for all texts (issue #367).
+        PixelText.Load(Path.Combine(AppContext.BaseDirectory, "assets", "fonts"), log);
+
         // Balancing values from assets/balance.json - a broken file only costs warnings in the log, never the game.
         var balancePath = Path.Combine(AppContext.BaseDirectory, "assets", "balance.json");
         var balance = LoadBalance(balancePath, log);
@@ -641,7 +644,7 @@ static void RunGame(
                 DrawDebugInfo(player);
                 if (reloadedNoticeSeconds > 0f)
                 {
-                    Raylib.DrawText("Balancing reloaded", 20, 160, 20, new Color(230, 190, 90, 255));
+                    PixelText.Draw("Balancing reloaded", 20, 160, 20, new Color(230, 190, 90, 255));
                 }
             }
 #endif
@@ -1186,6 +1189,7 @@ static void RunGame(
     }
     finally
     {
+        PixelText.Unload();
         Raylib.CloseWindow();
     }
 }
@@ -1234,7 +1238,7 @@ static void DrawHud(string displayVersion, bool fps)
     var screenHeight = Raylib.GetScreenHeight();
     var textColor = new Color(200, 200, 210, 255);
 
-    Raylib.DrawText("Silver & Ash", 20, 20, 30, textColor);
+    PixelText.Draw("Silver & Ash", 20, 20, 30, textColor);
 
     // The frame rate is a developer display: only in the debug build (issue #340).
     if (fps && BuildInfo.ShowsDeveloperDisplays)
@@ -1243,8 +1247,8 @@ static void DrawHud(string displayVersion, bool fps)
     }
 
     var versionText = $"v{displayVersion}";
-    var versionWidth = Raylib.MeasureText(versionText, 20);
-    Raylib.DrawText(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
+    var versionWidth = PixelText.Measure(versionText, 20);
+    PixelText.Draw(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
 }
 
 #if DEBUG
@@ -1330,29 +1334,29 @@ static void DrawDebugInfo(Player player)
         : player.IsExhausted ? exhaustedColor
         : new Color(200, 200, 210, 255);
 
-    Raylib.DrawText(speedText, 20, 60, 20, color);
+    PixelText.Draw(speedText, 20, 60, 20, color);
     if (player.HasPerfectJumpBonus)
     {
-        Raylib.DrawText("PERFECT", 20, 85, 20, bonusColor);
+        PixelText.Draw("PERFECT", 20, 85, 20, bonusColor);
     }
     else if (player.IsExhausted)
     {
-        Raylib.DrawText("EXHAUSTED", 20, 85, 20, exhaustedColor);
+        PixelText.Draw("EXHAUSTED", 20, 85, 20, exhaustedColor);
     }
 
     var chargeText = player.MeleeCharge.IsCharging
         ? string.Create(CultureInfo.InvariantCulture, $"   Charge {player.MeleeCharge.Fraction * 100f:0} %")
         : string.Empty;
     var weaponsText = $"{Weapons.Info(player.Melee).Name} {CooldownText(player.MeleeCooldown)}   {player.Ranged.Info.Name} {CooldownText(player.Ranged.Cooldown)}{chargeText}";
-    Raylib.DrawText(weaponsText, 20, 135, 20, new Color(200, 200, 210, 255));
+    PixelText.Draw(weaponsText, 20, 135, 20, new Color(200, 200, 210, 255));
 
     if (player.IsDashing)
     {
-        Raylib.DrawText("DASH", 20, 110, 20, new Color(140, 200, 230, 255));
+        PixelText.Draw("DASH", 20, 110, 20, new Color(140, 200, 230, 255));
     }
     else if (player.IsDodging)
     {
-        Raylib.DrawText("DODGE", 20, 110, 20, new Color(140, 230, 160, 255));
+        PixelText.Draw("DODGE", 20, 110, 20, new Color(140, 230, 160, 255));
     }
 }
 

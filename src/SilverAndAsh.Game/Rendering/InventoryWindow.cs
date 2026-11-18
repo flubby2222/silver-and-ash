@@ -63,11 +63,11 @@ internal static class InventoryWindow
         Raylib.DrawRectangle(left, top, width, height, Panel);
         Raylib.DrawRectangleLines(left, top, width, height, Muted);
         MenuTabs.Draw(PlayerMenuPage.Equipment, Raylib.GetScreenWidth() / 2);
-        Raylib.DrawText("EQUIPMENT", left + Padding, top + 14, 28, Gold);
+        PixelText.Draw("EQUIPMENT", left + Padding, top + 14, 28, Gold);
 
         var hovered = Hovered();
         var equipTop = BoxAt(new InventoryClick(InventoryPlace.Melee, 0)).Y;
-        Raylib.DrawText("IN HAND", left + Padding, (int)equipTop - 22, 16, Muted);
+        PixelText.Draw("IN HAND", left + Padding, (int)equipTop - 22, 16, Muted);
         DrawBox(new InventoryClick(InventoryPlace.Melee, 0), "LMB", Weapons.Info(player.Melee), selected: true, hovered, seconds);
         for (var slot = 0; slot < Player.RangedSlotCount; slot++)
         {
@@ -77,7 +77,7 @@ internal static class InventoryWindow
 
         var bagTop = BoxAt(new InventoryClick(InventoryPlace.Bag, 0)).Y;
         var used = player.Bag.Count(place => place is not null);
-        Raylib.DrawText(string.Create(CultureInfo.InvariantCulture, $"BAG  {used} / {Player.InventorySlotCount}"), left + Padding, (int)bagTop - 22, 16, Muted);
+        PixelText.Draw(string.Create(CultureInfo.InvariantCulture, $"BAG  {used} / {Player.InventorySlotCount}"), left + Padding, (int)bagTop - 22, 16, Muted);
         for (var index = 0; index < Player.InventorySlotCount; index++)
         {
             WeaponInfo? info = player.Bag[index] is { } kind ? Weapons.Info(kind) : null;
@@ -87,17 +87,17 @@ internal static class InventoryWindow
         // The items (decision record 0008) come with their own issue; until then the list is empty.
         var itemsLeft = left + Padding + (Columns * BoxWidth) + ((Columns - 1) * Gap) + Padding;
         Raylib.DrawLine(itemsLeft - (Padding / 2), (int)equipTop - 24, itemsLeft - (Padding / 2), top + height - 48, Empty);
-        Raylib.DrawText("ITEMS", itemsLeft, (int)equipTop - 22, 16, Muted);
-        Raylib.DrawText("No items yet", itemsLeft, (int)equipTop, 16, Empty);
+        PixelText.Draw("ITEMS", itemsLeft, (int)equipTop - 22, 16, Muted);
+        PixelText.Draw("No items yet", itemsLeft, (int)equipTop, 16, Empty);
 
         const string Help = "Left click: equip   Right click: drop   [G] or [Esc] close   [Tab] map";
-        Raylib.DrawText(Help, left + ((width - Raylib.MeasureText(Help, 16)) / 2), top + height - 32, 16, Muted);
+        PixelText.Draw(Help, left + ((width - PixelText.Measure(Help, 16)) / 2), top + height - 32, 16, Muted);
 
         if (hovered is { Place: InventoryPlace.Ranged } && player.RangedSlots.Count(weapon => weapon is not null) == 1
             && player.RangedSlots[hovered.Value.Index] is not null)
         {
             const string Last = "Your last ranged weapon stays";
-            Raylib.DrawText(Last, left + ((width - Raylib.MeasureText(Last, 16)) / 2), top + height - 54, 16, Gold);
+            PixelText.Draw(Last, left + ((width - PixelText.Measure(Last, 16)) / 2), top + height - 54, 16, Gold);
         }
     }
 
@@ -111,17 +111,17 @@ internal static class InventoryWindow
         if (weapon is not { } info)
         {
             Raylib.DrawRectangleLinesEx(box, 1f, Empty);
-            Raylib.DrawText(key, x, y, 12, Empty);
-            Raylib.DrawText("-", x, y + 20, 18, Empty);
+            PixelText.Draw(key, x, y, 12, Empty);
+            PixelText.Draw("-", x, y + 20, 18, Empty);
             return;
         }
 
         var frame = TierColours.Of(info.Tier, seconds);
         Raylib.DrawRectangleLinesEx(box, selected || isHovered ? 3f : 2f, frame);
-        Raylib.DrawText(key, x, y, 12, Muted);
-        Raylib.DrawText(info.Name, x, y + 16, 18, selected ? Gold : Text);
+        PixelText.Draw(key, x, y, 12, Muted);
+        PixelText.Draw(info.Name, x, y + 16, 18, selected ? Gold : Text);
         var kind = $"{(info.Hand == WeaponHand.Melee ? "Melee" : "Ranged")} - {info.Tier}";
-        Raylib.DrawText(kind, x, y + 36, 10, frame);
+        PixelText.Draw(kind, x, y + 36, 10, frame);
     }
 
     /// <summary>The place under the mouse cursor, or null.</summary>

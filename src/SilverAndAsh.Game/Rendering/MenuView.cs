@@ -134,14 +134,14 @@ internal sealed class MenuView
             Raylib.DrawRectangleRec(rect, Panel);
             Raylib.DrawRectangleLinesEx(rect, i == Selected ? 3f : 1f, i == Selected ? Highlight : Border);
 
-            var width = Raylib.MeasureText(items[i], FontSize);
+            var width = PixelText.Measure(items[i], FontSize);
             var textY = (int)(rect.Y + (_buttonHeight - FontSize) / 2f);
-            Raylib.DrawText(items[i], (int)(rect.X + (rect.Width - width) / 2f), textY, FontSize, i == Selected ? Highlight : Text);
+            PixelText.Draw(items[i], (int)(rect.X + (rect.Width - width) / 2f), textY, FontSize, i == Selected ? Highlight : Text);
 
             if (valueRows.Contains(i))
             {
-                Raylib.DrawText("<", (int)rect.X + 16, textY, FontSize, Text);
-                Raylib.DrawText(">", (int)(rect.X + rect.Width) - 30, textY, FontSize, Text);
+                PixelText.Draw("<", (int)rect.X + 16, textY, FontSize, Text);
+                PixelText.Draw(">", (int)(rect.X + rect.Width) - 30, textY, FontSize, Text);
             }
         }
     }
@@ -149,8 +149,8 @@ internal sealed class MenuView
     /// <summary>Big centred text, e.g. the game's name or "PAUSED".</summary>
     public static void DrawTitle(string text, int y, int fontSize, Color color)
     {
-        var width = Raylib.MeasureText(text, fontSize);
-        Raylib.DrawText(text, (Raylib.GetScreenWidth() - width) / 2, y, fontSize, color);
+        var width = PixelText.Measure(text, fontSize);
+        PixelText.Draw(text, (Raylib.GetScreenWidth() - width) / 2, y, fontSize, color);
     }
 
     private Rectangle ButtonRect(int index, int top) => new(
