@@ -170,13 +170,16 @@ public static class PhotoScenes
                 Input = tick => PlayerInput.None with { Shoot = tick % 4 == 0 },
                 StopWhen = world => world.Player.AmmoHint == AmmoHint.Reload,
             }),
-        new("inventory", "The inventory window (G) open, every place of the bag taken.",
+        new("inventory", "The equipment page of the menu (G) open, every place of the bag taken (issue #348).",
             studio => new PhotoSetup(FullBag(AllWeapons(studio.StartRun())))
             {
-                Input = tick => PlayerInput.None with { ToggleInventory = tick == 0 },
+                Input = tick => PlayerInput.None with { PressMenu = tick == 0 ? MenuKey.Equipment : null },
             }),
-        new("map", "The map page (Tab) early in a run: values and five chosen boons on the left, the map on the right (issue #347).",
-            studio => new PhotoSetup(WithBoons(studio.StartRun())) { MapOpen = true }),
+        new("map", "The map page of the menu (Tab) early in a run: values and five chosen boons on the left, the map on the right (issues #347, #348).",
+            studio => new PhotoSetup(WithBoons(studio.StartRun()))
+            {
+                Input = tick => PlayerInput.None with { PressMenu = tick == 0 ? MenuKey.Map : null },
+            }),
         new("menu-title", "The title screen: Start, Settings, Quit (issue #349).",
             studio => new PhotoSetup(studio.StartRun()) { Menu = PhotoMenu.Title }),
         new("menu-pause", "The pause menu (Esc) over a run: Resume, Settings, Back to title, Quit (issue #349).",

@@ -6,7 +6,7 @@ using SilverAndAsh.Core.Gameplay;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The inventory (G, decision record 0008, issue #193): the weapons in hand on top (melee and the three ranged places),
+/// The equipment page of the menu (G, decision record 0008, issues #193, #348), Tab turns to the map page: the weapons in hand on top (melee and the three ranged places),
 /// the six places of the bag below, the items with their effect on the right. The game goes on behind it; only G or Esc
 /// close it, neither moving nor a hit (issue #346). A left click equips, a right click drops - every frame is in the colour of the weapon's
 /// tier. It only reads and shows - the click goes to Core as input (<see cref="Core.Input.PlayerInput.InventoryClick"/>).
@@ -62,7 +62,8 @@ internal static class InventoryWindow
         var (left, top, width, height) = PanelRect();
         Raylib.DrawRectangle(left, top, width, height, Panel);
         Raylib.DrawRectangleLines(left, top, width, height, Muted);
-        Raylib.DrawText("INVENTORY", left + Padding, top + 14, 28, Gold);
+        MenuTabs.Draw(PlayerMenuPage.Equipment, Raylib.GetScreenWidth() / 2);
+        Raylib.DrawText("EQUIPMENT", left + Padding, top + 14, 28, Gold);
 
         var hovered = Hovered();
         var equipTop = BoxAt(new InventoryClick(InventoryPlace.Melee, 0)).Y;
@@ -89,7 +90,7 @@ internal static class InventoryWindow
         Raylib.DrawText("ITEMS", itemsLeft, (int)equipTop - 22, 16, Muted);
         Raylib.DrawText("No items yet", itemsLeft, (int)equipTop, 16, Empty);
 
-        const string Help = "Left click: equip   Right click: drop   [G] or [Esc] close";
+        const string Help = "Left click: equip   Right click: drop   [G] or [Esc] close   [Tab] map";
         Raylib.DrawText(Help, left + ((width - Raylib.MeasureText(Help, 16)) / 2), top + height - 32, 16, Muted);
 
         if (hovered is { Place: InventoryPlace.Ranged } && player.RangedSlots.Count(weapon => weapon is not null) == 1
