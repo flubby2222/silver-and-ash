@@ -926,12 +926,22 @@ public sealed partial class Player
         _shootWasHeld = input.Shoot;
         _reloadWasHeld = input.Reload;
 
-        // Blade: pressing starts charging (only when the cooldown is over), holding charges, letting go swings.
-        if (meleePressed && MeleeCooldown.IsReady)
+        UseBlade(meleePressed, input.Melee);
+
+        // Mouse wheel or 1 - 3: another ranged weapon (empty places are skipped). Putting one away breaks its reload off.
+        SwitchRanged(input);
+
+        UseRanged(reloadPressed, shootPressed);
+    }
+
+    /// <summary>Blade: pressing starts charging (only when the cooldown is over), holding charges, letting go swings.</summary>
+    private void UseBlade(bool pressed, bool held)
+    {
+        if (pressed && MeleeCooldown.IsReady)
         {
             MeleeCharge.Start();
         }
-        else if (MeleeCharge.IsCharging && input.Melee)
+        else if (MeleeCharge.IsCharging && held)
         {
             MeleeCharge.Tick(Stamina);
         }
@@ -941,11 +951,11 @@ public sealed partial class Player
             MeleeCooldown.TryUse();
             _events.Add(new MeleeSwung(EyePosition, View.Forward, charge, Melee));
         }
+    }
 
-        // Mouse wheel or 1 - 3: another ranged weapon (empty places are skipped). Putting one away breaks its reload off.
-        SwitchRanged(input);
-
-        // R reloads; so does a shot with an empty magazine. While reloading the weapon does not fire.
+    /// <summary>R reloads; so does a shot with an empty magazine. While reloading the weapon does not fire.</summary>
+    private void UseRanged(bool reloadPressed, bool shootPressed)
+    {
         var ranged = Ranged;
         if (reloadPressed || (shootPressed && ranged.Magazine.Rounds == 0))
         {
