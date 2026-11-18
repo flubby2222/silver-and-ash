@@ -138,6 +138,15 @@ public enum SoundKind
 
     /// <summary>Gorm dies (issue #298).</summary>
     GormDied,
+
+    /// <summary>A player takes a piece of equipment from the floor with F - Worn, Forged or Royal (issue #317).</summary>
+    EquipmentTaken,
+
+    /// <summary>
+    /// A player takes a Vampiric piece - the top tier gets a sound of its own (issue #317, the human's wish on #195).
+    /// Until the audio designer has made it, it plays the same file as <see cref="EquipmentTaken"/>.
+    /// </summary>
+    VampiricEquipmentTaken,
 }
 
 /// <summary>One sound to play now: which file, at which volume (0 to 1, before <see cref="SoundBoard.MasterVolume"/>).</summary>
@@ -281,7 +290,8 @@ public static class SoundBoard
     /// dodge, a landing from high enough (<see cref="LandingSoundMinimumFallHeight"/>), a ghoul noticing a player and
     /// the end of the consecration (issue #291); a bat's wing beat, warnings, spit, bite, missed dive, hit and death
     /// (issue #297); Gorm's steps, a warning of its own for each of his three attacks, the hammer's impact, the chain,
-    /// the throw and the hook's hit, a hit on his body or head, his roar and his death (issue #298).
+    /// the throw and the hook's hit, a hit on his body or head, his roar and his death (issue #298); taking equipment,
+    /// a Vampiric piece with a sound of its own (issue #317).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -330,6 +340,8 @@ public static class SoundBoard
         GormHit => SoundKind.GormHurt,
         GormRoared => SoundKind.GormRoar,
         GormDied => SoundKind.GormDied,
+        EquipmentTaken { Tier: ItemTier.Vampiric } => SoundKind.VampiricEquipmentTaken,
+        EquipmentTaken => SoundKind.EquipmentTaken,
         _ => null,
     };
 }

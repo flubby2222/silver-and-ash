@@ -76,6 +76,25 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void Equipment_of_all_four_tiers_lies_in_the_showroom_and_can_be_taken()
+    {
+        // Issue #317: an item of each tier besides the weapons (Worn and Forged only so far), all taken with F.
+        var pieces = ShowroomPieces.All;
+        Assert.Equal(Enum.GetValues<ItemTier>().Order(), pieces.OfType<ItemPiece>().Select(piece => Items.Info(piece.Item).Tier).Order());
+        Assert.Equal(pieces.OfType<ItemPiece>().Count(), Layout.Exhibits.Items.Count);
+
+        var world = Layout.NewWorld();
+        Assert.Equal(Enum.GetValues<ItemTier>().Order(), world.EquipmentDrops.Select(drop => drop.Piece.Tier).Distinct().Order());
+        Assert.All(world.EquipmentDrops, drop =>
+        {
+            var offer = drop.OfferFor(world.Player);
+            Assert.True(offer.IsPossible);
+            Assert.Equal($"Take {drop.Piece.Name} ({drop.Piece.Tier})", offer.Text);
+            Assert.Equal(drop.Piece.Tier, offer.Tier);
+        });
+    }
+
+    [Fact]
     public void Three_sections_show_the_variants_A_B_and_C_at_corridor_and_room_height()
     {
         Assert.Equal([TextureVariant.A, TextureVariant.B, TextureVariant.C], Layout.Sections.Select(section => section.Variant));
@@ -366,6 +385,7 @@ public class ShowroomLayoutTests
         Assert.Null(world.Stairs);
         Assert.Empty(world.Loot);
         Assert.Empty(world.WeaponDrops);
+        Assert.Empty(world.EquipmentDrops);
         Assert.True(Layout.NewWorld().IsShowroom);
     }
 }

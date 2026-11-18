@@ -98,6 +98,11 @@ public sealed class SoundPack
         [SoundKind.GormHeadHurt] = ["p1-gorm-treffer-kopf.wav"],
         [SoundKind.GormRoar] = ["p1-gorm-bruellen.wav"],
         [SoundKind.GormDied] = ["p1-gorm-sterben.wav"],
+
+        // Issue #317: taking equipment with F. The Vampiric tier is to get a sound of its own - an open job for the
+        // audio designer (a file like "p1-aufheben-vampirisch.wav"); until then it plays the same file.
+        [SoundKind.EquipmentTaken] = ["p1-aufheben-ausruestung.wav"],
+        [SoundKind.VampiricEquipmentTaken] = ["p1-aufheben-ausruestung.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>
@@ -107,10 +112,10 @@ public sealed class SoundPack
     public static ImmutableArray<SoundPack> All => [Pack1, Old];
 
     /// <summary>
-    /// The files of sound pack 1 that no event plays yet: picking up a weapon or armour - the game cannot do that before
-    /// the loot system (#194). Checked in with the pack, so that issue only adds the event.
+    /// The files of sound pack 1 that no event plays yet. Empty since #317: the last one, picking up equipment, has its
+    /// event now. A file checked in ahead of its event goes here until the event comes.
     /// </summary>
-    public static ImmutableArray<string> Pack1WithoutEvent => ["p1-aufheben-ausruestung.wav"];
+    public static ImmutableArray<string> Pack1WithoutEvent => [];
 
     /// <summary>
     /// The files of <paramref name="kind"/> in this pack: one of them plays each time, never the same twice in a row.

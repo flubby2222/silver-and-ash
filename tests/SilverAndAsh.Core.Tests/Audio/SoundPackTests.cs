@@ -64,6 +64,12 @@ public class SoundPackTests
         { new GormHit(9, 40, Critical: true), SoundKind.GormHeadHurt, ["p1-gorm-treffer-kopf.wav"] },
         { new GormRoared(9), SoundKind.GormRoar, ["p1-gorm-bruellen.wav"] },
         { new GormDied(9), SoundKind.GormDied, ["p1-gorm-sterben.wav"] },
+
+        // Issue #317: taking equipment - every tier; the Vampiric one has a kind of its own (same file until its own comes).
+        { new EquipmentTaken(3, 0, Equipment.Of(WeaponKind.Club), Vector3.Zero), SoundKind.EquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
+        { new EquipmentTaken(3, 0, Equipment.Of(WeaponKind.Rifle), Vector3.Zero), SoundKind.EquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
+        { new EquipmentTaken(3, 0, Equipment.Of(ItemKind.HuntersEye), Vector3.Zero), SoundKind.EquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
+        { new EquipmentTaken(3, 0, Equipment.Of(ItemKind.Leech), Vector3.Zero), SoundKind.VampiricEquipmentTaken, ["p1-aufheben-ausruestung.wav"] },
     };
 
     private static readonly GameEvent[] BatEvents =
@@ -179,6 +185,10 @@ public class SoundPackTests
 
         // Issue #298: so is Gorm.
         Assert.All(GormEvents, gameEvent => Assert.Empty(new SoundCues(1).For([gameEvent], SoundPack.Old)));
+
+        // Issue #317: and taking equipment, of every tier.
+        Assert.All(Equipment.All, piece =>
+            Assert.Empty(new SoundCues(1).For([new EquipmentTaken(3, 0, piece, Vector3.Zero)], SoundPack.Old)));
     }
 
     [Fact]
@@ -470,15 +480,12 @@ public class SoundPackTests
     }
 
     [Fact]
-    public void The_files_waiting_for_their_events_are_checked_in_but_not_played()
+    public void No_file_of_pack_1_waits_for_its_event_any_more()
     {
-        // Since #291 only the equipment pickup waits - the game cannot pick up equipment before the loot system (#194).
-        Assert.Equal("p1-aufheben-ausruestung.wav", Assert.Single(SoundPack.Pack1WithoutEvent));
-        Assert.All(SoundPack.Pack1WithoutEvent, file =>
-        {
-            Assert.Contains(file, SoundBoard.AllFiles);
-            Assert.DoesNotContain(file, SoundBoard.SoundFiles);
-        });
+        // Since #317 the last waiting file, the equipment pickup, has its event: it is played now and still checked in.
+        Assert.Empty(SoundPack.Pack1WithoutEvent);
+        Assert.Contains("p1-aufheben-ausruestung.wav", SoundBoard.SoundFiles);
+        Assert.Contains("p1-aufheben-ausruestung.wav", SoundBoard.AllFiles);
     }
 
     [Fact]
