@@ -163,12 +163,28 @@ public static class PhotoScenes
                 Input = tick => PlayerInput.None with { Shoot = tick % 4 == 0 },
                 StopWhen = world => world.Player.AmmoHint == AmmoHint.Reload,
             }),
-        new("hud-texts", "Every HUD text at once, each in its own line (issue #340): \"Reload [R]\" and \"[F] Take Rifle (Forged)\" under the crosshair, the boon hint and the consecrated time at the bottom left.",
+        new("hud-texts", "Every HUD text at once (issues #340, #369): \"Reload [R]\" and \"[F] Take Rifle (Forged)\" under the crosshair, the skill point at the top left and the consecrated time above the weapons.",
             studio => new PhotoSetup(AllHudTexts(studio))
             {
                 Ticks = 1200,
                 Input = tick => PlayerInput.None with { Shoot = tick % 4 == 0 },
                 StopWhen = world => world.Player.AmmoHint == AmmoHint.Reload,
+            }),
+        new("hud-calm", "The HUD in a calm moment (issue #369): three items, every weapon place taken, a quarter of the life gone, silver and a key.",
+            studio => new PhotoSetup(Equipped(AllWeapons(studio.StartRun())))),
+        new("hud-boss", "The HUD in the boss fight (issue #369): Gorm's name and bar at the top, a quarter of his health gone.",
+            studio => new PhotoSetup(Equipped(QuarterOfGorm(studio.BeforeGorm(10f))))
+            {
+                Ticks = 120,
+                StopWhen = world => world.IsBossFightOn,
+            }),
+        new("hud-skillpoint", "The HUD while a boon waits (issue #369): the skill point with its key [X] at the top left.",
+            studio => new PhotoSetup(LevelUp(Equipped(studio.StartRun())))),
+        new("hud-pickup", "The HUD just after Hunter's Eye is taken with F (issue #369): the gold toast above the items.",
+            studio => new PhotoSetup(Equipped(BeforeEquipment(studio, piece => piece is ItemPiece { Item: ItemKind.HuntersEye })))
+            {
+                Ticks = 45,
+                Input = tick => PlayerInput.None with { Interact = tick == 0 },
             }),
         new("inventory", "The equipment page of the menu (G) open, every place of the bag taken (issue #348).",
             studio => new PhotoSetup(FullBag(AllWeapons(studio.StartRun())))
@@ -351,6 +367,34 @@ public static class PhotoScenes
         }
 
         player.TakeDamage(player.MaxHealth / 3, new List<GameEvent>());
+        return world;
+    }
+
+    // A run some rooms in (issue #369): three items, silver and a key, a quarter of the life gone.
+    private static GameWorld Equipped(GameWorld world)
+    {
+        var player = world.Player;
+        player.Take(ItemKind.IronFlask);
+        player.Take(ItemKind.HuntersEye);
+        player.Take(ItemKind.Leech);
+        player.AddSilver(85);
+        player.AddKeys(1);
+        player.TakeDamage(player.MaxHealth / 4, new List<GameEvent>());
+        return world;
+    }
+
+    // One level up whose boon waits (issue #369).
+    private static GameWorld LevelUp(GameWorld world)
+    {
+        world.Player.AddExperience(world.Player.ExperienceToNextLevel, new List<GameEvent>());
+        return world;
+    }
+
+    // A quarter of his health gone, still in phase 1.
+    private static GameWorld QuarterOfGorm(GameWorld world)
+    {
+        var gorm = world.Gorm!;
+        gorm.TakeDamage(gorm.MaxHealth / 4, new List<GameEvent>());
         return world;
     }
 

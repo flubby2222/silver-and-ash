@@ -248,10 +248,15 @@ static void RunGame(
     // Esc must not close the game - it opens the Esc menu.
     Raylib.SetExitKey(KeyboardKey.Null);
 
+    HudView? hud = null;
     try
     {
         // The game's own pixel font for all texts (issue #367).
-        PixelText.Load(Path.Combine(AppContext.BaseDirectory, "assets", "fonts"), log);
+        var fontsDirectory = Path.Combine(AppContext.BaseDirectory, "assets", "fonts");
+        PixelText.Load(fontsDirectory, log);
+
+        // The HUD from its parts picture (issue #369).
+        hud = HudView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "hud"), fontsDirectory, log);
 
         // Balancing values from assets/balance.json - a broken file only costs warnings in the log, never the game.
         var balancePath = Path.Combine(AppContext.BaseDirectory, "assets", "balance.json");
@@ -358,6 +363,7 @@ static void RunGame(
             weaponView = newWeaponView();
             damageFeedback = new DamageFeedback();
             equipmentCard = new EquipmentCard();
+            hud?.Reset();
         }
 
         // Choosing a level-up bonus: is the window open (X), and which boon is waiting for the next tick?
@@ -454,6 +460,7 @@ static void RunGame(
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
                 equipmentCard.OnEvent(gameEvent, player.Id);
+                hud?.OnEvent(gameEvent, player.Id);
             }
         }
 
@@ -469,6 +476,7 @@ static void RunGame(
             weaponView.Update(frameSeconds, player);
             damageFeedback.Update(frameSeconds);
             equipmentCard.Update(frameSeconds);
+            hud?.Update(frameSeconds);
         }
 
         // 3a. The 3D world goes into the small low-resolution picture, blended between the last two ticks by alpha.
@@ -591,10 +599,8 @@ static void RunGame(
                 ShowroomLabelView.Draw(showroomLabels, gameWorld.Level, lastCamera, picture.Width, picture.Height);
             }
 
-            DrawHud(displayVersion, fps: debugInfo);
-            DrawStaminaBar(player);
-            CombatHud.Draw(player);
-            BossBar.Draw(gameWorld);
+            hud?.Draw(gameWorld, player, picture.Width, picture.Height);
+            DrawFrameRate(debugInfo);
             if (!frozen)
             {
                 equipmentCard.Draw();
@@ -623,10 +629,6 @@ static void RunGame(
             else if (boonOpen && !frozen)
             {
                 BoonWindow.Draw(player, gameWorld.Balance.Boons);
-            }
-            else if (!frozen)
-            {
-                BoonWindow.DrawHint(player.PendingBoons, seconds);
             }
 
             if (menuOpen)
@@ -1189,6 +1191,7 @@ static void RunGame(
     }
     finally
     {
+        hud?.Dispose();
         PixelText.Unload();
         Raylib.CloseWindow();
     }
@@ -1231,24 +1234,13 @@ static void BringWindowOnScreen(FileLog? log)
     }
 }
 
-// Texts on top of the 3D world, in full window resolution - always sharp, whatever the window size.
-static void DrawHud(string displayVersion, bool fps)
+// The frame rate is a developer display: only in the debug build (issue #340), at the left edge above the items.
+static void DrawFrameRate(bool fps)
 {
-    var screenWidth = Raylib.GetScreenWidth();
-    var screenHeight = Raylib.GetScreenHeight();
-    var textColor = new Color(200, 200, 210, 255);
-
-    PixelText.Draw("Silver & Ash", 20, 20, 30, textColor);
-
-    // The frame rate is a developer display: only in the debug build (issue #340).
     if (fps && BuildInfo.ShowsDeveloperDisplays)
     {
-        Raylib.DrawFPS(20, screenHeight - 30);
+        Raylib.DrawFPS(20, Raylib.GetScreenHeight() / 2);
     }
-
-    var versionText = $"v{displayVersion}";
-    var versionWidth = PixelText.Measure(versionText, 20);
-    PixelText.Draw(versionText, screenWidth - versionWidth - 20, screenHeight - 30, 20, new Color(120, 120, 130, 255));
 }
 
 #if DEBUG
@@ -1295,32 +1287,6 @@ static Balance LoadBalance(string path, FileLog? log)
 
     log?.Info($"Balancing values loaded from '{path}' ({result.Warnings.Count} warnings).");
     return result.Balance;
-}
-
-// Stamina for jumps: one segment per jump at the bottom centre. A segment fills up from left to right.
-static void DrawStaminaBar(Player player)
-{
-    var segments = player.Stamina.Segments;
-    const int SegmentWidth = 48;
-    const int Gap = 4;
-    const int Height = 8;
-
-    var totalWidth = segments * SegmentWidth + (segments - 1) * Gap;
-    var left = (Raylib.GetScreenWidth() - totalWidth) / 2;
-    var top = Raylib.GetScreenHeight() - 40;
-
-    // Red background while exhausted: the player should see at once why they are slow.
-    var background = player.IsExhausted ? new Color(110, 25, 30, 220) : new Color(40, 35, 45, 200);
-    var fill = new Color(200, 205, 220, 255);
-
-    for (var i = 0; i < segments; i++)
-    {
-        var x = left + i * (SegmentWidth + Gap);
-        var segmentFill = Math.Clamp(player.Stamina.Fraction * segments - i, 0f, 1f);
-
-        Raylib.DrawRectangle(x, top, SegmentWidth, Height, background);
-        Raylib.DrawRectangle(x, top, (int)MathF.Round(SegmentWidth * segmentFill), Height, fill);
-    }
 }
 
 #if DEBUG
