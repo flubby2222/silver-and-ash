@@ -495,19 +495,62 @@ public sealed partial class Player
     /// Advances the player by one simulation tick: walking (with less control in the air), jumping,
     /// perfect jumps, gravity, walls, floor and ceiling.
     /// </summary>
+    /// <remarks>
+    /// The phases run in this order because most of them read what the ones before it left behind (issue #325).
+    /// Some neighbours share nothing and could swap without any effect - the timers and the jump chain, counting down
+    /// dash and dodge and the landing, crouch and steps; they keep the order they always had:
+    /// <list type="number">
+    ///   <item>Death and Gorm's chain first take away what the input may do - every later phase sees the cut input.</item>
+    ///   <item>Inventory and timers (cooldowns, consecration, reloads) before the attack, so a weapon that just became
+    ///     ready fires in this very tick.</item>
+    ///   <item>The jump chain (counters, bonus, exhaustion, refilling) before steering: the top speed and whether a jump
+    ///     is timed depend on it.</item>
+    ///   <item>Steering (walking, jump presses, dash and dodge, the jump itself, the pull) only sets the velocity;
+    ///     a dash or dodge started here already overrides walking and blocks the jump of the same tick.</item>
+    ///   <item>Moving through the level, then counting down dash and dodge: their end looks at where the move left the
+    ///     feet (on the ground or not).</item>
+    ///   <item>Crouch, steps, fall height and landing after the move, because they need the new position.</item>
+    ///   <item>The attack last, so blade and shot start at the eyes' position of this tick.</item>
+    /// </list>
+    /// </remarks>
     public void Tick(PlayerInput input)
     {
-        const float Dt = SimulationClock.SecondsPerTick;
         PreviousPosition = Position;
+        input = LimitInput(input, out var pulled);
 
-        // A dead player does nothing any more: no walking, jumping, dashing - gravity still works.
+        _events.Clear();
+        UseInventory(input);
+        TickWeaponTimers();
+
+        var wasGrounded = IsGrounded;
+        TickJumpChain();
+
+        var (horizontal, vertical) = Steer(input);
+        Velocity = horizontal with { Y = vertical };
+
+        var (grounded, fallSpeed, airTicksBeforeLanding) = MoveThroughLevel();
+        CountDownDashAndDodge(grounded);
+
+        Crouch.Tick(IsDodging);
+        CountSteps(wasGrounded && grounded, pulled);
+        TrackFallAndLanding(wasGrounded, grounded, fallSpeed, airTicksBeforeLanding);
+
+        Attack(input);
+    }
+
+    /// <summary>
+    /// What the input may still do: a dead player does nothing any more (gravity still works); a player pulled by
+    /// Gorm's chain cannot walk, jump, dash or dodge - looking and fighting still work. <paramref name="pulled"/>
+    /// tells whether the chain pulls at the start of this tick.
+    /// </summary>
+    private PlayerInput LimitInput(PlayerInput input, out bool pulled)
+    {
         if (IsDead)
         {
             input = PlayerInput.None;
         }
 
-        // Pulled by Gorm's chain: no walking, jumping, dashing or dodging - looking and fighting still work.
-        var pulled = IsPulled;
+        pulled = IsPulled;
         if (pulled)
         {
             input = input with { Move = Vector2.Zero, Jump = false, Dash = false };
@@ -515,8 +558,12 @@ public sealed partial class Player
             _dodgeTicksLeft = 0;
         }
 
-        _events.Clear();
-        UseInventory(input);
+        return input;
+    }
+
+    /// <summary>Blade cooldown, consecrated ammunition, and cooldown and reload of every ranged weapon count down.</summary>
+    private void TickWeaponTimers()
+    {
         MeleeCooldown.Tick();
         if (_consecratedTicksLeft > 0 && --_consecratedTicksLeft == 0)
         {
@@ -531,9 +578,15 @@ public sealed partial class Player
                 _events.Add(new ReloadFinished(Id));
             }
         }
+    }
 
+    /// <summary>
+    /// The landing dip and the perfect-jump counters move on; a chain of jumps that is over ends bonus and exhaustion;
+    /// the stamina refills (or not) and ticks.
+    /// </summary>
+    private void TickJumpChain()
+    {
         LandingDip.Tick();
-        var wasGrounded = IsGrounded;
         _ticksSinceLanding = Math.Min(_ticksSinceLanding + 1, Never);
         _ticksSinceJumpPressedInAir = Math.Min(_ticksSinceJumpPressedInAir + 1, Never);
         _ticksSinceDodgeEnded = Math.Min(_ticksSinceDodgeEnded + 1, Never);
@@ -555,15 +608,51 @@ public sealed partial class Player
         var stillCharging = MeleeCharge.IsCharging && !MeleeCharge.IsFull;
         Stamina.SetRecharging(chainOver && !IsDodging && !stillCharging);
         Stamina.Tick();
+    }
 
-        // Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
-        // but a slightly higher top speed - more with the perfect jump bonus, less when exhausted.
-        var acceleration = _player.Acceleration * (IsGrounded ? 1f : _player.AirControl);
-        var targetVelocity = WishDirection(input) * TopSpeed(IsGrounded);
-        var horizontal = MoveTowards(new Vector3(Velocity.X, 0f, Velocity.Z), targetVelocity, acceleration * Dt);
+    /// <summary>
+    /// The velocity the player wants for this tick, before walls and gravity: walking, a jump press, a dash or dodge
+    /// (which override walking), the jump itself and the pull of Gorm's chain - in this order.
+    /// </summary>
+    private (Vector3 Horizontal, float Vertical) Steer(PlayerInput input)
+    {
+        var horizontal = Walk(input);
 
         // Vertical: jump on a fresh press while standing. Gravity is applied in MoveVertically.
         var vertical = Velocity.Y;
+        var jumpPressed = RegisterJumpPress(input);
+
+        StartEvade(input);
+        OverrideByDashOrDodge(input, ref horizontal, ref vertical);
+        TryJump(jumpPressed, ref horizontal, ref vertical);
+
+        if (IsPulled)
+        {
+            horizontal = _pullVelocity;
+            _pullTicksLeft--;
+        }
+
+        return (horizontal, vertical);
+    }
+
+    /// <summary>
+    /// Horizontal: accelerate towards the wished velocity. In the air: less steering strength,
+    /// but a slightly higher top speed - more with the perfect jump bonus, less when exhausted.
+    /// </summary>
+    private Vector3 Walk(PlayerInput input)
+    {
+        const float Dt = SimulationClock.SecondsPerTick;
+        var acceleration = _player.Acceleration * (IsGrounded ? 1f : _player.AirControl);
+        var targetVelocity = WishDirection(input) * TopSpeed(IsGrounded);
+        return MoveTowards(new Vector3(Velocity.X, 0f, Velocity.Z), targetVelocity, acceleration * Dt);
+    }
+
+    /// <summary>
+    /// Reads the jump button. A fresh press in the air, at the end of a dash or at the end of a dodge is remembered
+    /// for later (a buffered or queued jump). Returns whether the button was freshly pressed in this tick.
+    /// </summary>
+    private bool RegisterJumpPress(PlayerInput input)
+    {
         var jumpPressed = input.Jump && !_jumpWasHeld;
         _jumpWasHeld = input.Jump;
 
@@ -596,7 +685,12 @@ public sealed partial class Player
             _perfectJumpQueued = true;
         }
 
-        // Shift on a fresh press: dodge on the ground, dash in the air. Both override walking and jumping.
+        return jumpPressed;
+    }
+
+    /// <summary>Shift on a fresh press: dodge on the ground, dash in the air. Both override walking and jumping.</summary>
+    private void StartEvade(PlayerInput input)
+    {
         var evadePressed = input.Dash && !_evadeWasHeld;
         _evadeWasHeld = input.Dash;
         if (evadePressed)
@@ -610,7 +704,11 @@ public sealed partial class Player
                 TryStartDash(input);
             }
         }
+    }
 
+    /// <summary>While dashing or dodging, their own speed and direction replace walking (and, for a dash, falling).</summary>
+    private void OverrideByDashOrDodge(PlayerInput input, ref Vector3 horizontal, ref float vertical)
+    {
         if (IsDashing)
         {
             // Flat dashes have no Y; a dash in the looking direction also rises or sinks (no gravity meanwhile).
@@ -629,54 +727,62 @@ public sealed partial class Player
 
             horizontal = _dodgeDirection * _player.DodgeSpeed;
         }
+    }
 
+    /// <summary>
+    /// Jumps if standing (not dashing or dodging) and the button was freshly pressed or a timed jump is queued.
+    /// Pays stamina and sets bonus or exhaustion; the current speed changes with the new speed factor.
+    /// </summary>
+    private void TryJump(bool jumpPressed, ref Vector3 horizontal, ref float vertical)
+    {
         var jumpNow = !IsDashing && !IsDodging && IsGrounded && (jumpPressed || _perfectJumpQueued);
-        if (jumpNow)
+        if (!jumpNow)
         {
-            // Timed: pressed shortly before landing or at the end of a dodge (queued),
-            // or shortly after landing or after a dodge.
-            var wasQueued = _perfectJumpQueued;
-            var afterDodge = _ticksSinceDodgeEnded <= _perfectWindowTicks;
-            var timed = wasQueued || afterDodge || _ticksSinceLanding <= _perfectWindowTicks;
-            _perfectJumpQueued = false;
-            vertical = _player.JumpSpeed;
-            _events.Add(new PlayerJumped(Id));
-
-            // Every jump costs stamina. Timed and paid = perfect (bonus). Not paid = exhausted (slower).
-            // A normal, paid jump changes nothing about bonus or exhaustion.
-            var factorBefore = SpeedFactor;
-            var paid = Stamina.TryPay();
-            if (!paid)
-            {
-                HasPerfectJumpBonus = false;
-                IsExhausted = true;
-            }
-            else if (timed)
-            {
-                HasPerfectJumpBonus = true;
-                IsExhausted = false;
-            }
-
-            // Noticeable right away: the current speed changes with the factor, too. Same factor
-            // as before (perfect after perfect) = no change, so the bonus does not stack.
-            horizontal *= SpeedFactor / factorBefore;
-
-            // A queued jump already softened the dip when it landed - softening twice would make it 0.4 x 0.4.
-            if (timed && paid && !wasQueued)
-            {
-                LandingDip.Soften(_player.PerfectJumpDipFactor);
-            }
+            return;
         }
 
-        if (IsPulled)
+        // Timed: pressed shortly before landing or at the end of a dodge (queued),
+        // or shortly after landing or after a dodge.
+        var wasQueued = _perfectJumpQueued;
+        var afterDodge = _ticksSinceDodgeEnded <= _perfectWindowTicks;
+        var timed = wasQueued || afterDodge || _ticksSinceLanding <= _perfectWindowTicks;
+        _perfectJumpQueued = false;
+        vertical = _player.JumpSpeed;
+        _events.Add(new PlayerJumped(Id));
+
+        // Every jump costs stamina. Timed and paid = perfect (bonus). Not paid = exhausted (slower).
+        // A normal, paid jump changes nothing about bonus or exhaustion.
+        var factorBefore = SpeedFactor;
+        var paid = Stamina.TryPay();
+        if (!paid)
         {
-            horizontal = _pullVelocity;
-            _pullTicksLeft--;
+            HasPerfectJumpBonus = false;
+            IsExhausted = true;
+        }
+        else if (timed)
+        {
+            HasPerfectJumpBonus = true;
+            IsExhausted = false;
         }
 
-        Velocity = horizontal with { Y = vertical };
+        // Noticeable right away: the current speed changes with the factor, too. Same factor
+        // as before (perfect after perfect) = no change, so the bonus does not stack.
+        horizontal *= SpeedFactor / factorBefore;
 
-        // Walls first (sideways), then gravity, floor and ceiling (up and down).
+        // A queued jump already softened the dip when it landed - softening twice would make it 0.4 x 0.4.
+        if (timed && paid && !wasQueued)
+        {
+            LandingDip.Soften(_player.PerfectJumpDipFactor);
+        }
+    }
+
+    /// <summary>
+    /// Walls first (sideways), then gravity, floor and ceiling (up and down). Returns whether the feet are on the
+    /// ground afterwards, the falling speed for the landing dip and how long the stay in the air before lasted.
+    /// </summary>
+    private (bool Grounded, float FallSpeed, int AirTicksBeforeLanding) MoveThroughLevel()
+    {
+        const float Dt = SimulationClock.SecondsPerTick;
         var boxes = _boxes().ToList();
         (Position, Velocity) = CharacterCollision.Move(
             _level, Position, Velocity, BodySizes.Player.Radius, Dt, CollisionHeight, bodies: _bodies().ToList(), boxes: boxes);
@@ -698,6 +804,15 @@ public sealed partial class Player
         }
         _ticksOnGround = grounded ? _ticksOnGround + 1 : 0;
 
+        return (grounded, fallSpeed, airTicksBeforeLanding);
+    }
+
+    /// <summary>
+    /// Gives the air dash back on the ground, then counts down dash and dodge. Ending one falls back to the top speed;
+    /// a dodge that ends on the ground opens the window for a perfect jump out of it.
+    /// </summary>
+    private void CountDownDashAndDodge(bool grounded)
+    {
         // Back on the ground (and not in the middle of a dash or dodge): the air dash is available again.
         // Not during them - touching a low step mid-dash must not hand out a second one.
         if (grounded && !IsDashing && !IsDodging)
@@ -740,46 +855,50 @@ public sealed partial class Player
                 }
             }
         }
+    }
 
-        Crouch.Tick(IsDodging);
-        CountSteps(wasGrounded && grounded, pulled);
-
+    /// <summary>
+    /// Keeps the highest point of a stay in the air; on landing reports the fall height, starts the landing dip,
+    /// opens the perfect window (only after a real drop) and queues a jump pressed just before.
+    /// </summary>
+    private void TrackFallAndLanding(bool wasGrounded, bool grounded, float fallSpeed, int airTicksBeforeLanding)
+    {
         if (!grounded)
         {
             _airPeakY = MathF.Max(wasGrounded || float.IsNaN(_airPeakY) ? PreviousPosition.Y : _airPeakY, Position.Y);
         }
 
-        if (!wasGrounded && grounded)
+        if (wasGrounded || !grounded)
         {
-            var peak = float.IsNaN(_airPeakY) ? PreviousPosition.Y : MathF.Max(_airPeakY, PreviousPosition.Y);
-            _events.Add(new PlayerLanded(Id, MathF.Max(0f, peak - Position.Y)));
-            _airPeakY = float.NaN;
-            LandingDip.Land(fallSpeed);
-
-            // Only real drops open the perfect window (see MinimumAirTicksForLanding).
-            var realLanding = airTicksBeforeLanding >= MinimumAirTicksForLanding;
-            if (realLanding)
-            {
-                _ticksSinceLanding = 0;
-            }
-
-            var pressedAtDashEnd = _jumpPressedAtDashEnd;
-            _jumpPressedAtDashEnd = false;
-            if ((realLanding && _ticksSinceJumpPressedInAir <= _perfectWindowTicks) || pressedAtDashEnd)
-            {
-                // Pressed just before landing (or at the end of the dash): jump again right away in the next tick
-                // (after a dash that landed on a step: when the dash is over), as a timed jump.
-                // Only a jump the stamina can pay for lands softly.
-                _perfectJumpQueued = true;
-                _ticksSinceJumpPressedInAir = Never;
-                if (Stamina.CanPay)
-                {
-                    LandingDip.Soften(_player.PerfectJumpDipFactor);
-                }
-            }
+            return;
         }
 
-        Attack(input);
+        var peak = float.IsNaN(_airPeakY) ? PreviousPosition.Y : MathF.Max(_airPeakY, PreviousPosition.Y);
+        _events.Add(new PlayerLanded(Id, MathF.Max(0f, peak - Position.Y)));
+        _airPeakY = float.NaN;
+        LandingDip.Land(fallSpeed);
+
+        // Only real drops open the perfect window (see MinimumAirTicksForLanding).
+        var realLanding = airTicksBeforeLanding >= MinimumAirTicksForLanding;
+        if (realLanding)
+        {
+            _ticksSinceLanding = 0;
+        }
+
+        var pressedAtDashEnd = _jumpPressedAtDashEnd;
+        _jumpPressedAtDashEnd = false;
+        if ((realLanding && _ticksSinceJumpPressedInAir <= _perfectWindowTicks) || pressedAtDashEnd)
+        {
+            // Pressed just before landing (or at the end of the dash): jump again right away in the next tick
+            // (after a dash that landed on a step: when the dash is over), as a timed jump.
+            // Only a jump the stamina can pay for lands softly.
+            _perfectJumpQueued = true;
+            _ticksSinceJumpPressedInAir = Never;
+            if (Stamina.CanPay)
+            {
+                LandingDip.Soften(_player.PerfectJumpDipFactor);
+            }
+        }
     }
 
     /// <summary>
@@ -807,12 +926,22 @@ public sealed partial class Player
         _shootWasHeld = input.Shoot;
         _reloadWasHeld = input.Reload;
 
-        // Blade: pressing starts charging (only when the cooldown is over), holding charges, letting go swings.
-        if (meleePressed && MeleeCooldown.IsReady)
+        UseBlade(meleePressed, input.Melee);
+
+        // Mouse wheel or 1 - 3: another ranged weapon (empty places are skipped). Putting one away breaks its reload off.
+        SwitchRanged(input);
+
+        UseRanged(reloadPressed, shootPressed);
+    }
+
+    /// <summary>Blade: pressing starts charging (only when the cooldown is over), holding charges, letting go swings.</summary>
+    private void UseBlade(bool pressed, bool held)
+    {
+        if (pressed && MeleeCooldown.IsReady)
         {
             MeleeCharge.Start();
         }
-        else if (MeleeCharge.IsCharging && input.Melee)
+        else if (MeleeCharge.IsCharging && held)
         {
             MeleeCharge.Tick(Stamina);
         }
@@ -822,11 +951,11 @@ public sealed partial class Player
             MeleeCooldown.TryUse();
             _events.Add(new MeleeSwung(EyePosition, View.Forward, charge, Melee));
         }
+    }
 
-        // Mouse wheel or 1 - 3: another ranged weapon (empty places are skipped). Putting one away breaks its reload off.
-        SwitchRanged(input);
-
-        // R reloads; so does a shot with an empty magazine. While reloading the weapon does not fire.
+    /// <summary>R reloads; so does a shot with an empty magazine. While reloading the weapon does not fire.</summary>
+    private void UseRanged(bool reloadPressed, bool shootPressed)
+    {
         var ranged = Ranged;
         if (reloadPressed || (shootPressed && ranged.Magazine.Rounds == 0))
         {
