@@ -54,23 +54,6 @@ internal static class BoonWindow
         return openSeconds >= ClickDelaySeconds && Raylib.IsMouseButtonPressed(MouseButton.Left) ? Hovered(offer) : null;
     }
 
-    /// <summary>
-    /// The hint while boons wait and the window is closed, flashing in its own line above the level (bottom left, issue
-    /// #340): "[X] Choose boon", with the number if several.
-    /// </summary>
-    public static void DrawHint(int pending, float seconds)
-    {
-        if (pending == 0)
-        {
-            return;
-        }
-
-        var text = pending > 1 ? $"[X] Choose boon ({pending})" : "[X] Choose boon";
-        var flash = 0.55f + (0.45f * MathF.Sin(seconds * 6f));
-        var line = HudTextLines.Of(HudText.BoonHint, Raylib.GetScreenHeight());
-        PixelText.Draw(text, 20, line.Top, line.FontSize, Gold with { A = (byte)(255 * flash) });
-    }
-
     /// <summary>Draws the window for <paramref name="player"/>'s waiting offer, with the values of <paramref name="boons"/>.</summary>
     public static void Draw(Player player, BoonBalance boons)
     {
