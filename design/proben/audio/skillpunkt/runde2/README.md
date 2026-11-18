@@ -27,3 +27,14 @@ Mono, 44 100 Hz, 16 Bit. Spitze und mittlere Lautstärke mit `ffmpeg -af volumed
 | 3-schlag-chor.wav | 0,85 | 0,35 | 0,56 | −3,0 | −22,0 | 48 (Schlag; Akkord bei 110–220 Hz gemessen) | 0,00 | 0,00 |
 
 Anfang und Ende liegen bei Stille (erstes/letztes Sample 0), kein Übersteuern. Ob eine Variante nach Turmglocke, Klinge oder Chor klingt, kann nur der Mensch beurteilen.
+
+## Endfassung von Variante 3 (nach dem Urteil)
+
+Der Mensch wählte Variante 3 mit dem Wunsch, sie solle „noch etwas länger ausklingen“. `3-schlag-chor-final.wav` ist dieselbe Geste: gleicher Schlag, gleicher Akkord, gleicher Einsatz; nur der Akkord fällt langsamer ab (3,2 statt 4,5 je Sekunde), das Ausblenden ist länger und der Hall läuft länger nach. Die Datei `3-schlag-chor.wav` bleibt unverändert (SHA-256 vor und nach der Änderung gleich).
+
+| Datei | Gesamt (s) | Hauptteil (s) | Nachklang (s) | Spitze (dBFS) | mittlere Lautstärke (dB) | Energie >2 kHz (%) | erstes/letztes Sample |
+|---|---|---|---|---|---|---|---|
+| 3-schlag-chor.wav | 0,85 | 0,35 | 0,56 | −3,0 | −22,0 | 0,00 | 0 / 0 |
+| 3-schlag-chor-final.wav | 1,40 | 0,49 | 0,89 | −3,0 | −23,9 | 0,00 | 0 / 0 |
+
+Gemessen, ungehört; die Endfassung hört der Mensch im Spieltest.

@@ -79,9 +79,9 @@ def klinge():
     return hall(out, 0.2, 0.15)
 
 
-def schlag_chor():
+def schlag_chor(laenge=0.6, chor_abfall=4.5, release=0.12, nachlauf=0.25):
     """Tiefer Schlag (Sinus 90 -> 45 Hz) und dunkler Stimmen-Akkord a-Moll (110/131/165/220 Hz) mit 'o'-Klangfarbe."""
-    n = sek(0.6)
+    n = sek(laenge)
     akkord = [(110.0, 1.0), (131.0, 0.8), (165.0, 0.7), (220.0, 0.5)]
     # 'o'-Formant: starke Teiltoene um 400-700 Hz, hoehere schnell schwaecher
     out = []
@@ -99,9 +99,14 @@ def schlag_chor():
                 formant = math.exp(-((fh - 500) / 300) ** 2)
                 chor += am * formant / h * math.sin(TAU * fh * t + f * 0.1)
         ein = min(1.0, t / 0.04)  # Chor setzt weich knapp nach dem Schlag ein
-        s += 0.55 * chor * ein * math.exp(-4.5 * t)
-        out.append(s * huelle(i, n, 0.002, 0.12))
-    return hall(out, 0.25, 0.2)
+        s += 0.55 * chor * ein * math.exp(-chor_abfall * t)
+        out.append(s * huelle(i, n, 0.002, release))
+    return hall(out, nachlauf, 0.2)
+
+
+def schlag_chor_final():
+    """Variante 3 mit laengerem Ausklang: Schlag und Einsatz unveraendert, Akkord faellt langsamer ab (3,2 statt 4,5 je s)."""
+    return schlag_chor(laenge=1.0, chor_abfall=3.2, release=0.3, nachlauf=0.4)
 
 
 def normieren(samples):
@@ -155,7 +160,7 @@ def dauer_bis(samples, db):
 
 
 def main():
-    varianten = [("1-turmglocke.wav", turmglocke), ("2-klinge.wav", klinge), ("3-schlag-chor.wav", schlag_chor)]
+    varianten = [("1-turmglocke.wav", turmglocke), ("2-klinge.wav", klinge), ("3-schlag-chor.wav", schlag_chor), ("3-schlag-chor-final.wav", schlag_chor_final)]
     print("| Datei | Gesamt (s) | Hauptteil, 20 dB (s) | Nachklang, 40 dB (s) | Spitze (dBFS) | Hauptfrequenz (Hz) | Energie >2 kHz (%) | Energie >4 kHz (%) | erstes/letztes Sample |")
     print("|---|---|---|---|---|---|---|---|---|")
     for name, fn in varianten:
