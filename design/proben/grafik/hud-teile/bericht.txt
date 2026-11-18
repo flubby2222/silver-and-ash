@@ -1,0 +1,8 @@
+Kontrolle der HUD-Bildteile (Issue #368)
+Teile in der Tabelle: 52, Atlas 512 x 197
+Vergleich in Byte-Werten; eine Stufe der 15-Bit-Rasterung = 8.2. Bild: 854 x 480 = 409920 Pixel.
+Schriftflaechen (Endbild gegen Vorlage ohne Schrift): 1705 Pixel
+Kontrollbild gegen Vorlage ohne Schrift: 2602 Pixel verschieden, davon 6 um mehr als eine Stufe (x 426..426, y 455..460)
+Kontrollbild gegen Endbild r6-V3-final-854.png ausserhalb der Schriftflaechen: 2504 Pixel verschieden, davon 6 um mehr als eine Stufe (x 426..426, y 455..460)
+Mehr als eine Stufe, gegen die Vorlage ohne Schrift (x, y): (426,455), (426,456), (426,457), (426,458), (426,459), (426,460)
+Mehr als eine Stufe, gegen das Endbild ausserhalb der Schrift (x, y): (426,455), (426,456), (426,457), (426,458), (426,459), (426,460)

@@ -1,0 +1,534 @@
+{
+ "image": "hud_parts.png",
+ "width": 512,
+ "height": 197,
+ "designWidth": 854,
+ "designHeight": 480,
+ "notes": [
+  "x, y, w, h: Rechteck des Teils im Bild; layoutX, layoutY: linke obere Ecke im 854 x 480 grossen Entwurf (Abweichend davon zeichnet das Spiel nach seiner Anordnung).",
+  "Teile werden 1:1 gezeichnet (Raster der Entwurfsaufloesung), nicht skaliert.",
+  "NAME_empty und NAME_full (life, boss, xp, stamina_N) haben dieselbe Groesse: erst _empty, darueber _full links vom Fuellstand beschnitten.",
+  "frame_weapon_N_active und icon_<waffe>_active fuer die gewaehlte Waffe; Schrift, Zahlen, Nachladeschleier und Hervorhebung am Fuellstand zeichnet das Spiel.",
+  "icon_skillpoint ist neu (Stern aus dem Zeichensatz der Vorlage), icon_toast_eye ist golden (nur Aufnahme-Meldung).",
+  "layoutX/Y von icon_coin, icon_key, frame_prompt und frame_toast gelten nur fuer die Beispielwerte der Vorlage (Silber 128, Schluessel 2, Text 'to open', Meldung 'Picked up Hunter's Eye')."
+ ],
+ "game": {
+  "reloadVeil": {
+   "color": [
+    14,
+    9,
+    22
+   ],
+   "alpha": 0.72,
+   "edgeColor": [
+    163,
+    175,
+    187
+   ],
+   "edgeAlpha": 0.9,
+   "edgeWidth": 1.2,
+   "note": "ueber das Waffenbild von links, Anteil = Nachladefortschritt; Rand der Fassung innen"
+  },
+  "lifeEdge": {
+   "color": [
+    225,
+    58,
+    48
+   ],
+   "width": 1,
+   "note": "Vorlage: 1 px helle Kante am Fuellstand der Lebensleiste, nicht Teil der Bilder"
+  },
+  "text": {
+   "main": [
+    216,
+    210,
+    192
+   ],
+   "second": [
+    195,
+    192,
+    164
+   ],
+   "shadow": [
+    16,
+    11,
+    20
+   ],
+   "pickup": [
+    214,
+    170,
+    64
+   ]
+  }
+ },
+ "parts": [
+  {
+   "name": "frame_item_0",
+   "x": 0,
+   "y": 0,
+   "w": 36,
+   "h": 38,
+   "layoutX": 9,
+   "layoutY": 442
+  },
+  {
+   "name": "frame_item_1",
+   "x": 37,
+   "y": 0,
+   "w": 36,
+   "h": 38,
+   "layoutX": 43,
+   "layoutY": 442
+  },
+  {
+   "name": "icon_flask",
+   "x": 254,
+   "y": 115,
+   "w": 11,
+   "h": 17,
+   "layoutX": 22,
+   "layoutY": 454
+  },
+  {
+   "name": "icon_eye",
+   "x": 202,
+   "y": 179,
+   "w": 15,
+   "h": 7,
+   "layoutX": 54,
+   "layoutY": 459
+  },
+  {
+   "name": "frame_weapon_0",
+   "x": 441,
+   "y": 0,
+   "w": 44,
+   "h": 38,
+   "layoutX": 687,
+   "layoutY": 442
+  },
+  {
+   "name": "frame_weapon_0_active",
+   "x": 0,
+   "y": 39,
+   "w": 44,
+   "h": 38,
+   "layoutX": 687,
+   "layoutY": 442
+  },
+  {
+   "name": "icon_blade",
+   "x": 158,
+   "y": 179,
+   "w": 21,
+   "h": 7,
+   "layoutX": 698,
+   "layoutY": 459
+  },
+  {
+   "name": "icon_blade_active",
+   "x": 180,
+   "y": 179,
+   "w": 21,
+   "h": 7,
+   "layoutX": 698,
+   "layoutY": 459
+  },
+  {
+   "name": "frame_weapon_1",
+   "x": 45,
+   "y": 39,
+   "w": 44,
+   "h": 38,
+   "layoutX": 728,
+   "layoutY": 442
+  },
+  {
+   "name": "frame_weapon_1_active",
+   "x": 90,
+   "y": 39,
+   "w": 44,
+   "h": 38,
+   "layoutX": 728,
+   "layoutY": 442
+  },
+  {
+   "name": "icon_pistol",
+   "x": 466,
+   "y": 167,
+   "w": 18,
+   "h": 10,
+   "layoutX": 739,
+   "layoutY": 458
+  },
+  {
+   "name": "icon_pistol_active",
+   "x": 485,
+   "y": 167,
+   "w": 18,
+   "h": 10,
+   "layoutX": 739,
+   "layoutY": 458
+  },
+  {
+   "name": "frame_weapon_2",
+   "x": 135,
+   "y": 39,
+   "w": 44,
+   "h": 38,
+   "layoutX": 769,
+   "layoutY": 442
+  },
+  {
+   "name": "frame_weapon_2_active",
+   "x": 180,
+   "y": 39,
+   "w": 44,
+   "h": 38,
+   "layoutX": 769,
+   "layoutY": 442
+  },
+  {
+   "name": "icon_rifle",
+   "x": 445,
+   "y": 190,
+   "w": 22,
+   "h": 6,
+   "layoutX": 776,
+   "layoutY": 461
+  },
+  {
+   "name": "icon_rifle_active",
+   "x": 468,
+   "y": 190,
+   "w": 22,
+   "h": 6,
+   "layoutX": 776,
+   "layoutY": 461
+  },
+  {
+   "name": "frame_weapon_3",
+   "x": 225,
+   "y": 39,
+   "w": 44,
+   "h": 38,
+   "layoutX": 810,
+   "layoutY": 442
+  },
+  {
+   "name": "frame_weapon_3_active",
+   "x": 270,
+   "y": 39,
+   "w": 44,
+   "h": 38,
+   "layoutX": 810,
+   "layoutY": 442
+  },
+  {
+   "name": "icon_blunder",
+   "x": 114,
+   "y": 179,
+   "w": 21,
+   "h": 9,
+   "layoutX": 818,
+   "layoutY": 458
+  },
+  {
+   "name": "icon_blunder_active",
+   "x": 136,
+   "y": 179,
+   "w": 21,
+   "h": 9,
+   "layoutX": 818,
+   "layoutY": 458
+  },
+  {
+   "name": "frame_vitals",
+   "x": 74,
+   "y": 0,
+   "w": 366,
+   "h": 38,
+   "layoutX": 244,
+   "layoutY": 442
+  },
+  {
+   "name": "life_empty",
+   "x": 0,
+   "y": 137,
+   "w": 344,
+   "h": 14,
+   "layoutX": 255,
+   "layoutY": 451
+  },
+  {
+   "name": "life_full",
+   "x": 0,
+   "y": 152,
+   "w": 344,
+   "h": 14,
+   "layoutX": 255,
+   "layoutY": 451
+  },
+  {
+   "name": "stamina_0_empty",
+   "x": 218,
+   "y": 179,
+   "w": 69,
+   "h": 7,
+   "layoutX": 256,
+   "layoutY": 466
+  },
+  {
+   "name": "stamina_0_full",
+   "x": 288,
+   "y": 179,
+   "w": 69,
+   "h": 7,
+   "layoutX": 256,
+   "layoutY": 466
+  },
+  {
+   "name": "stamina_1_empty",
+   "x": 358,
+   "y": 179,
+   "w": 72,
+   "h": 7,
+   "layoutX": 322,
+   "layoutY": 466
+  },
+  {
+   "name": "stamina_1_full",
+   "x": 431,
+   "y": 179,
+   "w": 72,
+   "h": 7,
+   "layoutX": 322,
+   "layoutY": 466
+  },
+  {
+   "name": "stamina_2_empty",
+   "x": 0,
+   "y": 190,
+   "w": 72,
+   "h": 7,
+   "layoutX": 391,
+   "layoutY": 466
+  },
+  {
+   "name": "stamina_2_full",
+   "x": 73,
+   "y": 190,
+   "w": 72,
+   "h": 7,
+   "layoutX": 391,
+   "layoutY": 466
+  },
+  {
+   "name": "stamina_3_empty",
+   "x": 146,
+   "y": 190,
+   "w": 72,
+   "h": 7,
+   "layoutX": 460,
+   "layoutY": 466
+  },
+  {
+   "name": "stamina_3_full",
+   "x": 219,
+   "y": 190,
+   "w": 72,
+   "h": 7,
+   "layoutX": 460,
+   "layoutY": 466
+  },
+  {
+   "name": "stamina_4_empty",
+   "x": 292,
+   "y": 190,
+   "w": 69,
+   "h": 7,
+   "layoutX": 529,
+   "layoutY": 466
+  },
+  {
+   "name": "stamina_4_full",
+   "x": 362,
+   "y": 190,
+   "w": 69,
+   "h": 7,
+   "layoutX": 529,
+   "layoutY": 466
+  },
+  {
+   "name": "frame_toast",
+   "x": 87,
+   "y": 115,
+   "w": 166,
+   "h": 18,
+   "layoutX": 7,
+   "layoutY": 423
+  },
+  {
+   "name": "icon_toast_eye",
+   "x": 496,
+   "y": 190,
+   "w": 6,
+   "h": 4,
+   "layoutX": 15,
+   "layoutY": 430
+  },
+  {
+   "name": "frame_level",
+   "x": 396,
+   "y": 78,
+   "w": 32,
+   "h": 36,
+   "layoutX": 5,
+   "layoutY": 0
+  },
+  {
+   "name": "frame_xp",
+   "x": 0,
+   "y": 115,
+   "w": 66,
+   "h": 21,
+   "layoutX": 36,
+   "layoutY": 7
+  },
+  {
+   "name": "xp_empty",
+   "x": 0,
+   "y": 179,
+   "w": 56,
+   "h": 10,
+   "layoutX": 41,
+   "layoutY": 14
+  },
+  {
+   "name": "xp_full",
+   "x": 57,
+   "y": 179,
+   "w": 56,
+   "h": 10,
+   "layoutX": 41,
+   "layoutY": 14
+  },
+  {
+   "name": "frame_skill_0",
+   "x": 429,
+   "y": 78,
+   "w": 30,
+   "h": 36,
+   "layoutX": 103,
+   "layoutY": 0
+  },
+  {
+   "name": "icon_flame",
+   "x": 266,
+   "y": 115,
+   "w": 11,
+   "h": 14,
+   "layoutX": 113,
+   "layoutY": 13
+  },
+  {
+   "name": "frame_skill_1",
+   "x": 460,
+   "y": 78,
+   "w": 30,
+   "h": 36,
+   "layoutX": 131,
+   "layoutY": 0
+  },
+  {
+   "name": "icon_shield",
+   "x": 278,
+   "y": 115,
+   "w": 11,
+   "h": 14,
+   "layoutX": 141,
+   "layoutY": 13
+  },
+  {
+   "name": "icon_skillpoint",
+   "x": 454,
+   "y": 167,
+   "w": 11,
+   "h": 11,
+   "layoutX": 167,
+   "layoutY": 14
+  },
+  {
+   "name": "frame_currency",
+   "x": 263,
+   "y": 78,
+   "w": 132,
+   "h": 36,
+   "layoutX": 721,
+   "layoutY": 0
+  },
+  {
+   "name": "icon_coin",
+   "x": 345,
+   "y": 152,
+   "w": 12,
+   "h": 12,
+   "layoutX": 745,
+   "layoutY": 14
+  },
+  {
+   "name": "icon_key",
+   "x": 432,
+   "y": 190,
+   "w": 12,
+   "h": 6,
+   "layoutX": 812,
+   "layoutY": 17
+  },
+  {
+   "name": "frame_boss",
+   "x": 0,
+   "y": 78,
+   "w": 262,
+   "h": 36,
+   "layoutX": 296,
+   "layoutY": 0
+  },
+  {
+   "name": "boss_empty",
+   "x": 0,
+   "y": 167,
+   "w": 226,
+   "h": 11,
+   "layoutX": 314,
+   "layoutY": 19
+  },
+  {
+   "name": "boss_full",
+   "x": 227,
+   "y": 167,
+   "w": 226,
+   "h": 11,
+   "layoutX": 314,
+   "layoutY": 19
+  },
+  {
+   "name": "crosshair",
+   "x": 491,
+   "y": 190,
+   "w": 4,
+   "h": 4,
+   "layoutX": 425,
+   "layoutY": 238
+  },
+  {
+   "name": "frame_prompt",
+   "x": 67,
+   "y": 115,
+   "w": 19,
+   "h": 20,
+   "layoutX": 389,
+   "layoutY": 252
+  }
+ ]
+}
