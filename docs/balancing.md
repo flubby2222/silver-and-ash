@@ -100,6 +100,20 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 19.11.2026 (#391, vorläufig)
+
+**Anlass:** Spieltest vom 18.11.: In einem Raum waren 5 oder 6 Fledermäuse – „ohne genug Schaden für One-Shots nicht machbar“.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `difficulty.maxBatsPerRoom` | – (keine Grenze) | 3 (**vorläufig**, Wert der Leitung) | nie mehr als drei Fledermäuse in einem Raum; das übrige Budget kauft Ghule |
+
+Die Grenze wirkt in der Raumerzeugung: Hat ein Raum so viele Fledermäuse wie erlaubt, kauft sein Budget nur noch Ghule. Der Zufall bleibt beim Seed der Ebene.
+
+**Report (500 Ebenen, Durchschnitt, mit Grenze gegen ohne):** Fledermäuse 23,5 statt 26,5, Ghule 73,3 statt 69,2, Gegner 96,9 statt 95,7, Erfahrung 2671 statt 2606, Kampfzeit 1,98 statt 1,93 min.
+
+**Zählung der Stufe:** Seit #391 beginnt ein Lauf auf Stufe 0 statt 1. Die Erfahrung je Stufe bleibt gleich (`experience.firstLevel` ist jetzt der Weg von Stufe 0 auf 1). Die Zeile „Player level reached“ im Report liegt deshalb um genau 1 tiefer als in den Runden unten.
+
 ### Runde 2 – 16.11.2026 (vor 0.10.0)
 
 **Anlass:** Mit Gorm (v0.10) zwei Siege, Gorm nach 44 und 47 s besiegt. Eindruck: Gorm „viel zu leicht“, Phase 2 „zu harmlos“, der Weg „zu leicht, Länge passt“, Heilung „ab und zu knapp“, also richtig.

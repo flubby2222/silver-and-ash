@@ -67,7 +67,7 @@ public class BoonTests
 
         world.Player.AddExperience(100, []);
 
-        Assert.Equal(2, world.Player.Level);
+        Assert.Equal(1, world.Player.Level);
         Assert.Equal(0, world.Player.PendingBoons);
     }
 

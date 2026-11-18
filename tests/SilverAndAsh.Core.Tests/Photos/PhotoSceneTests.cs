@@ -266,7 +266,7 @@ public class PhotoSceneTests
         });
 
         Assert.True(ticks < setup.Ticks, "A shot ghoul should bring the level up long before the scene gives up.");
-        Assert.Equal(2, setup.World.Player.Level);
+        Assert.Equal(1, setup.World.Player.Level);
         Assert.True(effects.SkillPoint > 0.5f);
     }
 

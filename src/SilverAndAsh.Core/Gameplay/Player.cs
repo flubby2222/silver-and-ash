@@ -204,8 +204,8 @@ public sealed partial class Player
         Keys--;
     }
 
-    /// <summary>The player's level in this run - 1 at the start, back to 1 after death (a new world).</summary>
-    public int Level { get; private set; } = 1;
+    /// <summary>The player's level in this run - 0 at the start (issue #391), back to 0 after death (a new world).</summary>
+    public int Level { get; private set; }
 
     /// <summary>Experience gathered towards the next level.</summary>
     public int Experience { get; private set; }
@@ -215,7 +215,7 @@ public sealed partial class Player
     /// times as much for each level (100, 125, 156, 195 ...), rounded.
     /// </summary>
     public int ExperienceToNextLevel =>
-        (int)MathF.Round(_experience.FirstLevel * MathF.Pow(_experience.Growth, Level - 1), MidpointRounding.AwayFromZero);
+        (int)MathF.Round(_experience.FirstLevel * MathF.Pow(_experience.Growth, Level), MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// Adds <paramref name="amount"/> experience - plus the <see cref="Boon.Experience"/> bonus, counted from
