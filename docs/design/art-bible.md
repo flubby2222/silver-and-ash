@@ -189,6 +189,23 @@ Regel für Feuer an der Wand (Fackel, Kohlebecken und Ähnliches):
 
 Die Proben liegen in `design/proben/effekte/fackel/` (Runde 1) und `design/proben/effekte/fackel/runde2/`.
 
+### Mündungsfeuer: Wahl und Ablehnungen (2026-11-18)
+
+Stand der Effekt-Probestücke: **2 von 3 Treffern in Folge** (Fackel, Mündungsfeuer). Ins Spiel kommt ein Effekt erst nach drei angenommenen Stücken ohne Nacharbeit.
+
+Regel für den Schuss einer Fernwaffe in der Ich-Sicht (Pistole; für Rifle und Blunderbuss noch nicht geprüft):
+
+- **Blitz:** ein breiter, flacher Kegel aus zwei Polygonen in Messing/Gold, 3 Bilder (Variante C).
+- **Rauch:** eine dicke Wolke aus 10 groben Quadraten in Stein, die in den ersten 5 Ticks entsteht, wächst und etwa 0,6 s steht. Frischer Rauch ist in den ersten Bildern vom Blitz gold gefärbt.
+- **Funken:** keine.
+- **Aufleuchten:** zurückhaltend, etwa +50 % an der Mündung über 4 Bilder (67 ms), in groben Stufen, mitgekörnt.
+- **Nicht gewählt** (der Mensch nannte keinen Grund):
+  - Sternblitz aus 5 und dann 3 Spitzen mit 4 Funken und Rauchfaden, Licht +80 % (Variante A).
+  - Funkenstoß: winziger Blitz, 10 Funken als Kegel, kein Rauch, Licht +75 % in einem Bild (Variante B).
+- **Hinweis der Leitung** (kein Urteil des Menschen) für den späteren Einbau: Die Wolke steht 0,6 s. Bei schneller Schussfolge prüfen, dass sie das Ziel nicht verdeckt.
+
+Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
+
 ## Gelernte Regeln
 
 | Nr. | Datum | Stück | Was war falsch | Regel |
@@ -205,7 +222,12 @@ Die Proben liegen in `design/proben/effekte/fackel/` (Runde 1) und `design/probe
 | 10 | 2026-11-18 | Fackel, Runde 1, Variante C | Das Licht fiel in harten Stufenringen ab; die Kreise an der Wand wirkten künstlich | Licht fällt weich ab und ist nicht in Stufen geteilt. Die Pixel-Härte entsteht durch die Körnung, nicht durch Ringe |
 | 11 | 2026-11-18 | HUD, Runde 3 | Urteil des Menschen: Layout A gefällt, aber Steintextur nein, Farbe Silber, „so viel vom Spiel sichtbar wie möglich“; Runde 3 A verdeckte 23,2 % des Bildes | HUD-Metall ist Silber aus der Hauptpalette (Reihe IRON): harte Helligkeitsstufen, Körnung, 1 px helle Kante oben und dunkle unten, kein Chrom-Glanz, kein weiches Leuchten. Keine Steintextur im HUD. Das HUD verdeckt so wenig Bild wie möglich; der verdeckte Anteil wird aus dem Bild gemessen und auf dem Blatt genannt. Leben und Ausdauer ohne Zahl im HUD; die Zahlen stehen auf der Tab-Seite (Issue #347, Urteil des Menschen: „Die Zahlen nehmen wir doch raus und ins Tab Menü auf“; ersetzt die Zwischenregel „Zahlen drin“). Zahlen, die man zum Spielen braucht (Munition, Silber, Stufe, Schlüssel), bleiben |
 | 12 | 2026-11-18 | HUD, Schrift | Die Vorlagen nutzen Cinzel (Windows-Schrift) | Cinzel kommt nicht ins Spiel; der Mensch will eine eigene Pixelschrift (Issue #355). Für die Vorlagen reicht Cinzel |
-| 13 | 2026-11-18 | Menüs (#351) | Urteile des Menschen: Runde 1 wählte C, aber „noch was eleganter“; Runde 2 wählte C2 Schlank (mehr hat er nicht gesagt) | Menüs folgen C2, siehe Abschnitt „Menüs“. Abgelehnt: A schlicht, B gefasst, C in der ersten Fassung (nicht elegant genug), C1 Fein, C3 Geordnet. Ein Zierelement, das bei 1× kaum zu sehen ist (Giebel), wird größer gezogen |
+| 13 | 2026-11-18 | Mündungsfeuer, Variante A | Urteil des Menschen: Sternblitz mit Funken und Rauchfaden nicht gewählt; einen Grund nannte er nicht | Beim Schuss kein Sternblitz aus Spitzen mit wenigen Funken; Blitz als Kegel, siehe „Mündungsfeuer: Wahl und Ablehnungen“ |
+| 14 | 2026-11-18 | Mündungsfeuer, Variante B | Urteil des Menschen: Funkenstoß mit winzigem Blitz und ohne Rauch nicht gewählt; einen Grund nannte er nicht | Beim Schuss keinen Funkenkegel statt Blitz und Rauch; siehe „Mündungsfeuer: Wahl und Ablehnungen“ |
+| 15 | 2026-11-18 | Pixelschrift, B Textura (Issue #355) | Urteil des Menschen: „Schrift a ists“, B Textura nicht gewählt (ohne genannten Grund). Einschätzung der Leitung: B war in HUD-Größe schwer lesbar (n/u, „Gorm“) | Eine gebrochene Schrift mit dicken Stämmen verklebt auf 7 px Versalhöhe; Lesbarkeit der Zahlen und Namen geht vor Zierform |
+| 16 | 2026-11-18 | Pixelschrift, C Schmal (Issue #355) | Urteil des Menschen: C Schmal nicht gewählt (ohne genannten Grund). Einschätzung der Leitung: C wirkte neutral statt gotisch | Eine schmale Schrift ohne Serifen genügt dem gotischen Stil nicht; die Schrift trägt zur Stimmung bei |
+| 17 | 2026-11-18 | Pixelschrift, Ziffer 0 und Buchstabe O (Issue #355) | Der Tester fand in Schrift A „O“ und „0“ mit demselben Bitmuster; in HUD-Zahlen (Munition, Silber) wäre das ein Lesefehler | **Verbindlich:** Ziffer 0 und Buchstabe O müssen sich unterscheiden (Befund des Testers). In einer gewählten Pixelschrift darf kein Zeichen einem anderen gleichen; `check()` in `schrift.py` prüft das für A und bricht sonst ab. **Vorläufig:** Die Form mit Schrägstrich ist eine Entscheidung der Leitung vom 2026-11-18 und gilt bis zum Urteil des Menschen im Spieltest. |
+| 18 | 2026-11-18 | Menüs (#351) | Urteile des Menschen: Runde 1 wählte C, aber „noch was eleganter“; Runde 2 wählte C2 Schlank (mehr hat er nicht gesagt) | Menüs folgen C2, siehe Abschnitt „Menüs“. Abgelehnt: A schlicht, B gefasst, C in der ersten Fassung (nicht elegant genug), C1 Fein, C3 Geordnet. Ein Zierelement, das bei 1× kaum zu sehen ist (Giebel), wird größer gezogen |
 
 ## HUD (entschieden, Issue #341)
 
@@ -229,7 +251,7 @@ Die Proben liegen in `design/proben/effekte/fackel/` (Runde 1) und `design/probe
 
 **Abgelehnt:** A1 (geschlossene Leiste, 12,9 %): verdeckt zu viel. A2 (offener Rahmen, 6,1 %): Zeichen stehen ungeschützt auf dem Spielbild.
 
-**Offen:** Eine eigene Pixelschrift (Issue #355). Cinzel (Windows-Schrift der Vorlagen) kommt nicht ins Spiel.
+**Schrift (Urteil des Menschen, Issue #355): A „Kapitell“.** Eigene Pixelschrift für HUD und Menüs: schlichte Kapitälchen mit kleinen Serifen; Versalhöhe 7 px, Kleinbuchstaben 5 px als kleine Versalien, Zeichenbreite 3–5 px, Abstand 1 px, Leerzeichen 3 px. Pixelmuster und Skripte: `design/proben/grafik/schrift/` (Blatt `blatt-schrift.png`). Cinzel kommt nicht ins Spiel. Menü-Überschriften 3-fach, Einträge 2-fach. **Offen für den Einbau:** eine größere Zahlengröße für Stufe und Munition fehlt noch (Versalhöhe 7 px statt 9–11 px bei Cinzel).
 - **Verzierung (Runde 5 und 6, Urteil des Menschen: V3, dann überarbeiten):** Ein Motiv an allen Fassungen ab 24 px Breite, immer im selben Silber: Rautenniete in den vier Ecken, Spitzgiebel mit Auge oben in der Mitte, dünner Doppelrahmen innen, an Fassungen über 100 px Breite zusätzlich Fialen mittig an den Enden. Rot und Gold bleiben, wie sie sind; kein Rot als Signalfarbe in der Verzierung.
 - **Regeln aus dem Feinschliff (Runde 6):** Licht kommt überall von oben links, auch an den kleinen Teilen (Nieten, Giebel, Fialen nutzen dieselbe Lichtregel wie der Rahmen). Alle Mittelpunkte liegen auf dem Pixelraster, die Giebelbreite passt zur Fassung (gerade oder ungerade), damit die Form spiegelgleich bleibt. Verzierung ragt nie aus dem Bild; Fialen sitzen mittig auf der Fassungskante. Zeichen in kleinen Fassungen so groß, dass sie im 4-fachen Ausschnitt eindeutig lesbar sind (Waffenzeichen 10,5 statt 9,5).
 

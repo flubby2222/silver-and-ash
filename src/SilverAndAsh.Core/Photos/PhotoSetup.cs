@@ -19,9 +19,6 @@ public sealed record PhotoSetup(GameWorld World)
     /// <summary>Checked after every tick: once true, the picture is taken at once. Null: all <see cref="Ticks"/> run.</summary>
     public Func<GameWorld, bool>? StopWhen { get; init; }
 
-    /// <summary>True if the picture shows the map kept open (M) - a matter of the screen, not of the world.</summary>
-    public bool MapOpen { get; init; }
-
     /// <summary>Which menu the picture shows over the scene (issue #349) - a matter of the screen, not of the world.</summary>
     public PhotoMenu Menu { get; init; }
 
