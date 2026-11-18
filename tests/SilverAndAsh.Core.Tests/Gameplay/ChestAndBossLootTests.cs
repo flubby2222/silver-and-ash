@@ -69,10 +69,15 @@ public class ChestAndBossLootTests
         return Run(world, press ? PressF : PlayerInput.None, 1);
     }
 
-    // Room 0 (start) in row 0, door in row 1, room 1 (the boss room) in rows 2-11 with Gorm ('T') in row 10.
-    private const string BossMap = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
+    /// <summary>
+    /// Room 0 (start) in row 0, door in row 1, room 1 (the boss room) in rows 2-11 with Gorm ('T') in
+    /// <paramref name="gormRow"/>, column 3. The staircase rises in cell (3, 6). <paramref name="below"/> adds rows
+    /// after the hall, outside every room.
+    /// </summary>
+    private static string BossMap(int gormRow = 10, string below = "") =>
+        "##.P.##\n###.###\n" + string.Join("\n", Enumerable.Range(2, 10).Select(z => z == gormRow ? "#..T..#" : "#.....#")) + below;
 
-    private static GameWorld BossWorld(int seed, Balance? balance = null)
+    private static GameWorld BossWorld(int seed, Balance? balance = null, int gormRow = 10, string below = "")
     {
         var hall = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
         PlacedRoom[] rooms =
@@ -81,7 +86,34 @@ public class ChestAndBossLootTests
             new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, hall, [], []),
         ];
         LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
-        return new GameWorld(LevelParser.Parse(BossMap), seed, balance ?? NoOtherLoot, doors, rooms);
+        return new GameWorld(LevelParser.Parse(BossMap(gormRow, below)), seed, balance ?? NoOtherLoot, doors, rooms);
+    }
+
+    /// <summary>Turns the player's view (through the mouse, as in the game) to look at <paramref name="point"/>.</summary>
+    private static void LookAt(Player player, Vector3 point)
+    {
+        var to = point - player.EyePosition;
+        var yaw = MathF.Atan2(to.X, to.Z);
+        var pitch = MathF.Atan2(to.Y, new Vector2(to.X, to.Z).Length());
+        var turn = MathF.IEEERemainder(player.View.YawRadians - yaw, MathF.Tau);
+        player.Look(PlayerInput.None with
+        {
+            Look = new Vector2(turn, player.View.PitchRadians - pitch) / ControlSettings.MouseSensitivity,
+        });
+    }
+
+    /// <summary>Walks the player (turning towards it each tick) until they stand on <paramref name="spot"/>, then lets them stop.</summary>
+    private static void WalkTo(GameWorld world, Vector3 spot)
+    {
+        var player = world.Player;
+        for (var tick = 0; new Vector2(spot.X - player.Position.X, spot.Z - player.Position.Z).Length() > 0.15f; tick++)
+        {
+            Assert.True(tick < 10 * Second, $"The player never got to {spot} (stuck at {player.Position}).");
+            LookAt(player, spot with { Y = player.EyePosition.Y });
+            world.Tick(Forward);
+        }
+
+        Run(world, PlayerInput.None, Second / 2);
     }
 
     /// <summary>Kills Gorm where he stands and lets his loot fall; returns the events.</summary>
@@ -225,6 +257,127 @@ public class ChestAndBossLootTests
         Assert.True(Vector2.Dot(flat, new Vector2(gorm.Facing.X, gorm.Facing.Z)) < 0f, "The piece lay in front of him, where the blood vial lies.");
         var (x, z) = Level.ToGrid(drop.Position.X, drop.Position.Z);
         Assert.Contains((x, z), world.Rooms[1].Cells);
+    }
+
+    /// <summary>
+    /// Issue #338: F takes the nearest box a player looks at, and inside the staircase's box that is the stairs. If Gorm
+    /// dies right where the staircase will rise, his piece still lies outside its box, on his floor - and once the
+    /// stairs stand, a player who walks up to the piece and looks at it gets "Take ...", not "Climb the stairs".
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Gorm_s_equipment_never_lies_under_the_stairs_and_can_be_taken_when_they_stand(int seed)
+    {
+        var world = BossWorld(seed, gormRow: 6);
+        Assert.Equal((3, 6), Stairs.CellIn(world.Rooms[1].Cells));
+        Assert.Equal(world.Level.CellCenter(3, 6), world.Gorm!.Position);
+
+        KillGorm(world);
+
+        var drop = Assert.Single(world.EquipmentDrops);
+        var stairsMiddle = world.Level.CellCenter(3, 6);
+        var apart = MathF.Max(MathF.Abs(drop.Position.X - stairsMiddle.X), MathF.Abs(drop.Position.Z - stairsMiddle.Z));
+        Assert.True(apart >= Stairs.Radius + EquipmentDrop.BoxRadius, $"The piece's box at {drop.Position} reaches into the staircase's box.");
+        foreach (var (dx, dz) in new[] { (-1f, -1f), (-1f, 1f), (1f, -1f), (1f, 1f) })
+        {
+            var corner = Level.ToGrid(drop.Position.X + (dx * EquipmentDrop.BoxRadius), drop.Position.Z + (dz * EquipmentDrop.BoxRadius));
+            Assert.Contains(corner, world.Rooms[1].Cells);
+        }
+
+        Assert.Equal(world.Gorm.Position.Y, drop.Position.Y, 0.01f);
+
+        // In through the door: the dead boss's room is cleared at once, and the stairs rise.
+        Run(world, PressF, 1);
+        for (var tick = 0; world.Stairs is null; tick++)
+        {
+            Assert.True(tick < 3 * Second, "The stairs never rose - the test would prove nothing.");
+            world.Tick(Forward);
+        }
+
+        Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Gorm.StairsRiseTime) + 1);
+        var stairs = world.Stairs!;
+        Assert.True(stairs.CanInteract, "The stairs do not stand - the test would prove nothing.");
+
+        // Walk up to the piece from the side away from the stairs and look at it.
+        var outwards = Vector3.Normalize((drop.Position - stairs.Position) with { Y = 0f });
+        WalkTo(world, drop.Position + (outwards * 1.2f));
+        LookAt(world.Player, drop.Position + new Vector3(0f, EquipmentDrop.BoxHeight / 2f, 0f));
+
+        Assert.Same(drop, world.InteractionTarget(world.Player));
+        var taken = Assert.Single(Run(world, PressF, 1).OfType<EquipmentTaken>());
+        Assert.Equal((drop.Id, drop.Piece), (taken.DropId, taken.Piece));
+        Assert.Empty(world.EquipmentDrops);
+        Assert.False(world.IsWon);
+    }
+
+    /// <summary>
+    /// Gorm's tier roll and his draw come from the loot pool's own generator - exactly what a fresh pool of the same
+    /// seed rolls and draws. And whichever tier he rolls, or whether the pool is empty: the ghouls that die after him
+    /// leave the same silver, keys (the world's loot generator) and drops (its combat generator).
+    /// </summary>
+    [Fact]
+    public void Gorm_s_tier_roll_comes_from_the_loot_pool_and_never_shifts_what_silver_keys_and_drops_roll()
+    {
+        var vampiricChance = Balance.Default.Gorm.EquipmentVampiricChance;
+        var tiers = new HashSet<ItemTier>();
+        for (var seed = 0; seed < 20; seed++)
+        {
+            var twin = BossWorld(seed);
+            var expectedTier = twin.LootPool.Roll(vampiricChance) ? ItemTier.Vampiric : ItemTier.Royal;
+            var expected = twin.LootPool.Draw(expectedTier, mayRise: false);
+
+            var world = BossWorld(seed);
+            KillGorm(world);
+
+            Assert.Equal(expected, Assert.Single(world.EquipmentDrops).Piece);
+            tiers.Add(expectedTier);
+        }
+
+        Assert.Equal([ItemTier.Royal, ItemTier.Vampiric], tiers.Order());
+
+        // Five ghouls in a closed pocket below the hall: asleep, outside every room.
+        const string Pocket = "\n#######\n#GGGGG#\n#######";
+        var royal = Balance.Default with
+        {
+            Drops = Balance.Default.Drops with { GhoulChance = 0.5f },
+            Keys = new KeysBalance { RoomChance = 0f, EnemyChance = 0.5f },
+            Gorm = Balance.Default.Gorm with { EquipmentVampiricChance = 0f },
+        };
+        var vampiric = royal with { Gorm = royal.Gorm with { EquipmentVampiricChance = 1f } };
+
+        static List<string> GhoulDropsAfterGorm(Balance balance, int seed, bool emptyPool)
+        {
+            var world = BossWorld(seed, balance, below: Pocket);
+            if (emptyPool)
+            {
+                EmptyThePool(world);
+            }
+
+            KillGorm(world);
+            Assert.Equal(!emptyPool, world.EquipmentDrops.Count == 1);
+            foreach (var ghoul in world.Ghouls)
+            {
+                ghoul.TakeDamage(10_000, []);
+            }
+
+            return Run(world, PlayerInput.None, 2).Select(e => e switch
+            {
+                SilverDropped silver => $"{silver.Amount} silver at {silver.Position}",
+                KeyDropped key => $"key at {key.Position}",
+                PickupDropped pickup => $"{pickup.Kind} at {pickup.Position}",
+                _ => null,
+            }).OfType<string>().ToList();
+        }
+
+        for (var seed = 0; seed < 10; seed++)
+        {
+            var asRoyal = GhoulDropsAfterGorm(royal, seed, emptyPool: false);
+            Assert.True(asRoyal.Count > 1, "The ghouls left almost nothing - the test would prove nothing.");
+            Assert.Equal(asRoyal, GhoulDropsAfterGorm(vampiric, seed, emptyPool: false));
+            Assert.Equal(asRoyal, GhoulDropsAfterGorm(royal, seed, emptyPool: true));
+        }
     }
 
     [Fact]

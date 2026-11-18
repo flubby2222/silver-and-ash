@@ -772,12 +772,77 @@ public sealed class GameWorld
         // Behind him and closer than his own radius: his body kept that spot clear of walls, so the piece never lies in
         // one. The tier and the draw come from the loot pool's own generator; the tier is already rolled, so no bonus.
         var tier = LootPool.Roll(Balance.Gorm.EquipmentVampiricChance) ? ItemTier.Vampiric : ItemTier.Royal;
-        var equipmentPlace = _gorm.Position - (_gorm.Facing * GormEquipmentDistance);
+        var equipmentPlace = OutsideTheStairs(_gorm.Position - (_gorm.Facing * GormEquipmentDistance), _gorm.Position, -_gorm.Facing);
         DropEquipment(LootPool.Draw(tier, mayRise: false), Balance.Gorm.ExtraSilver, equipmentPlace);
     }
 
     /// <summary>How far behind Gorm his equipment lies (metres) - less than his body's radius, so never in a wall.</summary>
     public const float GormEquipmentDistance = BodySizes.Gorm.Radius * 0.7f;
+
+    /// <summary>
+    /// The gap (metres) between the box of Gorm's piece and the box of the staircase, when he died next to where it
+    /// rises. With it, F never finds the stairs nearer than the piece for a player looking at it from outside.
+    /// </summary>
+    public const float StairsClearance = 0.1f;
+
+    // Interaction picks the nearest box a player looks at, and inside the staircase's box that is the stairs (issue
+    // #338). So a piece whose box would touch the staircase's box moves out: away from the stairs' middle (straight
+    // behind Gorm if he died right on it), just far enough, and only onto the boss room's own floor at Gorm's height -
+    // every corner of its box on such a cell, so never in a wall. If no direction fits (a room too small), it stays.
+    private Vector3 OutsideTheStairs(Vector3 place, Vector3 gormPosition, Vector3 behind)
+    {
+        if (_rooms.FirstOrDefault(room => room.Kind == RoomKind.Boss) is not { } boss)
+        {
+            return place;
+        }
+
+        var (stairsX, stairsZ) = Stairs.CellIn(boss.Cells);
+        var stairs = Level.CellCenter(stairsX, stairsZ);
+        var reach = Stairs.Radius + EquipmentDrop.BoxRadius + StairsClearance;
+        if (MathF.Max(MathF.Abs(place.X - stairs.X), MathF.Abs(place.Z - stairs.Z)) >= reach)
+        {
+            return place;
+        }
+
+        var away = new Vector2(place.X - stairs.X, place.Z - stairs.Z);
+        if (away.LengthSquared() < 1e-6f)
+        {
+            away = new Vector2(behind.X, behind.Z);
+        }
+
+        var start = MathF.Atan2(away.X, away.Y);
+        for (var step = 0; step < 16; step++)
+        {
+            // 0, +22.5°, -22.5°, +45°, ... - the nearest directions to "away" first.
+            var angle = start + ((step + 1) / 2 * (step % 2 == 1 ? 1 : -1) * MathF.PI / 8f);
+            var direction = new Vector2(MathF.Sin(angle), MathF.Cos(angle));
+            var distance = reach / MathF.Max(MathF.Abs(direction.X), MathF.Abs(direction.Y));
+            var candidate = new Vector3(stairs.X + (direction.X * distance), gormPosition.Y, stairs.Z + (direction.Y * distance));
+            if (OnFloorOf(boss, candidate, EquipmentDrop.BoxRadius, gormPosition.Y))
+            {
+                return candidate;
+            }
+        }
+
+        return place;
+    }
+
+    // True if every corner of the square of half-width radius around position lies on a cell of the room whose floor
+    // is at floorHeight.
+    private bool OnFloorOf(RoomState room, Vector3 position, float radius, float floorHeight)
+    {
+        foreach (var (dx, dz) in new[] { (-1f, -1f), (-1f, 1f), (1f, -1f), (1f, 1f) })
+        {
+            var cell = Level.ToGrid(position.X + (dx * radius), position.Z + (dz * radius));
+            if (!room.Cells.Contains(cell) || Level[cell.X, cell.Z].IsSolid
+                || MathF.Abs(Level[cell.X, cell.Z].FloorHeight - floorHeight) > 0.01f)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>
     /// With <paramref name="chance"/>, drops a pile worth between <paramref name="min"/> and <paramref name="max"/>
