@@ -12,6 +12,21 @@ internal static class FullScreenToggle
     /// <summary>True while an Alt key is held - Enter then belongs to the switch, not to a menu.</summary>
     public static bool AltHeld => Raylib.IsKeyDown(KeyboardKey.LeftAlt) || Raylib.IsKeyDown(KeyboardKey.RightAlt);
 
+    /// <summary>True while the game shows borderless full screen, false in a window.</summary>
+    public static bool IsFullScreen => Raylib.IsWindowState(ConfigFlags.BorderlessWindowMode);
+
+    /// <summary>Switches to full screen or to the window (the settings menu, issue #349); true if that changed anything.</summary>
+    public static bool Set(bool fullScreen)
+    {
+        if (fullScreen == IsFullScreen)
+        {
+            return false;
+        }
+
+        Raylib.ToggleBorderlessWindowed();
+        return true;
+    }
+
     /// <summary>Switches if Alt + Enter was pressed this frame; true if it did.</summary>
     public static bool Update()
     {
