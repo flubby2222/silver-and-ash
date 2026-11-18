@@ -103,6 +103,10 @@ public sealed class SoundPack
         // audio designer (a file like "p1-aufheben-vampirisch.wav"); until then it plays the same file.
         [SoundKind.EquipmentTaken] = ["p1-aufheben-ausruestung.wav"],
         [SoundKind.VampiricEquipmentTaken] = ["p1-aufheben-ausruestung.wav"],
+
+        // Issue #375: not from the pack, but the strike with choir from the listening test of issue #372
+        // (tools/audio/skillpunkt.py). Several level ups in one tick play it once, like every other set.
+        [SoundKind.SkillPoint] = ["skillpunkt.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>
