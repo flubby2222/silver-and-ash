@@ -3,7 +3,7 @@
 Drei Richtungen für Titelmenü, Pausenmenü, Einstellungen, Beenden-Frage und die Reiterleiste des Tab-Menüs. Alles per Skript erzeugt,
 nichts heruntergeladen, keine Systemschrift. Schrift ist in allen Varianten A „Kapitell“ aus [../schrift](../schrift/) (importiert),
 Formen und Silberfassungen kommen aus [../hud-vorlagen](../hud-vorlagen/) (`hud_runde4`: `cell`, `sframe`, `trough`, `ornament`).
-**Noch keine Wahl in die Art-Bible eingetragen**, nichts unter `assets/`.
+Die Wahl (C2, Runde 2) steht inzwischen in der Art Bible; nichts unter `assets/`.
 
 **Blatt:** [blatt-menue.png](blatt-menue.png) (alle drei, 2610 × 3886). Je Variante einzeln: [A](menue-a.png), [B](menue-b.png), [C](menue-c.png);
 die reinen Bildschirme (854 × 480, 15 Bit, 4×4-Körnung) in [einzeln/](einzeln/). Unter jedem Block vier Ausschnitte in 4-fach

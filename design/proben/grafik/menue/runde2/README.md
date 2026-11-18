@@ -24,4 +24,4 @@ Gegenüber Runde 1 behoben: Der Giebel über der Tafel ist jetzt bei 1× sichtba
 
 ## Nicht geprüft
 
-Bewegung/Auswahlwechsel, Zusammenspiel mit anderen Seitenverhältnissen als 854×480, Hörbares. Eine Wahl in der Art Bible steht aus.
+Bewegung/Auswahlwechsel, Zusammenspiel mit anderen Seitenverhältnissen als 854×480, Hörbares. Die Wahl (C2 Schlank) steht in der Art Bible.
