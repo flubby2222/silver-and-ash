@@ -55,8 +55,8 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `hud-rifle` | wie `hud-weapons`, aber mit dem Gewehr (2) in der Hand |
 | `hud-reload` | die Pistole im Startraum leergeschossen: „Reload [R]“ unter dem Fadenkreuz (Issue #259) |
 | `hud-texts` | alle Schriftzüge zugleich, jeder in seiner Zeile: „Reload [R]“ und „[F] Take Rifle (Forged)“ unter dem Fadenkreuz, „[X] Choose boon“ und die Weihezeit unten links (Issue #340) |
-| `inventory` | das offene Inventar (G) mit voller Tasche |
-| `map` | die Kartenseite (Tab) früh im Durchlauf: links Werte und fünf gewählte Boons, rechts die Karte (Issue #347) |
+| `inventory` | die Menüseite „Equipment“ (G) mit voller Tasche, oben die beiden Reiter (Issue #348) |
+| `map` | die Menüseite „Map“ (Tab) früh im Durchlauf: links Werte und fünf gewählte Boons, rechts die Karte (Issues #347, #348) |
 | `chests-4m` | die Kisten aller vier Stufen nebeneinander aus 4 m, geschlossen und verschlossen, dazu eine offene (Issue #249) |
 | `door-normal`, `door-locked`, `door-boss` | die Tür dieser Art geschlossen in einer leeren Halle aus 6 m (Issue #245) |
 | `door-normal-half`, `door-locked-half`, `door-boss-half` | dieselbe Tür halb aufgeschwungen (Fortschritt 0,5, im Bild geglättet) |
@@ -104,7 +104,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo compare --out D:\fotos\ver
 ## Wie es funktioniert
 
 - **Die Szenen stehen im Core**, an einer Stelle: [`PhotoScenes.cs`](../src/SilverAndAsh.Core/Photos/PhotoScenes.cs). Jede Szene ist ein Name, eine Zeile Beschreibung und eine Funktion, die mit dem [`PhotoStudio`](../src/SilverAndAsh.Core/Photos/PhotoStudio.cs) eine [`PhotoSetup`](../src/SilverAndAsh.Core/Photos/PhotoSetup.cs) baut: die Welt, die Zahl der Ticks, die Eingaben je Tick, wann früher abgedrückt wird, ob die Karte offen ist.
-- **Kein Sonderweg in den Spielregeln:** Die Welten sind normale `GameWorld`s (Ebene 0 mit Seed `PhotoStudio.Seed`, oder eine kleine handgebaute Halle). Gewählt wird nur, wo der Spieler steht (`Player.PlaceAt`, `internal` – nur der Core kann es aufrufen) und wohin er schaut (über die normale Blick-Eingabe). Waffen kommen über `Equip`/`Stow`, das Inventar öffnet sich über die Eingabe `ToggleInventory`, wie bei G.
+- **Kein Sonderweg in den Spielregeln:** Die Welten sind normale `GameWorld`s (Ebene 0 mit Seed `PhotoStudio.Seed`, oder eine kleine handgebaute Halle). Gewählt wird nur, wo der Spieler steht (`Player.PlaceAt`, `internal` – nur der Core kann es aufrufen) und wohin er schaut (über die normale Blick-Eingabe). Waffen kommen über `Equip`/`Stow`, das Menü öffnet sich über die Eingabe `PressMenu` (`MenuKey.Equipment` wie bei G, `MenuKey.Map` wie bei Tab).
 - **Das Spiel zeichnet die Fotos mit demselben Code wie im Spiel** (`DrawWorld`/`DrawScreen` in `Program.cs`): pro Tick werden die Ereignisse gelesen und die Ansichten um 1/60 s weitergestellt, danach wird ein Bild gezeichnet und gespeichert.
 - Die Raum-Szenen nehmen den ersten Seed ab `PhotoStudio.Seed`, dessen Ebene so einen Raum hat. Ändert sich der Generator, wandern die Bilder mit – sie bleiben aber für denselben Stand gleich (Tests prüfen das).
 
@@ -125,7 +125,7 @@ Bausteine im `PhotoStudio`:
 - `Arena(figur, metres)` – leere Halle, eine Figur (`G` Ghul, `B` Fledermaus, `T` Gorm, `D` Puppe) in dieser Entfernung (Vielfaches von 2 m).
 - `PhotoStudio.Face(player, punkt)` – Blick auf einen Punkt richten.
 
-Und in der `PhotoSetup`: `Ticks` (wie lange die Welt läuft), `Input` (Eingabe je Tick, z. B. `ToggleInventory` in Tick 0), `StopWhen` (früher abdrücken, z. B. sobald ein Ghul ausholt), `MapOpen`, `IsModelProbe`.
+Und in der `PhotoSetup`: `Ticks` (wie lange die Welt läuft), `Input` (Eingabe je Tick, z. B. `PressMenu = MenuKey.Equipment` in Tick 0), `StopWhen` (früher abdrücken, z. B. sobald ein Ghul ausholt), `IsModelProbe`.
 
 Danach: Name in den Test `Every_scene_the_issue_asks_for_is_there` aufnehmen ([`PhotoSceneTests.cs`](../tests/SilverAndAsh.Core.Tests/Photos/PhotoSceneTests.cs)), die Szene einmal laufen lassen und **das Bild ansehen**.
 

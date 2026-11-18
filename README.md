@@ -37,12 +37,13 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | R | Nachladen (bei leerem Magazin lädt auch ein Schuss nach) |
 | Mausrad, 1 / 2 / 3 | Fernwaffe wechseln (bis zu drei Plätze) |
 | F | Interagieren (Türen, Kisten) |
-| Tab | Kartenseite an/aus: links Werte (Leben, Ausdauer, Schaden, Tempo …) und gewählte Boons, rechts die Karte mit betretenen Räumen, ihren Türen (Schloss, Boss-Tür), Kisten, liegen gelassenen Blutphiolen und der eigenen Position; das Spiel läuft weiter, Laufen und Treffer schließen sie nicht |
+| G | Menüseite „Equipment“ (Inventar) an/aus, aus der Kartenseite blättert G dorthin um; nur hier erscheint der Mauszeiger |
+| Tab | Menüseite „Map“ an/aus, aus der Ausrüstungsseite blättert Tab dorthin um: links Werte (Leben, Ausdauer, Schaden, Tempo …) und gewählte Boons, rechts die Karte mit betretenen Räumen, ihren Türen (Schloss, Boss-Tür), Kisten, liegen gelassenen Blutphiolen und der eigenen Position; das Spiel läuft weiter, Laufen und Treffer schließen sie nicht |
 | N | Ton aus/an |
 | K | Klangpaket wechseln: Klangpaket 1 ↔ alte Geräusche (zum Vergleichen, oben steht kurz der Name) |
 | X, dann 1–4 oder Klick | Bonus nach einem Stufenaufstieg wählen – das Spiel läuft weiter; mehrere Aufstiege warten und kommen nacheinander; man kann dabei laufen und getroffen werden; X oder Esc schließt die Wahl |
 | Q | Blutrausch |
-| Esc | Schließt zuerst ein offenes Fenster (Bonus-Wahl, Inventar, Kartenseite), sonst Menü: weiter, Mausempfindlichkeit, zum Titel, beenden (allein steht das Spiel solange still) |
+| Esc | Schließt zuerst ein offenes Fenster (Bonus-Wahl, Menü mit Karte und Ausrüstung), sonst Menü: weiter, Mausempfindlichkeit, zum Titel, beenden (allein steht das Spiel solange still) |
 
 **Einstellungen** (heute nur die Mausempfindlichkeit) speichert das Spiel lokal in `%LOCALAPPDATA%\SilverAndAsh\settings.json` – kein Spielstand, nichts wird verschickt. Fehlt die Datei oder ist sie kaputt, gelten die Standardwerte.
 
