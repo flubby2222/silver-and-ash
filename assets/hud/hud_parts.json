@@ -82,7 +82,7 @@
   },
   {
    "name": "icon_flask",
-   "x": 254,
+   "x": 282,
    "y": 115,
    "w": 11,
    "h": 17,
@@ -361,7 +361,7 @@
   },
   {
    "name": "frame_toast",
-   "x": 87,
+   "x": 101,
    "y": 115,
    "w": 166,
    "h": 18,
@@ -424,7 +424,7 @@
   },
   {
    "name": "icon_flame",
-   "x": 266,
+   "x": 363,
    "y": 115,
    "w": 11,
    "h": 14,
@@ -442,7 +442,7 @@
   },
   {
    "name": "icon_shield",
-   "x": 278,
+   "x": 375,
    "y": 115,
    "w": 11,
    "h": 14,
@@ -469,7 +469,7 @@
   },
   {
    "name": "icon_coin",
-   "x": 345,
+   "x": 391,
    "y": 152,
    "w": 12,
    "h": 12,
@@ -529,6 +529,78 @@
    "h": 20,
    "layoutX": 389,
    "layoutY": 252
+  },
+  {
+   "name": "icon_club",
+   "x": 345,
+   "y": 152,
+   "w": 22,
+   "h": 13,
+   "layoutX": 698,
+   "layoutY": 456
+  },
+  {
+   "name": "icon_club_active",
+   "x": 368,
+   "y": 152,
+   "w": 22,
+   "h": 13,
+   "layoutX": 698,
+   "layoutY": 456
+  },
+  {
+   "name": "icon_boots",
+   "x": 268,
+   "y": 115,
+   "w": 13,
+   "h": 17,
+   "layoutX": 23,
+   "layoutY": 454
+  },
+  {
+   "name": "icon_rosary",
+   "x": 87,
+   "y": 115,
+   "w": 13,
+   "h": 19,
+   "layoutX": 21,
+   "layoutY": 452
+  },
+  {
+   "name": "icon_holster",
+   "x": 294,
+   "y": 115,
+   "w": 13,
+   "h": 17,
+   "layoutX": 22,
+   "layoutY": 454
+  },
+  {
+   "name": "icon_parry",
+   "x": 308,
+   "y": 115,
+   "w": 17,
+   "h": 17,
+   "layoutX": 19,
+   "layoutY": 454
+  },
+  {
+   "name": "icon_leech",
+   "x": 326,
+   "y": 115,
+   "w": 18,
+   "h": 16,
+   "layoutX": 19,
+   "layoutY": 455
+  },
+  {
+   "name": "icon_ashheart",
+   "x": 345,
+   "y": 115,
+   "w": 17,
+   "h": 15,
+   "layoutX": 19,
+   "layoutY": 455
   }
  ]
 }

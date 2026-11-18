@@ -15,7 +15,7 @@ Ohne Schrift: Zahlen und Texte zeichnet das Spiel selbst.
 Alle Teile sind bei 854 x 480 gemeint und werden 1:1 (ohne Skalierung) gezeichnet. PNG: RGBA, nicht vormultipliziert, ungerastert
 (die 15-Bit-Rasterung mit Bayer-Muster ist Sache des Spielbilds, ADR 0010). Ohne Zufall; zwei Laeufe liefern bitgleiche Dateien.
 """
-import sys, os, json, zlib, struct
+import sys, os, json, zlib, struct, math
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -179,6 +179,72 @@ def _cross(L):
 
 add([("crosshair", _cross)])
 frame("frame_prompt", 390, 253, 407, 271, True, 2)
+
+
+# ---------------------------------------------------------------- Zeichen fuer Keule und sechs Gegenstaende (Issue #381)
+# Eigene Formen im Einheitsfeld [-1, 1] (Abstandsfunktionen wie die Zeichen der Vorlage); keine Haende. Das Zeichnen laeuft ueber
+# dieselbe Funktion H.gl (Schatten, Verlauf, Lichtregel) wie bei den vorhandenen Zeichen.
+sd_box, sd_circle, sd_poly, sd_seg, u_ = H.sd_box, H.sd_circle, H.sd_poly, H.sd_seg, H.u_
+
+# Keule: waagerecht wie die Waffen; gedrungener Kopf rechts mit Stacheln oben und unten, Knauf links.
+H.ICON["club"] = (
+    u_(sd_poly([(-0.95, -0.08), (0.0, -0.12), (0.3, -0.3), (0.55, -0.36), (0.85, -0.3), (1.0, 0.0), (0.85, 0.3), (0.55, 0.36),
+                (0.3, 0.3), (0.0, 0.12), (-0.95, 0.08)]),
+       sd_circle(-0.93, 0, 0.14),
+       sd_poly([(0.3, -0.3), (0.42, -0.6), (0.56, -0.34)]), sd_poly([(0.62, -0.34), (0.76, -0.6), (0.86, -0.28)]),
+       sd_poly([(0.3, 0.3), (0.42, 0.6), (0.56, 0.34)]), sd_poly([(0.62, 0.34), (0.76, 0.6), (0.86, 0.28)])),
+    None)
+
+# Stiefel von der Seite: Schaft, Fuss nach vorn, Stulpe und Sohle als dunkle Linien.
+H.ICON["boots"] = (
+    sd_poly([(-0.5, -1.0), (0.25, -1.0), (0.25, 0.05), (0.7, 0.2), (1.0, 0.45), (1.0, 0.95), (-0.5, 0.95)]),
+    u_(sd_box(-0.5, -0.62, 0.25, -0.5), sd_box(-0.5, 0.62, 1.0, 0.74)))
+
+# Rosenkranz: kleiner Ring aus Perlen, unten offen; eine Kette aus zwei Perlen fuehrt zum Kreuz.
+_beads = [sd_circle(0.55 * bx, -0.45 + 0.55 * by, 0.2)
+          for bx, by in ((0.0, -1.0), (0.78, -0.62), (1.0, 0.1), (0.62, 0.78), (-0.62, 0.78), (-1.0, 0.1), (-0.78, -0.62))]
+H.ICON["rosary"] = (
+    u_(*_beads, sd_circle(0.0, 0.32, 0.14), sd_box(-0.09, 0.4, 0.09, 1.0), sd_box(-0.3, 0.58, 0.3, 0.74)),
+    None)
+
+# Schnellzieh-Holster: Pistole mit Griff und Lauf, die in einer sich nach unten verjuengenden Tasche steckt; Riemen und Schnalle dunkel.
+H.ICON["holster"] = (
+    u_(sd_poly([(-0.55, -0.05), (0.6, -0.05), (0.42, 1.0), (-0.3, 1.0)]),
+       sd_poly([(-0.5, -0.05), (0.0, -0.05), (0.35, -0.85), (-0.15, -0.95)]),
+       sd_box(-0.15, -0.95, 0.9, -0.68)),
+    u_(sd_poly([(-0.58, 0.28), (0.57, 0.28), (0.55, 0.4), (-0.56, 0.4)]), sd_box(0.0, 0.2, 0.28, 0.48)))
+
+# Klingen-Parade: zwei gekreuzte Klingen mit Parierstangen.
+H.ICON["parry"] = (
+    u_(sd_seg((-0.85, -0.85), (0.85, 0.85), 0.3), sd_seg((0.85, -0.85), (-0.85, 0.85), 0.3),
+       sd_seg((-0.78, 0.32), (-0.32, 0.78), 0.22), sd_seg((0.78, 0.32), (0.32, 0.78), 0.22)),
+    sd_circle(0.0, 0.0, 0.1))
+
+# Egel: gekruemmter Koerper, dick am Maul, duenn am Schwanz, mit dunklen Ringfurchen.
+_leech = []
+_rings = []
+for _k in range(11):
+    _t = _k / 10.0
+    _a = (0.1 + 1.45 * _t) * math.pi
+    _cx, _cy = 0.1 + 0.7 * math.cos(_a), 0.15 - 0.72 * math.sin(_a)
+    _leech.append(sd_circle(_cx, _cy, 0.42 - 0.26 * _t))
+    if _k in (2, 4, 6, 8):
+        _rings.append(sd_seg((_cx - 0.3 * math.cos(_a), _cy + 0.3 * math.sin(_a)), (_cx + 0.3 * math.cos(_a), _cy - 0.3 * math.sin(_a)), 0.1))
+H.ICON["leech"] = (u_(*_leech), u_(*_rings))
+
+# Aschenherz: Herz mit senkrechtem Riss.
+H.ICON["ashheart"] = (
+    u_(sd_circle(-0.42, -0.35, 0.52), sd_circle(0.42, -0.35, 0.52), sd_poly([(-0.92, -0.1), (0.92, -0.1), (0.0, 1.0)])),
+    u_(sd_seg((0.05, -0.75), (-0.12, -0.3), 0.14), sd_seg((-0.12, -0.3), (0.14, 0.1), 0.14), sd_seg((0.14, 0.1), (-0.02, 0.55), 0.14)))
+
+# Kopfstueck: Keule sitzt wie die Klinge mittig in der Waffenfassung 0 (keine Munition); Gegenstaende in der Fassung 0 wie der Kolben.
+add([("icon_club", lambda L: H.gl(L, "club", 690 + 3 + 16, 462, 10.5, H.BONE2, H.IRON6, "socket")),
+     ("icon_club_active", lambda L: H.gl(L, "club", 690 + 3 + 16, 462, 10.5, H.BONE, H.BONE3, "socket"))])
+ITEMS = (("boots", "icon_boots", H.BONE, H.BONE3), ("rosary", "icon_rosary", H.IRON7, H.IRON5),
+         ("holster", "icon_holster", H.BONE2, H.IRON6), ("parry", "icon_parry", H.IRON7, H.IRON5),
+         ("leech", "icon_leech", H.BONE2, H.BONE3), ("ashheart", "icon_ashheart", H.IRON6, H.IRON4))
+for _g, _n, _c1, _c2 in ITEMS:
+    add([(_n, lambda L, g=_g, c1=_c1, c2=_c2: H.gl(L, g, 12 + 15, 462, 8, c1, c2, "socket", detail=(40, 20, 10)))])
 
 
 # ---------------------------------------------------------------- Atlas packen

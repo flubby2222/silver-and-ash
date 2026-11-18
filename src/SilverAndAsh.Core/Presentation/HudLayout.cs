@@ -117,14 +117,21 @@ public sealed class HudLayout
     {
         [WeaponKind.SilverBlade] = "icon_blade",
         [WeaponKind.Pistol] = "icon_pistol",
+        [WeaponKind.Club] = "icon_club",
         [WeaponKind.Rifle] = "icon_rifle",
         [WeaponKind.Blunderbuss] = "icon_blunder",
     }.ToFrozenDictionary();
 
     private static readonly FrozenDictionary<ItemKind, string> ItemIcons = new Dictionary<ItemKind, string>
     {
+        [ItemKind.HuntersBoots] = "icon_boots",
         [ItemKind.IronFlask] = "icon_flask",
+        [ItemKind.SilverRosary] = "icon_rosary",
+        [ItemKind.QuickdrawHolster] = "icon_holster",
+        [ItemKind.BladeParry] = "icon_parry",
         [ItemKind.HuntersEye] = "icon_eye",
+        [ItemKind.Leech] = "icon_leech",
+        [ItemKind.AshenHeart] = "icon_ashheart",
     }.ToFrozenDictionary();
 
     private readonly HudParts _parts;
@@ -137,10 +144,10 @@ public sealed class HudLayout
         _font = font ?? throw new ArgumentNullException(nameof(font));
     }
 
-    /// <summary>The weapons that have a picture of their own; the others show their initial.</summary>
+    /// <summary>The weapons that have a picture of their own (all, tested); any other would show its initial.</summary>
     public static IReadOnlyCollection<WeaponKind> WeaponsWithIcon => WeaponIcons.Keys;
 
-    /// <summary>The items that have a picture of their own; the others show their initial.</summary>
+    /// <summary>The items that have a picture of their own (all, tested); any other would show its initial.</summary>
     public static IReadOnlyCollection<ItemKind> ItemsWithIcon => ItemIcons.Keys;
 
     /// <summary>The name of the part for weapon <paramref name="kind"/>, or null if it has none yet.</summary>

@@ -172,6 +172,8 @@ public static class PhotoScenes
             }),
         new("hud-calm", "The HUD in a calm moment (issue #369): three items, every weapon place taken, a quarter of the life gone, silver and a key.",
             studio => new PhotoSetup(Equipped(AllWeapons(studio.StartRun())))),
+        new("hud-items", "The HUD with the club in hand and the six items drawn last (issue #381): boots, rosary, holster, parry, leech, ashen heart.",
+            studio => new PhotoSetup(NewItems(AllWeapons(studio.StartRun())))),
         new("hud-boss", "The HUD in the boss fight (issue #369): Gorm's name and bar at the top, a quarter of his health gone.",
             studio => new PhotoSetup(Equipped(QuarterOfGorm(studio.BeforeGorm(10f))))
             {
@@ -455,6 +457,18 @@ public static class PhotoScenes
         player.AddSilver(85);
         player.AddKeys(1);
         player.TakeDamage(player.MaxHealth / 4, new List<GameEvent>());
+        return world;
+    }
+
+    // The six items whose pictures came last (issue #381) - as many as fit beside the life frame at 854 x 480.
+    private static GameWorld NewItems(GameWorld world)
+    {
+        ItemKind[] items = [ItemKind.HuntersBoots, ItemKind.SilverRosary, ItemKind.QuickdrawHolster, ItemKind.BladeParry, ItemKind.Leech, ItemKind.AshenHeart];
+        foreach (var item in items)
+        {
+            world.Player.Take(item);
+        }
+
         return world;
     }
 
