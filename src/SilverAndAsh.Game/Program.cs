@@ -916,13 +916,15 @@ static void RunGame(
             wheelSteps += playerInput.CycleSlot;
 
             // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while walking
-            // and when hit - only X or Esc close it (issue #346). Several level ups come one after the other.
-            if (!frozen && !inventoryOpen && !escClosedOverlay && Raylib.IsKeyPressed(KeyboardKey.X) && player.PendingBoons > 0)
+            // and when hit - only X or Esc close it (issue #346). Several level ups come one after the other. A dead
+            // player takes no boon (Core), so the window closes and X stays locked - display only.
+            if (!frozen && !inventoryOpen && !escClosedOverlay && !player.IsDead && Raylib.IsKeyPressed(KeyboardKey.X)
+                && player.PendingBoons > 0)
             {
                 boonOpen = !boonOpen;
             }
 
-            if (player.PendingBoons == 0)
+            if (player.PendingBoons == 0 || player.IsDead)
             {
                 boonOpen = false;
             }
