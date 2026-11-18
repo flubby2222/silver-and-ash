@@ -50,6 +50,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Bonus-Wahl ohne Stillstand:** Ein Stufenaufstieg hält das Spiel nicht mehr an. Unter der Stufenanzeige blinkt „[X] Choose boon“ (bei mehreren mit Anzahl). **X** öffnet die Wahl, **1–4** oder ein **Klick** wählt, das Spiel läuft weiter, und du kannst dabei laufen. Mehrere Aufstiege kommen nacheinander. Nur ein Treffer schließt die Wahl, der Bonus wartet weiter
 - **Kisten sind fest:** Man läuft nicht mehr durch Kisten hindurch, kann aber auf sie springen (0,7 m). Steigt eine Kiste unter dir aus dem Boden, hebt sie dich an. Ghule und Gorm laufen um Kisten herum; Fledermäuse fliegen darüber. Noch versteckte Kisten blockieren nicht
 
+### Behoben
+- **Gorms Beute liegt nie mehr unter der Treppe:** Starb Gorm nahe der Saalmitte, lag sein Ausrüstungsstück dort, wo die Wendeltreppe aufsteigt – sobald sie stand, zeigte **F** nur noch „Climb the stairs“, und das Stück ließ sich nicht mehr nehmen. Jetzt rückt es in diesem Fall knapp neben die Treppe, auf Gorms Boden und nie in eine Wand (#338)
+
 ## [0.10.0] – 2026-11-16 – Boss & Bewegung
 
 Jede Ebene hat jetzt ihren Höhepunkt: Gorm, the Chained, ein Troll mit Keule und Kette, drei angekündigten Angriffen und einer zweiten Phase. Nach seinem Sieg führt eine Wendeltreppe hinaus. Dazu ein Luft-Dash in Blickrichtung, Gegner, die jedes Mal anders stehen, eine Karte mit Symbolen und die zweite Balancing-Runde.
