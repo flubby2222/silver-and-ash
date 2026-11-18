@@ -36,6 +36,32 @@ WEAPONS = ("blade", "pistol", "rifle", "blunder")
 AMMO_HAS = (False, True, True, True)  # Klinge ohne Munition: Zeichen mittig, sonst links (Platz fuer die Zahl)
 
 
+def _ornament_ohne_doppelrahmen(L, x0, y0, x1, y1):
+    """Verzierung V3 ohne den duennen Doppelrahmen innen (Issue #387, Urteil des Menschen nach dem Spieltest: die kleinen
+    grauen Rahmen in den Fenstern passen nicht zum Rest). Sonst unveraendert wie H.ornament: Rautenniete, Giebel mit Auge, Fialen."""
+    if H.ORN <= 0:
+        return
+    tall = (y1 - y0) >= 20
+    r = 3.0 if H.ORN < 3 else (3.4 if tall else 2.6)
+    for (cx, cy) in ((x0 + 1.5, y0 + 1.5), (x1 - 1.5, y0 + 1.5), (x0 + 1.5, y1 - 1.5), (x1 - 1.5, y1 - 1.5)):
+        H.diamond4(L, cx, cy, r)
+    if H.ORN >= 2:
+        mx = (x0 + x1) / 2
+        hw = 6.0 if abs(mx - round(mx)) < 0.01 else 6.5
+        H._lit_poly(L, [(mx - hw, y0 + 1.5), (mx, y0 - 4.0), (mx + hw, y0 + 1.5)])
+        if H.ORN >= 3:
+            L.shape((mx - 3, y0 - 2, mx + 3, y0 + 3), H.sd_circle(mx, y0 - 0.5, 1.1), H.IRON0)
+    if H.ORN >= 3 and x1 - x0 > 100:  # lange Fassungen: Fialen mittig an den Enden
+        cy = (y0 + y1) / 2
+        for fx in (x0, x1):
+            H._lit_poly(L, [(fx, cy - 8), (fx + 2.6, cy), (fx, cy + 8), (fx - 2.6, cy)])
+
+
+H.ornament = _ornament_ohne_doppelrahmen  # H.cell ruft ornament ueber den Modulnamen auf
+
+BODIES = {}  # Name -> Koerper der Fassung (x0, y0, x1, y1): Silberrahmen ohne Nieten, Giebel und Fialen
+
+
 # ---------------------------------------------------------------- Rendern und Zuschneiden
 
 
@@ -93,6 +119,7 @@ def add(names_draws, clip=None):
 
 
 def frame(name, x0, y0, x1, y1, active=False, seed=2):
+    BODIES[name] = (x0, y0, x1, y1)
     add([(name, lambda L: H.cell(L, x0, y0, x1, y1, "socket", active, seed))])
 
 
@@ -115,6 +142,7 @@ add([("icon_eye", lambda L: H.gl(L, "eye", 46 + 15, 462, 8, H.IRON7, H.IRON5, "s
 # unten rechts: vier Waffen-Fassungen (ruhig und aktiv), je 38 breit, Abstand 3, ab x = 690, dazu die Zeichen
 for i, g in enumerate(WEAPONS):
     x = 690 + i * 41
+    BODIES[f"frame_weapon_{i}"] = BODIES[f"frame_weapon_{i}_active"] = (x, GY - 30, x + 38, GY)
     add([(f"frame_weapon_{i}", lambda L, x=x, i=i: H.cell(L, x, GY - 30, x + 38, GY, "socket", False, 4 + i)),
          (f"frame_weapon_{i}_active", lambda L, x=x, i=i: H.cell(L, x, GY - 30, x + 38, GY, "socket", True, 4 + i))])
     cx = (x + 3) + 32 * (0.36 if AMMO_HAS[i] else 0.5)
@@ -146,14 +174,16 @@ def _toast(L):
     L.shape((8, 424, 172, 440), H.sd_box(8 + 2.6, 424 + 2.6, 172 - 2.6, 440 - 2.6), H.IRON0, alpha=0.93)
 
 
+BODIES["frame_toast"] = (8, 424, 172, 440)
 add([("frame_toast", _toast)])
 add([("icon_toast_eye", lambda L: H.glyph(L, "eye", 18, 432, 4.2, H.ROYAL, H.BRASS_M, detail=(40, 20, 10)))])
 
 # oben links: Stufe (aktive Fassung 26 x 28), Erfahrung (Fassung 62 x 14, Leiste 52 x 6), zwei Faehigkeiten (24 x 28)
 frame("frame_level", 8, 5, 34, 33, True, 14)
 frame("frame_xp", 38, 12, 100, 26, False, 15)
-add([("xp_empty", lambda L: H.trough(L, 43, 16, 95, 22, 0.0, H.IRON7, H.IRON5, "recess", back=H.IRON0, p=3)),
-     ("xp_full", lambda L: H.trough(L, 43, 16, 95, 22, 1.0, H.IRON7, H.IRON5, "recess", back=H.IRON0, p=3))])
+# Erfahrung golden (Issue #387, Urteil des Menschen); Gold sonst nur fuer die Aufnahme-Meldung und den Hinweis zum Aufsteigen
+add([("xp_empty", lambda L: H.trough(L, 43, 16, 95, 22, 0.0, H.BRASS_L, H.BRASS_M, "recess", back=H.IRON0, p=3)),
+     ("xp_full", lambda L: H.trough(L, 43, 16, 95, 22, 1.0, H.BRASS_L, H.BRASS_M, "recess", back=H.IRON0, p=3))])
 for i, g in enumerate(("flame", "shield")):
     x = 106 + i * 28
     frame(f"frame_skill_{i}", x, 5, x + 24, 33, False, 16 + i)
@@ -286,7 +316,11 @@ def main():
         x, y = pos[k]
         h, w = im.shape[:2]
         atlas[y:y + h, x:x + w] = im
-        table.append({"name": name, "x": x, "y": y, "w": w, "h": h, "layoutX": lx, "layoutY": ly})
+        entry = {"name": name, "x": x, "y": y, "w": w, "h": h, "layoutX": lx, "layoutY": ly}
+        if name in BODIES:
+            bx0, by0, bx1, by1 = BODIES[name]
+            entry["body"] = [bx0 - lx, by0 - ly, bx1 - bx0, by1 - by0]
+        table.append(entry)
     info = {
         "image": "hud_parts.png",
         "width": ATLAS_W, "height": int(atlas_h),
@@ -297,14 +331,15 @@ def main():
             "NAME_empty und NAME_full (life, boss, xp, stamina_N) haben dieselbe Groesse: erst _empty, darueber _full links vom Fuellstand beschnitten.",
             "frame_weapon_N_active und icon_<waffe>_active fuer die gewaehlte Waffe; Schrift, Zahlen, Nachladeschleier und Hervorhebung am Fuellstand zeichnet das Spiel.",
             "icon_skillpoint ist neu (Stern aus dem Zeichensatz der Vorlage), icon_toast_eye ist golden (nur Aufnahme-Meldung).",
+            "body (nur Fassungen): Koerper der Fassung relativ zur linken oberen Ecke des Teils (x, y, w, h), ohne Nieten, Giebel und Fialen. Die Abstandsregel des Spiels (HudLayout.Spacing) misst daran.",
+            "Issue #387: ohne Doppelrahmen innen, Erfahrungsleiste golden, keine Kante am Fuellstand der Lebensleiste.",
             "layoutX/Y von icon_coin, icon_key, frame_prompt und frame_toast gelten nur fuer die Beispielwerte der Vorlage (Silber 128, Schluessel 2, Text 'to open', Meldung 'Picked up Hunter's Eye').",
         ],
         "game": {
             "reloadVeil": {"color": [14, 9, 22], "alpha": 0.72, "edgeColor": list(H.IRON6), "edgeAlpha": 0.9, "edgeWidth": 1.2,
                            "note": "ueber das Waffenbild von links, Anteil = Nachladefortschritt; Rand der Fassung innen"},
-            "lifeEdge": {"color": list(H.RED6), "width": 1,
-                         "note": "Vorlage: 1 px helle Kante am Fuellstand der Lebensleiste, nicht Teil der Bilder"},
-            "text": {"main": list(H.BONE), "second": list(H.BONE2), "shadow": list(H.FOG), "pickup": list(H.ROYAL)},
+            "text": {"main": list(H.BONE), "second": list(H.BONE2), "shadow": list(H.FOG), "pickup": list(H.ROYAL),
+                     "hint": list(H.BRASS_L)},
         },
         "parts": table,
     }

@@ -30,7 +30,7 @@ public class HudLayoutTests
         ["vitals"] = ["frame_vitals"],
         ["weapons"] = ["frame_weapon_0", "frame_weapon_1", "frame_weapon_2", "frame_weapon_3",
             "frame_weapon_0_active", "frame_weapon_1_active", "frame_weapon_2_active", "frame_weapon_3_active"],
-        ["level"] = ["frame_level", "frame_xp", "frame_skill_0", "frame_prompt"],
+        ["level"] = ["frame_level", "frame_xp", "frame_skill_0"],
         ["boss"] = ["frame_boss"],
         ["currency"] = ["frame_currency"],
         ["toast"] = ["frame_toast"],
@@ -123,12 +123,14 @@ public class HudLayoutTests
     }
 
     [Fact]
-    public void The_club_sits_in_the_melee_frame_where_the_design_puts_it()
+    public void The_club_sits_in_the_middle_of_the_melee_frame()
     {
         var picture = Arrange(Busy());
 
-        var club = Single(picture, "icon_club");
-        Assert.Equal((Parts["icon_club"].LayoutX, Parts["icon_club"].LayoutY), (club.X, club.Y));
+        var club = Layout.Bounds(Single(picture, "icon_club"));
+        var ground = Layout.BodyOf(Single(picture, "frame_weapon_0")).Inset(HudLayout.Rim);
+        AssertCentredIn(ground, club);
+        Assert.InRange((2 * club.Y) + club.Height - ((2 * ground.Y) + ground.Height), -1, 1);
         Assert.DoesNotContain(picture.Parts, part => part.Name == "icon_blade");
     }
 
@@ -144,20 +146,26 @@ public class HudLayoutTests
     }
 
     [Fact]
-    public void In_the_design_every_frame_is_where_the_approved_design_put_it()
+    public void Every_frame_has_a_body_inside_its_ornament_and_other_parts_are_all_body()
     {
-        var picture = Arrange(Busy(), LongestToast());
-
-        foreach (var part in picture.Parts.Where(part => part.Name.StartsWith("frame_", StringComparison.Ordinal)
-                     && part.Name is not ("frame_item_0" or "frame_item_1" or "frame_skill_0" or "frame_prompt")))
+        Assert.All(Parts.All, part =>
         {
-            Assert.Equal((Parts[part.Name].LayoutX, Parts[part.Name].LayoutY), (part.X, part.Y));
-        }
+            Assert.True(part.Body.X >= 0 && part.Body.Y >= 0 && part.Body.Right <= part.Width && part.Body.Bottom <= part.Height,
+                $"{part.Name}: body {part.Body} leaves the part");
+            if (part.Name.StartsWith("frame_", StringComparison.Ordinal))
+            {
+                Assert.True(part.Body.Width < part.Width && part.Body.Height < part.Height, $"{part.Name} has no ornament around its body");
+            }
+            else
+            {
+                Assert.Equal(new HudRect(0, 0, part.Width, part.Height), part.Body);
+            }
+        });
     }
 
     [Theory]
     [MemberData(nameof(PictureWidths))]
-    public void The_bottom_frames_end_on_one_line_the_same_distance_above_the_bottom_edge(int pictureWidth)
+    public void The_bottom_frames_end_on_one_line_the_spacing_above_the_bottom_edge(int pictureWidth)
     {
         var canvas = HudCanvas.For(pictureWidth);
         var picture = Arrange(Busy(), canvas: canvas);
@@ -166,30 +174,147 @@ public class HudLayoutTests
             || part.Name == "frame_vitals" || part.Name.StartsWith("frame_weapon", StringComparison.Ordinal)).ToList();
 
         Assert.NotEmpty(bottomFrames);
-        Assert.All(bottomFrames, part =>
-            Assert.Equal(HudLayout.BottomBaseline - Parts[part.Name].LayoutY, canvas.Height - (480 - HudLayout.BottomBaseline) - part.Y));
+        Assert.All(bottomFrames, part => Assert.Equal(canvas.Height - HudLayout.Spacing, Layout.BodyOf(part).Bottom));
+        Assert.Equal(480 - HudLayout.Spacing, HudLayout.BottomBaseline);
     }
 
     [Theory]
     [MemberData(nameof(PictureWidths))]
-    public void The_groups_keep_to_their_corner_or_the_middle(int pictureWidth)
+    public void The_groups_keep_the_spacing_to_their_corner_or_stand_in_the_middle(int pictureWidth)
     {
         var canvas = HudCanvas.For(pictureWidth);
         var picture = Arrange(Busy(), canvas: canvas);
+        var gap = HudLayout.Spacing;
+        HudRect Body(string name) => Layout.BodyOf(picture.Parts.First(part => part.Name == name));
 
-        // Left: as far from the left edge as in the design.
-        Assert.Equal(Parts["frame_level"].LayoutX, Single(picture, "frame_level").X);
-        Assert.Equal(Parts["frame_item_0"].LayoutX, picture.Parts.First(part => part.Name == "frame_item_0").X);
+        // Left: the spacing from the left edge (and the top edge for the top row).
+        Assert.Equal((gap, gap), (Body("frame_level").X, Body("frame_level").Y));
+        Assert.Equal(gap, Body("frame_item_0").X);
 
-        // Right: as far from the right edge as in the design.
-        Assert.Equal(854 - Parts["frame_currency"].LayoutX, canvas.Width - Single(picture, "frame_currency").X);
-        Assert.Equal(854 - Parts["frame_weapon_3"].LayoutX, canvas.Width - Single(picture, "frame_weapon_3").X);
+        // Right: the spacing from the right edge.
+        Assert.Equal((canvas.Width - gap, gap), (Body("frame_currency").Right, Body("frame_currency").Y));
+        Assert.Equal(canvas.Width - gap, Body("frame_weapon_3").Right);
 
-        // Middle: as far from the middle as in the design (within the half pixel of an odd difference).
-        Assert.InRange((2 * Single(picture, "frame_vitals").X) - canvas.Width, (2 * Parts["frame_vitals"].LayoutX) - 854 - 1,
-            (2 * Parts["frame_vitals"].LayoutX) - 854);
-        Assert.InRange((2 * Single(picture, "frame_boss").X) - canvas.Width, (2 * Parts["frame_boss"].LayoutX) - 854 - 1,
-            (2 * Parts["frame_boss"].LayoutX) - 854);
+        // Middle: centred (within the half pixel of an odd difference); the boss the spacing below the top edge.
+        Assert.InRange(Body("frame_vitals").X + Body("frame_vitals").Right - canvas.Width, -1, 0);
+        Assert.InRange(Body("frame_boss").X + Body("frame_boss").Right - canvas.Width, -1, 0);
+        Assert.Equal(gap, Body("frame_boss").Y);
+    }
+
+    [Theory]
+    [MemberData(nameof(PictureWidths))]
+    public void Frames_in_a_row_keep_the_spacing_between_their_bodies(int pictureWidth)
+    {
+        // Issue #387: one rule for every gap - neighbour to neighbour as frame to edge.
+        var canvas = HudCanvas.For(pictureWidth);
+        var picture = Arrange(Busy(), canvas: canvas);
+
+        List<HudRect> Row(Func<string, bool> inRow) =>
+            picture.Parts.Where(part => inRow(part.Name)).Select(Layout.BodyOf).OrderBy(body => body.X).ToList();
+
+        var rows = new Dictionary<string, List<HudRect>>
+        {
+            ["items"] = Row(name => name.StartsWith("frame_item", StringComparison.Ordinal)),
+            ["weapons"] = Row(name => name.StartsWith("frame_weapon", StringComparison.Ordinal)),
+            ["level"] = Row(name => name is "frame_level" or "frame_xp" or "frame_skill_0"),
+        };
+
+        Assert.True(rows["items"].Count >= 4, "Too few item frames - the case would prove little.");
+        Assert.Equal(4, rows["weapons"].Count);
+        Assert.Equal(3, rows["level"].Count);
+        foreach (var (name, row) in rows)
+        {
+            for (var i = 1; i < row.Count; i++)
+            {
+                Assert.True(row[i].X - row[i - 1].Right == HudLayout.Spacing,
+                    $"{name}: frame {i} stands {row[i].X - row[i - 1].Right} from the one before on {canvas}");
+            }
+        }
+
+        // The small experience frame stands in the middle of the level frame's height, the skill frame level with it.
+        var (level, xp, skill) = (rows["level"][0], rows["level"][1], rows["level"][2]);
+        Assert.InRange((2 * xp.Y) + xp.Height - ((2 * level.Y) + level.Height), -1, 1);
+        Assert.Equal(level.Y, skill.Y);
+
+        // Between the groups of the bottom row at least the spacing as well.
+        var vitals = Layout.BodyOf(Single(picture, "frame_vitals"));
+        Assert.True(vitals.X - rows["items"][^1].Right >= HudLayout.Spacing, $"items run up to the life frame on {canvas}");
+        Assert.True(rows["weapons"][0].X - vitals.Right >= HudLayout.Spacing, $"weapons run up to the life frame on {canvas}");
+    }
+
+    [Theory]
+    [MemberData(nameof(PictureWidths))]
+    public void Inside_every_frame_the_contents_keep_equal_gaps_to_the_edge_and_to_each_other(int pictureWidth)
+    {
+        var canvas = HudCanvas.For(pictureWidth);
+        foreach (var picture in new[] { Arrange(Busy(), LongestToast(), canvas), Arrange(Calm(), "Picked up Hunter's Eye", canvas) })
+        {
+            foreach (var frame in picture.Parts.Where(part => part.Name.StartsWith("frame_", StringComparison.Ordinal)))
+            {
+                var ground = Layout.BodyOf(frame).Inset(HudLayout.Rim);
+                var contents = picture.Parts.Where(part => !part.Name.StartsWith("frame_", StringComparison.Ordinal)
+                        && !part.Name.EndsWith("_full", StringComparison.Ordinal))
+                    .Select(Layout.Bounds)
+                    .Concat(picture.Texts.Select(Layout.Bounds))
+                    .Where(rect => Contains(ground, (2 * rect.X) + rect.Width, (2 * rect.Y) + rect.Height))
+                    .ToList();
+
+                if (contents.Count == 0)
+                {
+                    Assert.True(frame.Name.StartsWith("frame_weapon", StringComparison.Ordinal), $"{frame.Name} is empty on {canvas}");
+                    continue; // an empty weapon place
+                }
+
+                AssertSpreadEvenly(ground, Blocks(contents), $"{frame.Name} on {canvas}");
+            }
+        }
+    }
+
+    [Fact]
+    public void A_sign_and_its_number_stand_the_sign_gap_apart()
+    {
+        var picture = Arrange(Busy(), "Picked up Hunter's Eye");
+
+        var coin = Layout.Bounds(Single(picture, "icon_coin"));
+        var key = Layout.Bounds(Single(picture, "icon_key"));
+        var eye = Layout.Bounds(Single(picture, "icon_toast_eye"));
+        Assert.Equal(coin.Right + HudLayout.SignGap, Assert.Single(picture.Texts, text => text.Text == "99999").X);
+        Assert.Equal(key.Right + HudLayout.SignGap, picture.Texts.Single(text => text.Text == "99" && text.X > key.X).X);
+        Assert.Equal(eye.Right + HudLayout.SignGap, Assert.Single(picture.Texts, text => text.Text == "Picked up Hunter's Eye").X);
+    }
+
+    [Theory]
+    [MemberData(nameof(PictureWidths))]
+    public void What_stands_above_or_below_a_row_keeps_the_spacing_to_its_ornament(int pictureWidth)
+    {
+        var canvas = HudCanvas.For(pictureWidth);
+        var picture = Arrange(Busy(), LongestToast(), canvas);
+        var gap = HudLayout.Spacing;
+
+        // The toast above the item frames' gables, at the left edge like them.
+        var toast = Layout.BodyOf(Single(picture, "frame_toast"));
+        var itemsTop = picture.Parts.Where(part => part.Name.StartsWith("frame_item", StringComparison.Ordinal)).Min(part => part.Y);
+        Assert.Equal((gap, itemsTop - gap), (toast.X, toast.Bottom));
+
+        // The consecrated time above the weapon frames' gables, ending with them.
+        var consecrated = Layout.Bounds(Assert.Single(picture.Texts, text => text.Text.StartsWith("Consecrated", StringComparison.Ordinal)));
+        var weaponsTop = picture.Parts.Where(part => part.Name.StartsWith("frame_weapon", StringComparison.Ordinal)).Min(part => part.Y);
+        Assert.Equal((canvas.Width - gap, weaponsTop - gap), (consecrated.Right, consecrated.Bottom));
+
+        // The hint under the level row's rivets, starting with the level frame.
+        var hint = Layout.Bounds(Assert.Single(picture.Texts, text => text.Text == HudLayout.LevelUpHint));
+        var levelBottom = picture.Parts.Where(part => Groups["level"].Contains(part.Name)).Max(part => Layout.Bounds(part).Bottom);
+        Assert.Equal((gap, levelBottom + gap), (hint.X, hint.Y));
+    }
+
+    [Fact]
+    public void Spread_leaves_equal_gaps_before_between_and_after_and_centres_one_alone()
+    {
+        Assert.Equal([13, 19], HudLayout.Spread(10, 13, [3, 1]));             // 9 free: gaps 3, 3, 3
+        Assert.Equal([1, 5], HudLayout.Spread(0, 10, [3, 3]));                 // 4 free: gaps 1, 1, 2
+        Assert.Equal([15], HudLayout.Spread(10, 20, [10]));                    // alone: centred
+        Assert.Equal([9], HudLayout.Spread(10, 8, [10]));                      // longer than the stretch: out on both sides
+        Assert.Equal([100, 110, 120], HudLayout.Spread(100, 30, [10, 10, 10])); // no room: no gaps
     }
 
     [Theory]
@@ -245,17 +370,39 @@ public class HudLayoutTests
     }
 
     [Fact]
-    public void The_skill_point_shows_only_while_a_boon_waits_with_its_key()
+    public void The_skill_point_and_the_yellow_hint_show_only_while_a_boon_waits()
     {
         var calm = Arrange(Calm());
         var waiting = Arrange(Calm() with { PendingBoons = 1 });
 
-        Assert.DoesNotContain(calm.Parts, part => part.Name is "frame_skill_0" or "icon_skillpoint" or "frame_prompt");
-        Assert.DoesNotContain(calm.Texts, text => text.Text == "X");
+        Assert.DoesNotContain(calm.Parts, part => part.Name is "frame_skill_0" or "icon_skillpoint");
+        Assert.DoesNotContain(calm.Texts, text => text.Color == HudTextColor.Hint);
+        Single(waiting, "frame_skill_0");
         Single(waiting, "icon_skillpoint");
-        var key = Single(waiting, "frame_prompt");
-        var letter = Assert.Single(waiting.Texts, text => text.Text == "X");
-        Assert.True(Layout.Bounds(key).X < letter.X && Layout.Bounds(letter).Right <= Layout.Bounds(key).Right);
+
+        // Issue #387: the key cap beside the star is gone; the hint stands under the level number and the experience bar.
+        Assert.DoesNotContain(waiting.Parts, part => part.Name == "frame_prompt");
+        var hint = Assert.Single(waiting.Texts, text => text.Color == HudTextColor.Hint);
+        Assert.Equal("[X] to level up", hint.Text);
+        Assert.Empty(Font.Missing(hint.Text));
+        var hintRect = Layout.Bounds(hint);
+        var level = Layout.Bounds(Single(waiting, "frame_level"));
+        var xp = Layout.Bounds(Single(waiting, "frame_xp"));
+        Assert.True(hintRect.Y >= Math.Max(level.Bottom, xp.Bottom), $"The hint {hintRect} is not under level {level} and bar {xp}.");
+        Assert.True(hintRect.X < level.Right && hintRect.Right > xp.X, $"The hint {hintRect} does not reach under the number and the bar.");
+    }
+
+    [Fact]
+    public void The_hint_is_the_yellow_of_the_table_and_no_other_hud_colour()
+    {
+        using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(RepositoryFiles.Find("assets/hud/hud_parts.json")));
+        var hint = json.RootElement.GetProperty("game").GetProperty("text").GetProperty("hint");
+
+        Assert.Equal(new HudColor(hint[0].GetByte(), hint[1].GetByte(), hint[2].GetByte()), Parts.TextHint);
+        Assert.NotEqual(Parts.TextMain, Parts.TextHint);
+        Assert.NotEqual(Parts.TextSecond, Parts.TextHint);
+        Assert.NotEqual(Parts.TextPickup, Parts.TextHint);
+        Assert.True(Parts.TextHint.R > Parts.TextHint.B + 60 && Parts.TextHint.G > Parts.TextHint.B + 60, $"{Parts.TextHint} is not yellow");
     }
 
     [Fact]
@@ -299,24 +446,29 @@ public class HudLayoutTests
     }
 
     [Theory]
-    [InlineData(1f, false)]
-    [InlineData(0.5f, true)]
-    [InlineData(0.01f, true)]
-    [InlineData(0f, false)]
-    public void The_life_bar_fills_from_the_left_with_a_light_edge_while_part_of_it_is_gone(float life, bool edge)
+    [InlineData(1f)]
+    [InlineData(0.5f)]
+    [InlineData(0.01f)]
+    [InlineData(0f)]
+    public void The_life_bar_fills_from_the_left_and_nothing_marks_its_level(float life)
     {
         var width = (int)MathF.Round(Parts["life_full"].Width * life);
         Assert.True(life == 0f || width > 0, "A sliver of life must still show - the case would prove nothing.");
         var picture = Arrange(Calm() with { Life = life });
 
-        Single(picture, "life_empty");
+        var empty = Single(picture, "life_empty");
         Assert.Equal(width, picture.Parts.SingleOrDefault(part => part.Name == "life_full").Width);
-        Assert.Equal(edge, picture.LifeEdge is not null);
-        if (picture.LifeEdge is { } rect)
+        if (width > 0)
         {
-            Assert.Equal(Single(picture, "life_full").X + width - 1, rect.X);
-            Assert.Equal(1, rect.Width);
+            Assert.Equal(empty.X, Single(picture, "life_full").X);
         }
+
+        // Issue #387: the light edge at the fill level is gone - nothing but the two bar parts lies on the bar.
+        var bar = Layout.Bounds(empty);
+        Assert.All(picture.Parts.Where(part => part.Name is not ("life_empty" or "life_full" or "frame_vitals")),
+            part => Assert.False(Layout.Bounds(part).Overlaps(bar), $"{part.Name} lies on the life bar"));
+        Assert.DoesNotContain(picture.Texts, text => Layout.Bounds(text).Overlaps(bar));
+        Assert.DoesNotContain(picture.ReloadVeils, veil => veil.Overlaps(bar));
     }
 
     [Fact]
@@ -329,7 +481,6 @@ public class HudLayoutTests
         var picture = Arrange(Calm() with { Life = life });
 
         Assert.Equal(full, Single(picture, "life_full").Width);
-        Assert.Null(picture.LifeEdge);
     }
 
     [Fact]
@@ -438,6 +589,61 @@ public class HudLayoutTests
         // Since issue #381 the leech has its picture too; before, its initial "L" stood in.
         AssertCentredIn(Layout.Bounds(frames[2]), Layout.Bounds(Single(picture, "icon_leech")));
         Assert.DoesNotContain(picture.Texts, text => text.Text == "L");
+    }
+
+    // Whether the point (given doubled, to keep half pixels) lies in the rectangle.
+    private static bool Contains(HudRect rect, int doubledX, int doubledY) =>
+        2 * rect.X <= doubledX && doubledX < 2 * rect.Right && 2 * rect.Y <= doubledY && doubledY < 2 * rect.Bottom;
+
+    // The contents of a frame as the eye groups them: things side by side at most a sign gap apart (a sign and its
+    // number, interlocking bar segments) make one block.
+    private static List<HudRect> Blocks(IEnumerable<HudRect> contents)
+    {
+        var blocks = contents.ToList();
+        for (var merged = true; merged;)
+        {
+            merged = false;
+            for (var i = 0; i < blocks.Count && !merged; i++)
+            {
+                for (var j = i + 1; j < blocks.Count && !merged; j++)
+                {
+                    var (a, b) = (blocks[i], blocks[j]);
+                    var sideBySide = a.Y < b.Bottom && b.Y < a.Bottom;
+                    var gap = Math.Max(a.X, b.X) - Math.Min(a.Right, b.Right);
+                    if (sideBySide && gap <= HudLayout.SignGap)
+                    {
+                        blocks[i] = Union([a, b])!.Value;
+                        blocks.RemoveAt(j);
+                        merged = true;
+                    }
+                }
+            }
+        }
+
+        return blocks;
+    }
+
+    // The blocks share the ground with equal gaps (within a pixel) to its edges and to each other along one line,
+    // and stand in its middle across that line; one block alone stands in the middle both ways.
+    private static void AssertSpreadEvenly(HudRect ground, List<HudRect> blocks, string what)
+    {
+        var vertical = blocks.Count > 1 && blocks.Any(a => blocks.Any(b => a != b && a.X < b.Right && b.X < a.Right));
+        var (start, length) = vertical ? (ground.Y, ground.Height) : (ground.X, ground.Width);
+        var line = blocks.Select(block => vertical ? (Start: block.Y, End: block.Bottom) : (Start: block.X, End: block.Right))
+            .OrderBy(span => span.Start).ToList();
+
+        var gaps = new List<int> { line[0].Start - start };
+        gaps.AddRange(line.Zip(line.Skip(1), (before, after) => after.Start - before.End));
+        gaps.Add(start + length - line[^1].End);
+        Assert.True(gaps.Max() - gaps.Min() <= 1, $"{what}: gaps {string.Join(", ", gaps)} along the {(vertical ? "height" : "width")}");
+
+        foreach (var block in blocks)
+        {
+            var across = vertical
+                ? (2 * block.X) + block.Width - ((2 * ground.X) + ground.Width)
+                : (2 * block.Y) + block.Height - ((2 * ground.Y) + ground.Height);
+            Assert.True(Math.Abs(across) <= 1, $"{what}: {block} is {across / 2.0} off the middle of {ground}");
+        }
     }
 
     private static void AssertCentredIn(HudRect frame, HudRect icon)

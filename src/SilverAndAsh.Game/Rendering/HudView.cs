@@ -136,11 +136,6 @@ internal sealed class HudView : IDisposable
             Raylib.DrawRectangle(veil.Right - 1, veil.Y, 1, veil.Height, veilEdge);
         }
 
-        if (picture.LifeEdge is { } edge)
-        {
-            Raylib.DrawRectangle(edge.X, edge.Y, edge.Width, edge.Height, ColorOf(_parts.LifeEdge));
-        }
-
         var shadow = ColorOf(_parts.TextShadow);
         foreach (var text in picture.Texts)
         {
@@ -186,6 +181,7 @@ internal sealed class HudView : IDisposable
     {
         HudTextColor.Second => _parts.TextSecond,
         HudTextColor.Pickup => _parts.TextPickup,
+        HudTextColor.Hint => _parts.TextHint,
         _ => _parts.TextMain,
     });
 
