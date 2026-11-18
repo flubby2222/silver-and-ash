@@ -5,16 +5,17 @@ using SilverAndAsh.Game.Input;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// A column of buttons in the middle of the screen, for the title screen and the Esc menu. Works with the mouse
+/// A column of buttons in the middle of the screen, for the title screen, the Esc menu and the settings. Works with the mouse
 /// (point, click) and the keyboard (Up/Down, Enter or Space; Left/Right for a value row). Pure presentation and
 /// input - what a button does decides the caller.
 /// </summary>
 internal sealed class MenuView
 {
     private const int ButtonWidth = 380;
-    private const int ButtonHeight = 50;
-    private const int Gap = 14;
     private const int FontSize = 26;
+
+    private readonly int _buttonHeight;
+    private readonly int _gap;
 
     private static readonly Color Panel = new(24, 20, 24, 230);
     private static readonly Color Border = new(90, 84, 92, 255);
@@ -22,6 +23,19 @@ internal sealed class MenuView
     private static readonly Color Text = new(220, 220, 228, 255);
 
     private Vector2 _lastMouse = new(float.NaN, float.NaN);
+
+    /// <summary>
+    /// A menu with buttons <paramref name="buttonHeight"/> pixels high, <paramref name="gap"/> pixels apart - lower
+    /// for menus with many rows (the settings), so they still fit into a window 480 pixels high.
+    /// </summary>
+    public MenuView(int buttonHeight = 50, int gap = 14)
+    {
+        _buttonHeight = buttonHeight;
+        _gap = gap;
+    }
+
+    /// <summary>The height of <paramref name="count"/> buttons from the top of the first to the bottom of the last.</summary>
+    public int Height(int count) => count * (_buttonHeight + _gap) - _gap;
 
     /// <summary>The button the keyboard (or the mouse pointer) is on.</summary>
     public int Selected { get; private set; }
@@ -121,7 +135,7 @@ internal sealed class MenuView
             Raylib.DrawRectangleLinesEx(rect, i == Selected ? 3f : 1f, i == Selected ? Highlight : Border);
 
             var width = Raylib.MeasureText(items[i], FontSize);
-            var textY = (int)(rect.Y + (ButtonHeight - FontSize) / 2f);
+            var textY = (int)(rect.Y + (_buttonHeight - FontSize) / 2f);
             Raylib.DrawText(items[i], (int)(rect.X + (rect.Width - width) / 2f), textY, FontSize, i == Selected ? Highlight : Text);
 
             if (valueRows.Contains(i))
@@ -139,6 +153,6 @@ internal sealed class MenuView
         Raylib.DrawText(text, (Raylib.GetScreenWidth() - width) / 2, y, fontSize, color);
     }
 
-    private static Rectangle ButtonRect(int index, int top) => new(
-        (Raylib.GetScreenWidth() - ButtonWidth) / 2f, top + index * (ButtonHeight + Gap), ButtonWidth, ButtonHeight);
+    private Rectangle ButtonRect(int index, int top) => new(
+        (Raylib.GetScreenWidth() - ButtonWidth) / 2f, top + index * (_buttonHeight + _gap), ButtonWidth, _buttonHeight);
 }
