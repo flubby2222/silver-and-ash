@@ -12,7 +12,7 @@ public class EquipmentPickupTests
 
     private static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
-    private static readonly PlayerInput Toggle = PlayerInput.None with { ToggleInventory = true };
+    private static readonly PlayerInput Toggle = PlayerInput.None with { PressMenu = MenuKey.Equipment };
 
     /// <summary>A world whose floor holds <paramref name="weapons"/> and <paramref name="items"/> (at the player's feet unless placed).</summary>
     private static GameWorld World(ExhibitWeapon[]? weapons = null, ExhibitItem[]? items = null) =>

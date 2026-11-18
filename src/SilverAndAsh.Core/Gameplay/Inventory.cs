@@ -49,10 +49,13 @@ public sealed partial class Player
     public IReadOnlyList<ItemKind> Items => _items;
 
     /// <summary>
-    /// True while the inventory window is open (G). The world goes on meanwhile; only the player closes it - neither
-    /// moving nor a hit does (issue #346).
+    /// The menu of this player: closed, the map page (Tab) or the equipment page (G), issue #348. The world goes on
+    /// meanwhile; only the player closes it - neither moving nor a hit does (issue #346).
     /// </summary>
-    public bool IsInventoryOpen { get; private set; }
+    public PlayerMenu Menu { get; private set; }
+
+    /// <summary>True while the menu shows the equipment page (G) - the inventory of decision record 0008.</summary>
+    public bool IsInventoryOpen => Menu.Page == PlayerMenuPage.Equipment;
 
     /// <summary>
     /// Puts <paramref name="kind"/> (a ranged one ready and full) into the first free place of the <see cref="Bag"/>.
@@ -92,20 +95,21 @@ public sealed partial class Player
     internal void Take(ItemKind kind) => _items.Add(kind);
 
     /// <summary>
-    /// Opens and closes the window (G) and carries out a click while it is open. Comes first in every tick, so a click acts
-    /// on the weapons before this tick's attacks. Only the player closes it - neither moving nor a hit does (issue #346).
+    /// Turns the pages of the menu (Tab, G, Esc - issue #348) and carries out a click while the equipment page is open.
+    /// Comes first in every tick, so a click acts on the weapons before this tick's attacks. Only the player closes the
+    /// menu - neither moving nor a hit does (issue #346); a dead player's menu closes and stays closed.
     /// </summary>
     private void UseInventory(Input.PlayerInput input)
     {
         if (IsDead)
         {
-            IsInventoryOpen = false;
+            Menu = PlayerMenu.Closed;
             return;
         }
 
-        if (input.ToggleInventory)
+        if (input.PressMenu is { } key)
         {
-            IsInventoryOpen = !IsInventoryOpen;
+            Menu = Menu.Press(key);
         }
 
         if (IsInventoryOpen && input.InventoryClick is { } click)
