@@ -1,6 +1,6 @@
-using System.Globalization;
 using Raylib_cs;
 using SilverAndAsh.Core;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
@@ -18,15 +18,10 @@ internal static class SettingsMenu
     public const int Display = 4;
     public const int Back = 5;
 
-    private const int RowCount = 6;
-    private static readonly int[] ValueRows = [Sensitivity, Master, Effects, Ambience, Display];
-
     private static readonly Color Shade = new(0, 0, 0, 160);
-    private static readonly Color Heading = new(214, 204, 180, 255);
-    private static readonly Color Hint = new(150, 150, 160, 255);
 
-    /// <summary>A menu with lower rows than the others, so six of them fit into a window 480 pixels high.</summary>
-    public static MenuView NewMenu() => new(buttonHeight: 40, gap: 8);
+    /// <summary>The menu of the settings; where its rows sit decides <see cref="MenuLayout.Settings"/>.</summary>
+    public static MenuView NewMenu() => new();
 
     /// <summary>
     /// <see cref="Back"/> if "Back" was chosen this frame, otherwise -1. <paramref name="changed"/> holds the settings
@@ -34,7 +29,8 @@ internal static class SettingsMenu
     /// </summary>
     public static int Update(MenuView menu, GameSettings settings, out GameSettings changed)
     {
-        var chosen = menu.Update(Items(settings), Top(menu), out var step);
+        var canvas = MenuArt.Canvas;
+        var chosen = menu.Update(MenuArt.Layout.Settings(canvas, menu.Selected, settings).Rows, canvas, out var step);
         // Enter or a click in the middle swaps window and full screen; on the other rows only Left/Right change something.
         changed = step == 0 && chosen != Display ? settings : menu.Selected switch
         {
@@ -48,28 +44,11 @@ internal static class SettingsMenu
         return chosen == Back ? Back : -1;
     }
 
+    /// <summary>Draws the settings in the design "C2 Slim" (issue #371): a slider per value, the display in use framed.</summary>
     public static void Draw(MenuView menu, GameSettings settings)
     {
-        Raylib.DrawRectangle(0, 0, Raylib.GetScreenWidth(), Raylib.GetScreenHeight(), Shade);
-        var top = Top(menu);
-        MenuView.DrawTitle("SETTINGS", top - 60, 40, Heading);
-        menu.Draw(Items(settings), top, ValueRows);
-        MenuView.DrawTitle("Left/Right: change    Esc: back", top + menu.Height(RowCount) + 14, 18, Hint);
+        MenuArt.Shade(Shade);
+        var canvas = MenuArt.Canvas;
+        MenuArt.Draw(MenuArt.Layout.Settings(canvas, menu.Selected, settings), canvas);
     }
-
-    // The rows in the middle of the screen, a little lower, so the heading fits above them.
-    private static int Top(MenuView menu) => (Raylib.GetScreenHeight() - menu.Height(RowCount)) / 2 + 20;
-
-    private static string[] Items(GameSettings settings) =>
-    [
-        string.Create(CultureInfo.InvariantCulture, $"Mouse sensitivity {settings.MouseSensitivity:0.00}"),
-        $"Master volume {Percent(settings.MasterVolume)}",
-        $"Effects volume {Percent(settings.EffectsVolume)}",
-        $"Ambience volume {Percent(settings.AmbienceVolume)}",
-        settings.FullScreen ? "Full screen" : "Window",
-        "Back",
-    ];
-
-    private static string Percent(float volume) =>
-        string.Create(CultureInfo.InvariantCulture, $"{MathF.Round(volume * 100f):0}%");
 }

@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Game.Input;
 
 namespace SilverAndAsh.Game.Rendering;
@@ -61,27 +62,38 @@ internal sealed class MenuView
     /// Returns the button that was chosen this frame (-1 for none). <paramref name="step"/> is -1 / +1 when the
     /// selected button was nudged left or right (arrow keys, or a click on its left or right half) - for value rows.
     /// </summary>
-    public int Update(IReadOnlyList<string> items, int top, out int step)
+    public int Update(IReadOnlyList<string> items, int top, out int step) =>
+        Update(items.Select((_, i) => ButtonRect(i, top)).ToArray(), out step);
+
+    /// <summary>
+    /// As above, for the entries <paramref name="rows"/> of a menu laid out on <paramref name="canvas"/>
+    /// (<see cref="MenuLayout"/>, issue #371) - the pointer is tested against them where the canvas shows them.
+    /// </summary>
+    public int Update(IReadOnlyList<MenuRect> rows, MenuCanvas canvas, out int step) =>
+        Update(rows.Select(row => new Rectangle(canvas.Screen.X + (row.X * canvas.Scale), canvas.ToWindowY(row.Y),
+            row.Width * canvas.Scale, row.Height * canvas.Scale)).ToArray(), out step);
+
+    private int Update(Rectangle[] buttons, out int step)
     {
-        Selected = Math.Clamp(Selected, 0, items.Count - 1);
+        Selected = Math.Clamp(Selected, 0, buttons.Length - 1);
         var before = Selected;
-        var chosen = Read(items, top, out step);
+        var chosen = Read(buttons, out step);
         Clicked = Selected != before || step != 0 || chosen >= 0;
         return chosen;
     }
 
-    private int Read(IReadOnlyList<string> items, int top, out int step)
+    private int Read(Rectangle[] buttons, out int step)
     {
         step = 0;
 
         if (Raylib.IsKeyPressed(KeyboardKey.Down))
         {
-            Selected = (Selected + 1) % items.Count;
+            Selected = (Selected + 1) % buttons.Length;
         }
 
         if (Raylib.IsKeyPressed(KeyboardKey.Up))
         {
-            Selected = (Selected + items.Count - 1) % items.Count;
+            Selected = (Selected + buttons.Length - 1) % buttons.Length;
         }
 
         if (Raylib.IsKeyPressed(KeyboardKey.Left))
@@ -97,9 +109,9 @@ internal sealed class MenuView
         // The pointer only takes over the selection when it moves - so the keyboard is not fought by a resting mouse.
         var mouse = Raylib.GetMousePosition();
         var hovered = -1;
-        for (var i = 0; i < items.Count; i++)
+        for (var i = 0; i < buttons.Length; i++)
         {
-            if (Raylib.CheckCollisionPointRec(mouse, ButtonRect(i, top)))
+            if (Raylib.CheckCollisionPointRec(mouse, buttons[i]))
             {
                 hovered = i;
             }
@@ -115,7 +127,7 @@ internal sealed class MenuView
         if (hovered >= 0 && Raylib.IsMouseButtonPressed(MouseButton.Left))
         {
             Selected = hovered;
-            var rect = ButtonRect(hovered, top);
+            var rect = buttons[hovered];
             step = mouse.X < rect.X + rect.Width / 3f ? -1 : mouse.X > rect.X + rect.Width * 2f / 3f ? 1 : 0;
             return hovered;
         }
