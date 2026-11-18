@@ -126,6 +126,16 @@ internal sealed class HudView : IDisposable
                 new Vector2(part.X, part.Y), Color.White);
         }
 
+        // The reload veil over the weapon picture (issue #370), shrinking as the reload comes on; its right column is
+        // the light front edge.
+        var veilColor = ColorOf(_parts.ReloadVeil, _parts.ReloadVeilAlpha);
+        var veilEdge = ColorOf(_parts.ReloadVeilEdge, _parts.ReloadVeilEdgeAlpha);
+        foreach (var veil in picture.ReloadVeils)
+        {
+            Raylib.DrawRectangle(veil.X, veil.Y, veil.Width - 1, veil.Height, veilColor);
+            Raylib.DrawRectangle(veil.Right - 1, veil.Y, 1, veil.Height, veilEdge);
+        }
+
         if (picture.LifeEdge is { } edge)
         {
             Raylib.DrawRectangle(edge.X, edge.Y, edge.Width, edge.Height, ColorOf(_parts.LifeEdge));
@@ -179,5 +189,6 @@ internal sealed class HudView : IDisposable
         _ => _parts.TextMain,
     });
 
-    private static Color ColorOf(HudColor color) => new(color.R, color.G, color.B, (byte)255);
+    private static Color ColorOf(HudColor color, float alpha = 1f) =>
+        new(color.R, color.G, color.B, (byte)MathF.Round(255f * Math.Clamp(alpha, 0f, 1f)));
 }

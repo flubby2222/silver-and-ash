@@ -4,9 +4,10 @@ namespace SilverAndAsh.Core.Presentation;
 
 /// <summary>
 /// One weapon place of the HUD: the weapon in it (null while empty), its rounds (null for a melee weapon or an empty
-/// place), whether it is reloading and whether it is the chosen ranged weapon.
+/// place), whether it is reloading and whether it is the chosen ranged weapon, and how far the reload has come (0 to 1,
+/// 0 while not reloading; issue #370).
 /// </summary>
-public readonly record struct HudWeapon(WeaponKind? Kind, int? Rounds, bool IsReloading, bool IsSelected);
+public readonly record struct HudWeapon(WeaponKind? Kind, int? Rounds, bool IsReloading, bool IsSelected, float ReloadProgress = 0f);
 
 /// <summary>The boss of a running boss fight: his name and how much of his health is left (0 to 1).</summary>
 public readonly record struct HudBoss(string Name, float Health);
@@ -51,7 +52,8 @@ public sealed record HudReadout(
         for (var slot = 0; slot < Player.RangedSlotCount; slot++)
         {
             weapons.Add(player.RangedSlots[slot] is { } ranged
-                ? new HudWeapon(ranged.Kind, ranged.Magazine.Rounds, ranged.Magazine.IsReloading, slot == player.SelectedSlot)
+                ? new HudWeapon(ranged.Kind, ranged.Magazine.Rounds, ranged.Magazine.IsReloading, slot == player.SelectedSlot,
+                    ranged.Magazine.ReloadProgress)
                 : new HudWeapon(null, null, false, false));
         }
 

@@ -306,6 +306,8 @@ static void RunGame(
         Func<IWeaponView> newWeaponView = () => new WeaponView();
         IWeaponView weaponView = newWeaponView();
         var damageFeedback = new DamageFeedback();
+        var screenEffects = new ScreenEffects(player.Id);
+        using var screenEffectsView = new ScreenEffectsView();
         var equipmentCard = new EquipmentCard();
         var input = new RaylibInput();
 
@@ -363,6 +365,7 @@ static void RunGame(
             wallBreakView = new WallBreakView();
             weaponView = newWeaponView();
             damageFeedback = new DamageFeedback();
+            screenEffects = new ScreenEffects(player.Id);
             equipmentCard = new EquipmentCard();
             hud?.Reset();
         }
@@ -460,9 +463,13 @@ static void RunGame(
                 wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position, gameWorld.Surfaces);
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
+                screenEffects.OnEvent(gameEvent);
                 equipmentCard.OnEvent(gameEvent, player.Id);
                 hud?.OnEvent(gameEvent, player.Id);
             }
+
+            // Once per tick, like the events: the edge effects count in ticks (issue #370).
+            screenEffects.Tick(player);
         }
 
         void UpdateViews(float frameSeconds)
@@ -554,6 +561,13 @@ static void RunGame(
 
             levelShader.EndFigures();
             Raylib.EndMode3D();
+
+            // The edge effects in the small picture, so they get its big pixels (issue #370); not over the end screen.
+            if (endSummary is null)
+            {
+                screenEffectsView.Draw(screenEffects, picture.Width, picture.Height);
+            }
+
             picture.EndDrawing();
         }
 

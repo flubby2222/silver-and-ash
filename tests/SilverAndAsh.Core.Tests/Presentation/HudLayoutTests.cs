@@ -429,6 +429,83 @@ public class HudLayoutTests
         Assert.All(Enum.GetValues<WeaponKind>(), kind => Assert.Empty(Font.Missing(Weapons.Info(kind).Name)));
     }
 
+    [Fact]
+    public void A_weapon_not_reloading_has_no_veil()
+    {
+        Assert.Empty(Arrange(Calm()).ReloadVeils);
+    }
+
+    [Theory]
+    [MemberData(nameof(PictureWidths))]
+    public void The_reload_veil_lies_inside_the_frame_of_the_weapon_being_reloaded(int pictureWidth)
+    {
+        var readout = Calm() with
+        {
+            Weapons =
+            [
+                new(WeaponKind.SilverBlade, null, false, false),
+                new(WeaponKind.Pistol, 0, true, true, 0f),
+                new(null, null, false, false),
+                new(null, null, false, false),
+            ],
+        };
+
+        var picture = Arrange(readout, canvas: HudCanvas.For(pictureWidth));
+
+        var veil = Assert.Single(picture.ReloadVeils);
+        var frame = Layout.Bounds(picture.Parts.Single(part => part.Name == "frame_weapon_1_active"));
+        Assert.Equal(frame.X + HudLayout.VeilInset, veil.X);
+        Assert.Equal(HudLayout.VeilWidth, veil.Width);
+        Assert.Equal(HudLayout.VeilHeight, veil.Height);
+        Assert.True(veil.Right <= frame.Right - HudLayout.VeilInset + 1, $"veil ends at {veil.Right}, frame at {frame.Right}");
+        Assert.True(veil.Bottom <= frame.Bottom, $"veil ends at {veil.Bottom}, frame at {frame.Bottom}");
+        Assert.True(veil.Y > frame.Y, $"veil starts at {veil.Y}, frame at {frame.Y}");
+    }
+
+    [Fact]
+    public void The_reload_veil_shrinks_from_the_right_as_the_reload_comes_on()
+    {
+        var start = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 0f);
+        var half = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 0.5f);
+        var nearlyDone = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 0.9f);
+        var done = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 1f);
+
+        Assert.Equal(HudLayout.VeilWidth, start!.Value.Width);
+        Assert.Equal(HudLayout.VeilWidth / 2, half!.Value.Width);
+        Assert.Equal(start.Value.X, half.Value.X);
+        Assert.True(nearlyDone!.Value.Width < half.Value.Width);
+        Assert.Null(done);
+        Assert.Equal(HudLayout.BottomBaseline - HudLayout.BottomBodyHeight + HudLayout.VeilInset, start.Value.Y);
+    }
+
+    [Fact]
+    public void The_reload_veil_width_is_rounded_not_cut_off()
+    {
+        // 32 * 0.8 = 25.6: rounded 26, cut off 25. The example must tell the two apart.
+        var exact = HudLayout.VeilWidth * 0.8f;
+        Assert.NotEqual((int)exact, (int)MathF.Round(exact));
+
+        var veil = HudLayout.ReloadVeil(100, HudLayout.BottomBaseline, 0.2f);
+
+        Assert.Equal((int)MathF.Round(exact), veil!.Value.Width);
+    }
+
+    [Fact]
+    public void The_reload_veil_takes_its_look_from_the_table()
+    {
+        using var json = System.Text.Json.JsonDocument.Parse(
+            File.ReadAllText(RepositoryFiles.Find("assets/hud/hud_parts.json")));
+        var veil = json.RootElement.GetProperty("game").GetProperty("reloadVeil");
+
+        Assert.Equal(veil.GetProperty("alpha").GetSingle(), Parts.ReloadVeilAlpha);
+        Assert.Equal(veil.GetProperty("edgeAlpha").GetSingle(), Parts.ReloadVeilEdgeAlpha);
+        Assert.Equal(veil.GetProperty("color")[0].GetInt32(), Parts.ReloadVeil.R);
+        Assert.Equal(veil.GetProperty("edgeColor")[0].GetInt32(), Parts.ReloadVeilEdge.R);
+        Assert.InRange(Parts.ReloadVeilAlpha, 0.01f, 1f);
+        Assert.InRange(Parts.ReloadVeilEdgeAlpha, 0.01f, 1f);
+        Assert.NotEqual(Parts.ReloadVeil, Parts.ReloadVeilEdge);
+    }
+
     private static HudRect? Union(IEnumerable<HudRect> rects)
     {
         HudRect? union = null;

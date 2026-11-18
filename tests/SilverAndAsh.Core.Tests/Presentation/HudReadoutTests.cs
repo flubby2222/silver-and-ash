@@ -57,6 +57,29 @@ public class HudReadoutTests
     }
 
     [Fact]
+    public void A_weapon_being_reloaded_shows_how_far_the_reload_has_come()
+    {
+        var world = PlainWorld();
+        var player = world.Player;
+        var slot = player.SelectedSlot;
+        world.Tick(PlayerInput.None with { Shoot = true });
+        world.Tick(PlayerInput.None);
+        world.Tick(PlayerInput.None with { Reload = true });
+        var magazine = player.RangedSlots[slot]!.Magazine;
+        var reloadTicks = SimulationClock.SecondsToTicks(world.Balance.Pistol.ReloadTime);
+        for (var tick = 0; tick < reloadTicks / 2; tick++)
+        {
+            world.Tick(PlayerInput.None);
+        }
+
+        var weapon = HudReadout.Of(world, player).Weapons[1 + slot];
+
+        Assert.True(weapon.IsReloading);
+        Assert.Equal(magazine.ReloadProgress, weapon.ReloadProgress);
+        Assert.InRange(weapon.ReloadProgress, 0.3f, 0.7f);
+    }
+
+    [Fact]
     public void The_selected_ranged_weapon_is_the_one_the_player_switched_to()
     {
         var world = PlainWorld();
