@@ -134,7 +134,7 @@ public sealed record ExperienceBalance
     /// <summary>Experience for killing a bat.</summary>
     public int Bat { get; init; } = 20;
 
-    /// <summary>Experience needed from level 1 to level 2.</summary>
+    /// <summary>Experience needed from level 0 (the start) to level 1.</summary>
     public int FirstLevel { get; init; } = 100;
 
     /// <summary>Every further level needs this many times as much as the one before (1.25: 100, 125, 156, 195 ...).</summary>
@@ -382,6 +382,9 @@ public sealed record DifficultyBalance
 
     /// <summary>Weight of bats far from the start (and in the boss room).</summary>
     public float BatWeightFar { get; init; } = 0.4f;
+
+    /// <summary>Most bats in one room (issue #391): once a room holds this many, its budget buys only ghouls.</summary>
+    public int MaxBatsPerRoom { get; init; } = 3;
 
     /// <summary>Least distance (metres, cell middle to cell middle) of an enemy from the room's doors.</summary>
     public float DoorDistance { get; init; } = 4f;

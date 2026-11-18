@@ -187,7 +187,7 @@
   "experience": {
     "ghoul": 30,                        // experience for killing a ghoul (the killing hit counts)
     "bat": 20,                          // for a bat
-    "firstLevel": 100,                  // needed from level 1 to 2 ...
+    "firstLevel": 100,                  // needed from level 0 to 1 ...
     "growth": 1.25                      // ... and every further level x1.25 (100, 125, 156, 195, 244 ...)
   },
 
@@ -282,6 +282,7 @@
     "ghoulWeightFar": 0.6,
     "batWeightNear": 0.15,              // ... far away more bats
     "batWeightFar": 0.4,
+    "maxBatsPerRoom": 3,                // never more bats than this in one room (provisional, issue #391)
     "doorDistance": 4,                  // m: no enemy closer than this to a door of its room
     "spacing": 2.5                      // m: no two enemies closer than this
   },

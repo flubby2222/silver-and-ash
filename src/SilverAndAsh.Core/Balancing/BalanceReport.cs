@@ -161,11 +161,11 @@ public static class BalanceReport
     public static int LevelReached(int experience, ExperienceBalance balance)
     {
         ArgumentNullException.ThrowIfNull(balance);
-        var level = 1;
+        var level = 0;
         var left = experience;
         while (true)
         {
-            var needed = (int)MathF.Round(balance.FirstLevel * MathF.Pow(balance.Growth, level - 1), MidpointRounding.AwayFromZero);
+            var needed = (int)MathF.Round(balance.FirstLevel * MathF.Pow(balance.Growth, level), MidpointRounding.AwayFromZero);
             if (needed <= 0 || left < needed)
             {
                 return level;

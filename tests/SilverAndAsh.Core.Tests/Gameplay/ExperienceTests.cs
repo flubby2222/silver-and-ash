@@ -15,13 +15,35 @@ public class ExperienceTests
     };
 
     [Fact]
-    public void A_new_player_is_level_one_without_experience()
+    public void A_new_player_is_level_zero_without_experience()
     {
         var player = new Player(LevelParser.Parse("P"));
 
-        Assert.Equal(1, player.Level);
+        Assert.Equal(0, player.Level);
         Assert.Equal(0, player.Experience);
         Assert.Equal(Balance.Default.Experience.FirstLevel, player.ExperienceToNextLevel);
+    }
+
+    [Fact]
+    public void The_first_threshold_leads_to_level_one_with_one_skill_point_and_the_thresholds_stay()
+    {
+        // Issue #391: counting starts at 0, but every threshold and skill point stays where it was.
+        var experience = Balance.Default.Experience;
+        var player = new Player(LevelParser.Parse("P"));
+        var events = new List<GameEvent>();
+
+        player.AddExperience(experience.FirstLevel - 1, events);
+        Assert.Equal(0, player.Level);
+        Assert.Equal(0, player.PendingBoons);
+
+        player.AddExperience(1, events);
+        Assert.Equal(1, player.Level);
+        Assert.Equal(1, player.PendingBoons);
+        Assert.Equal(new LevelUp(player.Id, 1), Assert.Single(events.OfType<LevelUp>()));
+        Assert.Equal(0, player.Experience);
+        Assert.Equal(
+            (int)MathF.Round(experience.FirstLevel * experience.Growth, MidpointRounding.AwayFromZero),
+            player.ExperienceToNextLevel);
     }
 
     [Fact]
@@ -110,15 +132,15 @@ public class ExperienceTests
         var player = new Player(LevelParser.Parse("P"));
 
         player.AddExperience(100, []);
-        Assert.Equal(2, player.Level);
+        Assert.Equal(1, player.Level);
         Assert.Equal(125, player.ExperienceToNextLevel);
 
         player.AddExperience(125, []);
-        Assert.Equal(3, player.Level);
+        Assert.Equal(2, player.Level);
         Assert.Equal(156, player.ExperienceToNextLevel);
 
         player.AddExperience(156, []);
-        Assert.Equal(4, player.Level);
+        Assert.Equal(3, player.Level);
         Assert.Equal(195, player.ExperienceToNextLevel);
     }
 
@@ -129,7 +151,7 @@ public class ExperienceTests
 
         player.AddExperience(130, []);
 
-        Assert.Equal(2, player.Level);
+        Assert.Equal(1, player.Level);
         Assert.Equal(30, player.Experience);
     }
 
@@ -141,9 +163,9 @@ public class ExperienceTests
 
         player.AddExperience(235, events);      // 100 + 125, 10 left
 
-        Assert.Equal(3, player.Level);
+        Assert.Equal(2, player.Level);
         Assert.Equal(10, player.Experience);
-        Assert.Equal([new LevelUp(player.Id, 2), new LevelUp(player.Id, 3)], events.OfType<LevelUp>());
+        Assert.Equal([new LevelUp(player.Id, 1), new LevelUp(player.Id, 2)], events.OfType<LevelUp>());
     }
 
     [Fact]
@@ -154,7 +176,7 @@ public class ExperienceTests
 
         player.AddExperience(99, events);
 
-        Assert.Equal(1, player.Level);
+        Assert.Equal(0, player.Level);
         Assert.DoesNotContain(events, e => e is LevelUp);
     }
 
@@ -169,7 +191,7 @@ public class ExperienceTests
 
         player.AddExperience(10, []);
 
-        Assert.Equal(1, player.Level);
+        Assert.Equal(0, player.Level);
     }
 
     [Fact]
@@ -180,19 +202,19 @@ public class ExperienceTests
 
         player.AddExperience(500, []);
 
-        Assert.Equal(1, player.Level);
+        Assert.Equal(0, player.Level);
         Assert.Equal(0, player.Experience);
     }
 
     [Fact]
-    public void A_restart_begins_at_level_one_again()
+    public void A_restart_begins_at_level_zero_again()
     {
         var world = new GameWorld(LevelParser.Parse("P"));
         world.Player.AddExperience(300, []);
 
         var restarted = world.Restarted();
 
-        Assert.Equal(1, restarted.Player.Level);
+        Assert.Equal(0, restarted.Player.Level);
         Assert.Equal(0, restarted.Player.Experience);
     }
 
@@ -207,8 +229,8 @@ public class ExperienceTests
 
         Shoot(world, world.Ghouls[0].Position + new Vector3(0f, 0.5f, 0f));
 
-        // 70 experience: level 2 needs 60, then 10 are left of the 90 (60 x 1.5) for level 3.
-        Assert.Equal(2, world.Player.Level);
+        // 70 experience: level 1 needs 60, then 10 are left of the 90 (60 x 1.5) for level 2.
+        Assert.Equal(1, world.Player.Level);
         Assert.Equal(10, world.Player.Experience);
         Assert.Equal(90, world.Player.ExperienceToNextLevel);
     }
@@ -233,7 +255,7 @@ public class ExperienceTests
         player.AddExperience(needed, events);
 
         Assert.Equal(levels, player.PendingBoons);
-        Assert.Equal(Enumerable.Range(2, levels).Select(level => new LevelUp(player.Id, level)), events.OfType<LevelUp>());
+        Assert.Equal(Enumerable.Range(1, levels).Select(level => new LevelUp(player.Id, level)), events.OfType<LevelUp>());
     }
 
     [Fact]
@@ -249,7 +271,7 @@ public class ExperienceTests
         Shoot(world, world.Ghouls[0].Position + new Vector3(0f, 0.5f, 0f));
 
         Assert.Equal(1, world.Player.PendingBoons);
-        Assert.Equal(new LevelUp(world.Player.Id, 2), Assert.Single(world.Events.OfType<LevelUp>()));
+        Assert.Equal(new LevelUp(world.Player.Id, 1), Assert.Single(world.Events.OfType<LevelUp>()));
         for (var tick = 0; tick < SimulationClock.TicksPerSecond; tick++)
         {
             world.Tick(PlayerInput.None);
