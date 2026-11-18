@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Presentation;
 
@@ -248,7 +249,7 @@ public class MenuLayoutTests
         "settings" => Layout.Settings(canvas, selected, new GameSettings()),
         "settings-full" => Layout.Settings(canvas, selected,
             new GameSettings { FullScreen = true, MouseSensitivity = GameSettings.MaxMouseSensitivity, MasterVolume = 1f }),
-        "map" => Layout.MapTabs(canvas, out _),
+        "map" => Layout.Map(canvas).Frame,
         _ => Layout.Equipment(canvas, Player.InventorySlotCount).Frame,
     };
 
@@ -309,15 +310,15 @@ public class MenuLayoutTests
 
         var shiftX = (actual.CentreX - (canvas.Width / 2f)) - (expected.CentreX - (design.Width / 2f));
         var shiftY = (actual.CentreY - canvas.OffsetY) - (expected.CentreY - design.OffsetY);
-        Assert.True(MathF.Abs(shiftX) <= 1.5f, $"{screen} sits {shiftX} px off the middle sideways ({actual} on {canvas.Width} x {canvas.Height})");
-        if (screen == "map")
+        Assert.True(MathF.Abs(shiftY) <= 1.5f, $"{screen} sits {shiftY} px off the middle upright ({actual} on {canvas.Width} x {canvas.Height})");
+        if (screen is "map" or "equipment")
         {
-            // The map page grows downwards from under its tabs (MapView), so the tabs keep to the top of the canvas.
-            Assert.Equal(expected.Y, actual.Y);
+            // Since issue #390 both pages leave the frame of values free on the left (it keeps to the HUD's top left
+            // corner): sideways they fill the room right of it - tested in The_pages_stand_right_of_the_frame_of_values.
             return;
         }
 
-        Assert.True(MathF.Abs(shiftY) <= 1.5f, $"{screen} sits {shiftY} px off the middle upright ({actual} on {canvas.Width} x {canvas.Height})");
+        Assert.True(MathF.Abs(shiftX) <= 1.5f, $"{screen} sits {shiftX} px off the middle sideways ({actual} on {canvas.Width} x {canvas.Height})");
     }
 
     [Theory]
@@ -429,7 +430,7 @@ public class MenuLayoutTests
     public void Tab_labels_fit_their_tabs(int windowWidth, int windowHeight)
     {
         var canvas = MenuCanvas.For(windowWidth, windowHeight);
-        foreach (var picture in new[] { Layout.MapTabs(canvas, out _), Layout.Equipment(canvas, 0).Frame })
+        foreach (var picture in new[] { Layout.Map(canvas).Frame, Layout.Equipment(canvas, 0).Frame })
         {
             Assert.Equal(2, picture.Tabs.Count);
             foreach (var tab in picture.Tabs)
@@ -446,14 +447,120 @@ public class MenuLayoutTests
         }
     }
 
-    [Fact]
-    public void The_map_tabs_end_where_the_map_page_continues()
+    [Theory]
+    [MemberData(nameof(Windows))]
+    public void The_tabs_stand_at_the_same_place_on_both_pages(int windowWidth, int windowHeight)
     {
-        var picture = Layout.MapTabs(MenuCanvas.For(854, 480), out var bottom);
+        // Issue #390: turning the page must not move the tabs - each tab covers the same rectangle on both pages, and the
+        // mouse clicks it there.
+        var canvas = MenuCanvas.For(windowWidth, windowHeight);
+        var map = Layout.Map(canvas).Frame.Tabs;
+        var equipment = Layout.Equipment(canvas, 0).Frame.Tabs;
 
-        Assert.Equal(58f, bottom);
-        Assert.True(picture.Tabs.Single(tab => tab.Open).Index == 0);
-        Assert.All(picture.Tabs, tab => Assert.True(Parts.Tab(tab.Index, tab.Open, tab.Left, tab.Top).Target.Bottom <= bottom + 1));
+        Assert.Equal(0, map.Single(tab => tab.Open).Index);
+        Assert.Equal(1, equipment.Single(tab => tab.Open).Index);
+        for (var i = 0; i < MenuLayout.TabLabels.Count; i++)
+        {
+            var onMap = map.Single(tab => tab.Index == i);
+            var onEquipment = equipment.Single(tab => tab.Index == i);
+            Assert.Equal((onMap.Left, onMap.Top), (onEquipment.Left, onEquipment.Top));
+            Assert.Equal(MenuLayout.TabOutline(i, open: true, onMap.Left, onMap.Top), MenuLayout.TabOutline(i, open: true, onEquipment.Left, onEquipment.Top));
+            Assert.Equal(MenuLayout.TabTarget(canvas, i), MenuLayout.TabOutline(i, open: true, onMap.Left, onMap.Top));
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Windows))]
+    public void A_click_on_a_tab_turns_to_its_page(int windowWidth, int windowHeight)
+    {
+        var canvas = MenuCanvas.For(windowWidth, windowHeight);
+        var map = MenuLayout.TabTarget(canvas, 0);
+        var equipment = MenuLayout.TabTarget(canvas, 1);
+
+        Assert.Equal(MenuKey.MapTab, MenuLayout.TabAt(canvas, new Vector2(map.CentreX, map.CentreY)));
+        Assert.Equal(MenuKey.EquipmentTab, MenuLayout.TabAt(canvas, new Vector2(equipment.CentreX, equipment.CentreY)));
+        Assert.Null(MenuLayout.TabAt(canvas, new Vector2(map.CentreX, map.Bottom + 4)));
+        Assert.Null(MenuLayout.TabAt(canvas, new Vector2(float.NaN, float.NaN)));
+        Assert.False(map.Overlaps(equipment));
+    }
+
+    [Theory]
+    [MemberData(nameof(Windows))]
+    public void The_map_lies_under_the_tabs_and_the_hint(int windowWidth, int windowHeight)
+    {
+        var canvas = MenuCanvas.For(windowWidth, windowHeight);
+        var page = Layout.Map(canvas);
+        var hint = page.Frame.Texts.Single(text => text.Text == MenuLayout.MapHint);
+
+        Assert.True(canvas.Bounds.Encloses(page.MapArea), $"{page.MapArea} leaves the canvas");
+        Assert.True(page.MapArea.Width > 300 && page.MapArea.Height > 250, $"{page.MapArea} is too small for a map");
+        Assert.True(page.MapArea.Y >= Layout.Bounds(hint).Bottom + 4, "the map runs into the hint");
+        Assert.All(page.Frame.Tabs, tab => Assert.True(Parts.Tab(tab.Index, tab.Open, tab.Left, tab.Top).Target.Bottom <= Layout.Bounds(hint).Y,
+            $"tab {tab.Index} runs into the hint"));
+    }
+
+    // ---------------------------------------------------------------- the frame of values (issue #390)
+
+    [Theory]
+    [MemberData(nameof(Windows))]
+    public void The_frame_of_values_lies_under_the_experience_zone_and_off_the_hud(int windowWidth, int windowHeight)
+    {
+        // The HUD stays visible behind the menu: the frame of values starts under the level, the experience bar and the
+        // waiting boons (top left), and touches no other part of the HUD either - with everything shown at its widest.
+        var canvas = MenuCanvas.For(windowWidth, windowHeight);
+        var hud = HudLayout.Arrange(BusyHud(), "Picked up Hunter's Eye", new HudCanvas(canvas.Width, canvas.Height));
+        var frame = WidestSheet().Frame;
+        string[] zone = ["frame_level", "frame_xp", "xp_empty", "xp_full", "frame_skill_0", "frame_skill_1", "icon_skillpoint", "frame_prompt"];
+
+        var zoneParts = hud.Parts.Where(part => zone.Contains(part.Name)).ToList();
+        Assert.Contains(zoneParts, part => part.Name == "frame_prompt");
+        Assert.All(zoneParts, part => Assert.True(frame.Y >= HudLayout.Bounds(part).Y + HudLayout.Bounds(part).Height,
+            $"the frame of values starts above the end of {part.Name}"));
+        Assert.All(hud.Parts, part => Assert.False(frame.Overlaps(ToMenu(HudLayout.Bounds(part))), $"the frame of values covers {part.Name}"));
+        Assert.All(hud.Texts, text => Assert.False(frame.Overlaps(ToMenu(HudLayout.Bounds(text))), $"the frame of values covers '{text.Text}'"));
+    }
+
+    [Fact]
+    public void The_frame_of_values_holds_the_widest_lines_and_its_texts_keep_apart()
+    {
+        foreach (var sheet in new[] { WidestSheet(), Layout.Sheet(SheetLines(8), []) })
+        {
+            var bounds = sheet.Texts.Select(Layout.Bounds).ToArray();
+            Assert.All(bounds, text => Assert.True(Inset(sheet.Frame, 2).Encloses(text), $"{text} leaves the frame {sheet.Frame}"));
+            for (var i = 0; i < bounds.Length; i++)
+            {
+                Assert.All(bounds.Skip(i + 1), other => Assert.False(bounds[i].Overlaps(other), $"'{sheet.Texts[i].Text}' runs into another text"));
+            }
+        }
+
+        Assert.Contains(Layout.Sheet(SheetLines(8), []).Texts, text => text.Text == "No boons yet");
+    }
+
+    [Fact]
+    public void The_frame_of_values_holds_a_real_players_lines()
+    {
+        var world = new GameWorld(LevelParser.Parse("P"));
+        var sheet = Layout.Sheet(CharacterSheet.Stats(world, world.Player), CharacterSheet.Boons(world.Player, world.Balance.Boons));
+
+        Assert.Equal(MenuLayout.SheetWidth, sheet.Frame.Width);
+        Assert.All(sheet.Texts, text => Assert.True(sheet.Frame.Encloses(Layout.Bounds(text)), $"'{text.Text}' leaves the frame"));
+        Assert.All(sheet.Texts.Where(text => text.Scale == 1), text => Assert.NotEqual(MenuTextColor.Selected, text.Color));
+    }
+
+    [Theory]
+    [MemberData(nameof(Windows))]
+    public void The_pages_stand_right_of_the_frame_of_values(int windowWidth, int windowHeight)
+    {
+        var canvas = MenuCanvas.For(windowWidth, windowHeight);
+        var frame = WidestSheet().Frame;
+        var map = Layout.Map(canvas);
+        var equipment = Layout.Equipment(canvas, Player.InventorySlotCount);
+        var taken = new List<MenuRect> { map.MapArea, equipment.Frame.Panels.Single().Rect };
+        taken.AddRange(map.Frame.Tabs.Concat(equipment.Frame.Tabs).Select(tab => Parts.Tab(tab.Index, tab.Open, tab.Left, tab.Top).Target));
+        taken.AddRange(map.Frame.Texts.Concat(equipment.Frame.Texts).Select(Layout.Bounds));
+
+        Assert.All(taken, rect => Assert.True(rect.X >= frame.Right + 4, $"{rect} runs into the frame of values {frame}"));
+        Assert.True(canvas.Bounds.Encloses(frame));
     }
 
     [Theory]
@@ -566,6 +673,57 @@ public class MenuLayoutTests
     // True if a and b are at least gap apart (side by side or one over the other) - touching is not apart.
     private static bool Apart(MenuRect a, MenuRect b, float gap) =>
         a.Right + gap <= b.X || b.Right + gap <= a.X || a.Bottom + gap <= b.Y || b.Bottom + gap <= a.Y;
+
+    private static readonly HudLayout HudLayout = new(
+        HudParts.Parse(File.ReadAllText(RepositoryFiles.Find("assets/hud/hud_parts.json"))), Font);
+
+    // The HUD with everything shown at its widest (as HudLayoutTests.Busy): waiting boons, a boss, items, the toast.
+    private static HudReadout BusyHud() => new(
+        IsDead: false,
+        Life: 1f,
+        Stamina: 1f,
+        Level: 99,
+        Experience: 0.4f,
+        PendingBoons: 2,
+        Silver: 99999,
+        Keys: 99,
+        Weapons:
+        [
+            new(WeaponKind.Club, null, false, false),
+            new(WeaponKind.Rifle, 12, true, false),
+            new(WeaponKind.Blunderbuss, 12, false, true),
+            new(WeaponKind.Pistol, 12, false, false),
+        ],
+        Items: Enum.GetValues<ItemKind>().Concat(Enum.GetValues<ItemKind>()).ToList(),
+        Boss: new HudBoss(Gorm.Name, 0.5f),
+        ConsecratedSecondsLeft: 12.5f);
+
+    // The values at their widest and every boon chosen nine times - the test of room for the frame of values.
+    private static ValuesSheet WidestSheet()
+    {
+        IReadOnlyList<SheetLine> stats =
+        [
+            new("Level", "99"),
+            new("Health", "999 / 999"),
+            new("Stamina", "9.9 / 9 bars"),
+            new("Stamina regen", "+125 %"),
+            new("Melee", "999  Silver Blade"),
+            new("Ranged", "99 x 12  Blunderbuss"),
+            new("Speed", "99.9 m/s"),
+            new("Experience", "199.5 %"),
+        ];
+        var boons = Enum.GetValues<Boon>()
+            .Select(boon => new SheetLine($"{BoonTexts.Name(boon)} x9", $"{BoonTexts.Amount(boon, Balance.Default.Boons, 9)} {BoonTexts.What(boon)}"))
+            .ToList();
+        return Layout.Sheet(stats, boons);
+    }
+
+    private static IReadOnlyList<SheetLine> SheetLines(int count) =>
+        Enumerable.Range(0, count).Select(i => new SheetLine($"Line {i}", $"{i}")).ToList();
+
+    private static MenuRect ToMenu(HudRect rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
+
+    private static MenuRect Inset(MenuRect rect, float by) => new(rect.X + by, rect.Y + by, rect.Width - (2 * by), rect.Height - (2 * by));
 
     // Everything of a screen that keeps to the middle: panels with gable, tabs, rows, texts (not the version) and, on
     // the equipment page, its boxes and note.

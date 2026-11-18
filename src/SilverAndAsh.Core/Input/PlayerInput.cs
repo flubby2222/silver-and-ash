@@ -23,8 +23,8 @@ namespace SilverAndAsh.Core.Input;
 /// <param name="SelectSlot">The ranged weapon place chosen with 1 / 2 / 3 (0, 1, 2), or null.</param>
 /// <param name="CycleSlot">The mouse wheel: +1 the next ranged weapon, -1 the one before, 0 none.</param>
 /// <param name="PressMenu">
-/// The key of the menu pressed (Tab: map page, G: equipment page, Esc: close - issue #348), in the one tick after it was
-/// pressed; null for none.
+/// The key of the menu pressed (Tab: map page, G: equipment page, Esc: close - issue #348) or the tab clicked (issue #390),
+/// in the one tick after it was pressed; null for none.
 /// </param>
 /// <param name="InventoryClick">A click into the open equipment page (left: equip, right: drop), or null.</param>
 /// <param name="Paused">
