@@ -5,7 +5,8 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// "[F] Open" under the crosshair while the player looks at something they can use - or, if F would do nothing for
-/// them right now, only the reason in a dimmer colour ("Locked - needs a key").
+/// them right now, only the reason in a dimmer colour ("Locked - needs a key"). Equipment is named in the colour of its
+/// tier ("[F] Take Rifle (Forged)", issue #317).
 /// </summary>
 internal static class InteractionPrompt
 {
@@ -28,6 +29,9 @@ internal static class InteractionPrompt
         var x = (Raylib.GetScreenWidth() - total) / 2;
         var y = Raylib.GetScreenHeight() / 2 + 40;
         Raylib.DrawText(key, x, y, FontSize, Key);
-        Raylib.DrawText(offer.Text, x + keyWidth, y, FontSize, offer.IsPossible ? Text : NotPossible);
+        var colour = !offer.IsPossible ? NotPossible
+            : offer.Tier is { } tier ? EquipmentCard.Readable(TierColours.Of(tier, (float)Raylib.GetTime()))
+            : Text;
+        Raylib.DrawText(offer.Text, x + keyWidth, y, FontSize, colour);
     }
 }

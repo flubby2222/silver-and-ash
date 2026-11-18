@@ -53,6 +53,7 @@ public class PhotoSceneTests
             "cracked-wall-break-after",
             "showroom-a-corridor", "showroom-a-room", "showroom-b-corridor", "showroom-b-room", "showroom-c-corridor",
             "showroom-c-room", "stairs-4m", "stairs-10m",
+            "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -412,6 +413,44 @@ public class PhotoSceneTests
         var middle = stairs.Position + new Vector3(0f, Stairs.Height / 2f, 0f);
         var towards = Vector3.Normalize(middle - setup.World.Player.EyePosition);
         Assert.Equal(1f, Vector3.Dot(setup.World.Player.View.Forward, towards), 0.01f);
+    }
+
+    [Fact]
+    public void The_equipment_rifle_scene_looks_at_the_rifle_within_reach()
+    {
+        var world = Built("equipment-rifle").World;
+
+        var target = Assert.IsType<WeaponDrop>(world.InteractionTarget(world.Player));
+        Assert.Equal(WeaponKind.Rifle, target.Kind);
+        Assert.Equal(new InteractionOffer("Take Rifle (Forged)", true, ItemTier.Forged), target.OfferFor(world.Player));
+    }
+
+    [Theory]
+    [InlineData("equipment-worn", ItemTier.Worn)]
+    [InlineData("equipment-forged", ItemTier.Forged)]
+    [InlineData("equipment-royal", ItemTier.Royal)]
+    [InlineData("equipment-vampiric", ItemTier.Vampiric)]
+    public void Each_tier_scene_looks_at_an_item_of_its_tier_within_reach(string name, ItemTier tier)
+    {
+        var world = Built(name).World;
+
+        var target = Assert.IsType<ItemDrop>(world.InteractionTarget(world.Player));
+        Assert.Equal(tier, target.Piece.Tier);
+        Assert.True(target.OfferFor(world.Player).IsPossible);
+    }
+
+    [Theory]
+    [InlineData("equipment-taken-royal", ItemKind.HuntersEye)]
+    [InlineData("equipment-taken-vampiric", ItemKind.Leech)]
+    public void The_equipment_taken_scenes_take_their_item_with_f(string name, ItemKind kind)
+    {
+        var setup = Built(name);
+        var taken = new List<EquipmentTaken>();
+
+        setup.Run(() => taken.AddRange(setup.World.Events.OfType<EquipmentTaken>()));
+
+        Assert.Equal(Equipment.Of(kind), Assert.Single(taken).Piece);
+        Assert.Equal([kind], setup.World.Player.Items);
     }
 
     private static Vector2 Flat(Vector3 point) => new(point.X, point.Z);

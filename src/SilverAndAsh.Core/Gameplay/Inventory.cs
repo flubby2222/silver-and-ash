@@ -31,6 +31,8 @@ public sealed partial class Player
 
     private readonly BagEntry?[] _bag = new BagEntry?[InventorySlotCount];
 
+    private readonly List<ItemKind> _items = [];
+
     // The moves (walking directions, jump, Shift) held when the window opened: they close it only once let go and
     // pressed anew - so opening it while running away keeps it open.
     private MoveKeys _movesHeldAtOpen;
@@ -53,6 +55,15 @@ public sealed partial class Player
     /// <summary>The ranged weapon in bag place <paramref name="index"/> with its magazine, or null (empty, or a melee weapon).</summary>
     public RangedWeapon? BagRanged(int index) => _bag[index]?.Ranged;
 
+    /// <summary>True while a place of the <see cref="Bag"/> is free - otherwise a weapon on the floor stays lying ("Inventory full").</summary>
+    public bool HasBagRoom => Array.IndexOf(_bag, null) >= 0;
+
+    /// <summary>
+    /// The items this player has found, in the order taken (decision record 0008): passive for the whole run, no place
+    /// needed. Placeholders for now - their effects come with #195 and #196.
+    /// </summary>
+    public IReadOnlyList<ItemKind> Items => _items;
+
     /// <summary>
     /// True while the inventory window is open (G). The world goes on meanwhile; a move begun after opening (walking,
     /// jumping, Shift) or a hit close it.
@@ -64,9 +75,25 @@ public sealed partial class Player
     /// Returns false (and keeps nothing) if all places are taken - loot (#194) then leaves the weapon lying
     /// ("Inventory full"). Tests use this, too.
     /// </summary>
-    public bool Stow(WeaponKind kind)
+    public bool Stow(WeaponKind kind) => Stow(kind, null);
+
+    /// <summary>
+    /// Puts <paramref name="kind"/> into the first free place of the <see cref="Bag"/> as it was taken from the floor:
+    /// a ranged one as <paramref name="ranged"/>, with the magazine it was dropped with - or ready and full if it comes
+    /// without one (from a chest). Returns false (and keeps nothing) if all places are taken.
+    /// </summary>
+    public bool Stow(WeaponKind kind, RangedWeapon? ranged)
     {
-        var ranged = Weapons.Info(kind).Hand == WeaponHand.Ranged ? new RangedWeapon(kind, _balance) : null;
+        if (ranged is not null && ranged.Kind != kind)
+        {
+            throw new ArgumentException($"The weapon {ranged.Kind} is no {kind}.", nameof(ranged));
+        }
+
+        if (ranged is null && Weapons.Info(kind).Hand == WeaponHand.Ranged)
+        {
+            ranged = new RangedWeapon(kind, _balance);
+        }
+
         var free = Array.IndexOf(_bag, null);
         if (free < 0)
         {
@@ -76,6 +103,9 @@ public sealed partial class Player
         _bag[free] = new BagEntry(kind, ranged);
         return true;
     }
+
+    /// <summary>Adds <paramref name="kind"/> to the <see cref="Items"/> - an item needs no place and is always taken.</summary>
+    internal void Take(ItemKind kind) => _items.Add(kind);
 
     /// <summary>
     /// Opens and closes the window (G), closes it on a new move, and carries out a click while it is open. Comes first in
