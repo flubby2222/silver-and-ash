@@ -5,9 +5,10 @@ namespace SilverAndAsh.Core.Presentation;
 /// <summary>
 /// One weapon place of the HUD: the weapon in it (null while empty), its rounds (null for a melee weapon or an empty
 /// place), whether it is reloading and whether it is the chosen ranged weapon, and how far the reload has come (0 to 1,
-/// 0 while not reloading; issue #370).
+/// 0 while not reloading; issue #370) and how many rounds its magazine holds (null like the rounds; issue #388).
 /// </summary>
-public readonly record struct HudWeapon(WeaponKind? Kind, int? Rounds, bool IsReloading, bool IsSelected, float ReloadProgress = 0f);
+public readonly record struct HudWeapon(WeaponKind? Kind, int? Rounds, bool IsReloading, bool IsSelected, float ReloadProgress = 0f,
+    int? MagazineSize = null);
 
 /// <summary>The boss of a running boss fight: his name and how much of his health is left (0 to 1).</summary>
 public readonly record struct HudBoss(string Name, float Health);
@@ -28,6 +29,10 @@ public readonly record struct HudBoss(string Name, float Health);
 /// <param name="Items">The items found, in the order taken.</param>
 /// <param name="Boss">The boss while a boss fight is on, else null.</param>
 /// <param name="ConsecratedSecondsLeft">Seconds left of consecrated ammunition, 0 while it is not.</param>
+/// <param name="IsMeleeInUse">
+/// True while the melee weapon is in use - charged or swung, until it is ready again (issue #388): the large rounds
+/// number of the chosen ranged weapon gives way meanwhile.
+/// </param>
 public sealed record HudReadout(
     bool IsDead,
     float Life,
@@ -40,7 +45,8 @@ public sealed record HudReadout(
     IReadOnlyList<HudWeapon> Weapons,
     IReadOnlyList<ItemKind> Items,
     HudBoss? Boss,
-    float ConsecratedSecondsLeft)
+    float ConsecratedSecondsLeft,
+    bool IsMeleeInUse = false)
 {
     /// <summary>The HUD of <paramref name="player"/> in <paramref name="world"/> as it is now.</summary>
     public static HudReadout Of(GameWorld world, Player player)
@@ -53,7 +59,7 @@ public sealed record HudReadout(
         {
             weapons.Add(player.RangedSlots[slot] is { } ranged
                 ? new HudWeapon(ranged.Kind, ranged.Magazine.Rounds, ranged.Magazine.IsReloading, slot == player.SelectedSlot,
-                    ranged.Magazine.ReloadProgress)
+                    ranged.Magazine.ReloadProgress, ranged.Magazine.Size)
                 : new HudWeapon(null, null, false, false));
         }
 
@@ -73,7 +79,8 @@ public sealed record HudReadout(
             weapons,
             player.Items.ToList(),
             boss,
-            player.IsConsecrated ? player.ConsecratedSecondsLeft : 0f);
+            player.IsConsecrated ? player.ConsecratedSecondsLeft : 0f,
+            player.MeleeCharge.IsCharging || !player.MeleeCooldown.IsReady);
     }
 
     private static float Fraction(int part, int whole) => whole > 0 ? Math.Clamp((float)part / whole, 0f, 1f) : 0f;

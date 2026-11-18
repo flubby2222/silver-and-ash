@@ -49,7 +49,7 @@ public class HudLayoutTests
         Weapons:
         [
             new(WeaponKind.SilverBlade, null, false, false),
-            new(WeaponKind.Pistol, 6, false, true),
+            new(WeaponKind.Pistol, 6, false, true, 0f, 7),
             new(null, null, false, false),
             new(null, null, false, false),
         ],
@@ -71,9 +71,9 @@ public class HudLayoutTests
         Weapons =
         [
             new(WeaponKind.Club, null, false, false),
-            new(WeaponKind.Rifle, MostRounds, true, false),
-            new(WeaponKind.Blunderbuss, MostRounds, false, true),
-            new(WeaponKind.Pistol, MostRounds, false, false),
+            new(WeaponKind.Rifle, MostRounds, true, false, 0f, MostRounds),
+            new(WeaponKind.Blunderbuss, MostRounds, false, true, 0f, MostRounds),
+            new(WeaponKind.Pistol, MostRounds, false, false, 0f, MostRounds),
         ],
         Items = Enum.GetValues<ItemKind>().Concat(Enum.GetValues<ItemKind>()).ToList(),
         Boss = new HudBoss(Gorm.Name, 0.5f),
@@ -323,10 +323,16 @@ public class HudLayoutTests
         var itemsTop = picture.Parts.Where(part => part.Name.StartsWith("frame_item", StringComparison.Ordinal)).Min(part => part.Y);
         Assert.Equal((gap, itemsTop - gap), (toast.X, toast.Bottom));
 
-        // The consecrated time above the weapon frames' gables, ending with them.
+        // The rounds above the weapon frames' gables; the consecrated time above the rounds, ending with the weapon row
+        // (issue #388; before, the consecrated time stood right above the gables).
         var consecrated = Layout.Bounds(Assert.Single(picture.Texts, text => text.Text.StartsWith("Consecrated", StringComparison.Ordinal)));
         var weaponsTop = picture.Parts.Where(part => part.Name.StartsWith("frame_weapon", StringComparison.Ordinal)).Min(part => part.Y);
-        Assert.Equal((canvas.Width - gap, weaponsTop - gap), (consecrated.Right, consecrated.Bottom));
+        var rounds = Layout.Bounds(Assert.Single(LargeOverWeapons(picture)));
+        Assert.Equal(weaponsTop - gap, rounds.Bottom);
+        Assert.Equal((canvas.Width - gap, rounds.Y - gap), (consecrated.Right, consecrated.Bottom));
+        var withoutRounds = Arrange(Busy() with { IsMeleeInUse = true }, LongestToast(), canvas);
+        var alone = Layout.Bounds(Assert.Single(withoutRounds.Texts, text => text.Text.StartsWith("Consecrated", StringComparison.Ordinal)));
+        Assert.Equal((canvas.Width - gap, weaponsTop - gap), (alone.Right, alone.Bottom));
 
         // The hint under the level row's rivets, starting with the level frame.
         var hint = Layout.Bounds(Assert.Single(picture.Texts, text => text.Text == HudLayout.LevelUpHint));
@@ -469,7 +475,8 @@ public class HudLayoutTests
         Assert.Contains("99", texts);    // level and keys
         Assert.Equal(2, texts.Count(text => text == "99"));
         Assert.Contains("99999", texts); // silver
-        Assert.Equal(3, texts.Count(text => text == MostRounds.ToString(CultureInfo.InvariantCulture))); // rounds of the three ranged weapons
+        // Issue #388: only the rounds of the chosen weapon, large; the other ranged weapons show none.
+        Assert.Single(texts, text => text == MostRounds.ToString(CultureInfo.InvariantCulture));
     }
 
     [Theory]
@@ -540,20 +547,143 @@ public class HudLayoutTests
     [Fact]
     public void Rounds_while_reloading_are_in_the_quieter_colour()
     {
-        var picture = Arrange(Calm() with
+        // Issue #388: only the chosen weapon shows its rounds, so the two cases are two pictures.
+        static HudReadout Chosen(bool reloading) => Calm() with
         {
             Keys = 0,
             Weapons =
             [
                 new(WeaponKind.Club, null, false, false),
-                new(WeaponKind.Rifle, 1, true, false),
-                new(WeaponKind.Blunderbuss, 2, false, true),
+                new(WeaponKind.Rifle, 1, false, false, 0f, 4),
+                new(WeaponKind.Blunderbuss, 0, reloading, true, 0f, 1),
                 new(WeaponKind.Pistol, null, false, false),
             ],
+        };
+
+        Assert.Equal(HudTextColor.Second, Assert.Single(LargeOverWeapons(Arrange(Chosen(true)))).Color);
+        Assert.Equal(HudTextColor.Main, Assert.Single(LargeOverWeapons(Arrange(Chosen(false)))).Color);
+    }
+
+    /// <summary>Every ranged place chosen in turn, each with rounds no other place has.</summary>
+    public static TheoryData<int> RangedPlaces => new() { 1, 2, 3 };
+
+    [Theory]
+    [MemberData(nameof(RangedPlaces))]
+    public void The_large_number_is_the_rounds_of_the_chosen_weapon_and_not_of_another(int chosen)
+    {
+        // Issue #388: rounds 3, 2 and 0 and magazines 7, 4 and 1 - each number belongs to one place only.
+        int[] rounds = [3, 2, 0];
+        int[] sizes = [7, 4, 1];
+        WeaponKind[] kinds = [WeaponKind.Pistol, WeaponKind.Rifle, WeaponKind.Blunderbuss];
+        var readout = Calm() with
+        {
+            Keys = 0,
+            Silver = 0,
+            Weapons = [new(WeaponKind.SilverBlade, null, false, false),
+                .. Enumerable.Range(0, 3).Select(i => new HudWeapon(kinds[i], rounds[i], false, i + 1 == chosen, 0f, sizes[i]))],
+        };
+
+        var picture = Arrange(readout);
+
+        var large = Assert.Single(LargeOverWeapons(picture));
+        Assert.Equal(rounds[chosen - 1].ToString(CultureInfo.InvariantCulture), large.Text);
+        var small = Assert.Single(picture.Texts, text => text.Text.StartsWith(HudLayout.MagazineMark, StringComparison.Ordinal));
+        Assert.Equal(HudLayout.MagazineMark + sizes[chosen - 1].ToString(CultureInfo.InvariantCulture), small.Text);
+        Assert.Equal(1, small.Scale);
+    }
+
+    [Theory]
+    [MemberData(nameof(PictureWidths))]
+    public void The_rounds_stand_large_in_the_middle_above_the_weapon_row_with_the_magazine_small_beside_them(int pictureWidth)
+    {
+        var canvas = HudCanvas.For(pictureWidth);
+        var picture = Arrange(Calm(), canvas: canvas);
+
+        var large = Assert.Single(picture.Texts, text => text.Text == "6");
+        var small = Assert.Single(picture.Texts, text => text.Text == "/ 7");
+        Assert.Equal((PixelFont.NumberScale, 1), (large.Scale, small.Scale));
+        Assert.Equal((HudTextColor.Main, HudTextColor.Second), (large.Color, small.Color)); // neutral silver, no signal colour
+
+        var (largeRect, smallRect) = (Layout.Bounds(large), Layout.Bounds(small));
+        Assert.Equal(largeRect.Right + HudLayout.SignGap, smallRect.X);
+        Assert.Equal(largeRect.Bottom, smallRect.Bottom); // one base line
+
+        var frames = picture.Parts.Where(part => part.Name.StartsWith("frame_weapon", StringComparison.Ordinal)).ToList();
+        var bodies = frames.Select(Layout.BodyOf).ToList();
+        var (rowLeft, rowRight) = (bodies.Min(body => body.X), bodies.Max(body => body.Right));
+        var both = Union([largeRect, smallRect])!.Value;
+        Assert.InRange((2 * both.X) + both.Width - (rowLeft + rowRight), -1, 1);
+        Assert.Equal(frames.Min(part => part.Y) - HudLayout.Spacing, both.Bottom);
+    }
+
+    [Theory]
+    [MemberData(nameof(PictureWidths))]
+    public void No_number_stands_beside_the_weapon_pictures_any_more(int pictureWidth)
+    {
+        // Issue #388: the small rounds beside each picture are gone - no text touches a weapon frame.
+        var canvas = HudCanvas.For(pictureWidth);
+        foreach (var picture in new[] { Arrange(Busy(), canvas: canvas), Arrange(Calm(), canvas: canvas) })
+        {
+            var frames = picture.Parts.Where(part => part.Name.StartsWith("frame_weapon", StringComparison.Ordinal)).Select(Layout.Bounds).ToList();
+            Assert.Equal(4, frames.Count);
+            Assert.All(picture.Texts, text => Assert.False(frames.Any(frame => frame.Overlaps(Layout.Bounds(text))),
+                $"'{text.Text}' {Layout.Bounds(text)} lies on a weapon frame on {canvas}"));
+        }
+    }
+
+    [Fact]
+    public void No_rounds_show_while_the_melee_weapon_is_in_use_or_chosen()
+    {
+        Assert.Contains(Arrange(Calm()).Texts, text => text.Text == "6"); // the case below would prove nothing otherwise
+
+        var inUse = Arrange(Calm() with { IsMeleeInUse = true });
+        var meleeChosen = Arrange(Calm() with
+        {
+            Weapons = [new(WeaponKind.SilverBlade, null, false, true), new(WeaponKind.Pistol, 6, false, false, 0f, 7), new(null, null, false, false), new(null, null, false, false)],
         });
 
-        Assert.Equal(HudTextColor.Second, Assert.Single(picture.Texts, text => text.Text == "1").Color);
-        Assert.Equal(HudTextColor.Main, Assert.Single(picture.Texts, text => text.Text == "2").Color);
+        foreach (var picture in new[] { inUse, meleeChosen })
+        {
+            Assert.DoesNotContain(picture.Texts, text => text.Text == "6" || text.Text.StartsWith(HudLayout.MagazineMark, StringComparison.Ordinal));
+            Assert.Empty(LargeOverWeapons(picture));
+        }
+    }
+
+    [Fact]
+    public void With_the_large_rounds_the_hud_still_covers_less_than_a_tenth_of_the_picture()
+    {
+        // Issue #388: the number adds to what the HUD covers - at 854 x 480 all of it stays under 10 %.
+        var canvas = HudCanvas.For(854);
+        var picture = Arrange(Calm(), canvas: canvas);
+        Assert.Single(LargeOverWeapons(picture)); // the number is in the count
+
+        var covered = new bool[canvas.Width, canvas.Height];
+        foreach (var rect in picture.Parts.Select(Layout.Bounds).Concat(picture.Texts.Select(Layout.Bounds)))
+        {
+            for (var x = Math.Max(0, rect.X); x < Math.Min(canvas.Width, rect.Right); x++)
+            {
+                for (var y = Math.Max(0, rect.Y); y < Math.Min(canvas.Height, rect.Bottom); y++)
+                {
+                    covered[x, y] = true;
+                }
+            }
+        }
+
+        var share = (double)covered.Cast<bool>().Count(pixel => pixel) / (canvas.Width * canvas.Height);
+        Assert.True(share < 0.10, $"The HUD covers {share:P1} of the picture.");
+    }
+
+    [Fact]
+    public void An_empty_magazine_shows_a_large_zero_in_the_main_colour()
+    {
+        var picture = Arrange(Calm() with
+        {
+            Weapons = [new(WeaponKind.SilverBlade, null, false, false), new(WeaponKind.Pistol, 0, false, true, 0f, 7), new(null, null, false, false), new(null, null, false, false)],
+        });
+
+        var zero = Assert.Single(LargeOverWeapons(picture));
+        Assert.Equal("0", zero.Text);
+        Assert.Equal((PixelFont.NumberScale, HudTextColor.Main), (zero.Scale, zero.Color));
     }
 
     [Fact]
@@ -778,5 +908,14 @@ public class HudLayoutTests
         }
 
         return union;
+    }
+
+    /// <summary>The large texts standing over the weapon row (issue #388): the rounds number, or none.</summary>
+    private static List<HudPlacedText> LargeOverWeapons(HudPicture picture)
+    {
+        var frames = picture.Parts.Where(part => part.Name.StartsWith("frame_weapon", StringComparison.Ordinal)).Select(Layout.Bounds).ToList();
+        var (left, right, top) = (frames.Min(frame => frame.X), frames.Max(frame => frame.Right), frames.Min(frame => frame.Y));
+        return picture.Texts.Where(text => text.Scale == PixelFont.NumberScale && Layout.Bounds(text) is var rect
+            && rect.X >= left && rect.Right <= right && rect.Bottom <= top && rect.Y > top / 2).ToList();
     }
 }

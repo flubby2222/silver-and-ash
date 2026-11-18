@@ -45,7 +45,10 @@ public class HudReadoutTests
             var weapon = readout.Weapons[1 + slot];
             if (player.RangedSlots[slot] is { } ranged)
             {
-                Assert.Equal(new HudWeapon(ranged.Kind, ranged.Magazine.Rounds, ranged.Magazine.IsReloading, slot == player.SelectedSlot), weapon);
+                // Issue #388: with the size of its magazine for the large number.
+                Assert.Equal(new HudWeapon(ranged.Kind, ranged.Magazine.Rounds, ranged.Magazine.IsReloading, slot == player.SelectedSlot,
+                    ranged.Magazine.ReloadProgress, ranged.Magazine.Size), weapon);
+                Assert.Equal(world.Balance.Pistol.MagazineSize, weapon.MagazineSize);
             }
             else
             {
@@ -107,6 +110,32 @@ public class HudReadoutTests
 
         Assert.True(player.Ranged.Magazine.IsReloading, "The reload never started - the test would prove nothing.");
         Assert.True(HudReadout.Of(world, player).Weapons[1].IsReloading);
+    }
+
+    [Fact]
+    public void The_melee_weapon_is_in_use_while_charged_and_until_it_is_ready_again()
+    {
+        // Issue #388: meanwhile the large rounds number gives way.
+        var world = PlainWorld();
+        var player = world.Player;
+        Assert.False(HudReadout.Of(world, player).IsMeleeInUse);
+
+        world.Tick(PlayerInput.None with { Melee = true });
+        Assert.True(player.MeleeCharge.IsCharging, "The charge never started - the test would prove nothing.");
+        Assert.True(HudReadout.Of(world, player).IsMeleeInUse);
+
+        world.Tick(PlayerInput.None);
+        Assert.False(player.MeleeCharge.IsCharging, "The swing never came - the test would prove nothing.");
+        Assert.True(HudReadout.Of(world, player).IsMeleeInUse);
+
+        var ticks = 0;
+        while (!player.MeleeCooldown.IsReady && ticks++ < 10 * SimulationClock.TicksPerSecond)
+        {
+            world.Tick(PlayerInput.None);
+        }
+
+        Assert.True(player.MeleeCooldown.IsReady);
+        Assert.False(HudReadout.Of(world, player).IsMeleeInUse);
     }
 
     [Fact]

@@ -118,6 +118,9 @@ public sealed class HudLayout
     /// <summary>... and this high.</summary>
     public const int VeilHeight = 24;
 
+    /// <summary>Starts the small magazine size beside the large rounds number above the weapons ("/ 7", issue #388).</summary>
+    public const string MagazineMark = "/ ";
+
     /// <summary>The hint under the level while a boon waits to be chosen.</summary>
     public const string LevelUpHint = "[X] to level up";
 
@@ -320,11 +323,13 @@ public sealed class HudLayout
         }
     }
 
-    // Bottom right: the melee hand and the three ranged places; the chosen one lit, each ranged weapon with its rounds.
+    // Bottom right: the melee hand and the three ranged places, the chosen one lit, each only with its picture; above
+    // the row the rounds of the chosen ranged weapon (issue #388), above them the consecrated time.
     private void ArrangeWeapons(Builder picture, HudReadout readout, HudCanvas canvas)
     {
         var count = readout.Weapons.Count;
         var bodyWidth = _parts["frame_weapon_0"].Body.Width;
+        var rowX = canvas.Width - Spacing - (count * bodyWidth) - ((count - 1) * Spacing);
         for (var i = 0; i < count; i++)
         {
             var weapon = readout.Weapons[i];
@@ -342,29 +347,22 @@ public sealed class HudLayout
                 continue;
             }
 
-            string? icon = IconOf(kind) is { } plain ? (weapon.IsSelected ? plain + "_active" : plain) : null;
-            var initial = Weapons.Info(kind).Name[..1];
-            (int Width, int Height) sign = icon is not null ? (_parts[icon].Width, _parts[icon].Height) : TextSize(initial, PixelFont.NumberScale);
-            var number = weapon.Rounds?.ToString(CultureInfo.InvariantCulture);
-            var sizes = number is null ? new[] { sign.Width } : [sign.Width, TextSize(number, 1).Width];
-            var xs = Spread(ground.X, ground.Width, sizes);
-
-            var top = Spread(ground.Y, ground.Height, [sign.Height])[0];
-            if (icon is not null)
+            // Only the picture, in the middle of the ground: the rounds stand above the row since issue #388.
+            if (IconOf(kind) is { } plain)
             {
-                picture.Part(icon, xs[0], top);
+                picture.CentredPart(weapon.IsSelected ? plain + "_active" : plain, ground);
             }
             else
             {
-                picture.Text(initial, xs[0], top, PixelFont.NumberScale, HudTextColor.Main);
+                picture.CentredText(Weapons.Info(kind).Name[..1], ground, PixelFont.NumberScale, HudTextColor.Main);
             }
+        }
 
-            if (number is not null)
-            {
-                // Small, as in the design: the picture of the weapon is what the eye looks for.
-                picture.Text(number, xs[1], Spread(ground.Y, ground.Height, [TextSize(number, 1).Height])[0], 1,
-                    weapon.IsReloading ? HudTextColor.Second : HudTextColor.Main);
-            }
+        // What stands above the row ends this line: Spacing above the ornament of the weapon frames.
+        var above = BottomBodyTop(canvas) - _parts["frame_weapon_0"].Body.Y - Spacing;
+        if (ArrangeRounds(picture, readout, rowX, canvas.Width - Spacing - rowX, above) is { } roundsTop)
+        {
+            above = roundsTop - Spacing;
         }
 
         if (readout.ConsecratedSecondsLeft > 0f)
@@ -372,9 +370,34 @@ public sealed class HudLayout
             var seconds = (int)MathF.Ceiling(readout.ConsecratedSecondsLeft);
             var text = string.Create(CultureInfo.InvariantCulture, $"Consecrated {seconds}s");
             var size = TextSize(text, 1);
-            var ornamentTop = BottomBodyTop(canvas) - _parts["frame_weapon_0"].Body.Y;
-            picture.Text(text, canvas.Width - Spacing - size.Width, ornamentTop - Spacing - size.Height, 1, HudTextColor.Main);
+            picture.Text(text, canvas.Width - Spacing - size.Width, above - size.Height, 1, HudTextColor.Main);
         }
+    }
+
+    // In the middle above the weapon row (issue #388), ending on line `bottom`: the rounds of the chosen ranged weapon
+    // large, the size of its magazine small beside them ("7 / 7" - the supply itself is unlimited). Nothing while the
+    // melee weapon is in use or no weapon with rounds is chosen. Returns the top of the large number, else null.
+    private int? ArrangeRounds(Builder picture, HudReadout readout, int rowX, int rowWidth, int bottom)
+    {
+        if (readout.IsMeleeInUse || readout.Weapons.FirstOrDefault(weapon => weapon.IsSelected) is not { Rounds: { } rounds } chosen)
+        {
+            return null;
+        }
+
+        var large = rounds.ToString(CultureInfo.InvariantCulture);
+        var largeSize = TextSize(large, PixelFont.NumberScale);
+        var small = chosen.MagazineSize is { } magazine ? string.Create(CultureInfo.InvariantCulture, $"{MagazineMark}{magazine}") : null;
+        var smallSize = small is null ? (Width: 0, Height: 0) : TextSize(small, 1);
+        var x = Spread(rowX, rowWidth, [largeSize.Width + (small is null ? 0 : SignGap + smallSize.Width)])[0];
+
+        var top = bottom - largeSize.Height;
+        picture.Text(large, x, top, PixelFont.NumberScale, chosen.IsReloading ? HudTextColor.Second : HudTextColor.Main);
+        if (small is not null)
+        {
+            picture.Text(small, x + largeSize.Width + SignGap, bottom - smallSize.Height, 1, HudTextColor.Second);
+        }
+
+        return top;
     }
 
     // Top left: the level with its number, the experience bar, and while a boon waits the skill point and the hint.

@@ -252,7 +252,7 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 
 **Abgelehnt:** A1 (geschlossene Leiste, 12,9 %): verdeckt zu viel. A2 (offener Rahmen, 6,1 %): Zeichen stehen ungeschützt auf dem Spielbild.
 
-**Schrift (Urteil des Menschen, Issue #355): A „Kapitell“.** Eigene Pixelschrift für HUD und Menüs: schlichte Kapitälchen mit kleinen Serifen; Versalhöhe 7 px, Kleinbuchstaben 5 px als kleine Versalien, Zeichenbreite 3–5 px, Abstand 1 px, Leerzeichen 3 px. Pixelmuster und Skripte: `design/proben/grafik/schrift/` (Blatt `blatt-schrift.png`). Cinzel kommt nicht ins Spiel. Menü-Überschriften 3-fach, Einträge 2-fach. **Offen für den Einbau:** eine größere Zahlengröße für Stufe und Munition fehlt noch (Versalhöhe 7 px statt 9–11 px bei Cinzel).
+**Schrift (Urteil des Menschen, Issue #355): A „Kapitell“.** Eigene Pixelschrift für HUD und Menüs: schlichte Kapitälchen mit kleinen Serifen; Versalhöhe 7 px, Kleinbuchstaben 5 px als kleine Versalien, Zeichenbreite 3–5 px, Abstand 1 px, Leerzeichen 3 px. Pixelmuster und Skripte: `design/proben/grafik/schrift/` (Blatt `blatt-schrift.png`). Cinzel kommt nicht ins Spiel. Menü-Überschriften 3-fach, Einträge 2-fach. **Offen für den Einbau:** eine größere Zahlengröße für Stufe und Munition fehlt noch (Versalhöhe 7 px statt 9–11 px bei Cinzel). Seit Issue #388 steht die Munition 2-fach (14 px), siehe „Munitionszahl“.
 - **Verzierung (Runde 5 und 6, Urteil des Menschen: V3, dann überarbeiten):** Ein Motiv an allen Fassungen ab 24 px Breite, immer im selben Silber: Rautenniete in den vier Ecken, Spitzgiebel mit Auge oben in der Mitte (der dünne Doppelrahmen innen ist seit Issue #387 entfernt), an Fassungen über 100 px Breite zusätzlich Fialen mittig an den Enden. Rot und Gold bleiben, wie sie sind; kein Rot als Signalfarbe in der Verzierung.
 - **Regeln aus dem Feinschliff (Runde 6):** Licht kommt überall von oben links, auch an den kleinen Teilen (Nieten, Giebel, Fialen nutzen dieselbe Lichtregel wie der Rahmen). Alle Mittelpunkte liegen auf dem Pixelraster, die Giebelbreite passt zur Fassung (gerade oder ungerade), damit die Form spiegelgleich bleibt. Verzierung ragt nie aus dem Bild; Fialen sitzen mittig auf der Fassungskante. Zeichen in kleinen Fassungen so groß, dass sie im 4-fachen Ausschnitt eindeutig lesbar sind (Waffenzeichen 10,5 statt 9,5).
 
@@ -266,6 +266,15 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 - **Ein Abstand für alles (6 px):** zwischen den Körpern benachbarter Fassungen (Silberrahmen ohne Nieten und Giebel) und vom Körper zum Bildrand. Die Nieten ragen 3 px über, bei 6 px berühren sich die Verzierungen gerade. Was über oder unter einer Reihe steht (Aufnahme-Meldung, Hinweis, „Consecrated“), hält 6 px zur Verzierung dieser Reihe.
 - **Innen gleich verteilt:** Die Inhalte einer Fassung teilen sich den dunklen Grund mit gleich großen Lücken zum Rand und untereinander; ein einzelner Inhalt steht mittig. Zeichen und zugehörige Zahl (Münze und Silber, Schlüssel und Anzahl, Auge und Meldung) stehen 3 px auseinander.
 - Die Regel steht als Rechnung in `HudLayout` (Core); die Tests in `HudLayoutTests` prüfen sie für alle Bildbreiten.
+
+**Munitionszahl (Issue #388, vorläufig – Urteil des Menschen steht aus):**
+
+- **Eine große Zahl statt Ziffern neben den Feldern:** In den Waffenfeldern steht nur noch das Waffenbild. Die Patronen der gewählten Fernwaffe stehen groß (Zahlengröße 2-fach, Versalhöhe 14 px) mittig über der Waffenreihe, daneben klein (1-fach) die Magazingröße: `6 / 7`. Groß und klein stehen auf einer Grundlinie, 3 px auseinander, 6 px über der Verzierung der Waffenfelder.
+- **Ohne eigene Fassung**, mit dem dunklen Textschatten wie „Consecrated“; der Atlas bleibt unverändert. „Consecrated“ steht darüber, wieder 6 px Abstand.
+- **Neutrales Silber, kein Rot.** Die große Zahl in der Hauptfarbe, die Magazingröße in der leiseren Farbe; beim Nachladen wird auch die große Zahl leise. Die Null bleibt durchgestrichen (Schrift „Kapitell“).
+- **Nahkampf:** Solange die Nahkampfwaffe in Gebrauch ist (Aufladen, Schlag, bis sie wieder bereit ist), verschwindet die Zahl.
+- **Vorrat:** Munition ist unbegrenzt (ADR 0008); hinter dem Schrägstrich steht deshalb die Magazingröße, nicht ein Vorrat.
+- Verdeckt bei 854 × 480 in `HudLayoutTests` gerechnet: 7,2 % (Rechtecke der Teile und Texte, also eher zu viel). Fotos: `design/proben/grafik/hud-munition/`.
 
 ## Menüs (entschieden, Issue #351)
 

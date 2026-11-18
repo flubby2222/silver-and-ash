@@ -155,7 +155,19 @@ public static class PhotoScenes
                 Ticks = 30,
                 Input = tick => PlayerInput.None with { SelectSlot = tick == 0 ? 1 : null },
             }),
-        new("hud-reload", "The pistol fired empty in the start room: \"Reload [R]\" under the crosshair (issue #259).",
+        new("hud-blunderbuss", "Like hud-weapons, but the blunderbuss chosen (3): its one round large above the weapons (issue #388).",
+            studio => new PhotoSetup(AllWeapons(studio.StartRun()))
+            {
+                Ticks = 30,
+                Input = tick => PlayerInput.None with { SelectSlot = tick == 0 ? 2 : null },
+            }),
+        new("hud-melee", "Like hud-weapons, the club held charging: the large rounds number gives way (issue #388).",
+            studio => new PhotoSetup(AllWeapons(studio.StartRun()))
+            {
+                Ticks = 20,
+                Input = _ => PlayerInput.None with { Melee = true },
+            }),
+        new("hud-reload","The pistol fired empty in the start room: \"Reload [R]\" under the crosshair (issue #259).",
             studio => new PhotoSetup(studio.StartRun())
             {
                 Ticks = 1200,
