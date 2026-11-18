@@ -103,6 +103,9 @@ public sealed record Balance
     /// <summary>Chests: where they stand, which tier, how often locked, what is inside.</summary>
     public ChestsBalance Chests { get; init; } = new();
 
+    /// <summary>Equipment as loot: how a draw from the loot pool chooses (see <see cref="Gameplay.LootPool"/>).</summary>
+    public LootBalance Loot { get; init; } = new();
+
     /// <summary>Doors: how long they take to swing open.</summary>
     public DoorsBalance Doors { get; init; } = new();
 
@@ -206,6 +209,16 @@ public sealed record KeysBalance
 
     /// <summary>Chance that a killed enemy drops a key.</summary>
     public float EnemyChance { get; init; } = 0.025f;
+}
+
+/// <summary>Equipment as loot (decision records 0006 and 0008): how a draw from the loot pool chooses.</summary>
+public sealed record LootBalance
+{
+    /// <summary>Chance that a draw rises one tier above the least tier asked for (a chest's own tier): 0 = never, 1 = always.</summary>
+    public float HigherTierChance { get; init; } = 0.1f;
+
+    /// <summary>Chance that a draw is an item rather than a weapon: 0 = always a weapon, 1 = always an item.</summary>
+    public float ItemShare { get; init; } = 0.7f;
 }
 
 /// <summary>Chests (decision record 0006). Each tier has its own values - see <see cref="ChestTierBalance"/>.</summary>
