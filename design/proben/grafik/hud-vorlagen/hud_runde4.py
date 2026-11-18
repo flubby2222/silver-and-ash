@@ -21,6 +21,34 @@ SH = (0.8, 0.8, FOG)
 SILV_TOP, SILV_BOT = np.array(IRON6, np.float32) / 255, np.array(IRON4, np.float32) / 255
 
 
+NEU = False  # False = Runde 4 (bläuliches Silber), True = Endfassung (neutral, harte Kanten)
+
+
+def _neutral(c, a=0.2):
+    c = np.array(c, np.float32)
+    lum = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+    return (lum + (c - lum) * a) / 255
+
+
+N_LEVELS = [_neutral(c) for c in (IRON3, IRON4, IRON5, IRON6, IRON7, (226, 228, 230))]  # dunkel -> hell
+
+
+def lit_ring(f, seed=0):
+    """Harte Lichtkante oben/links, Schattenkante unten/rechts in wenigen Palettenstufen plus Körnung."""
+    lv = np.stack(N_LEVELS)
+
+    def g(px, py):
+        nx = f(px + 1, py) - f(px - 1, py); ny = f(px, py + 1) - f(px, py - 1)
+        m = np.maximum(np.hypot(nx, ny), 1e-6)
+        d = -(ny / m) * 0.85 - (nx / m) * 0.5
+        idx = np.select([d > 0.7, d > 0.25, d > -0.3, d > -0.7], [5, 4, 3, 2], 1)
+        gx = np.floor(px).astype(np.int64); gy = np.floor(py).astype(np.int64)
+        h = ((gx * 73856093) ^ (gy * 19349663) ^ (seed * 83492791)) & 0xFFFF
+        n = h / 65535.0 - 0.5
+        return np.clip(lv[idx] * (1 + 0.12 * n[..., None]), 0, 1)
+    return g
+
+
 def silver(y0, y1, seed=0, k=1.0):
     """Silber: vier harte Helligkeitsstufen (kein weicher Verlauf), Punktkoernung und feine Buerstenzeilen."""
     def f(px, py):
@@ -30,7 +58,8 @@ def silver(y0, y1, seed=0, k=1.0):
         hr = (((gy * 2654435761) ^ (seed * 97)) & 0xFFFF) / 65535.0 - 0.5
         t = np.clip((py - y0) / max(y1 - y0, 1), 0, 1)
         t = np.floor(t * 4 - 1e-6) / 3.0
-        base = SILV_TOP * (1 - t[..., None]) + SILV_BOT * t[..., None]
+        top, bot = (N_LEVELS[4], N_LEVELS[2]) if NEU else (SILV_TOP, SILV_BOT)
+        base = top * (1 - t[..., None]) + bot * t[..., None]
         return np.clip(base * k * (1 + 0.13 * n[..., None] + 0.07 * hr[..., None]), 0, 1)
     return f
 
@@ -49,7 +78,8 @@ def sbody(L, poly, y0, y1, w=2.0, seed=0):
 def sframe(L, poly, y0, y1, w=2.6, seed=1):
     """Offener Silberrahmen: nur ein Streifen entlang der Form."""
     f = sd_poly(poly); bb = bbox(poly, 4)
-    L.shape(bb, lambda px, py: f(px, py) + w / 2, silver(y0, y1, seed), stroke=w)
+    col = lit_ring(f, seed) if NEU else silver(y0, y1, seed)
+    L.shape(bb, lambda px, py: f(px, py) + w / 2, col, stroke=w)
     L.shape(bb, lambda px, py: f(px, py) - 0.5, IRON0, stroke=1.0, alpha=0.9)
     L.shape(bb, lambda px, py: f(px, py) + w + 0.5, IRON0, stroke=1.0, alpha=0.8)
     return f
@@ -128,8 +158,8 @@ def segs(L, x0, x1, y0, y1, style, n=5, gap=3):
             L.shape(bb, b, IRON1)
         fill = np.clip(STAM * n - i, 0, 1)
         if fill > 0:
-            L.shape(bb, b, vg(y0, y1, IRON7, IRON5), clipf=clipx(sx + sw * fill))
-        L.shape(bb, lambda px, py: b(px, py) + 0.7, IRON4, stroke=1.0)
+            L.shape(bb, b, vg(y0, y1, tuple(N_LEVELS[5] * 255) if NEU else IRON7, tuple(N_LEVELS[3] * 255) if NEU else IRON5), clipf=clipx(sx + sw * fill))
+        L.shape(bb, lambda px, py: b(px, py) + 0.7, tuple(N_LEVELS[2] * 255) if NEU else IRON4, stroke=1.0)
 
 
 def weapon_cells(L, x0, y0, y1, w, gap, style, gs, nsize):
@@ -224,7 +254,7 @@ def build(L, V):
         nums(L, 265, 589, GY - 15)
         trough(L, 283, GY - 24, 571, GY - 14, HP, RED5, RED2, "recess", back=RED0, hi=RED6, p=4)
         segs(L, 283, 571, GY - 10, GY - 5, "recess", 5, 4)
-        toast(L, 8, 438, 172, 454, sty)
+        toast(L, 8, 429, 172, 445, sty)
 
     # ---------------------------------------------------------------- oben: dieselben Anzeigen, Huelle je Variante
     cx = 427
@@ -305,6 +335,28 @@ def sheet(nat, pct, p3):
     return np.clip(cv * (1 - L.a[..., None]) + L.rgb, 0, 1)
 
 
+def main_final():
+    """Endfassung A3 mit neutralem Silber; Vergleich alt/neu in 854 x 480."""
+    global NEU
+    scene = load_png(os.path.join(HERE, "basis-854x480.png"))
+    ims = []
+    for neu in (False, True):
+        NEU = neu
+        im = r3.compose(scene, design(3))
+        ims.append(im)
+        print("A3", "neu" if neu else "alt", round(measure(im, scene), 2), flush=True)
+    save_png(os.path.join(OUT4, "A3-final-854.png"), ims[1])
+    save_png(os.path.join(OUT4, "A3-final.png"), nearest(ims[1], FINAL_H, FINAL_W))
+    gap = 14
+    cv = np.tile(np.array((20, 16, 26), np.float32) / 255, (480 + 40, 2 * 854 + 3 * gap, 1))
+    cv[40:, gap:gap + 854] = ims[0]
+    cv[40:, 2 * gap + 854:2 * gap + 1708] = ims[1]
+    L = Layer(cv.shape[1], cv.shape[0], False); L.sx = L.sy = L.s = 1.0
+    L.text(F_CINZEL, 18, "A3 alt (Runde 4)", gap + 427, 28, IRON7, "c")
+    L.text(F_CINZEL, 18, "A3 neu (neutrales Silber)", 2 * gap + 854 + 427, 28, IRON7, "c")
+    save_png(os.path.join(OUT4, "vergleich-A3-alt-neu.png"), np.clip(cv * (1 - L.a[..., None]) + L.rgb, 0, 1))
+
+
 def main4():
     scene = load_png(os.path.join(HERE, "basis-854x480.png"))
     p3 = measure(r3.compose(scene, r3.design_a), scene)
@@ -321,3 +373,4 @@ def main4():
 
 if __name__ == "__main__":
     main4()
+    main_final()

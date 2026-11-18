@@ -165,11 +165,28 @@ Das ist eine Annäherung an das Spiel, kein Ersatz. Sobald das Spiel Modelle lad
 | 7 | 2026-11-16 | Ghul, zweiter Entwurf | Aus 10 m waren die Glieder ein bis zwei Pixel breit und die Figur fast weg | Aus 10 m ist eine Figur als Masse mit erkennbarer Haltung lesbar; Glieder mindestens zwei bis drei Pixel breit, im Bild nachgemessen |
 | 8 | 2026-11-17 | Hauptpalette, Runde 1 und 2 | Runde 1 färbte auch Spielfigur und Waffen um (nicht gewollt); Runde 2 mischte warme und kalte Töne in die Flächen, und mit der Kachelwiederholung entstand ein Regenbogenmuster | Ein Vergleichsblatt ändert nur die eine Sache, die beurteilt wird; alles andere bleibt wie in `main`. Eine Fläche bleibt in einer Rampe, kräftige Reihen sind Akzente (siehe Farben) |
 | 9 | 2026-11-18 | HUD, Runde 3 | Urteil des Menschen: Layout A gefällt, aber Steintextur nein, Farbe Silber, „so viel vom Spiel sichtbar wie möglich“; Runde 3 A verdeckte 23,2 % des Bildes | HUD-Metall ist Silber aus der Hauptpalette (Reihe IRON): harte Helligkeitsstufen, Körnung, 1 px helle Kante oben und dunkle unten, kein Chrom-Glanz, kein weiches Leuchten. Keine Steintextur im HUD. Das HUD verdeckt so wenig Bild wie möglich; der verdeckte Anteil wird aus dem Bild gemessen und auf dem Blatt genannt. Leben und Ausdauer behalten ihre Zahlen (Urteil des Menschen: „lass die Zahlen drin“) |
-| 10 | 2026-11-18 | HUD, Schrift | Die Vorlagen nutzen Cinzel (Windows-Schrift) | Cinzel kommt nicht ins Spiel; der Mensch will eine eigene Schrift, das wird ein eigenes Issue nach der HUD-Wahl. Für die Vorlagen reicht Cinzel |
+| 10 | 2026-11-18 | HUD, Schrift | Die Vorlagen nutzen Cinzel (Windows-Schrift) | Cinzel kommt nicht ins Spiel; der Mensch will eine eigene Pixelschrift (Issue #355). Für die Vorlagen reicht Cinzel |
 
-## HUD (Stand Runde 4, Issue #341)
+## HUD (entschieden, Issue #341)
 
-- **Gewählt:** Layout A („Eine Leiste“): unten links Gegenstände, Mitte Leben mit Zahl und Ausdauer-Segmenten mit Zahl, rechts vier Waffen; oben links Stufe, Erfahrung, Fähigkeiten, oben Mitte Boss, oben rechts Silber und Schlüssel.
-- **Abgelehnt:** Stein als HUD-Material.
-- **Material:** Silber, siehe Regel 9. Rot nur für Leben, Gold nur für die Aufnahme-Meldung.
-- **Bauweise noch offen:** A1 geschlossene Leiste (12,9 % verdeckt), A2 offener Rahmen (6,1 %), A3 Fassungen (8,9 %); Runde 3 A: 23,2 %. Vorlagen: `design/proben/grafik/hud-vorlagen/hud_runde4.py`.
+**Gewählt: A3, Silberfassungen auf einer Linie.** Vorlage: `design/proben/grafik/hud-vorlagen/hud_runde4.py` (Endfassung `main_final`, Bild `runde4/A3-final-854.png`, 854 × 480). Das Layout stammt aus Runde 3 A.
+
+**Maße (854 × 480):**
+
+- Alle unteren Fassungen enden auf **einer gemeinsamen Grundlinie, y = 477**; jede ist 30 px hoch, der Silberrahmen 3 px, innen dunkler Grund.
+- Links zwei Gegenstände (je 30 px breit, Abstand 4, ab x = 12), Mitte eine Fassung x 247 bis 607 mit Leben (Balken, Zahl links) und fünf Ausdauer-Segmenten (Zahl rechts), rechts vier Waffen (je 38 px, Abstand 3, ab x = 690).
+- Oben: Stufe, Erfahrung und zwei Fähigkeiten links; Boss mit Namen und dünnem Balken in der Mitte; Silber und Schlüssel rechts. Aufnahme-Meldung (einzige Goldfläche) über der linken Gruppe.
+- **Verdeckt: 9,0 % des Bildes** (gemessen: Unterschied zum Foto ohne HUD); Runde 3 A waren 23,2 %.
+
+**Silber (Palettenstufen):** Reihe Eisen `IRON3` bis `IRON7` plus ein helles Silber (226, 228, 230), jeweils zu 80 % zu Grau entsättigt, damit es nicht bläulich wirkt. Fünf feste Stufen je nach Flächenneigung: Lichtkante oben und links hell, Schattenkante unten und rechts dunkel, dazu Punktkörnung. Kein Verlauf, kein Chrom-Glanz, kein weiches Leuchten. Rot nur für Leben, Gold nur für die Aufnahme-Meldung.
+
+**Regeln:**
+
+- **Silber statt Stein.** Die Steintextur im HUD ist abgelehnt (Urteil des Menschen).
+- **So wenig Spielbild verdecken wie möglich**; Richtwert **unter 10 %**, gemessen am fertigen Bild.
+- Layout von Runde 3 A; **Leben und Ausdauer mit Zahl** (Urteil des Menschen: „lass die Zahlen drin“).
+- **Alle Fassungen auf einer Grundlinie**; jede Anzeige hat ihren eigenen dunklen Grund, damit Zeichen auf jedem Spielbild lesbar bleiben.
+
+**Abgelehnt:** A1 (geschlossene Leiste, 12,9 %): verdeckt zu viel. A2 (offener Rahmen, 6,1 %): Zeichen stehen ungeschützt auf dem Spielbild.
+
+**Offen:** Eine eigene Pixelschrift (Issue #355). Cinzel (Windows-Schrift der Vorlagen) kommt nicht ins Spiel.
