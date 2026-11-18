@@ -51,5 +51,5 @@ Blender dient nur als Python mit numpy und PNG-Ausgabe (kein Rendern); Pfad zu B
 - Cinzel setzt Kleinbuchstaben als Versalien („TO OPEN“); die Muster zeigen den Text so, wie er im Code steht. Nur A kommt dem Cinzel-Eindruck nahe.
 - B: Versalien und Ziffern bleiben dünn (dick würde „GORM“ und die Zahlen verkleben); die Eigenart steckt in den Kleinbuchstaben.
 - Keine Umlaute (Spieltexte sind Englisch), keine Ligaturen, kein Feinabgleich der Zeichenabstände (kein Kerning).
-- Die „0“ trägt in A (und B, gleiche Ziffern) einen Schrägstrich, damit sie vom „O“ abweicht. `check()` in `schrift.py` verlangt das als Pflicht nur für A (gewählt). C hat keine gleichen Zeichen; B (nicht gewählt) hat noch „I“ und „l“ mit gleichem Muster und wurde dafür nicht geändert.
+- Verbindlich ist, dass „0“ und „O“ sich unterscheiden (Befund des Testers). Die Form mit Schrägstrich in A (und B, gleiche Ziffern) ist eine **vorläufige Entscheidung der Leitung vom 2026-11-18** und gilt bis zum Urteil des Menschen im Spieltest. `check()` in `schrift.py` verlangt das als Pflicht nur für A (gewählt). C hat keine gleichen Zeichen; B (nicht gewählt) hat noch „I“ und „l“ mit gleichem Muster und wurde dafür nicht geändert.
 - Hörproben o. Ä. entfallen; die Entscheidung trifft der Mensch nach Blick aufs Blatt.
