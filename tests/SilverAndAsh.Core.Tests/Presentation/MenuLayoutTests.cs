@@ -132,6 +132,16 @@ public class MenuLayoutTests
     }
 
     [Theory]
+    [InlineData(208)] // the question before quitting
+    [InlineData(454)] // the settings
+    public void The_gable_sits_over_the_middle_of_a_panel_of_any_width(int width)
+    {
+        var panel = new MenuRect(100, 150, width, 190);
+
+        Assert.Equal(panel.CentreX, Parts.Gable(panel).Target.CentreX, 0);
+    }
+
+    [Theory]
     [InlineData(0f)]
     [InlineData(0.25f)]
     [InlineData(0.5f)]
@@ -271,6 +281,43 @@ public class MenuLayoutTests
         {
             Assert.True(picture.Rows[i - 1].Bottom <= picture.Rows[i].Y, $"rows {i - 1} and {i} overlap");
         }
+    }
+
+    [Theory]
+    [MemberData(nameof(ScreensAndWindows))]
+    public void Entries_keep_air_between_them(string screen, int windowWidth, int windowHeight)
+    {
+        var picture = Screen(screen, MenuCanvas.For(windowWidth, windowHeight));
+
+        for (var i = 1; i < picture.Rows.Count; i++)
+        {
+            Assert.True(picture.Rows[i].Y - picture.Rows[i - 1].Bottom >= MinRowGap,
+                $"rows {i - 1} and {i} are only {picture.Rows[i].Y - picture.Rows[i - 1].Bottom} px apart");
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(ScreensAndWindows))]
+    public void A_screen_keeps_to_the_middle_of_the_canvas_as_in_the_design(string screen, int windowWidth, int windowHeight)
+    {
+        // The design is 854 x 480; on any other canvas the whole screen moves with it into the middle - on a tall
+        // canvas (5:4, a window dragged upright) down by OffsetY, on a wide one sideways.
+        var design = MenuCanvas.For(MenuCanvas.DesignWidth, MenuCanvas.DesignHeight);
+        var canvas = MenuCanvas.For(windowWidth, windowHeight);
+        var expected = Hull(screen, design);
+        var actual = Hull(screen, canvas);
+
+        var shiftX = (actual.CentreX - (canvas.Width / 2f)) - (expected.CentreX - (design.Width / 2f));
+        var shiftY = (actual.CentreY - canvas.OffsetY) - (expected.CentreY - design.OffsetY);
+        Assert.True(MathF.Abs(shiftX) <= 1.5f, $"{screen} sits {shiftX} px off the middle sideways ({actual} on {canvas.Width} x {canvas.Height})");
+        if (screen == "map")
+        {
+            // The map page grows downwards from under its tabs (MapView), so the tabs keep to the top of the canvas.
+            Assert.Equal(expected.Y, actual.Y);
+            return;
+        }
+
+        Assert.True(MathF.Abs(shiftY) <= 1.5f, $"{screen} sits {shiftY} px off the middle upright ({actual} on {canvas.Width} x {canvas.Height})");
     }
 
     [Theory]
@@ -436,6 +483,23 @@ public class MenuLayoutTests
         Assert.All(boxes, box => Assert.False(box.Overlaps(page.Divider)));
     }
 
+    [Theory]
+    [MemberData(nameof(Windows))]
+    public void The_equipment_boxes_and_the_note_keep_air_between_them(int windowWidth, int windowHeight)
+    {
+        var page = Layout.Equipment(MenuCanvas.For(windowWidth, windowHeight), 3);
+        var boxes = page.Hands.Concat(page.Bag).ToArray();
+        var note = Layout.Bounds(page.LastWeaponNote);
+
+        for (var i = 0; i < boxes.Length; i++)
+        {
+            Assert.All(boxes.Skip(i + 1), other => Assert.True(Apart(boxes[i], other, MinBoxGap), $"box {i} touches {other}"));
+            Assert.True(Apart(note, boxes[i], MinBoxGap), $"the note {note} runs into box {i} {boxes[i]}");
+        }
+
+        Assert.True(note.Y >= page.Bag[^1].Bottom + MinBoxGap, "the note stands above the last row of boxes");
+    }
+
     [Fact]
     public void The_equipment_page_fits_the_narrowest_canvas_that_used_to_cut_it_off()
     {
@@ -490,6 +554,38 @@ public class MenuLayoutTests
 
         Assert.Equal("-", texts.Name.Text);
         Assert.Null(texts.Kind);
+    }
+
+    // Air that must stay between two entries (rows of a menu) and between two boxes of the equipment page.
+    private const float MinRowGap = 8f;
+    private const float MinBoxGap = 4f;
+
+    // The version on the title screen keeps to the corner of the canvas, not to the middle.
+    private const string TitleVersionText = "v0.9.0-dev+4f2a1c3";
+
+    // True if a and b are at least gap apart (side by side or one over the other) - touching is not apart.
+    private static bool Apart(MenuRect a, MenuRect b, float gap) =>
+        a.Right + gap <= b.X || b.Right + gap <= a.X || a.Bottom + gap <= b.Y || b.Bottom + gap <= a.Y;
+
+    // Everything of a screen that keeps to the middle: panels with gable, tabs, rows, texts (not the version) and, on
+    // the equipment page, its boxes and note.
+    private static MenuRect Hull(string screen, MenuCanvas canvas)
+    {
+        var picture = Screen(screen, canvas);
+        var rects = picture.Panels.Select(Outline)
+            .Concat(picture.Tabs.Select(tab => Parts.Tab(tab.Index, tab.Open, tab.Left, tab.Top).Target))
+            .Concat(picture.Rows)
+            .Concat(picture.Texts.Where(text => text.Text != TitleVersionText).Select(Layout.Bounds))
+            .ToList();
+        if (screen == "equipment")
+        {
+            var page = Layout.Equipment(canvas, Player.InventorySlotCount);
+            rects.AddRange(page.Hands);
+            rects.AddRange(page.Bag);
+            rects.Add(Layout.Bounds(page.LastWeaponNote));
+        }
+
+        return MenuRect.FromEdges(rects.Min(r => r.X), rects.Min(r => r.Y), rects.Max(r => r.Right), rects.Max(r => r.Bottom));
     }
 
     // The outline a panel covers with its gable.
