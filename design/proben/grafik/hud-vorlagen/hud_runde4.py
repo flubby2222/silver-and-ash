@@ -21,6 +21,8 @@ SH = (0.8, 0.8, FOG)
 SILV_TOP, SILV_BOT = np.array(IRON6, np.float32) / 255, np.array(IRON4, np.float32) / 255
 
 
+NUMS = True   # Zahlen bei Leben und Ausdauer (Runde 5: False)
+ORN = 0       # Verzierung der Silberfassungen: 0 keine, 1 zurückhaltend, 2 mittel, 3 reich
 NEU = False  # False = Runde 4 (bläuliches Silber), True = Endfassung (neutral, harte Kanten)
 
 
@@ -99,6 +101,39 @@ def gl(L, name, cx, cy, s, c1, c2, mode, **kw):
     glyph(L, name, cx, cy, s, c1, c2, **kw)
 
 
+def _lit_poly(L, pts, seed=0):
+    """Kleines Silberteil: dunkler Rand, helle obere linke Hälfte, dunkle untere rechte (harte Kante)."""
+    f = sd_poly(pts); bb = bbox(pts, 3)
+    cx = sum(p[0] for p in pts) / len(pts); cy = sum(p[1] for p in pts) / len(pts)
+    L.shape(bb, lambda px, py: f(px, py) - 1.0, IRON0, alpha=0.92)
+    L.shape(bb, f, tuple(N_LEVELS[4] * 255))
+    L.shape(bb, f, tuple(N_LEVELS[1] * 255), clipf=lambda px, py: -((px - cx) * 0.6 + (py - cy) * 0.8) + 0.2 - 0.0)
+
+
+def diamond4(L, cx, cy, r):
+    _lit_poly(L, [(cx, cy - r), (cx + r, cy), (cx, cy + r), (cx - r, cy)])
+
+
+def ornament(L, x0, y0, x1, y1):
+    """Ein Motiv an allen Fassungen: Rautenniete an den Ecken (1), dazu Spitzgiebel oben (2), dazu Doppelrahmen, Giebelauge und Fialen an langen Fassungen (3)."""
+    if ORN <= 0:
+        return
+    for (cx, cy) in ((x0 + 1.5, y0 + 1.5), (x1 - 1.5, y0 + 1.5), (x0 + 1.5, y1 - 1.5), (x1 - 1.5, y1 - 1.5)):
+        diamond4(L, cx, cy, 3.0 if ORN < 3 else 3.4)
+    if ORN >= 2:
+        mx = (x0 + x1) / 2
+        _lit_poly(L, [(mx - 6.5, y0 + 1.5), (mx, y0 - 4.5), (mx + 6.5, y0 + 1.5)])
+        if ORN >= 3:
+            L.shape((mx - 3, y0 - 2, mx + 3, y0 + 3), sd_circle(mx, y0 - 0.2, 1.1), IRON0)
+    if ORN >= 3:
+        bb = (x0, y0, x1, y1)
+        q = sd_poly(chamfer(x0 + 5.5, y0 + 5.5, x1 - 5.5, y1 - 5.5, 1.0))
+        L.shape(bb, lambda px, py: q(px, py) + 0.5, tuple(N_LEVELS[0] * 255), stroke=1.0, alpha=0.9)
+        if x1 - x0 > 100:  # lange Fassungen: Fialen an den Enden
+            for fx in (x0 - 2, x1 + 2):
+                _lit_poly(L, [(fx, y0 - 7), (fx + 2.6, y0 + 2), (fx, y0 + 8), (fx - 2.6, y0 + 2)])
+
+
 def cell(L, x0, y0, x1, y1, style, active=False, seed=2):
     """recess: dunkle Nische, duenne Silberlinie | frame: Silberlinie, Bild scheint durch | socket: Silberfassung mit dunkler Nische."""
     poly = chamfer(x0, y0, x1, y1, 2.5)
@@ -117,6 +152,8 @@ def cell(L, x0, y0, x1, y1, style, active=False, seed=2):
     L.shape(bb, sd_poly(q), vg(y0, y1, IRON1, IRON0), alpha=0.97)
     if active:
         L.shape(bb, lambda px, py: sd_poly(q)(px, py) + 0.7, IRON7, stroke=1.0, alpha=0.9)
+    if x1 - x0 >= 24:
+        ornament(L, x0, y0, x1, y1)
     return x0 + 3, y0 + 3, x1 - 3, y1 - 3
 
 
@@ -251,10 +288,12 @@ def build(L, V):
         item_cells(L, 12, GY - 30, GY, 30, 4, sty, 8)
         weapon_cells(L, 690, GY - 30, GY, 38, 3, sty, 9.5, 10)
         cell(L, 247, GY - 30, 607, GY, "socket", False, seed=10)
-        nums(L, 265, 589, GY - 15)
-        trough(L, 283, GY - 24, 571, GY - 14, HP, RED5, RED2, "recess", back=RED0, hi=RED6, p=4)
-        segs(L, 283, 571, GY - 10, GY - 5, "recess", 5, 4)
-        toast(L, 8, 429, 172, 445, sty)
+        ta, tb = (283, 571) if NUMS else (257, 597)
+        if NUMS:
+            nums(L, 265, 589, GY - 15)
+        trough(L, ta, GY - 24, tb, GY - 14, HP, RED5, RED2, "recess", back=RED0, hi=RED6, p=4)
+        segs(L, ta, tb, GY - 10, GY - 5, "recess", 5, 4)
+        toast(L, 8, 424, 172, 440, sty)
 
     # ---------------------------------------------------------------- oben: dieselben Anzeigen, Huelle je Variante
     cx = 427
@@ -371,6 +410,49 @@ def main4():
     save_png(os.path.join(OUT4, "blatt-runde4.png"), sheet(nat, pct, p3))
 
 
+def sheet5(nat, pct, base):
+    gap, top, bottom = 14, 46, 100
+    W = 3 * 854 + 4 * gap; H = top + 480 + bottom + gap
+    cv = np.tile(np.array((20, 16, 26), np.float32) / 255, (H, W, 1))
+    for i, im in enumerate(nat):
+        cv[top:top + 480, gap + i * (854 + gap):gap + i * (854 + gap) + 854] = im
+    L = Layer(W, H, False); L.sx = L.sy = L.s = 1.0
+    titles = ["V1  Zurückhaltend", "V2  Mittel", "V3  Reich"]
+    notes = [["Rautenniete in den vier Ecken jeder Fassung.", "Sonst nichts; das Silber der Fassung selbst bleibt unverändert."],
+             ["Ecknieten und ein Spitzgiebel oben in der Mitte jeder Fassung.", "Dasselbe Motiv an allen Fassungen, auch oben und am Boss."],
+             ["Dazu Giebelauge, Doppelrahmen innen und Fialen an den langen Fassungen.", "Mehr Gotik, aber alles im selben Silber."]]
+    for i, n in enumerate(titles):
+        x = gap + i * (854 + gap)
+        L.text(F_CINZEL, 20, n, x + 427, 33, IRON7, "c")
+        ys = top + 480 + 24
+        L.text(F_BELL, 16, f"Verdeckt: {pct[i]:.1f} % des Bildes (A3 ohne Verzierung, ohne Zahlen: {base:.1f} %)", x + 4, ys, BONE)
+        for k, line in enumerate(notes[i]):
+            L.text(F_BELL, 15, line, x + 4, ys + 24 + k * 21, BONE2)
+    return np.clip(cv * (1 - L.a[..., None]) + L.rgb, 0, 1)
+
+
+def main5():
+    """Runde 5: A3 ohne Zahlen bei Leben/Ausdauer, drei Stufen Verzierung."""
+    global NEU, NUMS, ORN
+    NEU, NUMS = True, False
+    scene = load_png(os.path.join(HERE, "basis-854x480.png"))
+    ORN = 0
+    base = measure(r3.compose(scene, design(3)), scene)
+    nat, pct = [], []
+    for o, nm in ((1, "zurueckhaltend"), (2, "mittel"), (3, "reich")):
+        ORN = o
+        im = r3.compose(scene, design(3))
+        nat.append(im); pct.append(measure(im, scene))
+        save_png(os.path.join(OUT4, f"r5-V{o}-{nm}-854.png"), im)
+        save_png(os.path.join(OUT4, f"r5-V{o}-{nm}.png"), nearest(im, FINAL_H, FINAL_W))
+        print("R5", o, round(pct[-1], 2), "Basis", round(base, 2), flush=True)
+    save_png(os.path.join(OUT4, "blatt-runde5.png"), sheet5(nat, pct, base))
+
+
 if __name__ == "__main__":
-    main4()
-    main_final()
+    import sys as _s
+    if "--runde5" in _s.argv:
+        main5()
+    else:
+        main4()
+        main_final()
