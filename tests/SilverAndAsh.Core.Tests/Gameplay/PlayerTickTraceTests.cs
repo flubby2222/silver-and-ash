@@ -145,8 +145,8 @@ public class PlayerTickTraceTests
                 player.TakeDamage(1, []);
             }
 
-            // Buttons that only count for one tick: inventory, wheel and number keys.
-            var thisTick = holdTicks == 0 ? input : input with { ToggleInventory = false, CycleSlot = 0, SelectSlot = null };
+            // Buttons that only count for one tick: menu key, wheel and number keys.
+            var thisTick = holdTicks == 0 ? input : input with { PressMenu = null, CycleSlot = 0, SelectSlot = null };
 
             // At the end: charge the blade and die while charging - the charge must be dropped without a swing.
             var dyingFrom = ticks - 60;
@@ -184,7 +184,7 @@ public class PlayerTickTraceTests
         {
             if (holdTicks-- <= 0)
             {
-                input = RandomInput(random) with { ToggleInventory = false };
+                input = RandomInput(random) with { PressMenu = null };
                 holdTicks = random.Next(1, 60);
             }
 
@@ -212,7 +212,7 @@ public class PlayerTickTraceTests
             Reload = random.Next(12) == 0,
             CycleSlot = random.Next(10) == 0 ? (random.Next(2) == 0 ? 1 : -1) : 0,
             SelectSlot = random.Next(15) == 0 ? random.Next(3) : null,
-            ToggleInventory = random.Next(40) == 0,
+            PressMenu = random.Next(40) == 0 ? MenuKey.Equipment : null, // G: open or close the equipment page
         };
     }
 
