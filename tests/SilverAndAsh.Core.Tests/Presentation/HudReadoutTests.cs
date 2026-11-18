@@ -57,6 +57,62 @@ public class HudReadoutTests
     }
 
     [Fact]
+    public void The_selected_ranged_weapon_is_the_one_the_player_switched_to()
+    {
+        var world = PlainWorld();
+        var player = world.Player;
+        player.Equip(1, WeaponKind.Rifle);
+
+        world.Tick(PlayerInput.None with { SelectSlot = 1 });
+        var weapons = HudReadout.Of(world, player).Weapons;
+
+        Assert.Equal(1, player.SelectedSlot);
+        Assert.False(weapons[1].IsSelected);
+        Assert.True(weapons[2].IsSelected);
+        Assert.Equal(WeaponKind.Rifle, weapons[2].Kind);
+    }
+
+    [Fact]
+    public void A_reloading_weapon_shows_as_reloading()
+    {
+        var world = PlainWorld();
+        var player = world.Player;
+        Assert.False(HudReadout.Of(world, player).Weapons[1].IsReloading);
+
+        world.Tick(PlayerInput.None with { Shoot = true });
+        world.Tick(PlayerInput.None with { Reload = true });
+
+        Assert.True(player.Ranged.Magazine.IsReloading, "The reload never started - the test would prove nothing.");
+        Assert.True(HudReadout.Of(world, player).Weapons[1].IsReloading);
+    }
+
+    [Fact]
+    public void Spent_stamina_shows_as_the_share_left()
+    {
+        var world = PlainWorld();
+        var player = world.Player;
+
+        world.Tick(PlayerInput.None with { Jump = true });
+        world.Tick(PlayerInput.None with { Dash = true });
+
+        Assert.True(player.Stamina.Fraction < 1f, "No stamina was spent - the test would prove nothing.");
+        Assert.Equal(player.Stamina.Fraction, HudReadout.Of(world, player).Stamina, 4);
+    }
+
+    [Fact]
+    public void A_dead_player_shows_as_dead_with_no_life_left()
+    {
+        var world = PlainWorld();
+        var player = world.Player;
+
+        player.TakeDamage(player.MaxHealth, new List<GameEvent>());
+        var readout = HudReadout.Of(world, player);
+
+        Assert.True(readout.IsDead);
+        Assert.Equal(0f, readout.Life);
+    }
+
+    [Fact]
     public void Damage_shows_as_the_share_of_life_left()
     {
         var world = PlainWorld();
@@ -117,6 +173,8 @@ public class HudReadoutTests
         Assert.Equal("Picked up Blood Vial", PickupToast.TextFor(new PickupTaken(1, 0, ConsumableKind.BloodVial), 0));
         Assert.Equal("Picked up a Key", PickupToast.TextFor(new KeyTaken(1, 0), 0));
         Assert.Null(PickupToast.TextFor(new KeyTaken(1, 1), 0));
+        Assert.Null(PickupToast.TextFor(new EquipmentTaken(1, 1, eye, Vector3.Zero), 0));
+        Assert.Null(PickupToast.TextFor(new PickupTaken(1, 1, ConsumableKind.BloodVial), 0));
         Assert.Null(PickupToast.TextFor(new SilverTaken(1, 0, 5), 0));
     }
 

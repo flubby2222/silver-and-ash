@@ -1,3 +1,4 @@
+using System.Globalization;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Presentation;
 
@@ -56,6 +57,10 @@ public class HudLayoutTests
         ConsecratedSecondsLeft: 0f);
 
     /// <summary>Everything at once and at its widest: the test of room.</summary>
+    /// <summary>The most rounds any magazine holds - the widest number a weapon frame must take.</summary>
+    private static int MostRounds => new[] { Balance.Default.Pistol, Balance.Default.Rifle, Balance.Default.Blunderbuss }
+        .Max(weapon => weapon.MagazineSize);
+
     private static HudReadout Busy() => Calm() with
     {
         Level = 99,
@@ -65,9 +70,9 @@ public class HudLayoutTests
         Weapons =
         [
             new(WeaponKind.Club, null, false, false),
-            new(WeaponKind.Rifle, 1, true, false),
-            new(WeaponKind.Blunderbuss, 2, false, true),
-            new(WeaponKind.Pistol, 6, false, false),
+            new(WeaponKind.Rifle, MostRounds, true, false),
+            new(WeaponKind.Blunderbuss, MostRounds, false, true),
+            new(WeaponKind.Pistol, MostRounds, false, false),
         ],
         Items = Enum.GetValues<ItemKind>().Concat(Enum.GetValues<ItemKind>()).ToList(),
         Boss = new HudBoss(Gorm.Name, 0.5f),
@@ -265,18 +270,18 @@ public class HudLayoutTests
         Assert.Contains("99", texts);    // level and keys
         Assert.Equal(2, texts.Count(text => text == "99"));
         Assert.Contains("99999", texts); // silver
-        Assert.Contains("1", texts);     // rifle rounds
-        Assert.Contains("2", texts);     // blunderbuss rounds
-        Assert.Contains("6", texts);     // pistol rounds
+        Assert.Equal(3, texts.Count(text => text == MostRounds.ToString(CultureInfo.InvariantCulture))); // rounds of the three ranged weapons
     }
 
     [Theory]
-    [InlineData(1f, 344, false)]
-    [InlineData(0.5f, 172, true)]
-    [InlineData(0.01f, 3, true)]
-    [InlineData(0f, 0, false)]
-    public void The_life_bar_fills_from_the_left_with_a_light_edge_while_part_of_it_is_gone(float life, int width, bool edge)
+    [InlineData(1f, false)]
+    [InlineData(0.5f, true)]
+    [InlineData(0.01f, true)]
+    [InlineData(0f, false)]
+    public void The_life_bar_fills_from_the_left_with_a_light_edge_while_part_of_it_is_gone(float life, bool edge)
     {
+        var width = (int)MathF.Round(Parts["life_full"].Width * life);
+        Assert.True(life == 0f || width > 0, "A sliver of life must still show - the case would prove nothing.");
         var picture = Arrange(Calm() with { Life = life });
 
         Single(picture, "life_empty");
@@ -319,7 +324,17 @@ public class HudLayoutTests
     [Fact]
     public void Rounds_while_reloading_are_in_the_quieter_colour()
     {
-        var picture = Arrange(Busy());
+        var picture = Arrange(Calm() with
+        {
+            Keys = 0,
+            Weapons =
+            [
+                new(WeaponKind.Club, null, false, false),
+                new(WeaponKind.Rifle, 1, true, false),
+                new(WeaponKind.Blunderbuss, 2, false, true),
+                new(WeaponKind.Pistol, null, false, false),
+            ],
+        });
 
         Assert.Equal(HudTextColor.Second, Assert.Single(picture.Texts, text => text.Text == "1").Color);
         Assert.Equal(HudTextColor.Main, Assert.Single(picture.Texts, text => text.Text == "2").Color);
@@ -376,9 +391,20 @@ public class HudLayoutTests
         var picture = Arrange(Calm() with { Items = [ItemKind.IronFlask, ItemKind.HuntersEye, ItemKind.Leech] });
         Assert.Equal(["frame_item_0", "frame_item_1", "frame_item_0"],
             picture.Parts.Where(part => part.Name.StartsWith("frame_item", StringComparison.Ordinal)).Select(part => part.Name));
-        Assert.Equal((22, 454), (Single(picture, "icon_flask").X, Single(picture, "icon_flask").Y));
-        Assert.Equal((54, 459), (Single(picture, "icon_eye").X, Single(picture, "icon_eye").Y));
+        var frames = picture.Parts.Where(part => part.Name.StartsWith("frame_item", StringComparison.Ordinal)).ToList();
+        var flask = Layout.Bounds(Single(picture, "icon_flask"));
+        var eye = Layout.Bounds(Single(picture, "icon_eye"));
+        AssertCentredIn(Layout.Bounds(frames[0]), flask);
+        AssertCentredIn(Layout.Bounds(frames[1]), eye);
+        Assert.InRange((2 * flask.Y) + flask.Height - ((2 * eye.Y) + eye.Height), -1, 1); // one line through both
         Assert.Single(picture.Texts, text => text.Text == "L");
+    }
+
+    private static void AssertCentredIn(HudRect frame, HudRect icon)
+    {
+        Assert.True(frame.X <= icon.X && icon.Right <= frame.Right && frame.Y <= icon.Y && icon.Bottom <= frame.Bottom,
+            $"The icon {icon} lies outside its frame {frame}.");
+        Assert.InRange((2 * icon.X) + icon.Width - ((2 * frame.X) + frame.Width), -1, 1);
     }
 
     [Fact]
