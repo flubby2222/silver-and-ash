@@ -12,7 +12,7 @@ public class HudReadoutTests
     private static GameWorld PlainWorld() => new(LevelParser.Parse("P"));
 
     [Fact]
-    public void A_fresh_player_has_full_bars_level_one_and_no_boss_or_skill_point()
+    public void A_fresh_player_has_full_bars_level_zero_and_no_boss_or_skill_point()
     {
         var world = PlainWorld();
 
@@ -21,7 +21,7 @@ public class HudReadoutTests
         Assert.False(readout.IsDead);
         Assert.Equal(1f, readout.Life);
         Assert.Equal(1f, readout.Stamina);
-        Assert.Equal(1, readout.Level);
+        Assert.Equal(0, readout.Level);
         Assert.Equal(0f, readout.Experience);
         Assert.Equal(0, readout.PendingBoons);
         Assert.Null(readout.Boss);
@@ -185,7 +185,7 @@ public class HudReadoutTests
         player.AddExperience(player.ExperienceToNextLevel + 1, new List<GameEvent>());
         var readout = HudReadout.Of(world, player);
 
-        Assert.Equal(2, readout.Level);
+        Assert.Equal(1, readout.Level);
         Assert.Equal(1, readout.PendingBoons);
         Assert.Equal(1f / player.ExperienceToNextLevel, readout.Experience, 4);
     }

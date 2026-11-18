@@ -272,4 +272,51 @@ public class EnemyPlacementTests
         Assert.True(Enumerable.Range(0, plain.Level.Width).All(x => Enumerable.Range(0, plain.Level.Depth)
             .All(z => plain.Level[x, z] == populated.Level[x, z])));
     }
+
+    [Fact]
+    public void No_room_ever_holds_more_bats_than_allowed()
+    {
+        // Issue #391: five or six bats in one room could not be beaten without one-shot damage.
+        var checkedRooms = 0;
+        foreach (var seed in Enumerable.Range(0, 300))
+        {
+            var generated = EnemyPlacement.Populate(LevelGenerator.Generate(Templates, seed, Balance.Default.Layout), Difficulty);
+            foreach (var room in Arenas(generated))
+            {
+                Assert.True(
+                    Bats(generated, room).Count <= Difficulty.MaxBatsPerRoom,
+                    $"Seed {seed}, room {room.Index}: {Bats(generated, room).Count} bats, at most {Difficulty.MaxBatsPerRoom} allowed.");
+                checkedRooms++;
+            }
+        }
+
+        Assert.True(checkedRooms > 300, "Every level should have several rooms with enemies.");
+    }
+
+    [Fact]
+    public void A_room_that_wants_only_bats_stops_at_the_limit()
+    {
+        // Without ghouls to buy, the budget would pay for far more bats than allowed - the limit is what stops it.
+        var batsOnly = Difficulty with { GhoulWeightNear = 0f, GhoulWeightFar = 0f, BatWeightNear = 1f, BatWeightFar = 1f };
+
+        var counts = Enumerable.Range(0, 40)
+            .Select(seed => EnemyPlacement.Populate(LevelGenerator.Generate(Templates, seed, Balance.Default.Layout), batsOnly))
+            .SelectMany(generated => Arenas(generated).Select(room => Bats(generated, room).Count))
+            .ToList();
+
+        Assert.All(counts, count => Assert.InRange(count, 0, batsOnly.MaxBatsPerRoom));
+        Assert.Contains(batsOnly.MaxBatsPerRoom, counts);
+    }
+
+    [Fact]
+    public void A_limit_of_zero_keeps_every_room_free_of_bats()
+    {
+        var noBats = Difficulty with { GhoulWeightNear = 0f, GhoulWeightFar = 0f, MaxBatsPerRoom = 0 };
+
+        var generated = EnemyPlacement.Populate(LevelGenerator.Generate(Templates, 5, Balance.Default.Layout), noBats);
+
+        Assert.Empty(generated.Level.BatPositions);
+        Assert.All(generated.Rooms.Where(room => room.Kind == RoomKind.Combat), room =>
+            Assert.Single(Ghouls(generated, room)));
+    }
 }

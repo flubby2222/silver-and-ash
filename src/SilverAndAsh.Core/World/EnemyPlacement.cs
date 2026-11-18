@@ -8,7 +8,7 @@ namespace SilverAndAsh.Core.World;
 /// boss room has its own. The room buys enemies with it - each kind has a cost - and the kind is drawn by weights that
 /// also go from "near" to "far". Every enemy stands on a random free floor cell of the room, keeping away from its
 /// doors and from the other enemies. So the same room looks different every run. Every combat room gets at least one
-/// enemy; start rooms, corridors, treasure and secret rooms stay empty. The boss room holds its boss (Gorm) on his
+/// enemy; no room holds more than <see cref="DifficultyBalance.MaxBatsPerRoom"/> bats; start rooms, corridors, treasure and secret rooms stay empty. The boss room holds its boss (Gorm) on his
 /// place 'T' and - only if its budget is above 0 - more enemies. Same seed = same enemies.
 /// </summary>
 public static class EnemyPlacement
@@ -54,7 +54,8 @@ public static class EnemyPlacement
 
             while (true)
             {
-                var kind = Pick(budget, ghoulWeight, batWeight, difficulty, random);
+                var batsHere = placed.Count(enemy => enemy.Kind == Kind.Bat);
+                var kind = Pick(budget, ghoulWeight, batsHere < difficulty.MaxBatsPerRoom ? batWeight : 0f, difficulty, random);
                 if (kind is null)
                 {
                     break;
@@ -75,7 +76,7 @@ public static class EnemyPlacement
             if (room.Kind == RoomKind.Combat && placed.Count == 0)
             {
                 var cell = free.Count > 0 ? free[0] : room.FloorCells[random.Next(room.FloorCells.Count)];
-                placed.Add((cell, ghoulWeight > 0f || batWeight <= 0f ? Kind.Ghoul : Kind.Bat));
+                placed.Add((cell, ghoulWeight > 0f || batWeight <= 0f || difficulty.MaxBatsPerRoom <= 0 ? Kind.Ghoul : Kind.Bat));
             }
 
             ghouls.AddRange(placed.Where(enemy => enemy.Kind == Kind.Ghoul).Select(enemy => enemy.Cell));

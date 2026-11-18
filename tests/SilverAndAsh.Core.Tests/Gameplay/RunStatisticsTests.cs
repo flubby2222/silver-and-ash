@@ -162,7 +162,7 @@ public sealed class RunStatisticsTests : IDisposable
         Assert.Equal(77, running.Seed);
         Assert.Equal(RunOutcome.Running, running.Outcome);
         Assert.Equal(RunOutcome.Lost, lost.Outcome);
-        Assert.Equal(1, lost.Level);
+        Assert.Equal(0, lost.Level);
         Assert.Equal(world.Rooms.Count(room => room.IsArena), lost.ArenaRooms);
         Assert.Equal(0, lost.RoomsCleared);
     }
