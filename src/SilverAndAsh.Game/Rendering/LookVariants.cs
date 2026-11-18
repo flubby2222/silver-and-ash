@@ -10,11 +10,10 @@ namespace SilverAndAsh.Game.Rendering;
 /// </summary>
 /// <param name="Number">1 to 4, as chosen with <c>--look</c>.</param>
 /// <param name="Label">One line for the comparison pictures.</param>
-/// <param name="RenderWidth">Width of the low-resolution picture.</param>
-/// <param name="RenderHeight">Height of the low-resolution picture.</param>
+/// <param name="RenderHeight">Height of the low-resolution picture; its width follows the window (PictureWidth, issue #350).</param>
 /// <param name="Quantize">Rasterise every colour to 5 bits per channel with the 4 x 4 pattern.</param>
 /// <param name="PatternFade">Leave pixels out after the pattern instead of mixing in fog.</param>
-internal sealed record LookVariant(int Number, string Label, int RenderWidth, int RenderHeight, bool Quantize, bool PatternFade)
+internal sealed record LookVariant(int Number, string Label, int RenderHeight, bool Quantize, bool PatternFade)
 {
     /// <summary>
     /// Colour the 3D world is cleared with. With the pattern it is moved to a 5-bit step, so the far end of the view
@@ -45,23 +44,23 @@ internal static class LookVariants
     /// <summary>Distance in metres where every pixel is left out: the end of the fog, the range of the lantern.</summary>
     public const float FadeEnd = LookSettings.FogEnd;
 
-    /// <summary>The lower resolution of variant 4: the pattern gets coarser, targets get smaller.</summary>
-    public const int LowRenderWidth = 640;
-
-    /// <summary>Height of the lower resolution of variant 4.</summary>
+    /// <summary>
+    /// The lower resolution of variant 4: the pattern gets coarser, targets get smaller. 640 x 360 at 16:9; the width
+    /// follows the window like in the game (issue #350).
+    /// </summary>
     public const int LowRenderHeight = 360;
 
     /// <summary>Variants 1 to 4, in order.</summary>
     public static IReadOnlyList<LookVariant> All { get; } =
     [
-        new(1, "1  no grain: fog, full colour, 854 x 480",
-            LookSettings.RenderWidth, LookSettings.RenderHeight, Quantize: false, PatternFade: false),
+        new(1, string.Create(CultureInfo.InvariantCulture, $"1  no grain: fog, full colour, {LookSettings.RenderHeight} lines"),
+            LookSettings.RenderHeight, Quantize: false, PatternFade: false),
         new(2, "2  15 bit + 4x4 pattern, fog",
-            LookSettings.RenderWidth, LookSettings.RenderHeight, Quantize: true, PatternFade: false),
+            LookSettings.RenderHeight, Quantize: true, PatternFade: false),
         new(3, string.Create(CultureInfo.InvariantCulture, $"3  15 bit + pattern fade {FadeStart:0} - {FadeEnd:0.#} m, no fog"),
-            LookSettings.RenderWidth, LookSettings.RenderHeight, Quantize: true, PatternFade: true),
-        new(4, string.Create(CultureInfo.InvariantCulture, $"4  like 3 in {LowRenderWidth} x {LowRenderHeight}"),
-            LowRenderWidth, LowRenderHeight, Quantize: true, PatternFade: true),
+            LookSettings.RenderHeight, Quantize: true, PatternFade: true),
+        new(4, string.Create(CultureInfo.InvariantCulture, $"4  like 3 in {LowRenderHeight} lines"),
+            LowRenderHeight, Quantize: true, PatternFade: true),
     ];
 
     /// <summary>

@@ -8,10 +8,10 @@ namespace SilverAndAsh.Game.Rendering;
 /// </summary>
 internal static class LookSettings
 {
-    /// <summary>Width of the picture the 3D world is drawn into (then scaled up with hard pixel edges).</summary>
-    public const int RenderWidth = 854;
-
-    /// <summary>Height of the picture the 3D world is drawn into.</summary>
+    /// <summary>
+    /// Height of the picture the 3D world is drawn into (then scaled up with hard pixel edges). Its width follows the
+    /// shape of the window (<see cref="SilverAndAsh.Core.Presentation.PictureWidth"/>, issue #350): 854 at 16:9.
+    /// </summary>
     public const int RenderHeight = 480;
 
     /// <summary>Dark violet-black that everything fades into with distance.</summary>
@@ -32,7 +32,7 @@ internal static class LookSettings
     /// <summary>Lantern brightness far away (0..1). Close by it is 1.</summary>
     public const float LanternMinimum = 0.35f;
 
-    /// <summary>Colour of the bars when the window shape does not match the picture.</summary>
+    /// <summary>Colour of the bars when the window is narrower than 5:4 or wider than 32:9 (PictureWidth, issue #350).</summary>
     public static readonly Color BarColor = Color.Black;
 
     /// <summary>Vertical field of view of the camera in degrees.</summary>

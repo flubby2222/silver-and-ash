@@ -55,6 +55,7 @@ using (log)
     Func<GameWorld, GameWorld>? nextWorld = null;
     int? seed = null;
     int? look = null;
+    WindowSize? window = null;
     PhotoRequest? photos = null;
     try
     {
@@ -99,6 +100,9 @@ using (log)
             nextWorld = world => showroom.NewWorld(world.Balance);
             log?.Info($"Showroom: {showroom.Placed.Count} pieces in {showroom.Sections.Count} sections.");
         }
+
+        // Test option: --window 2520x1080 opens the window in another shape, e.g. for photos in 21:9 (issue #350).
+        window = options.Window;
 
         // Test option: --look 3 draws the world in one of the picture variants of issue #234 (decision record 0010).
         look = options.Look;
@@ -195,6 +199,11 @@ using (log)
         {
             throw new ArgumentException("'--look' works only in the debug version (dotnet run).");
         }
+
+        if (options.Window is not null)
+        {
+            throw new ArgumentException("'--window' works only in the debug version (dotnet run).");
+        }
 #endif
     }
     catch (Exception exception) when (exception is ArgumentException or LevelFormatException or IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -212,7 +221,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look));
+            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look), window);
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -228,12 +237,12 @@ using (log)
 // look: how the 3D world is drawn - the standard variant 2 (issue #237) unless --look chose another (debug version, issue #234).
 static void RunGame(
     Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
-    PhotoRequest? photos, LookVariant look)
+    PhotoRequest? photos, LookVariant look, WindowSize? window)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted. The bench (--bench) draws as
     // fast as it can: no VSync, and no frame rate limit is set anywhere.
     Raylib.SetConfigFlags(photos is { Bench: true } ? ConfigFlags.ResizableWindow : ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
-    Raylib.InitWindow(WindowWidth, WindowHeight, "Silver & Ash");
+    Raylib.InitWindow(window?.Width ?? WindowWidth, window?.Height ?? WindowHeight, "Silver & Ash");
     BringWindowOnScreen(log);
 
     // Esc must not close the game - it opens the Esc menu.
@@ -354,7 +363,7 @@ static void RunGame(
         var seconds = 0f;
 
         var accumulator = new TickAccumulator();
-        using var picture = new LowResolutionTarget(look.RenderWidth, look.RenderHeight);
+        using var picture = new LowResolutionTarget(look.RenderHeight);
 
         // Lantern light and fog: a small program for the graphics card (assets/shaders/), for everything in the 3D world.
         using var levelShader = new LevelShader(Path.Combine(AppContext.BaseDirectory, "assets", "shaders"));
@@ -429,10 +438,6 @@ static void RunGame(
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
                 equipmentCard.OnEvent(gameEvent, player.Id);
-                if (gameEvent is PlayerHit hit && hit.PlayerId == player.Id)
-                {
-                    boonOpen = false;
-                }
             }
         }
 
@@ -470,6 +475,9 @@ static void RunGame(
             lastCamera = camera;
 
             levelShader.SetCameraPosition(eye);
+
+            // The picture follows the window: 480 lines, as wide as the window's shape (issue #350).
+            picture.FitToWindow(look.RenderHeight);
             picture.BeginDrawing();
             Raylib.ClearBackground(look.BackgroundColor);
             Raylib.BeginMode3D(camera);
@@ -482,7 +490,7 @@ static void RunGame(
 
             levelRenderer.Draw();
             levelShader.BeginFigures();
-            var viewCone = new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)look.RenderWidth / look.RenderHeight);
+            var viewCone = new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)picture.Width / picture.Height);
             doorView.Draw(gameWorld.Doors, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             chestView.Draw(gameWorld.Chests, seconds);
             stairsView.Draw(gameWorld.Stairs, seconds, viewCone, gameWorld.Surfaces, levelTextures);
@@ -618,7 +626,7 @@ static void RunGame(
                 {
                     look = variant;
                     levelShader.Apply(look);
-                    picture.Resize(look.RenderWidth, look.RenderHeight);
+                    picture.FitToWindow(look.RenderHeight);
                 }
 
                 var suffix = photos.Compare ? $"-look{look.Number}" : string.Empty;
@@ -764,6 +772,22 @@ static void RunGame(
         {
             seconds += Raylib.GetFrameTime();
 
+            // Alt + Enter: window or borderless full screen (issue #350). A captured mouse is captured again in the new
+            // window, so the view does not jump.
+            if (FullScreenToggle.Update())
+            {
+                if (input.IsMouseCaptured)
+                {
+                    input.CaptureMouse();
+                }
+
+                var monitor = Raylib.GetCurrentMonitor();
+                log?.Info(
+                    $"{(Raylib.IsWindowState(ConfigFlags.BorderlessWindowMode) ? "Full screen" : "Window")}: "
+                    + $"{Raylib.GetScreenWidth()} x {Raylib.GetScreenHeight()}, monitor "
+                    + $"{Raylib.GetMonitorWidth(monitor)} x {Raylib.GetMonitorHeight(monitor)}.");
+            }
+
             // N mutes the game and turns it on again - anywhere, also on the title screen. Pure presentation, not tick input.
             if (Raylib.IsKeyPressed(KeyboardKey.N))
             {
@@ -818,15 +842,29 @@ static void RunGame(
                 continue;
             }
 
-            // Esc opens and closes the menu; leaving the window (Alt+Tab) opens it, too. Not on the end screen.
+            // Esc first closes an open overlay (bonus choice, inventory, map kept open) and opens the menu only on the next
+            // press (issue #346); with the menu open it closes the menu. Leaving the window (Alt+Tab) opens the menu, too.
+            // Not on the end screen.
             var wasMenuOpen = menuOpen;
+            var escClosedOverlay = false;
             if (endSummary is not null)
             {
                 menuOpen = false;
             }
             else if (Raylib.IsKeyPressed(KeyboardKey.Escape))
             {
-                menuOpen = !menuOpen;
+                if (!menuOpen && (boonOpen || player.IsInventoryOpen || mapKeptOpen))
+                {
+                    // The inventory lives in Core: it closes with the next tick, like with G.
+                    inventoryToggle = player.IsInventoryOpen;
+                    boonOpen = false;
+                    mapKeptOpen = false;
+                    escClosedOverlay = true;
+                }
+                else
+                {
+                    menuOpen = !menuOpen;
+                }
             }
             else if (!Raylib.IsWindowFocused())
             {
@@ -885,7 +923,7 @@ static void RunGame(
             }
 
             // The mouse is captured only while playing: free in the menu, on the end screen and while the bonus choice
-            // is open (a click chooses; you walk on with the keys; a hit closes it).
+            // is open (a click chooses; you walk on with the keys; only the player closes it, issue #346).
             var frozen = menuOpen || endSummary is not null;
             var inventoryOpen = player.IsInventoryOpen;
             var capture = !frozen && !onTitle && !boonOpen && !inventoryOpen;
@@ -905,14 +943,16 @@ static void RunGame(
             slotChosen = playerInput.SelectSlot ?? slotChosen;
             wheelSteps += playerInput.CycleSlot;
 
-            // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while
-            // walking - only a hit closes it (see the events below). Several level ups come one after the other.
-            if (!frozen && !inventoryOpen && Raylib.IsKeyPressed(KeyboardKey.X) && player.PendingBoons > 0)
+            // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while walking
+            // and when hit - only X or Esc close it (issue #346). Several level ups come one after the other. A dead
+            // player takes no boon (Core), so the window closes and X stays locked - display only.
+            if (!frozen && !inventoryOpen && !escClosedOverlay && !player.IsDead && Raylib.IsKeyPressed(KeyboardKey.X)
+                && player.PendingBoons > 0)
             {
                 boonOpen = !boonOpen;
             }
 
-            if (player.PendingBoons == 0)
+            if (player.PendingBoons == 0 || player.IsDead)
             {
                 boonOpen = false;
             }
@@ -923,9 +963,9 @@ static void RunGame(
                 chosenBoon ??= BoonWindow.Pick(player.CurrentOffer, boonOpenSeconds);
             }
 
-            // The inventory (decision record 0008): G opens and closes it - not while the bonus choice is open. Moving or a
-            // hit closes it (Core). A click is picked only once it has been open for a moment.
-            if (!frozen && !boonOpen && Raylib.IsKeyPressed(KeyboardKey.G))
+            // The inventory (decision record 0008): G opens and closes it - not while the bonus choice is open. Only G or
+            // Esc close it, neither moving nor a hit (issue #346). A click is picked only once it has been open for a moment.
+            if (!frozen && !boonOpen && !escClosedOverlay && Raylib.IsKeyPressed(KeyboardKey.G))
             {
                 inventoryToggle = !inventoryToggle;
             }
@@ -997,7 +1037,7 @@ static void RunGame(
 
             // 3b. ... which is scaled up onto the screen, the HUD on top. The map while Tab is held, or kept open with M (to have it while walking) - the game goes on meanwhile
             // (no pause: online co-op).
-            if (!frozen && !boonOpen && !player.IsInventoryOpen && Raylib.IsKeyPressed(KeyboardKey.M))
+            if (!frozen && !boonOpen && !player.IsInventoryOpen && !escClosedOverlay && Raylib.IsKeyPressed(KeyboardKey.M))
             {
                 mapKeptOpen = !mapKeptOpen;
             }

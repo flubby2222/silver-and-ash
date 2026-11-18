@@ -10,8 +10,8 @@ namespace SilverAndAsh.Game.Rendering;
 /// <summary>
 /// The bonus choice (decision record 0008): a level up only shows the hint "[X] Choose boon" - the game goes on.
 /// X opens the window with one box per boon of the offer Core drew; 1 - 4 or a click choose (the cursor shows while
-/// it is open). Several level ups wait in line and come one after the other. Walking keeps it open; only a hit closes it;
-/// the boon keeps waiting. It only reads and shows - the choice goes to Core as input
+/// it is open). Several level ups wait in line and come one after the other. Walking and hits keep it open; only X or Esc
+/// close it (issue #346), and the boon keeps waiting. It only reads and shows - the choice goes to Core as input
 /// (<see cref="Core.Input.PlayerInput.ChooseBoon"/>).
 /// </summary>
 internal static class BoonWindow
@@ -87,7 +87,7 @@ internal static class BoonWindow
         var titleWidth = Raylib.MeasureText(title, 32);
         Raylib.DrawText(title, (width - titleWidth) / 2, height / 2 - BoxHeight / 2 - 70, 32, Gold);
 
-        const string Close = "Walk on as you like - a hit closes it, the boon keeps waiting";
+        const string Close = "[X] or [Esc] close it - the boon keeps waiting";
         Raylib.DrawText(Close, (width - Raylib.MeasureText(Close, 16)) / 2, height / 2 + BoxHeight / 2 + 24, 16, Muted);
 
         var hovered = Hovered(offer);
