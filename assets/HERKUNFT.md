@@ -27,6 +27,7 @@ Alles unter `assets/` ist per Skript erzeugt, nichts heruntergeladen (`CLAUDE.md
 | `audio/skillpunkt.wav` | `tools/audio/skillpunkt.py` (lädt die Synthese aus `design/proben/audio/skillpunkt/runde3/bauen.py`, Funktion `a_ohne_vibrato`); rein synthetisch, nur Standardbibliothek | 2026-11-18 |
 | `audio/p1-gorm-ankuendigung-hammer.wav`, `audio/p1-gorm-ankuendigung-schwung.wav`, `audio/p1-gorm-ankuendigung-wurf.wav`, `audio/p1-gorm-aufschlag.wav`, `audio/p1-gorm-bruellen.wav`, `audio/p1-gorm-haken-treffer.wav`, `audio/p1-gorm-haken-wurf.wav`, `audio/p1-gorm-kette.wav`, `audio/p1-gorm-schritt-1.wav`, `audio/p1-gorm-schritt-2.wav`, `audio/p1-gorm-sterben.wav`, `audio/p1-gorm-treffer-1.wav`, `audio/p1-gorm-treffer-2.wav`, `audio/p1-gorm-treffer-kopf.wav` | `tools/audio/paket1/paket1.py` (Abschnitt Gorm; mit `bauen.py`, `bauen9.py`, den Bauplänen in `skripte/` und `tools/audio/ps1_klang.py`, `synth.py`); eigene Synthese aus denselben Quell-Klängen (Rauschschlag, Glocke, Pfeife, Hauch, Stimme), in SoundCraft 0.20.1 gebaut, keine Aufnahmen, keine fremden Samples. **Braucht SoundCraft, läuft nicht in der CI** | 2026-11-17 |
 | `hud/hud_parts.png`, `hud/hud_parts.json` | `tools/hud/hud_teile.py` (zeichnet mit den Funktionen aus `design/proben/grafik/hud-vorlagen/hud_runde4.py` und `hud_runde3.py`; liest nur diese Skripte, keine Bilder); rein per Skript, keine Schrift | 2026-11-18 |
+| `menu/menu_parts.png`, `menu/menu_parts.json` | `tools/menu/menue_teile.py` (zeichnet mit den Formen und Farben der Menü-Vorlage C2 „Schlank“ aus `design/proben/grafik/menue/runde2/menue_r2.py`; liest keine Bilder); rein per Skript, keine Schrift | 2026-11-18 |
 | `fonts/kapitell.png`, `fonts/kapitell.json` | `tools/schrift/schrift_atlas.py` (importiert `font_a()` aus `design/proben/grafik/schrift/schrift.py` mit den Skeletten aus `glyphen.py`; kopiert kein Bitmuster); reines Python 3 ohne Zusatzpakete, eigene Schrift, keine fremde Schriftdatei | 2026-11-18 |
 
 ## Neu erzeugen
@@ -56,6 +57,12 @@ HUD-Bildteile (Issue #368) ebenso; das Skript schreibt ein Bild und eine Maßtab
 ```
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/hud/hud_teile.py
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python design/proben/grafik/hud-teile/kontrolle.py
+```
+
+Menü-Bildteile (Issue #371) ebenso; das Skript schreibt Bild und Maßtabelle nach `assets/menu/` (oder in den Ordner, der als erster Wert nach `--` folgt). Zwei Läufe ergeben byte-gleiche Dateien (SHA-256 verglichen):
+
+```
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/menu/menue_teile.py
 ```
 
 Zeichensatz der Pixelschrift (Issue #367) mit Python 3, ohne Blender; das Skript schreibt Bild und Maßtabelle nach `assets/fonts/` (oder in den Ordner, der als erster Wert folgt):

@@ -65,8 +65,10 @@ internal static class MapView
         // The map fills the rest of the screen, right of the column; the hint sits under its heading, away from the HUD.
         var mapLeft = panelRight + 24;
         var mapWidth = width - mapLeft - 40;
-        MenuTabs.Draw(PlayerMenuPage.Map, width / 2);
-        DrawCentred("Tab or Esc: close   G: equipment", mapLeft, mapWidth, PanelTop + 52, 16, Hint);
+        // The tabs grow with the window (issue #371): hint and map stay below them.
+        var tabsBottom = (int)MathF.Ceiling(MenuTabs.DrawMap());
+        DrawCentred("Tab or Esc: close   G: equipment", mapLeft, mapWidth, Math.Max(PanelTop + 52, tabsBottom + 6), 16, Hint);
+        var mapTop = Math.Max(90, tabsBottom + 32);
 
         var discovered = world.Rooms.Where(room => room.IsDiscovered).ToList();
         if (discovered.Count == 0)
@@ -81,7 +83,7 @@ internal static class MapView
         var minZ = cells.Min(cell => cell.Z) - 1;
         var spanX = cells.Max(cell => cell.X) - minX + 2;
         var spanZ = cells.Max(cell => cell.Z) - minZ + 2;
-        var area = new Rectangle(mapLeft, 90, mapWidth, height - 140);
+        var area = new Rectangle(mapLeft, mapTop, mapWidth, height - mapTop - 50);
         var size = MathF.Min(MathF.Min(area.Width / spanX, area.Height / spanZ), 28f);
         var left = area.X + (area.Width - spanX * size) / 2f;
         var top = area.Y + (area.Height - spanZ * size) / 2f;

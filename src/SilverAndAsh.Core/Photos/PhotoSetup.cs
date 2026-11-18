@@ -82,11 +82,15 @@ public sealed record PhotoSetup(GameWorld World)
     }
 }
 
-/// <summary>A menu a photo shows (issue #349): none, the title screen, the pause menu or the settings opened from it.</summary>
+/// <summary>
+/// A menu a photo shows (issue #349): none, the title screen, the pause menu, the settings opened from it or the
+/// question before quitting (issue #371).
+/// </summary>
 public enum PhotoMenu
 {
     None,
     Title,
     Pause,
     Settings,
+    Quit,
 }

@@ -31,6 +31,7 @@ public class PhotoSceneTests
     [InlineData("menu-title", PhotoMenu.Title)]
     [InlineData("menu-pause", PhotoMenu.Pause)]
     [InlineData("menu-settings", PhotoMenu.Settings)]
+    [InlineData("menu-quit", PhotoMenu.Quit)]
     public void The_menu_scenes_show_their_menu(string name, PhotoMenu menu)
     {
         Assert.Equal(menu, Built(name).Menu);
@@ -72,7 +73,7 @@ public class PhotoSceneTests
             "showroom-a-corridor", "showroom-a-room", "showroom-b-corridor", "showroom-b-room", "showroom-c-corridor",
             "showroom-c-room", "stairs-4m", "stairs-10m",
             "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
-            "menu-title", "menu-pause", "menu-settings",
+            "menu-title", "menu-pause", "menu-settings", "menu-quit",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
