@@ -224,6 +224,8 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.StartRun()) { Menu = PhotoMenu.Pause }),
         new("menu-settings", "The settings opened from the pause menu: sensitivity, three volumes, window or full screen (issue #349).",
             studio => new PhotoSetup(studio.StartRun()) { Menu = PhotoMenu.Settings }),
+        new("menu-quit", "The question before quitting, asked from the pause menu: Cancel, Quit (issues #349, #371).",
+            studio => new PhotoSetup(studio.StartRun()) { Menu = PhotoMenu.Quit }),
         new("model-probe-4m", "One target on a bare floor, 4 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 4)) { IsModelProbe = true }),
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",

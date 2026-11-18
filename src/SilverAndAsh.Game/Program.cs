@@ -254,6 +254,7 @@ static void RunGame(
         // The game's own pixel font for all texts (issue #367).
         var fontsDirectory = Path.Combine(AppContext.BaseDirectory, "assets", "fonts");
         PixelText.Load(fontsDirectory, log);
+        MenuArt.Load(Path.Combine(AppContext.BaseDirectory, "assets", "menu"), log);
 
         // The HUD from its parts picture (issue #369).
         hud = HudView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "hud"), fontsDirectory, log);
@@ -751,7 +752,13 @@ static void RunGame(
                 titleMenu.Open();
                 escMenu.Open();
                 settingsMenu.Open();
-                menuPage = setup.Menu == PhotoMenu.Settings ? MenuPage.Settings : MenuPage.Main;
+                quitMenu.Open();
+                menuPage = setup.Menu switch
+                {
+                    PhotoMenu.Settings => MenuPage.Settings,
+                    PhotoMenu.Quit => MenuPage.ConfirmQuit,
+                    _ => MenuPage.Main,
+                };
                 if (setup.Menu == PhotoMenu.Title)
                 {
                     TitleScreen.Draw(titleMenu, displayVersion);
@@ -1207,6 +1214,7 @@ static void RunGame(
     {
         hud?.Dispose();
         PixelText.Unload();
+        MenuArt.Unload();
         Raylib.CloseWindow();
     }
 }
