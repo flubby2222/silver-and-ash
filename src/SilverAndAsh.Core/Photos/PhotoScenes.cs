@@ -163,6 +163,13 @@ public static class PhotoScenes
                 Input = tick => PlayerInput.None with { Shoot = tick % 4 == 0 },
                 StopWhen = world => world.Player.AmmoHint == AmmoHint.Reload,
             }),
+        new("hud-texts", "Every HUD text at once, each in its own line (issue #340): \"Reload [R]\" and \"[F] Take Rifle (Forged)\" under the crosshair, the boon hint and the consecrated time at the bottom left.",
+            studio => new PhotoSetup(AllHudTexts(studio))
+            {
+                Ticks = 1200,
+                Input = tick => PlayerInput.None with { Shoot = tick % 4 == 0 },
+                StopWhen = world => world.Player.AmmoHint == AmmoHint.Reload,
+            }),
         new("inventory", "The inventory window (G) open, every place of the bag taken.",
             studio => new PhotoSetup(FullBag(AllWeapons(studio.StartRun())))
             {
@@ -312,6 +319,16 @@ public static class PhotoScenes
     }
 
     private static Func<GameWorld, bool> Swung(float fraction) => world => world.Doors[0].OpenFraction >= fraction;
+
+    // In front of the rifle in the showroom (the "[F] Take" prompt), consecrated for a minute, one level up whose boon
+    // waits: with the pistol fired empty, every HUD text shows at the same time (issue #340).
+    private static GameWorld AllHudTexts(PhotoStudio studio)
+    {
+        var world = BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle });
+        world.Player.Consecrate(60f);
+        world.Player.AddExperience(world.Player.ExperienceToNextLevel, new List<GameEvent>());
+        return world;
+    }
 
     private static GameWorld AllWeapons(GameWorld world)
     {

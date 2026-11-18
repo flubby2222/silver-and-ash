@@ -526,7 +526,7 @@ static void RunGame(
 
         // 3b. The small picture scaled up onto the screen, the HUD on top at full resolution (sharp). Between
         // Raylib.BeginDrawing and EndDrawing.
-        // debugInfo: the frame rate, and in the debug version the test display - not in photos.
+        // debugInfo: the frame rate and the test display, both only in the debug version (issue #340) - not in photos.
         void DrawScreen(float frameSeconds, bool frozen, bool showMap, bool mapKeptOpen, bool debugInfo)
         {
             Raylib.ClearBackground(LookSettings.BarColor);
@@ -1050,7 +1050,9 @@ static void DrawHud(string displayVersion, bool fps)
     var textColor = new Color(200, 200, 210, 255);
 
     Raylib.DrawText("Silver & Ash", 20, 20, 30, textColor);
-    if (fps)
+
+    // The frame rate is a developer display: only in the debug build (issue #340).
+    if (fps && BuildInfo.ShowsDeveloperDisplays)
     {
         Raylib.DrawFPS(20, screenHeight - 30);
     }

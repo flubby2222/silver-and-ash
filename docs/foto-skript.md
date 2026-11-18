@@ -53,6 +53,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `hud-weapons` | das HUD mit allen Waffenplätzen belegt (Keule, Pistole, Gewehr, Donnerbüchse) |
 | `hud-rifle` | wie `hud-weapons`, aber mit dem Gewehr (2) in der Hand |
 | `hud-reload` | die Pistole im Startraum leergeschossen: „Reload [R]“ unter dem Fadenkreuz (Issue #259) |
+| `hud-texts` | alle Schriftzüge zugleich, jeder in seiner Zeile: „Reload [R]“ und „[F] Take Rifle (Forged)“ unter dem Fadenkreuz, „[X] Choose boon“ und die Weihezeit unten links (Issue #340) |
 | `inventory` | das offene Inventar (G) mit voller Tasche |
 | `map` | die offene Karte (M) zu Beginn eines Durchlaufs |
 | `chests-4m` | die Kisten aller vier Stufen nebeneinander aus 4 m, geschlossen und verschlossen, dazu eine offene (Issue #249) |
