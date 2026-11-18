@@ -56,11 +56,11 @@ public class HudLayoutTests
         Boss: null,
         ConsecratedSecondsLeft: 0f);
 
-    /// <summary>Everything at once and at its widest: the test of room.</summary>
     /// <summary>The most rounds any magazine holds - the widest number a weapon frame must take.</summary>
     private static int MostRounds => new[] { Balance.Default.Pistol, Balance.Default.Rifle, Balance.Default.Blunderbuss }
         .Max(weapon => weapon.MagazineSize);
 
+    /// <summary>Everything at once and at its widest: the test of room.</summary>
     private static HudReadout Busy() => Calm() with
     {
         Level = 99,
@@ -292,6 +292,19 @@ public class HudLayoutTests
             Assert.Equal(Single(picture, "life_full").X + width - 1, rect.X);
             Assert.Equal(1, rect.Width);
         }
+    }
+
+    [Fact]
+    public void Almost_full_life_rounds_to_the_full_bar_and_not_one_pixel_short()
+    {
+        var full = Parts["life_full"].Width;
+        var life = (full - 0.4f) / full; // rounds to the whole bar, cutting off would leave one pixel short
+        Assert.Equal(full - 1, (int)(full * life));
+
+        var picture = Arrange(Calm() with { Life = life });
+
+        Assert.Equal(full, Single(picture, "life_full").Width);
+        Assert.Null(picture.LifeEdge);
     }
 
     [Fact]
