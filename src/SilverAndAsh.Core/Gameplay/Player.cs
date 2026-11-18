@@ -356,7 +356,6 @@ public sealed partial class Player
             return;
         }
 
-        CloseInventoryOnHit();
         var taken = Math.Min(damage, Health);
         Health -= taken;
         events.Add(new PlayerHit(Id, taken));

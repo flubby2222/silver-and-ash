@@ -41,9 +41,9 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | M | Karte an/aus: bleibt offen, auch beim Laufen |
 | N | Ton aus/an |
 | K | Klangpaket wechseln: Klangpaket 1 ↔ alte Geräusche (zum Vergleichen, oben steht kurz der Name) |
-| X, dann 1–4 oder Klick | Bonus nach einem Stufenaufstieg wählen – das Spiel läuft weiter; mehrere Aufstiege warten und kommen nacheinander; man kann dabei laufen, nur ein Treffer schließt die Wahl |
+| X, dann 1–4 oder Klick | Bonus nach einem Stufenaufstieg wählen – das Spiel läuft weiter; mehrere Aufstiege warten und kommen nacheinander; man kann dabei laufen und getroffen werden; X oder Esc schließt die Wahl |
 | Q | Blutrausch |
-| Esc | Menü: weiter, Mausempfindlichkeit, zum Titel, beenden (allein steht das Spiel solange still) |
+| Esc | Schließt zuerst ein offenes Fenster (Bonus-Wahl, Inventar, offene Karte), sonst Menü: weiter, Mausempfindlichkeit, zum Titel, beenden (allein steht das Spiel solange still) |
 
 **Einstellungen** (heute nur die Mausempfindlichkeit) speichert das Spiel lokal in `%LOCALAPPDATA%\SilverAndAsh\settings.json` – kein Spielstand, nichts wird verschickt. Fehlt die Datei oder ist sie kaputt, gelten die Standardwerte.
 
