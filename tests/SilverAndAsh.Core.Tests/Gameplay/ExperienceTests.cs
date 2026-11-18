@@ -213,6 +213,50 @@ public class ExperienceTests
         Assert.Equal(90, world.Player.ExperienceToNextLevel);
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(4)]
+    public void Every_skill_point_is_reported_by_exactly_one_level_up(int levels)
+    {
+        // Issue #375: a level up is a skill point (one boon to choose); the sound plays on its event.
+        var player = new Player(LevelParser.Parse("P"));
+        var needed = 0;
+        var probe = new Player(LevelParser.Parse("P"));
+        for (var i = 0; i < levels; i++)
+        {
+            needed += probe.ExperienceToNextLevel;
+            probe.AddExperience(probe.ExperienceToNextLevel, []);
+        }
+
+        var events = new List<GameEvent>();
+        player.AddExperience(needed, events);
+
+        Assert.Equal(levels, player.PendingBoons);
+        Assert.Equal(Enumerable.Range(2, levels).Select(level => new LevelUp(player.Id, level)), events.OfType<LevelUp>());
+    }
+
+    [Fact]
+    public void A_kill_that_pays_for_a_level_reports_it_once_in_the_world_and_not_again_while_the_choice_waits()
+    {
+        // Issue #375: the first level costs exactly one ghoul here, so the kill gives one skill point.
+        var balance = Frail with
+        {
+            Experience = Frail.Experience with { FirstLevel = Frail.Experience.Ghoul },
+        };
+        var world = new GameWorld(LevelParser.Parse("P\n.\nG"), balance: balance);
+
+        Shoot(world, world.Ghouls[0].Position + new Vector3(0f, 0.5f, 0f));
+
+        Assert.Equal(1, world.Player.PendingBoons);
+        Assert.Equal(new LevelUp(world.Player.Id, 2), Assert.Single(world.Events.OfType<LevelUp>()));
+        for (var tick = 0; tick < SimulationClock.TicksPerSecond; tick++)
+        {
+            world.Tick(PlayerInput.None);
+            Assert.DoesNotContain(world.Events, e => e is LevelUp);
+        }
+    }
+
     private static void Shoot(GameWorld world, Vector3 point)
     {
         Face(world.Player, point);
