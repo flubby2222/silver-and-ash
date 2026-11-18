@@ -3,6 +3,7 @@ using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
@@ -55,8 +56,8 @@ internal static class BoonWindow
     }
 
     /// <summary>
-    /// The hint while boons wait and the window is closed, flashing just below the level and its bar (bottom left):
-    /// "[X] Choose boon", with the number if several.
+    /// The hint while boons wait and the window is closed, flashing in its own line above the level (bottom left, issue
+    /// #340): "[X] Choose boon", with the number if several.
     /// </summary>
     public static void DrawHint(int pending, float seconds)
     {
@@ -67,7 +68,8 @@ internal static class BoonWindow
 
         var text = pending > 1 ? $"[X] Choose boon ({pending})" : "[X] Choose boon";
         var flash = 0.55f + (0.45f * MathF.Sin(seconds * 6f));
-        Raylib.DrawText(text, 20, Raylib.GetScreenHeight() - 104, 16, Gold with { A = (byte)(255 * flash) });
+        var line = HudTextLines.Of(HudText.BoonHint, Raylib.GetScreenHeight());
+        Raylib.DrawText(text, 20, line.Top, line.FontSize, Gold with { A = (byte)(255 * flash) });
     }
 
     /// <summary>Draws the window for <paramref name="player"/>'s waiting offer, with the values of <paramref name="boons"/>.</summary>

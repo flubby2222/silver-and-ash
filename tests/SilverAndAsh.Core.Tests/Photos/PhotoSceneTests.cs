@@ -43,7 +43,7 @@ public class PhotoSceneTests
             "start-room", "room-combat", "room-corridor", "room-treasure", "room-secret", "room-boss",
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "hud-rifle",
-            "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload",
+            "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload", "hud-texts",
             "gorm-hammer-windup", "gorm-shockwave",
             "door-normal", "door-normal-half", "door-normal-open", "door-locked", "door-locked-half", "door-locked-open",
             "door-boss", "door-boss-half", "door-boss-open", "door-cracked", "door-sideways-half", "door-level-seed1",
@@ -423,6 +423,20 @@ public class PhotoSceneTests
         var target = Assert.IsType<WeaponDrop>(world.InteractionTarget(world.Player));
         Assert.Equal(WeaponKind.Rifle, target.Kind);
         Assert.Equal(new InteractionOffer("Take Rifle (Forged)", true, ItemTier.Forged), target.OfferFor(world.Player));
+    }
+
+    [Fact]
+    public void The_hud_texts_scene_ends_with_every_hud_text_showing_at_once()
+    {
+        var setup = Built("hud-texts");
+
+        setup.Run();
+
+        var world = setup.World;
+        Assert.Equal(AmmoHint.Reload, world.Player.AmmoHint);
+        Assert.NotNull(world.InteractionTarget(world.Player));
+        Assert.True(world.Player.PendingBoons > 0);
+        Assert.True(world.Player.IsConsecrated);
     }
 
     [Theory]

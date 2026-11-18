@@ -2,12 +2,14 @@ using System.Globalization;
 using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// The combat part of the HUD, drawn sharp in full window resolution on top of the 3D picture:
-/// crosshair, readiness of blade and pistol next to it, the blade's charge under it, and the health at the bottom left.
+/// crosshair, the hints under it, the weapons and rounds at the bottom right, and the health at the bottom left.
+/// The texts that can show at the same time each have a fixed line of their own (<see cref="HudTextLines"/>, issue #340).
 /// Pure presentation - every value comes from Core.
 /// </summary>
 internal static class CombatHud
@@ -15,7 +17,6 @@ internal static class CombatHud
     private static readonly Color Light = new(226, 228, 238, 235);
     private static readonly Color Outline = new(12, 10, 16, 180);
     private static readonly Color Track = new(40, 35, 45, 190);
-    private static readonly Color Ready = new(200, 205, 220, 255);
     private static readonly Color Cooling = new(120, 124, 140, 255);
     private static readonly Color Charged = new(232, 196, 96, 255);
     private static readonly Color Blood = new(150, 24, 34, 255);
@@ -33,24 +34,15 @@ internal static class CombatHud
         // Dead: no aiming any more - only the (empty) health stays.
         if (!player.IsDead)
         {
+            // No bars at the crosshair any more (issue #340): only the hints in their fixed lines.
             DrawCrosshair(centreX, centreY);
-
-            // Blade on the left, pistol on the right - the same sides as the weapons in the hands.
-            DrawReadiness(centreX - 22, centreY, player.MeleeCooldown);
-            DrawReadiness(centreX + 19, centreY, player.Ranged.Cooldown);
             DrawAmmo(player.Ranged.Magazine);
             DrawWeapons(player);
 
-            // Under the crosshair, below where the blade's charge bar goes.
             if (player.AmmoHint == AmmoHint.Reload)
             {
-                DrawHint(centreX, centreY + 26, "Reload [R]");
+                DrawHint(centreX, HudTextLines.Of(HudText.ReloadHint, Raylib.GetScreenHeight()), "Reload [R]");
             }
-        }
-
-        if (player.MeleeCharge.IsCharging)
-        {
-            DrawCharge(centreX, centreY + 16, player.MeleeCharge.Fraction);
         }
 
         DrawHealth(player.Health, player.MaxHealth);
@@ -115,7 +107,8 @@ internal static class CombatHud
         }
 
         var text = string.Create(CultureInfo.InvariantCulture, $"CONSECRATED {MathF.Ceiling(secondsLeft):0}s");
-        Raylib.DrawText(text, 20, Raylib.GetScreenHeight() - 104, 16, Consecrated);
+        var line = HudTextLines.Of(HudText.Consecrated, Raylib.GetScreenHeight());
+        Raylib.DrawText(text, 20, line.Top, line.FontSize, Consecrated);
     }
 
     /// <summary>Four short lines with a gap in the middle and a dot, with a dark outline so it shows on any wall.</summary>
@@ -137,19 +130,6 @@ internal static class CombatHud
             Raylib.DrawRectangle(rx - 1, ry - 1, w + 2, h + 2, Outline);
             Raylib.DrawRectangle(rx, ry, w, h, Light);
         }
-    }
-
-    /// <summary>A small upright bar: full when the weapon is ready, refilling from the bottom while it cools down.</summary>
-    private static void DrawReadiness(int x, int centreY, Cooldown cooldown)
-    {
-        const int Width = 3;
-        const int Height = 16;
-        var top = centreY - Height / 2;
-        var filled = (int)MathF.Round(Height * (1f - cooldown.RemainingFraction));
-
-        Raylib.DrawRectangle(x - 1, top - 1, Width + 2, Height + 2, Outline);
-        Raylib.DrawRectangle(x, top, Width, Height, Track);
-        Raylib.DrawRectangle(x, top + Height - filled, Width, filled, cooldown.IsReady ? Ready : Cooling);
     }
 
     /// <summary>
@@ -225,28 +205,15 @@ internal static class CombatHud
     /// A short hint centred under the crosshair (issue #259): in the light HUD text colour with a dark outline, large
     /// enough to catch the eye in a fight, on light walls and in the dark alike.
     /// </summary>
-    private static void DrawHint(int centreX, int top, string text)
+    private static void DrawHint(int centreX, HudTextLine line, string text)
     {
-        const int Size = 22;
-        var left = centreX - (Raylib.MeasureText(text, Size) / 2);
+        var left = centreX - (Raylib.MeasureText(text, line.FontSize) / 2);
         foreach (var (dx, dy) in new[] { (-1, 0), (1, 0), (0, -1), (0, 1) })
         {
-            Raylib.DrawText(text, left + dx, top + dy, Size, Outline);
+            Raylib.DrawText(text, left + dx, line.Top + dy, line.FontSize, Outline);
         }
 
-        Raylib.DrawText(text, left, top, Size, TextColor);
-    }
-
-    /// <summary>A thin bar under the crosshair while the blade is being charged; golden when full.</summary>
-    private static void DrawCharge(int centreX, int top, float fraction)
-    {
-        const int Width = 40;
-        const int Height = 3;
-        var left = centreX - Width / 2;
-
-        Raylib.DrawRectangle(left - 1, top - 1, Width + 2, Height + 2, Outline);
-        Raylib.DrawRectangle(left, top, Width, Height, Track);
-        Raylib.DrawRectangle(left, top, (int)MathF.Round(Width * fraction), Height, fraction >= 1f ? Charged : Ready);
+        Raylib.DrawText(text, left, line.Top, line.FontSize, TextColor);
     }
 
     /// <summary>Health at the bottom left, above the frame counter: a blood-red bar with the number next to it.</summary>
