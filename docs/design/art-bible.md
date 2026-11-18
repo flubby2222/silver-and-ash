@@ -227,6 +227,7 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 | 15 | 2026-11-18 | Pixelschrift, B Textura (Issue #355) | Urteil des Menschen: „Schrift a ists“, B Textura nicht gewählt (ohne genannten Grund). Einschätzung der Leitung: B war in HUD-Größe schwer lesbar (n/u, „Gorm“) | Eine gebrochene Schrift mit dicken Stämmen verklebt auf 7 px Versalhöhe; Lesbarkeit der Zahlen und Namen geht vor Zierform |
 | 16 | 2026-11-18 | Pixelschrift, C Schmal (Issue #355) | Urteil des Menschen: C Schmal nicht gewählt (ohne genannten Grund). Einschätzung der Leitung: C wirkte neutral statt gotisch | Eine schmale Schrift ohne Serifen genügt dem gotischen Stil nicht; die Schrift trägt zur Stimmung bei |
 | 17 | 2026-11-18 | Pixelschrift, Ziffer 0 und Buchstabe O (Issue #355) | Der Tester fand in Schrift A „O“ und „0“ mit demselben Bitmuster; in HUD-Zahlen (Munition, Silber) wäre das ein Lesefehler | **Verbindlich:** Ziffer 0 und Buchstabe O müssen sich unterscheiden (Befund des Testers). In einer gewählten Pixelschrift darf kein Zeichen einem anderen gleichen; `check()` in `schrift.py` prüft das für A und bricht sonst ab. **Vorläufig:** Die Form mit Schrägstrich ist eine Entscheidung der Leitung vom 2026-11-18 und gilt bis zum Urteil des Menschen im Spieltest. |
+| 18 | 2026-11-18 | Menüs (#351) | Urteile des Menschen: Runde 1 wählte C, aber „noch was eleganter“; Runde 2 wählte C2 Schlank (mehr hat er nicht gesagt) | Menüs folgen C2, siehe Abschnitt „Menüs“. Abgelehnt: A schlicht, B gefasst, C in der ersten Fassung (nicht elegant genug), C1 Fein, C3 Geordnet. Ein Zierelement, das bei 1× kaum zu sehen ist (Giebel), wird größer gezogen |
 
 ## HUD (entschieden, Issue #341)
 
@@ -255,3 +256,22 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 - **Regeln aus dem Feinschliff (Runde 6):** Licht kommt überall von oben links, auch an den kleinen Teilen (Nieten, Giebel, Fialen nutzen dieselbe Lichtregel wie der Rahmen). Alle Mittelpunkte liegen auf dem Pixelraster, die Giebelbreite passt zur Fassung (gerade oder ungerade), damit die Form spiegelgleich bleibt. Verzierung ragt nie aus dem Bild; Fialen sitzen mittig auf der Fassungskante. Zeichen in kleinen Fassungen so groß, dass sie im 4-fachen Ausschnitt eindeutig lesbar sind (Waffenzeichen 10,5 statt 9,5).
 
 **Nicht gewählt:** V1 (nur Eckrauten): wirkt kaum anders als ohne Verzierung, das HUD bleibt zusammengewürfelt. V2 (Ecken und Giebel): gut, aber ohne Doppelrahmen und Fialen wirken die langen Fassungen noch kahl. Beide bleiben verworfen; wer die Verzierung später ändert, geht von V3 aus.
+
+## Menüs (entschieden, Issue #351)
+
+**Gewählt: C2 „Schlank“ (Runde 2); vom Menschen am 18.11.2026 abgenommen.** Er hat nur „C2 Schlank“ gesagt; was er an C2 mag, hat er nicht begründet. Vorlage: `design/proben/grafik/menue/runde2/menue_r2.py` (Fassung `P_SCHLANK`, Blatt `blatt-menue-r2.png`, 854 × 480). C2 ist die Form von C aus Runde 1 (HUD-Silberfassung, Schrift A „Kapitell“), schlanker gesetzt:
+
+- **Schmale, hohe Tafeln:** Halbbreite 120 px, also 240 px breit (Runde 1: 300 px). Einträge im Abstand von 62 px, Cursor 36 px hoch.
+- **Hoher, steiler Giebel** über jeder Tafel (Halbbreite 15 px, Höhe 20 px), bei 1× gut sichtbar, mit kleinem Auge darunter.
+- **Steile Reiter** für die Tab-Seite (Anstieg 0,62), der aktive Reiter ist 50 px hoch, mit Raute auf der Spitze.
+- **Cursor:** spitze Silberfassung ohne Zierrauten links und rechts.
+- **Keine Doppelungen:** einfacher Rahmen (2,6 px), kein Doppelrahmen, keine Fialen; Regler ohne Teilstriche und ohne Rauten an den Enden, Raute als Knopf.
+- Gleich wie im HUD: Silber aus der Reihe IRON, harte Stufen, Gold nur für die Auswahl, kein Rot als Signalfarbe.
+
+**Nicht gewählt:**
+
+- **A „Schlicht“** und **B „Gefasst“** (Runde 1): vom Menschen zugunsten von C abgelehnt, Gründe nannte er nicht.
+- **C in der ersten Fassung:** „Menü design C aber noch was eleganter“, also nicht elegant genug. Was „elegant“ heißt, sagte er nicht; die drei Auslegungen in Runde 2 stammen von der Leitung.
+- **C1 „Fein“** und **C3 „Geordnet“** (Runde 2): abgelehnt, Gründe nannte er nicht. Einschätzung des Grafikdesigners, nicht sein Urteil: C1 hat den kleinsten Giebel und wirkt am wenigsten wie C; C3 behält viel Zierrat.
+
+Wer die Menüs später ändert, geht von C2 aus. Die Darstellung im Spiel ist Sache der Umsetzungs-Issues (u. a. #348, #349).
