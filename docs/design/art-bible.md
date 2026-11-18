@@ -229,6 +229,7 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 | 17 | 2026-11-18 | Pixelschrift, Ziffer 0 und Buchstabe O (Issue #355) | Der Tester fand in Schrift A „O“ und „0“ mit demselben Bitmuster; in HUD-Zahlen (Munition, Silber) wäre das ein Lesefehler | **Verbindlich:** Ziffer 0 und Buchstabe O müssen sich unterscheiden (Befund des Testers). In einer gewählten Pixelschrift darf kein Zeichen einem anderen gleichen; `check()` in `schrift.py` prüft das für A und bricht sonst ab. **Vorläufig:** Die Form mit Schrägstrich ist eine Entscheidung der Leitung vom 2026-11-18 und gilt bis zum Urteil des Menschen im Spieltest. |
 | 18 | 2026-11-18 | Menüs (#351) | Urteile des Menschen: Runde 1 wählte C, aber „noch was eleganter“; Runde 2 wählte C2 Schlank (mehr hat er nicht gesagt) | Menüs folgen C2, siehe Abschnitt „Menüs“. Abgelehnt: A schlicht, B gefasst, C in der ersten Fassung (nicht elegant genug), C1 Fein, C3 Geordnet. Ein Zierelement, das bei 1× kaum zu sehen ist (Giebel), wird größer gezogen |
 | 19 | 2026-11-18 | HUD im Spieltest (Issue #387) | Urteile des Menschen nach dem Spieltest: die kleinen grauen Innenrahmen und der senkrechte rote Strich im Lebensbalken stören; die Teile stehen ungleich weit auseinander; Erfahrung soll golden sein; der Hinweis zum Aufsteigen soll unter Stufe und Erfahrung stehen | Kein Doppelrahmen innen in HUD-Fassungen, keine Markierung auf dem Lebensbalken; ein Abstand für alle HUD-Teile; siehe „Feinschliff nach dem Spieltest“ im Abschnitt HUD |
+| 20 | 2026-11-18 | HUD und Menü in höherer Auflösung, B geglättet (#393) | Urteil des Menschen: A harte Pixel gewählt, B abgelehnt; Schrift und Zeichen werden weich | Kein Glätten von Schrift und Zeichen im HUD; Pixel bleiben sichtbar, siehe „HUD und Menü in höherer Auflösung“. HUD-Gegenstände und Waffen zeigen am Ende Renderings ihrer Modelle |
 
 ## HUD (entschieden, Issue #341)
 
@@ -275,6 +276,17 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 - **Nahkampf:** Solange die Nahkampfwaffe in Gebrauch ist (Aufladen, Schlag, bis sie wieder bereit ist), verschwindet die Zahl.
 - **Vorrat:** Munition ist unbegrenzt (ADR 0008); hinter dem Schrägstrich steht deshalb die Magazingröße, nicht ein Vorrat.
 - Verdeckt bei 854 × 480 in `HudLayoutTests` gerechnet: 7,2 % (Rechtecke der Teile und Texte, also eher zu viel). Fotos: `design/proben/grafik/hud-munition/`.
+
+### HUD und Menü in höherer Auflösung (entschieden, Issue #393)
+
+**Gewählt: A „harte Pixel“; Urteil des Menschen am 18.11.2026.** Vorlage: `tools/hud/hud_hochaufgeloest.py`, Blatt `design/proben/grafik/hud-hochaufgeloest/blatt-a.png`.
+
+- **Doppelte Auflösung, Pixel bleiben sichtbar:** keine Kantenglättung, kein weicher Schatten, Silber in 8 festen Stufen, Bayer-Raster in Verläufen. Schrift „Kapitell“ bleibt Pixelschrift (Kanten mit halben Pixelstufen, aber hart).
+- **Rahmen als Metall-Relief:** in Blender gerendert (Profil aus Fase, Plateau und Stufe, vier Nieten, Licht von oben links), auf harte Pixel heruntergerechnet.
+- **Waffen und Gegenstände im HUD zeigen am Ende kleine Renderings ihrer 3D-Modelle** (feste Kamera, gleiches Licht für alle, auf harte Pixel gerechnet), keine eigens gezeichneten Zeichen. Bis ein Modell existiert, bleibt das heutige Zeichen als Platzhalter.
+- **Fehlende Modelle:** Gegenstände Flasche, Auge, Stiefel, Rosenkranz, Halfter, Parade, Egel, Aschenherz; Waffen Gewehr, Donnerbüchse, Keule. Vorhanden sind nur `blade.glb` und `pistol.glb`. Die Modelle entstehen in eigenen Issues.
+
+**Abgelehnt: B „geglättet“** (Urteil des Menschen, 18.11.2026): Schrift und Zeichen werden weich. Blatt `blatt-b.png` bleibt als abgelehntes Probestück im Ordner.
 
 ## Menüs (entschieden, Issue #351)
 
