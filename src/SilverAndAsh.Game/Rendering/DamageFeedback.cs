@@ -102,7 +102,7 @@ internal sealed class DamageFeedback
             // "+50" right of the health bar (bottom left), rising a little and fading out.
             var text = $"+{_healAmount}";
             var rise = (int)(18 * (1f - _heal));
-            Raylib.DrawText(text, 250, height - 70 - rise, 24, new Color(235, 205, 120, (int)(255 * MathF.Min(1f, _heal * 2f))));
+            PixelText.Draw(text, 250, height - 70 - rise, 24, new Color(235, 205, 120, (int)(255 * MathF.Min(1f, _heal * 2f))));
         }
 
         if (_deathFade > 0f)

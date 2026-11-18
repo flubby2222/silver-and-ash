@@ -30,14 +30,14 @@ internal static class MenuTabs
     public static void Draw(PlayerMenuPage page, int centreX)
     {
         (PlayerMenuPage Page, string Text)[] tabs = [(PlayerMenuPage.Map, "[Tab] Map"), (PlayerMenuPage.Equipment, "[G] Equipment")];
-        var widths = tabs.Select(tab => Raylib.MeasureText(tab.Text, FontSize) + (2 * Padding)).ToArray();
+        var widths = tabs.Select(tab => PixelText.Measure(tab.Text, FontSize) + (2 * Padding)).ToArray();
         var x = centreX - ((widths.Sum() + Gap) / 2);
         for (var i = 0; i < tabs.Length; i++)
         {
             var lit = tabs[i].Page == page;
             Raylib.DrawRectangle(x, Top, widths[i], Height, lit ? Open : Closed);
             Raylib.DrawRectangleLines(x, Top, widths[i], Height, lit ? Gold : Edge);
-            Raylib.DrawText(tabs[i].Text, x + Padding, Top + ((Height - FontSize) / 2), FontSize, lit ? Gold : Muted);
+            PixelText.Draw(tabs[i].Text, x + Padding, Top + ((Height - FontSize) / 2), FontSize, lit ? Gold : Muted);
             x += widths[i] + Gap;
         }
     }

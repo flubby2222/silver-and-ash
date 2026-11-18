@@ -85,19 +85,19 @@ internal sealed class EquipmentCard
         DrawFrame(piece.Tier, tier, left, top, height, fade);
 
         var y = top + Padding;
-        Raylib.DrawText(piece.Name, left + Padding, y, NameSize, Faded(Readable(tier), fade));
+        PixelText.Draw(piece.Name, left + Padding, y, NameSize, Faded(Readable(tier), fade));
         y += NameSize + 6;
-        Raylib.DrawText(TierLine(piece), left + Padding, y, TierSize, Faded(Note, fade));
+        PixelText.Draw(TierLine(piece), left + Padding, y, TierSize, Faded(Note, fade));
         y += TierSize + 10;
         foreach (var line in lines)
         {
-            Raylib.DrawText(line, left + Padding, y, TextSize, Faded(Text, fade));
+            PixelText.Draw(line, left + Padding, y, TextSize, Faded(Text, fade));
             y += TextSize + 4;
         }
 
         if (note is not null)
         {
-            Raylib.DrawText(note, left + Padding, y + 2, TierSize, Faded(Note, fade));
+            PixelText.Draw(note, left + Padding, y + 2, TierSize, Faded(Note, fade));
         }
     }
 
@@ -179,7 +179,7 @@ internal sealed class EquipmentCard
         foreach (var word in text.Split(' '))
         {
             var longer = line.Length == 0 ? word : $"{line} {word}";
-            if (line.Length > 0 && Raylib.MeasureText(longer, size) > width)
+            if (line.Length > 0 && PixelText.Measure(longer, size) > width)
             {
                 lines.Add(line);
                 line = word;

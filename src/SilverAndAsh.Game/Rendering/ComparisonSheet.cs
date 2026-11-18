@@ -26,7 +26,7 @@ internal static class ComparisonSheet
             {
                 var left = i % 2 * width;
                 var top = i / 2 * (height + LabelHeight);
-                Raylib.ImageDrawText(ref sheet, pictures[i].Label, left + 12, top + (LabelHeight - FontSize) / 2, FontSize, LabelColor);
+                PixelText.DrawOnImage(ref sheet, pictures[i].Label, left + 12, top + (LabelHeight - FontSize) / 2, FontSize, LabelColor);
                 Raylib.ImageDraw(
                     ref sheet, images[i],
                     new Rectangle(0, 0, images[i].Width, images[i].Height),

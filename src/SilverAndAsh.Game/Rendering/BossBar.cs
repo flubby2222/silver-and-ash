@@ -29,7 +29,7 @@ internal static class BossBar
 
         var left = (Raylib.GetScreenWidth() - Width) / 2;
         var name = Gorm.Name;
-        Raylib.DrawText(name, (Raylib.GetScreenWidth() - Raylib.MeasureText(name, FontSize)) / 2, Top - FontSize - 6, FontSize, Name);
+        PixelText.Draw(name, (Raylib.GetScreenWidth() - PixelText.Measure(name, FontSize)) / 2, Top - FontSize - 6, FontSize, Name);
 
         var fraction = Math.Clamp((float)gorm.Health / gorm.MaxHealth, 0f, 1f);
         Raylib.DrawRectangle(left - 2, Top - 2, Width + 4, Height + 4, Outline);

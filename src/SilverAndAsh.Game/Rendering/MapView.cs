@@ -165,16 +165,16 @@ internal static class MapView
         var stats = CharacterSheet.Stats(world, player);
         var boons = CharacterSheet.Boons(player, world.Balance.Boons);
         IEnumerable<SheetLine> all = [.. stats, .. boons];
-        var labelWidth = all.Max(line => Raylib.MeasureText(line.Label, FontSize));
-        var valueWidth = all.Max(line => Raylib.MeasureText(line.Value, FontSize));
+        var labelWidth = all.Max(line => PixelText.Measure(line.Label, FontSize));
+        var valueWidth = all.Max(line => PixelText.Measure(line.Value, FontSize));
         var valueX = Edge + Padding + labelWidth + ColumnGap;
-        var right = valueX + Math.Max(valueWidth, Raylib.MeasureText("No boons yet", FontSize)) + Padding;
+        var right = valueX + Math.Max(valueWidth, PixelText.Measure("No boons yet", FontSize)) + Padding;
         var lines = stats.Count + Math.Max(boons.Count, 1);
         var bottom = PanelTop + Padding + (2 * (HeadingSize + HeadingGap)) + HeadingGap + (lines * LineHeight) + Padding;
         Raylib.DrawRectangle(Edge, PanelTop, right - Edge, bottom - PanelTop, Panel);
 
         var y = PanelTop + Padding;
-        Raylib.DrawText("HUNTER", Edge + Padding, y, HeadingSize, Heading);
+        PixelText.Draw("HUNTER", Edge + Padding, y, HeadingSize, Heading);
         y += HeadingSize + HeadingGap;
         foreach (var line in stats)
         {
@@ -183,11 +183,11 @@ internal static class MapView
         }
 
         y += HeadingGap;
-        Raylib.DrawText("BOONS", Edge + Padding, y, HeadingSize, Heading);
+        PixelText.Draw("BOONS", Edge + Padding, y, HeadingSize, Heading);
         y += HeadingSize + HeadingGap;
         if (boons.Count == 0)
         {
-            Raylib.DrawText("No boons yet", Edge + Padding, y, FontSize, Hint);
+            PixelText.Draw("No boons yet", Edge + Padding, y, FontSize, Hint);
         }
 
         foreach (var line in boons)
@@ -201,12 +201,12 @@ internal static class MapView
 
     private static void DrawLine(SheetLine line, int valueX, int y, Color valueColor)
     {
-        Raylib.DrawText(line.Label, Edge + Padding, y, FontSize, Label);
-        Raylib.DrawText(line.Value, valueX, y, FontSize, valueColor);
+        PixelText.Draw(line.Label, Edge + Padding, y, FontSize, Label);
+        PixelText.Draw(line.Value, valueX, y, FontSize, valueColor);
     }
 
     private static void DrawCentred(string text, int left, int width, int y, int fontSize, Color color) =>
-        Raylib.DrawText(text, left + ((width - Raylib.MeasureText(text, fontSize)) / 2), y, fontSize, color);
+        PixelText.Draw(text, left + ((width - PixelText.Measure(text, fontSize)) / 2), y, fontSize, color);
 
     // A padlock, about `size` tall: a shackle (half ring) on a square body with a keyhole.
     private static void DrawPadlock(Vector2 centre, float size, Color color)
