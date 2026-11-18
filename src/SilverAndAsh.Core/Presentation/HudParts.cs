@@ -6,14 +6,21 @@ namespace SilverAndAsh.Core.Presentation;
 /// One picture part of the HUD (issue #369): its rectangle in the parts picture and where the approved design put its
 /// top left corner (854 x 480 design pixels). Parts are drawn 1:1, never stretched.
 /// </summary>
-public readonly record struct HudPart(string Name, int X, int Y, int Width, int Height, int LayoutX, int LayoutY);
+public readonly record struct HudPart(string Name, int X, int Y, int Width, int Height, int LayoutX, int LayoutY)
+{
+    /// <summary>
+    /// The body of a frame inside the part (issue #387): the silver rim with the dark ground in it, without the ornament
+    /// around (rivets, gable). Measured from the part's top left corner; the whole part for a part that is no frame.
+    /// </summary>
+    public HudRect Body { get; init; } = new(0, 0, Width, Height);
+}
 
 /// <summary>A colour of the HUD from the parts table (red, green, blue).</summary>
 public readonly record struct HudColor(byte R, byte G, byte B);
 
 /// <summary>
 /// The measure table of the HUD parts, <c>assets/hud/hud_parts.json</c> (issues #341, #369): every part with its
-/// rectangle and design position, plus the colours the game draws itself (texts, the light edge of the life bar).
+/// rectangle and design position, plus the colours the game draws itself (texts, the reload veil).
 /// Pure reading - the Game project draws the parts from the picture the table names.
 /// </summary>
 public sealed class HudParts
@@ -21,13 +28,13 @@ public sealed class HudParts
     private readonly Dictionary<string, HudPart> _parts;
 
     private HudParts(string image, int designWidth, int designHeight, Dictionary<string, HudPart> parts,
-        HudColor lifeEdge, HudColor textMain, HudColor textSecond, HudColor textShadow, HudColor textPickup)
+        HudColor textMain, HudColor textSecond, HudColor textShadow, HudColor textPickup, HudColor textHint)
     {
         Image = image;
         DesignWidth = designWidth;
         DesignHeight = designHeight;
         _parts = parts;
-        LifeEdge = lifeEdge;
+        TextHint = textHint;
         TextMain = textMain;
         TextSecond = textSecond;
         TextShadow = textShadow;
@@ -43,9 +50,6 @@ public sealed class HudParts
     /// <summary>Height of the design the layout positions belong to (480).</summary>
     public int DesignHeight { get; }
 
-    /// <summary>The light edge at the fill level of the life bar.</summary>
-    public HudColor LifeEdge { get; }
-
     /// <summary>The colour of numbers and names.</summary>
     public HudColor TextMain { get; }
 
@@ -57,6 +61,9 @@ public sealed class HudParts
 
     /// <summary>Gold: only the pickup toast.</summary>
     public HudColor TextPickup { get; }
+
+    /// <summary>Yellow, the gold of the experience bar: only the hint to level up (issue #387).</summary>
+    public HudColor TextHint { get; }
 
     /// <summary>The reload veil over a weapon picture (issue #370): its colour and opacity (0 to 1) ...</summary>
     public HudColor ReloadVeil { get; private init; }
@@ -97,6 +104,11 @@ public sealed class HudParts
                 entry.GetProperty("h").GetInt32(),
                 entry.GetProperty("layoutX").GetInt32(),
                 entry.GetProperty("layoutY").GetInt32());
+            if (entry.TryGetProperty("body", out var body))
+            {
+                part = part with { Body = new HudRect(body[0].GetInt32(), body[1].GetInt32(), body[2].GetInt32(), body[3].GetInt32()) };
+            }
+
             if (!parts.TryAdd(part.Name, part))
             {
                 throw new FormatException($"The HUD part '{part.Name}' is in the table twice.");
@@ -111,11 +123,11 @@ public sealed class HudParts
             root.GetProperty("designWidth").GetInt32(),
             root.GetProperty("designHeight").GetInt32(),
             parts,
-            ColorOf(game.GetProperty("lifeEdge").GetProperty("color")),
             ColorOf(text.GetProperty("main")),
             ColorOf(text.GetProperty("second")),
             ColorOf(text.GetProperty("shadow")),
-            ColorOf(text.GetProperty("pickup")))
+            ColorOf(text.GetProperty("pickup")),
+            ColorOf(text.GetProperty("hint")))
         {
             ReloadVeil = ColorOf(veil.GetProperty("color")),
             ReloadVeilAlpha = Math.Clamp(veil.GetProperty("alpha").GetSingle(), 0f, 1f),

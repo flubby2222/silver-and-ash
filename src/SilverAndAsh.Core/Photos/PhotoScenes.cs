@@ -220,6 +220,11 @@ public static class PhotoScenes
             {
                 Input = tick => PlayerInput.None with { PressMenu = tick == 0 ? MenuKey.Map : null },
             }),
+        new("map-skillpoint", "The map page of the menu (Tab) while a boon waits: the yellow \"[X] to level up\" above the values (issue #387).",
+            studio => new PhotoSetup(LevelUp(Equipped(studio.StartRun())))
+            {
+                Input = tick => PlayerInput.None with { PressMenu = tick == 0 ? MenuKey.Map : null },
+            }),
         new("menu-title", "The title screen: Start, Settings, Quit (issue #349).",
             studio => new PhotoSetup(studio.StartRun()) { Menu = PhotoMenu.Title }),
         new("menu-pause", "The pause menu (Esc) over a run: Resume, Settings, Back to title, Quit (issue #349).",

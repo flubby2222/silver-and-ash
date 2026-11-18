@@ -228,6 +228,7 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 | 16 | 2026-11-18 | Pixelschrift, C Schmal (Issue #355) | Urteil des Menschen: C Schmal nicht gewählt (ohne genannten Grund). Einschätzung der Leitung: C wirkte neutral statt gotisch | Eine schmale Schrift ohne Serifen genügt dem gotischen Stil nicht; die Schrift trägt zur Stimmung bei |
 | 17 | 2026-11-18 | Pixelschrift, Ziffer 0 und Buchstabe O (Issue #355) | Der Tester fand in Schrift A „O“ und „0“ mit demselben Bitmuster; in HUD-Zahlen (Munition, Silber) wäre das ein Lesefehler | **Verbindlich:** Ziffer 0 und Buchstabe O müssen sich unterscheiden (Befund des Testers). In einer gewählten Pixelschrift darf kein Zeichen einem anderen gleichen; `check()` in `schrift.py` prüft das für A und bricht sonst ab. **Vorläufig:** Die Form mit Schrägstrich ist eine Entscheidung der Leitung vom 2026-11-18 und gilt bis zum Urteil des Menschen im Spieltest. |
 | 18 | 2026-11-18 | Menüs (#351) | Urteile des Menschen: Runde 1 wählte C, aber „noch was eleganter“; Runde 2 wählte C2 Schlank (mehr hat er nicht gesagt) | Menüs folgen C2, siehe Abschnitt „Menüs“. Abgelehnt: A schlicht, B gefasst, C in der ersten Fassung (nicht elegant genug), C1 Fein, C3 Geordnet. Ein Zierelement, das bei 1× kaum zu sehen ist (Giebel), wird größer gezogen |
+| 19 | 2026-11-18 | HUD im Spieltest (Issue #387) | Urteile des Menschen nach dem Spieltest: die kleinen grauen Innenrahmen und der senkrechte rote Strich im Lebensbalken stören; die Teile stehen ungleich weit auseinander; Erfahrung soll golden sein; der Hinweis zum Aufsteigen soll unter Stufe und Erfahrung stehen | Kein Doppelrahmen innen in HUD-Fassungen, keine Markierung auf dem Lebensbalken; ein Abstand für alle HUD-Teile; siehe „Feinschliff nach dem Spieltest“ im Abschnitt HUD |
 
 ## HUD (entschieden, Issue #341)
 
@@ -235,12 +236,12 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 
 **Maße (854 × 480):**
 
-- Alle unteren Fassungen enden auf **einer gemeinsamen Grundlinie, y = 477**; jede ist 30 px hoch, der Silberrahmen 3 px, innen dunkler Grund.
-- Links zwei Gegenstände (je 30 px breit, Abstand 4, ab x = 12), Mitte eine Fassung x 247 bis 607 mit Leben (Balken) und fünf Ausdauer-Segmenten, beide ohne Zahl, rechts vier Waffen (je 38 px, Abstand 3, ab x = 690).
-- Oben: Stufe, Erfahrung und zwei Fähigkeiten links; Boss mit Namen und dünnem Balken in der Mitte; Silber und Schlüssel rechts. Aufnahme-Meldung (einzige Goldfläche) über der linken Gruppe.
-- **Verdeckt: 9,3 % des Bildes** mit Verzierung (gemessen: Unterschied zum Foto ohne HUD); A3 ohne Verzierung waren 9,0 %, Runde 3 A 23,2 %.
+- Alle unteren Fassungen enden auf **einer gemeinsamen Grundlinie, 6 px über dem unteren Rand (y = 474)**; jede ist 30 px hoch, der Silberrahmen 3 px, innen dunkler Grund. (Bis Issue #387: y = 477.)
+- Links die Gegenstände (je 30 px breit), Mitte eine Fassung, 360 px breit, mit Leben (Balken) und fünf Ausdauer-Segmenten, beide ohne Zahl, rechts vier Waffen (je 38 px). Die Abstände folgen der Abstandsregel unten.
+- Oben: Stufe, Erfahrung und Fähigkeit links, darunter der gelbe Hinweis „[X] to level up“, solange ein Segen wartet; Boss mit Namen und dünnem Balken in der Mitte; Silber und Schlüssel rechts. Aufnahme-Meldung über der linken Gruppe.
+- **Verdeckt: 6,7 bis 8,3 % des Bildes** in den Szenen hud-calm, hud-weapons, hud-items, hud-skillpoint, hud-boss (854 × 480, gemessen am 2026-11-18 als Unterschied zum Foto ohne HUD); bei der Abnahme von A3 mit Verzierung waren es 9,3 %, A3 ohne Verzierung 9,0 %, Runde 3 A 23,2 %.
 
-**Silber (Palettenstufen):** Reihe Eisen `IRON3` bis `IRON7` plus ein helles Silber (226, 228, 230), jeweils zu 80 % zu Grau entsättigt, damit es nicht bläulich wirkt. Fünf feste Stufen je nach Flächenneigung: Lichtkante oben und links hell, Schattenkante unten und rechts dunkel, dazu Punktkörnung. Kein Verlauf, kein Chrom-Glanz, kein weiches Leuchten. Rot nur für Leben, Gold nur für die Aufnahme-Meldung.
+**Silber (Palettenstufen):** Reihe Eisen `IRON3` bis `IRON7` plus ein helles Silber (226, 228, 230), jeweils zu 80 % zu Grau entsättigt, damit es nicht bläulich wirkt. Fünf feste Stufen je nach Flächenneigung: Lichtkante oben und links hell, Schattenkante unten und rechts dunkel, dazu Punktkörnung. Kein Verlauf, kein Chrom-Glanz, kein weiches Leuchten. Rot nur für Leben. Gold nur für die Aufnahme-Meldung, den Erfahrungsbalken und den Hinweis zum Aufsteigen (Issue #387); alles andere bleibt neutrales Silber.
 
 **Regeln:**
 
@@ -252,10 +253,19 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 **Abgelehnt:** A1 (geschlossene Leiste, 12,9 %): verdeckt zu viel. A2 (offener Rahmen, 6,1 %): Zeichen stehen ungeschützt auf dem Spielbild.
 
 **Schrift (Urteil des Menschen, Issue #355): A „Kapitell“.** Eigene Pixelschrift für HUD und Menüs: schlichte Kapitälchen mit kleinen Serifen; Versalhöhe 7 px, Kleinbuchstaben 5 px als kleine Versalien, Zeichenbreite 3–5 px, Abstand 1 px, Leerzeichen 3 px. Pixelmuster und Skripte: `design/proben/grafik/schrift/` (Blatt `blatt-schrift.png`). Cinzel kommt nicht ins Spiel. Menü-Überschriften 3-fach, Einträge 2-fach. **Offen für den Einbau:** eine größere Zahlengröße für Stufe und Munition fehlt noch (Versalhöhe 7 px statt 9–11 px bei Cinzel).
-- **Verzierung (Runde 5 und 6, Urteil des Menschen: V3, dann überarbeiten):** Ein Motiv an allen Fassungen ab 24 px Breite, immer im selben Silber: Rautenniete in den vier Ecken, Spitzgiebel mit Auge oben in der Mitte, dünner Doppelrahmen innen, an Fassungen über 100 px Breite zusätzlich Fialen mittig an den Enden. Rot und Gold bleiben, wie sie sind; kein Rot als Signalfarbe in der Verzierung.
+- **Verzierung (Runde 5 und 6, Urteil des Menschen: V3, dann überarbeiten):** Ein Motiv an allen Fassungen ab 24 px Breite, immer im selben Silber: Rautenniete in den vier Ecken, Spitzgiebel mit Auge oben in der Mitte (der dünne Doppelrahmen innen ist seit Issue #387 entfernt), an Fassungen über 100 px Breite zusätzlich Fialen mittig an den Enden. Rot und Gold bleiben, wie sie sind; kein Rot als Signalfarbe in der Verzierung.
 - **Regeln aus dem Feinschliff (Runde 6):** Licht kommt überall von oben links, auch an den kleinen Teilen (Nieten, Giebel, Fialen nutzen dieselbe Lichtregel wie der Rahmen). Alle Mittelpunkte liegen auf dem Pixelraster, die Giebelbreite passt zur Fassung (gerade oder ungerade), damit die Form spiegelgleich bleibt. Verzierung ragt nie aus dem Bild; Fialen sitzen mittig auf der Fassungskante. Zeichen in kleinen Fassungen so groß, dass sie im 4-fachen Ausschnitt eindeutig lesbar sind (Waffenzeichen 10,5 statt 9,5).
 
 **Nicht gewählt:** V1 (nur Eckrauten): wirkt kaum anders als ohne Verzierung, das HUD bleibt zusammengewürfelt. V2 (Ecken und Giebel): gut, aber ohne Doppelrahmen und Fialen wirken die langen Fassungen noch kahl. Beide bleiben verworfen; wer die Verzierung später ändert, geht von V3 aus.
+
+**Feinschliff nach dem Spieltest (Urteile des Menschen, Issue #387):**
+
+- **Kein Innenrahmen:** Im dunklen Grund einer Fassung steht kein zweiter, grauer Rahmen, auch nicht der helle Ring der aktiven Fassung an der Stufe. Den Ring trägt nur noch die gewählte Waffe, weil er dort die Wahl anzeigt.
+- **Keine Markierung auf dem Lebensbalken:** kein senkrechter roter Strich am Füllstand; der Balken selbst zeigt das Leben.
+- **Erfahrung golden**, der Hinweis „[X] to level up“ gelb in derselben Goldfarbe, links unter Stufe und Erfahrung.
+- **Ein Abstand für alles (6 px):** zwischen den Körpern benachbarter Fassungen (Silberrahmen ohne Nieten und Giebel) und vom Körper zum Bildrand. Die Nieten ragen 3 px über, bei 6 px berühren sich die Verzierungen gerade. Was über oder unter einer Reihe steht (Aufnahme-Meldung, Hinweis, „Consecrated“), hält 6 px zur Verzierung dieser Reihe.
+- **Innen gleich verteilt:** Die Inhalte einer Fassung teilen sich den dunklen Grund mit gleich großen Lücken zum Rand und untereinander; ein einzelner Inhalt steht mittig. Zeichen und zugehörige Zahl (Münze und Silber, Schlüssel und Anzahl, Auge und Meldung) stehen 3 px auseinander.
+- Die Regel steht als Rechnung in `HudLayout` (Core); die Tests in `HudLayoutTests` prüfen sie für alle Bildbreiten.
 
 ## Menüs (entschieden, Issue #351)
 
@@ -279,6 +289,6 @@ Wer die Menüs später ändert, geht von C2 aus. Die Darstellung im Spiel ist Sa
 ### Karte und Ausrüstung als ein Menü (Issue #390, vorläufig)
 
 - **Reiter deckungsgleich:** „[Tab] Map“ und „[G] Equipment“ stehen auf beiden Seiten an genau derselben Stelle, über dem linken Ende der Seitentafel. Beim Blättern wechselt nur, welcher Reiter offen (gold, 8 px höher) ist.
-- **Werte-Tafel auf beiden Seiten:** „HUNTER“ und „BOONS“ links, ohne Grund, nur mit 1-px-Rahmen in gedämpftem Silber. Sie beginnt 8 px unter der Erfahrungs-Zone des HUD (Level, Leiste, wartende Boni) und deckt kein HUD-Teil zu. Überschriften 2×, Zeilen 1× wie die HUD-Texte, Namen in der zweiten Farbe, Werte in der Hauptfarbe, alle mit Schatten.
+- **Werte-Tafel auf beiden Seiten:** „HUNTER“ und „BOONS“ links, ohne Grund, nur mit 1-px-Rahmen in gedämpftem Silber. Sie beginnt im Abstand der HUD-Regel (6 px) unter der linken oberen HUD-Gruppe einschließlich des gelben Hinweises „[X] to level up“ (`MenuLayout.SheetTopUnder`, aus `HudLayout` gerechnet, seit Issue #387 keine feste Zeile mehr) und deckt kein HUD-Teil und keinen HUD-Text zu. Überschriften 2×, Zeilen 1× wie die HUD-Texte, Namen in der zweiten Farbe, Werte in der Hauptfarbe, alle mit Schatten.
 - **Die Seiten stehen rechts davon:** Karte und Ausrüstungstafel beginnen rechts der Werte-Tafel, damit nichts sie verdeckt.
 - **Tafeln zu 70 % deckend** (Tafel, Giebel, Reiter, in allen Menüs): Die Szene scheint durch, Schrift und Felder bleiben lesbar. Wird ein Menü damit unlesbar, geht die Deckkraft wieder hoch, nicht die Schrift auf schwarzen Grund.
