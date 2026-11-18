@@ -265,12 +265,14 @@ public sealed partial class Player
 
     /// <summary>
     /// Takes the waiting bonus: applies <paramref name="boon"/> and reports <see cref="BoonChosen"/>. Returns false
-    /// (and does nothing) if no level up is waiting or <paramref name="boon"/> is not in its offer.
+    /// (and does nothing) if no level up is waiting, <paramref name="boon"/> is not in its offer, or this player is
+    /// dead - a dead player takes no boon, so "Health" never brings them back (the bonus choice stays open while hit,
+    /// issue #346).
     /// </summary>
     public bool Choose(Boon boon, ICollection<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(events);
-        if (!CurrentOffer.Contains(boon))
+        if (IsDead || !CurrentOffer.Contains(boon))
         {
             return false;
         }
@@ -356,7 +358,6 @@ public sealed partial class Player
             return;
         }
 
-        CloseInventoryOnHit();
         var taken = Math.Min(damage, Health);
         Health -= taken;
         events.Add(new PlayerHit(Id, taken));

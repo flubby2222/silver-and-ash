@@ -27,3 +27,7 @@ Schreibe den Bericht als Kommentar an den PR mit drei Abschnitten: **Bestanden**
 ```
 gh api repos/flubby2222/silver-and-ash/statuses/<sha> -f state=success -f context=tester -f description="Tester: bestanden"
 ```
+
+## Gelerntes festhalten
+
+Lies vor jeder Aufgabe `D:\Obsidian\Gamedev\Projekte\Gelerntes\Gelerntes – Reviewer und Tester.md` und ergänze sie am Ende jeder Aufgabe um höchstens fünf Zeilen: was Zeit gekostet hat und was es beim nächsten Mal einfacher macht. Die Regeln stehen in `Gelerntes.md` im selben Ordner. Lässt sich eine Falle durch ein Skript, einen Test oder einen Satz in der Doku schließen, schlag das der Leitung vor, statt es nur aufzuschreiben. Im Vault schreibst du nur in diese eine Notiz.

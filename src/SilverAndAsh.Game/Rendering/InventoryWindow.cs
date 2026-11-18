@@ -7,8 +7,8 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// The inventory (G, decision record 0008, issue #193): the weapons in hand on top (melee and the three ranged places),
-/// the six places of the bag below, the items with their effect on the right. The game goes on behind it; moving or a
-/// hit closes it (Core decides). A left click equips, a right click drops - every frame is in the colour of the weapon's
+/// the six places of the bag below, the items with their effect on the right. The game goes on behind it; only G or Esc
+/// close it, neither moving nor a hit (issue #346). A left click equips, a right click drops - every frame is in the colour of the weapon's
 /// tier. It only reads and shows - the click goes to Core as input (<see cref="Core.Input.PlayerInput.InventoryClick"/>).
 /// </summary>
 internal static class InventoryWindow
@@ -89,7 +89,7 @@ internal static class InventoryWindow
         Raylib.DrawText("ITEMS", itemsLeft, (int)equipTop - 22, 16, Muted);
         Raylib.DrawText("No items yet", itemsLeft, (int)equipTop, 16, Empty);
 
-        const string Help = "Left click: equip   Right click: drop   [G] close - moving or a hit closes it";
+        const string Help = "Left click: equip   Right click: drop   [G] or [Esc] close";
         Raylib.DrawText(Help, left + ((width - Raylib.MeasureText(Help, 16)) / 2), top + height - 32, 16, Muted);
 
         if (hovered is { Place: InventoryPlace.Ranged } && player.RangedSlots.Count(weapon => weapon is not null) == 1

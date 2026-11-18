@@ -16,11 +16,18 @@ Hier steht nur, was sich nicht aus dem Code ablesen lässt. Die Hintergründe st
 4. **Sichtbare Änderungen** stehen im `CHANGELOG.md` unter *Unveröffentlicht*.
 5. **Merge:** GitHub merged per Auto-Merge nach drei Freigaben – CI grün, Reviewer ohne offene Befunde (Commit-Status `review`), Tester ohne Fehler (Commit-Status `tester`). Wer den PR geschrieben hat, setzt diese Status nie selbst. Einzige Ausnahme ist `tools/pr-nachziehen.ps1`: Es bringt offene PRs nach einem Merge auf den neuesten `main` und überträgt `review` und `tester` auf den neuen Commit, wenn die eigenen Änderungen des PRs dabei gleich geblieben sind. Es vergibt nie eine Freigabe neu.
 6. **Leitplanken-PRs merged nur der Mensch:** alles an `CLAUDE.md`, `.claude/**`, `.github/**`, `docs/entscheidungen/**`. Auch Releases (Tags) löst nur der Mensch aus.
-7. **Tests nie verbiegen** (nicht löschen, abschwächen, überspringen). Ist ein Test selbst falsch: im PR begründen.
+7. **Tests nie verbiegen** (nicht löschen, abschwächen, überspringen). Ist ein Test selbst falsch: im PR begründen. **Gegenprobe belegen:** Der PR zeigt den Fall, an dem die Änderung wirklich greift (ein neuer Test wird rot, wenn man die geprüfte Stelle kaputt macht; eine Funktion für den zweiten Lauf wird mit zwei Läufen geprüft).
 8. **Notbremse:** nach etwa drei gescheiterten Versuchen am selben Fehler aufhören und die Leitung fragen.
 9. **Merge selbst prüfen** (`gh pr view`), bevor lokal aufgeräumt wird.
 
 Mehrere dieser Regeln erzwingen Hooks in [.claude/hooks/](.claude/hooks/). Blockiert ein Hook, die Ursache beheben – nicht den Hook umgehen.
+
+## Die Leitung hält die Arbeit schmal
+
+- **Höchstens zwei Code-Sitzungen gleichzeitig.** Designer mit Probestücken außerhalb des Spiels zählen nicht mit.
+- **Pull Requests einzeln durchbringen, in fester Reihenfolge:** Review und Test für den nächsten PR beginnen erst, wenn der davor gemergt und der nächste auf dem neuesten `main` ist. Sind zwei PRs offen, startet keine weitere Code-Sitzung.
+- **Warum:** Jeder Merge macht die anderen offenen PRs veraltet; ihre Freigaben müssen dann neu erteilt werden, ohne dass etwas Neues geprüft wird (am 2026-11-17 dreimal bei PR #306).
+- **Nach jedem Merge:** `git pull`, `tools/pr-nachziehen.ps1`, Board nachziehen.
 
 ## Die Leitung unterbricht den Menschen nur, wenn
 
@@ -39,8 +46,11 @@ Mehrere dieser Regeln erzwingen Hooks in [.claude/hooks/](.claude/hooks/). Block
 
 ## Nach dem Merge
 
+- **Gelerntes:** Jede Sitzung liest vor der Aufgabe die Notiz ihrer Rolle in `D:\Obsidian\Gamedev\Projekte\Gelerntes\` und ergänzt sie am Ende um höchstens fünf Zeilen (was Zeit gekostet hat, was es nächstes Mal einfacher macht). Wiederkehrende Handgriffe werden zu Skript, Test oder Doku im Repository; die Leitung macht daraus Issues.
 - **Neues Konzept:** Notiz im Obsidian-Vault `D:\Obsidian\Gamedev` (`Konzepte/`, `Werkzeuge/` oder `Design/`, Frontmatter `autor: claude`, auf Deutsch, mit Links zum Code).
 - **Ende eines Meilensteins:** Retro in `Retros/` mit freiem Abschnitt „Meine Sicht“, Meilenstein schließen, Release-Vorstellung im Chat.
+- **Ende eines Meilensteins, Blick von oben:** CRAP-Bericht für `Core` (`python tools/crap-report.py`, siehe [docs/qualitaet/](docs/qualitaet/)) und eine Architektur-Durchsicht durch eine frische Sitzung (Doppelungen, Abweichungen von den ADRs). Die Leitung stellt beides im Chat mit eigener Einschätzung vor und bittet um Lesebestätigung; daraus werden Aufräum-Issues. Beides ist keine Schranke für einzelne PRs.
+- **Ein Spieltest je Release:** Der Mensch spielt einmal je Release. Die Leitung schneidet Releases als gleich große Mischung aus Code, Bild und Klang und gibt ihm eine kurze Liste der offenen Urteile samt Startbefehl. Dazwischen entscheidet sie Designfragen nach seinen bisherigen Urteilen und kennzeichnet sie als vorläufig.
 - **Vor jedem Release eine Balancing-Runde:** Balance-Report mit Vorher/Nachher, Bot-Durchläufe des Testers, `runs.log`, Werte in `balance.json`; Ergebnis in [docs/balancing.md](docs/balancing.md). Tests rechnen mit `Balance.Default`, nie mit festen Balancing-Zahlen.
 
 ## Sprachen
