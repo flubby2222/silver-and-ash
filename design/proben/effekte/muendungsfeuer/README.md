@@ -1,6 +1,8 @@
 # Effekt-Probestück: Mündungsfeuer der Pistole (Issue #361)
 
-Zweites Probestück des Effektdesigners (Rolle: #352). Schuss der Pistole in der Ich-Sicht – Blitz, Funken, Rauch und kurzes Aufleuchten der Umgebung – in drei Varianten. Die Szene ist bei allen dreien dasselbe Foto und wird nicht beurteilt; es ändert sich nur der Effekt. Noch kein Urteil, nichts in der Art-Bible.
+Zweites Probestück des Effektdesigners (Rolle: #352). Schuss der Pistole in der Ich-Sicht – Blitz, Funken, Rauch und kurzes Aufleuchten der Umgebung – in drei Varianten. Die Szene ist bei allen dreien dasselbe Foto und wird nicht beurteilt; es ändert sich nur der Effekt. 
+
+**Urteil des Menschen (2026-11-18): gewählt ist C, Pulverdampf, ohne Nacharbeit** (Treffer 2 von 3 bei den Effekten). A und B wurden abgelehnt, einen Grund nannte er nicht. Die Regel steht in `docs/design/art-bible.md`, Abschnitt „Effekte“.
 
 ## Dateien
 

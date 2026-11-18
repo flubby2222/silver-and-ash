@@ -189,6 +189,23 @@ Regel für Feuer an der Wand (Fackel, Kohlebecken und Ähnliches):
 
 Die Proben liegen in `design/proben/effekte/fackel/` (Runde 1) und `design/proben/effekte/fackel/runde2/`.
 
+### Mündungsfeuer: Wahl und Ablehnungen (2026-11-18)
+
+Stand der Effekt-Probestücke: **2 von 3 Treffern in Folge** (Fackel, Mündungsfeuer). Ins Spiel kommt ein Effekt erst nach drei angenommenen Stücken ohne Nacharbeit.
+
+Regel für den Schuss einer Fernwaffe in der Ich-Sicht (Pistole; für Rifle und Blunderbuss noch nicht geprüft):
+
+- **Blitz:** ein breiter, flacher Kegel aus zwei Polygonen in Messing/Gold, 3 Bilder (Variante C).
+- **Rauch:** eine dicke Wolke aus 10 groben Quadraten in Stein, die in den ersten 5 Ticks entsteht, wächst und etwa 0,6 s steht. Frischer Rauch ist in den ersten Bildern vom Blitz gold gefärbt.
+- **Funken:** keine.
+- **Aufleuchten:** zurückhaltend, etwa +50 % an der Mündung über 4 Bilder (67 ms), in groben Stufen, mitgekörnt.
+- **Nicht gewählt** (der Mensch nannte keinen Grund):
+  - Sternblitz aus 5 und dann 3 Spitzen mit 4 Funken und Rauchfaden, Licht +80 % (Variante A).
+  - Funkenstoß: winziger Blitz, 10 Funken als Kegel, kein Rauch, Licht +75 % in einem Bild (Variante B).
+- **Hinweis der Leitung** (kein Urteil des Menschen) für den späteren Einbau: Die Wolke steht 0,6 s. Bei schneller Schussfolge prüfen, dass sie das Ziel nicht verdeckt.
+
+Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
+
 ## Gelernte Regeln
 
 | Nr. | Datum | Stück | Was war falsch | Regel |
@@ -205,6 +222,8 @@ Die Proben liegen in `design/proben/effekte/fackel/` (Runde 1) und `design/probe
 | 10 | 2026-11-18 | Fackel, Runde 1, Variante C | Das Licht fiel in harten Stufenringen ab; die Kreise an der Wand wirkten künstlich | Licht fällt weich ab und ist nicht in Stufen geteilt. Die Pixel-Härte entsteht durch die Körnung, nicht durch Ringe |
 | 11 | 2026-11-18 | HUD, Runde 3 | Urteil des Menschen: Layout A gefällt, aber Steintextur nein, Farbe Silber, „so viel vom Spiel sichtbar wie möglich“; Runde 3 A verdeckte 23,2 % des Bildes | HUD-Metall ist Silber aus der Hauptpalette (Reihe IRON): harte Helligkeitsstufen, Körnung, 1 px helle Kante oben und dunkle unten, kein Chrom-Glanz, kein weiches Leuchten. Keine Steintextur im HUD. Das HUD verdeckt so wenig Bild wie möglich; der verdeckte Anteil wird aus dem Bild gemessen und auf dem Blatt genannt. Leben und Ausdauer ohne Zahl im HUD; die Zahlen stehen auf der Tab-Seite (Issue #347, Urteil des Menschen: „Die Zahlen nehmen wir doch raus und ins Tab Menü auf“; ersetzt die Zwischenregel „Zahlen drin“). Zahlen, die man zum Spielen braucht (Munition, Silber, Stufe, Schlüssel), bleiben |
 | 12 | 2026-11-18 | HUD, Schrift | Die Vorlagen nutzen Cinzel (Windows-Schrift) | Cinzel kommt nicht ins Spiel; der Mensch will eine eigene Pixelschrift (Issue #355). Für die Vorlagen reicht Cinzel |
+| 13 | 2026-11-18 | Mündungsfeuer, Variante A | Urteil des Menschen: Sternblitz mit Funken und Rauchfaden nicht gewählt; einen Grund nannte er nicht | Beim Schuss kein Sternblitz aus Spitzen mit wenigen Funken; Blitz als Kegel, siehe „Mündungsfeuer: Wahl und Ablehnungen“ |
+| 14 | 2026-11-18 | Mündungsfeuer, Variante B | Urteil des Menschen: Funkenstoß mit winzigem Blitz und ohne Rauch nicht gewählt; einen Grund nannte er nicht | Beim Schuss keinen Funkenkegel statt Blitz und Rauch; siehe „Mündungsfeuer: Wahl und Ablehnungen“ |
 
 ## HUD (entschieden, Issue #341)
 
