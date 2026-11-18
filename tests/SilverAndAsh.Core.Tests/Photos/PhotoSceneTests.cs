@@ -27,6 +27,23 @@ public class PhotoSceneTests
         return names;
     }
 
+    [Theory]
+    [InlineData("menu-title", PhotoMenu.Title)]
+    [InlineData("menu-pause", PhotoMenu.Pause)]
+    [InlineData("menu-settings", PhotoMenu.Settings)]
+    public void The_menu_scenes_show_their_menu(string name, PhotoMenu menu)
+    {
+        Assert.Equal(menu, Built(name).Menu);
+    }
+
+    [Fact]
+    public void Scenes_of_the_game_show_no_menu()
+    {
+        Assert.All(
+            PhotoScenes.All.Where(scene => !scene.Name.StartsWith("menu-", StringComparison.Ordinal)),
+            scene => Assert.Equal(PhotoMenu.None, scene.Build(Studio()).Menu));
+    }
+
     [Fact]
     public void The_look_comparison_takes_the_scenes_issue_234_asks_for()
     {
@@ -54,6 +71,7 @@ public class PhotoSceneTests
             "showroom-a-corridor", "showroom-a-room", "showroom-b-corridor", "showroom-b-room", "showroom-c-corridor",
             "showroom-c-room", "stairs-4m", "stairs-10m",
             "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
+            "menu-title", "menu-pause", "menu-settings",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
