@@ -1,0 +1,202 @@
+{
+ "image": "menu_parts.png",
+ "width": 1024,
+ "height": 469,
+ "designWidth": 854,
+ "designHeight": 480,
+ "notes": [
+  "x, y, w, h: Rechteck des Teils im Bild; layoutX, layoutY: linke obere Ecke im 854 x 480 grossen Entwurf.",
+  "panel: Tafel ohne Giebel, gezeichnet fuer das Rechteck shapes.panel; das Spiel zieht sie in neun Stuecken auf jede Groesse (Ecken slice.panel px bleiben 1:1).",
+  "cursor und cursor_small: gezeichnet fuer shapes.cursor bzw. shapes.cursorSmall; drei Stuecke (Spitzen slice.cursor bzw. slice.cursorSmall px bleiben 1:1).",
+  "gable: ueber der Mitte der oberen Kante einer Tafel; gableAnchor ist der Punkt (Mitte, Oberkante) der Tafel, zu dem layoutX/Y gehoeren.",
+  "slider_empty und slider_full sind gleich gross: erst _empty, darueber _full links vom Stand beschnitten; knob mittig auf dem Stand (shapes.slider: x0, x1, Mitte y; knobCentre).",
+  "tab_*: Rechtecke shapes.tabs (Vorlage); _active ist 8 px hoeher und traegt eine Raute."
+ ],
+ "shapes": {
+  "panel": [
+   40,
+   62,
+   814,
+   452
+  ],
+  "cursor": [
+   323,
+   222,
+   531,
+   258
+  ],
+  "cursorSmall": [
+   359,
+   300,
+   495,
+   330
+  ],
+  "slider": [
+   420,
+   580,
+   138
+  ],
+  "knobCentre": [
+   500.5,
+   138
+  ],
+  "tabs": [
+   [
+    40,
+    8,
+    160,
+    58
+   ],
+   [
+    168,
+    8,
+    358,
+    58
+   ]
+  ],
+  "gableAnchor": [
+   427,
+   204
+  ]
+ },
+ "slice": {
+  "panel": 8,
+  "cursor": 24,
+  "cursorSmall": 20
+ },
+ "game": {
+  "text": {
+   "main": [
+    216,
+    210,
+    192
+   ],
+   "second": [
+    195,
+    192,
+    164
+   ],
+   "selected": [
+    214,
+    170,
+    64
+   ],
+   "quiet": [
+    163,
+    175,
+    187
+   ],
+   "shadow": [
+    16,
+    11,
+    20
+   ]
+  },
+  "sliderEdge": [
+   238,
+   228,
+   160
+  ]
+ },
+ "parts": [
+  {
+   "name": "panel",
+   "x": 0,
+   "y": 0,
+   "w": 778,
+   "h": 394,
+   "layoutX": 38,
+   "layoutY": 60
+  },
+  {
+   "name": "gable",
+   "x": 789,
+   "y": 395,
+   "w": 32,
+   "h": 21,
+   "layoutX": 411,
+   "layoutY": 185
+  },
+  {
+   "name": "cursor",
+   "x": 439,
+   "y": 395,
+   "w": 210,
+   "h": 38,
+   "layoutX": 322,
+   "layoutY": 221
+  },
+  {
+   "name": "cursor_small",
+   "x": 650,
+   "y": 395,
+   "w": 138,
+   "h": 32,
+   "layoutX": 358,
+   "layoutY": 299
+  },
+  {
+   "name": "slider_empty",
+   "x": 822,
+   "y": 395,
+   "w": 164,
+   "h": 14,
+   "layoutX": 418,
+   "layoutY": 131
+  },
+  {
+   "name": "slider_full",
+   "x": 0,
+   "y": 455,
+   "w": 164,
+   "h": 14,
+   "layoutX": 418,
+   "layoutY": 131
+  },
+  {
+   "name": "knob",
+   "x": 165,
+   "y": 455,
+   "w": 13,
+   "h": 13,
+   "layoutX": 494,
+   "layoutY": 131
+  },
+  {
+   "name": "tab_map",
+   "x": 316,
+   "y": 395,
+   "w": 122,
+   "h": 44,
+   "layoutX": 39,
+   "layoutY": 15
+  },
+  {
+   "name": "tab_map_active",
+   "x": 0,
+   "y": 395,
+   "w": 122,
+   "h": 59,
+   "layoutX": 39,
+   "layoutY": 0
+  },
+  {
+   "name": "tab_equipment",
+   "x": 123,
+   "y": 395,
+   "w": 192,
+   "h": 44,
+   "layoutX": 167,
+   "layoutY": 15
+  },
+  {
+   "name": "tab_equipment_active",
+   "x": 779,
+   "y": 0,
+   "w": 192,
+   "h": 59,
+   "layoutX": 167,
+   "layoutY": 0
+  }
+ ]
+}
