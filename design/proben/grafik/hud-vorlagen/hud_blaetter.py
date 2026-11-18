@@ -773,4 +773,5 @@ def main():
             save_png(os.path.join(pr, f"{n}{rc}-{slug}-{rslug}-854.png"), bilinear(img.reshape(1080, 1920, 3), 480, 854))
 
 
-main()
+if __name__ == "__main__":
+    main()
