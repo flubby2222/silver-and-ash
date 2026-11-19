@@ -9,11 +9,10 @@ Aufruf (aus dem Repository-Wurzelverzeichnis):
     "D:\\Program Files\\Blender Foundation\\Blender 5.3\\blender.exe" --background --python tools/models/club.py
 
 Masse wie der Platzhalter in WeaponViews.cs (DrawBlade, Zweig Club): Griff 0,1 m lang und 0,022 m dick, Kopf 0,11 m lang
-und 0,038 m dick, 25 Grad nach oben geneigt, ab z = 0,05 (Spielmass; die Datei ist 1,8-fach, das Spiel zeichnet sie halb).
+und 0,038 m dick, gerade auf dem Griff (seit #414; vorher 25 Grad geneigt), ab z = 0,04 im Griff steckend (Spielmass; die Datei ist 1,8-fach, das Spiel zeichnet sie halb).
 Herkunft: alles per Skript, nichts heruntergeladen.
 """
 
-import math
 import os
 import sys
 
@@ -98,10 +97,10 @@ PAINTERS.update(_arm.design_painters(_arm.DESIGN))
 PAINTERS.setdefault("wood", paint_wood)
 
 
-# Kopf: 25 Grad nach oben, Mittellinie ab (0, 0,0067, 0,05); Halbmesser nach Laenge t entlang der Achse.
-UP = math.radians(25)
-AXIS = C(0, math.sin(UP), math.cos(UP))
-BASE = C(0, 0.0067, 0.050)
+# Kopf: gerade Verlaengerung des Griffs (Achse z, Issue #414), beginnt bei z = 0,04 und steckt mit dem ersten Stueck im
+# Griff (der bis 0,05 reicht): keine Luecke. Halbmesser nach Laenge t entlang der Achse.
+AXIS = C(0, 0, 1)
+BASE = C(0, 0, 0.040)
 HEAD_LEN = 0.11
 HEAD_T = [0.0, 0.02, 0.05, 0.08, 0.10, 0.11]
 HEAD_R = [0.0115, 0.0145, 0.0180, 0.0205, 0.0195, 0.0140]
@@ -118,18 +117,18 @@ def build_club():
     # Griff mit Lederwicklung, Knauf am Ende (8 Seiten), Holzkopf.
     gz = [-0.058, -0.030, 0.0, 0.050]
     gr = [0.0105, 0.0098, 0.0102, 0.0112]
-    part.loft(tube([C(0, 0, z) for z in gz], [(r, r, r) for r in gr], 8), "grip", cap_start=False, cap_end=False)
+    part.loft(tube([C(0, 0, z) for z in gz], [(r, r, r) for r in gr], 8), "grip")
     kz = [-0.074, -0.068, -0.062, -0.056]
     kr = [0.0085, 0.0138, 0.0140, 0.0105]
     part.loft(tube([C(0, 0, z) for z in kz], [(r, r, r) for r in kr], 8), "wood")
     centres = [BASE + AXIS * t for t in HEAD_T]
-    part.loft(tube(centres, [(r, r, r) for r in HEAD_R], 8, ref_up=V(0, 1, 0)), "wood", cap_start=False)
-    # Zwei bis drei dunkle Eisenbaender (hier drei), je mit leichtem Wulst in der Mitte.
+    part.loft(tube(centres, [(r, r, r) for r in HEAD_R], 8, ref_up=V(0, 1, 0)), "wood")
+    # Alle Teile sind geschlossene Koerper (Kappen an beiden Enden), sie ueberlappen sich: rundum geschlossen (Regel 21).
+    # Drei dunkle Eisenbaender, je mit leichtem Wulst in der Mitte.
     for t0, half in BANDS:
         ts = [t0 - half, t0, t0 + half]
         rs = [head_radius(t) + d for t, d in zip(ts, (0.0022, 0.0034, 0.0022))]
-        part.loft(tube([BASE + AXIS * t for t in ts], [(r, r, r) for r in rs], 8, ref_up=V(0, 1, 0)), "iron",
-                  cap_start=False, cap_end=False)
+        part.loft(tube([BASE + AXIS * t for t in ts], [(r, r, r) for r in rs], 8, ref_up=V(0, 1, 0)), "iron")
     return part
 
 
