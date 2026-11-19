@@ -223,6 +223,11 @@
     "enemyChance": 0.025                // a killed enemy drops one in 2.5 %
   },
 
+  // Teleporters at special places of a level (start room, in front of the boss door). Stepping onto one unlocks it for all players.
+  "teleporters": {
+    "radius": 0.8                       // metres from its middle within which the feet stand on it (to unlock it and to travel from it)
+  },
+
   // Chests (decision record 0006). About every fourth combat room gets one; it rises from the floor once the room is cleared.
   // Per tier: its share among combat-room chests (near the start / farthest away, rising in between), in a treasure room,
   // in a locked treasure room and in a secret room (the shares of all tiers count in proportion), how often it is locked, the silver
