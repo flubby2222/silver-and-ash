@@ -87,6 +87,19 @@ public static class PhotoScenes
                 Ticks = 3,
                 Input = tick => PlayerInput.None with { Melee = tick == 0 },
             }),
+        new("club-charged", "The club fully wound up: the bend at the grip eases to 20 degrees, the head turns in (issue #417).",
+            studio => new PhotoSetup(ClubInHand(studio.Arena('G', 10)))
+            {
+                Ticks = 600,
+                Input = _ => PlayerInput.None with { Melee = true },
+                StopWhen = world => world.Player.MeleeCharge is { IsCharging: true, Fraction: >= 1f },
+            }),
+        new("club-swing-full", "A quick club swing at its height, where it hits: the club straight in the sleeve (issue #417).",
+            studio => new PhotoSetup(ClubInHand(studio.Arena('G', 10)))
+            {
+                Ticks = 8,
+                Input = tick => PlayerInput.None with { Melee = tick == 0 },
+            }),
         new("showroom-club", "The club in hand before the club (Worn) lying in the showroom (issue #403).",
             studio => new PhotoSetup(ClubInHand(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Club })))),
         new("bat-4m", "A bat 4 m away in a bare hall.",

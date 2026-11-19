@@ -211,8 +211,9 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
 
         if (models is not null && models.TryGetMelee(_melee, out var blade, out var bladeHand))
         {
+            // The sleeve hangs on the grip; the club alone bends in the cuff (issue #417).
             var grip = WeaponPose.Blade(t, _windUp, tremble) * modelMotion;
-            DrawOnePart(blade, grip);
+            DrawOnePart(blade, WeaponPose.MeleeBend(_melee, t, _windUp) * grip);
             DrawSleeve(bladeHand, grip, WeaponPose.BladeForearm(t, _windUp, tremble, bladeHand.Rig.Pivots[1]));
             return;
         }
