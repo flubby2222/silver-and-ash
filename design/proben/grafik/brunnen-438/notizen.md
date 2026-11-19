@@ -105,3 +105,35 @@ Alles zum Einbau in Core und Game (Zelle, Zustand, Zähler, Kollision, Datei in 
 2. Welche Ausführung (A1, A2, A3) und welche Moosmenge (keins, wenig, stark)?
 3. Reicht die Animation (vier Bilder, 150 ms), oder soll beim Wurf zusätzlich etwas reagieren (Spritzer)?
 4. Die Kapuzenfigur in A3 hat keine Hände und ist grob; soll sie als Figur lesbarer werden, oder ist eine Säulenfigur genug?
+
+
+# Endfassung: Well of Sirius (Issue #438)
+
+Urteil des Menschen zu Runde 2: Form **A2 Dreischaler** mit den **Texturen von A1**, Moos **wenig wie A1**, Wasser-Animation reicht, Name **Well of Sirius**.
+
+## Dateien (Endfassung)
+
+- `brunnen3.py`: erzeugt genau diese Fassung (Geometrie A2 aus `brunnen2.py`, Textur und Seed von A1: Moos 0,40, Seed 11). Zwei Läufe liefern bitgleiche Dateien (Blatt, beide glb, GIF per SHA-256 geprüft).
+- `well_of_sirius_bereit.glb` (372 Dreiecke), `well_of_sirius_verbraucht.glb` (264 Dreiecke); beide geschlossen (`tools/models/check_closed.py`, 0 offene Kanten). Maße 1,70 x 2,30 x 1,96 m (x, y, z), 28 Farben.
+- Teile in `bereit`: `body` 96, `column` 168, `water_basin` 20, `water_bowl1` 20, `water_bowl2` 20, `falls` 48. `verbraucht` hat nur `body` und `column`.
+- `blatt3.png` (vier Ansichten aus 4 m in Augenhöhe, vier nah/von oben, verbraucht, Vergleich mit Runde 2, Textur, Spielbilder 4 m und 2 m, Maßstab), `wasser_final.gif` (hell) und `wasser_final_spiel.gif` (Spielbedingungen, 3 m), je vier Bilder zu 150 ms, `spiel_final_*.png`, `textur_f.png` (64 x 64), `textur_final_x6.png`, `massstab3.png`.
+
+## Was von A1 übernommen wurde
+
+Der gesamte Atlas: Wandstein, Deckplatte, Sockel, Säule, trockener Boden, Wasser- und Fall-Bilder, dazu dieselbe Moosmenge und derselbe Zufalls-Seed. Das Moos wächst nur in Fugen, am Sockel und am Schalenrand.
+
+## Eigene Prüfung gegen Runde 2
+
+- Fugenverlauf auf sechs Seiten: Eine Seitenfläche ist 0,80 x 0,50 m und zeigt das ganze Wandfeld (32 x 16 px), also zwei Steine breit und zwei Lagen. An den Kanten treffen sich Fuge und Fuge (untere Lage) beziehungsweise Steinmitte (obere Lage); das ergibt einen versetzten Verband über die Ecke, keine Sprünge. Auf A1 (acht Seiten à 0,62 m) war das Feld gut doppelt so stark vertikal gestreckt, auf A2 nur etwa 1,25-fach; die Steine sind hier also eher besser proportioniert.
+- Verzerrung: Die schmalen Schalenränder (0,08 m hoch) zeigen das ganze Wandfeld und wirken als flache Bänder; das passt zu einem Rand. Spitze und Säule laufen kegelig, die Streifen der Säulentextur laufen mit. Keine sichtbaren Verzerrungen auf dem Blatt.
+- Wasser und Funkeln lesen sich auf der Textur unverändert; aus 4 m im Spiel sind die Fälle als blaue Striche auf zwei Stufen sichtbar, das Funkeln nur nah.
+
+## Offene Punkte für den Einbau (eigener PR, `Closes #438`)
+
+- **Name:** im Spiel und im Code „Well of Sirius“ (Datei etwa `assets/models/well_of_sirius_*.glb`, Skript nach `tools/models/`, Eintrag in `assets/HERKUNFT.md`, `checksums.py` laufen lassen).
+- **Zustände:** zwei Modelle (bereit/verbraucht) oder ein Modell mit ausgeblendeten Wasser-Knoten (`water_*`, `falls`).
+- **Animation:** Spielcode tauscht alle 150 ms die UV-Rechtecke der Teile `water_*` und `falls` (Atlas-Felder `water0..3` und `fall0..3`, Reihenfolge im Skript `RECTS`). Alternativ vier Atlas-Ausschnitte.
+- **Kollision:** Grundfläche sechseckig, Umkreis etwa 0,98 m (Sockel); als Kreis mit Radius 0,95 m ansetzen. Zelle 2 x 2 m: A2 füllt in z 1,96 m, also knapp.
+- **Moosfarbe:** Haut/Knochen 1 bis 3 (nächstes Grün der Palette); der Mensch hat das Aussehen gebilligt, eine eigene Moosreihe ist damit nicht nötig.
+- Texturen 64 x 64: die Maße der Art Bible für Props sind erfüllt; Skript wiederverwendbar, wenn das Wasserfeld später anders gemalt werden soll.
+- Ein Spritzer beim Wurf ist laut Urteil nicht verlangt; der Hörprobe-Hinweis (Klang) bleibt unverändert.
