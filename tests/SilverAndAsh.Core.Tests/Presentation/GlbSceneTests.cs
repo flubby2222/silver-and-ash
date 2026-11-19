@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Numerics;
 using System.Text;
+using System.Text.Json.Nodes;
 using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Core.Tests.Presentation;
@@ -187,6 +188,236 @@ public class GlbSceneTests
             StringComparison.Ordinal);
 
         Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(twoPrimitives)));
+    }
+
+    [Fact]
+    public void A_file_without_buffers_is_refused()
+    {
+        var message = Refusal(root => root.AsObject().Remove("buffers"));
+
+        Assert.Equal("The .glb file has 0 buffers - the game needs exactly one, in the file.", message);
+    }
+
+    [Fact]
+    public void Buffers_that_are_no_list_are_refused()
+    {
+        var message = Refusal(root => root["buffers"] = new JsonObject { ["byteLength"] = DataLength });
+
+        Assert.Equal("The .glb file has 0 buffers - the game needs exactly one, in the file.", message);
+    }
+
+    [Fact]
+    public void A_file_with_two_buffers_is_refused()
+    {
+        var message = Refusal(root => root["buffers"]!.AsArray().Add(new JsonObject { ["byteLength"] = 4 }));
+
+        Assert.Equal("The .glb file has 2 buffers - the game needs exactly one, in the file.", message);
+    }
+
+    [Fact]
+    public void A_buffer_with_negative_length_is_refused()
+    {
+        var message = Refusal(root => root["buffers"]![0]!["byteLength"] = -1);
+
+        Assert.Equal($"The buffer claims -1 bytes, the binary chunk has {DataLength}.", message);
+    }
+
+    [Fact]
+    public void A_buffer_view_of_a_second_buffer_is_refused()
+    {
+        var message = Refusal(root => root["bufferViews"]![1]!["buffer"] = 1);
+
+        Assert.Equal($"A buffer view (1032 + 396 bytes) lies outside the buffer ({DataLength} bytes).", message);
+    }
+
+    [Fact]
+    public void A_buffer_view_before_the_buffer_is_refused()
+    {
+        // -4 + 1032 ends inside the buffer: only the check on the start catches it.
+        var message = Refusal(root => root["bufferViews"]![0]!["byteOffset"] = -4);
+
+        Assert.Equal($"A buffer view (-4 + 1032 bytes) lies outside the buffer ({DataLength} bytes).", message);
+    }
+
+    [Fact]
+    public void A_buffer_view_with_negative_length_is_refused()
+    {
+        var message = Refusal(root => root["bufferViews"]![3]!["byteLength"] = -216);
+
+        Assert.Equal($"A buffer view (2292 + -216 bytes) lies outside the buffer ({DataLength} bytes).", message);
+    }
+
+    [Fact]
+    public void A_buffer_view_whose_end_overflows_is_refused()
+    {
+        // Offset and length are each far beyond the buffer; their sum does not fit a long and wraps to a negative number.
+        var message = Refusal(root =>
+        {
+            root["bufferViews"]![0]!["byteOffset"] = 9_000_000_000_000_000_000L;
+            root["bufferViews"]![0]!["byteLength"] = 9_000_000_000_000_000_000L;
+        });
+
+        Assert.Equal($"A buffer view (9000000000000000000 + 9000000000000000000 bytes) lies outside the buffer ({DataLength} bytes).", message);
+    }
+
+    [Fact]
+    public void A_buffer_view_without_offset_starts_at_the_beginning_of_the_buffer()
+    {
+        // The whole buffer fits only if the missing offset counts as 0.
+        var root = JsonNode.Parse(TwoParts)!;
+        root["bufferViews"]![0]!.AsObject().Remove("byteOffset");
+        root["bufferViews"]![0]!["byteLength"] = DataLength;
+
+        Assert.Equal(2, GlbScene.Read(Glb(root.ToJsonString())).Count);
+    }
+
+    [Fact]
+    public void Accessors_without_any_buffer_views_are_refused()
+    {
+        var message = Refusal(root => root.AsObject().Remove("bufferViews"));
+
+        Assert.Equal("An accessor points to buffer view 0, the file has 0.", message);
+    }
+
+    [Fact]
+    public void Buffer_views_that_are_no_list_are_refused()
+    {
+        var message = Refusal(root => root["bufferViews"] = new JsonObject());
+
+        Assert.Equal("An accessor points to buffer view 0, the file has 0.", message);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(4)]
+    public void An_accessor_pointing_to_a_missing_buffer_view_is_refused(int view)
+    {
+        var message = Refusal(root => root["accessors"]![3]!["bufferView"] = view);
+
+        Assert.Equal($"An accessor points to buffer view {view}, the file has 4.", message);
+    }
+
+    [Fact]
+    public void A_stride_longer_than_its_buffer_view_is_refused()
+    {
+        var message = Refusal(root => root["bufferViews"]![1]!["byteStride"] = 400);
+
+        Assert.Equal("A buffer view has a stride of 400 bytes, its elements need 12.", message);
+    }
+
+    [Fact]
+    public void An_accessor_offset_pushing_its_corners_past_the_view_is_refused()
+    {
+        var message = Refusal(root => root["accessors"]![0]!["byteOffset"] = 12);
+
+        Assert.Equal("An accessor needs 1044 bytes, its buffer view has 1032.", message);
+    }
+
+    [Fact]
+    public void An_accessor_starting_before_its_view_is_refused()
+    {
+        // -12 + 86 corners of 12 bytes ends inside the view: only the check on the start catches it.
+        var message = Refusal(root => root["accessors"]![0]!["byteOffset"] = -12);
+
+        Assert.Equal("An accessor needs 1020 bytes, its buffer view has 1032.", message);
+    }
+
+    [Fact]
+    public void An_accessor_offset_that_overflows_is_refused()
+    {
+        // The largest offset a long holds: offset plus the corners wraps to a negative number of needed bytes.
+        var message = Refusal(root => root["accessors"]![0]!["byteOffset"] = long.MaxValue);
+
+        Assert.EndsWith("its buffer view has 1032.", message);
+    }
+
+    [Fact]
+    public void An_accessor_with_negative_count_is_refused()
+    {
+        var message = Refusal(root => root["accessors"]![2]!["count"] = -1);
+
+        Assert.Equal("An accessor needs -2 bytes, its buffer view has 864.", message);
+    }
+
+    [Fact]
+    public void An_accessor_count_that_overflows_is_refused()
+    {
+        // (2^62 + 1 - 1) indices of 2 bytes are 2^63 bytes - one more than a long holds, so "needed" wraps around.
+        var message = Refusal(root => root["accessors"]![2]!["count"] = (1L << 62) + 1);
+
+        Assert.EndsWith("its buffer view has 864.", message);
+    }
+
+    [Fact]
+    public void An_accessor_with_no_elements_needs_no_data()
+    {
+        var root = JsonNode.Parse(TwoParts)!;
+        root["accessors"]![1]!["count"] = 0;
+
+        var parts = GlbScene.Read(Glb(root.ToJsonString()));
+
+        Assert.Equal(0, parts[1].VertexCount);
+    }
+
+    [Theory]
+    [InlineData("SCALAR", 5120, 1)]
+    [InlineData("SCALAR", 5121, 1)]
+    [InlineData("VEC2", 5122, 4)]
+    [InlineData("VEC3", 5123, 6)]
+    [InlineData("VEC4", 5125, 16)]
+    [InlineData("MAT2", 5126, 16)]
+    [InlineData("MAT3", 5126, 36)]
+    [InlineData("MAT4", 5126, 64)]
+    public void Each_accessor_type_needs_its_own_number_of_bytes(string type, int componentType, int element)
+    {
+        // A stride of exactly one element passes, one byte less is refused - that pins the size the reader computes.
+        Assert.Equal(2, GlbScene.Read(WithExtraAccessor(type, componentType, stride: element)).Count);
+
+        var refused = Assert.Throws<InvalidDataException>(() => GlbScene.Read(WithExtraAccessor(type, componentType, stride: element - 1)));
+        Assert.Equal($"A buffer view has a stride of {element - 1} bytes, its elements need {element}.", refused.Message);
+    }
+
+    [Theory]
+    [InlineData("VEC5", "Unknown accessor type 'VEC5'.")]
+    [InlineData(null, "Unknown accessor type ''.")]
+    public void An_unknown_accessor_type_is_refused(string? type, string expected)
+    {
+        var message = Refusal(root => root["accessors"]![3]!["type"] = type);
+
+        Assert.Equal(expected, message);
+    }
+
+    [Fact]
+    public void An_unknown_component_type_is_refused()
+    {
+        var message = Refusal(root => root["accessors"]![3]!["componentType"] = 5124);
+
+        Assert.Equal("Unknown component type 5124.", message);
+    }
+
+    // The two-part file with a fifth buffer view (64 bytes from the start of the buffer, no offset given) and a fifth
+    // accessor of one element on it.
+    private static byte[] WithExtraAccessor(string type, int componentType, int stride)
+    {
+        var root = JsonNode.Parse(TwoParts)!;
+        root["bufferViews"]!.AsArray().Add(new JsonObject { ["buffer"] = 0, ["byteLength"] = 64, ["byteStride"] = stride });
+        root["accessors"]!.AsArray().Add(new JsonObject
+        {
+            ["bufferView"] = 4,
+            ["componentType"] = componentType,
+            ["type"] = type,
+            ["count"] = 1,
+        });
+        return Glb(root.ToJsonString());
+    }
+
+    // The message the reader refuses the two-part file with after the given change to its description.
+    private static string Refusal(Action<JsonNode> edit)
+    {
+        var root = JsonNode.Parse(TwoParts)!;
+        edit(root);
+        var glb = Glb(root.ToJsonString());
+        return Assert.Throws<InvalidDataException>(() => GlbScene.Read(glb)).Message;
     }
 
     // A minimal .glb: 12-byte header, the JSON chunk (padded with spaces to 4 bytes), then - unless dataLength is null -
