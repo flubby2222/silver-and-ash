@@ -548,13 +548,13 @@ public sealed class GameWorld
     }
 
     // Whoever takes a piece first gets it: it leaves the floor at once, so in online co-op a second player pressing F
-    // in the same tick (later in the order of Players) finds nothing there any more. A weapon goes into the bag with its
-    // magazine; an item needs no place.
+    // in the same tick (later in the order of Players) finds nothing there any more. A weapon goes with its magazine into
+    // a free ranged place, otherwise into the bag (issue #434); an item needs no place.
     private void Take(EquipmentDrop drop, Player taker)
     {
         switch (drop)
         {
-            case WeaponDrop weapon when !taker.Stow(weapon.Kind, weapon.Ranged):
+            case WeaponDrop weapon when !taker.PickUp(weapon.Kind, weapon.Ranged):
                 return;
             case ItemDrop item:
                 taker.Take(item.Kind);
