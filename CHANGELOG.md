@@ -8,6 +8,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ### Behoben
 - **Pistole, silberne Platte:** Die silberne Platte hinten am Lauf stand über Griff und Schloss hinaus und schwebte in der Ich-Sicht als heller Stab. Sie sitzt jetzt weiter vorn auf dem Laufende; Form, Lauf und alles andere sind unverändert (#431)
+- **Regler mit der Maus ziehen:** In den Einstellungen folgt ein Regler jetzt der gedrückten Maus in beide Richtungen, ein Klick setzt ihn an die Klickstelle. Bisher änderte nur jeder einzelne Klick den Wert um einen Schritt, je nachdem, in welches Drittel der Zeile er fiel; Ziehen bewirkte nichts, und zurück nach links ging es nur Klick für Klick ganz links in der Zeile. Links/Rechts arbeiten wie bisher, ein Klick auf „Display“ schaltet weiter um. Der gezogene Wert wirkt sofort, gespeichert wird er einmal beim Loslassen (#426)
 
 ## [0.11.1] – 2026-11-19
 
