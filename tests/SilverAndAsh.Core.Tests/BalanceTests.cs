@@ -134,7 +134,7 @@ public class BalanceTests
     [Fact]
     public void A_longer_blade_reaches_farther()
     {
-        // The dummy stands 4 m ahead: out of reach of the standard 2 m blade, in reach of a 4 m one.
+        // The dummy stands 4 m ahead: out of reach of the standard blade (2.5 m), in reach of a 4 m one.
         var standard = SwingAtDummyFourMetresAhead(Balance.Default);
         var longer = SwingAtDummyFourMetresAhead(Balance.Default with { Blade = Balance.Default.Blade with { Range = 4f } });
 

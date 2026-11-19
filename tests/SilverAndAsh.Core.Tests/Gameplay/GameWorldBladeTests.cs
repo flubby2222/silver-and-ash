@@ -103,6 +103,28 @@ public class GameWorldBladeTests
         Assert.True(world.Dummies[0].IsDown);
     }
 
+    [Fact]
+    public void The_blade_reaches_exactly_as_far_as_the_world_s_balance_says()
+    {
+        // Issue #425: the reach comes from the balance, to the dummy's surface - a blade a little longer than the
+        // gap hits, one a little shorter does not. A reach fixed in the code cannot pass both.
+        var standing = InFrontOfADummy();
+        var dummy = standing.Dummies[0].Body;
+        var eye = standing.Player.EyePosition;
+        var axis = dummy.Position with { Y = Math.Clamp(eye.Y, dummy.Position.Y, dummy.Position.Y + dummy.Height) };
+        var gap = Vector3.Distance(eye, axis) - dummy.Radius;
+
+        Assert.Equal(Balance.Default.Dummy.MaxHealth - Balance.Default.Blade.Damage, HealthAfterASwing(gap + 0.05f));
+        Assert.Equal(Balance.Default.Dummy.MaxHealth, HealthAfterASwing(gap - 0.05f));
+
+        static int HealthAfterASwing(float range)
+        {
+            var world = InFrontOfADummy(Balance.Default with { Blade = Balance.Default.Blade with { Range = range } });
+            Swing(world);
+            return world.Dummies[0].Health;
+        }
+    }
+
     /// <summary>A quick (uncharged) swing: button pressed in one tick, let go in the next - the swing happens then.</summary>
     private static void Swing(GameWorld world)
     {
@@ -111,9 +133,9 @@ public class GameWorldBladeTests
     }
 
     /// <summary>The player walked up to a dummy and stands right in front of it.</summary>
-    private static GameWorld InFrontOfADummy()
+    private static GameWorld InFrontOfADummy(Balance? balance = null)
     {
-        var world = new GameWorld(LevelParser.Parse("P\n.\nD"));
+        var world = new GameWorld(LevelParser.Parse("P\n.\nD"), balance: balance ?? Balance.Default);
         RunTicks(world, Forward, SimulationClock.TicksPerSecond);
         RunTicks(world, PlayerInput.None, 10);
         return world;

@@ -15,8 +15,8 @@ public sealed record Balance
     /// <summary>The player character.</summary>
     public PlayerBalance Player { get; init; } = new();
 
-    /// <summary>The silver blade.</summary>
-    public MeleeBalance Blade { get; init; } = new();
+    /// <summary>The silver blade: a quarter more reach than the club (playtest of 19.11.2026, #425).</summary>
+    public MeleeBalance Blade { get; init; } = new() { Range = 2.5f };
 
     /// <summary>The club (decision record 0008): slower than the blade, harder, and it knocks enemies back.</summary>
     public MeleeBalance Club { get; init; } = new()

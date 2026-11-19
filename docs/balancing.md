@@ -100,6 +100,18 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 19.11.2026 (#425, vorläufig)
+
+**Anlass:** Spieltest des Menschen zu 0.11.0 (19.11.): „Die Silberklinge trifft zu kurz.“
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `blade.range` | 2 m | 2,5 m (**vorläufig**, Wert der Leitung) | ein Viertel mehr Reichweite; die Keule bleibt bei 2 m |
+
+Dieselbe Reichweite gilt für jeden Hieb, für den aufgeladenen Schlag und für das Aufbrechen rissiger Wände. Der Schwung in der Ich-Sicht hängt nicht von der Reichweite ab (er bleibt innerhalb von 30 cm vor den Augen, damit er nicht in Wände ragt).
+
+**Report (500 Ebenen):** zeilengleich mit vorher. Der Report rechnet die Kampfzeit aus Schaden und Abklingzeit, nicht aus der Reichweite.
+
 ### Runde 3 – 19.11.2026 (vor 0.11.0, Kurzrunde)
 
 **Anlass:** Release 0.11.0. Seit Runde 2 kamen neue Waffen (Keule, Gewehr, Donnerbüchse), das Nachladen der Pistole und die Grenze für Fledermäuse dazu (siehe Zwischenschritt unten).
