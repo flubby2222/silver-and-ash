@@ -249,6 +249,16 @@ public sealed record StairsRose : GameEvent;
 /// <summary>Player <paramref name="PlayerId"/> climbed the stairs: the run is won.</summary>
 public sealed record StairsClimbed(int PlayerId) : GameEvent;
 
+/// <summary>Player <paramref name="PlayerId"/> stepped onto teleporter <paramref name="TeleporterId"/> for the first time: it is unlocked for all.</summary>
+public sealed record TeleporterUnlocked(int TeleporterId, int PlayerId, System.Numerics.Vector3 Position) : GameEvent;
+
+/// <summary>
+/// Player <paramref name="PlayerId"/> travelled from teleporter <paramref name="FromId"/> (at <paramref name="From"/>) to
+/// teleporter <paramref name="ToId"/> (at <paramref name="To"/>).
+/// </summary>
+public sealed record PlayerTeleported(
+    int PlayerId, int FromId, int ToId, System.Numerics.Vector3 From, System.Numerics.Vector3 To) : GameEvent;
+
 /// <summary>Every player is dead before the run was won.</summary>
 public sealed record RunLost : GameEvent;
 

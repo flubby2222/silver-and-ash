@@ -6,10 +6,11 @@ namespace SilverAndAsh.Core.World;
 /// <param name="Rooms">All rooms, the start room first (index 0). Corridors count as rooms.</param>
 /// <param name="Doors">All doors; each joins two rooms.</param>
 /// <param name="Chests">The chests, once <see cref="ChestPlacement"/> has placed them (none before).</param>
+/// <param name="Teleporters">The teleporters, once <see cref="TeleporterPlacement"/> has placed them (none before).</param>
 /// <param name="Well">The Well of Sirius, once <see cref="WellPlacement"/> has placed it - none if the level has none.</param>
 public sealed record GeneratedLevel(
     int Seed, Level Level, IReadOnlyList<PlacedRoom> Rooms, IReadOnlyList<LevelDoor> Doors, IReadOnlyList<ChestPlan>? Chests = null,
-    WellPlan? Well = null);
+    IReadOnlyList<TeleporterPlan>? Teleporters = null, WellPlan? Well = null);
 
 /// <summary>The Well of Sirius of a generated level (issue #438): the cell it stands in the middle of.</summary>
 /// <param name="X">Column of its cell.</param>

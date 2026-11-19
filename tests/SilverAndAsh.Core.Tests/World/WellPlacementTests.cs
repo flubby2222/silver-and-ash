@@ -49,6 +49,39 @@ public class WellPlacementTests
     }
 
     [Fact]
+    public void The_well_keeps_its_block_of_three_by_three_cells_clear_of_every_teleporter()
+    {
+        // Teleporters (issue #436) are placed before the well; the well must not stand on one or reach into it.
+        var sharingARoom = 0;
+        foreach (var level in Levels.Value.Where(level => level.Well is not null))
+        {
+            var well = level.Well!;
+            Assert.NotEmpty(level.Teleporters!);
+            foreach (var teleporter in level.Teleporters!)
+            {
+                Assert.True(
+                    Math.Max(Math.Abs(teleporter.X - well.X), Math.Abs(teleporter.Z - well.Z)) >= 2,
+                    $"Seed {level.Seed}: well at ({well.X}, {well.Z}), teleporter at ({teleporter.X}, {teleporter.Z}).");
+                sharingARoom += teleporter.Room == well.Room ? 1 : 0;
+            }
+        }
+
+        // Not empty: in many levels well and teleporter stand in the same room (the start room is quiet).
+        Assert.True(sharingARoom >= 10, $"Only {sharingARoom} levels have well and teleporter in one room.");
+    }
+
+    [Fact]
+    public void Placing_the_well_shifts_no_teleporter()
+    {
+        foreach (var level in Levels.Value.Take(30))
+        {
+            var without = level with { Well = null };
+
+            Assert.Same(without.Teleporters, WellPlacement.Place(without, Standard).Teleporters);
+        }
+    }
+
+    [Fact]
     public void The_same_seed_gives_the_same_well_and_different_seeds_different_places()
     {
         var again = Enumerable.Range(0, 20).Select(seed => new LevelZero(Templates).Build(seed, Balance.Default).Well);

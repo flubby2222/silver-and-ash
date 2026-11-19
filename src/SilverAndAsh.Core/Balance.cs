@@ -112,6 +112,9 @@ public sealed record Balance
     /// <summary>The Well of Sirius (issue #438): how often a level has one and how wide it stands.</summary>
     public WellBalance Well { get; init; } = new();
 
+    /// <summary>Teleporters at special places (issue #436): how near a player must come.</summary>
+    public TeleportersBalance Teleporters { get; init; } = new();
+
     /// <summary>The blood vial: a consumable that heals.</summary>
     public BloodVialBalance BloodVial { get; init; } = new();
 
@@ -212,6 +215,16 @@ public sealed record KeysBalance
 
     /// <summary>Chance that a killed enemy drops a key.</summary>
     public float EnemyChance { get; init; } = 0.025f;
+}
+
+/// <summary>Teleporters at special places of a level (issue #436).</summary>
+public sealed record TeleportersBalance
+{
+    /// <summary>
+    /// Metres from a teleporter's middle (on the ground plane) within which a player's feet stand on it: stepping in
+    /// unlocks it, and only from there can they travel.
+    /// </summary>
+    public float Radius { get; init; } = 0.8f;
 }
 
 /// <summary>Equipment as loot (decision records 0006 and 0008): how a draw from the loot pool chooses.</summary>
