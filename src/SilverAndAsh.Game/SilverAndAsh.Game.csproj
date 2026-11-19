@@ -18,12 +18,15 @@
     <PackageReference Include="Raylib-cs" Version="8.1.0" />
   </ItemGroup>
 
-  <!-- Game data (levels, later models and more) is copied next to the .exe, keeping its folder structure. -->
+  <!-- Game data (levels, later models and more) is copied next to the .exe, keeping its folder structure.
+       ExcludeFromSingleFile: the single-file bundler must never pack game data into the .exe. Without it, v0.11.0
+       shipped without music - the bundler took the two music files for native libraries and swallowed them. -->
   <ItemGroup>
     <None Include="..\..\assets\**\*"
           Link="assets\%(RecursiveDir)%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest"
-          CopyToPublishDirectory="PreserveNewest" />
+          CopyToPublishDirectory="PreserveNewest"
+          ExcludeFromSingleFile="true" />
   </ItemGroup>
 
 </Project>

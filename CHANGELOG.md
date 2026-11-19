@@ -6,6 +6,11 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.11.1] – 2026-11-19
+
+### Behoben
+- **Musik im Release:** In der heruntergeladenen Version 0.11.0 lief keine Musik, weder im Titel noch im Lauf. Beim Bau der einen `.exe` waren die beiden Musikdateien in die `.exe` gewandert, statt im Ordner `assets/audio` zu liegen, wo das Spiel sie sucht. Jetzt bleiben alle Spieldaten neben der `.exe`. Beim Start mit `dotnet run` war der Fehler nicht zu hören (#422).
+
 ## [0.11.0] – 2026-11-19 – Gestalt & Klang
 
 ### Hinzugefügt
@@ -256,7 +261,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.11.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/flubby2222/silver-and-ash/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.8.0...v0.9.0
