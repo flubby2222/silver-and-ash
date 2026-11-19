@@ -35,3 +35,33 @@ Grundlage: der echte HUD-Atlas (`assets/hud/hud_parts.png`/`.json`), Foto `hud-c
 - Das Urteil über 1 px je Lebenspunkt und den verkürzten Balken (100 statt 344 px) steht beim Auftraggeber.
 - Obergrenze als Spielregel (Core) gibt es noch nicht; ohne sie läuft der Balken beim Boss-Rahmen auf.
 - Lesbarkeit bei 1280 x 720 ist hier nur im Entwurfsraster gezeigt; Prüfung im Spiel erst beim Einbau.
+
+# Runde 2 (Urteil: Layout B gewählt, aber im neuen HUD-Design; Bezug #412)
+
+Blätter: `blatt-lebensbalken-runde2.png` (2400 x 2120) und `blatt-schmuck-runde2.png` (2800 x 2830), Einzelbilder `runde2-hoechst-1920.png` und `runde2-hoechst-854.png`. Neu erzeugen mit `lebensbalken_runde2.py` (gleicher Blender-Aufruf wie oben); zwei Läufe sind bitgleich.
+
+## Warum das erste Blatt wie das alte Design aussah
+
+Runde 1 las `assets/hud/hud_parts.png` (der einfache Atlas für das 854er Raster). Dessen Rahmen haben Giebel, Fialen und Eckzacken. Das Spiel zeichnet aber seit #409 überall den Atlas in doppelter Auflösung (`hud_parts_x2`, 1708 x 960): glatte Metallrahmen als Relief, sechs Silberstufen im Rahmen, ohne Giebel. `AtlasChoice.Pick` nimmt `_x2`, sobald beide Dateien da sind, bei jeder Fenstergröße. Mein Blatt hätte den x2-Atlas lesen müssen. Runde 2 tut das. Merkpunkt: Proben zum HUD immer aus `_x2` bauen, nicht aus dem einfachen Atlas.
+
+## Layout B im neuen Design
+
+- Raster 1708 x 960: 2 px je Lebenspunkt (1 px bei 854 x 480, etwa 2,25 px bei 1920 x 1080), ein Strich je Upgrade alle 10 px, jeder fünfte lang. Start 100 = 200 px, Mittel 150 = 300 px, Höchst 235 = 470 px.
+- Fassung des Lebens: `frame_xp` um 8 Zeilen höher (Balken 28 statt 20), Breite = Balken + 20, Kappen links und rechts, Mitte gekachelt. Das neue Design hat keine Giebel mehr; die Endkappe aus Runde 1 ist hier der rechte Abschluss des Rahmens, der mit dem Balken wandert.
+- Obergrenze im Entwurf 244 Lebenspunkte (Rahmen endet 12 px vor dem Boss-Rahmen bei x 592); gezeigt 235.
+- Stufe auf der Mitte des Stapels, Fähigkeiten in zweiter Zeile, Erfahrung 112 px; Ausdauer unten in der Mitte in einer Fassung, die 46 statt 76 hoch ist (`frame_vitals` ohne die Zeilen 18 bis 47).
+- Die Bilder in 854 x 480 nehmen jeden zweiten Pixel des Entwurfs (das Spiel zeichnet dort ebenfalls den x2-Atlas verkleinert). Das Hintergrundfoto ist `basis-854.png`, 2fach vergrößert (nur Hintergrund, nicht Teil der Beurteilung).
+
+## Schmuck der Rahmen (#412, Teil 1: Probe)
+
+Nur die sechs Silberstufen aus dem Rahmen (72, 100, 132, 166, 200, 230), Licht links oben, keine Glättung, keine neue Farbe. Gezeigt am Lebensbalken (Mittel und Höchst) und an Karte und Ausrüstung (aktiver und ruhender Reiter), je neben dem heutigen schlichten Rahmen.
+
+- **S1 Nieten:** runde Niete an jeder Ecke; am Lebensbalken zusätzlich an den langen Strichen (jedes fünfte Upgrade) auf dem unteren Rand, an Reitern alle etwa 80 px. Wenig Bild, ruhig; die Nieten am Lebensbalken sind zugleich eine Zählhilfe.
+- **S2 Eckwinkel:** vier Winkel mit Licht und Schatten und einer Niete im Knick. Deutlichste Rahmung, wirkt aber schwer.
+- **S3 Giebel:** dreistufiger Giebel mit Spitzbogenfenster; am Lebensbalken auf dem Ende (wandert mit), an Reitern zwei kleine, damit die Mitte für die goldene Marke frei bleibt. Stärkster Ausdruck, aber der x2-Atlas hat Giebel und Fialen mit Absicht weggelassen (`design/proben/grafik/hud-atlas-402/abweichungen.md`), und er widerspricht Art-Bible-Regel 11 (so wenig Bild wie möglich).
+- **Empfehlung S1.** Geringster Bildanteil, keine neue Fläche (die Nieten sitzen im Rand), trägt den Lebensbalken ohne ihn zu überladen und knüpft an die Eck-Nieten der Stufen-Fassung an, die es im x2-Atlas schon gibt. S3 wäre die zweite Wahl nur am Lebensbalken.
+- Grenzen: Der Schmuck ist nur auf Lebensbalken und Reiter gezeigt, nicht auf allen Rahmen (Waffen, Gegenstände, Währung, Boss). Beim Einbau braucht es dafür neue Teile im x2-Atlas (der Generator `tools/hud/hud_atlas_doppelt.py` müsste sie als Relief aus Blender rendern; hier sind es von Hand gesetzte Pixel).
+
+## Entscheidung (nur vermerkt)
+
+Das Leben bekommt eine Obergrenze, vorläufig etwa 235; am Deckel fallen keine Leben-Upgrades mehr. Die Zahl ist ein Vorschlag aus der Bildbreite bei 854 x 480 und noch nicht in `balance.json`; sie ist Sache des Einbaus (Core) und der Balancing-Runde.
