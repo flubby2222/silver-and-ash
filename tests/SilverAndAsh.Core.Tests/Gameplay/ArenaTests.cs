@@ -1,6 +1,7 @@
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
@@ -25,13 +26,13 @@ public class ArenaTests
     private const string BatMap = "#.P.#\n##.##\n#...#\n#...#\n#.B.#\n#...#\n##.##\n#...#\n#...#";
     private const string TwoGhoulsMap = "#.P.#\n##.##\n#...#\n#G..#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
 
-    private static GameWorld World(bool withGhoul = true, string? mapText = null)
+    private static GameWorld World(bool withGhoul = true, string? mapText = null, RoomKind arena = RoomKind.Combat)
     {
         var map = mapText ?? (withGhoul ? Map : Map.Replace('G', '.'));
         PlacedRoom[] rooms =
         [
             new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, Rows(0, 0), [], []),
-            new(1, RoomKind.Combat, "arena", 0, 2, 5, 4, 1, Rows(2, 5), [(2, 4)], []),
+            new(1, arena, "arena", 0, 2, 5, 4, 1, Rows(2, 5), [(2, 4)], []),
             new(2, RoomKind.Corridor, "corridor", 0, 7, 5, 2, 2, Rows(7, 8), [], []),
         ];
         LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
@@ -56,6 +57,20 @@ public class ArenaTests
         var events = Run(world, PressF, 1);
         events.AddRange(Run(world, Forward, 180, () => world.Rooms[1].IsEntered));
         return events;
+    }
+
+    private static readonly int EmergeTicks = SimulationClock.SecondsToTicks(Balance.Default.Difficulty.EmergeTime);
+
+    // Turns the player's view onto the middle of a body.
+    private static void AimAt(GameWorld world, CylinderBody body)
+    {
+        var direction = Vector3.Normalize(body.Position + new Vector3(0f, body.Height / 2f, 0f) - world.Player.EyePosition);
+        world.Player.Look(PlayerInput.None with
+        {
+            Look = new Vector2(
+                -(MathF.Atan2(direction.X, direction.Z) - world.Player.View.YawRadians) / ControlSettings.MouseSensitivity,
+                -(MathF.Asin(direction.Y) - world.Player.View.PitchRadians) / ControlSettings.MouseSensitivity),
+        });
     }
 
     private static void KillEverything(GameWorld world)
@@ -181,8 +196,9 @@ public class ArenaTests
         var events = Run(world, PlayerInput.None, 300);
         Assert.DoesNotContain(events, e => e is BatFlapped);
 
+        // Issue #424: it first sinks out of the ceiling (no wing beats meanwhile), then flies - and flaps.
         events = Enter(world);
-        events.AddRange(Run(world, PlayerInput.None, 60));
+        events.AddRange(Run(world, PlayerInput.None, EmergeTicks + 60));
         Assert.Contains(events, e => e is BatFlapped);
     }
 
@@ -246,25 +262,154 @@ public class ArenaTests
     }
 
     [Fact]
-    public void Hitting_a_sleeping_enemy_wakes_its_room_but_does_not_seal_it()
+    public void A_shot_through_the_open_door_finds_nobody_and_nobody_is_lured_out()
     {
+        // Issue #424 (softlock): a shot through the open door used to wake the ghoul without sealing the room; it
+        // crawled out after the player, and once the player went in, the room sealed with its enemy outside - for ever.
         var world = World();
+        var ghoul = world.Ghouls[0];
+        var start = ghoul.Position;
         Run(world, PressF, 1);
 
-        // From the start room through the open door, aimed at the middle of the (low, crawling) ghoul.
-        var body = world.Ghouls[0].Body;
-        var direction = Vector3.Normalize(body.Position + new Vector3(0f, body.Height / 2f, 0f) - world.Player.EyePosition);
-        world.Player.Look(PlayerInput.None with
+        // From the start room through the open door, aimed at where the (low, crawling) ghoul would stand.
+        AimAt(world, ghoul.Body);
+        var events = Run(world, PlayerInput.None with { Shoot = true }, 1);
+        events.AddRange(Run(world, PlayerInput.None, 600));
+
+        Assert.DoesNotContain(events, e => e is GhoulHit or GhoulNoticed);
+        Assert.True(ghoul.Emergence.IsHidden);
+        Assert.Equal(start, ghoul.Position);
+        Assert.False(world.Rooms[1].IsSealed);
+
+        // Going in seals the room with its ghoul inside - and killing it clears the room.
+        Enter(world);
+        Assert.True(world.Rooms[1].IsSealed);
+        Assert.Contains(Level.ToGrid(ghoul.Position.X, ghoul.Position.Z), world.Rooms[1].Cells);
+        Run(world, PlayerInput.None, EmergeTicks);
+        ghoul.TakeDamage(10_000, []);
+        Run(world, PlayerInput.None, 1);
+        Assert.True(world.Rooms[1].IsCleared);
+    }
+
+    [Fact]
+    public void A_combat_room_s_ghoul_waits_in_the_floor_and_rises_when_the_room_seals()
+    {
+        var world = World();
+        var ghoul = world.Ghouls[0];
+        var floor = ghoul.Position.Y;
+
+        // Hidden: all of it below the floor, not a target, not an obstacle.
+        Assert.True(ghoul.Emergence.IsHidden);
+        Assert.False(ghoul.IsHittable);
+        Assert.Equal(floor - BodySizes.Ghoul.Height, ghoul.ShownPosition.Y, 3);
+        Assert.DoesNotContain(ghoul, world.Targets.Where(target => target.IsHittable));
+
+        var events = Enter(world);
+
+        Assert.Contains(new WaveEmerged(1, 0, [ghoul.Id]), events.OfType<WaveEmerged>(), new WaveComparer());
+        Assert.True(ghoul.Emergence.IsEmerging);
+        Assert.Equal(1, world.Rooms[1].WavesReleased);
+
+        // Half way: half out of the floor, still not hittable.
+        Run(world, PlayerInput.None, EmergeTicks / 2);
+        Assert.True(ghoul.ShownPosition.Y < floor && ghoul.ShownPosition.Y > floor - BodySizes.Ghoul.Height);
+        Assert.False(ghoul.IsHittable);
+
+        Run(world, PlayerInput.None, EmergeTicks);
+        Assert.True(ghoul.Emergence.IsPresent);
+        Assert.True(ghoul.IsHittable);
+        Assert.Equal(ghoul.Position, ghoul.ShownPosition);
+    }
+
+    [Fact]
+    public void A_combat_room_s_bat_waits_in_the_ceiling_and_sinks_out_when_the_room_seals()
+    {
+        var world = World(mapText: BatMap);
+        var bat = world.Bats[0];
+        var ceiling = world.Level.CellAt(bat.Position).CeilingHeight;
+
+        Assert.True(bat.Emergence.IsHidden);
+        Assert.False(bat.IsHittable);
+        Assert.Equal(ceiling, bat.ShownPosition.Y, 3);
+
+        Enter(world);
+        Run(world, PlayerInput.None, EmergeTicks / 2);
+        Assert.True(bat.ShownPosition.Y < ceiling && bat.ShownPosition.Y > bat.Position.Y);
+        Assert.False(bat.IsHittable);
+
+        Run(world, PlayerInput.None, EmergeTicks);
+        Assert.True(bat.IsHittable);
+        Assert.Equal(bat.Position, bat.ShownPosition);
+    }
+
+    [Fact]
+    public void While_it_comes_out_an_enemy_neither_attacks_nor_takes_damage()
+    {
+        // The ghoul waits just inside the door (a hand-made map, no door zone): close to the player who comes in.
+        var world = World(mapText: "#.P.#\n##.##\n#G..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#");
+        var ghoul = world.Ghouls[0];
+        Enter(world);
+
+        var events = new List<GameEvent>();
+        while (ghoul.Emergence.IsEmerging)
         {
-            Look = new Vector2(
-                -(MathF.Atan2(direction.X, direction.Z) - world.Player.View.YawRadians) / ControlSettings.MouseSensitivity,
-                -(MathF.Asin(direction.Y) - world.Player.View.PitchRadians) / ControlSettings.MouseSensitivity),
-        });
+            AimAt(world, ghoul.Body);
+            events.AddRange(Run(world, PlayerInput.None with { Shoot = true }, 1));
+        }
+
+        Assert.DoesNotContain(events, e => e is GhoulHit or GhoulWindUp or GhoulStruck or PlayerHit);
+        Assert.Equal(Balance.Default.Ghoul.MaxHealth, ghoul.Health);
+    }
+
+    [Fact]
+    public void While_it_sinks_out_of_the_ceiling_a_bat_neither_flies_nor_attacks_nor_takes_damage()
+    {
+        // The bat waits just inside the door (a hand-made map, no door zone): close to the player who comes in.
+        var world = World(mapText: "#.P.#\n##.##\n#B..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#");
+        var bat = world.Bats[0];
+        var start = bat.Position;
+        Enter(world);
+        Assert.True(bat.Emergence.IsEmerging);
+
+        var events = new List<GameEvent>();
+        while (bat.Emergence.IsEmerging)
+        {
+            AimAt(world, bat.Body);
+            events.AddRange(Run(world, PlayerInput.None with { Shoot = true }, 1));
+            Assert.Equal(start, bat.Position);
+        }
+
+        Assert.DoesNotContain(events, e => e is BatFlapped or BatScreeched or BatSpitWindUp or BatSpat or BatBit or BatHit or PlayerHit);
+        Assert.Equal(Balance.Default.Bat.MaxHealth, bat.Health);
+    }
+
+    [Fact]
+    public void In_the_boss_room_hitting_a_sleeping_enemy_wakes_the_room_but_does_not_seal_it()
+    {
+        // Issue #424 changed this only for combat rooms. The boss room's enemies stand there from the start and sleep;
+        // a hit through the open door wakes all of them - the room seals only once the player is inside.
+        var world = World(mapText: TwoGhoulsMap, arena: RoomKind.Boss);
+        var target = world.Ghouls.Single(ghoul => Level.ToGrid(ghoul.Position.X, ghoul.Position.Z) == (2, 4));
+        var other = world.Ghouls.Single(ghoul => !ReferenceEquals(ghoul, target));
+        Run(world, PressF, 1);
+        Assert.True(world.IsAsleep(target));
+        Assert.True(world.IsAsleep(other));
+
+        AimAt(world, target.Body);
         var events = Run(world, PlayerInput.None with { Shoot = true }, 1);
 
         Assert.Contains(events, e => e is GhoulHit);
-        Assert.False(world.IsAsleep(world.Ghouls[0]));
+        Assert.False(world.IsAsleep(target));
+        Assert.False(world.IsAsleep(other));
         Assert.False(world.Rooms[1].IsSealed);
+    }
+
+    private sealed class WaveComparer : IEqualityComparer<WaveEmerged>
+    {
+        public bool Equals(WaveEmerged? x, WaveEmerged? y) =>
+            x is not null && y is not null && x.RoomIndex == y.RoomIndex && x.Wave == y.Wave && x.EnemyIds.SequenceEqual(y.EnemyIds);
+
+        public int GetHashCode(WaveEmerged obj) => HashCode.Combine(obj.RoomIndex, obj.Wave);
     }
 
     [Fact]

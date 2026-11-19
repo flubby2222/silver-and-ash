@@ -7,6 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Behoben
+- **Kein Festsitzen mehr in Kampfräumen:** Bisher standen die Gegner eines Kampfraums schon vor dem Betreten im Raum. Man konnte sie durch die offene Tür treffen und herauslocken. Danach blieb der verriegelte Raum für immer zu. Jetzt sind die Gegner erst da, wenn sich der Raum verriegelt: Ghule wachsen aus dem Boden, Fledermäuse sinken aus der Decke, nie nah an einer Tür. In dieser kurzen Phase greifen sie nicht an und nehmen keinen Schaden. Die Dauer steht als `emergeTime` in `balance.json`. Der Bossraum mit Gorm bleibt wie bisher (#424)
 - **Regler mit der Maus ziehen:** In den Einstellungen folgt ein Regler jetzt der gedrückten Maus in beide Richtungen, ein Klick setzt ihn an die Klickstelle. Bisher änderte nur jeder einzelne Klick den Wert um einen Schritt, je nachdem, in welches Drittel der Zeile er fiel; Ziehen bewirkte nichts, und zurück nach links ging es nur Klick für Klick ganz links in der Zeile. Links/Rechts arbeiten wie bisher, ein Klick auf „Display“ schaltet weiter um. Der gezogene Wert wirkt sofort, gespeichert wird er einmal beim Loslassen (#426)
 
 ## [0.11.1] – 2026-11-19

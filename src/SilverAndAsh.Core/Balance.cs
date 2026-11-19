@@ -386,11 +386,20 @@ public sealed record DifficultyBalance
     /// <summary>Most bats in one room (issue #391): once a room holds this many, its budget buys only ghouls.</summary>
     public int MaxBatsPerRoom { get; init; } = 3;
 
-    /// <summary>Least distance (metres, cell middle to cell middle) of an enemy from the room's doors.</summary>
+    /// <summary>
+    /// Least distance (metres, cell middle to cell middle) of an enemy from the room's doors - in a combat room also
+    /// where it comes out of the floor or the ceiling when the room seals (issue #424).
+    /// </summary>
     public float DoorDistance { get; init; } = 4f;
 
     /// <summary>Least distance (metres) between two enemies of a room.</summary>
     public float Spacing { get; init; } = 2.5f;
+
+    /// <summary>
+    /// Seconds an enemy of a combat room takes to come out of the floor (ghoul) or the ceiling (bat) once the room
+    /// seals (issue #424). Meanwhile it neither attacks nor can be hit.
+    /// </summary>
+    public float EmergeTime { get; init; } = 0.8f;
 }
 
 /// <summary>

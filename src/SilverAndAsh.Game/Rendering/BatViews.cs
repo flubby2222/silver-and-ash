@@ -93,7 +93,7 @@ internal sealed class ModelBatView(TexturedModel model, LevelShader shader) : IB
             Matrix4x4.CreateRotationX(Deg(tumble)) *
             Matrix4x4.CreateTranslation(shiver, BodySizes.Bat.Height / 2f + bob, 0f) *
             Matrix4x4.CreateRotationY(yaw) *
-            Matrix4x4.CreateTranslation(bat.Position);
+            Matrix4x4.CreateTranslation(bat.ShownPosition);
 
         var angles = BatPose.Angles(stance, phase);
         if (stance == BatStance.Screeching)
@@ -214,7 +214,7 @@ internal sealed class PlaceholderBatView : IBatView
             Matrix4x4.CreateRotationX(Deg(tumble)) *
             Matrix4x4.CreateTranslation(shiver, 0.2f + bob, 0f) *
             Matrix4x4.CreateRotationY(yaw) *
-            Matrix4x4.CreateTranslation(bat.Position);
+            Matrix4x4.CreateTranslation(bat.ShownPosition);
 
         // Before a spit it glows up red - the warning. A hit flash wins over the glow.
         var glow = state.IsDead ? 0f : bat.SpitWindUpProgress;
