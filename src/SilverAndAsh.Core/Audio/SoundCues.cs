@@ -187,7 +187,7 @@ public static class SoundBoard
     /// <summary>Volume of the title theme (before <see cref="MasterVolume"/>); the louder of the two files.</summary>
     public const float TitleMusicVolume = 0.8f;
 
-    /// <summary>Volume of the catacomb music (before <see cref="MasterVolume"/>); the file itself is about 12 LU quieter.</summary>
+    /// <summary>Volume of the catacomb music (before <see cref="MasterVolume"/>); the file itself is about as loud as the title file (-22.5 LUFS, raised by 10 dB in issue #427).</summary>
     public const float CatacombsMusicVolume = 1f;
 
     /// <summary>Seconds a piece of music takes to fade out before the next one starts.</summary>
