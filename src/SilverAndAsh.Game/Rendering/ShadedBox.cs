@@ -27,15 +27,28 @@ internal static class ShadedBox
     /// Draws a box of <paramref name="size"/> centred at the origin of <paramref name="transform"/>
     /// (local box space -> world). Call between BeginMode3D and EndMode3D.
     /// </summary>
-    public static void Draw(Matrix4x4 transform, Vector3 size, Color color)
+    public static void Draw(Matrix4x4 transform, Vector3 size, Color color) => Draw(transform, size, color, shaded: true);
+
+    /// <summary>
+    /// Like <see cref="Draw(Matrix4x4, Vector3, Color)"/>, but every face in exactly <paramref name="color"/>: for
+    /// something that glows by itself (the red eyes of a ghoul announcing a blow) - no shading, no soft halo.
+    /// </summary>
+    public static void DrawGlowing(Matrix4x4 transform, Vector3 size, Color color) => Draw(transform, size, color, shaded: false);
+
+    private static void Draw(Matrix4x4 transform, Vector3 size, Color color, bool shaded)
     {
         var half = size / 2f;
         Rlgl.Begin(DrawMode.Quads);
         foreach (var (normal, u, v) in Faces)
         {
-            var worldNormal = Vector3.Normalize(Vector3.TransformNormal(normal, transform));
-            var shaded = FlatShading.Apply(color, FlatShading.Brightness(worldNormal));
-            Rlgl.Color4ub(shaded.R, shaded.G, shaded.B, shaded.A);
+            var face = color;
+            if (shaded)
+            {
+                var worldNormal = Vector3.Normalize(Vector3.TransformNormal(normal, transform));
+                face = FlatShading.Apply(color, FlatShading.Brightness(worldNormal));
+            }
+
+            Rlgl.Color4ub(face.R, face.G, face.B, face.A);
 
             var centre = normal * half;
             var edgeU = u * half;
