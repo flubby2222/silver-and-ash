@@ -48,3 +48,25 @@ Optional (nicht nötig, Entscheidung der Leitung): mehr Wucht der Keule gegen di
 
 - `probe-haltung.patch`: vorübergehender Umschalter über Umgebungsvariablen (`SA_CLUB_REST`, `SA_CLUB_HIT`, `SA_CLUB_WIND` = `Hoch,Gier,Roll,x,y,z`; `SA_CLUB_T`, `SA_CLUB_W` setzen Schlag und Aufladen fest). Nicht im Spiel, nur für die Probe; die Funktion `ClubProbePose` im Patch ist der Vorläufer der Teil-2-Pose.
 - `rendern.sh`, `blatt.ps1`, `pruefung.py`, `keule-haltung-417.png`.
+
+## Runde 2: Keule am Griff abgewinkelt, Ärmel bleibt (Urteil des Auftraggebers)
+
+Blatt: `keule-haltung-417-runde2.png`. Der Schlagbogen aus Runde 1 ist abgenommen und bleibt. Dateien: `probe-haltung-runde2.patch`, `rendern-runde2.sh`, `blatt-runde2.ps1`.
+
+**Haltung.** Manschette und Unterarm werden exakt wie heute gezeichnet (`Blade(t, w, tremble)`, `BladeForearm`). Nur das Keulenteil bekommt zusätzlich einen Knick um einen Drehpunkt im Dateiraum bei (0, 0, -0,06), also im Inneren der Manschette (Griff reicht von z -0,136 bis 0). Reihenfolge: Verschieben(-P), RotX(-Neigung), RotY(Auswärts), Verschieben(P), danach die Waffenhaltung.
+
+| Variante | Neigung | Auswärts | Befund Nahaufnahme |
+|---|---|---|---|
+| A | 20 Grad | 6 Grad | sauber, Knick kaum zu sehen |
+| B (empfohlen) | 35 Grad | 10 Grad | sauber, deutlich schräg |
+| C | 50 Grad | 15 Grad | Griffende sticht vorn durch die Manschette |
+
+**Schlag aus B** (Zeiten unverändert, 17 Ticks, `SwingCurve`): Knick im Treffer-Moment 0 Grad (Keule gerade in Schlagrichtung), beim vollen Ausholen 20 Grad Neigung und -10 Grad auswärts; dazwischen linear über dieselben Werte `swing` und `windUp` wie die Haltung. Der Ärmel folgt wie heute der Waffe und beginnt und endet in heutiger Lage.
+
+**Geprüft** (Bildfolge, 12 Phasen: Ruhe, Schlag Tick 1/2/4/6/11, Ausholen 25/60/100 %, Loslassen Tick 1/2/4): keine Lücke, kein Blick in die hohle Manschette, keine dunkle Fläche, nichts durch Bildrand oder Nahebene, der Kopf füllt das Bild nie.
+
+**Offen.**
+- Der Knick ist nur Probecode. Für den Einbau braucht es Tests wie die `WeaponPoseTests` der Klinge auch für die Keule (Reichweite, Nahebene, Durchstich der Manschette je Phase).
+- Die Drehpunkttiefe (-0,06) beim Einbau gegen die Manschettenöffnung prüfen.
+- Pistole und Keule überschneiden sich im Ruhebild leicht; wie in Runde 1 hingenommen.
+- Der Unterschied Ausholen zu Ruhe ist klein (20 statt 35 Grad); bei Bedarf stärker abheben.
