@@ -27,6 +27,7 @@ internal static class MenuArt
     private static readonly Color SheetEdge = new(163, 175, 187, 170);
 
     private static MenuParts? _parts;
+    private static MenuAtlas? _atlas;
     private static Texture2D _texture;
     private static MenuLayout? _layout;
 
@@ -45,7 +46,9 @@ internal static class MenuArt
     {
         try
         {
-            var parts = MenuParts.Parse(File.ReadAllText(Path.Combine(menuDirectory, "menu_parts.json")));
+            // The double atlas when it is there, otherwise the one of today (issue #409).
+            var file = AtlasChoice.Pick(menuDirectory, "menu_parts", File.Exists);
+            var parts = MenuParts.Parse(File.ReadAllText(file.Table));
             var imagePath = Path.Combine(menuDirectory, parts.Image);
             if (!File.Exists(imagePath))
             {
@@ -61,6 +64,7 @@ internal static class MenuArt
             Raylib.SetTextureFilter(texture, TextureFilter.Point);
             _texture = texture;
             _parts = parts;
+            _atlas = new MenuAtlas(parts, file.Scale);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
                                               or System.Text.Json.JsonException or FormatException
@@ -82,6 +86,7 @@ internal static class MenuArt
 
         Raylib.UnloadTexture(_texture);
         _parts = null;
+        _atlas = null;
     }
 
     /// <summary>The layout, measuring with the font the texts are drawn in.</summary>
@@ -190,7 +195,7 @@ internal static class MenuArt
 
     private static void DrawPanel(MenuPanel panel)
     {
-        if (_parts is not { } parts)
+        if (_atlas is not { } parts)
         {
             Raylib.DrawRectangleRec(ToRectangle(panel.Rect), PlainPanel with { A = PanelTint.A });
             Raylib.DrawRectangleLinesEx(ToRectangle(panel.Rect), 1f, PlainEdge);
@@ -206,7 +211,7 @@ internal static class MenuArt
 
     private static void DrawCursor(MenuCursor cursor)
     {
-        if (_parts is not { } parts)
+        if (_atlas is not { } parts)
         {
             Raylib.DrawRectangleLinesEx(ToRectangle(cursor.Rect), cursor.Small ? 1f : 2f, PlainGold);
             return;
@@ -217,7 +222,7 @@ internal static class MenuArt
 
     private static void DrawSlider(MenuSlider slider)
     {
-        if (_parts is not { } parts)
+        if (_atlas is not { } parts)
         {
             var trough = new Rectangle(slider.Left, slider.CentreY - 3, MenuLayout.SliderRight - MenuLayout.SliderLeft, 6);
             Raylib.DrawRectangleRec(trough, PlainTrough);
@@ -238,7 +243,7 @@ internal static class MenuArt
 
     private static void DrawTab(MenuTab tab)
     {
-        if (_parts is not { } parts)
+        if (_atlas is not { } parts)
         {
             var outline = MenuLayout.TabOutline(tab.Index, tab.Open, tab.Left, tab.Top);
             Raylib.DrawRectangleRec(ToRectangle(outline), PlainPanel with { A = PanelTint.A });

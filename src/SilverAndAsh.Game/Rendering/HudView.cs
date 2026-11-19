@@ -26,14 +26,16 @@ internal sealed class HudView : IDisposable
 
     private readonly HudParts _parts;
     private readonly HudLayout _layout;
+    private readonly HudAtlas _atlas;
     private readonly Texture2D _texture;
     private string? _toast;
     private float _toastLeft;
     private bool _disposed;
 
-    private HudView(HudParts parts, PixelFont font, Texture2D texture)
+    private HudView(HudParts parts, HudAtlas atlas, PixelFont font, Texture2D texture)
     {
         _parts = parts;
+        _atlas = atlas;
         _layout = new HudLayout(parts, font);
         _texture = texture;
     }
@@ -51,7 +53,11 @@ internal sealed class HudView : IDisposable
         {
             var parts = HudParts.Parse(File.ReadAllText(Path.Combine(hudDirectory, "hud_parts.json")));
             var font = PixelFont.Parse(File.ReadAllText(Path.Combine(fontsDirectory, "kapitell.json")));
-            var imagePath = Path.Combine(hudDirectory, parts.Image);
+
+            // The layout keeps the table of today; the picture is the double atlas when it is there (issue #409).
+            var file = AtlasChoice.Pick(hudDirectory, "hud_parts", File.Exists);
+            var picture = file.Scale == 1 ? parts : HudParts.Parse(File.ReadAllText(file.Table));
+            var imagePath = Path.Combine(hudDirectory, picture.Image);
             if (!File.Exists(imagePath))
             {
                 throw new FileNotFoundException("HUD parts picture missing.", imagePath);
@@ -60,11 +66,11 @@ internal sealed class HudView : IDisposable
             var texture = Raylib.LoadTexture(imagePath);
             if (texture.Width == 0)
             {
-                throw new InvalidOperationException($"HUD parts picture '{parts.Image}' could not be read.");
+                throw new InvalidOperationException($"HUD parts picture '{picture.Image}' could not be read.");
             }
 
             Raylib.SetTextureFilter(texture, TextureFilter.Point);
-            return new HudView(parts, font, texture);
+            return new HudView(parts, new HudAtlas(parts, picture, file.Scale), font, texture);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
                                               or System.Text.Json.JsonException or FormatException
@@ -124,9 +130,8 @@ internal sealed class HudView : IDisposable
         Raylib.BeginMode2D(camera);
         foreach (var part in picture.Parts)
         {
-            var source = _parts[part.Name];
-            Raylib.DrawTextureRec(_texture, new Rectangle(source.X, source.Y, part.Width, source.Height),
-                new Vector2(part.X, part.Y), Color.White);
+            var piece = _atlas.Piece(part);
+            Raylib.DrawTexturePro(_texture, ToRectangle(piece.Source), ToRectangle(piece.Target), Vector2.Zero, 0f, Color.White);
         }
 
         // The reload veil over the weapon picture (issue #370), inside the frame and shrinking towards the right as the
@@ -179,6 +184,8 @@ internal sealed class HudView : IDisposable
 
         PixelText.Draw(text, left, line.Top, line.FontSize, HintColor);
     }
+
+    private static Rectangle ToRectangle(MenuRect rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
 
     private Color ColorOf(HudTextColor color) => ColorOf(color switch
     {
