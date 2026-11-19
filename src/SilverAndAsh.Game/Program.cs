@@ -6,6 +6,7 @@ using SilverAndAsh.Core;
 using SilverAndAsh.Core.Audio;
 using SilverAndAsh.Core.Diagnostics;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Logging;
 using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.Presentation;
@@ -1064,9 +1065,10 @@ static void RunGame(
                     menuOpen = !menuOpen;
                 }
             }
-            else if (!Raylib.IsWindowFocused())
+            else
             {
-                menuOpen = true;
+                // Alt+Tab: the run holds and the mouse is free for the other window (issue #428).
+                menuOpen = FocusPause.MenuOpen(menuOpen, Raylib.IsWindowFocused());
             }
 
             if (menuOpen && !wasMenuOpen)
@@ -1122,7 +1124,7 @@ static void RunGame(
 
             // Both pages of the menu free the mouse, so it can click the tabs (issue #390).
             var playerMenuOpen = player.Menu.IsOpen;
-            var capture = !frozen && !onTitle && !boonOpen && !playerMenuOpen;
+            var capture = FocusPause.CapturesMouse(menuOpen, endSummary is not null, onTitle, boonOpen || playerMenuOpen);
             if (capture && !input.IsMouseCaptured)
             {
                 input.CaptureMouse();

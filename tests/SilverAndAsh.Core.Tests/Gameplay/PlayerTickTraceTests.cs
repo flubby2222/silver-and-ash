@@ -29,8 +29,10 @@ public class PlayerTickTraceTests
     // Checksums of the traces as Player.Tick wrote them before the split into phases (issue #325, main at 5fc2b73).
     // Changed on purpose in #413: a charge the stamina can no longer pay holds and lets the bar refill (first difference
     // in each run: the tick a stalled charge would have kept the empty bar from refilling).
+    // Gorm duel changed on purpose in #430: the chain swing reaches 12 m instead of 8 m, so it hits the bot where it
+    // missed before (parcours traces unchanged).
     // Two parcours seeds: together their bots reach almost every line of the tick (one alone misses a few).
-    private const string GormDuelChecksum = "8142306C796EEE705EEF3B6FB6EAB49753AEBDAE1A0027570D9FFBB9C446D1BA";
+    private const string GormDuelChecksum = "96A7BD0EF1B6A17085C2BC10AA9E77B3E2B7BDB48DAFDAA993F29E8BDF93577F";
 
     [Theory]
     [InlineData(1, "D9933F5097C3E8FAED875CB10664AA4B31447231594EBCB9647AFC7FE5AADE8A")]
