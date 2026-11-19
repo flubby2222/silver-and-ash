@@ -52,6 +52,8 @@ public sealed class GameWorld
     private List<(int X, int Z)> _enemyPathWalls = [];
     private Level _enemyLevel;
     private readonly List<Chest> _chests;
+    private readonly IReadOnlyList<TeleporterPlan> _teleporterPlan;
+    private readonly List<Teleporter> _teleporters;
     private bool _lossReported;
     private bool _endSummaryTaken;
     private ShowroomExhibits? _showroom;
@@ -64,11 +66,13 @@ public sealed class GameWorld
     /// start closed. Their cells must be walkable in <paramref name="level"/>. <paramref name="rooms"/> (optional) are
     /// the rooms of a generated level: enemies in combat and boss rooms sleep until a player enters, then the room
     /// becomes an arena (see <see cref="RoomState"/>). <paramref name="chests"/> (optional) are the chests of a generated
-    /// level; a combat room's chest rises once its room is cleared.
+    /// level; a combat room's chest rises once its room is cleared. <paramref name="teleporters"/> (optional) are the
+    /// teleporters of a generated level; they all start locked (issue #436).
     /// </summary>
     public GameWorld(
         Level level, int seed = 0, Balance? balance = null, IReadOnlyList<LevelDoor>? doors = null,
-        IReadOnlyList<PlacedRoom>? rooms = null, IReadOnlyList<ChestPlan>? chests = null)
+        IReadOnlyList<PlacedRoom>? rooms = null, IReadOnlyList<ChestPlan>? chests = null,
+        IReadOnlyList<TeleporterPlan>? teleporters = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         _levelWithOpenDoors = level;
@@ -120,6 +124,9 @@ public sealed class GameWorld
 
         _chestPlan = chests ?? [];
         _chests = _chestPlan.Select((plan, index) => new Chest(index, plan, level)).ToList();
+
+        _teleporterPlan = teleporters ?? [];
+        _teleporters = _teleporterPlan.Select((plan, index) => new Teleporter(index, plan, level)).ToList();
 
         _roomPlan = rooms ?? [];
 
@@ -424,6 +431,61 @@ public sealed class GameWorld
     /// <summary>The chests of the level, in the order they were given (hidden ones included).</summary>
     public IReadOnlyList<Chest> Chests => _chests;
 
+    /// <summary>The teleporters of the level, in the order they were given (their number is their place here).</summary>
+    public IReadOnlyList<Teleporter> Teleporters => _teleporters;
+
+    // Issue #436: a living player whose feet come within the radius of a locked teleporter unlocks it - for everyone.
+    private void UnlockTeleporters(Player player)
+    {
+        if (player.IsDead)
+        {
+            return;
+        }
+
+        foreach (var teleporter in _teleporters.Where(teleporter => !teleporter.IsUnlocked && teleporter.Reaches(player.Position, Balance.Teleporters.Radius)))
+        {
+            teleporter.Unlock();
+            _events.Add(new TeleporterUnlocked(teleporter.Id, player.Id, teleporter.Position));
+        }
+    }
+
+    /// <summary>
+    /// The unlocked teleporter <paramref name="player"/> stands on and could travel from right now - or null: when they
+    /// are dead, stand on none (or only on a locked one), or are in a sealed room (there it rests until the fight ends).
+    /// </summary>
+    public Teleporter? TeleporterUnder(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        if (player.IsDead || IsInSealedRoom(player))
+        {
+            return null;
+        }
+
+        return _teleporters.FirstOrDefault(teleporter => teleporter.IsUnlocked && teleporter.Reaches(player.Position, Balance.Teleporters.Radius));
+    }
+
+    private bool IsInSealedRoom(Player player) =>
+        _roomOfCell.TryGetValue(Level.ToGrid(player.Position.X, player.Position.Z), out var room) && room.IsSealed;
+
+    // Issue #436, input TeleportTo: from the unlocked teleporter the player stands on to another unlocked one. Anything
+    // else - no choice, an unknown number, a locked or the same teleporter, not standing on one, a sealed room - does nothing.
+    private void Teleport(Player player, int? target)
+    {
+        if (target is not { } id || id < 0 || id >= _teleporters.Count || TeleporterUnder(player) is not { } from)
+        {
+            return;
+        }
+
+        var to = _teleporters[id];
+        if (!to.IsUnlocked || ReferenceEquals(to, from))
+        {
+            return;
+        }
+
+        player.TeleportTo(to.Position);
+        _events.Add(new PlayerTeleported(player.Id, from.Id, to.Id, from.Position, to.Position));
+    }
+
     // The chests that block the way: standing or rising, not those still waiting under the floor (decision record 0008).
     private IEnumerable<Chest> StandingChests => _chests.Where(chest => chest.RiseFraction > 0f);
 
@@ -470,7 +532,7 @@ public sealed class GameWorld
     /// A fresh world for the same level: full health, every enemy back at its start - but with a new seed (taken
     /// from this one), so the bats fly differently than last time. The balancing values stay the same.
     /// </summary>
-    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan, _roomPlan, _chestPlan)
+    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan, _roomPlan, _chestPlan, _teleporterPlan)
     {
         Surfaces = Surfaces,
     };
@@ -1450,7 +1512,9 @@ public sealed class GameWorld
             Interact(Player);
         }
 
+        Teleport(Player, input.TeleportTo);
         EnterRooms(Player);
+        UnlockTeleporters(Player);
 
         foreach (var swing in Player.Events.OfType<MeleeSwung>())
         {
