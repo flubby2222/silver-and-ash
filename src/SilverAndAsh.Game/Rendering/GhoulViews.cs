@@ -132,6 +132,20 @@ internal sealed class GhoulAnimation
     /// <summary>The flash colour of the last hit.</summary>
     public Color FlashColor => FlashIsCritical ? GhoulAnimations.CriticalFlashColor : GhoulAnimations.FlashColor;
 
+    /// <summary>
+    /// The colour the eyes of <paramref name="ghoul"/> glow in, or null when they do not glow: while it announces a
+    /// blow, the step of the blood red ramp <see cref="GhoulEyes"/> picks (issue #447).
+    /// </summary>
+    public static Color? EyeGlow(Ghoul ghoul) => GhoulEyes.GlowStep(ghoul) switch
+    {
+        // Rows of "Blutrot" in assets/palette/hauptpalette.json.
+        3 => new Color(150, 20, 30, 255),
+        5 => new Color(200, 30, 40, 255),
+        6 => new Color(225, 58, 48, 255),
+        null => null,
+        var step => throw new InvalidOperationException($"No colour for blood red step {step}."),
+    };
+
     /// <summary>The flinch eased: a fast jerk, a soft return.</summary>
     public float EasedFlinch => Flinch * Flinch;
 
@@ -144,11 +158,19 @@ internal sealed class GhoulAnimation
 /// parts turned by code (<see cref="GhoulPose"/>). Crawling, the arms reach forward in turn and the legs push; winding
 /// up, it rears up around the hip, lifts its arms and opens its jaw wide (the warning to step away); the blow throws
 /// the torso and arms forward. It flashes when hit (blood red for a headshot), flinches back, and at death it sinks
-/// and rolls onto its side - the same movements as the placeholder.
+/// and rolls onto its side - the same movements as the placeholder. While it winds up, two small boxes in its eye
+/// sockets glow blood red (issue #447); they turn with the head.
 /// </summary>
 internal sealed class ModelGhoulView(TexturedModel model, LevelShader shader) : IGhoulView
 {
+    // The eye sockets, as tools/models/ghoul.py builds the head: centre (0, 0.81, 0.34), tilted up 14 degrees and
+    // rolled 10 degrees to the side; the sockets are the dents of the ring 0.005 below the centre, 0.032 to each side.
+    private static readonly Vector3 HeadCentre = new(0f, 0.81f, 0.34f);
+    private static readonly Vector3 EyeSize = new(0.024f, 0.018f, 0.012f);   // across, up, deep - small, inside the dent
+    private static readonly Matrix4x4[] EyeBoxes = EyeBoxesInFigure();
+
     private readonly GhoulAnimations _animations = new();
+    private readonly int _head = IndexOfHead(model);
     private readonly float[] _degrees = new float[GhoulPose.Parts.Count];
     private readonly Matrix4x4[] _turns = new Matrix4x4[GhoulPose.Parts.Count];
     private readonly Matrix4x4[] _frames = new Matrix4x4[GhoulPose.Parts.Count];
@@ -198,6 +220,46 @@ internal sealed class ModelGhoulView(TexturedModel model, LevelShader shader) : 
         {
             model.Draw(_frames);
         }
+
+        if (GhoulAnimation.EyeGlow(ghoul) is { } glow)
+        {
+            // From the figure's own space to "relative to the head pivot", then with the head into the world.
+            var toHead = Matrix4x4.CreateTranslation(-model.Rig.Pivots[_head]) * _frames[_head];
+            foreach (var eye in EyeBoxes)
+            {
+                ShadedBox.DrawGlowing(eye * toHead, EyeSize, glow);
+            }
+        }
+    }
+
+    private static int IndexOfHead(TexturedModel model)
+    {
+        var index = model.Rig.Names.ToList().IndexOf(GhoulPose.Head);
+        return index >= 0 ? index : throw new InvalidOperationException("The ghoul model has no head.");
+    }
+
+    // The two eye boxes in the figure's own space, turned like the head (same axes as the model script).
+    private static Matrix4x4[] EyeBoxesInFigure()
+    {
+        var tilt = Deg(14f);
+        var roll = Deg(10f);
+        var up = Vector3.Normalize(new Vector3(MathF.Sin(roll), MathF.Cos(roll) * MathF.Cos(tilt), -MathF.Sin(tilt) * MathF.Cos(roll)));
+        var forward = new Vector3(0f, MathF.Sin(tilt), MathF.Cos(tilt));
+        forward = Vector3.Normalize(forward - up * Vector3.Dot(forward, up));
+        var side = Vector3.Normalize(Vector3.Cross(up, forward));
+
+        var socketRow = HeadCentre + up * -0.005f;
+        return [Box(-1f), Box(1f)];
+
+        Matrix4x4 Box(float sign)
+        {
+            var centre = socketRow + side * (0.032f * sign) + forward * 0.052f;
+            return new Matrix4x4(
+                side.X, side.Y, side.Z, 0f,
+                up.X, up.Y, up.Z, 0f,
+                forward.X, forward.Y, forward.Z, 0f,
+                centre.X, centre.Y, centre.Z, 1f);
+        }
     }
 
     private static float Deg(float degrees) => degrees * MathF.PI / 180f;
@@ -207,7 +269,8 @@ internal sealed class ModelGhoulView(TexturedModel model, LevelShader shader) : 
 /// Placeholder ghoul made of boxes, drawn when the model cannot be loaded: crouched hips, a hunched torso, the head
 /// pushed forward, long arms reaching for the ground. Movement by code: the arms reach forward in turn while it
 /// crawls; winding up, it rears up and lifts its arms (the warning to step away); the blow is a short lunge. It
-/// flashes when hit (blood red for a headshot), flinches back, and at death it sinks and rolls onto its side.
+/// flashes when hit (blood red for a headshot), flinches back, and at death it sinks and rolls onto its side. While it
+/// winds up, its eyes glow blood red.
 /// </summary>
 internal sealed class PlaceholderGhoulView : IGhoulView
 {
@@ -282,7 +345,19 @@ internal sealed class PlaceholderGhoulView : IGhoulView
                 body;
             ShadedBox.Draw(arm, ArmSize, Shown(Skin));
         }
+
+        // Announcing a blow: two eyes glow blood red on the front of the head (issue #447).
+        if (GhoulAnimation.EyeGlow(ghoul) is { } glow)
+        {
+            foreach (var side in (ReadOnlySpan<float>)[-1f, 1f])
+            {
+                ShadedBox.DrawGlowing(Matrix4x4.CreateTranslation(0.06f * side, 0.86f, 0.51f) * body, PlaceholderEyeSize, glow);
+            }
+        }
     }
+
+    // Half inside the front of the head box (front face at z = 0.36 + 0.30 / 2 = 0.51).
+    private static readonly Vector3 PlaceholderEyeSize = new(0.05f, 0.03f, 0.02f);
 
     private static float Deg(float degrees) => degrees * MathF.PI / 180f;
 
