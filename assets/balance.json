@@ -146,7 +146,12 @@
     "swingTime": 0.6,                   // s the chain takes to sweep from his left over the front to his right ...
     "swingArc": 180,                    // ... along this arc (degrees): behind him you are safe
     "throwWindUp": 0.5,                 // s: the hook glows red -> step ASIDE or behind a pillar
-    "hookSpeed": 18,                    // m/s, straight to where you stood when he threw
+    "hookSpeed": 18,                    // m/s, straight to the point he aimed at
+    "hookLead": 1,                      // aims where you will be if you keep your pace (0 = where you stand) ... (provisional, #437)
+    "hookLeadMax": 6,                   // ... but at most this far (m) ahead
+    "hookLockTime": 0.2,                // s before the throw his aim locks: he stands rigid - stop or dodge NOW
+    "chaseThrowTime": 8,                // s chasing you without an attack, then he stops and throws anyway (0 = never) ...
+    "chaseWarnTime": 2,                 // ... the last s of it his hook swings at his side
     "throwDamage": 20,
     "pullDistance": 3,                  // m: a hit pulls you this close ...
     "pullTime": 0.4,                    // ... within this time, without control

@@ -56,7 +56,9 @@ public readonly record struct FallingStone(Vector3 At, float Progress);
 /// blow that hits nobody gets his club stuck: he bends forward (head lower) and takes double damage. His head is a
 /// weak spot (<see cref="HitZone.BossHead"/>). At half health he roars once and phase 2 begins: walking, warnings
 /// and pauses get faster, and every hammer blow shakes stones from the ceiling - each announced by its shadow on the
-/// floor. When he dies, his body stays where it fell.
+/// floor. When he dies, his body stays where it fell. His hook aims ahead of a running player and locks shortly before
+/// the throw - stop or dodge then; after a long chase without an attack he stops and throws anyway, warned by the
+/// swinging hook (issue #437).
 /// </summary>
 public sealed class Gorm : ITarget
 {
@@ -98,6 +100,14 @@ public sealed class Gorm : ITarget
     private readonly HashSet<Player> _sweptPlayers = new(ReferenceEqualityComparer.Instance);
     private float _hookTravelled;
 
+    // Issue #437: ticks of the locked aim before the throw, of chasing until the chase throw, and of its warning.
+    private readonly int _lockTicks;
+    private readonly int _chaseThrowTicks;
+    private readonly int _chaseWarnTicks;
+
+    // Walking ticks without an attack since his last one (or since he lost his target).
+    private int _chaseTicks;
+
     // Distance walked since his latest step (issue #298); standing still starts the count anew.
     private float _strideDistance;
 
@@ -122,6 +132,9 @@ public sealed class Gorm : ITarget
         _gravity = balance.Player.Gravity;
         _repathTicks = SimulationClock.SecondsToTicks(_gorm.RepathTime);
         _stoneTicks = Math.Max(1, SimulationClock.SecondsToTicks(_gorm.StoneWarning));
+        _lockTicks = SimulationClock.SecondsToTicks(_gorm.HookLockTime);
+        _chaseThrowTicks = SimulationClock.SecondsToTicks(_gorm.ChaseThrowTime);
+        _chaseWarnTicks = Math.Min(_chaseThrowTicks, SimulationClock.SecondsToTicks(_gorm.ChaseWarnTime));
         _random = random ?? new Random(id);
         _arena = arena;
         Health = _gorm.MaxHealth;
@@ -189,6 +202,36 @@ public sealed class Gorm : ITarget
     /// <summary>Where the hook is while it flies - null otherwise. The chain runs from his hand to it.</summary>
     public Vector3? Hook { get; private set; }
 
+    /// <summary>
+    /// Where his locked hook will fly (issue #437): set in the last moments of the throw's wind-up
+    /// (<see cref="GormBalance.HookLockTime"/>), while he stands rigid; null otherwise.
+    /// </summary>
+    public Vector3? HookAim { get; private set; }
+
+    /// <summary>
+    /// The warning before his chase throw (issue #437): his hook swings at his side, from 0 at its start to 1 when he
+    /// throws - null while there is none.
+    /// </summary>
+    public float? ChaseWarning
+    {
+        get
+        {
+            var start = _chaseThrowTicks - _chaseWarnTicks;
+            if (State != GormState.Walking || _chaseThrowTicks == 0 || _chaseWarnTicks == 0 || _chaseTicks < start)
+            {
+                return null;
+            }
+
+            return (float)(_chaseTicks - start) / _chaseWarnTicks;
+        }
+    }
+
+    /// <summary>
+    /// Where a hook that missed lies on the floor (issue #437) until his pause ends and the chain draws it back - null
+    /// otherwise. It fell from where <see cref="HookStopped"/> says.
+    /// </summary>
+    public Vector3? LyingHook { get; private set; }
+
     /// <summary>Where the hook leaves his hand.</summary>
     public Vector3 Hand => Position + new Vector3(0f, HookHeight, 0f) + (Facing * BodySizes.Gorm.Radius);
 
@@ -232,6 +275,8 @@ public sealed class Gorm : ITarget
             Velocity = Vector3.Zero;
             Shockwave = null;
             Hook = null;
+            HookAim = null;
+            LyingHook = null;
             _stones.Clear();
             events.Add(new GormDied(Id));
             return;
@@ -243,6 +288,8 @@ public sealed class Gorm : ITarget
             IsInPhase2 = true;
             Shockwave = null;
             Hook = null;
+            HookAim = null;
+            LyingHook = null;
             Attack = null;
             Begin(GormState.Roaring, _gorm.RoarTime);
             events.Add(new GormRoared(Id));
@@ -278,17 +325,7 @@ public sealed class Gorm : ITarget
                 break;
 
             case GormState.WindingUp:
-                if (target is not null)
-                {
-                    FaceTowards(target.Position);
-                }
-
-                Stand(level, obstacles);
-                if (--_stateTicksLeft == 0)
-                {
-                    Release(level, target, players, events);
-                }
-
+                WindUp(level, target, players, obstacles, events);
                 break;
 
             case GormState.Slamming:
@@ -323,10 +360,84 @@ public sealed class Gorm : ITarget
                 {
                     State = GormState.Walking;
                     Attack = null;
+                    LyingHook = null;
                 }
 
                 break;
         }
+    }
+
+    // The wind-up: he turns towards the target - until his aim locks in the last moments before a throw (issue #437).
+    private void WindUp(
+        Level level, Player? target, IReadOnlyList<Player> players, IReadOnlyList<CylinderBody> obstacles,
+        ICollection<GameEvent> events)
+    {
+        if (target is not null && HookAim is null)
+        {
+            FaceTowards(target.Position);
+        }
+
+        Stand(level, obstacles);
+        if (--_stateTicksLeft == 0)
+        {
+            Release(level, target, players, events);
+            return;
+        }
+
+        if (Attack == GormAttack.Throw && HookAim is null && _stateTicksLeft <= _lockTicks)
+        {
+            LockAim(level, target, events);
+        }
+    }
+
+    // Issue #437: his aim locks on where the target will be when the hook arrives if it keeps its pace; from now on he
+    // stands rigid. Without a living target he throws straight on.
+    private void LockAim(Level level, Player? target, ICollection<GameEvent> events)
+    {
+        var aim = target is null ? Position + (Facing * _gorm.FarRange) : AimAt(level, target);
+        FaceTowards(aim);
+        HookAim = aim;
+        events.Add(new GormHookLocked(Id, aim));
+    }
+
+    // Where the target will be at the hook's arrival - the rest of the lock plus the flight - at most HookLeadMax
+    // ahead. The flight time depends on where the hook flies, so a few rounds settle it (the hook is three times as fast
+    // as a player). If a pillar hides that point, he aims where the target stands.
+    private Vector3 AimAt(Level level, Player target)
+    {
+        var velocity = target.Velocity with { Y = 0f };
+        var untilThrow = _stateTicksLeft * SimulationClock.SecondsPerTick;
+        var lead = Vector3.Zero;
+        for (var round = 0; round < 4; round++)
+        {
+            var flight = MathF.Max(0f, FlatDistance(Position, target.Position + lead) - BodySizes.Gorm.Radius) / _gorm.HookSpeed;
+            lead = velocity * (_gorm.HookLead * (untilThrow + flight));
+            var length = lead.Length();
+            if (length > _gorm.HookLeadMax)
+            {
+                lead *= _gorm.HookLeadMax / length;
+            }
+        }
+
+        var aim = target.Position + lead;
+        return IsInSight(level, aim) ? aim : target.Position;
+    }
+
+    // A clear line from his hand to a player's middle standing at `feet`.
+    private bool IsInSight(Level level, Vector3 feet) =>
+        LineOfSight.IsClear(level, Hand, feet + new Vector3(0f, BodySizes.Player.Height / 2f, 0f));
+
+    // Issue #437: chasing a player for long without an attack, he throws anyway - even right after a throw. The count
+    // waits at its end while the target is out of sight or reach, and the warning (ChaseWarning) goes on meanwhile.
+    private GormAttack? ChaseThrow(Level level, Player target, float distance)
+    {
+        if (_chaseThrowTicks == 0 || ++_chaseTicks < _chaseThrowTicks)
+        {
+            return null;
+        }
+
+        _chaseTicks = _chaseThrowTicks;
+        return distance <= _gorm.FarRange && IsInSight(level, target.Position) ? GormAttack.Throw : null;
     }
 
     // In phase 2 walking, warnings and pauses take less time.
@@ -386,14 +497,16 @@ public sealed class Gorm : ITarget
     {
         if (target is null)
         {
+            _chaseTicks = 0;
             Stand(level, obstacles);
             return;
         }
 
         var distance = FlatDistance(Position, target.Position);
-        var attack = ChooseAttack(level, target, distance);
+        var attack = ChooseAttack(level, target, distance) ?? ChaseThrow(level, target, distance);
         if (attack is { } chosen)
         {
+            _chaseTicks = 0;
             FaceTowards(target.Position);
             Begin(GormState.WindingUp, chosen switch
             {
@@ -449,8 +562,7 @@ public sealed class Gorm : ITarget
             return options[_random.Next(options.Count)];
         }
 
-        var clear = LineOfSight.IsClear(level, Hand, target.Position + new Vector3(0f, BodySizes.Player.Height / 2f, 0f));
-        return distance <= _gorm.FarRange && _lastAttack != GormAttack.Throw && clear ? GormAttack.Throw : null;
+        return distance <= _gorm.FarRange && _lastAttack != GormAttack.Throw && IsInSight(level, target.Position) ? GormAttack.Throw : null;
     }
 
     // One tick of the swing: the chain moves on from where it was. Every living player it passes over (within reach,
@@ -513,7 +625,8 @@ public sealed class Gorm : ITarget
                 break;
 
             default:
-                // Straight ahead at hand height: he has turned to where the player stands now while winding up.
+                // Straight ahead at hand height: he has turned to his locked aim (issue #437).
+                HookAim = null;
                 _hookDirection = Facing;
                 _hookTravelled = 0f;
                 Hook = Hand;
@@ -589,6 +702,7 @@ public sealed class Gorm : ITarget
         {
             events.Add(new HookStopped(to));
             Hook = null;
+            LyingHook = new Vector3(from.X, level.CellAt(from).FloorHeight, from.Z);
             Rest();
             return;
         }

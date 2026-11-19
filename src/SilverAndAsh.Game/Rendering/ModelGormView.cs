@@ -29,6 +29,15 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
     // At rest the chain hangs from his fist to the floor and lies there this far (metres), out and forward.
     private const float DragLength = 1.1f;
 
+    // Issue #437 (display only, provisional): a missed hook falls from hand height to the floor in this time ...
+    private const float HookFallSeconds = 0.3f;
+    private const float DropHeight = 1.6f;
+
+    // ... and the warning before a chase throw swings the hook to and fro, ever wider.
+    private const float SwingStartDegrees = 10f;
+    private const float SwingEndDegrees = 35f;
+    private const float SwingsPerSecond = 1.5f;
+
     private static readonly Color FlashColor = new(255, 250, 235, 255);
     private static readonly Color CriticalFlashColor = new(230, 40, 50, 255);
     private static readonly Color Warning = new(200, 30, 30, 255);
@@ -54,6 +63,9 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
     private float _stridePhase;
     private float _time;
 
+    // How far a missed hook has fallen to the floor, 0 to 1 (issue #437).
+    private float _hookFall = 1f;
+
     public void OnEvent(GameEvent gameEvent)
     {
         switch (gameEvent)
@@ -65,6 +77,9 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
             case GormDied:
                 _dead = true;
                 break;
+            case HookStopped:
+                _hookFall = 0f;
+                break;
         }
     }
 
@@ -73,6 +88,7 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
         ArgumentNullException.ThrowIfNull(gorm);
         _flash = MathF.Max(0f, _flash - frameSeconds / FlashSeconds);
         _time += frameSeconds;
+        _hookFall = MathF.Min(1f, _hookFall + frameSeconds / HookFallSeconds);
         var dead = _dead || gorm.IsDead;
         if (dead)
         {
@@ -182,6 +198,18 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
             // Ready to throw: the hook hangs short below his fist and glows (forward over the floor while the fist is low).
             hook = GormChain.Ready(fist, gorm.Position.Y, gorm.Facing, _links);
         }
+        else if (!dead && gorm.LyingHook is { } lying)
+        {
+            hook = LyingHook(fist, lying);
+        }
+        else if (!dead && gorm.ChaseWarning is { } warning)
+        {
+            // Issue #437: chased too long, he swings the short hook to and fro - ever wider - before he throws anyway.
+            var amplitude = float.DegreesToRadians(SwingStartDegrees + ((SwingEndDegrees - SwingStartDegrees) * warning));
+            var angle = amplitude * MathF.Sin(_time * 2f * MathF.PI * SwingsPerSecond);
+            var swung = Vector3.TransformNormal(gorm.Facing, Matrix4x4.CreateRotationY(angle));
+            hook = GormChain.Ready(fist, gorm.Position.Y, swung, _links);
+        }
         else
         {
             // At rest: down from his fist to the floor, then lying there, out and forward.
@@ -206,6 +234,34 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
         {
             model.DrawPart(LinkIndex, link);
         }
+
+        DrawHook(hook, hookGlows);
+    }
+
+    // Issue #437: a missed hook drops from where it stopped (at hand height) to the floor and lies there, the chain
+    // slack from his fist, until his pause ends and he has it back.
+    private Matrix4x4 LyingHook(Vector3 fist, Vector3 lying)
+    {
+        var flat = (lying - fist) with { Y = 0f };
+        var along = flat.LengthSquared() > 0.0001f ? Vector3.Normalize(flat) : Vector3.UnitZ;
+        var drop = 1f - (_hookFall * _hookFall);
+        var tip = lying + new Vector3(0f, 0.03f + (DropHeight * drop), 0f);
+        var floor = fist with { Y = lying.Y + 0.03f };
+        if (fist.Y - floor.Y > GormChain.LinkLength)
+        {
+            GormChain.Lay(fist, floor, _links);
+            GormChain.Lay(floor, GormChain.HookEye(tip, along), _links, _links.Count);
+        }
+        else
+        {
+            GormChain.Lay(fist, GormChain.HookEye(tip, along), _links);
+        }
+
+        return GormChain.HookAt(tip, along, Vector3.UnitY);
+    }
+
+    private void DrawHook(Matrix4x4 hook, bool hookGlows)
+    {
 
         if (hookGlows)
         {

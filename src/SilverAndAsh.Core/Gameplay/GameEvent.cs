@@ -198,13 +198,22 @@ public sealed record GormSwingStarted(int GormId) : GameEvent;
 /// <summary>Gorm's chain swung round; <paramref name="Hit"/> tells whether it hit anyone. Comes at the end of the sweep.</summary>
 public sealed record GormSwung(int GormId, bool Hit) : GameEvent;
 
+/// <summary>
+/// Gorm's aim locked onto <paramref name="Aim"/> (issue #437): he stands rigid until the throw - stopping or dodging now
+/// escapes. Silent for now (the clack comes later with a listening test); drawn as dust at his foot.
+/// </summary>
+public sealed record GormHookLocked(int GormId, Vector3 Aim) : GameEvent;
+
 /// <summary>Gorm threw his hook from <paramref name="From"/> along <paramref name="Direction"/>.</summary>
 public sealed record GormThrew(int GormId, Vector3 From, Vector3 Direction) : GameEvent;
 
 /// <summary>The hook hit player <paramref name="PlayerId"/>: they are pulled to Gorm.</summary>
 public sealed record HookHit(int PlayerId) : GameEvent;
 
-/// <summary>The hook hit a wall or pillar at <paramref name="At"/> (or flew its range) and is drawn back.</summary>
+/// <summary>
+/// The hook hit a wall or pillar at <paramref name="At"/> (or flew its range): it falls and lies on the floor
+/// (<see cref="Gorm.LyingHook"/>) until his pause ends and the chain draws it back.
+/// </summary>
 public sealed record HookStopped(Vector3 At) : GameEvent;
 
 /// <summary>Gorm's hammer blow hit nobody: the club is stuck - he takes double damage for a while.</summary>
