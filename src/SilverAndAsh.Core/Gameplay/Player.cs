@@ -103,6 +103,16 @@ public sealed partial class Player
         Velocity = Vector3.Zero;
     }
 
+    /// <summary>
+    /// A teleporter carries the player: at rest with their feet on <paramref name="feet"/>, a chain pull ends (issue #436).
+    /// The previous position moves along, so the picture jumps instead of sliding through the walls.
+    /// </summary>
+    internal void TeleportTo(Vector3 feet)
+    {
+        PlaceAt(feet);
+        _pullTicksLeft = 0;
+    }
+
     internal void ChangeLevel(Level level) => _level = level ?? throw new ArgumentNullException(nameof(level));
 
     /// <summary>The camera "nod" after landing.</summary>
