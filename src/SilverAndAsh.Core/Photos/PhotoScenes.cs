@@ -155,7 +155,19 @@ public static class PhotoScenes
                 Ticks = 30,
                 Input = tick => PlayerInput.None with { SelectSlot = tick == 0 ? 1 : null },
             }),
-        new("hud-reload", "The pistol fired empty in the start room: \"Reload [R]\" under the crosshair (issue #259).",
+        new("hud-blunderbuss", "Like hud-weapons, but the blunderbuss chosen (3): its one round large above the weapons (issue #388).",
+            studio => new PhotoSetup(AllWeapons(studio.StartRun()))
+            {
+                Ticks = 30,
+                Input = tick => PlayerInput.None with { SelectSlot = tick == 0 ? 2 : null },
+            }),
+        new("hud-melee", "Like hud-weapons, the club held charging: the large rounds number gives way (issue #388).",
+            studio => new PhotoSetup(AllWeapons(studio.StartRun()))
+            {
+                Ticks = 20,
+                Input = _ => PlayerInput.None with { Melee = true },
+            }),
+        new("hud-reload","The pistol fired empty in the start room: \"Reload [R]\" under the crosshair (issue #259).",
             studio => new PhotoSetup(studio.StartRun())
             {
                 Ticks = 1200,
@@ -190,7 +202,7 @@ public static class PhotoScenes
             }),
         new("hud-reload-start", "The pistol just started reloading (R) with one round gone: the veil covers its picture (issue #370).",
             studio => ReloadingPistol(studio, 0.1f)),
-        new("hud-reload-mid", "The pistol half way through its reload: the veil has shrunk to half (issue #370).",
+        new("hud-reload-mid", "The pistol half way through its reload: the veil has shrunk to the right half of the frame (issues #370, #389).",
             studio => ReloadingPistol(studio, 0.5f)),
         new("hud-hit", "A ghoul's blow has just landed: the picture darkened for a moment, the ghoul still visible (issue #370).",
             studio => new PhotoSetup(studio.Arena('G', 4))
@@ -217,6 +229,11 @@ public static class PhotoScenes
             }),
         new("map", "The map page of the menu (Tab) early in a run: values and five chosen boons on the left, the map on the right (issues #347, #348).",
             studio => new PhotoSetup(WithBoons(studio.StartRun()))
+            {
+                Input = tick => PlayerInput.None with { PressMenu = tick == 0 ? MenuKey.Map : null },
+            }),
+        new("map-skillpoint", "The map page of the menu (Tab) while a boon waits: the yellow \"[X] to level up\" above the values (issue #387).",
+            studio => new PhotoSetup(LevelUp(Equipped(studio.StartRun())))
             {
                 Input = tick => PlayerInput.None with { PressMenu = tick == 0 ? MenuKey.Map : null },
             }),

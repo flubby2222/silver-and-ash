@@ -12,7 +12,7 @@ public class HudReadoutTests
     private static GameWorld PlainWorld() => new(LevelParser.Parse("P"));
 
     [Fact]
-    public void A_fresh_player_has_full_bars_level_one_and_no_boss_or_skill_point()
+    public void A_fresh_player_has_full_bars_level_zero_and_no_boss_or_skill_point()
     {
         var world = PlainWorld();
 
@@ -21,7 +21,7 @@ public class HudReadoutTests
         Assert.False(readout.IsDead);
         Assert.Equal(1f, readout.Life);
         Assert.Equal(1f, readout.Stamina);
-        Assert.Equal(1, readout.Level);
+        Assert.Equal(0, readout.Level);
         Assert.Equal(0f, readout.Experience);
         Assert.Equal(0, readout.PendingBoons);
         Assert.Null(readout.Boss);
@@ -45,7 +45,10 @@ public class HudReadoutTests
             var weapon = readout.Weapons[1 + slot];
             if (player.RangedSlots[slot] is { } ranged)
             {
-                Assert.Equal(new HudWeapon(ranged.Kind, ranged.Magazine.Rounds, ranged.Magazine.IsReloading, slot == player.SelectedSlot), weapon);
+                // Issue #388: with the size of its magazine for the large number.
+                Assert.Equal(new HudWeapon(ranged.Kind, ranged.Magazine.Rounds, ranged.Magazine.IsReloading, slot == player.SelectedSlot,
+                    ranged.Magazine.ReloadProgress, ranged.Magazine.Size), weapon);
+                Assert.Equal(world.Balance.Pistol.MagazineSize, weapon.MagazineSize);
             }
             else
             {
@@ -110,6 +113,32 @@ public class HudReadoutTests
     }
 
     [Fact]
+    public void The_melee_weapon_is_in_use_while_charged_and_until_it_is_ready_again()
+    {
+        // Issue #388: meanwhile the large rounds number gives way.
+        var world = PlainWorld();
+        var player = world.Player;
+        Assert.False(HudReadout.Of(world, player).IsMeleeInUse);
+
+        world.Tick(PlayerInput.None with { Melee = true });
+        Assert.True(player.MeleeCharge.IsCharging, "The charge never started - the test would prove nothing.");
+        Assert.True(HudReadout.Of(world, player).IsMeleeInUse);
+
+        world.Tick(PlayerInput.None);
+        Assert.False(player.MeleeCharge.IsCharging, "The swing never came - the test would prove nothing.");
+        Assert.True(HudReadout.Of(world, player).IsMeleeInUse);
+
+        var ticks = 0;
+        while (!player.MeleeCooldown.IsReady && ticks++ < 10 * SimulationClock.TicksPerSecond)
+        {
+            world.Tick(PlayerInput.None);
+        }
+
+        Assert.True(player.MeleeCooldown.IsReady);
+        Assert.False(HudReadout.Of(world, player).IsMeleeInUse);
+    }
+
+    [Fact]
     public void Spent_stamina_shows_as_the_share_left()
     {
         var world = PlainWorld();
@@ -156,7 +185,7 @@ public class HudReadoutTests
         player.AddExperience(player.ExperienceToNextLevel + 1, new List<GameEvent>());
         var readout = HudReadout.Of(world, player);
 
-        Assert.Equal(2, readout.Level);
+        Assert.Equal(1, readout.Level);
         Assert.Equal(1, readout.PendingBoons);
         Assert.Equal(1f / player.ExperienceToNextLevel, readout.Experience, 4);
     }

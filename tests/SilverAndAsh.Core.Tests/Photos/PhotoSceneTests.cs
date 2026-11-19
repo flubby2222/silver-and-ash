@@ -59,11 +59,11 @@ public class PhotoSceneTests
         string[] wanted =
         [
             "start-room", "room-combat", "room-corridor", "room-treasure", "room-secret", "room-boss",
-            "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map",
+            "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map", "map-skillpoint",
             "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "hud-rifle",
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload", "hud-texts",
             "hud-calm", "hud-items", "hud-boss", "hud-skillpoint", "hud-pickup",
-            "hud-reload-start", "hud-reload-mid", "hud-hit", "hud-lowlife", "hud-skillpoint-glow",
+            "hud-reload-start", "hud-reload-mid", "hud-hit", "hud-lowlife", "hud-skillpoint-glow", "hud-blunderbuss", "hud-melee",
             "gorm-hammer-windup", "gorm-shockwave",
             "door-normal", "door-normal-half", "door-normal-open", "door-locked", "door-locked-half", "door-locked-open",
             "door-boss", "door-boss-half", "door-boss-open", "door-cracked", "door-sideways-half", "door-level-seed1",
@@ -196,6 +196,27 @@ public class PhotoSceneTests
         Assert.Equal(share, weapon.ReloadProgress, 0.05f);
     }
 
+    [Theory]
+    [InlineData("hud-weapons", WeaponKind.Pistol, false)]
+    [InlineData("hud-rifle", WeaponKind.Rifle, false)]
+    [InlineData("hud-blunderbuss", WeaponKind.Blunderbuss, false)]
+    [InlineData("hud-reload", WeaponKind.Pistol, false)]
+    [InlineData("hud-melee", WeaponKind.Pistol, true)]
+    public void The_ammo_scenes_end_with_their_weapon_chosen_and_the_melee_weapon_in_use_only_in_the_melee_scene(
+        string name, WeaponKind chosen, bool meleeInUse)
+    {
+        // Issue #388: the photos of the large rounds number - pistol, rifle, blunderbuss, empty magazine and melee.
+        var setup = Built(name);
+
+        setup.Run();
+
+        var readout = HudReadout.Of(setup.World, setup.World.Player);
+        var weapon = Assert.Single(readout.Weapons, weapon => weapon.IsSelected);
+        Assert.Equal(chosen, weapon.Kind);
+        Assert.Equal(meleeInUse, readout.IsMeleeInUse);
+        Assert.Equal(name == "hud-reload" ? 0 : weapon.MagazineSize, weapon.Rounds);
+    }
+
     [Fact]
     public void The_hit_scene_stops_just_after_a_blow_while_the_picture_is_still_dark()
     {
@@ -245,7 +266,7 @@ public class PhotoSceneTests
         });
 
         Assert.True(ticks < setup.Ticks, "A shot ghoul should bring the level up long before the scene gives up.");
-        Assert.Equal(2, setup.World.Player.Level);
+        Assert.Equal(1, setup.World.Player.Level);
         Assert.True(effects.SkillPoint > 0.5f);
     }
 
@@ -367,12 +388,23 @@ public class PhotoSceneTests
     }
 
     [Fact]
-    public void Only_the_map_scene_shows_the_map_and_only_the_model_probes_are_probes()
+    public void The_map_scene_with_a_skill_point_opens_the_map_page_while_a_boon_waits()
+    {
+        var setup = Built("map-skillpoint");
+
+        setup.Run();
+
+        Assert.Equal(PlayerMenuPage.Map, setup.World.Player.Menu.Page);
+        Assert.True(setup.World.Player.PendingBoons > 0);
+    }
+
+    [Fact]
+    public void Only_the_map_scenes_show_the_map_and_only_the_model_probes_are_probes()
     {
         var studio = Studio();
         var setups = PhotoScenes.All.ToDictionary(scene => scene.Name, scene => scene.Build(studio));
 
-        Assert.Equal(["map"], setups.Where(pair => pair.Value.Input?.Invoke(0).PressMenu == MenuKey.Map).Select(pair => pair.Key));
+        Assert.Equal(["map", "map-skillpoint"], setups.Where(pair => pair.Value.Input?.Invoke(0).PressMenu == MenuKey.Map).Select(pair => pair.Key).Order());
         Assert.Equal(
             ["model-probe-10m", "model-probe-4m"],
             setups.Where(pair => pair.Value.IsModelProbe).Select(pair => pair.Key).Order());

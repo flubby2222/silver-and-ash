@@ -67,7 +67,7 @@ internal sealed class ScreenEffectsView : IDisposable
                 }
 
                 // Gold over red: the shine is short and should be seen even at low life.
-                if (ScreenEffects.IsEdgePixelOn(x, y, width, height, effects.SkillPoint))
+                if (ScreenEffects.IsSkillPointPixelOn(x, y, width, height, effects.SkillPoint))
                 {
                     _pixels[(y * width) + x] = SkillPointColor;
                 }

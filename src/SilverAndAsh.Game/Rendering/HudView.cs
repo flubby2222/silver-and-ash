@@ -38,6 +38,9 @@ internal sealed class HudView : IDisposable
         _texture = texture;
     }
 
+    /// <summary>Where the HUD puts its parts - the menus read the top left group from it (issue #387).</summary>
+    public HudLayout Layout => _layout;
+
     /// <summary>
     /// Loads the parts after the window is open (the picture becomes a texture on the graphics card). Null - with a
     /// warning in the log - if a file is missing or broken: the game then runs without a HUD.
@@ -126,19 +129,14 @@ internal sealed class HudView : IDisposable
                 new Vector2(part.X, part.Y), Color.White);
         }
 
-        // The reload veil over the weapon picture (issue #370), shrinking as the reload comes on; its right column is
-        // the light front edge.
+        // The reload veil over the weapon picture (issue #370), inside the frame and shrinking towards the right as the
+        // reload comes on (issue #389); its left column is the light front edge.
         var veilColor = ColorOf(_parts.ReloadVeil, _parts.ReloadVeilAlpha);
         var veilEdge = ColorOf(_parts.ReloadVeilEdge, _parts.ReloadVeilEdgeAlpha);
         foreach (var veil in picture.ReloadVeils)
         {
-            Raylib.DrawRectangle(veil.X, veil.Y, veil.Width - 1, veil.Height, veilColor);
-            Raylib.DrawRectangle(veil.Right - 1, veil.Y, 1, veil.Height, veilEdge);
-        }
-
-        if (picture.LifeEdge is { } edge)
-        {
-            Raylib.DrawRectangle(edge.X, edge.Y, edge.Width, edge.Height, ColorOf(_parts.LifeEdge));
+            Raylib.DrawRectangle(veil.X, veil.Y, 1, veil.Height, veilEdge);
+            Raylib.DrawRectangle(veil.X + 1, veil.Y, veil.Width - 1, veil.Height, veilColor);
         }
 
         var shadow = ColorOf(_parts.TextShadow);
@@ -186,6 +184,7 @@ internal sealed class HudView : IDisposable
     {
         HudTextColor.Second => _parts.TextSecond,
         HudTextColor.Pickup => _parts.TextPickup,
+        HudTextColor.Hint => _parts.TextHint,
         _ => _parts.TextMain,
     });
 

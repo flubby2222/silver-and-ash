@@ -57,6 +57,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `hud-texts` | alle Schriftzüge zugleich, jeder in seiner Zeile: „Reload [R]“ und „[F] Take Rifle (Forged)“ unter dem Fadenkreuz, „[X] Choose boon“ und die Weihezeit unten links (Issue #340) |
 | `inventory` | die Menüseite „Equipment“ (G) mit voller Tasche, oben die beiden Reiter (Issue #348) |
 | `map` | die Menüseite „Map“ (Tab) früh im Durchlauf: links Werte und fünf gewählte Boons, rechts die Karte (Issues #347, #348) |
+| `map-skillpoint` | die Menüseite „Map“ (Tab), während ein Bonus wartet: oben links der gelbe Hinweis „[X] to level up“ über der Werte-Tafel (Issue #387) |
 | `chests-4m` | die Kisten aller vier Stufen nebeneinander aus 4 m, geschlossen und verschlossen, dazu eine offene (Issue #249) |
 | `door-normal`, `door-locked`, `door-boss` | die Tür dieser Art geschlossen in einer leeren Halle aus 6 m (Issue #245) |
 | `door-normal-half`, `door-locked-half`, `door-boss-half` | dieselbe Tür halb aufgeschwungen (Fortschritt 0,5, im Bild geglättet) |

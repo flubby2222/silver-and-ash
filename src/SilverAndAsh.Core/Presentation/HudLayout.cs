@@ -15,6 +15,9 @@ public enum HudTextColor
 
     /// <summary>Gold: only the pickup toast.</summary>
     Pickup,
+
+    /// <summary>Yellow: only the hint to level up (issue #387).</summary>
+    Hint,
 }
 
 /// <summary>A rectangle of the HUD canvas in design pixels.</summary>
@@ -29,6 +32,9 @@ public readonly record struct HudRect(int X, int Y, int Width, int Height)
     /// <summary>Whether this rectangle and <paramref name="other"/> share at least one pixel.</summary>
     public bool Overlaps(HudRect other) =>
         X < other.Right && other.X < Right && Y < other.Bottom && other.Y < Bottom;
+
+    /// <summary>This rectangle made smaller by <paramref name="inset"/> on every side.</summary>
+    public HudRect Inset(int inset) => new(X + inset, Y + inset, Width - (2 * inset), Height - (2 * inset));
 }
 
 /// <summary>
@@ -44,11 +50,11 @@ public readonly record struct HudPlacedPart(string Name, int X, int Y, int Width
 public readonly record struct HudPlacedText(string Text, int X, int Top, int Scale, HudTextColor Color);
 
 /// <summary>
-/// Everything the HUD draws in one frame, in drawing order: parts first, then the reload veils, then texts, then the
-/// life edge. A reload veil (issue #370) lies over the picture of a weapon being reloaded, from the left; its rightmost
-/// column is its light front edge.
+/// Everything the HUD draws in one frame, in drawing order: parts first, then the reload veils, then texts. A reload
+/// veil (issue #370) lies over the picture of a weapon being reloaded, only inside the frame's rim and on the part still
+/// to go at the right (issue #389); its leftmost column is its light front edge, travelling from left to right.
 /// </summary>
-public sealed record HudPicture(IReadOnlyList<HudPlacedPart> Parts, IReadOnlyList<HudPlacedText> Texts, HudRect? LifeEdge)
+public sealed record HudPicture(IReadOnlyList<HudPlacedPart> Parts, IReadOnlyList<HudPlacedText> Texts)
 {
     /// <summary>The reload veils, one per weapon being reloaded.</summary>
     public IReadOnlyList<HudRect> ReloadVeils { get; init; } = [];
@@ -79,39 +85,35 @@ public readonly record struct HudCanvas(int Width, int Height)
 }
 
 /// <summary>
-/// Where the HUD draws what (issue #369): the approved design A3 with ornament V3 (art bible, section "HUD"), built
-/// from the parts of <see cref="HudParts"/> at their design positions. On a canvas wider or narrower than the design
-/// the groups keep to their corners or the middle; the bottom groups keep to the bottom edge. Pure arithmetic - the
+/// Where the HUD draws what (issues #369, #387): the frames of the approved design A3 with ornament V3 (art bible,
+/// section "HUD"), placed by one rule of spacing. Every frame body (its silver rim, without rivets and gable) keeps
+/// <see cref="Spacing"/> to the frame next to it and to the edge of the canvas; what stands above or below a row of
+/// frames keeps <see cref="Spacing"/> to their ornament. Inside a frame its contents share the dark ground with equal
+/// gaps to its edge and to each other; a sign and its number stand <see cref="SignGap"/> apart. Pure arithmetic - the
 /// Game project draws the result.
 /// </summary>
 public sealed class HudLayout
 {
-    /// <summary>Every bottom frame ends on this line of the 854 x 480 design (the frame body, without ornament below).</summary>
-    public const int BottomBaseline = 477;
+    /// <summary>The one gap of the HUD: between neighbouring frame bodies and between a frame body and the canvas edge.</summary>
+    public const int Spacing = 6;
+
+    /// <summary>Width of the silver rim of a frame body; the dark ground lies inside it.</summary>
+    public const int Rim = 3;
+
+    /// <summary>Between a sign and the number or text it stands for (coin and silver, key and keys, eye and toast).</summary>
+    public const int SignGap = 3;
+
+    /// <summary>Every bottom frame body ends on this line of a canvas 480 lines high, <see cref="Spacing"/> above its edge.</summary>
+    public const int BottomBaseline = HudCanvas.DesignHeight - Spacing;
 
     /// <summary>Height of a bottom frame body (above <see cref="BottomBaseline"/>), its dark ground inside.</summary>
     public const int BottomBodyHeight = 30;
 
-    /// <summary>Space kept between two groups next to each other, and between a group and a text beside it.</summary>
-    public const int GroupGap = 4;
+    /// <summary>Starts the small magazine size beside the large rounds number above the weapons ("/ 7", issue #388).</summary>
+    public const string MagazineMark = "/ ";
 
-    /// <summary>Right edge of the rounds inside a weapon frame, from the frame's left edge.</summary>
-    public const int RoundsRight = 38;
-
-    /// <summary>Middle row of the top frames' dark ground (level, skill point, currency).</summary>
-    public const int TopMiddle = 20;
-
-    /// <summary>The reload veil inside a weapon frame (as in the design): this far in from the frame's top left ...</summary>
-    public const int VeilInset = 3;
-
-    /// <summary>... this wide when the reload starts ...</summary>
-    public const int VeilWidth = 32;
-
-    /// <summary>... and this high.</summary>
-    public const int VeilHeight = 24;
-
-    private const int DesignWidth = 854;
-    private const int DesignHeight = 480;
+    /// <summary>The hint under the level while a boon waits to be chosen.</summary>
+    public const string LevelUpHint = "[X] to level up";
 
     private static readonly FrozenDictionary<WeaponKind, string> WeaponIcons = new Dictionary<WeaponKind, string>
     {
@@ -156,8 +158,22 @@ public sealed class HudLayout
     /// <summary>The name of the part for item <paramref name="kind"/>, or null if it has none yet.</summary>
     public static string? IconOf(ItemKind kind) => ItemIcons.GetValueOrDefault(kind);
 
+    /// <summary>
+    /// The line under the top left group (issue #387): level, experience and skill frames and, while a boon waits, the
+    /// yellow hint under them with its shadow. The same on every canvas - the group keeps to the top left corner. The
+    /// menus start their frame of values <see cref="Spacing"/> below it (<see cref="MenuLayout.SheetTopUnder"/>).
+    /// </summary>
+    public int TopLeftBottom => LevelHintTop() + _font.CapHeight + 1;
+
     /// <summary>The rectangle a placed part covers.</summary>
     public HudRect Bounds(HudPlacedPart part) => new(part.X, part.Y, part.Width, _parts[part.Name].Height);
+
+    /// <summary>The body of a placed frame on the canvas: its silver rim, without the ornament around.</summary>
+    public HudRect BodyOf(HudPlacedPart part)
+    {
+        var body = _parts[part.Name].Body;
+        return body with { X = part.X + body.X, Y = part.Y + body.Y };
+    }
 
     /// <summary>The rectangle a placed text covers, with its shadow one pixel below and right.</summary>
     public HudRect Bounds(HudPlacedText text) =>
@@ -170,193 +186,223 @@ public sealed class HudLayout
     public HudPicture Arrange(HudReadout readout, string? toast, HudCanvas canvas)
     {
         ArgumentNullException.ThrowIfNull(readout);
-        var picture = new Builder(this, canvas);
+        var picture = new Builder(this);
 
-        ArrangeItems(picture, readout.Items);
-        var lifeEdge = ArrangeVitals(picture, readout);
+        ArrangeItems(picture, readout.Items, canvas);
+        ArrangeVitals(picture, readout, canvas);
         if (!readout.IsDead)
         {
-            ArrangeWeapons(picture, readout);
-            picture.Part("crosshair", Anchor.Middle, Anchor.Middle);
+            ArrangeWeapons(picture, readout, canvas);
+            var crosshair = _parts["crosshair"];
+            picture.Part("crosshair", (canvas.Width / 2) - (crosshair.Width / 2), (canvas.Height / 2) - (crosshair.Height / 2));
         }
 
         ArrangeLevel(picture, readout);
         if (readout.Boss is { } boss)
         {
-            ArrangeBoss(picture, boss);
+            ArrangeBoss(picture, boss, canvas);
         }
 
-        ArrangeCurrency(picture, readout);
+        ArrangeCurrency(picture, readout, canvas);
         if (toast is not null)
         {
-            ArrangeToast(picture, toast);
+            ArrangeToast(picture, toast, canvas);
         }
 
-        return new HudPicture(picture.Parts, picture.Texts, lifeEdge) { ReloadVeils = picture.Veils };
+        return new HudPicture(picture.Parts, picture.Texts) { ReloadVeils = picture.Veils };
     }
 
     /// <summary>
-    /// The reload veil over a weapon frame whose left edge is <paramref name="frameX"/> and whose body ends on line
-    /// <paramref name="baseline"/>: inside the frame, covering the share still to go (1 - <paramref name="progress"/>)
-    /// from the left, so it shrinks as the reload comes on. Null once nothing is left to cover.
+    /// The reload veil over the dark ground <paramref name="ground"/> of a weapon frame (issue #389): only inside the
+    /// silver rim, covering the share still to go (1 - <paramref name="progress"/>) at the right, so its front edge
+    /// travels from left to right as the reload comes on. Null once nothing is left to cover.
     /// </summary>
-    public static HudRect? ReloadVeil(int frameX, int baseline, float progress)
+    public static HudRect? ReloadVeil(HudRect ground, float progress)
     {
-        var width = (int)MathF.Round(VeilWidth * (1f - Math.Clamp(progress, 0f, 1f)));
-        return width > 0 ? new HudRect(frameX + VeilInset, baseline - BottomBodyHeight + VeilInset, width, VeilHeight) : null;
+        var width = (int)MathF.Round(ground.Width * (1f - Math.Clamp(progress, 0f, 1f)));
+        return width > 0 ? ground with { X = ground.Right - width, Width = width } : null;
+    }
+
+    /// <summary>
+    /// Where things of the lengths <paramref name="sizes"/> start when they share the stretch from
+    /// <paramref name="start"/>, <paramref name="length"/> long, in order and with equal gaps before, between and after
+    /// them (the gaps differ by at most one pixel; they turn negative if the things are longer than the stretch). One
+    /// thing alone is centred.
+    /// </summary>
+    public static int[] Spread(int start, int length, IReadOnlyList<int> sizes)
+    {
+        ArgumentNullException.ThrowIfNull(sizes);
+        var free = length - sizes.Sum();
+        var places = new int[sizes.Count];
+        var at = start;
+        for (var i = 0; i < sizes.Count; i++)
+        {
+            at += FloorDiv((i + 1) * free, sizes.Count + 1) - FloorDiv(i * free, sizes.Count + 1);
+            places[i] = at;
+            at += sizes[i];
+        }
+
+        return places;
     }
 
     // Bottom left: one frame per item, as many as fit before the life frame; more items end in a "+N" frame.
-    private void ArrangeItems(Builder picture, IReadOnlyList<ItemKind> items)
+    private void ArrangeItems(Builder picture, IReadOnlyList<ItemKind> items, HudCanvas canvas)
     {
         if (items.Count == 0)
         {
             return;
         }
 
-        var first = _parts["frame_item_0"];
-        var step = _parts["frame_item_1"].LayoutX - first.LayoutX;
-        var limit = picture.X(_parts["frame_vitals"].LayoutX, Anchor.Middle) - GroupGap;
-        var fit = Math.Max(1, ((limit - first.LayoutX - first.Width) / step) + 1);
+        var body = _parts["frame_item_0"].Body;
+        var step = body.Width + Spacing;
+        var fit = Math.Max(1, (VitalsBodyX(canvas) - Spacing) / step);
         var shown = items.Count <= fit ? items.Count : fit - 1;
 
         for (var i = 0; i < Math.Min(items.Count, fit); i++)
         {
-            var frame = picture.Part($"frame_item_{i % 2}", Anchor.Start, Anchor.End, x: first.LayoutX + (i * step));
+            var ground = picture.Frame($"frame_item_{i % 2}", Spacing + (i * step), BottomBodyTop(canvas)).Inset(Rim);
             if (i >= shown)
             {
-                picture.CentredText(string.Create(CultureInfo.InvariantCulture, $"+{items.Count - shown}"),
-                    frame.X + (first.Width / 2), BottomMiddle(picture), 1, HudTextColor.Main);
+                picture.CentredText(string.Create(CultureInfo.InvariantCulture, $"+{items.Count - shown}"), ground, 1, HudTextColor.Main);
             }
             else if (IconOf(items[i]) is { } icon)
             {
-                var part = _parts[icon];
-                picture.Part(icon, frame.X + ((first.Width - part.Width + 1) / 2), BottomBodyTop(picture) + ((BottomBodyHeight - part.Height + 1) / 2));
+                picture.CentredPart(icon, ground);
             }
             else
             {
-                picture.CentredText(Items.Info(items[i]).Name[..1], frame.X + (first.Width / 2), BottomMiddle(picture),
-                    PixelFont.NumberScale, HudTextColor.Main);
+                picture.CentredText(Items.Info(items[i]).Name[..1], ground, PixelFont.NumberScale, HudTextColor.Main);
             }
         }
     }
 
-    // Bottom middle: the life bar and five stamina segments, both without a number.
-    private HudRect? ArrangeVitals(Builder picture, HudReadout readout)
+    // Bottom middle: the life bar and five stamina segments, both without a number, one above the other.
+    private void ArrangeVitals(Builder picture, HudReadout readout, HudCanvas canvas)
     {
-        picture.Part("frame_vitals", Anchor.Middle, Anchor.End);
-        var life = picture.Part("life_empty", Anchor.Middle, Anchor.End);
-        var full = _parts["life_full"];
-        var filled = (int)MathF.Round(full.Width * readout.Life);
-        HudRect? edge = null;
-        if (filled > 0)
-        {
-            picture.Part("life_full", life.X, life.Y, filled);
-            if (filled < full.Width)
-            {
-                edge = new HudRect(life.X + filled - 1, life.Y, 1, full.Height);
-            }
-        }
+        var ground = picture.Frame("frame_vitals", VitalsBodyX(canvas), BottomBodyTop(canvas)).Inset(Rim);
+        var life = _parts["life_empty"];
 
         const int Segments = 5;
+        var segments = Enumerable.Range(0, Segments).Select(i => _parts[$"stamina_{i}_empty"]).ToList();
+        var rowLeft = segments.Min(segment => segment.LayoutX);
+        var rowTop = segments.Min(segment => segment.LayoutY);
+        var rowWidth = segments.Max(segment => segment.LayoutX + segment.Width) - rowLeft;
+        var rowHeight = segments.Max(segment => segment.LayoutY + segment.Height) - rowTop;
+
+        var rows = Spread(ground.Y, ground.Height, [life.Height, rowHeight]);
+        var lifeX = Spread(ground.X, ground.Width, [life.Width])[0];
+        picture.Part("life_empty", lifeX, rows[0]);
+        var filled = (int)MathF.Round(_parts["life_full"].Width * readout.Life);
+        if (filled > 0)
+        {
+            picture.Part("life_full", lifeX, rows[0], filled);
+        }
+
+        var rowX = Spread(ground.X, ground.Width, [rowWidth])[0];
         for (var i = 0; i < Segments; i++)
         {
-            var segment = picture.Part($"stamina_{i}_empty", Anchor.Middle, Anchor.End);
+            var x = rowX + (segments[i].LayoutX - rowLeft);
+            var y = rows[1] + (segments[i].LayoutY - rowTop);
+            picture.Part($"stamina_{i}_empty", x, y);
             var width = _parts[$"stamina_{i}_full"].Width;
             var share = Math.Clamp((readout.Stamina * Segments) - i, 0f, 1f);
             var segmentFilled = (int)MathF.Round(width * share);
             if (segmentFilled > 0)
             {
-                picture.Part($"stamina_{i}_full", segment.X, segment.Y, segmentFilled);
+                picture.Part($"stamina_{i}_full", x, y, segmentFilled);
             }
         }
-
-        return edge;
     }
 
-    // Bottom right: the melee hand and the three ranged places; the chosen one lit, each ranged weapon with its rounds.
-    private void ArrangeWeapons(Builder picture, HudReadout readout)
+    // Bottom right: the melee hand and the three ranged places, the chosen one lit, each only with its picture; above
+    // the row the rounds of the chosen ranged weapon (issue #388), above them the consecrated time.
+    private void ArrangeWeapons(Builder picture, HudReadout readout, HudCanvas canvas)
     {
-        for (var i = 0; i < readout.Weapons.Count; i++)
+        var count = readout.Weapons.Count;
+        var bodyWidth = _parts["frame_weapon_0"].Body.Width;
+        var rowX = canvas.Width - Spacing - (count * bodyWidth) - ((count - 1) * Spacing);
+        for (var i = 0; i < count; i++)
         {
             var weapon = readout.Weapons[i];
             var frameName = weapon.IsSelected ? $"frame_weapon_{i}_active" : $"frame_weapon_{i}";
-            var frame = picture.Part(frameName, Anchor.End, Anchor.End);
-            var frameWidth = _parts[frameName].Width;
+            var bodyX = canvas.Width - Spacing - ((count - i) * bodyWidth) - ((count - 1 - i) * Spacing);
+            var body = picture.Frame(frameName, bodyX, BottomBodyTop(canvas));
+            var ground = body.Inset(Rim);
+            if (weapon.IsReloading && ReloadVeil(ground, weapon.ReloadProgress) is { } veil)
+            {
+                picture.Veils.Add(veil);
+            }
+
             if (weapon.Kind is not { } kind)
             {
                 continue;
             }
 
-            var iconRight = frame.X;
-            if (IconOf(kind) is { } icon)
+            // Only the picture, in the middle of the ground: the rounds stand above the row since issue #388.
+            if (IconOf(kind) is { } plain)
             {
-                var name = weapon.IsSelected ? icon + "_active" : icon;
-                var part = _parts[name];
-                var (offsetX, offsetY) = OffsetInWeaponFrame(_parts[icon]);
-                var placed = picture.Part(name, frame.X + offsetX, frame.Y + offsetY);
-                iconRight = placed.X + part.Width;
+                picture.CentredPart(weapon.IsSelected ? plain + "_active" : plain, ground);
             }
             else
             {
-                var initial = Weapons.Info(kind).Name[..1];
-                var text = picture.CentredText(initial, frame.X + (frameWidth / 2), BottomMiddle(picture), PixelFont.NumberScale,
-                    HudTextColor.Main);
-                iconRight = text.X + _font.Width(initial, PixelFont.NumberScale);
+                picture.CentredText(Weapons.Info(kind).Name[..1], ground, PixelFont.NumberScale, HudTextColor.Main);
             }
+        }
 
-            if (weapon.IsReloading && ReloadVeil(frame.X, picture.Y(BottomBaseline, Anchor.End), weapon.ReloadProgress) is { } veil)
-            {
-                picture.Veils.Add(veil);
-            }
-
-            if (weapon.Rounds is { } rounds)
-            {
-                var number = rounds.ToString(CultureInfo.InvariantCulture);
-                // Small, as in the design: the picture of the weapon is what the eye looks for.
-                var left = Math.Max(iconRight + 1, frame.X + RoundsRight - _font.Width(number));
-                picture.Text(number, left, BottomMiddle(picture) - (_font.CapHeight / 2), 1,
-                    weapon.IsReloading ? HudTextColor.Second : HudTextColor.Main);
-            }
+        // What stands above the row ends this line: Spacing above the ornament of the weapon frames.
+        var above = BottomBodyTop(canvas) - _parts["frame_weapon_0"].Body.Y - Spacing;
+        if (ArrangeRounds(picture, readout, rowX, canvas.Width - Spacing - rowX, above) is { } roundsTop)
+        {
+            above = roundsTop - Spacing;
         }
 
         if (readout.ConsecratedSecondsLeft > 0f)
         {
             var seconds = (int)MathF.Ceiling(readout.ConsecratedSecondsLeft);
             var text = string.Create(CultureInfo.InvariantCulture, $"Consecrated {seconds}s");
-            var last = _parts["frame_weapon_3"];
-            var right = picture.X(last.LayoutX + last.Width, Anchor.End) - GroupGap;
-            var top = picture.Y(last.LayoutY, Anchor.End) - GroupGap - _font.CapHeight - 1;
-            picture.Text(text, right - _font.Width(text), top, 1, HudTextColor.Main);
+            var size = TextSize(text, 1);
+            picture.Text(text, canvas.Width - Spacing - size.Width, above - size.Height, 1, HudTextColor.Main);
         }
     }
 
-    // Where a weapon picture sits inside its frame: as in the design, in whichever frame the design shows it.
-    private (int X, int Y) OffsetInWeaponFrame(HudPart icon)
+    // In the middle above the weapon row (issue #388), ending on line `bottom`: the rounds of the chosen ranged weapon
+    // large, the size of its magazine small beside them ("7 / 7" - the supply itself is unlimited). Nothing while the
+    // melee weapon is in use or no weapon with rounds is chosen. Returns the top of the large number, else null.
+    private int? ArrangeRounds(Builder picture, HudReadout readout, int rowX, int rowWidth, int bottom)
     {
-        for (var i = 0; i < 1 + Player.RangedSlotCount; i++)
+        if (readout.IsMeleeInUse || readout.Weapons.FirstOrDefault(weapon => weapon.IsSelected) is not { Rounds: { } rounds } chosen)
         {
-            var frame = _parts[$"frame_weapon_{i}"];
-            if (icon.LayoutX >= frame.LayoutX && icon.LayoutX < frame.LayoutX + frame.Width)
-            {
-                return (icon.LayoutX - frame.LayoutX, icon.LayoutY - frame.LayoutY);
-            }
+            return null;
         }
 
-        throw new InvalidOperationException($"The design shows '{icon.Name}' in no weapon frame.");
+        var large = rounds.ToString(CultureInfo.InvariantCulture);
+        var largeSize = TextSize(large, PixelFont.NumberScale);
+        var small = chosen.MagazineSize is { } magazine ? string.Create(CultureInfo.InvariantCulture, $"{MagazineMark}{magazine}") : null;
+        var smallSize = small is null ? (Width: 0, Height: 0) : TextSize(small, 1);
+        var x = Spread(rowX, rowWidth, [largeSize.Width + (small is null ? 0 : SignGap + smallSize.Width)])[0];
+
+        var top = bottom - largeSize.Height;
+        picture.Text(large, x, top, PixelFont.NumberScale, chosen.IsReloading ? HudTextColor.Second : HudTextColor.Main);
+        if (small is not null)
+        {
+            picture.Text(small, x + largeSize.Width + SignGap, bottom - smallSize.Height, 1, HudTextColor.Second);
+        }
+
+        return top;
     }
 
-    // Top left: the level with its number, the experience bar, and while a boon waits the skill point with its key.
+    // Top left: the level with its number, the experience bar, and while a boon waits the skill point and the hint.
     private void ArrangeLevel(Builder picture, HudReadout readout)
     {
-        var level = picture.Part("frame_level", Anchor.Start, Anchor.Start);
-        var levelPart = _parts["frame_level"];
+        var level = picture.Frame("frame_level", Spacing, Spacing);
+        var levelGround = level.Inset(Rim);
         var number = readout.Level.ToString(CultureInfo.InvariantCulture);
-        var scale = _font.Width(number, PixelFont.NumberScale) <= levelPart.Width - 12 ? PixelFont.NumberScale : 1;
-        picture.CentredText(number, level.X + (levelPart.Width / 2), TopMiddle - 2, scale, HudTextColor.Main);
+        var scale = TextSize(number, PixelFont.NumberScale).Width <= levelGround.Width ? PixelFont.NumberScale : 1;
+        picture.CentredText(number, levelGround, scale, HudTextColor.Main);
 
-        picture.Part("frame_xp", Anchor.Start, Anchor.Start);
-        var bar = picture.Part("xp_empty", Anchor.Start, Anchor.Start);
+        var xpBody = _parts["frame_xp"].Body;
+        var xp = picture.Frame("frame_xp", level.Right + Spacing, Spread(level.Y, level.Height, [xpBody.Height])[0]);
+        var bar = picture.CentredPart("xp_empty", xp.Inset(Rim));
         var filled = (int)MathF.Round(_parts["xp_full"].Width * readout.Experience);
         if (filled > 0)
         {
@@ -368,79 +414,97 @@ public sealed class HudLayout
             return;
         }
 
-        var skill = picture.Part("frame_skill_0", Anchor.Start, Anchor.Start);
-        var skillPart = _parts["frame_skill_0"];
-        var star = _parts["icon_skillpoint"];
-        picture.Part("icon_skillpoint", skill.X + ((skillPart.Width - star.Width + 1) / 2), star.LayoutY);
+        var skill = picture.Frame("frame_skill_0", xp.Right + Spacing, Spacing);
+        picture.CentredPart("icon_skillpoint", skill.Inset(Rim));
 
-        var key = _parts["frame_prompt"];
-        var keyTop = TopMiddle - (key.Height / 2);
-        var cap = picture.Part("frame_prompt", skill.X + skillPart.Width + GroupGap - 1, keyTop);
-        picture.CentredText("X", cap.X + (key.Width / 2), keyTop + (key.Height / 2), 1, HudTextColor.Main);
+        picture.Text(LevelUpHint, Spacing, LevelHintTop(), 1, HudTextColor.Hint);
     }
 
-    // Top middle, only in a boss fight: the boss's name and a thin bar of his health.
-    private void ArrangeBoss(Builder picture, HudBoss boss)
+    // Where the hint to level up starts: Spacing under the ornament of the level, experience and skill frames, placed as
+    // ArrangeLevel places them (bodies on line Spacing, the experience body centred on the level body).
+    private int LevelHintTop()
     {
-        var frame = picture.Part("frame_boss", Anchor.Middle, Anchor.Start);
-        var framePart = _parts["frame_boss"];
-        var bar = picture.Part("boss_empty", Anchor.Middle, Anchor.Start);
+        var level = _parts["frame_level"];
+        var xp = _parts["frame_xp"];
+        var skill = _parts["frame_skill_0"];
+        var xpBodyY = Spread(Spacing, level.Body.Height, [xp.Body.Height])[0];
+        var ornamentBottom = Math.Max(
+            Spacing - level.Body.Y + level.Height,
+            Math.Max(xpBodyY - xp.Body.Y + xp.Height, Spacing - skill.Body.Y + skill.Height));
+        return ornamentBottom + Spacing;
+    }
+
+    // Top middle, only in a boss fight: the boss's name above a thin bar of his health.
+    private void ArrangeBoss(Builder picture, HudBoss boss, HudCanvas canvas)
+    {
+        var body = _parts["frame_boss"].Body;
+        var ground = picture.Frame("frame_boss", (canvas.Width - body.Width) / 2, Spacing).Inset(Rim);
+        var bar = _parts["boss_empty"];
+        var name = TextSize(boss.Name, 1);
+        var rows = Spread(ground.Y, ground.Height, [name.Height, bar.Height]);
+
+        picture.Text(boss.Name, Spread(ground.X, ground.Width, [name.Width])[0], rows[0], 1, HudTextColor.Main);
+        var barX = Spread(ground.X, ground.Width, [bar.Width])[0];
+        picture.Part("boss_empty", barX, rows[1]);
         var filled = (int)MathF.Round(_parts["boss_full"].Width * boss.Health);
         if (filled > 0)
         {
-            picture.Part("boss_full", bar.X, bar.Y, filled);
+            picture.Part("boss_full", barX, rows[1], filled);
         }
-
-        var nameTop = bar.Y - GroupGap - _font.CapHeight - 1;
-        picture.Text(boss.Name, frame.X + ((framePart.Width - _font.Width(boss.Name)) / 2), nameTop, 1, HudTextColor.Main);
     }
 
-    // Top right: silver behind its coin, keys at the right end with the key in front of the number.
-    private void ArrangeCurrency(Builder picture, HudReadout readout)
+    // Top right: silver behind its coin, keys behind the key - two signs with their numbers, spread over the ground.
+    private void ArrangeCurrency(Builder picture, HudReadout readout, HudCanvas canvas)
     {
-        var frame = picture.Part("frame_currency", Anchor.End, Anchor.Start);
-        var framePart = _parts["frame_currency"];
+        var body = _parts["frame_currency"].Body;
+        var ground = picture.Frame("frame_currency", canvas.Width - Spacing - body.Width, Spacing).Inset(Rim);
         var coin = _parts["icon_coin"];
         var key = _parts["icon_key"];
-        var coinPlaced = picture.Part("icon_coin", Anchor.End, Anchor.Start);
-
-        var keys = readout.Keys.ToString(CultureInfo.InvariantCulture);
-        var keysRight = frame.X + framePart.Width - 14;
-        var keysScale = _font.Width(keys, PixelFont.NumberScale) <= 12 ? PixelFont.NumberScale : 1;
-        var keysLeft = keysRight - _font.Width(keys, keysScale);
-        picture.Text(keys, keysLeft, TopMiddle - (_font.CapHeight * keysScale / 2), keysScale, HudTextColor.Main);
-        var keyX = keysLeft - 7 - key.Width;
-        picture.Part("icon_key", keyX, key.LayoutY);
-
         var silver = readout.Silver.ToString(CultureInfo.InvariantCulture);
-        var silverLeft = coinPlaced.X + coin.Width + GroupGap + 1;
-        var silverScale = silverLeft + _font.Width(silver, PixelFont.NumberScale) <= keyX - GroupGap ? PixelFont.NumberScale : 1;
-        picture.Text(silver, silverLeft, TopMiddle - (_font.CapHeight * silverScale / 2), silverScale, HudTextColor.Main);
+        var keys = readout.Keys.ToString(CultureInfo.InvariantCulture);
+
+        // Large numbers while both fit with gaps of at least one sign gap; else the silver small first, then both.
+        var (silverScale, keysScale) = new[] { (PixelFont.NumberScale, PixelFont.NumberScale), (1, PixelFont.NumberScale), (1, 1) }
+            .FirstOrDefault(scales => coin.Width + key.Width + (2 * SignGap) + TextSize(silver, scales.Item1).Width
+                + TextSize(keys, scales.Item2).Width + (3 * SignGap) <= ground.Width, (1, 1));
+
+        var silverWidth = coin.Width + SignGap + TextSize(silver, silverScale).Width;
+        var keysWidth = key.Width + SignGap + TextSize(keys, keysScale).Width;
+        var xs = Spread(ground.X, ground.Width, [silverWidth, keysWidth]);
+
+        picture.Part("icon_coin", xs[0], Spread(ground.Y, ground.Height, [coin.Height])[0]);
+        picture.Text(silver, xs[0] + coin.Width + SignGap, Spread(ground.Y, ground.Height, [TextSize(silver, silverScale).Height])[0],
+            silverScale, HudTextColor.Main);
+        picture.Part("icon_key", xs[1], Spread(ground.Y, ground.Height, [key.Height])[0]);
+        picture.Text(keys, xs[1] + key.Width + SignGap, Spread(ground.Y, ground.Height, [TextSize(keys, keysScale).Height])[0],
+            keysScale, HudTextColor.Main);
     }
 
-    // Above the bottom left: the gold toast of what was just picked up.
-    private void ArrangeToast(Builder picture, string toast)
+    // Above the bottom left, clear of the item frames' ornament: the gold toast of what was just picked up.
+    private void ArrangeToast(Builder picture, string toast, HudCanvas canvas)
     {
-        var frame = picture.Part("frame_toast", Anchor.Start, Anchor.End);
-        var framePart = _parts["frame_toast"];
-        var eye = picture.Part("icon_toast_eye", Anchor.Start, Anchor.End);
-        var top = frame.Y + ((framePart.Height - _font.CapHeight + 1) / 2);
-        picture.Text(toast, eye.X + _parts["icon_toast_eye"].Width + 7, top, 1, HudTextColor.Pickup);
+        var body = _parts["frame_toast"].Body;
+        var itemOrnamentTop = BottomBodyTop(canvas) - _parts["frame_item_0"].Body.Y;
+        var ground = picture.Frame("frame_toast", Spacing, itemOrnamentTop - Spacing - body.Height).Inset(Rim);
+        var eye = _parts["icon_toast_eye"];
+        var text = TextSize(toast, 1);
+        var x = Spread(ground.X, ground.Width, [eye.Width + SignGap + text.Width])[0];
+        picture.Part("icon_toast_eye", x, Spread(ground.Y, ground.Height, [eye.Height])[0]);
+        picture.Text(toast, x + eye.Width + SignGap, Spread(ground.Y, ground.Height, [text.Height])[0], 1, HudTextColor.Pickup);
     }
 
-    private static int BottomBodyTop(Builder picture) => picture.Y(BottomBaseline - BottomBodyHeight, Anchor.End);
+    private int VitalsBodyX(HudCanvas canvas) => (canvas.Width - _parts["frame_vitals"].Body.Width) / 2;
 
-    private static int BottomMiddle(Builder picture) => picture.Y(BottomBaseline - (BottomBodyHeight / 2), Anchor.End);
+    private static int BottomBodyTop(HudCanvas canvas) => canvas.Height - Spacing - BottomBodyHeight;
 
-    private enum Anchor
-    {
-        Start,
-        Middle,
-        End,
-    }
+    // The rectangle a text covers with its shadow.
+    private (int Width, int Height) TextSize(string text, int scale) =>
+        (_font.Width(text, scale) + 1, (_font.CapHeight * scale) + 1);
 
-    // Collects the placed parts and texts; moves design positions to their corner or the middle of the canvas.
-    private sealed class Builder(HudLayout layout, HudCanvas canvas)
+    private static int FloorDiv(int a, int b) => (int)Math.Floor((double)a / b);
+
+    // Collects the placed parts and texts.
+    private sealed class Builder(HudLayout layout)
     {
         public List<HudPlacedPart> Parts { get; } = [];
 
@@ -448,23 +512,27 @@ public sealed class HudLayout
 
         public List<HudRect> Veils { get; } = [];
 
-        public int X(int designX, Anchor anchor) => designX + Shift(anchor, canvas.Width, DesignWidth);
-
-        public int Y(int designY, Anchor anchor) => designY + Shift(anchor, canvas.Height, DesignHeight);
-
-        // The part at its design position, moved with its group.
-        public HudPlacedPart Part(string name, Anchor horizontal, Anchor vertical, int? x = null)
-        {
-            var part = layout._parts[name];
-            return Part(name, X(x ?? part.LayoutX, horizontal), Y(part.LayoutY, vertical));
-        }
-
-        // The part at a place already on the canvas.
+        // The part with its top left corner at a place of the canvas.
         public HudPlacedPart Part(string name, int x, int y, int? width = null)
         {
             var placed = new HudPlacedPart(name, x, y, width ?? layout._parts[name].Width);
             Parts.Add(placed);
             return placed;
+        }
+
+        // A frame whose body has its top left corner at a place of the canvas; returns the body.
+        public HudRect Frame(string name, int bodyX, int bodyY)
+        {
+            var body = layout._parts[name].Body;
+            Part(name, bodyX - body.X, bodyY - body.Y);
+            return body with { X = bodyX, Y = bodyY };
+        }
+
+        // A part centred in a rectangle of the canvas.
+        public HudPlacedPart CentredPart(string name, HudRect area)
+        {
+            var part = layout._parts[name];
+            return Part(name, Spread(area.X, area.Width, [part.Width])[0], Spread(area.Y, area.Height, [part.Height])[0]);
         }
 
         public HudPlacedText Text(string text, int x, int top, int scale, HudTextColor color)
@@ -474,15 +542,11 @@ public sealed class HudLayout
             return placed;
         }
 
-        // A text centred on a point of the canvas.
-        public HudPlacedText CentredText(string text, int centreX, int centreY, int scale, HudTextColor color) =>
-            Text(text, centreX - (layout._font.Width(text, scale) / 2), centreY - (layout._font.CapHeight * scale / 2), scale, color);
-
-        private static int Shift(Anchor anchor, int size, int design) => anchor switch
+        // A text (with its shadow) centred in a rectangle of the canvas.
+        public HudPlacedText CentredText(string text, HudRect area, int scale, HudTextColor color)
         {
-            Anchor.Start => 0,
-            Anchor.Middle => (size - design) / 2,
-            _ => size - design,
-        };
+            var size = layout.TextSize(text, scale);
+            return Text(text, Spread(area.X, area.Width, [size.Width])[0], Spread(area.Y, area.Height, [size.Height])[0], scale, color);
+        }
     }
 }

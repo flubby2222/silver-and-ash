@@ -258,6 +258,7 @@ static void RunGame(
 
         // The HUD from its parts picture (issue #369).
         hud = HudView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "hud"), fontsDirectory, log);
+        MenuArt.PlaceUnder(hud);
 
         // Balancing values from assets/balance.json - a broken file only costs warnings in the log, never the game.
         var balancePath = Path.Combine(AppContext.BaseDirectory, "assets", "balance.json");
@@ -639,7 +640,7 @@ static void RunGame(
 
             if (player.IsInventoryOpen && !frozen)
             {
-                InventoryWindow.Draw(player);
+                InventoryWindow.Draw(gameWorld, player);
             }
             else if (boonOpen && !frozen)
             {
@@ -1084,7 +1085,10 @@ static void RunGame(
             // is open (a click chooses; you walk on with the keys; only the player closes it, issue #346).
             var frozen = menuOpen || endSummary is not null;
             var inventoryOpen = player.IsInventoryOpen;
-            var capture = !frozen && !onTitle && !boonOpen && !inventoryOpen;
+
+            // Both pages of the menu free the mouse, so it can click the tabs (issue #390).
+            var playerMenuOpen = player.Menu.IsOpen;
+            var capture = !frozen && !onTitle && !boonOpen && !playerMenuOpen;
             if (capture && !input.IsMouseCaptured)
             {
                 input.CaptureMouse();
@@ -1095,7 +1099,7 @@ static void RunGame(
             }
 
             // 1. Input: looking around happens every frame, so it feels immediate.
-            var playerInput = input.Read(keysWithFreeMouse: (boonOpen || inventoryOpen) && !frozen);
+            var playerInput = input.Read(keysWithFreeMouse: (boonOpen || playerMenuOpen) && !frozen);
             player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
             slotChosen = playerInput.SelectSlot ?? slotChosen;
@@ -1135,6 +1139,11 @@ static void RunGame(
                     && !Raylib.IsKeyDown(KeyboardKey.RightAlt))
                 {
                     menuKey ??= MenuKey.Map;
+                }
+                else if (playerMenuOpen)
+                {
+                    // A click on a tab turns to its page (issue #390) - as input in the tick, like the keys.
+                    menuKey ??= MenuTabs.Pick();
                 }
             }
 

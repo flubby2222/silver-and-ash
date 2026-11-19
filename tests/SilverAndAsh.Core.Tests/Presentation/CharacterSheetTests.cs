@@ -46,7 +46,7 @@ public class CharacterSheetTests
 
         Assert.Equal(
             [
-                new("Level", "1"),
+                new("Level", "0"),
                 new("Health", Text($"{Default.Player.MaxHealth} / {Default.Player.MaxHealth}")),
                 new("Stamina", Text($"{world.Player.Stamina.Segments} / {world.Player.Stamina.Segments} bars")),
                 new("Stamina regen", "100 %"),
@@ -172,7 +172,7 @@ public class CharacterSheetTests
         Assert.Equal(Text($"{(1f + Boons.StaminaRegen) * 100f:0.#} %"), Value(world, "Stamina regen"));
         Assert.Equal(Text($"{(1f + (2 * Boons.Experience)) * 100f:0.#} %"), Value(world, "Experience"));
         Assert.Equal(Text($"{world.Player.Level}"), Value(world, "Level"));
-        Assert.Equal("6", Value(world, "Level"));
+        Assert.Equal("5", Value(world, "Level"));
     }
 
     [Fact]

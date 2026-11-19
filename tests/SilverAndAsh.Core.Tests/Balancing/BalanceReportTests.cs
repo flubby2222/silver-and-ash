@@ -99,15 +99,15 @@ public class BalanceReportTests
     }
 
     [Theory]
-    [InlineData(0, 1)]
-    [InlineData(99, 1)]
-    [InlineData(100, 2)]
-    [InlineData(224, 2)]
-    [InlineData(225, 3)]
-    [InlineData(381, 4)]
+    [InlineData(0, 0)]
+    [InlineData(99, 0)]
+    [InlineData(100, 1)]
+    [InlineData(224, 1)]
+    [InlineData(225, 2)]
+    [InlineData(381, 3)]
     public void The_level_reached_follows_the_experience_curve(int experience, int level)
     {
-        // 100 to level 2, then 125, 156 ... (as the player counts it).
+        // 100 to level 1, then 125, 156 ... (as the player counts it).
         Assert.Equal(level, BalanceReport.LevelReached(experience, Balance.Default.Experience));
     }
 
