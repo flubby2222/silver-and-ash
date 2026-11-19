@@ -1,7 +1,7 @@
 """Prueft musik-*.ogg gegen den technischen Rahmen und die Regeln der Klangwelt (nur Standardbibliothek und ffmpeg).
 
 Aufruf: python musik_pruefen.py <ordner mit den OGG-Dateien>
-Je Datei: Laenge (60-90 s), Spitze (<= -1 dBFS), Mittel, Lautheit (LUFS), Naht der dekodierten Datei (Sprung vom letzten zum ersten
+Je Datei: Laenge (60-90 s), Spitze (<= -1 dBFS), Mittel (Katakomben: Ziel aus musik_erzeugen.py +- 0,5 dB), Lautheit (LUFS), Naht der dekodierten Datei (Sprung vom letzten zum ersten
 Sample gegenueber dem 99,9-%-Abstand zweier Nachbar-Samples, je Kanal), Pegel je Band und Abstand der Mitte (300-3 000 Hz) zum
 Gesamtpegel (Ziel Katakomben: mindestens 15 dB), Energie je Tonklasse (Anteil ausserhalb von e-Moll).
 """
@@ -17,8 +17,13 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from synth import svf  # noqa: E402
+from musik_erzeugen import PIECES  # noqa: E402
 
 SR = 44100
+# Mittel der Katakomben-Musik muss das Ziel aus musik_erzeugen.py treffen (Issue #427: +10 dB). Das Hauptmenue-Stueck
+# erreicht sein Ziel nicht (Verstaerkung auf 1 begrenzt, Spitze aus der Mischung mit Herzschlag) und wird hier nicht geprueft.
+LEVEL = {PIECES["katakomben"]["name"] + ".ogg": PIECES["katakomben"]["target_mean"]}
+LEVEL_TOL = 0.5
 SCALE = {4, 6, 7, 9, 11, 0, 2}
 PC = ["C", "Cis", "D", "Es", "E", "F", "Fis", "G", "As", "A", "B", "H"]
 
@@ -67,8 +72,8 @@ def chroma(x):
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    print("| Datei | Länge | Spitze | Mittel | Lautheit | Naht L / R (Sprung ≤ 99,9 %) | < 300 Hz | 300–3 000 Hz | > 3 000 Hz | gesamt | Abstand Mitte | außerhalb e-Moll | stärkste Tonklasse | Ergebnis |")
-    print("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    print("| Datei | Länge | Spitze | Mittel | Ziel Mittel (± 0,5 dB) | Lautheit | Naht L / R (Sprung ≤ 99,9 %) | < 300 Hz | 300–3 000 Hz | > 3 000 Hz | gesamt | Abstand Mitte | außerhalb e-Moll | stärkste Tonklasse | Ergebnis |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for p in sorted(Path(sys.argv[1]).glob("musik-*.ogg")):
         with tempfile.TemporaryDirectory() as td:
             dec = Path(td) / "d.wav"
@@ -92,7 +97,11 @@ def main():
         out = sum(ch[i] for i in range(12) if i not in SCALE)
         top = max(range(12), key=lambda i: ch[i])
         ok &= 60 <= n / SR <= 90 and mx <= -1.0
-        print(f"| `{p.name}` | {n / SR:.1f} s | {mx:.1f} dBFS | {mean:.1f} dBFS | {lufs:.1f} LUFS | {'; '.join(seam)} | {lo:.0f} | {mid:.0f} | {hi:.0f} | {tot:.0f} | "
+        target = LEVEL.get(p.name)
+        if target is not None:
+            ok &= abs(mean - target) <= LEVEL_TOL
+        aim = "–" if target is None else f"{target:.1f} dBFS"
+        print(f"| `{p.name}` | {n / SR:.1f} s | {mx:.1f} dBFS | {mean:.1f} dBFS | {aim} | {lufs:.1f} LUFS | {'; '.join(seam)} | {lo:.0f} | {mid:.0f} | {hi:.0f} | {tot:.0f} | "
               f"{mid - tot:.1f} dB | {out * 100:.1f} % | {PC[top]} ({ch[top] * 100:.0f} %) | {'bestanden' if ok else 'NICHT bestanden'} |")
 
 
