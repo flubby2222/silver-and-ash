@@ -277,6 +277,72 @@ public static class WeaponPose
         Matrix4x4.CreateTranslation(BladeGrip + (WindUpShift * windUp) + new Vector3(tremble, 0f, 0f) + (SwingShift * swing));
 
     /// <summary>
+    /// The club at rest is bent against its sleeve this far at the grip, its head up (degrees, issue #417). There is no
+    /// hand to show: the sleeve stays as it is, only the club turns in the cuff, which hides where it bends.
+    /// </summary>
+    public const float ClubBendRestDegrees = 35f;
+
+    /// <summary>... and turned this far outward, its head to the left (degrees).</summary>
+    public const float ClubBendRestOutwardDegrees = 10f;
+
+    /// <summary>Fully wound up the bend is this much (degrees, head up) ...</summary>
+    public const float ClubBendWindUpDegrees = 20f;
+
+    /// <summary>... and this much outward (degrees, negative: the head turns to the right).</summary>
+    public const float ClubBendWindUpOutwardDegrees = -10f;
+
+    /// <summary>
+    /// Where the club bends (file space): on its handle, inside the cuff (the handle runs from z -0.136 to the grip at 0,
+    /// the cuff's mouth lies at about -0.005). Checked against the cuff of club_hand.glb in the tests.
+    /// </summary>
+    public static Vector3 ClubBendPivot { get; } = new(0f, 0f, -0.06f);
+
+    /// <summary>
+    /// How far the club is bent at the grip (degrees): its pitch (head up) and its turn outward (head to the left). At
+    /// rest <see cref="ClubBendRestDegrees"/>, at the height of a swing (<paramref name="swing"/> 1) straight - the club
+    /// meets its target in line with the blow -, fully wound up (<paramref name="windUp"/> 1)
+    /// <see cref="ClubBendWindUpDegrees"/>; in between along the same values as <see cref="Blade"/>. The swing scales the
+    /// whole bend, wind-up included: after a charged swing the wind-up only eases off (<see cref="WindUpStep"/>) while the
+    /// swing is already at its height, and there the club must still be straight.
+    /// </summary>
+    public static (float Pitch, float Outward) ClubBendDegrees(float swing, float windUp) =>
+        ((1f - swing) * (ClubBendRestDegrees + ((ClubBendWindUpDegrees - ClubBendRestDegrees) * windUp)),
+         (1f - swing) * (ClubBendRestOutwardDegrees + ((ClubBendWindUpOutwardDegrees - ClubBendRestOutwardDegrees) * windUp)));
+
+    /// <summary>How long a melee swing takes (seconds), from its start until <c>swing</c> reaches 1.</summary>
+    public const float SwingSeconds = 0.28f;
+
+    /// <summary>How quickly the wind-up follows its target (per second, as the other soft movements of the hands).</summary>
+    public const float WindUpCatchUp = 6f;
+
+    /// <summary>
+    /// The wind-up one frame later: it catches up a part of the way to <paramref name="target"/> (1 while a charge is
+    /// full, 0 after the release), so it never jumps.
+    /// </summary>
+    public static float WindUpStep(float windUp, float target, float frameSeconds) =>
+        windUp + ((target - windUp) * MathF.Min(1f, 2f * (1f - MathF.Exp(-WindUpCatchUp * frameSeconds))));
+
+    /// <summary>
+    /// The club's bend at the grip (file space, before the pose of <see cref="Blade"/>): turned around
+    /// <see cref="ClubBendPivot"/>, first the pitch, then outward.
+    /// </summary>
+    public static Matrix4x4 ClubBend(float swing, float windUp)
+    {
+        var (pitch, outward) = ClubBendDegrees(swing, windUp);
+        return Matrix4x4.CreateTranslation(-ClubBendPivot) *
+            Matrix4x4.CreateRotationX(Radians(-pitch)) *
+            Matrix4x4.CreateRotationY(Radians(outward)) *
+            Matrix4x4.CreateTranslation(ClubBendPivot);
+    }
+
+    /// <summary>
+    /// How a melee weapon is bent against its sleeve (file space, before the pose of <see cref="Blade"/>; the sleeve
+    /// itself is not bent): the club at the grip (<see cref="ClubBend"/>), the blade not at all.
+    /// </summary>
+    public static Matrix4x4 MeleeBend(WeaponKind kind, float swing, float windUp) =>
+        kind == WeaponKind.Club ? ClubBend(swing, windUp) : Matrix4x4.Identity;
+
+    /// <summary>
     /// The turn of the blade's forearm around its pivot (file space, for <see cref="Rig.Pose"/>) in the pose
     /// <see cref="Blade"/> gives for the same values. <paramref name="pivot"/>: the forearm's pivot from the file.
     /// </summary>
