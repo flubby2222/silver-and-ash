@@ -88,6 +88,12 @@ public sealed class Ghoul : ITarget
     /// <summary>How far the wind-up has come: 0 at its start, 1 at the blow. 0 in every other state. For drawing.</summary>
     public float WindUpProgress => State == GhoulState.WindingUp ? 1f - (float)_stateTicksLeft / _windUpTicks : 0f;
 
+    /// <summary>
+    /// True while it announces a blow (issue #447): it is drawing back and alive. Its eyes glow red meanwhile. Taken from
+    /// the wind-up itself (<see cref="GhoulBalance.WindUpTime"/>), no timing of its own.
+    /// </summary>
+    public bool IsAnnouncingBlow => !IsDead && State == GhoulState.WindingUp;
+
     /// <summary>Current health; 0 when dead.</summary>
     public int Health { get; private set; }
 

@@ -104,7 +104,7 @@ Abweichung: Die dunklen Bänder der Kistenplatzhalter im Code (56, 44, 36; 52, 5
 **Figuren und Gegenstände** müssen sich vom Stein abheben:
 
 - Untote: **kränklich, kalt, etwas heller als die Wand** (Haut um 124, 132, 112).
-- **Rot ist reserviert** für Blut, Treffer, Gefahr (Blitz bei kritischem Treffer 230, 40, 50; der normale Treffer-Blitz ist fast weiß) und die höchste Stufe *Vampiric* (blutrot, pulsierend). Kein Rot als bloße Zierde.
+- **Rot ist reserviert** für Blut, Treffer, Gefahr (Blitz bei kritischem Treffer 230, 40, 50; der normale Treffer-Blitz ist fast weiß) und die höchste Stufe *Vampiric* (blutrot, pulsierend). Dazu kommen die Augen eines Ghuls, der zum Schlag ausholt (Blutrot-Stufen 150, 20, 30 → 200, 30, 40 → 225, 58, 48, hart, ohne Schein). Kein Rot als bloße Zierde.
 - **Warmes Licht** (Gelb, Orange) gehört der Laterne und allem, was der Spieler haben will.
 - **Silber** – hell, kühl, fast weiß – gehört dem Jäger und seinen Waffen.
 - **Die vier Stufen von Ausrüstung und Kisten haben eigene Farben** (Tabelle oben). Lies sie im Code nach, bevor du Kisten oder Beute gestaltest, und verwende sie für nichts anderes.
@@ -163,7 +163,7 @@ Effekte sind Flammen, Funken, Staub, Blut, Treffer und Licht, das sich bewegt. D
 - **Nur Farben aus der Hauptpalette** (siehe „Farben“). Feuer und Glut nehmen die Reihe *Messing/Gold*, das Licht einer Fackel ist Messing 5.
 - **Mitgekörnt.** Effekte werden vor der 15-Bit-Körnung gezeichnet und bekommen dasselbe Punktmuster wie die Wand dahinter (siehe „Technischer Rahmen“).
 - **Kein weiches Glühen.** Kein Bloom, kein Leuchtschein um Flammen und Funken. Was hell sein soll, ist hell, weil das Licht die Umgebung aufhellt.
-- **Kein Rot als Signalfarbe an Gegnern.** Gegner werden nicht durch rote Effekte (Augen, Umrisse, Warnzeichen) hervorgehoben. Feuer und Glut sind Gold und Messing, nicht Rot. Wo Rot erlaubt ist, steht unter „Farben“.
+- **Rot an Gegnern nur als kurze Angriffs-Ankündigung in den Augen; weiterhin keine roten Umrisse oder Warnzeichen.** Die Augen leuchten nur, solange der Gegner zum Schlag ausholt, in harten Stufen ohne Schein oder Halo (Urteil 22). Feuer und Glut sind Gold und Messing, nicht Rot. Wo Rot erlaubt ist, steht unter „Farben“.
 
 ### Format der Probestücke
 
@@ -231,6 +231,7 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 | 19 | 2026-11-18 | HUD im Spieltest (Issue #387) | Urteile des Menschen nach dem Spieltest: die kleinen grauen Innenrahmen und der senkrechte rote Strich im Lebensbalken stören; die Teile stehen ungleich weit auseinander; Erfahrung soll golden sein; der Hinweis zum Aufsteigen soll unter Stufe und Erfahrung stehen | Kein Doppelrahmen innen in HUD-Fassungen, keine Markierung auf dem Lebensbalken; ein Abstand für alle HUD-Teile; siehe „Feinschliff nach dem Spieltest“ im Abschnitt HUD |
 | 20 | 2026-11-18 | HUD und Menü in höherer Auflösung, B geglättet (#393) | Urteil des Menschen: A harte Pixel gewählt, B abgelehnt; Schrift und Zeichen werden weich | Kein Glätten von Schrift und Zeichen im HUD; Pixel bleiben sichtbar, siehe „HUD und Menü in höherer Auflösung“. HUD-Gegenstände und Waffen zeigen am Ende Renderings ihrer Modelle |
 | 21 | 2026-11-19 | Keule (Issue #403, Nacharbeit #414) | Urteil des Menschen im Schauraum: „Die Keule ist nicht fertig“ – Lücke zwischen Griff und Kopf, offene Seite am Kopf (die Kappen von Griff, Kopf und Bändern fehlten), Kopf um 25 Grad geknickt. Schauraum, Schlagbewegung und liegende Waffen zeigen jede Seite | **Verbindlich: 3D-Modelle sind rundum geschlossen.** Kein Modell hat offene Seiten, fehlende Rück- oder Unterflächen oder Lücken zwischen seinen Teilen, auch nicht dort, wo man in der Ich-Sicht „nie hinsieht“. Teile sind geschlossene Körper (Kappen an beiden Enden) und überlappen sich dort, wo sie zusammenstoßen. Ein Stiel mit Kopf ist gerade, wenn nicht ausdrücklich anders gewollt. Prüfung: `python tools/models/check_closed.py` (jede Kante gehört zu genau zwei Dreiecken, Ecken gleicher Lage zusammengelegt); jedes neue oder geänderte Modell besteht sie vor dem Probenblatt |
+| 22 | 2026-11-19 | Ghul-Augen vor dem Schlag (#447) | Wunsch des Menschen: „Wäre cool, wenn eines ghoul augen kurz rot aufleuchtet, kurz bevor sie zuschlagen.“ Auf Rückfrage Rot gewählt; die Regel „Kein Rot als Signalfarbe an Gegnern“ wird dafür geändert | Rot an Gegnern nur als kurze Angriffs-Ankündigung in den Augen (während des Ausholens, harte Blutrot-Stufen, kein Schein); weiterhin keine roten Umrisse oder Warnzeichen. Dauer und Stärke vorläufig bis zum nächsten Spieltest |
 
 ## HUD (entschieden, Issue #341)
 
