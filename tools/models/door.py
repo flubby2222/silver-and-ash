@@ -13,8 +13,9 @@ Alles per Skript, nichts heruntergeladen. Spiel-Achsen (x seitlich, y oben, z vo
 auf dem Boden, Tuerflaeche in der x/y-Ebene, Dicke in z. Durchgang = Zelle des Spiels: 2 m breit, 2 m tief, 3,5 m hoch.
 
 Je Tuerart zwei Sorten Dateien:
-  door_<art>.glb               Knoten "portal" (fest: Kopffeld, Beschlag, beim Boss die leuchtende Scheibe; kein Stein) und
-                               die beweglichen Teile (leaf_a, leaf_b bzw. leaf, lock). Eigener Atlas 128 x 128, 32 Farben.
+  door_<art>.glb               nur bewegliche Teile (leaf_a, leaf_b bzw. leaf, lock), kein Stein; jeder Fluegel traegt seinen
+                               Teil von Kopffeld, Querband und beim Boss der leuchtenden Scheibe (Issue #429; bis dahin
+                               stand das in einem festen Knoten "portal"). Eigener Atlas 128 x 128, 32 Farben.
   door_frame_<art>_<v>.glb     der Steinrahmen fuer die Wandvariante v (a, b, c): Knoten "portal_front" (Stein der +z-Seite)
                                und "portal_back" (Stein der -z-Seite), beide fest. Atlas 128 x 64: links die echte
                                Wand-Textur der Variante (assets/textures/catacomb_wall*.png, bitgleich, nur gelesen), rechts
@@ -29,8 +30,9 @@ Wandverlauf, v mit der Hoehe) und sind an den Metergrenzen geteilt: die Fugen la
 eine Wand-Textur oder die Palette, passt der Rahmen nicht mehr; ein Test vergleicht door_frame_sources.sha256 mit
 assets/textures/textures.sha256 und schlaegt fehl, bis dieses Skript neu gelaufen ist.
 
-Die beweglichen Teile sind unterhalb des Bogenansatzes rechteckig, damit sie ohne Durchdringung schwingen koennen; der
-Spitzbogen entsteht aus dem festen Kopffeld. Die Risswand hat nur den Knoten "cracks". Wie das Spiel die Teile bewegt:
+Die Fluegel sind unterhalb des Bogenansatzes rechteckig; darueber traegt jeder seine Haelfte des Kopffelds im Spitzbogen
+(die Eisentuer das ganze). Beim Oeffnen schwingt die Spitze dieses Kopffelds in die Bogenleibung hinein: der Stein verdeckt
+sie, sichtbar bleibt der Fluegel bis zur Leibung. Die Risswand hat nur den Knoten "cracks". Wie das Spiel die Teile bewegt:
 docs/modelle.md (Tueren).
 """
 import hashlib
@@ -225,11 +227,26 @@ def extrude(part, pts, z0, z1, rect):
     part.prism([(x, y, z0) for x, y in pts], (0, 0, z1 - z0), rect)
 
 
-def head_panel(part, hw, spring, apex, z0, z1, rect, n=6):
-    """Kopffeld im Bogen (konvex), in zwei Haelften (links/rechts), damit die Textur nicht ueber 2 m gestreckt wird."""
+def head_panel(part, hw, spring, apex, z0, z1, rect, sides=(1, -1), n=6):
+    """Kopffeld im Bogen (konvex), in zwei Haelften (rechts +1, links -1), damit die Textur nicht ueber 2 m gestreckt wird.
+    `sides`: welche Haelften an dieses Teil kommen (jede Haelfte schwingt mit dem Fluegel ihrer Seite, Issue #429)."""
     right = arc(hw, spring, apex, n)
-    extrude(part, [(0, spring)] + right, z0, z1, rect)
-    extrude(part, [(0, spring)] + [(-x, y) for x, y in right], z0, z1, rect)
+    for s in sides:
+        extrude(part, [(0, spring)] + [(s * x, y) for x, y in right], z0, z1, rect)
+
+
+def half_poly(pts, side):
+    """Konvexes Vieleck (x, y), beschnitten an x = 0; bleibt die Seite side * x >= 0."""
+    out = []
+    for i, b in enumerate(pts):
+        a = pts[i - 1]
+        a_in, b_in = side * a[0] >= 0, side * b[0] >= 0
+        if a_in != b_in:
+            t = a[0] / (a[0] - b[0])
+            out.append((0.0, a[1] + t * (b[1] - a[1])))
+        if b_in:
+            out.append(b)
+    return out
 
 
 def strap(part, x_hinge, side, y, length, half, z0, z1, rect="iron"):
@@ -486,35 +503,36 @@ def frame_boss():
     return [front, back]
 
 
-def portal_normal(kind):
-    """Fest, ohne Stein: Kopffeld (Holz oder Eisenplatten) im Bogen des Laufs, Querband auf der Fuge zu den Fluegeln."""
-    part = Part("portal", (0, 0, 0), UV)
+def head_normal(part, kind, sides):
+    """Kopffeld (Holz oder Eisenplatten) im Bogen des Laufs, Querband auf der Fuge zum Fluegel: die Haelften `sides` an den
+    Fluegel `part` (Issue #429: bis #303 stand das Kopffeld fest im Knoten "portal" und blieb beim Oeffnen stehen). Ein
+    Fuellstueck im Fluegel schliesst die Fuge zwischen Fluegel und Kopffeld (vorn und hinten deckt sie das Querband)."""
     hw = 0.875
     apex = SPRING_N + math.sqrt(1.4375 ** 2 - 0.5625 ** 2)
-    head_panel(part, hw, SPRING_N, apex, -0.07, 0.07, "planks" if kind == "normal" else "plate")
-    for z0, z1 in faces(0.14, 0.025):
-        part.box((-hw, LEAF_TOP_N, z0), (hw, SPRING_N + 0.06, z1), "iron")
-        if kind == "normal":
-            for s in (1, -1):                                                           # zwei Baender im Kopf, spitz zulaufend
+    head_panel(part, hw, SPRING_N, apex, -0.07, 0.07, "planks" if kind == "normal" else "plate", sides)
+    for s in sides:
+        lo, hi = sorted((0.0, s * hw))
+        part.box((lo, LEAF_TOP_N - 0.01, -0.065), (hi, SPRING_N + 0.01, 0.065), "edge")
+        for z0, z1 in faces(0.14, 0.025):
+            part.box((lo, LEAF_TOP_N, z0), (hi, SPRING_N + 0.06, z1), "iron")
+            if kind == "normal":                                                        # ein Band im Kopf, spitz zulaufend
                 strap(part, s * (hw - 0.01), s, 2.5, 0.9, 0.065, z0, z1)
-    return part
 
 
-def portal_boss():
-    """Fest, ohne Stein: Kopffeld im innersten Lauf mit leuchtender Scheibe, Eisenband ueber den Fluegeln."""
-    part = Part("portal", (0, 0, 0), UV)
+def head_boss(part, side):
+    """Kopffeld im innersten Lauf mit leuchtender Scheibe, Eisenband ueber dem Fluegel: die Haelfte `side` an den Fluegel."""
     xc, hw = 1.0 - 1.75, 0.625
     r = 1.75 - 0.375
     apex = SPRING_B + math.sqrt(r * r - xc * xc)
-    head_panel(part, hw, SPRING_B, apex, -0.1, 0.1, "planks")
+    head_panel(part, hw, SPRING_B, apex, -0.1, 0.1, "planks", (side,))
+    lo, hi = sorted((0.0, side * hw))
     for z0, z1 in faces(0.2, 0.03):
-        part.box((-hw, SPRING_B, z0), (hw, SPRING_B + 0.0625, z1), "iron")
+        part.box((lo, SPRING_B, z0), (hi, SPRING_B + 0.0625, z1), "iron")
     cy = 2.375
+    disc = [(0.21 * math.cos(2 * math.pi * k / 10), cy + 0.21 * math.sin(2 * math.pi * k / 10)) for k in range(10)]
     for f in (-1, 1):
         z0, z1 = sorted((f * 0.095, f * 0.14))
-        pts = [(0.21 * math.cos(2 * math.pi * k / 10), cy + 0.21 * math.sin(2 * math.pi * k / 10)) for k in range(10)]
-        extrude(part, pts, z0, z1, "glass")
-    return part
+        extrude(part, half_poly(disc, side), z0, z1, "glass")
 
 
 def locked_leaf():
@@ -554,13 +572,22 @@ def lock_node():
 
 
 def parts_for(kind):
+    """Nichts steht fest (Issue #429): jeder Fluegel traegt seinen Teil des Kopffelds."""
     if kind == "normal":
-        return [portal_normal("normal"), leaf_rect("leaf_a", +1, 1.0, 0.14, LEAF_TOP_N, "normal"),
-                leaf_rect("leaf_b", -1, 1.0, 0.14, LEAF_TOP_N, "normal")]
+        a = leaf_rect("leaf_a", +1, 1.0, 0.14, LEAF_TOP_N, "normal")
+        b = leaf_rect("leaf_b", -1, 1.0, 0.14, LEAF_TOP_N, "normal")
+        head_normal(a, "normal", (1,))
+        head_normal(b, "normal", (-1,))
+        return [a, b]
     if kind == "locked":
-        return [portal_normal("locked"), locked_leaf(), lock_node()]
-    return [portal_boss(), leaf_rect("leaf_a", +1, 0.625, 0.2, SPRING_B, "boss"),
-            leaf_rect("leaf_b", -1, 0.625, 0.2, SPRING_B, "boss")]
+        leaf = locked_leaf()
+        head_normal(leaf, "locked", (1, -1))
+        return [leaf, lock_node()]
+    a = leaf_rect("leaf_a", +1, 0.625, 0.2, SPRING_B, "boss")
+    b = leaf_rect("leaf_b", -1, 0.625, 0.2, SPRING_B, "boss")
+    head_boss(a, 1)
+    head_boss(b, -1)
+    return [a, b]
 
 
 def frame_for(kind):

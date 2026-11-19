@@ -7,11 +7,11 @@ namespace SilverAndAsh.Core.Presentation;
 /// The parts of the door models (assets/models/door_*.glb, one per <see cref="DoorKind"/>, issue #245) and how they move.
 /// In the file the origin is the middle of the passage on the floor, the passage runs along z and the leaves stand
 /// across it, closed. The hinges stand at the outer edges: <see cref="LeafA"/> (and the single <see cref="Leaf"/>) on
-/// the +x side, <see cref="LeafB"/> on the -x side. The <see cref="Portal"/> (posts, head panel, arch field) never moves.
+/// the +x side, <see cref="LeafB"/> on the -x side. Nothing of the door stands still (issue #429): each leaf carries its
+/// share of the head panel in the arch, so the whole door opens. The stone around it is the frame (<see cref="DoorFrameLook"/>).
 /// </summary>
 public static class DoorPose
 {
-    public const string Portal = "portal";
     public const string LeafA = "leaf_a";
     public const string LeafB = "leaf_b";
     public const string Leaf = "leaf";
@@ -24,16 +24,16 @@ public static class DoorPose
     /// <summary>The leaf of a locked door, fully open (degrees): a little less, the heavy leaf stops short of the wall.</summary>
     public const float LockedOpenDegrees = 80f;
 
-    private static readonly RigPart[] DoubleDoor = [new(Portal, null), new(LeafA, Portal), new(LeafB, Portal)];
-    private static readonly RigPart[] LockedDoor = [new(Portal, null), new(Leaf, Portal), new(Lock, Leaf)];
+    private static readonly RigPart[] DoubleDoor = [new(LeafA, null), new(LeafB, null)];
+    private static readonly RigPart[] LockedDoor = [new(Leaf, null), new(Lock, Leaf)];
     private static readonly RigPart[] CrackedWall = [new(Cracks, null)];
 
     /// <summary>The file of <paramref name="kind"/>: door_normal.glb, door_locked.glb, door_boss.glb, door_cracked.glb.</summary>
     public static string FileName(DoorKind kind) => $"door_{kind.ToString().ToLowerInvariant()}.glb";
 
     /// <summary>
-    /// The parts in the order of the rig. Wooden and boss doors: portal, leaf_a, leaf_b. Locked door: portal, leaf, and
-    /// the lock hanging on the leaf (it swings with it). Cracked wall: only its cracks - the wall itself is the level's.
+    /// The parts in the order of the rig. Wooden and boss doors: leaf_a, leaf_b. Locked door: the leaf, and the lock
+    /// hanging on it (it swings with it). Cracked wall: only its cracks - the wall itself is the level's.
     /// </summary>
     public static IReadOnlyList<RigPart> Parts(DoorKind kind) => kind switch
     {
