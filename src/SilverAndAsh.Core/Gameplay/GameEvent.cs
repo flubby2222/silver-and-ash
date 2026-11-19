@@ -167,6 +167,13 @@ public sealed record DoorOpened(int DoorId) : GameEvent;
 /// <summary>Room <paramref name="RoomIndex"/> became an arena: grates fell at all its doors, its enemies woke up.</summary>
 public sealed record RoomSealed(int RoomIndex) : GameEvent;
 
+/// <summary>
+/// Wave <paramref name="Wave"/> (0 = the first) of combat room <paramref name="RoomIndex"/> starts coming out of the floor
+/// and the ceiling (issue #424): the enemies <paramref name="EnemyIds"/>. No sound yet - a new kind of sound needs a
+/// listening test first.
+/// </summary>
+public sealed record WaveEmerged(int RoomIndex, int Wave, IReadOnlyList<int> EnemyIds) : GameEvent;
+
 /// <summary>All enemies of room <paramref name="RoomIndex"/> are dead: its grates rise.</summary>
 public sealed record RoomCleared(int RoomIndex) : GameEvent;
 

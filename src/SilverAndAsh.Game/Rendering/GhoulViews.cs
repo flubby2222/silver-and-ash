@@ -184,7 +184,7 @@ internal sealed class ModelGhoulView(TexturedModel model, LevelShader shader) : 
             Matrix4x4.CreateRotationZ(Deg(75f * collapse)) *
             Matrix4x4.CreateTranslation(0f, -0.2f * collapse, -0.06f * flinch) *
             Matrix4x4.CreateRotationY(MathF.Atan2(ghoul.Facing.X, ghoul.Facing.Z)) *
-            Matrix4x4.CreateTranslation(ghoul.Position);
+            Matrix4x4.CreateTranslation(ghoul.ShownPosition);
 
         model.Rig.Pose(_turns, figure, _frames);
 
@@ -260,7 +260,7 @@ internal sealed class PlaceholderGhoulView : IGhoulView
             Matrix4x4.CreateRotationZ(Deg(75f * collapse)) *
             Matrix4x4.CreateTranslation(0f, -0.2f * collapse, -0.06f * flinch) *
             Matrix4x4.CreateRotationY(yaw) *
-            Matrix4x4.CreateTranslation(ghoul.Position);
+            Matrix4x4.CreateTranslation(ghoul.ShownPosition);
 
         Color Shown(Color color) => state.Flash > 0f ? Blend(color, state.FlashColor, state.Flash) : color;
 

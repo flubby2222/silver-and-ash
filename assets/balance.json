@@ -283,8 +283,9 @@
     "batWeightNear": 0.15,              // ... far away more bats
     "batWeightFar": 0.4,
     "maxBatsPerRoom": 3,                // never more bats than this in one room (provisional, issue #391)
-    "doorDistance": 4,                  // m: no enemy closer than this to a door of its room
-    "spacing": 2.5                      // m: no two enemies closer than this
+    "doorDistance": 4,                  // m: no enemy closer than this to a door of its room (also where it comes out)
+    "spacing": 2.5,                     // m: no two enemies closer than this
+    "emergeTime": 0.8                   // s: a combat room's enemies come out of floor/ceiling when it seals (#424)
   },
 
   "bloodBolt": {

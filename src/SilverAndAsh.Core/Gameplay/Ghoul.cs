@@ -97,7 +97,16 @@ public sealed class Ghoul : ITarget
     /// <summary>True when the dead body has disappeared - it is no longer drawn.</summary>
     public bool IsGone => IsDead && _corpseTicksLeft == 0;
 
-    public bool IsHittable => !IsDead;
+    /// <summary>
+    /// Coming out of the floor (issue #424): in a combat room it waits hidden until the room seals. While hidden or
+    /// rising it cannot be hit (and the world does not let it act).
+    /// </summary>
+    public Emergence Emergence { get; } = new();
+
+    /// <summary>Where it is drawn: its position, sunk into the floor while it is hidden or rising.</summary>
+    public Vector3 ShownPosition => Position + Emergence.Offset;
+
+    public bool IsHittable => !IsDead && Emergence.IsPresent;
 
     public CylinderBody Body => new(Position, BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height);
 
@@ -340,10 +349,11 @@ public sealed class Ghoul : ITarget
 
     private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
-    /// <summary>Advances the timers by one tick: a dead body disappears after a while.</summary>
+    /// <summary>Advances the timers by one tick: it rises further out of the floor; a dead body disappears after a while.</summary>
     public void Tick(ICollection<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(events);
+        Emergence.Tick();
         if (_corpseTicksLeft > 0)
         {
             _corpseTicksLeft--;

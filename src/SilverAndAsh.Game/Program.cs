@@ -534,7 +534,8 @@ static void RunGame(
                 dummyView.Draw(dummy);
             }
 
-            foreach (var ghoul in gameWorld.Ghouls)
+            // Enemies of a combat room wait hidden in the floor or the ceiling until it seals (issue #424).
+            foreach (var ghoul in gameWorld.Ghouls.Where(ghoul => !ghoul.Emergence.IsHidden))
             {
                 ghoulView.Draw(ghoul);
             }
@@ -546,7 +547,7 @@ static void RunGame(
                 shockwaveView.Draw(gorm);
             }
 
-            foreach (var bat in gameWorld.Bats)
+            foreach (var bat in gameWorld.Bats.Where(bat => !bat.Emergence.IsHidden))
             {
                 batView.Draw(bat, eye);
             }

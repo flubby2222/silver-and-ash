@@ -157,7 +157,16 @@ public sealed class Bat : ITarget
     /// <summary>True when the dead body has disappeared - it is no longer drawn.</summary>
     public bool IsGone => IsDead && _corpseTicksLeft == 0;
 
-    public bool IsHittable => !IsDead;
+    /// <summary>
+    /// Coming out of the ceiling (issue #424): in a combat room it waits hidden until the room seals. While hidden or
+    /// sinking it cannot be hit (and the world does not let it act).
+    /// </summary>
+    public Emergence Emergence { get; } = new();
+
+    /// <summary>Where it is drawn: its position, pulled up into the ceiling while it is hidden or sinking.</summary>
+    public Vector3 ShownPosition => Position + Emergence.Offset;
+
+    public bool IsHittable => !IsDead && Emergence.IsPresent;
 
     public CylinderBody Body => new(Position, BodySizes.Bat.Radius, BodySizes.Bat.Height);
 
@@ -490,11 +499,12 @@ public sealed class Bat : ITarget
 
     private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
-    /// <summary>One tick of the body: dead it falls to the floor and disappears after a while.</summary>
+    /// <summary>One tick of the body: it sinks further out of the ceiling; dead it falls to the floor and disappears after a while.</summary>
     public void Tick(Level level, ICollection<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(level);
         ArgumentNullException.ThrowIfNull(events);
+        Emergence.Tick();
         if (!IsDead)
         {
             return;
