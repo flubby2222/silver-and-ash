@@ -27,12 +27,14 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 public class PlayerTickTraceTests
 {
     // Checksums of the traces as Player.Tick wrote them before the split into phases (issue #325, main at 5fc2b73).
+    // Changed on purpose in #413: a charge the stamina can no longer pay holds and lets the bar refill (first difference
+    // in each run: the tick a stalled charge would have kept the empty bar from refilling).
     // Two parcours seeds: together their bots reach almost every line of the tick (one alone misses a few).
-    private const string GormDuelChecksum = "20DBD2879D7B67F9CA5FAB3F7B3C9710E5B54929299AE8B2B4B4D7363153048D";
+    private const string GormDuelChecksum = "8142306C796EEE705EEF3B6FB6EAB49753AEBDAE1A0027570D9FFBB9C446D1BA";
 
     [Theory]
-    [InlineData(1, "F0F5E307C8576D67ABE72F5C6508B30DB85C9127891B181AA5D1F360DE5D1A23")]
-    [InlineData(4, "ADE2A8202952DA75AC5DAEE55EC7B0FAC1E2181529159FE1AE1D25FCD1018C08")]
+    [InlineData(1, "D9933F5097C3E8FAED875CB10664AA4B31447231594EBCB9647AFC7FE5AADE8A")]
+    [InlineData(4, "B59A6BBEB46D54E81BC6C0E2E2A3F17F3E78CEE118EC607EB8BA3E492D9ECA23")]
     public void A_bot_run_through_a_parcours_gives_the_same_trace_as_before(int seed, string checksum)
     {
         var trace = ParcoursTrace(seed, ticks: 6000);

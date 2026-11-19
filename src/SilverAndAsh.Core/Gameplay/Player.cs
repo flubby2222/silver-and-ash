@@ -604,9 +604,9 @@ public sealed partial class Player
 
         // No refilling during a dodge either - otherwise standing on the ground would pay part of it back.
         // Nor while the blade is still charging (it pays bit by bit); once it is fully charged, holding on is free
-        // and the bar refills again (found while playing).
-        var stillCharging = MeleeCharge.IsCharging && !MeleeCharge.IsFull;
-        Stamina.SetRecharging(chainOver && !IsDodging && !stillCharging);
+        // and the bar refills again (found while playing). The same once the charge has stalled because the stamina
+        // could not pay the next bit - e.g. after a dodge or dash while holding (issue #413).
+        Stamina.SetRecharging(chainOver && !IsDodging && !MeleeCharge.IsPaying);
         Stamina.Tick();
     }
 
