@@ -6,8 +6,10 @@ namespace SilverAndAsh.Core.World;
 /// <param name="Rooms">All rooms, the start room first (index 0). Corridors count as rooms.</param>
 /// <param name="Doors">All doors; each joins two rooms.</param>
 /// <param name="Chests">The chests, once <see cref="ChestPlacement"/> has placed them (none before).</param>
+/// <param name="Teleporters">The teleporters, once <see cref="TeleporterPlacement"/> has placed them (none before).</param>
 public sealed record GeneratedLevel(
-    int Seed, Level Level, IReadOnlyList<PlacedRoom> Rooms, IReadOnlyList<LevelDoor> Doors, IReadOnlyList<ChestPlan>? Chests = null);
+    int Seed, Level Level, IReadOnlyList<PlacedRoom> Rooms, IReadOnlyList<LevelDoor> Doors, IReadOnlyList<ChestPlan>? Chests = null,
+    IReadOnlyList<TeleporterPlan>? Teleporters = null);
 
 /// <summary>A room template placed in a generated level. All cells are level cells.</summary>
 /// <param name="Index">Position in <see cref="GeneratedLevel.Rooms"/>.</param>
