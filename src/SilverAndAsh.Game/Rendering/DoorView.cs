@@ -10,8 +10,8 @@ namespace SilverAndAsh.Game.Rendering;
 /// <summary>
 /// The doors. The designer's models (assets/models/door_*.glb, issue #245, see <see cref="DoorPose"/>): a wooden double
 /// door, a locked door with one iron-bound leaf and a padlock, a boss door with two heavy leaves, and the fine cracks of a
-/// cracked wall. The portal (head panel, bands) always stands, in its stone frame (issue #303, see <see cref="DoorFrameLook"/>:
-/// each face of the frame from the file of the wall variant of the room it faces); the leaves swing open away from the player
+/// cracked wall. Only the stone frame stands (issue #303, see <see cref="DoorFrameLook"/>: each face of the frame from the
+/// file of the wall variant of the room it faces); the leaves - with their share of the head panel, issue #429 - swing open away from the player
 /// who opened the door, as far as <see cref="Door.OpenFraction"/> says, starting and stopping slowly. The padlock is
 /// gone once the door is unlocked. A cracked wall is drawn as wall by the level itself; here it gets its plates (issue
 /// #246, see <see cref="CrackedWallLook"/>): on each face the wall texture of that face's variant with the cracks painted
