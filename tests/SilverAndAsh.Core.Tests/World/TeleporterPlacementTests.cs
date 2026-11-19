@@ -146,4 +146,41 @@ public class TeleporterPlacementTests
 
         Assert.Equal(TeleporterSite.Start, Assert.Single(placed.Teleporters!).Site);
     }
+
+    [Fact]
+    public void A_room_too_small_for_the_distance_rule_takes_its_nearest_floor_cell()
+    {
+        // The start room shrinks to the one cell beside the start: no cell keeps two cells away, the rule is dropped.
+        var level = Levels.Value[0];
+        var beside = (level.Level.PlayerStartX + 1, level.Level.PlayerStartZ);
+        var tiny = level with
+        {
+            Rooms = level.Rooms.Select(room => room.Kind == RoomKind.Start ? room with { FloorCells = [beside] } : room).ToList(),
+        };
+
+        var placed = TeleporterPlacement.Place(tiny);
+
+        var start = Assert.Single(placed.Teleporters!, teleporter => teleporter.Site == TeleporterSite.Start);
+        Assert.Equal(beside, (start.X, start.Z));
+    }
+
+    [Fact]
+    public void A_start_room_in_front_of_the_boss_door_gets_only_the_start_teleporter()
+    {
+        // The room in front of the boss door becomes the start room (the old start room a combat room).
+        var level = Levels.Value[0];
+        var (gate, _) = BossGate(level);
+        var gateIsStart = level with
+        {
+            Rooms = level.Rooms.Select(room => room.Index == gate.Index
+                ? room with { Kind = RoomKind.Start }
+                : room.Kind == RoomKind.Start ? room with { Kind = RoomKind.Combat } : room).ToList(),
+        };
+
+        var placed = TeleporterPlacement.Place(gateIsStart);
+
+        var only = Assert.Single(placed.Teleporters!);
+        Assert.Equal(TeleporterSite.Start, only.Site);
+        Assert.Equal(gate.Index, only.Room);
+    }
 }

@@ -104,13 +104,16 @@ public sealed partial class Player
     }
 
     /// <summary>
-    /// A teleporter carries the player: at rest with their feet on <paramref name="feet"/>, a chain pull ends (issue #436).
+    /// A teleporter carries the player: at rest with their feet on <paramref name="feet"/> - a chain pull, a dash and
+    /// a dodge end, so nothing carries the player on afterwards (issue #436).
     /// The previous position moves along, so the picture jumps instead of sliding through the walls.
     /// </summary>
     internal void TeleportTo(Vector3 feet)
     {
         PlaceAt(feet);
         _pullTicksLeft = 0;
+        _dashTicksLeft = 0;
+        _dodgeTicksLeft = 0;
     }
 
     internal void ChangeLevel(Level level) => _level = level ?? throw new ArgumentNullException(nameof(level));

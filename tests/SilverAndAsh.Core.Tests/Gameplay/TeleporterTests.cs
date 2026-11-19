@@ -117,6 +117,41 @@ public class TeleporterTests
         Assert.Single(world.Events.OfType<PlayerTeleported>());
     }
 
+    // Review finding: a dodge or dash started in the travel tick must not carry the player off the target afterwards.
+    private static void AssertStaysOnTarget(GameWorld world, PlayerInput travel)
+    {
+        world.Tick(travel);
+        Assert.Single(world.Events.OfType<PlayerTeleported>());
+
+        Run(world, PlayerInput.None, 60);
+
+        Assert.Same(world.Teleporters[0], world.TeleporterUnder(world.Player));
+        Assert.Equal(0f, Vector2.Distance(Ground(world.Teleporters[0].Position), Ground(world.Player.Position)), 3);
+    }
+
+    [Fact]
+    public void A_dodge_started_in_the_travel_tick_ends_with_the_travel()
+    {
+        // On the ground the dash button dodges.
+        var world = OnSecondTeleporter();
+        Assert.True(world.Player.IsGrounded);
+
+        AssertStaysOnTarget(world, Forward with { Dash = true, TeleportTo = 0 });
+    }
+
+    [Fact]
+    public void A_dash_started_in_the_travel_tick_ends_with_the_travel()
+    {
+        // In the air the dash button dashes; the teleporter still counts below the jumping player.
+        var world = OnSecondTeleporter();
+        Run(world, PlayerInput.None with { Jump = true }, 1);
+        Run(world, PlayerInput.None, 30, () => !world.Player.IsGrounded);
+        Assert.False(world.Player.IsGrounded);
+        Assert.Same(world.Teleporters[1], world.TeleporterUnder(world.Player));
+
+        AssertStaysOnTarget(world, Forward with { Dash = true, TeleportTo = 0 });
+    }
+
     [Fact]
     public void A_locked_target_is_refused()
     {
