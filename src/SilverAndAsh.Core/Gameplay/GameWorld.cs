@@ -190,6 +190,7 @@ public sealed class GameWorld
     // (a new kind of sound needs a listening test first) - only the event, for effects later.
     private void Release(RoomState room, IReadOnlyList<ITarget> wave)
     {
+        KeepAwayFromPlayers(room, wave);
         var emergeTicks = SimulationClock.SecondsToTicks(Balance.Difficulty.EmergeTime);
         foreach (var enemy in wave)
         {
@@ -206,6 +207,70 @@ public sealed class GameWorld
         }
 
         _events.Add(new WaveEmerged(room.Index, room.WavesReleased - 1, wave.Select(enemy => enemy.Id).ToList()));
+    }
+
+    // Issue #445: nobody comes out right in front of a player. The start cells were chosen with the level, before
+    // anybody stood in the room; now the players' places are known. An enemy whose start cell is nearer than
+    // difficulty.playerDistance to any player comes out on the nearest free cell of the room that keeps that distance
+    // to every player and difficulty.doorDistance to every door - or, if there is none, on the free cell farthest from
+    // all players (away from the doors if possible). No chance involved: the same places give the same cells.
+    private void KeepAwayFromPlayers(RoomState room, IReadOnlyList<ITarget> wave)
+    {
+        var difficulty = Balance.Difficulty;
+        var players = Players.Select(player => new Vector2(player.Position.X, player.Position.Z)).ToList();
+        var doors = room.DoorIds.Select(id => Middle((_doors[id].X, _doors[id].Z))).ToList();
+
+        // Metres from the middle of a cell to the nearest player (or the middle of the nearest door).
+        static float Nearest(List<Vector2> places, (int X, int Z) cell) =>
+            places.Count == 0 ? float.MaxValue : places.Min(place => Vector2.Distance(Middle(cell), place));
+
+        // Enemies that stay - all others of the room, and those of the wave that are far enough - keep their cells.
+        var movers = wave.Where(enemy => Nearest(players, CellOf(enemy)) < difficulty.PlayerDistance).ToList();
+        var taken = room.Enemies.Where(enemy => !IsDead(enemy) && !movers.Contains(enemy)).Select(CellOf).ToHashSet();
+        var cells = room.Cells.OrderBy(cell => cell.Z).ThenBy(cell => cell.X).ToList();
+
+        foreach (var enemy in movers)
+        {
+            var start = CellOf(enemy);
+            var free = cells.Where(cell => !taken.Contains(cell)).ToList();
+            if (free.Count == 0)
+            {
+                continue;
+            }
+
+            var awayFromDoors = free.Where(cell => Nearest(doors, cell) >= difficulty.DoorDistance).ToList();
+            var allowed = awayFromDoors.Where(cell => Nearest(players, cell) >= difficulty.PlayerDistance).ToList();
+            var choice = allowed.Count > 0
+                ? allowed.MinBy(cell => Vector2.Distance(Middle(cell), Middle(start)))
+                : (awayFromDoors.Count > 0 ? awayFromDoors : free).MaxBy(cell => Nearest(players, cell));
+            taken.Add(choice);
+            MoveHidden(enemy, choice);
+        }
+    }
+
+    private static readonly Vector2 Half = new(Level.CellSize / 2f, Level.CellSize / 2f);
+
+    private static Vector2 Middle((int X, int Z) cell) => (new Vector2(cell.X, cell.Z) * Level.CellSize) + Half;
+
+    private (int X, int Z) CellOf(ITarget enemy) => Level.ToGrid(enemy.Body.Position.X, enemy.Body.Position.Z);
+
+    // Puts a hidden enemy onto another cell, still hidden there (a bat in that cell's ceiling).
+    private void MoveHidden(ITarget enemy, (int X, int Z) cell)
+    {
+        var floor = Level.CellCenter(cell.X, cell.Z);
+        switch (enemy)
+        {
+            case Ghoul ghoul:
+                ghoul.PlaceAt(floor);
+                break;
+            case Bat bat:
+                bat.PlaceAt(Bat.HoverPosition(Level, floor));
+                break;
+            default:
+                return;
+        }
+
+        Hide(enemy);
     }
 
     /// <summary>

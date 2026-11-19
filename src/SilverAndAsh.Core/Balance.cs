@@ -392,6 +392,14 @@ public sealed record DifficultyBalance
     /// </summary>
     public float DoorDistance { get; init; } = 4f;
 
+    /// <summary>
+    /// Least distance (metres, flat, cell middle to the player's feet) of a combat room's enemy from every player when
+    /// it comes out (issue #445). A start cell nearer than this to a player is swapped for the nearest free cell of
+    /// the room that keeps this distance and <see cref="DoorDistance"/>; with none, the free cell farthest from all
+    /// players. Provisional.
+    /// </summary>
+    public float PlayerDistance { get; init; } = 3f;
+
     /// <summary>Least distance (metres) between two enemies of a room.</summary>
     public float Spacing { get; init; } = 2.5f;
 

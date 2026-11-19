@@ -51,6 +51,13 @@ public class EmergenceTests
             .ThenByDescending(cell => enemies.Count == 0 ? 0f : enemies.Min(enemy => Metres(cell, enemy)))
             .First();
 
+        return StartingAt(generated, seed, start, Balance);
+    }
+
+    // The same level, but the player starts in the middle of the cell `start`.
+    private static GameWorld StartingAt(GeneratedLevel generated, int seed, (int X, int Z) start, Balance balance)
+    {
+        var level = generated.Level;
         var cells = new Cell[level.Width, level.Depth];
         for (var x = 0; x < level.Width; x++)
         {
@@ -63,7 +70,110 @@ public class EmergenceTests
         var moved = new Level(
             cells, start.X, start.Z, level.DummyPositions.Select(Cell), level.GhoulPositions.Select(Cell),
             level.BatPositions.Select(Cell), level.BossPositions.Select(Cell));
-        return new GameWorld(moved, seed, Balance, generated.Doors, generated.Rooms, generated.Chests);
+        return new GameWorld(moved, seed, balance, generated.Doors, generated.Rooms, generated.Chests);
+    }
+
+    private static float FlatMetres(Vector3 a, Vector3 b) => Vector2.Distance(new Vector2(a.X, a.Z), new Vector2(b.X, b.Z));
+
+    [Fact]
+    public void An_enemy_never_comes_out_closer_than_the_player_distance_even_when_a_player_stands_on_its_start_cell()
+    {
+        // Issue #445: the worst case - a player stands on the start cell of one enemy of the room when it seals.
+        // Before, that enemy came out inside the player. Now it comes out on the nearest free cell that keeps the
+        // distance to every player and to the doors; the others stay where they are, and the room still clears.
+        var least = Balance.Difficulty.PlayerDistance;
+        var moved = 0;
+        for (var seed = 0; seed < Levels; seed++)
+        {
+            var generated = LevelZero.Build(seed, Balance);
+            foreach (var plan in generated.Rooms.Where(room => room.Kind == RoomKind.Combat))
+            {
+                var probe = StartingIn(generated, seed, plan);
+                var first = EnemiesOf(probe, probe.Rooms[plan.Index]).OrderBy(enemy => enemy.Id).First();
+                var world = StartingAt(generated, seed, Cell(first.Body.Position), Balance);
+                var room = world.Rooms[plan.Index];
+                var enemies = EnemiesOf(world, room);
+                var starts = enemies.ToDictionary(enemy => enemy.Id, enemy => enemy.Body.Position);
+                var doors = DoorCells(world, room);
+
+                world.Tick(PlayerInput.None);
+
+                var where = $"Seed {seed}, room {room.Index}";
+                Assert.True(room.IsSealed, $"{where}: not sealed.");
+                Assert.All(world.Players, player => Assert.All(enemies, enemy => Assert.True(
+                    FlatMetres(enemy.Body.Position, player.Position) >= least,
+                    $"{where}: enemy {enemy.Id} comes out {FlatMetres(enemy.Body.Position, player.Position)} m from a player.")));
+                Assert.All(enemies, enemy =>
+                {
+                    Assert.True(IsEmerging(enemy), $"{where}: enemy {enemy.Id} does not come out.");
+                    Assert.Contains(Cell(enemy.Body.Position), room.Cells);
+                    Assert.All(doors, door => Assert.True(
+                        Metres(Cell(enemy.Body.Position), door) >= Balance.Difficulty.DoorDistance,
+                        $"{where}: enemy {enemy.Id} comes out {Metres(Cell(enemy.Body.Position), door)} m from a door."));
+
+                    // Who was far enough stays on its start cell.
+                    if (world.Players.All(player => FlatMetres(starts[enemy.Id], player.Position) >= least))
+                    {
+                        Assert.Equal(starts[enemy.Id], enemy.Body.Position);
+                    }
+                });
+                Assert.Equal(enemies.Count, enemies.Select(enemy => Cell(enemy.Body.Position)).Distinct().Count());
+                moved += enemies.Count(enemy => enemy.Body.Position != starts[enemy.Id]);
+
+                for (var tick = 0; tick < EmergeTicks; tick++)
+                {
+                    world.Tick(PlayerInput.None);
+                }
+
+                foreach (var enemy in enemies)
+                {
+                    Assert.True(enemy.IsHittable, $"{where}: enemy {enemy.Id} is not out after the emerge time.");
+                    enemy.TakeDamage(10_000, []);
+                }
+
+                world.Tick(PlayerInput.None);
+                Assert.True(room.IsCleared, $"{where}: never cleared.");
+            }
+        }
+
+        // The case really happens: at least the enemy under the player moved, in every room.
+        Assert.True(moved > 0);
+    }
+
+    [Fact]
+    public void Without_any_cell_far_enough_an_enemy_comes_out_on_the_free_cell_farthest_from_the_players()
+    {
+        // A player distance no room can keep: every enemy has to give way, each to the farthest cell still free
+        // (away from the doors). So no free cell is left that lies farther from the player than one of them.
+        var balance = Balance with { Difficulty = Balance.Difficulty with { PlayerDistance = 1000f } };
+        for (var seed = 0; seed < 20; seed++)
+        {
+            var generated = LevelZero.Build(seed, balance);
+            foreach (var plan in generated.Rooms.Where(room => room.Kind == RoomKind.Combat))
+            {
+                var probe = StartingIn(generated, seed, plan);
+                var first = EnemiesOf(probe, probe.Rooms[plan.Index]).OrderBy(enemy => enemy.Id).First();
+                var world = StartingAt(generated, seed, Cell(first.Body.Position), balance);
+                var room = world.Rooms[plan.Index];
+                var enemies = EnemiesOf(world, room);
+                var doors = DoorCells(world, room);
+
+                world.Tick(PlayerInput.None);
+
+                var where = $"Seed {seed}, room {room.Index}";
+                var player = world.Player.Position;
+                var occupied = enemies.Select(enemy => Cell(enemy.Body.Position)).ToHashSet();
+                var free = room.Cells
+                    .Where(cell => !occupied.Contains(cell))
+                    .Where(cell => doors.All(door => Metres(cell, door) >= balance.Difficulty.DoorDistance))
+                    .ToList();
+                var nearestEnemy = enemies.Min(enemy => FlatMetres(enemy.Body.Position, player));
+                Assert.Equal(enemies.Count, occupied.Count);
+                Assert.All(free, cell => Assert.True(
+                    FlatMetres(world.Level.CellCenter(cell.X, cell.Z), player) <= nearestEnemy,
+                    $"{where}: cell {cell} is free and farther from the player than an enemy ({nearestEnemy} m)."));
+            }
+        }
     }
 
     [Fact]

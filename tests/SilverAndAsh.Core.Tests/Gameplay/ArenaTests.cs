@@ -26,7 +26,7 @@ public class ArenaTests
     private const string BatMap = "#.P.#\n##.##\n#...#\n#...#\n#.B.#\n#...#\n##.##\n#...#\n#...#";
     private const string TwoGhoulsMap = "#.P.#\n##.##\n#...#\n#G..#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
 
-    private static GameWorld World(bool withGhoul = true, string? mapText = null, RoomKind arena = RoomKind.Combat)
+    private static GameWorld World(bool withGhoul = true, string? mapText = null, RoomKind arena = RoomKind.Combat, Balance? balance = null)
     {
         var map = mapText ?? (withGhoul ? Map : Map.Replace('G', '.'));
         PlacedRoom[] rooms =
@@ -36,7 +36,7 @@ public class ArenaTests
             new(2, RoomKind.Corridor, "corridor", 0, 7, 5, 2, 2, Rows(7, 8), [], []),
         ];
         LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
-        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+        return new GameWorld(LevelParser.Parse(map), 1, balance ?? Balance.Default, doors, rooms);
     }
 
     private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
@@ -58,6 +58,10 @@ public class ArenaTests
         events.AddRange(Run(world, Forward, 180, () => world.Rooms[1].IsEntered));
         return events;
     }
+
+    // Issue #445 would move an enemy that waits close to the player away when the room seals.
+    private static readonly Balance WithoutPlayerDistance =
+        Balance.Default with { Difficulty = Balance.Default.Difficulty with { PlayerDistance = 0f } };
 
     private static readonly int EmergeTicks = SimulationClock.SecondsToTicks(Balance.Default.Difficulty.EmergeTime);
 
@@ -345,8 +349,9 @@ public class ArenaTests
     [Fact]
     public void While_it_comes_out_an_enemy_neither_attacks_nor_takes_damage()
     {
-        // The ghoul waits just inside the door (a hand-made map, no door zone): close to the player who comes in.
-        var world = World(mapText: "#.P.#\n##.##\n#G..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#");
+        // The ghoul waits just inside the door (a hand-made map, no door zone, no player distance): close to the
+        // player who comes in.
+        var world = World(mapText: "#.P.#\n##.##\n#G..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#", balance: WithoutPlayerDistance);
         var ghoul = world.Ghouls[0];
         Enter(world);
 
@@ -364,8 +369,9 @@ public class ArenaTests
     [Fact]
     public void While_it_sinks_out_of_the_ceiling_a_bat_neither_flies_nor_attacks_nor_takes_damage()
     {
-        // The bat waits just inside the door (a hand-made map, no door zone): close to the player who comes in.
-        var world = World(mapText: "#.P.#\n##.##\n#B..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#");
+        // The bat waits just inside the door (a hand-made map, no door zone, no player distance): close to the
+        // player who comes in.
+        var world = World(mapText: "#.P.#\n##.##\n#B..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#", balance: WithoutPlayerDistance);
         var bat = world.Bats[0];
         var start = bat.Position;
         Enter(world);
