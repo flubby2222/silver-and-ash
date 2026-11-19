@@ -31,3 +31,15 @@ Dateien liegen alle im selben Ordner. Messwerte und Spektrogramme: `messwerte.md
 - Lautheit: Pegel (RMS) je Paar gleich, gleich der alten Datei, soweit die Spitze (höchstens −1,5 dBFS) es zulässt. Bei `fledermaus-kreischen`, `fledermaus-sterben`, `gorm-sterben` und `gorm-ankuendigung-hammer` liegt die neue Fassung 1 bis 5 dB unter der alten, bei `fledermaus-kreischen` 10 dB (die alte war mit −8,3 dB Mittel sehr laut und schrill); im Spiel wäre das ein Pegel-Wert, kein Klangurteil.
 - Ankündigungen (Regel 2 der Audio-Bible): mit 30-ms-Fenster höchstens ein Einsatz bei allen acht Fassungen; 0 bei `fledermaus-spuck-ankuendigung-a` und `fledermaus-kreischen-b` heißt: sanfter Beginn ohne Sprung, kein zweiter Einsatz. Mit 10-ms-Fenster zählen tiefe Stimmen (unter 70 Hz, Periode über 14 ms) und das Flattern mehrere Einsätze: Messartefakt der tiefen Periode, nicht gehört.
 - Fledermaus-Zischen liegt um 1 bis 3 kHz (Anteil über 3 kHz bei `fledermaus-spucken-a` nur −3,6 dB, weil Zischen Rauschen ist); Stimmen der Fledermaus bleiben unter etwa 400 Hz Grundton.
+
+## Runde 2 (Urteil vom 2026-11-19: gewählt sind Kreischen c, Spuck-Ankündigung a, Sterben b)
+
+Die Fassungen c, a und b sind im Spiel (`tools/audio/monsterklaenge.py`); es ist keine Hörprobe mehr offen. Die Tabelle zeigt, was zur Wahl stand.
+
+| Spielklang | Fassung c | Fassung d | Unterschied |
+|---|---|---|---|
+| `p1-fledermaus-kreischen.wav` (kündigt den Sturzflug an; a und b abgelehnt) | `fledermaus-kreischen-c.wav` | `fledermaus-kreischen-d.wav` | c raues Zirpen-Schnarren, Grundton 180 bis 230 Hz, Pegel flattert immer schneller (8 bis 28 Hz), Atem dabei; d Flügelschwirren: weiche Rauschschläge zwischen 200 und 1200 Hz, ohne Stimme, Schlagrate steigt von 6 auf 22 Hz. Beide schwellen an, 0,55 s, ein Einsatz mit 30-ms-Fenster, keine Energie über 3 kHz von Belang (c −15,8 dB, d −18,0 dB unter Gesamt) |
+| `p1-fledermaus-spuck-ankuendigung.wav` (offen aus Runde 1) | `fledermaus-spuck-ankuendigung-a.wav` | `fledermaus-spuck-ankuendigung-b.wav` | a ansteigendes Zischen, b anschwellendes Gurgeln |
+| `p1-fledermaus-sterben.wav` (offen aus Runde 1) | `fledermaus-sterben-a.wav` | `fledermaus-sterben-b.wav` | a schwacher fallender Stimmlaut, b ausatmendes Zischen |
+
+Die Pegel von c und d liegen bei −19,0 dB Mittel (alt: −8,3 dB), weil die Spitze höchstens −1,5 dBFS erreichen darf; die alte Datei war sehr laut.

@@ -34,5 +34,7 @@ Gemessen, **nicht gehoert**. Mono, 44 100 Hz, 16 Bit. Lautheit (RMS) je Klang an
 | gorm-sterben-b.wav | 1.50 | -1.5 | -18.7 | -17.4 | -3.8 | -3.2 | -26.1 | 3 / 1 |
 | gorm-ankuendigung-hammer-a.wav | 1.00 | -1.5 | -18.2 | -13.0 | -18.1 | -0.3 | -23.0 | 1 / 1 |
 | gorm-ankuendigung-hammer-b.wav | 1.00 | -8.2 | -18.2 | -13.0 | -1.9 | -5.6 | -17.2 | 6 / 1 |
+| fledermaus-kreischen-c.wav | 0.55 | -1.5 | -19.0 | -8.3 | -12.7 | -1.0 | -15.8 | 3 / 1 |
+| fledermaus-kreischen-d.wav | 0.55 | -3.2 | -19.0 | -8.3 | -11.6 | -0.8 | -18.0 | 3 / 1 |
 
 Ankuendigungen (Regel 2 der Audio-Bible: genau ein Einsatz): ghul-ankuendigung, fledermaus-spuck-ankuendigung, fledermaus-kreischen, gorm-ankuendigung-hammer.

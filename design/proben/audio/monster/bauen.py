@@ -2,6 +2,7 @@
 
 Aufruf (aus dem Repository-Stamm):
     python design/proben/audio/monster/bauen.py             # WAV + messwerte.md + Spektrogramme (ffmpeg)
+    python design/proben/audio/monster/bauen.py --nur-runde2 # nur Kreischen c/d bauen, Messwerte und Pruefsummen neu
     python design/proben/audio/monster/bauen.py --pruefen   # Temp-Ordner neu bauen, SHA-256 gegen wav.sha256 vergleichen
 
 Aufbau: Stimme = gehuepfter Impulszug (Hann-Impuls) mit Tonhoehen-Zittern (jitter), Pegel-Zittern (shimmer) und
@@ -177,7 +178,30 @@ def fertig(x):
     return x
 
 
+# RMS der alten Dateien (Stand origin/main vor Issue 392). Fest eingetragen, weil assets/audio nach dem Einbau
+# die neuen Dateien enthaelt und ein zweiter Lauf sonst eine andere Ziellautheit sieht.
+ALT_RMS = {
+    "p1-fledermaus-biss.wav": 0.03811547133285714,
+    "p1-fledermaus-fehlsturz.wav": 0.04001653299070042,
+    "p1-fledermaus-flattern-1.wav": 0.028153790644584915,
+    "p1-fledermaus-kreischen.wav": 0.38449668251857105,
+    "p1-fledermaus-spuck-ankuendigung.wav": 0.06648546060006182,
+    "p1-fledermaus-spucken.wav": 0.03579009022936983,
+    "p1-fledermaus-sterben.wav": 0.15944708096164378,
+    "p1-fledermaus-treffer.wav": 0.03583096274719661,
+    "p1-ghul-ankuendigung.wav": 0.09738755900480069,
+    "p1-ghul-entdecken.wav": 0.101857419127374,
+    "p1-ghul-sterben.wav": 0.08482610551690303,
+    "p1-gorm-ankuendigung-hammer.wav": 0.22281638552651406,
+    "p1-gorm-bruellen.wav": 0.1511242467137007,
+    "p1-gorm-sterben.wav": 0.13514257221088827,
+    "p1-gorm-treffer-1.wav": 0.05033925386962173,
+}
+
+
 def lautheit_alt(name):
+    if name in ALT_RMS:
+        return ALT_RMS[name]
     with wave.open(os.path.join(ALT, name), "rb") as w:
         roh = w.readframes(w.getnframes())
     werte = struct.unpack("<%dh" % (len(roh) // 2), roh)
@@ -210,9 +234,9 @@ def lies(pfad):
 
 
 # ---------------------------------------------------------------- Ghul
-def ghul_ankuendigung_a():
+def ghul_ankuendigung_a(seed=3921):
     """Knurren: knarrende Stimme 60 -> 70 Hz, Vokal u -> o, Atem, ueber 1 s anschwellend, am Gipfel Ende."""
-    rng = random.Random(3921)
+    rng = random.Random(seed)
     n = sek(1.0)
     v = stimme(n, rng, lambda t: 60 + 10 * t, lambda t: (350 + 150 * t, 700 + 300 * t, 2400),
                q=(6, 8, 10), atem=0.5, jitter=0.04, shimmer=0.2, knarren=0.5)
@@ -220,9 +244,9 @@ def ghul_ankuendigung_a():
     return mal(v, h)
 
 
-def ghul_ankuendigung_b():
+def ghul_ankuendigung_b(seed=3922):
     """Atem: stimmloses, rasselndes Einatmen; Rauschen mit steigender Mitte 350 -> 1100 Hz, anschwellend."""
-    rng = random.Random(3922)
+    rng = random.Random(seed)
     n = sek(1.0)
     r = rauschen(n, rng)
     a = filt(r, "bp", lambda t: 350 + 750 * t, 2.5)
@@ -232,9 +256,9 @@ def ghul_ankuendigung_b():
     return mal(x, h)
 
 
-def ghul_entdecken_a():
+def ghul_entdecken_a(seed=3923):
     """Stoehnen: Vokal u -> a -> o, Tonhoehe wie ein Bogen 75 -> 105 -> 70 Hz, knarrend."""
-    rng = random.Random(3923)
+    rng = random.Random(seed)
     n = sek(0.9)
 
     def f0(t):
@@ -249,9 +273,9 @@ def ghul_entdecken_a():
     return mal(v, h)
 
 
-def ghul_entdecken_b():
+def ghul_entdecken_b(seed=3924):
     """Gurgeln: Tiefpass-Rauschen mit unregelmaessigem Nass-Flattern (~28 Hz), darunter leise Stimme 55 Hz."""
-    rng = random.Random(3924)
+    rng = random.Random(seed)
     n = sek(0.9)
     luft = filt(rauschen(n, rng), "lp", 900, 0.8)
     lfo = filt(rauschen(n, rng), "lp", 28, 0.7)
@@ -263,9 +287,9 @@ def ghul_entdecken_b():
     return mal(x, h)
 
 
-def ghul_sterben_a():
+def ghul_sterben_a(seed=3925):
     """Letzter Atemzug mit Stimme: Tonhoehe faellt 100 -> 40 Hz, Vokal a -> o, Atem nimmt zu."""
-    rng = random.Random(3925)
+    rng = random.Random(seed)
     n = sek(1.3)
     v = stimme(n, rng, lambda t: 100 * math.exp(-0.7 * t / 1.3 * 1.6), lambda t: (700 - 300 * min(1, t / 1.2), 1100 - 300 * min(1, t / 1.2), 2400),
                q=(5, 7, 9), atem=0.6, jitter=0.05, shimmer=0.25, knarren=0.4)
@@ -273,9 +297,9 @@ def ghul_sterben_a():
     return mal(v, h)
 
 
-def ghul_sterben_b():
+def ghul_sterben_b(seed=3926):
     """Rasselndes Ausatmen: Rauschen mit fallender Mitte 1100 -> 250 Hz, rauhe Schwankung (~22 Hz)."""
-    rng = random.Random(3926)
+    rng = random.Random(seed)
     n = sek(1.3)
     x = norm(filt(rauschen(n, rng), "bp", lambda t: 1100 * math.exp(-1.48 * t / 1.3), 1.2))
     h = mal(huelle(n, [(0, 0), (0.06, 1), (0.4, 0.7), (1.3, 0)]), schwanken(n, rng, 22, 0.6))
@@ -283,17 +307,17 @@ def ghul_sterben_b():
 
 
 # ---------------------------------------------------------------- Fledermaus
-def fl_spuck_ank_a():
+def fl_spuck_ank_a(seed=3931):
     """Anschwellendes Zischen: Rauschen, Mitte 1000 -> 2400 Hz, Pegel steigt bis zum Ende."""
-    rng = random.Random(3931)
+    rng = random.Random(seed)
     n = sek(0.7)
     x = norm(filt(filt(rauschen(n, rng), "hp", 800, 0.7), "bp", lambda t: 1000 + 2000 * t, 1.5))
     return mal(x, huelle(n, [(0, 0.03), (0.69, 1.0), (0.7, 0)], 2.5), schwanken(n, rng, 9, 0.2))
 
 
-def fl_spuck_ank_b():
+def fl_spuck_ank_b(seed=3932):
     """Gurgeln: Tiefpass-Rauschen mit Nass-Flattern (~20 Hz, flach), anschwellend, dazu leises Band um 600 Hz."""
-    rng = random.Random(3932)
+    rng = random.Random(seed)
     n = sek(0.7)
     luft = rauschen(n, rng)
     lfo = filt(rauschen(n, rng), "lp", 20, 0.7)
@@ -304,9 +328,9 @@ def fl_spuck_ank_b():
     return mal(x, huelle(n, [(0, 0.03), (0.69, 1.0), (0.7, 0)], 2.0))
 
 
-def fl_spucken_a():
+def fl_spucken_a(seed=3933):
     """Fauchen: kurzer Rauschstoss (Band um 2200 Hz) plus ein feuchtes Klicken am Anfang."""
-    rng = random.Random(3933)
+    rng = random.Random(seed)
     n = sek(0.3)
     r = rauschen(n, rng)
     z = norm(filt(filt(r, "hp", 1000, 0.7), "bp", 2200, 0.9))
@@ -316,9 +340,9 @@ def fl_spucken_a():
     return [a * p + 0.8 * b * q for a, p, b, q in zip(hz, z, hk, k)]
 
 
-def fl_spucken_b():
+def fl_spucken_b(seed=3934):
     """Ausspucken 'ptuh': kurzer dumpfer Schlag (Tiefpass-Rauschen plus fallende Sinuswelle 220 -> 90 Hz), dann leises Zischen."""
-    rng = random.Random(3934)
+    rng = random.Random(seed)
     n = sek(0.2)
     r = rauschen(n, rng)
     d = norm(filt(r, "lp", 1500, 0.8))
@@ -334,9 +358,9 @@ def fl_spucken_b():
     return [a * (p + 0.8 * q) + b * w for a, p, q, b, w in zip(hd, d, s, hz, z)]
 
 
-def fl_kreischen_a():
+def fl_kreischen_a(seed=3935):
     """Fauchen vor dem Sturzflug: Rauschband 1800 -> 2600 Hz plus raue tiefe Stimme (160 -> 240 Hz) darunter."""
-    rng = random.Random(3935)
+    rng = random.Random(seed)
     n = sek(0.55)
     z = norm(filt(rauschen(n, rng), "bp", lambda t: 1800 + 1450 * t, 1.2))
     v = stimme(n, rng, lambda t: 160 + 145 * t, lambda t: (600, 1500, 2600), q=(4, 6, 8), atem=0.8, jitter=0.06,
@@ -345,34 +369,34 @@ def fl_kreischen_a():
     return mal(x, huelle(n, [(0, 0.03), (0.54, 1.0), (0.55, 0)], 2.0))
 
 
-def fl_kreischen_b():
+def fl_kreischen_b(seed=3936):
     """Heiseres Kraechzen: nur Stimme 140 -> 210 Hz, starkes Zittern, Atem, anschwellend; keine hohe Lage."""
-    rng = random.Random(3936)
+    rng = random.Random(seed)
     n = sek(0.55)
     v = stimme(n, rng, lambda t: 140 + 130 * t, lambda t: (500, 1300, 2500), q=(5, 7, 9), atem=0.5, jitter=0.08,
                shimmer=0.3)
     return mal(v, huelle(n, [(0, 0.03), (0.54, 1.0), (0.55, 0)], 1.8), schwanken(n, rng, 14, 0.3))
 
 
-def fl_flattern_a():
+def fl_flattern_a(seed=3937):
     """Flügelschlag, zwei weiche Wellen aus Rauschen 250 -> 1400 Hz."""
-    rng = random.Random(3937)
+    rng = random.Random(seed)
     n = sek(0.22)
     x = norm(filt(filt(rauschen(n, rng), "hp", 250, 0.7), "lp", 1400, 0.7))
     return mal(x, huelle(n, [(0, 0), (0.03, 0.7), (0.07, 0.25), (0.11, 1), (0.18, 0.2), (0.22, 0)]))
 
 
-def fl_flattern_b():
+def fl_flattern_b(seed=3938):
     """Flügelschlag, ein einziges dumpfes Wuschen: Rauschen um 350 Hz."""
-    rng = random.Random(3938)
+    rng = random.Random(seed)
     n = sek(0.22)
     x = norm(filt(rauschen(n, rng), "bp", 350, 1.0))
     return mal(x, huelle(n, [(0, 0), (0.08, 1), (0.22, 0)]))
 
 
-def fl_biss_a():
+def fl_biss_a(seed=3939):
     """Feuchtes Schnappen: kurzes Rauschklicken um 1400 Hz plus dumpfer Schlag 140 Hz."""
-    rng = random.Random(3939)
+    rng = random.Random(seed)
     n = sek(0.25)
     k = norm(filt(rauschen(n, rng), "bp", 1400, 2.0))
     d = [math.sin(TAU * 140 * i / SR) for i in range(n)]
@@ -381,9 +405,9 @@ def fl_biss_a():
     return [a * p + 0.6 * b * q for a, p, b, q in zip(hk, k, hd, d)]
 
 
-def fl_biss_b():
+def fl_biss_b(seed=3940):
     """Schnappen mit Knurrlaut: Tiefpass-Rauschstoss (60 ms) plus kurzer Stimmlaut 180 Hz mit Atem."""
-    rng = random.Random(3940)
+    rng = random.Random(seed)
     n = sek(0.25)
     s = norm(filt(rauschen(n, rng), "lp", 2500, 0.8))
     v = norm(stimme(n, rng, lambda t: 180, lambda t: (600, 1200, 2500), atem=0.8, jitter=0.06))
@@ -392,9 +416,9 @@ def fl_biss_b():
     return [a * p + 0.5 * b * q for a, p, b, q in zip(hs, s, hv, v)]
 
 
-def fl_treffer_a():
+def fl_treffer_a(seed=3941):
     """Kurzes Fauchen 'hsst': Rauschband 2400 Hz, darunter schwaches raues Stimmchen (300 -> 220 Hz)."""
-    rng = random.Random(3941)
+    rng = random.Random(seed)
     n = sek(0.3)
     z = norm(filt(rauschen(n, rng), "bp", 2400, 1.5))
     v = norm(stimme(n, rng, lambda t: 300 - 80 * t / 0.3, lambda t: (650, 1600, 2600), atem=0.7, jitter=0.06))
@@ -402,26 +426,26 @@ def fl_treffer_a():
     return mal(x, huelle(n, [(0, 0), (0.01, 1), (0.1, 0.5), (0.3, 0)]))
 
 
-def fl_treffer_b():
+def fl_treffer_b(seed=3942):
     """Kurzer tiefer Rauhlaut: Stimme 200 -> 150 Hz mit viel Atem."""
-    rng = random.Random(3942)
+    rng = random.Random(seed)
     n = sek(0.3)
     v = stimme(n, rng, lambda t: 200 - 50 * t / 0.3, lambda t: (550, 1300, 2500), atem=0.7, jitter=0.07, shimmer=0.25)
     return mal(v, huelle(n, [(0, 0), (0.015, 1), (0.12, 0.5), (0.3, 0)]))
 
 
-def fl_sterben_a():
+def fl_sterben_a(seed=3943):
     """Schwacher Stimmlaut: Tonhoehe faellt 380 -> 160 Hz, viel Atem, unregelmaessig."""
-    rng = random.Random(3943)
+    rng = random.Random(seed)
     n = sek(0.7)
     v = stimme(n, rng, lambda t: 380 * math.exp(-1.2 * t / 0.7 * 0.8), lambda t: (700, 1700, 2700), q=(4, 6, 8),
                atem=0.9, jitter=0.05, shimmer=0.25)
     return mal(v, huelle(n, [(0, 0), (0.04, 1), (0.3, 0.6), (0.7, 0)]), schwanken(n, rng, 9, 0.35))
 
 
-def fl_sterben_b():
+def fl_sterben_b(seed=3944):
     """Ausatmendes Zischen: Rauschband faellt 3000 -> 900 Hz, darunter leise raue Stimme 150 Hz."""
-    rng = random.Random(3944)
+    rng = random.Random(seed)
     n = sek(0.7)
     z = norm(filt(rauschen(n, rng), "bp", lambda t: 3000 * math.exp(-1.7 * t / 0.7), 1.2))
     v = norm(stimme(n, rng, lambda t: 150, lambda t: (550, 1200, 2500), atem=0.6, jitter=0.07))
@@ -429,26 +453,26 @@ def fl_sterben_b():
     return mal(x, huelle(n, [(0, 0), (0.04, 1), (0.35, 0.5), (0.7, 0)]))
 
 
-def fl_fehlsturz_a():
+def fl_fehlsturz_a(seed=3945):
     """Luftzug: Rauschen, Mitte faellt 1600 -> 500 Hz, ein Bogen."""
-    rng = random.Random(3945)
+    rng = random.Random(seed)
     n = sek(0.45)
     x = norm(filt(rauschen(n, rng), "bp", lambda t: 1600 * math.exp(-1.16 * t / 0.45), 1.2))
     return mal(x, huelle(n, [(0, 0), (0.18, 1), (0.45, 0)]))
 
 
-def fl_fehlsturz_b():
+def fl_fehlsturz_b(seed=3946):
     """Dumpfer Luftzug: Tiefpass-Rauschen, Grenze 1100 -> 300 Hz, breiter Bogen mit leichter Schwankung."""
-    rng = random.Random(3946)
+    rng = random.Random(seed)
     n = sek(0.45)
     x = norm(filt(rauschen(n, rng), "lp", lambda t: 1100 * math.exp(-1.3 * t / 0.45), 0.8))
     return mal(x, huelle(n, [(0, 0), (0.15, 0.8), (0.28, 1), (0.45, 0)]), schwanken(n, rng, 10, 0.2))
 
 
 # ---------------------------------------------------------------- Gorm
-def gorm_bruellen_a():
+def gorm_bruellen_a(seed=3951):
     """Bruellen: Stimme 50 -> 68 -> 48 Hz, weite Formanten (a), Atem, leicht saettigend."""
-    rng = random.Random(3951)
+    rng = random.Random(seed)
     n = sek(1.5)
 
     def f0(t):
@@ -460,9 +484,9 @@ def gorm_bruellen_a():
     return saettigen(mal(v, h), 2.0)
 
 
-def gorm_bruellen_b():
+def gorm_bruellen_b(seed=3952):
     """Knurren: Stimme 38 -> 45 -> 36 Hz, Knarren, Vokal o, rasselnde Pegelschwankung ~22 Hz, saettigend."""
-    rng = random.Random(3952)
+    rng = random.Random(seed)
     n = sek(1.5)
     v = stimme(n, rng, lambda t: 36 + 9 * math.sin(math.pi * min(1.0, t / 1.4)), lambda t: (450, 800, 2300),
                q=(3, 4, 6), atem=0.3, jitter=0.05, shimmer=0.3, knarren=0.55)
@@ -471,17 +495,17 @@ def gorm_bruellen_b():
     return saettigen(mal(v, h, am), 2.0)
 
 
-def gorm_treffer_a():
+def gorm_treffer_a(seed=3953):
     """Grunzen 'hnnf': kurze Stimme 70 -> 50 Hz, Vokal o, Atem."""
-    rng = random.Random(3953)
+    rng = random.Random(seed)
     n = sek(0.35)
     v = stimme(n, rng, lambda t: 70 - 20 * t / 0.35, lambda t: (500, 900, 2300), q=(3, 4, 6), atem=0.5, jitter=0.05)
     return mal(v, huelle(n, [(0, 0), (0.03, 1), (0.15, 0.5), (0.35, 0)]))
 
 
-def gorm_treffer_b():
+def gorm_treffer_b(seed=3954):
     """Ausstossen 'haah': Tiefpass-Rauschen (Grenze 1000 -> 300 Hz) plus leise Stimme 55 Hz."""
-    rng = random.Random(3954)
+    rng = random.Random(seed)
     n = sek(0.35)
     a = norm(filt(rauschen(n, rng), "lp", lambda t: 1000 * math.exp(-3.5 * t / 0.35 * 0.35), 0.8))
     v = norm(stimme(n, rng, lambda t: 55, lambda t: (500, 900, 2300), q=(3, 4, 6), atem=0.3, jitter=0.05))
@@ -489,9 +513,9 @@ def gorm_treffer_b():
     return mal(x, huelle(n, [(0, 0), (0.03, 1), (0.15, 0.5), (0.35, 0)]))
 
 
-def gorm_sterben_a():
+def gorm_sterben_a(seed=3955):
     """Absackendes Stoehnen: Stimme faellt 60 -> 28 Hz, Vokal a -> o, Atem nimmt zu."""
-    rng = random.Random(3955)
+    rng = random.Random(seed)
     n = sek(1.5)
     v = stimme(n, rng, lambda t: 60 * math.exp(-0.76 * t / 1.5 * 1.4), lambda t: (650 - 250 * min(1, t / 1.4), 1000 - 200 * min(1, t / 1.4), 2400),
                q=(3, 4, 6), atem=0.6, jitter=0.05, shimmer=0.3)
@@ -499,9 +523,9 @@ def gorm_sterben_a():
     return saettigen(mal(v, h), 1.6)
 
 
-def gorm_sterben_b():
+def gorm_sterben_b(seed=3956):
     """Nasses Rasseln: Tiefpass-Rauschen sinkt 800 -> 150 Hz, Schwankung ~18 Hz, leise tiefe Stimme 35 Hz."""
-    rng = random.Random(3956)
+    rng = random.Random(seed)
     n = sek(1.5)
     a = norm(filt(rauschen(n, rng), "lp", lambda t: 800 * math.exp(-1.67 * t / 1.5), 0.8))
     am = [1 - 0.7 * (0.5 + 0.5 * math.sin(TAU * 18 * i / SR)) for i in range(n)]
@@ -510,17 +534,17 @@ def gorm_sterben_b():
     return mal(x, huelle(n, [(0, 0), (0.08, 1), (0.6, 0.7), (1.5, 0)]), schwanken(n, rng, 5, 0.3))
 
 
-def gorm_hammer_a():
+def gorm_hammer_a(seed=3957):
     """Tiefes Einatmen: Rauschband 400 -> 1000 Hz, ueber 1 s anschwellend."""
-    rng = random.Random(3957)
+    rng = random.Random(seed)
     n = sek(1.0)
     x = norm(filt(filt(rauschen(n, rng), "bp", lambda t: 400 + 600 * t, 1.0), "lp", 1500, 0.7))
     return mal(x, huelle(n, [(0, 0.03), (0.99, 1.0), (1.0, 0)], 2.0))
 
 
-def gorm_hammer_b():
+def gorm_hammer_b(seed=3958):
     """Anschwellendes Knurren: Stimme 42 -> 62 Hz, Vokal o -> a, Atem, Knarren."""
-    rng = random.Random(3958)
+    rng = random.Random(seed)
     n = sek(1.0)
     v = stimme(n, rng, lambda t: 42 + 20 * t, lambda t: (450 + 200 * t, 800 + 250 * t, 2300), q=(3, 4, 6), atem=0.4,
                jitter=0.05, shimmer=0.25, knarren=0.4)
@@ -562,12 +586,53 @@ KLAENGE = [
 ]
 
 
-def bauen(ordner):
+def fl_kreischen_c(seed=3961):
+    """Zirpen-Schnarren: raue Stimme 180 -> 230 Hz, Pegel mit steigender Rate (8 -> 28 Hz) flatternd, Atem, anschwellend."""
+    rng = random.Random(seed)
+    n = sek(0.55)
+    v = stimme(n, rng, lambda t: 180 + 50 * t / 0.55, lambda t: (600, 1500, 2600), q=(4, 6, 8), atem=0.6,
+               jitter=0.06, shimmer=0.25)
+    ph = 0.0
+    am = []
+    for i in range(n):
+        t = i / SR
+        ph += (8 + 20 * t / 0.55) / SR
+        am.append(1 - 0.4 * (0.5 + 0.5 * math.sin(TAU * ph)))
+    return mal(v, am, huelle(n, [(0, 0.05), (0.54, 1.0), (0.55, 0)], 1.6))
+
+
+def fl_kreischen_d(seed=3962):
+    """Fluegelschwirren: weiche Rauschschlaege (Band 200 bis 1200 Hz), Schlagrate steigt 6 -> 22 Hz, anschwellend; keine Stimme."""
+    rng = random.Random(seed)
+    n = sek(0.55)
+    x = norm(filt(filt(rauschen(n, rng), "hp", 200, 0.7), "lp", 1200, 0.7))
+    ph = 0.0
+    am = []
+    for i in range(n):
+        t = i / SR
+        ph += (6 + 16 * t / 0.55) / SR
+        am.append(1 - 0.5 * (0.5 + 0.5 * math.sin(TAU * ph)))
+    return mal(x, am, huelle(n, [(0, 0.05), (0.54, 1.0), (0.55, 0)], 1.8))
+
+
+RUNDE2 = [
+    ("fledermaus-kreischen", "p1-fledermaus-kreischen.wav", "Fledermaus kuendigt den Sturzflug an (BatScreech)", True,
+     fl_kreischen_c, fl_kreischen_d, "c raues Zirpen-Schnarren mit steigender Flatterrate, d Fluegelschwirren ohne Stimme"),
+]
+
+
+def alle(nur_runde2=False):
+    """(Eintrag, Endungen) fuer Runde 1 (a, b) und Runde 2 (c, d)."""
+    liste = [] if nur_runde2 else [(k, ("a", "b")) for k in KLAENGE]
+    return liste + [(k, ("c", "d")) for k in RUNDE2]
+
+
+def bauen(ordner, nur_runde2=False):
     os.makedirs(ordner, exist_ok=True)
     dateien = []
-    for name, alt, _, _, fa, fb, _ in KLAENGE:
+    for (name, alt, _, _, fa, fb, _), endungen in alle(nur_runde2):
         paar = anpassen_paar(fertig(fa()), fertig(fb()), alt)
-        for suffix, x in zip(("a", "b"), paar):
+        for suffix, x in zip(endungen, paar):
             p = os.path.join(ordner, "%s-%s.wav" % (name, suffix))
             schreibe(p, x)
             dateien.append(p)
@@ -619,8 +684,8 @@ def messwerte(ordner, mit_bildern):
               "|---|---|---|---|---|---|---|---|---|"]
     if mit_bildern:
         os.makedirs(os.path.join(ordner, "bilder"), exist_ok=True)
-    for name, alt, _, _, _, _, _ in KLAENGE:
-        for suffix in ("a", "b"):
+    for (name, alt, _, _, _, _, _), endungen in alle():
+        for suffix in endungen:
             p = os.path.join(ordner, "%s-%s.wav" % (name, suffix))
             x = lies(p)
             ffm = subprocess.run(["ffmpeg", "-hide_banner", "-i", p, "-af", "volumedetect", "-f", "null", "-"],
@@ -649,17 +714,17 @@ def main():
         with open(os.path.join(HIER, "wav.sha256"), encoding="utf-8") as f:
             soll = dict((z.split()[1], z.split()[0]) for z in f if z.strip())
         with tempfile.TemporaryDirectory() as t:
-            ist = dict((os.path.basename(p), sha(p)) for p in bauen(t))
-        gleich = soll == ist
+            ist = dict((os.path.basename(p), sha(p)) for p in bauen(t, "--nur-runde2" in sys.argv))
+        gleich = all(soll.get(k) == v for k, v in ist.items()) and bool(ist)
         print("zweiter Lauf bitgleich zu wav.sha256:", gleich, "(%d Dateien)" % len(ist))
         return 0 if gleich else 1
-    bauen(HIER)
+    bauen(HIER, "--nur-runde2" in sys.argv)
     messwerte(HIER, True)
     with open(os.path.join(HIER, "wav.sha256"), "w", newline="\n") as f:
-        for name, *_ in KLAENGE:
-            for s in ("a", "b"):
-                p = os.path.join(HIER, "%s-%s.wav" % (name, s))
-                f.write("%s  %s-%s.wav\n" % (sha(p), name, s))
+        for (name, *_), endungen in alle():
+            for s_ in endungen:
+                p = os.path.join(HIER, "%s-%s.wav" % (name, s_))
+                f.write("%s  %s-%s.wav\n" % (sha(p), name, s_))
     return 0
 
 
