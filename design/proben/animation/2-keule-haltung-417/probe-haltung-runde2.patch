@@ -1,0 +1,58 @@
+diff --git a/src/SilverAndAsh.Core/Presentation/WeaponPose.cs b/src/SilverAndAsh.Core/Presentation/WeaponPose.cs
+index 8742f62..6c4403e 100644
+--- a/src/SilverAndAsh.Core/Presentation/WeaponPose.cs
++++ b/src/SilverAndAsh.Core/Presentation/WeaponPose.cs
+@@ -335,6 +335,34 @@ public static class WeaponPose
+         return Matrix4x4.CreateFromQuaternion(Quaternion.Normalize(new Quaternion(Vector3.Cross(from, to), 1f + cosine)));
+     }
+ 
++
++    // ---- PROBE #417 round 2 (temporary, not part of the game) ----
++    public static float[] ProbeNums(string? v, int n, float[] fallback)
++    {
++        if (string.IsNullOrWhiteSpace(v)) return fallback;
++        var a = v.Split(',');
++        var r = new float[n];
++        for (var i = 0; i < n; i++) r[i] = float.Parse(a[i], System.Globalization.CultureInfo.InvariantCulture);
++        return r;
++    }
++
++    public static readonly bool ProbeOn = Environment.GetEnvironmentVariable("SA_CLUB_BEND") is not null;
++    // pitch, yaw (degrees), pivot x, y, z in file space (inside the cuff)
++    public static readonly float[] ProbeBend = ProbeNums(Environment.GetEnvironmentVariable("SA_CLUB_BEND"), 5, [35f, 10f, 0f, 0f, -0.06f]);
++    public static readonly float[] ProbeBendHit = ProbeNums(Environment.GetEnvironmentVariable("SA_CLUB_BENDHIT"), 2, [0f, 0f]);
++    public static readonly float[] ProbeBendWind = ProbeNums(Environment.GetEnvironmentVariable("SA_CLUB_BENDWIND"), 2, [20f, -10f]);
++    public static readonly float? ProbeT = float.TryParse(Environment.GetEnvironmentVariable("SA_CLUB_T"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pt) ? pt : null;
++    public static readonly float? ProbeW = float.TryParse(Environment.GetEnvironmentVariable("SA_CLUB_W"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pw) ? pw : null;
++
++    /// The club turned against its sleeve around a pivot inside the cuff (file space): pitch = head up, yaw = head outward (left).
++    public static Matrix4x4 ClubBend(float swing, float windUp)
++    {
++        var pitch = ProbeBend[0] + ((ProbeBendHit[0] - ProbeBend[0]) * swing) + ((ProbeBendWind[0] - ProbeBend[0]) * windUp);
++        var yaw = ProbeBend[1] + ((ProbeBendHit[1] - ProbeBend[1]) * swing) + ((ProbeBendWind[1] - ProbeBend[1]) * windUp);
++        var pivot = new Vector3(ProbeBend[2], ProbeBend[3], ProbeBend[4]);
++        return Matrix4x4.CreateTranslation(-pivot) * Matrix4x4.CreateRotationX(Radians(-pitch)) * Matrix4x4.CreateRotationY(Radians(yaw)) * Matrix4x4.CreateTranslation(pivot);
++    }
++
+     private static float Radians(float degrees) => degrees * MathF.PI / 180f;
+ }
+ 
+diff --git a/src/SilverAndAsh.Game/Rendering/WeaponViews.cs b/src/SilverAndAsh.Game/Rendering/WeaponViews.cs
+index 93bf5ce..3475ff4 100644
+--- a/src/SilverAndAsh.Game/Rendering/WeaponViews.cs
++++ b/src/SilverAndAsh.Game/Rendering/WeaponViews.cs
+@@ -211,6 +211,14 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
+ 
+         if (models is not null && models.TryGetMelee(_melee, out var blade, out var bladeHand))
+         {
++            if (WeaponPose.ProbeOn && _melee == WeaponKind.Club)
++            {
++                var pt = WeaponPose.ProbeT ?? t; var pw = WeaponPose.ProbeW ?? _windUp;
++                var g2 = WeaponPose.Blade(pt, pw, tremble) * modelMotion;
++                DrawOnePart(blade, WeaponPose.ClubBend(pt, pw) * g2);
++                DrawSleeve(bladeHand, g2, WeaponPose.BladeForearm(pt, pw, tremble, bladeHand.Rig.Pivots[1]));
++                return;
++            }
+             var grip = WeaponPose.Blade(t, _windUp, tremble) * modelMotion;
+             DrawOnePart(blade, grip);
+             DrawSleeve(bladeHand, grip, WeaponPose.BladeForearm(t, _windUp, tremble, bladeHand.Rig.Pivots[1]));
