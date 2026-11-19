@@ -60,7 +60,7 @@ public class PhotoSceneTests
         [
             "start-room", "room-combat", "room-corridor", "room-treasure", "room-secret", "room-boss",
             "ghoul-4m", "ghoul-10m", "bat-4m", "bat-10m", "ghoul-windup", "gorm", "hud-weapons", "inventory", "map", "map-skillpoint",
-            "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "club-rest", "club-swing-half", "showroom-club", "hud-rifle",
+            "model-probe-4m", "model-probe-10m", "chests-4m", "pistol-recoil", "blade-charged", "blade-swing-half", "blade-swing-full", "club-rest", "club-swing-half", "club-charged", "club-swing-full", "club-charged-release", "showroom-club", "hud-rifle",
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload", "hud-texts",
             "hud-calm", "hud-items", "hud-boss", "hud-skillpoint", "hud-pickup",
             "hud-reload-start", "hud-reload-mid", "hud-hit", "hud-lowlife", "hud-skillpoint-glow", "hud-blunderbuss", "hud-melee",
