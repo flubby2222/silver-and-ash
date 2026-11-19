@@ -56,3 +56,52 @@ Die Bilder entstehen im Workbench-Renderer mit Flächenfarben aus der Palette; L
 - **Game:** Modell laden (`assets/models/fountain_*.glb`, Skript unter `tools/models/`), Zustandswechsel über zwei Modelle oder getrennte Teile (Wasser, Deckel, Strahl als eigener Knoten; dann reicht eine Datei). Beim Einbau braucht das Modell eine Textur nach Art Bible (64 x 64, 16 bis 32 Farben); der Entwurf hier ist farbig je Fläche und noch nicht texturiert. Jede neue Datei in `assets/HERKUNFT.md`.
 - **Generator:** höchstens ein Brunnen je Ebene (Abnahmekriterium im Issue); B braucht eine Wandzelle, A und C eine freie Zelle mit mindestens 2 x 2 m.
 - Modell und Geräusche laufen laut Issue in eigenen Issues; die Hörprobe vor der ersten Integration bleibt Sache des Menschen.
+
+
+# Runde 2: Schalenbrunnen A in drei Ausführungen (Issue #438)
+
+Der Mensch hat Form A gewählt (B und C verworfen), blaues Wasser und goldenes Funkeln: ja. Dazu: "Vielleicht mit Moos". Diesmal **mit Textur** nach Art Bible (64 x 64, höchstens 32 Farben, nur Palette, keine Mischung).
+
+## Dateien (Runde 2)
+
+- `brunnen2.py`: erzeugt alles dieser Runde (Geometrie mit UVs, Texturen, `.glb`, Bilder, GIFs, Blatt). Zwei Läufe liefern bitgleiche Dateien (SHA-256 aller Ausgaben verglichen).
+- `blatt2.png`: Blatt mit A1/A2/A3, bereit und verbraucht, aus 4 m und 2 m im Spiel, Texturen, Maßstab, Empfehlung.
+- `ansichten_a1|a2|a3.png`: vier Ansichten (vorn, Seite, hinten, schräg oben), bereit und verbraucht, helle Ansicht ohne Laterne und Nebel. `spiel_a1|a2|a3_<bereit|verbraucht>_<2|4>m.png`: Spielbedingungen.
+- `textur_a1|a2|a3.png` (64 x 64), `texturen.png` (sechsfach vergrößert), `massstab2.png`.
+- `wasser_a1|a2|a3.gif`: Wasserfall und Wasser, vier Bilder zu je 150 ms, saubere Schleife (helle Ansicht); `wasser_*_spiel.gif`: dasselbe in Spielbedingungen aus 3 m.
+- `brunnen_a1|a2|a3_<bereit|verbraucht>.glb`: sechs Modelle (Bild 0 der Animation), alle geschlossen (`tools/models/check_closed.py`, 0 offene Kanten).
+
+## Ausführungen
+
+| | Ausführung | Maße x / y / z in m | Dreiecke bereit / verbraucht | Farben | Moos |
+|---|---|---|---|---|---|
+| A1 | Zweischaler: achteckiges Becken, schlanke Säule, eine Schale, Eisenspitze | 1,70 / 1,90 / 1,70 | 344 / 240 | 28 | wenig |
+| A2 | Dreischaler: sechseckig, dreistufiger Sockel, zwei Schalen, Steinspitze | 1,70 / 2,30 / 1,96 | 372 / 264 | 28 | stark |
+| A3 | Figurenbrunnen: breites flaches Becken, Sockel mit vier Eisen-Speiern, Kapuzenfigur ohne Hände | 1,81 / 2,22 / 1,81 | 384 / 308 | 25 | keines |
+
+Alle im Rahmen für Requisiten (100 bis 400) und in einer Zelle von 2 x 2 m (A2 mit 1,96 m in z knapp; Kollision besser als Kreis mit Radius 0,95). Verbraucht = trockenes Becken mit Brocken und stumpfen Münzen, ohne Wasser und Fälle.
+
+## Textur, Moos, Palette
+
+- Eine Textur je Ausführung, 15 Felder (Wand, Deckplatte, Sockel, Säule, Figur, Eisen, trockener Boden, vier Wasserfall-Bilder, vier Wasser-Bilder), nur Palettenfarben, in Indexform gemalt, keine Mischfarben.
+- Moos in Fugen, Sockel, Schalenrand und auf der Wetterseite (unten, an Fugen dichter) in harten Stufen. Es gibt in der Palette nur ein Grün: **Haut/Knochen 1 bis 3** (Moos = Stufen 1, 2, 3). Es ist die nächste passende Farbe, keine neue; siehe Frage 1.
+- Wasser: Reihe Stoff. Funkeln: Messing/Gold 5 bis 7, fünf Punkte, wandern mit der Animation.
+
+## Wasser-Animation, was der Einbau bräuchte
+
+Vier Bilder im selben Atlas: `water0..3` (16 x 16, Diagonalwellen, Phase je Bild um ein Viertel) und `fall0..3` (8 x 16, Strähnen, je Bild vier Zeilen nach unten). Wasserplatten und Fälle sind **eigene Teile** (`water_*`, `falls`); die Animation tauscht nur deren UV-Rechtecke alle 150 ms, in harten Stufen, ohne Leuchten. Das Funkeln steckt in den Wasserbildern. Der Spielcode bräuchte: Brunnen-Modell mit getrennten Wasser-Teilen laden, einen Animationstakt (150 ms, vier Bilder) und das Verschieben der UVs dieser Teile (oder vier Texturen-Ausschnitte). Der Zustand verbraucht lässt die Wasser-Teile weg (zweites Modell oder ausgeblendete Knoten).
+
+## Weiter wie in Runde 1
+
+Alles zum Einbau in Core und Game (Zelle, Zustand, Zähler, Kollision, Datei in `assets/HERKUNFT.md`, Hörprobe vor dem Klang) gilt unverändert; die Maße oben ersetzen die von A.
+
+## Empfehlung (nur Einschätzung)
+
+**A2 Dreischaler**: die gestuften Schalen geben aus 4 m im Nebel die unverwechselbarste Silhouette, das Wasser blitzt auf jeder Stufe, das kräftige Moos erzählt Alter. A1 ist die ruhigere, schlichtere Wahl. A3 ist ohne Moos die schmuckloseste.
+
+## Offene Fragen an den Menschen
+
+1. Das Moos-Grün stammt aus Haut/Knochen 1 bis 3, weil die Palette sonst kein Grün hat. In Ordnung, oder soll eine eigene Moosreihe in die Palette aufgenommen werden?
+2. Welche Ausführung (A1, A2, A3) und welche Moosmenge (keins, wenig, stark)?
+3. Reicht die Animation (vier Bilder, 150 ms), oder soll beim Wurf zusätzlich etwas reagieren (Spritzer)?
+4. Die Kapuzenfigur in A3 hat keine Hände und ist grob; soll sie als Figur lesbarer werden, oder ist eine Säulenfigur genug?
