@@ -18,6 +18,12 @@ public interface ITarget
     /// <summary>Its body for hits (and collisions).</summary>
     CylinderBody Body { get; }
 
+    /// <summary>
+    /// What a shot can hit: usually <see cref="Body"/>; a target whose shape is far from one round body gives several
+    /// (the ghoul: torso and head, issue #433). Blade blows still go against <see cref="Body"/>.
+    /// </summary>
+    IReadOnlyList<CylinderBody> ShotBodies => [Body];
+
     /// <summary>Which zone a hit at <paramref name="point"/> (on the body's surface) belongs to.</summary>
     HitZone ZoneAt(Vector3 point);
 
