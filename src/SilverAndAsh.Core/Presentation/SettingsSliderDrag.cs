@@ -19,6 +19,21 @@ public sealed class SettingsSliderDrag
     /// <summary>The settings row whose slider is being dragged, or null while none is.</summary>
     public int? Row { get; private set; }
 
+    /// <summary>True while a slider is being dragged.</summary>
+    public bool IsDragging => Row is not null;
+
+    /// <summary>
+    /// Ends a drag without the mouse - when the settings page is left or opened again while the button is still down
+    /// (issue #426): without it the old slider would jump to the pointer the next time the page shows.
+    /// </summary>
+    public void End() => Row = null;
+
+    /// <summary>
+    /// Whether settings changed but not yet written (<paramref name="unsaved"/>) should go to the file now: not while a
+    /// slider is dragged - its value counts at once, but is written once, when the drag ends.
+    /// </summary>
+    public bool WriteNow(bool unsaved) => unsaved && !IsDragging;
+
     /// <summary>
     /// One frame of the mouse at the canvas point <paramref name="point"/>: <paramref name="pressed"/> if the left button
     /// went down this frame, <paramref name="held"/> while it is down. Returns <paramref name="settings"/> with the

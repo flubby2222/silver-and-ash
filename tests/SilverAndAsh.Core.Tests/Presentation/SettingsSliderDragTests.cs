@@ -98,6 +98,79 @@ public class SettingsSliderDragTests
     }
 
     [Fact]
+    public void A_drag_ended_while_the_button_is_down_does_not_come_back_on_the_next_visit()
+    {
+        // Review of #442: drag "Master", press Esc with the button still down, let go elsewhere, click "Settings" again.
+        var drag = new SettingsSliderDrag();
+        var slider = Sliders[Master];
+        var settings = drag.Update(new GameSettings(), Sliders, At(slider, 0.7f), pressed: true, held: true);
+
+        drag.End();
+        Assert.False(drag.IsDragging);
+
+        // The page shows again while the click that opened it is still held: no press on a slider, so nothing moves.
+        settings = drag.Update(settings, Sliders, At(slider, 0.2f), pressed: false, held: true);
+        settings = drag.Update(settings, Sliders, At(slider, 0.1f), pressed: false, held: true);
+
+        Assert.Equal(0.7f, settings.MasterVolume, 3);
+        Assert.Null(drag.Row);
+    }
+
+    [Fact]
+    public void A_drag_is_written_once_when_it_ends_not_on_every_frame()
+    {
+        var drag = new SettingsSliderDrag();
+        var slider = Sliders[Master];
+        var settings = new GameSettings();
+        var unsaved = false;
+        var writes = new List<float>();
+
+        void Frame(float fraction, bool pressed, bool held)
+        {
+            var changed = drag.Update(settings, Sliders, At(slider, fraction), pressed, held);
+            unsaved |= changed != settings;
+            settings = changed;
+            if (drag.WriteNow(unsaved))
+            {
+                writes.Add(settings.MasterVolume);
+                unsaved = false;
+            }
+        }
+
+        Frame(0.5f, pressed: true, held: true);
+        for (var fraction = 0.55f; fraction <= 0.951f; fraction += 0.05f)
+        {
+            Frame(fraction, pressed: false, held: true);
+        }
+
+        for (var fraction = 0.9f; fraction >= 0.199f; fraction -= 0.1f)
+        {
+            Frame(fraction, pressed: false, held: true);
+        }
+
+        Assert.Empty(writes);
+        Assert.Equal(0.2f, settings.MasterVolume, 3);
+
+        Frame(0.2f, pressed: false, held: false);
+        Assert.Equal(0.2f, Assert.Single(writes), 3);
+
+        // A drag ended by leaving the page is written, too.
+        Frame(0.6f, pressed: true, held: true);
+        Assert.Single(writes);
+        drag.End();
+        Assert.True(drag.WriteNow(unsaved));
+    }
+
+    [Fact]
+    public void Without_a_drag_a_change_is_written_at_once()
+    {
+        var drag = new SettingsSliderDrag();
+
+        Assert.True(drag.WriteNow(unsaved: true));
+        Assert.False(drag.WriteNow(unsaved: false));
+    }
+
+    [Fact]
     public void A_press_on_a_label_or_beside_the_sliders_drags_nothing()
     {
         var drag = new SettingsSliderDrag();
