@@ -257,7 +257,7 @@
   },
 
   "bloodVial": {
-    "heal": 30                         // health it gives back (never above the maximum)
+    "heal": 30                          // health it gives back (never above the maximum)
   },
 
   "consecratedAmmo": {
