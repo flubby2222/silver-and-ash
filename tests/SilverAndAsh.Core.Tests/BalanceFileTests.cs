@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests;
 
@@ -153,6 +155,32 @@ public class BalanceFileTests
 
         Assert.Equal(Balance.Default, result.Balance);
         Assert.Contains(result.Warnings, w => w.Contains(name));
+    }
+
+    [Theory]
+    [InlineData("doorDistance", 0f)]
+    [InlineData("doorDistance", 0.75f)]
+    [InlineData("playerDistance", 0f)]
+    [InlineData("playerDistance", 0.75f)]
+    public void Door_and_player_distance_below_one_cell_fall_back_to_their_standard(string name, float cells)
+    {
+        // Issue #445: an enemy must never stand in a doorway nor come out on a player's cell.
+        var metres = (cells * Level.CellSize).ToString(CultureInfo.InvariantCulture);
+        var result = BalanceFile.Parse($$"""{ "difficulty": { "{{name}}": {{metres}} } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains($"difficulty.{name}"));
+    }
+
+    [Fact]
+    public void Door_and_player_distance_of_one_cell_are_allowed()
+    {
+        var metres = Level.CellSize.ToString(CultureInfo.InvariantCulture);
+        var result = BalanceFile.Parse($$"""{ "difficulty": { "doorDistance": {{metres}}, "playerDistance": {{metres}} } }""");
+
+        Assert.Equal(Level.CellSize, result.Balance.Difficulty.DoorDistance);
+        Assert.Equal(Level.CellSize, result.Balance.Difficulty.PlayerDistance);
+        Assert.Empty(result.Warnings);
     }
 
     [Fact]
