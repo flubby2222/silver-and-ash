@@ -18,6 +18,7 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 ## Dokumentation
 
 - [Entscheidungen](docs/entscheidungen/) – warum das Projekt so ist, wie es ist
+- [Glossar](docs/glossar.md) – die eigenen Begriffe des Projekts
 - [Changelog](CHANGELOG.md) – was sich pro Version geändert hat
 - [Level-Format](docs/level-format.md) – wie man Level baut
 - [Release veröffentlichen](docs/release.md) – Schritt für Schritt
