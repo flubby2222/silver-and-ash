@@ -1,0 +1,201 @@
+{
+ "image": "menu_parts_x2.png",
+ "scale": 2,
+ "width": 2048,
+ "height": 936,
+ "designWidth": 1708,
+ "designHeight": 960,
+ "notes": [
+  "Doppelt feiner Atlas (Issue #402): jedes Teil des heutigen Atlas mit gleichem Namen an doppelter Lage und in doppelter Groesse; layoutX/Y, x, y, w, h, body, shapes und slice sind im Entwurf 1708 x 960 angegeben.",
+  "Ausnahme: Zeichen von Waffen und Gegenstaenden (icon_*) sind 15 % groesser um dieselbe Mitte, siehe design/proben/grafik/hud-atlas-402/abweichungen.md.",
+  "Richtung A (harte Pixel): keine Glaettung, Silber in 8 festen Stufen, Rahmen als Metall-Relief; Teile 1:1 zeichnen.",
+  "slider_empty und slider_full sind gleich gross: erst _empty, darueber _full links vom Stand beschnitten; knob mittig auf dem Stand (shapes.slider: x0, x1, Mitte y; knobCentre)."
+ ],
+ "shapes": {
+  "panel": [
+   80,
+   124,
+   1628,
+   904
+  ],
+  "cursor": [
+   646,
+   444,
+   1062,
+   516
+  ],
+  "cursorSmall": [
+   718,
+   600,
+   990,
+   660
+  ],
+  "slider": [
+   840,
+   1160,
+   276
+  ],
+  "knobCentre": [
+   1001.0,
+   276
+  ],
+  "tabs": [
+   [
+    80,
+    16,
+    320,
+    116
+   ],
+   [
+    336,
+    16,
+    716,
+    116
+   ]
+  ],
+  "gableAnchor": [
+   854,
+   408
+  ]
+ },
+ "slice": {
+  "panel": 16,
+  "cursor": 48,
+  "cursorSmall": 40
+ },
+ "game": {
+  "text": {
+   "main": [
+    216,
+    210,
+    192
+   ],
+   "second": [
+    195,
+    192,
+    164
+   ],
+   "selected": [
+    214,
+    170,
+    64
+   ],
+   "quiet": [
+    163,
+    175,
+    187
+   ],
+   "shadow": [
+    16,
+    11,
+    20
+   ]
+  },
+  "sliderEdge": [
+   238,
+   228,
+   160
+  ]
+ },
+ "parts": [
+  {
+   "name": "panel",
+   "x": 0,
+   "y": 0,
+   "w": 1556,
+   "h": 788,
+   "layoutX": 76,
+   "layoutY": 120
+  },
+  {
+   "name": "gable",
+   "x": 1573,
+   "y": 789,
+   "w": 64,
+   "h": 42,
+   "layoutX": 822,
+   "layoutY": 370
+  },
+  {
+   "name": "cursor",
+   "x": 875,
+   "y": 789,
+   "w": 420,
+   "h": 76,
+   "layoutX": 644,
+   "layoutY": 442
+  },
+  {
+   "name": "cursor_small",
+   "x": 1296,
+   "y": 789,
+   "w": 276,
+   "h": 64,
+   "layoutX": 716,
+   "layoutY": 598
+  },
+  {
+   "name": "slider_empty",
+   "x": 1638,
+   "y": 789,
+   "w": 328,
+   "h": 28,
+   "layoutX": 836,
+   "layoutY": 262
+  },
+  {
+   "name": "slider_full",
+   "x": 0,
+   "y": 908,
+   "w": 328,
+   "h": 28,
+   "layoutX": 836,
+   "layoutY": 262
+  },
+  {
+   "name": "knob",
+   "x": 329,
+   "y": 908,
+   "w": 26,
+   "h": 26,
+   "layoutX": 988,
+   "layoutY": 262
+  },
+  {
+   "name": "tab_map",
+   "x": 630,
+   "y": 789,
+   "w": 244,
+   "h": 88,
+   "layoutX": 78,
+   "layoutY": 30
+  },
+  {
+   "name": "tab_map_active",
+   "x": 0,
+   "y": 789,
+   "w": 244,
+   "h": 118,
+   "layoutX": 78,
+   "layoutY": 0
+  },
+  {
+   "name": "tab_equipment",
+   "x": 245,
+   "y": 789,
+   "w": 384,
+   "h": 88,
+   "layoutX": 334,
+   "layoutY": 30
+  },
+  {
+   "name": "tab_equipment_active",
+   "x": 1557,
+   "y": 0,
+   "w": 384,
+   "h": 118,
+   "layoutX": 334,
+   "layoutY": 0
+  }
+ ]
+}
