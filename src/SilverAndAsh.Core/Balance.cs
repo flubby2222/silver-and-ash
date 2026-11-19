@@ -109,6 +109,9 @@ public sealed record Balance
     /// <summary>Doors: how long they take to swing open.</summary>
     public DoorsBalance Doors { get; init; } = new();
 
+    /// <summary>The Well of Sirius (issue #438): how often a level has one and how wide it stands.</summary>
+    public WellBalance Well { get; init; } = new();
+
     /// <summary>The blood vial: a consumable that heals.</summary>
     public BloodVialBalance BloodVial { get; init; } = new();
 
@@ -408,6 +411,19 @@ public sealed record DifficultyBalance
     /// seals (issue #424). Meanwhile it neither attacks nor can be hit.
     /// </summary>
     public float EmergeTime { get; init; } = 0.8f;
+}
+
+/// <summary>
+/// The Well of Sirius (issue #438). Price per throw, chances and the most throws are not decided yet; until then using
+/// it only turns it from ready to spent.
+/// </summary>
+public sealed record WellBalance
+{
+    /// <summary>Chance that a level has a well (at most one). Provisional: 1 = every level, so it can be seen.</summary>
+    public float LevelChance { get; init; } = 1f;
+
+    /// <summary>Radius in metres of the circle nobody walks through.</summary>
+    public float CollisionRadius { get; init; } = 0.95f;
 }
 
 /// <summary>
