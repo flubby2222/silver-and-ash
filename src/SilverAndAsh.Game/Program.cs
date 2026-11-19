@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Numerics;
 using System.Reflection;
 using Raylib_cs;
@@ -437,6 +437,9 @@ static void RunGame(
         // The spiral staircase of every wall variant (issue #300); without one the placeholder boxes.
         using var stairsView = StairsView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
+        // The Well of Sirius, ready or spent (issue #438); without its model a stone placeholder.
+        using var wellView = WellOfSiriusView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
         newWeaponView = () => new WeaponView(weaponModels, levelShader);
@@ -529,6 +532,7 @@ static void RunGame(
             doorView.Draw(gameWorld.Doors, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             chestView.Draw(gameWorld.Chests, seconds);
             stairsView.Draw(gameWorld.Stairs, seconds, viewCone, gameWorld.Surfaces, levelTextures);
+            wellView.Draw(gameWorld.Well, seconds, viewCone);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
