@@ -7,6 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Neue Monsterklänge:** Fünfzehn Klänge von Fledermaus, Ghul und Gorm sind neu gebaut, nach deinem Urteil zur Hörprobe. Die Fledermaus faucht, zischt und spuckt statt zu tönen; ihr Ankündigungsruf ist ein raues Zirpen-Schnarren; der Ghul klingt stimmhaft mit Atem und Kehle; Gorm klingt tiefer und knarrender. Das Skript ist `tools/audio/monsterklaenge.py` (#392)
 - **Die Keule als Modell:** In der Hand ist die Keule jetzt ein eigenes 3D-Modell – Holzgriff, schwerer Kopf mit Eisenbändern, abgenutzt – statt einfacher Klötze, mit Ärmel und Hand wie bei der Klinge. Halten und Schlagen bleiben gleich. Fehlt die Datei, zeichnet das Spiel weiter die Klötze. Neue Foto-Szenen `club-rest`, `club-swing-half`, `showroom-club` (#403)
 - **Sieben neue HUD-Zeichen:** Keule, Stiefel, Rosenkranz, Schnellzieh-Holster, Klingen-Parade, Egel und Aschenherz haben jetzt ein eigenes Zeichen im HUD, im Stil von Klinge, Flasche und Auge (neutrales Silber und Knochenton, harte Pixel, kein Rot). Statt des Anfangsbuchstabens zeigt das HUD jetzt bei jeder Waffe und jedem Gegenstand ein Bild; die Keule steht wie die Klinge im Nahkampf-Feld. Neue Foto-Szene `hud-items` (#381)
 - **Nachlade-Schleier und Effekte am Bildrand:** Lädst du nach, liegt ein dunkler Schleier über dem Bild der Waffe und zieht sich mit dem Fortschritt nach links zurück; seine Vorderkante ist eine helle Linie. Ein Treffer dunkelt das Bild kurz ab (statt des roten Blitzes). Bei weniger als einem Viertel Leben pulsiert langsam ein dunkelroter Rand, bei einem neuen Skillpunkt leuchtet der Rand kurz golden. Beide Ränder bestehen aus harten, gekörnten Pixeln und lassen die Bildmitte frei. Neue Foto-Szenen `hud-reload-start`, `hud-reload-mid`, `hud-hit`, `hud-lowlife`, `hud-skillpoint-glow` (#370)
@@ -69,6 +70,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Kisten sind fest:** Man läuft nicht mehr durch Kisten hindurch, kann aber auf sie springen (0,7 m). Steigt eine Kiste unter dir aus dem Boden, hebt sie dich an. Ghule und Gorm laufen um Kisten herum; Fledermäuse fliegen darüber. Noch versteckte Kisten blockieren nicht
 
 ### Behoben
+- **Die Keule ist fertig gebaut:** Zwischen Griff und Kopf klafft keine Lücke mehr, der Kopf hat keine offene Seite mehr und sitzt gerade auf dem Griff statt um 25 Grad geknickt. Neue Regel in der Art Bible: 3D-Modelle sind rundum geschlossen; `tools/models/check_closed.py` prüft das.
 - **Gorms Beute liegt nie mehr unter der Treppe:** Starb Gorm nahe der Saalmitte, lag sein Ausrüstungsstück dort, wo die Wendeltreppe aufsteigt – sobald sie stand, zeigte **F** nur noch „Climb the stairs“, und das Stück ließ sich nicht mehr nehmen. Jetzt rückt es in diesem Fall knapp neben die Treppe, auf Gorms Boden und nie in eine Wand (#338)
 
 ## [0.10.0] – 2026-11-16 – Boss & Bewegung
