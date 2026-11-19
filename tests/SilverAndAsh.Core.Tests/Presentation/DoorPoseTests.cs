@@ -9,8 +9,8 @@ public class DoorPoseTests
     private const float Tolerance = 0.0001f;
 
     // The pivots as in tools/models/door.py: hinges at the outer edges of the passage, the lock on the leaf.
-    private static readonly Vector3[] DoublePivots = [Vector3.Zero, new(0.895f, 0f, 0f), new(-0.895f, 0f, 0f)];
-    private static readonly Vector3[] LockedPivots = [Vector3.Zero, new(0.865f, 0f, 0f), new(-0.4f, 1f, 0f)];
+    private static readonly Vector3[] DoublePivots = [new(0.895f, 0f, 0f), new(-0.895f, 0f, 0f)];
+    private static readonly Vector3[] LockedPivots = [new(0.865f, 0f, 0f), new(-0.4f, 1f, 0f)];
 
     [Theory]
     [InlineData(DoorKind.Normal, "door_normal.glb")]
@@ -23,22 +23,18 @@ public class DoorPoseTests
     }
 
     [Fact]
-    public void Wooden_and_boss_doors_have_a_portal_and_two_leaves_on_it()
+    public void Wooden_and_boss_doors_are_two_leaves_and_nothing_that_stands_still()
     {
         foreach (var kind in new[] { DoorKind.Normal, DoorKind.Boss })
         {
-            Assert.Equal(
-                [new RigPart("portal", null), new RigPart("leaf_a", "portal"), new RigPart("leaf_b", "portal")],
-                DoorPose.Parts(kind));
+            Assert.Equal([new RigPart("leaf_a", null), new RigPart("leaf_b", null)], DoorPose.Parts(kind));
         }
     }
 
     [Fact]
     public void A_locked_door_has_one_leaf_and_the_lock_hangs_on_it()
     {
-        Assert.Equal(
-            [new RigPart("portal", null), new RigPart("leaf", "portal"), new RigPart("lock", "leaf")],
-            DoorPose.Parts(DoorKind.Locked));
+        Assert.Equal([new RigPart("leaf", null), new RigPart("lock", "leaf")], DoorPose.Parts(DoorKind.Locked));
     }
 
     [Fact]
@@ -77,14 +73,14 @@ public class DoorPoseTests
     public void Fully_open_both_leaves_of_a_double_door_lie_on_the_side_away_from_the_opener(bool towardsPlusZ, float side)
     {
         var rig = new Rig(DoorPose.Parts(DoorKind.Normal), DoublePivots);
-        var turns = new Matrix4x4[3];
-        var frames = new Matrix4x4[3];
+        var turns = new Matrix4x4[2];
+        var frames = new Matrix4x4[2];
         DoorPose.Turns(DoorKind.Normal, 1f, towardsPlusZ, turns);
         rig.Pose(turns, Matrix4x4.Identity, frames);
 
         // The free edges: leaf_a reaches from its hinge 0.9 m towards -x, leaf_b towards +x.
-        var edgeA = Vector3.Transform(new Vector3(-0.9f, 0f, 0f), frames[1]);
-        var edgeB = Vector3.Transform(new Vector3(0.9f, 0f, 0f), frames[2]);
+        var edgeA = Vector3.Transform(new Vector3(-0.9f, 0f, 0f), frames[0]);
+        var edgeB = Vector3.Transform(new Vector3(0.9f, 0f, 0f), frames[1]);
 
         Assert.Equal(0.9f * side, edgeA.Z, Tolerance);
         Assert.Equal(0.9f * side, edgeB.Z, Tolerance);
@@ -96,14 +92,14 @@ public class DoorPoseTests
     public void The_leaf_of_a_locked_door_stops_at_80_degrees_and_takes_its_lock_along()
     {
         var rig = new Rig(DoorPose.Parts(DoorKind.Locked), LockedPivots);
-        var turns = new Matrix4x4[3];
-        var frames = new Matrix4x4[3];
+        var turns = new Matrix4x4[2];
+        var frames = new Matrix4x4[2];
         DoorPose.Turns(DoorKind.Locked, 1f, towardsPlusZ: true, turns);
         rig.Pose(turns, Matrix4x4.Identity, frames);
 
-        var edge = Vector3.Transform(new Vector3(-1f, 0f, 0f), frames[1]);
+        var edge = Vector3.Transform(new Vector3(-1f, 0f, 0f), frames[0]);
         var angle = MathF.Atan2(edge.Z, 0.865f - edge.X) * 180f / MathF.PI;
-        var lockAt = Vector3.Transform(Vector3.Zero, frames[2]);
+        var lockAt = Vector3.Transform(Vector3.Zero, frames[1]);
 
         Assert.Equal(80f, angle, 0.01f);
         Assert.True(lockAt.Z > 1f, $"The lock must swing with the leaf to +z, not stay at z = {lockAt.Z}.");
