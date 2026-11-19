@@ -37,7 +37,7 @@ Silver & Ash ist ein **Lernprojekt**: Ziel ist es, den Ablauf professioneller So
 | Rechte Maustaste | Pistole (7 Schuss) |
 | R | Nachladen (bei leerem Magazin lädt auch ein Schuss nach) |
 | Mausrad, 1 / 2 / 3 | Fernwaffe wechseln (bis zu drei Plätze) |
-| F | Interagieren (Türen, Kisten) |
+| F | Interagieren (Türen, Kisten), Ausrüstung aufheben: Eine Fernwaffe kommt auf den ersten freien Fernwaffen-Platz (die geführte Waffe bleibt in der Hand), sonst ins Inventar; Nahkampfwaffen kommen ins Inventar |
 | G | Menüseite „Equipment“ (Inventar) an/aus, aus der Kartenseite blättert G dorthin um; nur hier erscheint der Mauszeiger |
 | Tab | Menüseite „Map“ an/aus, aus der Ausrüstungsseite blättert Tab dorthin um: links Werte (Leben, Ausdauer, Schaden, Tempo …) und gewählte Boons, rechts die Karte mit betretenen Räumen, ihren Türen (Schloss, Boss-Tür), Kisten, liegen gelassenen Blutphiolen und der eigenen Position; das Spiel läuft weiter, Laufen und Treffer schließen sie nicht |
 | N | Ton aus/an |
