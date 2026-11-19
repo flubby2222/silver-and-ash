@@ -121,8 +121,8 @@ def main():
     clear()
     cam = camera()
     rows = {"vorher": shots(OLD, "alt", cam)}
-    if os.path.exists(os.path.join(NEW, "pistol.glb")):
-        rows["nachher"] = shots(NEW, "neu", cam)
+    rows["ohne Platte"] = shots(os.path.join(HERE, "v1_ohne_platte"), "v1", cam)
+    rows["nachher"] = shots(NEW, "neu", cam)
     keys = ["hinten", "Seite", "oben-hinten", "Ich-Sicht"]
     up_t = 2
     gap, label = 6, 24

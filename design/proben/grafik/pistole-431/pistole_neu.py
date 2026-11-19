@@ -197,7 +197,9 @@ def build_fittings():
     part.loft(tube([C(0, -0.010, 0.15), C(0, -0.010, 0.155), C(0, -0.010, 0.156)], [(0.003, 0.003, 0.003)] * 3, 4),
               "silver")
     # Griffplatte (Schwanzschraube) oben auf dem Griff hinter dem Lauf: Zeichnung fuer den Blick von hinten oben.
-    # Fassung 431: die frei schwebende Platte (ragte als Stab hinter den Lauf) ist ersatzlos entfernt.
+    # Fassung 431b: Griffplatte (Schwanzschraube) bleibt, liegt aber auf dem Laufruecken auf (Lauf-Oberseite y 0,0158) und
+    # beginnt erst bei z 0,02: sie steht hinten nicht mehr ueber Griff und Schloss hinaus und schwebt nicht.
+    part.box((-0.0035, 0.0150, 0.020), (0.0035, 0.0185, 0.044), "silver")
     # Pfanne und Batterie (Feuerstahl) oben rechts vor dem Hahn.
     part.box((-0.0125, 0.008, 0.016), (-0.004, 0.011, 0.03), "lock")
     part.prism([C(0.006, 0.011, 0.024), C(0.006, 0.011, 0.031), C(0.006, 0.025, 0.029), C(0.006, 0.023, 0.023)],
