@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Behoben
+- **Pistole, silberne Platte:** Die silberne Platte hinten am Lauf stand über Griff und Schloss hinaus und schwebte in der Ich-Sicht als heller Stab. Sie sitzt jetzt weiter vorn auf dem Laufende; Form, Lauf und alles andere sind unverändert (#431)
+
 ## [0.11.1] – 2026-11-19
 
 ### Behoben

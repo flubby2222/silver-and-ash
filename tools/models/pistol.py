@@ -197,8 +197,8 @@ def build_fittings():
                    [(0.0022, 0.0022, 0.0022)] * 4, 4), "wood")
     part.loft(tube([C(0, -0.010, 0.15), C(0, -0.010, 0.155), C(0, -0.010, 0.156)], [(0.003, 0.003, 0.003)] * 3, 4),
               "silver")
-    # Griffplatte (Schwanzschraube) oben auf dem Griff hinter dem Lauf: Zeichnung fuer den Blick von hinten oben.
-    part.box((-0.0045, 0.0125, -0.006), (0.0045, 0.0165, 0.022), "silver")
+    # Griffplatte (Schwanzschraube) oben auf dem Lauf-Ende ab z 0,018 (Issue #431: nach vorn verschoben, steht hinten nicht ueber Griff und Schloss): Zeichnung fuer den Blick von hinten oben.
+    part.box((-0.0045, 0.0125, 0.018), (0.0045, 0.0165, 0.046), "silver")
     # Pfanne und Batterie (Feuerstahl) oben rechts vor dem Hahn.
     part.box((-0.0125, 0.008, 0.016), (-0.004, 0.011, 0.03), "lock")
     part.prism([C(0.006, 0.011, 0.024), C(0.006, 0.011, 0.031), C(0.006, 0.025, 0.029), C(0.006, 0.023, 0.023)],
