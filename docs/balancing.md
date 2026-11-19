@@ -100,6 +100,20 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 19.11.2026 (#430, vorläufig)
+
+**Anlass:** Issue #430: Gorms Kettenschwung soll weiter reichen, damit ein einzelner Schritt zurück nicht reicht.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `gorm.swingReach` | 8 m | 12 m (**vorläufig** bis zum nächsten Spieltest) | Gorm holt bei 8 m Abstand (`nearRange`) aus. Ein Schritt zurück (6 m/s, 3 m je Schritt) plus Auslaufen bringt den Spieler auf 11,3 m; 12 m trifft ihn dort noch. Wer während der ganzen 0,9 s bis zum Durchzug weiterläuft, kommt auf gut 13 m und entkommt. 12 m ist auch der Radius der Hammer-Druckwelle; die Halle misst 28 × 28 m. |
+
+Die Darstellung liest die Reichweite aus `Gorm.SwingArea`; Kette und Wirbel werden ohne Codeänderung länger.
+
+**Bot-Kampf (50 Seeds × 60 s gegen Gorm, Treffer je Schwung, 8 m → 12 m):** Stehenbleiben 100 % → 100 %; ein Schritt zurück 62,5 % → 100 % (erster Schwung 0/50 → 50/50); Weglaufen 89,5 % → 89,5 % (erster Schwung 0/50 → 0/50, spätere Treffer kommen nach Hakenzügen aus der Nähe); Ausweichen beim Durchzug 0 % → 0 %.
+
+**Report (500 Ebenen):** zeilengleich mit vorher. Der Report rechnet die Kampfzeit aus Schaden und Abklingzeit, nicht aus der Reichweite.
+
 ### Zwischenschritt – 19.11.2026 (#425, vorläufig)
 
 **Anlass:** Spieltest des Menschen zu 0.11.0 (19.11.): „Die Silberklinge trifft zu kurz.“

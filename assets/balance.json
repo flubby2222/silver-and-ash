@@ -140,7 +140,7 @@
     "stuckDamageMultiplier": 2,         // ... meanwhile he takes double damage
     "swingWindUp": 0.6,                 // s: the chain is spun up -> DODGE (ducked)
     "swingDamage": 30,
-    "swingReach": 8,                    // m
+    "swingReach": 12,                   // m: one step back is not enough - dodge (provisional, #430)
     "swingLow": 1.1,                    // m above his feet the chain passes from here ...
     "swingHigh": 1.6,                   // ... to here: standing or jumping it hits, ducked in a dodge not
     "swingTime": 0.6,                   // s the chain takes to sweep from his left over the front to his right ...
