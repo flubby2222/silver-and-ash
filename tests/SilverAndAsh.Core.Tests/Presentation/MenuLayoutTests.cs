@@ -381,6 +381,16 @@ public class MenuLayoutTests
     }
 
     [Fact]
+    public void The_title_screen_shows_only_the_name_the_entries_and_the_version()
+    {
+        // Issue #432: the line "a hunt in the catacombs" under the name is gone.
+        var picture = Layout.Title(MenuCanvas.For(854, 480), 0, "1.0");
+
+        Assert.Equal(["Quit", "Settings", "Silver & Ash", "Start", "v1.0"],
+            picture.Texts.Select(text => text.Text).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void Every_settings_label_ends_before_its_slider_and_every_value_after_it()
     {
         var canvas = MenuCanvas.For(854, 480);
