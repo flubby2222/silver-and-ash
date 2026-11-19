@@ -136,7 +136,8 @@ public class EmergenceTests
             }
         }
 
-        // The case really happens: at least the enemy under the player moved, in every room.
+        // The case really happens: over all rooms, at least one enemy moved. (That the enemy under the player moved in
+        // each room follows from the distance check above.)
         Assert.True(moved > 0);
     }
 

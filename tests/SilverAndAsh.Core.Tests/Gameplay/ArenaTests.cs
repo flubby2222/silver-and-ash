@@ -390,6 +390,41 @@ public class ArenaTests
     }
 
     [Fact]
+    public void A_bat_that_has_to_keep_away_from_the_player_hovers_and_hides_in_the_ceiling_of_its_new_cell()
+    {
+        // Issue #445: the bat waits just inside the door, too close to the player who comes in, so it has to move.
+        // Every other cell of the room has a higher ceiling, so the new cell's hover height and ceiling differ from
+        // the start cell's - a bat left at the old height or in the old ceiling shows up here.
+        var start = (X: 1, Z: 2);
+        var parsed = LevelParser.Parse("#.P.#\n##.##\n#B..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#");
+        var level = parsed.WithCells(Rows(2, 5).Where(cell => cell != start)
+            .Select(cell => (cell.X, cell.Z, parsed[cell.X, cell.Z] with { CeilingHeight = parsed[cell.X, cell.Z].CeilingHeight + 1.5f })));
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, Rows(0, 0), [], []),
+            new(1, RoomKind.Combat, "arena", 0, 2, 5, 4, 1, Rows(2, 5), [(2, 4)], []),
+            new(2, RoomKind.Corridor, "corridor", 0, 7, 5, 2, 2, Rows(7, 8), [], []),
+        ];
+        LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
+        var world = new GameWorld(level, 1, Balance.Default, doors, rooms);
+        var bat = world.Bats[0];
+        Assert.Equal(start, Level.ToGrid(bat.Position.X, bat.Position.Z));
+
+        Enter(world);
+        Assert.True(bat.Emergence.IsEmerging);
+
+        var cell = Level.ToGrid(bat.Position.X, bat.Position.Z);
+        Assert.NotEqual(start, cell);
+        Assert.Equal(Bat.HoverPosition(world.Level, world.Level.CellCenter(cell.X, cell.Z)), bat.Position);
+
+        // Where it started sinking: ShownPosition = Position + hidden offset * (1 - Fraction).
+        var fraction = bat.Emergence.Fraction;
+        Assert.True(fraction < 1f);
+        var hiddenY = bat.Position.Y + ((bat.ShownPosition.Y - bat.Position.Y) / (1f - fraction));
+        Assert.Equal(world.Level[cell.X, cell.Z].CeilingHeight, hiddenY, 3);
+    }
+
+    [Fact]
     public void In_the_boss_room_hitting_a_sleeping_enemy_wakes_the_room_but_does_not_seal_it()
     {
         // Issue #424 changed this only for combat rooms. The boss room's enemies stand there from the start and sleep;
