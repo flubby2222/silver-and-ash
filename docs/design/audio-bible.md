@@ -1,6 +1,6 @@
 # Audio Bible – wie Silver & Ash klingt
 
-Dieses Dokument liest der Audiodesigner vor jeder Aufgabe. Es hat zwei Teile: den **gewünschten Klang** und die **gelernten Regeln** aus den Hörproben des Menschen (siehe [ADR 0009](../entscheidungen/0009-leitung-designer-auto-merge.md)).
+Dieses Dokument liest der Audiodesigner vor jeder Aufgabe. Es hat zwei Teile: den **gewünschten Klang** und die **gelernten Regeln** aus den Hörproben des Menschen (siehe [ADR 0009](../entscheidungen/0009-leitung-designer-auto-merge.md)). Begriffe wie Hörprobe, Probestück und Fassung erklärt das [Glossar](../glossar.md).
 
 **Stand:** 2026-11-16, nach Hörprobe 1 und der Recherche des Audiodesigners ([Grundlagen Sounddesign](grundlagen-audio.md)). Weder die Leitung noch der Audiodesigner können hören. Was hier über Klang steht, gilt erst, wenn der Mensch es in einer Hörprobe bestätigt hat; bestätigt ist bisher nur, was unter „Gelernte Regeln“ steht. Hörprobe 2 liegt vor, sein Urteil dazu steht noch aus.
 
