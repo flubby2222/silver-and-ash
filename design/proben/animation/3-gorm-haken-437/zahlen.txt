@@ -1,0 +1,21 @@
+﻿Werte: hookSpeed=18 m/s (0.3 m/Tick), Lauf=6 m/s, Windup=30 Ticks (Phase 2: 21), Pause=72 (Phase 2: 51), Reichweite Haken=33 m, Abstandsgrenze=0.65 m, Fallzeit=26 Ticks, Dash=0.444 m/Tick
+HEUTE  d= 8 m  quer-laeufer: verfehlt flug  24 Ticks  fenster(stopp)       fenster(dash)       weglaeufer: TREFFER
+HEUTE  d=12 m  quer-laeufer: verfehlt flug  37 Ticks  fenster(stopp)       fenster(dash)       weglaeufer: TREFFER
+HEUTE  d=17 m  quer-laeufer: verfehlt flug  54 Ticks  fenster(stopp)       fenster(dash)       weglaeufer: TREFFER
+HEUTE  d=22 m  quer-laeufer: verfehlt flug  70 Ticks  fenster(stopp)       fenster(dash)       weglaeufer: TREFFER
+HEUTE  d=30 m  quer-laeufer: verfehlt flug  97 Ticks  fenster(stopp)       fenster(dash)       weglaeufer: verfehlt
+A      d= 8 m  quer-laeufer: TREFFER flug  25 Ticks  fenster(stopp)   -1  fenster(dash)    7  weglaeufer: TREFFER
+A      d=12 m  quer-laeufer: TREFFER flug  39 Ticks  fenster(stopp)   13  fenster(dash)   21  weglaeufer: TREFFER
+A      d=17 m  quer-laeufer: TREFFER flug  57 Ticks  fenster(stopp)   31  fenster(dash)   39  weglaeufer: TREFFER
+A      d=22 m  quer-laeufer: TREFFER flug  74 Ticks  fenster(stopp)   49  fenster(dash)   57  weglaeufer: TREFFER
+A      d=30 m  quer-laeufer: TREFFER flug 103 Ticks  fenster(stopp)   77  fenster(dash)   85  weglaeufer: verfehlt
+B      d= 8 m  quer-laeufer: TREFFER flug  25 Ticks  fenster(stopp)   11  fenster(dash)   19  weglaeufer: TREFFER
+B      d=12 m  quer-laeufer: TREFFER flug  39 Ticks  fenster(stopp)   25  fenster(dash)   33  weglaeufer: TREFFER
+B      d=17 m  quer-laeufer: TREFFER flug  57 Ticks  fenster(stopp)   43  fenster(dash)   51  weglaeufer: TREFFER
+B      d=22 m  quer-laeufer: verfehlt flug  73 Ticks  fenster(stopp)  127  fenster(dash)  127  weglaeufer: TREFFER
+B      d=30 m  quer-laeufer: verfehlt flug  99 Ticks  fenster(stopp)  127  fenster(dash)  127  weglaeufer: verfehlt
+C      d= 8 m  quer-laeufer: TREFFER flug  25 Ticks  fenster(stopp)   17  fenster(dash)   25  weglaeufer: TREFFER
+C      d=12 m  quer-laeufer: TREFFER flug  39 Ticks  fenster(stopp)   31  fenster(dash)   39  weglaeufer: TREFFER
+C      d=17 m  quer-laeufer: verfehlt flug  55 Ticks  fenster(stopp)  133  fenster(dash)  133  weglaeufer: TREFFER
+C      d=22 m  quer-laeufer: verfehlt flug  72 Ticks  fenster(stopp)  133  fenster(dash)  133  weglaeufer: TREFFER
+C      d=30 m  quer-laeufer: verfehlt flug  98 Ticks  fenster(stopp)  133  fenster(dash)  133  weglaeufer: verfehlt
