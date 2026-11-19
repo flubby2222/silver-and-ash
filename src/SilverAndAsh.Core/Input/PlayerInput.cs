@@ -31,10 +31,15 @@ namespace SilverAndAsh.Core.Input;
 /// True while the player has the Esc menu open. The world only stands still while ALL players have paused - alone
 /// that is this one; in online co-op it would go on.
 /// </param>
+/// <param name="TeleportTo">
+/// The teleporter (its number in <c>GameWorld.Teleporters</c>) chosen to travel to, in the one tick after the choice
+/// was made; null for none. Only works from another unlocked teleporter (issue #436).
+/// </param>
 public readonly record struct PlayerInput(
     Vector2 Move, Vector2 Look, bool Jump, bool Dash = false, bool Melee = false, bool Shoot = false,
     Gameplay.Boon? ChooseBoon = null, bool Interact = false, bool Paused = false, bool Reload = false,
-    int? SelectSlot = null, int CycleSlot = 0, Gameplay.MenuKey? PressMenu = null, Gameplay.InventoryClick? InventoryClick = null)
+    int? SelectSlot = null, int CycleSlot = 0, Gameplay.MenuKey? PressMenu = null, Gameplay.InventoryClick? InventoryClick = null,
+    int? TeleportTo = null)
 {
     /// <summary>No input at all.</summary>
     public static PlayerInput None { get; } = new(Vector2.Zero, Vector2.Zero, false);
