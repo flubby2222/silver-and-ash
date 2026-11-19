@@ -697,8 +697,11 @@ public sealed record GormBalance
     /// <summary>Damage of the chain swing.</summary>
     public int SwingDamage { get; init; } = 30;
 
-    /// <summary>Reach of the chain swing (metres, middle to middle).</summary>
-    public float SwingReach { get; init; } = 8f;
+    /// <summary>
+    /// Reach of the chain swing (metres, middle to middle). Farther than <see cref="NearRange"/>: one step back
+    /// without a dodge is not enough (issue #430, provisional until the next playtest).
+    /// </summary>
+    public float SwingReach { get; init; } = 12f;
 
     /// <summary>The swinging chain passes this high above his feet (metres) - from here ...</summary>
     public float SwingLow { get; init; } = 1.1f;
