@@ -64,11 +64,18 @@ public class PlayerMeleeChargeTests
     [Fact]
     public void Charging_stops_when_the_stamina_runs_out()
     {
-        // Half a segment left, in the air (so nothing refills): the blade charges only half way.
+        // Half a segment left, in the air (so nothing refills): the blade charges only half way. The empty bar is
+        // checked while still in the air - after the landing it refills although the button is held (#413).
         var player = InTheAirWithStamina(new Stamina().CostPerSegment / 2);
-
-        Assert.Equal(0.5f, HoldAndRelease(player, FullTicks).Charge, Tolerance);
+        player.Tick(Melee);
+        RunTicks(player, Melee, FullTicks / 2 + 1);
+        Assert.False(player.IsGrounded);
         Assert.Equal(0f, player.Stamina.Fraction);
+
+        RunTicks(player, Melee, FullTicks / 2);
+        player.Tick(PlayerInput.None);
+        var swing = Assert.IsType<MeleeSwung>(Assert.Single(player.Events));
+        Assert.Equal(0.5f, swing.Charge, Tolerance);
     }
 
     [Fact]
