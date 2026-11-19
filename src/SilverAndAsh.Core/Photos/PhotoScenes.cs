@@ -270,6 +270,10 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.StartRun()) { Menu = PhotoMenu.Settings }),
         new("menu-quit", "The question before quitting, asked from the pause menu: Cancel, Quit (issues #349, #371).",
             studio => new PhotoSetup(studio.StartRun()) { Menu = PhotoMenu.Quit }),
+        new("ghoul-shotbody-front", "The showroom's ghoul from 1.8 m in front, with what a shot can hit drawn over it as wires (issue #433).",
+            studio => new PhotoSetup(BesideTheGhoul(studio, ahead: 1.8f, aside: 0f)) { ShowsShotBodies = true }),
+        new("ghoul-shotbody-side", "The showroom's ghoul from 1.8 m to its side, with what a shot can hit drawn over it as wires (issue #433).",
+            studio => new PhotoSetup(BesideTheGhoul(studio, ahead: 0f, aside: 1.8f)) { ShowsShotBodies = true }),
         new("model-probe-4m", "One target on a bare floor, 4 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 4)) { IsModelProbe = true }),
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",
@@ -344,6 +348,18 @@ public static class PhotoScenes
         var world = layout.NewWorldAt(placed.X, placed.Z + 1, spot, studio.Balance);
         world.Player.PlaceAt(spot + new Vector3(0f, 0f, 0.8f));
         PhotoStudio.Face(world.Player, spot + new Vector3(0f, EquipmentDrop.BoxHeight / 2f, 0f));
+        return world;
+    }
+
+    // The showroom with a player `ahead` m in front of its ghoul and `aside` m to its side (by the way it looks - it
+    // never moves there), looking at the middle of its shot body (issue #433).
+    private static GameWorld BesideTheGhoul(PhotoStudio studio, float ahead, float aside)
+    {
+        var world = BeforeEquipment(studio, piece => piece is EnemyPiece { Enemy: ShowroomEnemy.Ghoul });
+        var ghoul = world.Ghouls.First(ghoul => Vector3.Distance(ghoul.Position, world.Player.Position) < 1f);
+        var side = new Vector3(ghoul.Facing.Z, 0f, -ghoul.Facing.X);
+        world.Player.PlaceAt(ghoul.Position + (ghoul.Facing * ahead) + (side * aside));
+        PhotoStudio.Face(world.Player, ghoul.Position + (ghoul.Facing * BodySizes.Ghoul.HeadForward / 2f) + new Vector3(0f, BodySizes.Ghoul.TorsoHeight / 2f, 0f));
         return world;
     }
 
