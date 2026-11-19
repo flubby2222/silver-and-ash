@@ -248,7 +248,6 @@ public sealed class MenuLayout
         var picture = new Builder(this);
         Column(picture, canvas, TitleItems, top: 204, selected);
         picture.Centred("Silver & Ash", canvas.Width / 2f, 110 + canvas.OffsetY, 4, MenuTextColor.Main);
-        picture.Centred("a hunt in the catacombs", canvas.Width / 2f, 150 + canvas.OffsetY, 2, MenuTextColor.Quiet);
         var text = "v" + version;
         picture.Text(text, canvas.Width - 12 - _width(text, 1), canvas.Height - 12 - _capHeight, 1, MenuTextColor.Quiet);
         return picture.Build();
