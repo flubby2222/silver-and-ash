@@ -323,6 +323,76 @@ public class GormAttackTests
         Assert.Equal(health, duel.Player.Health);
     }
 
+    /// <summary>
+    /// Issue #430, as it happens in the game: Gorm comes within <see cref="GormBalance.NearRange"/> and winds up his
+    /// swing; the player does not dodge but walks one step (<see cref="Player.StepLength"/>) straight back and stands.
+    /// Returns whether the chain hit and how far apart (centre to centre, flat) the two stood while it swept.
+    /// </summary>
+    private static (bool Hit, float Distance) StepBackFromTheSwing(Balance balance)
+    {
+        var duel = new Duel(balance.Gorm.NearRange, balance);
+        duel.UntilWindUp(GormAttack.Swing);
+        var start = FlatDistance(duel.Gorm.Position, duel.Player.Position);
+        var health = duel.Player.Health;
+
+        duel.Run(Second, PlayerInput.None with { Move = new Vector2(0f, -1f) },
+            () => FlatDistance(duel.Gorm.Position, duel.Player.Position) >= start + duel.Player.StepLength);
+        // Letting go of the key, the player runs out a little - until they stand. By then the chain must still be on
+        // his left, short of the player in front of him, or the test would prove nothing.
+        duel.Run(Second, until: () => duel.Player.Velocity == Vector3.Zero);
+        var right = new Vector3(-duel.Gorm.Facing.Z, 0f, duel.Gorm.Facing.X);
+        Assert.Equal(Vector3.Zero, duel.Player.Velocity);
+        Assert.True(duel.Gorm.SwingDirection is not { } sweep || Vector3.Dot(sweep, right) < 0f, "The chain passed the player before they stood.");
+        Assert.Equal(health, duel.Player.Health);
+
+        // The distance the game really produced, every tick until the sweep ends: the player stands.
+        var distances = new List<float>();
+        while (!duel.Events.OfType<GormSwung>().Any())
+        {
+            distances.Add(FlatDistance(duel.Gorm.Position, duel.Player.Position));
+            duel.Tick(PlayerInput.None);
+            Assert.True(distances.Count < 2 * Second, "The sweep never ended.");
+        }
+
+        Assert.True(distances.Max() - distances.Min() <= 0.001f, $"The player still moved while the chain swept: {string.Join(", ", distances)}.");
+        return (duel.Player.Health < health, distances[0]);
+    }
+
+    [Fact]
+    public void A_player_who_steps_back_once_without_dodging_is_still_hit_by_the_swing()
+    {
+        var (hit, distance) = StepBackFromTheSwing(Tough);
+
+        Assert.True(distance >= Values.NearRange + Balance.Default.Player.MaxSpeed / Player.StepsPerSecond - 0.01f, $"Only {distance} m apart - the step was too short.");
+        Assert.True(hit, $"The chain missed a player {distance} m away.");
+    }
+
+    [Fact]
+    public void The_swing_hits_just_inside_its_reach_and_misses_just_outside()
+    {
+        // The distance after the step comes from the game, tick by tick; the reach is set 5 cm either side of it.
+        var (_, distance) = StepBackFromTheSwing(Tough);
+        var inside = Tough with { Gorm = Values with { SwingReach = distance + 0.05f } };
+        var outside = Tough with { Gorm = Values with { SwingReach = distance - 0.05f } };
+
+        Assert.True(StepBackFromTheSwing(inside).Hit, $"Reach {distance + 0.05f} m missed a player {distance} m away.");
+        Assert.False(StepBackFromTheSwing(outside).Hit, $"Reach {distance - 0.05f} m hit a player {distance} m away.");
+    }
+
+    [Fact]
+    public void Walking_away_through_the_whole_wind_up_escapes_the_swing()
+    {
+        // The swing stays escapable without a dodge: whoever turns away at once and keeps walking is out of reach.
+        var duel = new Duel(Values.NearRange);
+        duel.UntilWindUp(GormAttack.Swing);
+        var health = duel.Player.Health;
+
+        duel.Run(3 * Second, PlayerInput.None with { Move = new Vector2(0f, -1f) }, () => duel.Events.OfType<GormSwung>().Any());
+
+        Assert.Contains(new GormSwung(9, false), duel.Events);
+        Assert.Equal(health, duel.Player.Health);
+    }
+
     // ---- Chain throw ------------------------------------------------------------------------------------------------
 
     [Fact]
