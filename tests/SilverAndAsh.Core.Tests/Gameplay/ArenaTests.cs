@@ -26,13 +26,13 @@ public class ArenaTests
     private const string BatMap = "#.P.#\n##.##\n#...#\n#...#\n#.B.#\n#...#\n##.##\n#...#\n#...#";
     private const string TwoGhoulsMap = "#.P.#\n##.##\n#...#\n#G..#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
 
-    private static GameWorld World(bool withGhoul = true, string? mapText = null)
+    private static GameWorld World(bool withGhoul = true, string? mapText = null, RoomKind arena = RoomKind.Combat)
     {
         var map = mapText ?? (withGhoul ? Map : Map.Replace('G', '.'));
         PlacedRoom[] rooms =
         [
             new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, Rows(0, 0), [], []),
-            new(1, RoomKind.Combat, "arena", 0, 2, 5, 4, 1, Rows(2, 5), [(2, 4)], []),
+            new(1, arena, "arena", 0, 2, 5, 4, 1, Rows(2, 5), [(2, 4)], []),
             new(2, RoomKind.Corridor, "corridor", 0, 7, 5, 2, 2, Rows(7, 8), [], []),
         ];
         LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
@@ -359,6 +359,49 @@ public class ArenaTests
 
         Assert.DoesNotContain(events, e => e is GhoulHit or GhoulWindUp or GhoulStruck or PlayerHit);
         Assert.Equal(Balance.Default.Ghoul.MaxHealth, ghoul.Health);
+    }
+
+    [Fact]
+    public void While_it_sinks_out_of_the_ceiling_a_bat_neither_flies_nor_attacks_nor_takes_damage()
+    {
+        // The bat waits just inside the door (a hand-made map, no door zone): close to the player who comes in.
+        var world = World(mapText: "#.P.#\n##.##\n#B..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#");
+        var bat = world.Bats[0];
+        var start = bat.Position;
+        Enter(world);
+        Assert.True(bat.Emergence.IsEmerging);
+
+        var events = new List<GameEvent>();
+        while (bat.Emergence.IsEmerging)
+        {
+            AimAt(world, bat.Body);
+            events.AddRange(Run(world, PlayerInput.None with { Shoot = true }, 1));
+            Assert.Equal(start, bat.Position);
+        }
+
+        Assert.DoesNotContain(events, e => e is BatFlapped or BatScreeched or BatSpitWindUp or BatSpat or BatBit or BatHit or PlayerHit);
+        Assert.Equal(Balance.Default.Bat.MaxHealth, bat.Health);
+    }
+
+    [Fact]
+    public void In_the_boss_room_hitting_a_sleeping_enemy_wakes_the_room_but_does_not_seal_it()
+    {
+        // Issue #424 changed this only for combat rooms. The boss room's enemies stand there from the start and sleep;
+        // a hit through the open door wakes all of them - the room seals only once the player is inside.
+        var world = World(mapText: TwoGhoulsMap, arena: RoomKind.Boss);
+        var target = world.Ghouls.Single(ghoul => Level.ToGrid(ghoul.Position.X, ghoul.Position.Z) == (2, 4));
+        var other = world.Ghouls.Single(ghoul => !ReferenceEquals(ghoul, target));
+        Run(world, PressF, 1);
+        Assert.True(world.IsAsleep(target));
+        Assert.True(world.IsAsleep(other));
+
+        AimAt(world, target.Body);
+        var events = Run(world, PlayerInput.None with { Shoot = true }, 1);
+
+        Assert.Contains(events, e => e is GhoulHit);
+        Assert.False(world.IsAsleep(target));
+        Assert.False(world.IsAsleep(other));
+        Assert.False(world.Rooms[1].IsSealed);
     }
 
     private sealed class WaveComparer : IEqualityComparer<WaveEmerged>
