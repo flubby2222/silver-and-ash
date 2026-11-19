@@ -324,6 +324,8 @@ static void RunGame(
         // menuPage says which page of the open menu is shown.
         var menuPage = MenuPage.Main;
         var settingsMenu = SettingsMenu.NewMenu();
+        var settingsDrag = new SettingsSliderDrag();
+        var settingsUnsaved = false;
         var quitMenu = new MenuView();
 
 #if DEBUG
@@ -856,25 +858,49 @@ static void RunGame(
 
         sounds.SetVolumes(settings.MasterVolume, settings.EffectsVolume, settings.AmbienceVolume);
 
-        // A changed setting counts at once (issue #349) and is written to the file, so it also counts after a restart.
+        // A changed setting counts at once (issue #349) and is written to the file, so it also counts after a restart -
+        // during a drag on a slider only once, when the drag ends (issue #426).
         void ChangeSettings(GameSettings changed)
         {
-            if (changed == settings)
+            if (changed != settings)
+            {
+                settings = changed;
+                settingsUnsaved = true;
+                sounds.SetVolumes(settings.MasterVolume, settings.EffectsVolume, settings.AmbienceVolume);
+                if (FullScreenToggle.Set(settings.FullScreen))
+                {
+                    AfterDisplaySwitch();
+                }
+            }
+
+            SaveSettingsWhenDue();
+        }
+
+        void SaveSettingsWhenDue()
+        {
+            if (!settingsDrag.WriteNow(settingsUnsaved))
             {
                 return;
             }
 
-            settings = changed;
-            sounds.SetVolumes(settings.MasterVolume, settings.EffectsVolume, settings.AmbienceVolume);
-            if (FullScreenToggle.Set(settings.FullScreen))
-            {
-                AfterDisplaySwitch();
-            }
-
+            settingsUnsaved = false;
             if (!SettingsFile.Save(settings, settingsPath))
             {
                 log?.Warning($"Could not save the settings to '{settingsPath}'.");
             }
+        }
+
+        // A drag on a slider ends when the settings are not on screen (left with Esc, Back, the window losing focus...)
+        // - also with the button still down, so it never carries over into the next visit (issue #426).
+        void EndSettingsDragOffPage()
+        {
+            if (menuPage == MenuPage.Settings && (onTitle || menuOpen))
+            {
+                return;
+            }
+
+            settingsDrag.End();
+            SaveSettingsWhenDue();
         }
 
         // A captured mouse is captured again in the new window, so the view does not jump.
@@ -895,7 +921,7 @@ static void RunGame(
             switch (menuPage)
             {
                 case MenuPage.Settings:
-                    var back = SettingsMenu.Update(settingsMenu, settings, out var changed) == SettingsMenu.Back;
+                    var back = SettingsMenu.Update(settingsMenu, settingsDrag, settings, out var changed) == SettingsMenu.Back;
                     PlayMenuClick(settingsMenu);
                     ChangeSettings(changed);
                     menuPage = back ? MenuPage.Main : menuPage;
@@ -913,6 +939,8 @@ static void RunGame(
 
         void OpenMenuPage(MenuPage page)
         {
+            settingsDrag.End();
+            SaveSettingsWhenDue();
             menuPage = page;
             (page == MenuPage.Settings ? settingsMenu : quitMenu).Open();
         }
@@ -921,6 +949,7 @@ static void RunGame(
         while (!Raylib.WindowShouldClose() && !quit)
         {
             seconds += Raylib.GetFrameTime();
+            EndSettingsDragOffPage();
 
             // Alt + Enter: window or borderless full screen (issue #350). The settings follow, so the menu shows it and the
             // next start opens the same way (issue #349).
@@ -1219,6 +1248,10 @@ static void RunGame(
             SoundPackNotice.Draw(soundPacks);
             Raylib.EndDrawing();
         }
+
+        // Closed in the middle of a drag: the dragged value is still written.
+        settingsDrag.End();
+        SaveSettingsWhenDue();
     }
     finally
     {
