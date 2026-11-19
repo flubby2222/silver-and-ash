@@ -54,7 +54,17 @@ public static class BalanceFile
         "layout.corridorChance", "layout.maxLoops", "gorm.pauseTime", "gorm.stoneCount", "gorm.stoneDamage", "gorm.equipmentVampiricChance", "gorm.extraSilver", "layout.treasureRooms", "layout.lockedTreasureRooms", "layout.secretRooms",
         "difficulty.budgetNear", "difficulty.budgetFar", "difficulty.budgetBoss",
         "difficulty.ghoulWeightNear", "difficulty.ghoulWeightFar", "difficulty.batWeightNear", "difficulty.batWeightFar",
-        "difficulty.doorDistance", "difficulty.spacing",
+        "difficulty.spacing",
+    };
+
+    /// <summary>
+    /// Lowest sensible values. An enemy never stands in a doorway nor comes out on a player's cell (issue #445): door
+    /// and player distance are at least one cell.
+    /// </summary>
+    private static readonly Dictionary<string, double> Minimum = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["difficulty.doorDistance"] = Level.CellSize,
+        ["difficulty.playerDistance"] = Level.CellSize,
     };
 
     /// <summary>Highest sensible values. A jump may at most bring the head up to the ceiling.</summary>
@@ -231,6 +241,11 @@ public static class BalanceFile
         if (value == 0 && !ZeroAllowed.Contains(path))
         {
             return "must be above 0";
+        }
+
+        if (Minimum.TryGetValue(path, out var minimum) && value < minimum)
+        {
+            return $"is below its limit of {minimum.ToString(CultureInfo.InvariantCulture)}";
         }
 
         if (Maximum.TryGetValue(path, out var maximum) && value > maximum)

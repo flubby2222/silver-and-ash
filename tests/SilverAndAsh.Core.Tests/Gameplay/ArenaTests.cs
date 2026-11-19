@@ -26,7 +26,7 @@ public class ArenaTests
     private const string BatMap = "#.P.#\n##.##\n#...#\n#...#\n#.B.#\n#...#\n##.##\n#...#\n#...#";
     private const string TwoGhoulsMap = "#.P.#\n##.##\n#...#\n#G..#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
 
-    private static GameWorld World(bool withGhoul = true, string? mapText = null, RoomKind arena = RoomKind.Combat)
+    private static GameWorld World(bool withGhoul = true, string? mapText = null, RoomKind arena = RoomKind.Combat, Balance? balance = null)
     {
         var map = mapText ?? (withGhoul ? Map : Map.Replace('G', '.'));
         PlacedRoom[] rooms =
@@ -36,7 +36,7 @@ public class ArenaTests
             new(2, RoomKind.Corridor, "corridor", 0, 7, 5, 2, 2, Rows(7, 8), [], []),
         ];
         LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
-        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+        return new GameWorld(LevelParser.Parse(map), 1, balance ?? Balance.Default, doors, rooms);
     }
 
     private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
@@ -58,6 +58,10 @@ public class ArenaTests
         events.AddRange(Run(world, Forward, 180, () => world.Rooms[1].IsEntered));
         return events;
     }
+
+    // Issue #445 would move an enemy that waits close to the player away when the room seals.
+    private static readonly Balance WithoutPlayerDistance =
+        Balance.Default with { Difficulty = Balance.Default.Difficulty with { PlayerDistance = 0f } };
 
     private static readonly int EmergeTicks = SimulationClock.SecondsToTicks(Balance.Default.Difficulty.EmergeTime);
 
@@ -345,8 +349,9 @@ public class ArenaTests
     [Fact]
     public void While_it_comes_out_an_enemy_neither_attacks_nor_takes_damage()
     {
-        // The ghoul waits just inside the door (a hand-made map, no door zone): close to the player who comes in.
-        var world = World(mapText: "#.P.#\n##.##\n#G..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#");
+        // The ghoul waits just inside the door (a hand-made map, no door zone, no player distance): close to the
+        // player who comes in.
+        var world = World(mapText: "#.P.#\n##.##\n#G..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#", balance: WithoutPlayerDistance);
         var ghoul = world.Ghouls[0];
         Enter(world);
 
@@ -364,8 +369,9 @@ public class ArenaTests
     [Fact]
     public void While_it_sinks_out_of_the_ceiling_a_bat_neither_flies_nor_attacks_nor_takes_damage()
     {
-        // The bat waits just inside the door (a hand-made map, no door zone): close to the player who comes in.
-        var world = World(mapText: "#.P.#\n##.##\n#B..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#");
+        // The bat waits just inside the door (a hand-made map, no door zone, no player distance): close to the
+        // player who comes in.
+        var world = World(mapText: "#.P.#\n##.##\n#B..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#", balance: WithoutPlayerDistance);
         var bat = world.Bats[0];
         var start = bat.Position;
         Enter(world);
@@ -381,6 +387,41 @@ public class ArenaTests
 
         Assert.DoesNotContain(events, e => e is BatFlapped or BatScreeched or BatSpitWindUp or BatSpat or BatBit or BatHit or PlayerHit);
         Assert.Equal(Balance.Default.Bat.MaxHealth, bat.Health);
+    }
+
+    [Fact]
+    public void A_bat_that_has_to_keep_away_from_the_player_hovers_and_hides_in_the_ceiling_of_its_new_cell()
+    {
+        // Issue #445: the bat waits just inside the door, too close to the player who comes in, so it has to move.
+        // Every other cell of the room has a higher ceiling, so the new cell's hover height and ceiling differ from
+        // the start cell's - a bat left at the old height or in the old ceiling shows up here.
+        var start = (X: 1, Z: 2);
+        var parsed = LevelParser.Parse("#.P.#\n##.##\n#B..#\n#...#\n#...#\n#...#\n##.##\n#...#\n#...#");
+        var level = parsed.WithCells(Rows(2, 5).Where(cell => cell != start)
+            .Select(cell => (cell.X, cell.Z, parsed[cell.X, cell.Z] with { CeilingHeight = parsed[cell.X, cell.Z].CeilingHeight + 1.5f })));
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, Rows(0, 0), [], []),
+            new(1, RoomKind.Combat, "arena", 0, 2, 5, 4, 1, Rows(2, 5), [(2, 4)], []),
+            new(2, RoomKind.Corridor, "corridor", 0, 7, 5, 2, 2, Rows(7, 8), [], []),
+        ];
+        LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
+        var world = new GameWorld(level, 1, Balance.Default, doors, rooms);
+        var bat = world.Bats[0];
+        Assert.Equal(start, Level.ToGrid(bat.Position.X, bat.Position.Z));
+
+        Enter(world);
+        Assert.True(bat.Emergence.IsEmerging);
+
+        var cell = Level.ToGrid(bat.Position.X, bat.Position.Z);
+        Assert.NotEqual(start, cell);
+        Assert.Equal(Bat.HoverPosition(world.Level, world.Level.CellCenter(cell.X, cell.Z)), bat.Position);
+
+        // Where it started sinking: ShownPosition = Position + hidden offset * (1 - Fraction).
+        var fraction = bat.Emergence.Fraction;
+        Assert.True(fraction < 1f);
+        var hiddenY = bat.Position.Y + ((bat.ShownPosition.Y - bat.Position.Y) / (1f - fraction));
+        Assert.Equal(world.Level[cell.X, cell.Z].CeilingHeight, hiddenY, 3);
     }
 
     [Fact]

@@ -106,6 +106,9 @@ public sealed class Ghoul : ITarget
     /// <summary>Where it is drawn: its position, sunk into the floor while it is hidden or rising.</summary>
     public Vector3 ShownPosition => Position + Emergence.Offset;
 
+    /// <summary>Moves it while it is still hidden (issue #445: it comes out elsewhere, away from the players).</summary>
+    internal void PlaceAt(Vector3 position) => Position = position;
+
     public bool IsHittable => !IsDead && Emergence.IsPresent;
 
     public CylinderBody Body => new(Position, BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height);
