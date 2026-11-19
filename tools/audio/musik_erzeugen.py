@@ -50,8 +50,9 @@ PIECES = {
     "menue": dict(name="musik-hauptmenue", beats=72, chords=MENU_CHORDS, bell=MENU_BELL, heart=[], ref_heart=MENU_HEART,
                   mix=dict(bell=-9.0, choir=-13.0, heart=-7.0), formant=(1.0, 0.5, 0.2), low=0.6, target_mean=-21.0),
     "katakomben": dict(name="musik-katakomben", beats=64, chords=KATA_CHORDS, bell=KATA_BELL, heart=KATA_HEART,
-                       mix=dict(bell=-12.0, choir=0.0, heart=-14.0), formant=(0.3, 0.15, 0.06), low=0.5, target_mean=-34.0),
+                       mix=dict(bell=-12.0, choir=0.0, heart=-14.0), formant=(0.3, 0.15, 0.06), low=0.5, target_mean=-24.0),
 }
+# Katakomben target_mean: -34 bis Issue #427, nach der Hoerprobe +10 dB (nur der Pegel, Klang und Spektrum gleich).
 
 
 # --- Klangerzeuger mit Schleifen-Umbruch ------------------------------------------------------------
