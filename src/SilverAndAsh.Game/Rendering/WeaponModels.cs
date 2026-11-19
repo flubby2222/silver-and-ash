@@ -1,16 +1,20 @@
+using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Logging;
 using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The designer's weapon models in the hands (issue #249): the pistol and the silver blade, each with its sleeve (cuff
-/// and forearm, issue #265). A weapon is drawn as a model only if both its files loaded - otherwise the placeholder
-/// boxes, so a weapon never floats without a sleeve or a sleeve without a weapon.
+/// The designer's weapon models in the hands (issue #249): the pistol and the melee weapons with a model
+/// (<see cref="WeaponPose.MeleeModel"/>: the silver blade and the club, issue #403), each with its sleeve (cuff and
+/// forearm, issue #265). A weapon is drawn as a model only if both its files loaded - otherwise the placeholder boxes,
+/// so a weapon never floats without a sleeve or a sleeve without a weapon.
 /// </summary>
 internal sealed class WeaponModels : IDisposable
 {
-    private WeaponModels(TexturedModel? pistol, TexturedModel? pistolHand, TexturedModel? blade, TexturedModel? bladeHand)
+    private readonly Dictionary<WeaponKind, (TexturedModel Weapon, TexturedModel Hand)> _melee = [];
+
+    private WeaponModels(TexturedModel? pistol, TexturedModel? pistolHand)
     {
         if (pistol is not null && pistolHand is not null)
         {
@@ -22,42 +26,64 @@ internal sealed class WeaponModels : IDisposable
             pistol?.Dispose();
             pistolHand?.Dispose();
         }
-
-        if (blade is not null && bladeHand is not null)
-        {
-            Blade = blade;
-            BladeHand = bladeHand;
-        }
-        else
-        {
-            blade?.Dispose();
-            bladeHand?.Dispose();
-        }
     }
 
     public TexturedModel? Pistol { get; }
 
     public TexturedModel? PistolHand { get; }
 
-    public TexturedModel? Blade { get; }
-
-    public TexturedModel? BladeHand { get; }
+    /// <summary>The model and sleeve of melee weapon <paramref name="kind"/>, or false for the placeholder boxes.</summary>
+    public bool TryGetMelee(WeaponKind kind, out TexturedModel weapon, out TexturedModel hand)
+    {
+        var found = _melee.TryGetValue(kind, out var pair);
+        (weapon, hand) = pair;
+        return found;
+    }
 
     /// <summary>
-    /// Loads pistol.glb, pistol_hand.glb, blade.glb and blade_hand.glb from <paramref name="directory"/>. A missing or
-    /// broken file: a warning in the log and the placeholder for that weapon. Needs the window.
+    /// Loads pistol.glb, pistol_hand.glb and the files of every melee weapon with a model from
+    /// <paramref name="directory"/>. A missing or broken file: a warning in the log and the placeholder for that weapon.
+    /// Needs the window.
     /// </summary>
-    public static WeaponModels Load(string directory, FileLog? log) => new(
-        TexturedModel.TryLoad(Path.Combine(directory, "pistol.glb"), WeaponPose.PistolParts, log),
-        TexturedModel.TryLoad(Path.Combine(directory, "pistol_hand.glb"), WeaponPose.HandParts, log),
-        TexturedModel.TryLoad(Path.Combine(directory, "blade.glb"), WeaponPose.BladeParts, log),
-        TexturedModel.TryLoad(Path.Combine(directory, "blade_hand.glb"), WeaponPose.HandParts, log));
+    public static WeaponModels Load(string directory, FileLog? log)
+    {
+        var models = new WeaponModels(
+            TexturedModel.TryLoad(Path.Combine(directory, "pistol.glb"), WeaponPose.PistolParts, log),
+            TexturedModel.TryLoad(Path.Combine(directory, "pistol_hand.glb"), WeaponPose.HandParts, log));
+
+        foreach (var kind in Enum.GetValues<WeaponKind>())
+        {
+            if (WeaponPose.MeleeModel(kind) is not { } files)
+            {
+                continue;
+            }
+
+            var weapon = TexturedModel.TryLoad(Path.Combine(directory, files.Weapon), files.Parts, log);
+            var hand = TexturedModel.TryLoad(Path.Combine(directory, files.Hand), WeaponPose.HandParts, log);
+            if (weapon is not null && hand is not null)
+            {
+                models._melee[kind] = (weapon, hand);
+            }
+            else
+            {
+                weapon?.Dispose();
+                hand?.Dispose();
+            }
+        }
+
+        return models;
+    }
 
     public void Dispose()
     {
         Pistol?.Dispose();
         PistolHand?.Dispose();
-        Blade?.Dispose();
-        BladeHand?.Dispose();
+        foreach (var (weapon, hand) in _melee.Values)
+        {
+            weapon.Dispose();
+            hand.Dispose();
+        }
+
+        _melee.Clear();
     }
 }

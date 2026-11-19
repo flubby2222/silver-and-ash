@@ -79,6 +79,16 @@ public static class PhotoScenes
                 Ticks = 8,
                 Input = tick => PlayerInput.None with { Melee = tick == 0 },
             }),
+        new("club-rest", "The club in hand at rest, held like the blade (issue #403).",
+            studio => new PhotoSetup(ClubInHand(studio.Arena('G', 10)))),
+        new("club-swing-half", "A quick club swing halfway out, the same movement as the blade's (issue #403).",
+            studio => new PhotoSetup(ClubInHand(studio.Arena('G', 10)))
+            {
+                Ticks = 3,
+                Input = tick => PlayerInput.None with { Melee = tick == 0 },
+            }),
+        new("showroom-club", "The club in hand before the club (Worn) lying in the showroom (issue #403).",
+            studio => new PhotoSetup(ClubInHand(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Club })))),
         new("bat-4m", "A bat 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('B', 4))),
         new("bat-10m", "A bat 10 m away in a bare hall.",
@@ -501,6 +511,12 @@ public static class PhotoScenes
     {
         var gorm = world.Gorm!;
         gorm.TakeDamage(gorm.MaxHealth / 4, new List<GameEvent>());
+        return world;
+    }
+
+    private static GameWorld ClubInHand(GameWorld world)
+    {
+        world.Player.EquipMelee(WeaponKind.Club);
         return world;
     }
 
