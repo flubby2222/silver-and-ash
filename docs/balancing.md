@@ -100,6 +100,16 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Runde 3 – 19.11.2026 (vor 0.11.0, Kurzrunde)
+
+**Anlass:** Release 0.11.0. Seit Runde 2 kamen neue Waffen (Keule, Gewehr, Donnerbüchse), das Nachladen der Pistole und die Grenze für Fledermäuse dazu (siehe Zwischenschritt unten).
+
+**Werte:** In dieser Runde **nichts geändert**. Die Werte der neuen Waffen sind die aus ihren Pull Requests und noch nicht am Spiel geprüft – sie gelten als **vorläufig**.
+
+**Report (500 Ebenen, Durchschnitt):** Silber 324 (97 von Gegnern, 227 aus Kisten), Schlüssel je Schloss 1,24, Kisten 7,2, Ausrüstung 4,8 Stück je Lauf (3,8 aus Kisten, 1 von Gorm), Heilung 286 Leben (2,86-mal das volle Leben), Zeit 10,6 min (8,6 Laufen, 2,0 Kämpfen).
+
+**Durchlauf:** Der Spieltest des Menschen zu 0.11.0 steht noch aus; sein Urteil und die `runs.log` gehen in die nächste Runde ein. Bekannt und offen: Die Ausdauer füllt sich nicht, solange ein Nahkampfschlag aufgeladen wird (#413).
+
 ### Zwischenschritt – 19.11.2026 (#391, vorläufig)
 
 **Anlass:** Spieltest vom 18.11.: In einem Raum waren 5 oder 6 Fledermäuse – „ohne genug Schaden für One-Shots nicht machbar“.

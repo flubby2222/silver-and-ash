@@ -6,6 +6,8 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.11.0] – 2026-11-19 – Gestalt & Klang
+
 ### Hinzugefügt
 - **Neue Monsterklänge:** Fünfzehn Klänge von Fledermaus, Ghul und Gorm sind neu gebaut, nach deinem Urteil zur Hörprobe. Die Fledermaus faucht, zischt und spuckt statt zu tönen; ihr Ankündigungsruf ist ein raues Zirpen-Schnarren; der Ghul klingt stimmhaft mit Atem und Kehle; Gorm klingt tiefer und knarrender. Das Skript ist `tools/audio/monsterklaenge.py` (#392)
 - **Die Keule als Modell:** In der Hand ist die Keule jetzt ein eigenes 3D-Modell – Holzgriff, schwerer Kopf mit Eisenbändern, abgenutzt – statt einfacher Klötze, mit Ärmel und Hand wie bei der Klinge. Halten und Schlagen bleiben gleich. Fehlt die Datei, zeichnet das Spiel weiter die Klötze. Neue Foto-Szenen `club-rest`, `club-swing-half`, `showroom-club` (#403)
@@ -254,7 +256,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.10.0...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.7.0...v0.8.0
