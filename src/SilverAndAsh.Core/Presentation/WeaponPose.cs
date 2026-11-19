@@ -301,11 +301,26 @@ public static class WeaponPose
     /// How far the club is bent at the grip (degrees): its pitch (head up) and its turn outward (head to the left). At
     /// rest <see cref="ClubBendRestDegrees"/>, at the height of a swing (<paramref name="swing"/> 1) straight - the club
     /// meets its target in line with the blow -, fully wound up (<paramref name="windUp"/> 1)
-    /// <see cref="ClubBendWindUpDegrees"/>; in between straight along the same values as <see cref="Blade"/>.
+    /// <see cref="ClubBendWindUpDegrees"/>; in between along the same values as <see cref="Blade"/>. The swing scales the
+    /// whole bend, wind-up included: after a charged swing the wind-up only eases off (<see cref="WindUpStep"/>) while the
+    /// swing is already at its height, and there the club must still be straight.
     /// </summary>
     public static (float Pitch, float Outward) ClubBendDegrees(float swing, float windUp) =>
-        (ClubBendRestDegrees - (ClubBendRestDegrees * swing) + ((ClubBendWindUpDegrees - ClubBendRestDegrees) * windUp),
-         ClubBendRestOutwardDegrees - (ClubBendRestOutwardDegrees * swing) + ((ClubBendWindUpOutwardDegrees - ClubBendRestOutwardDegrees) * windUp));
+        ((1f - swing) * (ClubBendRestDegrees + ((ClubBendWindUpDegrees - ClubBendRestDegrees) * windUp)),
+         (1f - swing) * (ClubBendRestOutwardDegrees + ((ClubBendWindUpOutwardDegrees - ClubBendRestOutwardDegrees) * windUp)));
+
+    /// <summary>How long a melee swing takes (seconds), from its start until <c>swing</c> reaches 1.</summary>
+    public const float SwingSeconds = 0.28f;
+
+    /// <summary>How quickly the wind-up follows its target (per second, as the other soft movements of the hands).</summary>
+    public const float WindUpCatchUp = 6f;
+
+    /// <summary>
+    /// The wind-up one frame later: it catches up a part of the way to <paramref name="target"/> (1 while a charge is
+    /// full, 0 after the release), so it never jumps.
+    /// </summary>
+    public static float WindUpStep(float windUp, float target, float frameSeconds) =>
+        windUp + ((target - windUp) * MathF.Min(1f, 2f * (1f - MathF.Exp(-WindUpCatchUp * frameSeconds))));
 
     /// <summary>
     /// The club's bend at the grip (file space, before the pose of <see cref="Blade"/>): turned around

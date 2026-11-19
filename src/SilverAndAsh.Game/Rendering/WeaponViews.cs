@@ -43,7 +43,7 @@ internal interface IWeaponView
 /// </summary>
 internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shader = null) : IWeaponView
 {
-    private const float SwingSeconds = 0.28f;
+    private const float SwingSeconds = WeaponPose.SwingSeconds;
     private const float RecoilSeconds = 0.18f;
     private const float FlashSeconds = 0.06f;
 
@@ -55,7 +55,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
     // (per second - higher = stiffer). Also how far they lean against walking sideways or forward, per m/s.
     private const float TurnSwayPerRadian = 0.05f;
     private const float MaxTurnSway = 0.025f;
-    private const float SwayCatchUp = 6f;
+    private const float SwayCatchUp = WeaponPose.WindUpCatchUp;
     private const float WalkSwayPerSpeed = 0.0016f;
 
     // Landing: the hands sink this much further than the eyes per metre of landing dip, and tilt down a little.
@@ -145,7 +145,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         // Charging the blade: drawn back a little at once, further the longer it is held.
         var charge = player.MeleeCharge;
         var windUpTarget = charge.IsCharging ? 0.25f + 0.75f * charge.Fraction : 0f;
-        _windUp += (windUpTarget - _windUp) * MathF.Min(1f, catchUp * 2f);
+        _windUp = WeaponPose.WindUpStep(_windUp, windUpTarget, frameSeconds);
         _fullyCharged = charge.IsCharging && charge.Fraction >= 1f;
 
         // Turning: the hands lag behind the view and then glide back to their place.

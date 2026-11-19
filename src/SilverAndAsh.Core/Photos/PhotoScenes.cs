@@ -100,6 +100,8 @@ public static class PhotoScenes
                 Ticks = 8,
                 Input = tick => PlayerInput.None with { Melee = tick == 0 },
             }),
+        new("club-charged-release", "A fully charged club swing let go, at its height: the club straight in the sleeve although the wind-up is still easing off (issue #417).",
+            studio => ChargedClubSwing(studio)),
         new("showroom-club", "The club in hand before the club (Worn) lying in the showroom (issue #403).",
             studio => new PhotoSetup(ClubInHand(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Club })))),
         new("bat-4m", "A bat 4 m away in a bare hall.",
@@ -422,6 +424,24 @@ public static class PhotoScenes
         {
             Ticks = ReloadAt + 1 + (int)MathF.Round(reload * share),
             Input = tick => PlayerInput.None with { Shoot = tick == 0, Reload = tick == ReloadAt },
+        };
+    }
+
+    // The club held until fully charged, then let go; stops at the height of the swing, as many ticks after it
+    // started as the quick swing in club-swing-full.
+    private static PhotoSetup ChargedClubSwing(PhotoStudio studio)
+    {
+        var world = ClubInHand(studio.Arena('G', 10));
+        var released = false;
+        return new PhotoSetup(world)
+        {
+            Ticks = 600,
+            Input = _ =>
+            {
+                released |= world.Player.MeleeCharge is { IsCharging: true, Fraction: >= 1f };
+                return PlayerInput.None with { Melee = !released };
+            },
+            StopWhen = TicksAfter<MeleeSwung>(7),
         };
     }
 

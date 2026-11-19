@@ -137,9 +137,58 @@ public class ClubBendTests
         Assert.Equal(27.5f, WeaponPose.ClubBendDegrees(swing: 0f, windUp: 0.5f).Pitch, Tolerance);
         Assert.Equal(0f, WeaponPose.ClubBendDegrees(swing: 0f, windUp: 0.5f).Outward, Tolerance);
 
-        // The charged swing: the wind-up eases off as the swing goes out, from 20 / -10 to 0 / 0.
-        Assert.Equal(10f, WeaponPose.ClubBendDegrees(swing: 0.5f, windUp: 0.5f).Pitch, Tolerance);
-        Assert.Equal(-5f, WeaponPose.ClubBendDegrees(swing: 0.5f, windUp: 0.5f).Outward, Tolerance);
+        // Swing and wind-up together: the swing scales the whole bend, so halfway out the half wound-up bend (27.5 / 0)
+        // is halved.
+        Assert.Equal(13.75f, WeaponPose.ClubBendDegrees(swing: 0.5f, windUp: 0.5f).Pitch, Tolerance);
+        Assert.Equal(0f, WeaponPose.ClubBendDegrees(swing: 0.5f, windUp: 0.5f).Outward, Tolerance);
+    }
+
+    [Theory]
+    [InlineData(60f)]
+    [InlineData(144f)]
+    public void A_released_charged_swing_hits_with_the_club_straight_and_the_handle_in_the_sleeve(float framesPerSecond)
+    {
+        // As WeaponView plays it: fully charged, then released - the swing starts at 0 and runs up in SwingSeconds, while
+        // the wind-up only eases off towards 0 and is still far from it when the swing is at its height.
+        var frameSeconds = 1f / framesPerSecond;
+        var lowest = Enumerable.Range(0, 101).Min(step => WeaponPose.SwingCurve(step / 100f));
+        var overshoot = Enumerable.Range(0, 101).Max(step => WeaponPose.SwingCurve(step / 100f));
+        var swing = 0f;
+        var windUp = 1f;
+        var hitWindUps = new List<float>();
+        while (swing < 1f)
+        {
+            swing = MathF.Min(1f, swing + (frameSeconds / WeaponPose.SwingSeconds));
+            windUp = WeaponPose.WindUpStep(windUp, 0f, frameSeconds);
+            var t = WeaponPose.SwingCurve(swing);
+            var (pitch, outward) = WeaponPose.ClubBendDegrees(t, windUp);
+            var name = $"{framesPerSecond} fps, swing {t:0.000}, wind-up {windUp:0.00}";
+
+            // Never bent further back than a plain swing bends at its overshoot (nor further than winding up).
+            Assert.True(pitch >= (1f - overshoot) * WeaponPose.ClubBendRestDegrees - Tolerance, $"{name}: bent back to {pitch:0.0} degrees.");
+            Assert.True(MathF.Abs(outward) <= WeaponPose.ClubBendRestOutwardDegrees * (1f - lowest) + Tolerance, $"{name}: turned {outward:0.0} degrees.");
+
+            var bend = WeaponPose.ClubBend(t, windUp);
+            var bent = Points(SeenBehindTheMouth(t, windUp, bend), bend);
+            var straight = Points(SeenBehindTheMouth(t, windUp, Matrix4x4.Identity), Matrix4x4.Identity);
+            Assert.True(
+                bent.Count <= straight.Count + GrazingPoints,
+                $"{name}: the handle sticks out of the sleeve, {bent.Count} points seen behind the mouth instead of {straight.Count}: {string.Join(", ", bent)} (file space).");
+            if (t >= 1f)
+            {
+                hitWindUps.Add(windUp);
+            }
+        }
+
+        // The hit itself: at swing 1 the club is straight, whatever is left of the wind-up.
+        Assert.NotEmpty(hitWindUps);
+        Assert.Contains(hitWindUps, value => value > 0.1f);
+        foreach (var left in hitWindUps.Append(1f))
+        {
+            var (pitch, outward) = WeaponPose.ClubBendDegrees(1f, left);
+            Assert.Equal(0f, pitch, Tolerance);
+            Assert.Equal(0f, outward, Tolerance);
+        }
     }
 
     [Fact]
