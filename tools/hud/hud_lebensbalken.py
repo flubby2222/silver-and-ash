@@ -10,8 +10,8 @@ assets/hud/, sonst nach <Ordner>/hud/.
 
 Die Teile entstehen wie in der abgenommenen Probe design/proben/grafik/lebensbalken-435/lebensbalken_runde2.py aus Teilen des doppelt
 feinen Atlas, nur gestreckt und geschnitten, ohne neue Farbe:
-  frame_life, frame_life_end      Fassung aus frame_xp (8 Zeilen hoeher), lang gestreckt; das Spiel schneidet sie von rechts auf die
-                                  Laenge des Balkens und setzt den Abschluss frame_life_end dahinter.
+  frame_life, life_frame_end      Fassung aus frame_xp (8 Zeilen hoeher), lang gestreckt; das Spiel schneidet sie von rechts auf die
+                                  Laenge des Balkens und setzt den Abschluss life_frame_end dahinter.
   life_bar_empty/_full,           Lebensleiste aus life_empty/life_full, lang gestreckt, ebenso geschnitten; life_cap_empty/_full ist
   life_cap_empty/_full            ihr rechtes Ende.
   life_tick(_long)_full/_empty    Teilstrich je Upgrade, jeder fuenfte lang; dunkel ueber dem vollen, grau ueber dem leeren Teil.
@@ -128,7 +128,7 @@ def make_parts(atlas, table):
     body = [xp["body"][0], xp["body"][1], fw + FRAME_CAP - 2 * xp["body"][0], xp["body"][3] + 8]
     bx, by = LIFE_X + 10, LIFE_Y + 14
     out = [("frame_life", frame[:, :fw], LIFE_X, LIFE_Y, body),
-           ("frame_life_end", frame[:, fw:], LIFE_X + fw, LIFE_Y, None)]
+           ("life_frame_end", frame[:, fw:], LIFE_X + fw, LIFE_Y, None)]
     bw = MAX_BAR - BAR_CAP
     for state in ("empty", "full"):
         bar = hstretch(part("life_" + state), MAX_BAR, BAR_CAP, BAR_CAP, 40)

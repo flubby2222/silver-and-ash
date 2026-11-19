@@ -728,7 +728,7 @@
    "source": "tools/hud/hud_lebensbalken.py"
   },
   {
-   "name": "frame_life_end",
+   "name": "life_frame_end",
    "x": 647,
    "y": 393,
    "w": 14,
