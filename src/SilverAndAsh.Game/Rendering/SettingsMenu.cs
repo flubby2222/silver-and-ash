@@ -6,7 +6,7 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// The settings (issue #349), from the title screen and from the Esc menu: mouse sensitivity, three volumes and window
-/// or full screen. Left/Right (or a click on the left/right part of a row) change a value; every change counts at once.
+/// or full screen. Left/Right change a value, the mouse drags a slider (issue #426); every change counts at once.
 /// What a value means and where it may go is decided by <see cref="GameSettings"/>.
 /// </summary>
 internal static class SettingsMenu
@@ -25,13 +25,15 @@ internal static class SettingsMenu
 
     /// <summary>
     /// <see cref="Back"/> if "Back" was chosen this frame, otherwise -1. <paramref name="changed"/> holds the settings
-    /// after this frame - with the nudged value changed, or window and full screen swapped.
+    /// after this frame - with the nudged or dragged value changed, or window and full screen swapped.
+    /// <paramref name="drag"/> remembers the slider the mouse holds from one frame to the next (issue #426).
     /// </summary>
-    public static int Update(MenuView menu, GameSettings settings, out GameSettings changed)
+    public static int Update(MenuView menu, SettingsSliderDrag drag, GameSettings settings, out GameSettings changed)
     {
         var canvas = MenuArt.Canvas;
-        var chosen = menu.Update(MenuArt.Layout.Settings(canvas, menu.Selected, settings).Rows, canvas, out var step);
-        // Enter or a click in the middle swaps window and full screen; on the other rows only Left/Right change something.
+        var picture = MenuArt.Layout.Settings(canvas, menu.Selected, settings);
+        var chosen = menu.Update(picture.Rows, canvas, out var step);
+        // Enter or a click swaps window and full screen; on the slider rows Left/Right nudge the value.
         changed = step == 0 && chosen != Display ? settings : menu.Selected switch
         {
             Sensitivity => settings.ChangedSensitivity(step),
@@ -41,6 +43,11 @@ internal static class SettingsMenu
             Display => settings with { FullScreen = !settings.FullScreen },
             _ => settings,
         };
+
+        // The mouse on a slider: a press puts the value at the pointer, holding the button drags it both ways.
+        changed = drag.Update(changed, picture.Sliders, canvas.ToCanvas(Raylib.GetMousePosition()),
+            Raylib.IsMouseButtonPressed(MouseButton.Left), Raylib.IsMouseButtonDown(MouseButton.Left));
+        menu.Hold(drag.Row);
         return chosen == Back ? Back : -1;
     }
 
