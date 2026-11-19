@@ -39,7 +39,7 @@
     "chargeTime": 1,                    // s of holding until fully charged
     "chargeMaxMultiplier": 2,           // fully charged: 200 % damage
     "chargeStaminaSegments": 1,         // a full charge costs this much stamina
-    "range": 2,                         // m from the eyes
+    "range": 2.5,                       // m from the eyes (provisional, #425)
     "angle": 90,                        // degrees, full width of the cone (at most 180)
     "coneStartBehind": 0.6,             // m the cone's tip lies behind the eyes (wider close up)
     "knockback": 0,                     // m the blade pushes enemies away (0 = not at all) ...

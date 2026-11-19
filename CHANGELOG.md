@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Geändert
+- **Die Silberklinge reicht weiter:** 2,5 m statt 2 m vor den Augen, also ein Viertel mehr (vorläufig, nach dem Spieltest vom 19.11.). Das gilt für jeden Hieb und für den aufgeladenen Schlag, auch beim Aufbrechen rissiger Wände. Die Keule reicht weiter 2 m (#425)
+
 ### Behoben
 - **Pistole, silberne Platte:** Die silberne Platte hinten am Lauf stand über Griff und Schloss hinaus und schwebte in der Ich-Sicht als heller Stab. Sie sitzt jetzt weiter vorn auf dem Laufende; Form, Lauf und alles andere sind unverändert (#431)
 - **Kein Festsitzen mehr in Kampfräumen:** Bisher standen die Gegner eines Kampfraums schon vor dem Betreten im Raum. Man konnte sie durch die offene Tür treffen und herauslocken. Danach blieb der verriegelte Raum für immer zu. Jetzt sind die Gegner erst da, wenn sich der Raum verriegelt: Ghule wachsen aus dem Boden, Fledermäuse sinken aus der Decke, nie nah an einer Tür. In dieser kurzen Phase greifen sie nicht an und nehmen keinen Schaden. Die Dauer steht als `emergeTime` in `balance.json`. Der Bossraum mit Gorm bleibt wie bisher (#424)
