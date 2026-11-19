@@ -6,7 +6,11 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Ghul-Augen kündigen den Schlag an:** Holt ein Ghul zum Schlag aus, leuchten seine Augen blutrot und werden in drei harten Stufen heller, bis er zuschlägt (eine halbe Sekunde, so lange wie das Ausholen). Jeder Ghul leuchtet für sich; ein toter Ghul leuchtet nicht. Zeitpunkt, Schaden und Balancing bleiben gleich. Dauer und Stärke sind vorläufig bis zum nächsten Spieltest (#447)
+
 ### Geändert
+- **Titelbild ohne Untertitel:** Unter „Silver & Ash“ steht nicht mehr „a hunt in the catacombs“ (nach dem Spieltest vom 19.11.). Name, Menü und Versionsnummer bleiben, wo sie waren.
 - **Die Silberklinge reicht weiter:** 2,5 m statt 2 m vor den Augen, also ein Viertel mehr (vorläufig, nach dem Spieltest vom 19.11.). Das gilt für jeden Hieb und für den aufgeladenen Schlag, auch beim Aufbrechen rissiger Wände. Die Keule reicht weiter 2 m (#425)
 
 ### Behoben
