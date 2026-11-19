@@ -293,6 +293,12 @@ Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 - **Waffen und Gegenstände im HUD zeigen am Ende kleine Renderings ihrer 3D-Modelle** (feste Kamera, gleiches Licht für alle, auf harte Pixel gerechnet), keine eigens gezeichneten Zeichen. Bis ein Modell existiert, bleibt das heutige Zeichen als Platzhalter.
 - **Fehlende Modelle:** Gegenstände Flasche, Auge, Stiefel, Rosenkranz, Halfter, Parade, Egel, Aschenherz; Waffen Gewehr, Donnerbüchse, Keule. Vorhanden sind nur `blade.glb` und `pistol.glb`. Die Modelle entstehen in eigenen Issues.
 
+**Doppelter Atlas (Issue #402, Teil 1 von #397):** `assets/hud/hud_parts_x2.*` und `assets/menu/menu_parts_x2.*`, Raster 1708 × 960, Maßstab 2. Er liegt neben dem heutigen Atlas, der unverändert bleibt.
+
+- **Jedes alte Teil hat ein Gegenstück gleichen Namens** an doppelter Lage und in doppelter Größe (`layoutX/Y`, `w`, `h`, `body`, `shapes`, `slice`). Ausnahme nur Zeichen (`icon_*`): gleiche Mitte, mindestens doppelte Größe (Waffen und Gegenstände etwa 15 % größer und heller), mit 3 px Rand gegen Abschneiden.
+- **Neues Teil hinzufügen:** zuerst im heutigen Atlas-Skript, dann das Gegenstück in `tools/hud/hud_atlas_doppelt.py` zeichnen; `python tools/hud/hud_atlas_pruefen.py <Lauf 1> <Lauf 2>` muss ohne Fehler laufen (zwei Läufe bitgleich).
+- **Schrift ist nicht im Atlas;** das Spiel zeichnet sie. Zeichen bleiben harte Pixel (Regel 20).
+
 **Abgelehnt: B „geglättet“** (Urteil des Menschen, 18.11.2026): Schrift und Zeichen werden weich. Blatt `blatt-b.png` bleibt als abgelehntes Probestück im Ordner.
 
 ## Menüs (entschieden, Issue #351)

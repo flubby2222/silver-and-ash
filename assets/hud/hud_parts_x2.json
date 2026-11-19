@@ -1,0 +1,715 @@
+{
+ "image": "hud_parts_x2.png",
+ "scale": 2,
+ "width": 1024,
+ "height": 392,
+ "designWidth": 1708,
+ "designHeight": 960,
+ "notes": [
+  "Doppelt feiner Atlas (Issue #402): jedes Teil des heutigen Atlas mit gleichem Namen an doppelter Lage und in doppelter Groesse; layoutX/Y, x, y, w, h, body, shapes und slice sind im Entwurf 1708 x 960 angegeben.",
+  "Ausnahme: Zeichen von Waffen und Gegenstaenden (icon_*) sind 15 % groesser um dieselbe Mitte, siehe design/proben/grafik/hud-atlas-402/abweichungen.md.",
+  "Richtung A (harte Pixel): keine Glaettung, Silber in 8 festen Stufen, Rahmen als Metall-Relief; Teile 1:1 zeichnen.",
+  "NAME_empty und NAME_full (life, boss, xp, stamina_N) haben dieselbe Groesse: erst _empty, darueber _full links vom Fuellstand beschnitten."
+ ],
+ "game": {
+  "reloadVeil": {
+   "color": [
+    14,
+    9,
+    22
+   ],
+   "alpha": 0.72,
+   "edgeColor": [
+    163,
+    175,
+    187
+   ],
+   "edgeAlpha": 0.9,
+   "edgeWidth": 2.4,
+   "note": "ueber das Waffenbild von links, Anteil = Nachladefortschritt; Rand der Fassung innen"
+  },
+  "text": {
+   "main": [
+    216,
+    210,
+    192
+   ],
+   "second": [
+    195,
+    192,
+    164
+   ],
+   "shadow": [
+    16,
+    11,
+    20
+   ],
+   "pickup": [
+    214,
+    170,
+    64
+   ],
+   "hint": [
+    227,
+    202,
+    111
+   ]
+  }
+ },
+ "parts": [
+  {
+   "name": "frame_item_0",
+   "x": 0,
+   "y": 0,
+   "w": 72,
+   "h": 76,
+   "layoutX": 18,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    60,
+    60
+   ]
+  },
+  {
+   "name": "frame_item_1",
+   "x": 73,
+   "y": 0,
+   "w": 72,
+   "h": 76,
+   "layoutX": 86,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    60,
+    60
+   ]
+  },
+  {
+   "name": "icon_flask",
+   "x": 37,
+   "y": 227,
+   "w": 32,
+   "h": 46,
+   "layoutX": 39,
+   "layoutY": 902
+  },
+  {
+   "name": "icon_eye",
+   "x": 803,
+   "y": 305,
+   "w": 42,
+   "h": 24,
+   "layoutX": 102,
+   "layoutY": 913
+  },
+  {
+   "name": "frame_weapon_0",
+   "x": 879,
+   "y": 0,
+   "w": 88,
+   "h": 76,
+   "layoutX": 1374,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    76,
+    60
+   ]
+  },
+  {
+   "name": "frame_weapon_0_active",
+   "x": 0,
+   "y": 77,
+   "w": 88,
+   "h": 76,
+   "layoutX": 1374,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    76,
+    60
+   ]
+  },
+  {
+   "name": "icon_blade",
+   "x": 689,
+   "y": 305,
+   "w": 56,
+   "h": 24,
+   "layoutX": 1389,
+   "layoutY": 913
+  },
+  {
+   "name": "icon_blade_active",
+   "x": 746,
+   "y": 305,
+   "w": 56,
+   "h": 24,
+   "layoutX": 1389,
+   "layoutY": 913
+  },
+  {
+   "name": "frame_weapon_1",
+   "x": 89,
+   "y": 77,
+   "w": 88,
+   "h": 76,
+   "layoutX": 1456,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    76,
+    60
+   ]
+  },
+  {
+   "name": "frame_weapon_1_active",
+   "x": 178,
+   "y": 77,
+   "w": 88,
+   "h": 76,
+   "layoutX": 1456,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    76,
+    60
+   ]
+  },
+  {
+   "name": "icon_pistol",
+   "x": 962,
+   "y": 227,
+   "w": 48,
+   "h": 30,
+   "layoutX": 1472,
+   "layoutY": 911
+  },
+  {
+   "name": "icon_pistol_active",
+   "x": 0,
+   "y": 274,
+   "w": 48,
+   "h": 30,
+   "layoutX": 1472,
+   "layoutY": 911
+  },
+  {
+   "name": "frame_weapon_2",
+   "x": 267,
+   "y": 77,
+   "w": 88,
+   "h": 76,
+   "layoutX": 1538,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    76,
+    60
+   ]
+  },
+  {
+   "name": "frame_weapon_2_active",
+   "x": 356,
+   "y": 77,
+   "w": 88,
+   "h": 76,
+   "layoutX": 1538,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    76,
+    60
+   ]
+  },
+  {
+   "name": "icon_rifle",
+   "x": 906,
+   "y": 334,
+   "w": 58,
+   "h": 20,
+   "layoutX": 1545,
+   "layoutY": 918
+  },
+  {
+   "name": "icon_rifle_active",
+   "x": 965,
+   "y": 334,
+   "w": 58,
+   "h": 20,
+   "layoutX": 1545,
+   "layoutY": 918
+  },
+  {
+   "name": "frame_weapon_3",
+   "x": 445,
+   "y": 77,
+   "w": 88,
+   "h": 76,
+   "layoutX": 1620,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    76,
+    60
+   ]
+  },
+  {
+   "name": "frame_weapon_3_active",
+   "x": 534,
+   "y": 77,
+   "w": 88,
+   "h": 76,
+   "layoutX": 1620,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    76,
+    60
+   ]
+  },
+  {
+   "name": "icon_blunder",
+   "x": 49,
+   "y": 274,
+   "w": 56,
+   "h": 28,
+   "layoutX": 1629,
+   "layoutY": 911
+  },
+  {
+   "name": "icon_blunder_active",
+   "x": 106,
+   "y": 274,
+   "w": 56,
+   "h": 28,
+   "layoutX": 1629,
+   "layoutY": 911
+  },
+  {
+   "name": "frame_vitals",
+   "x": 146,
+   "y": 0,
+   "w": 732,
+   "h": 76,
+   "layoutX": 488,
+   "layoutY": 884,
+   "body": [
+    6,
+    10,
+    720,
+    60
+   ]
+  },
+  {
+   "name": "life_empty",
+   "x": 192,
+   "y": 274,
+   "w": 688,
+   "h": 28,
+   "layoutX": 510,
+   "layoutY": 902
+  },
+  {
+   "name": "life_full",
+   "x": 0,
+   "y": 305,
+   "w": 688,
+   "h": 28,
+   "layoutX": 510,
+   "layoutY": 902
+  },
+  {
+   "name": "stamina_0_empty",
+   "x": 276,
+   "y": 357,
+   "w": 138,
+   "h": 14,
+   "layoutX": 512,
+   "layoutY": 932
+  },
+  {
+   "name": "stamina_0_full",
+   "x": 415,
+   "y": 357,
+   "w": 138,
+   "h": 14,
+   "layoutX": 512,
+   "layoutY": 932
+  },
+  {
+   "name": "stamina_1_empty",
+   "x": 554,
+   "y": 357,
+   "w": 144,
+   "h": 14,
+   "layoutX": 644,
+   "layoutY": 932
+  },
+  {
+   "name": "stamina_1_full",
+   "x": 699,
+   "y": 357,
+   "w": 144,
+   "h": 14,
+   "layoutX": 644,
+   "layoutY": 932
+  },
+  {
+   "name": "stamina_2_empty",
+   "x": 844,
+   "y": 357,
+   "w": 144,
+   "h": 14,
+   "layoutX": 782,
+   "layoutY": 932
+  },
+  {
+   "name": "stamina_2_full",
+   "x": 0,
+   "y": 378,
+   "w": 144,
+   "h": 14,
+   "layoutX": 782,
+   "layoutY": 932
+  },
+  {
+   "name": "stamina_3_empty",
+   "x": 145,
+   "y": 378,
+   "w": 144,
+   "h": 14,
+   "layoutX": 920,
+   "layoutY": 932
+  },
+  {
+   "name": "stamina_3_full",
+   "x": 290,
+   "y": 378,
+   "w": 144,
+   "h": 14,
+   "layoutX": 920,
+   "layoutY": 932
+  },
+  {
+   "name": "stamina_4_empty",
+   "x": 435,
+   "y": 378,
+   "w": 138,
+   "h": 14,
+   "layoutX": 1058,
+   "layoutY": 932
+  },
+  {
+   "name": "stamina_4_full",
+   "x": 574,
+   "y": 378,
+   "w": 138,
+   "h": 14,
+   "layoutX": 1058,
+   "layoutY": 932
+  },
+  {
+   "name": "frame_toast",
+   "x": 422,
+   "y": 227,
+   "w": 332,
+   "h": 36,
+   "layoutX": 14,
+   "layoutY": 846,
+   "body": [
+    2,
+    2,
+    328,
+    32
+   ]
+  },
+  {
+   "name": "icon_toast_eye",
+   "x": 257,
+   "y": 357,
+   "w": 18,
+   "h": 14,
+   "layoutX": 27,
+   "layoutY": 857
+  },
+  {
+   "name": "frame_level",
+   "x": 790,
+   "y": 154,
+   "w": 64,
+   "h": 72,
+   "layoutX": 10,
+   "layoutY": 0,
+   "body": [
+    6,
+    10,
+    52,
+    56
+   ]
+  },
+  {
+   "name": "frame_xp",
+   "x": 203,
+   "y": 227,
+   "w": 132,
+   "h": 42,
+   "layoutX": 72,
+   "layoutY": 14,
+   "body": [
+    4,
+    10,
+    124,
+    28
+   ]
+  },
+  {
+   "name": "xp_empty",
+   "x": 0,
+   "y": 357,
+   "w": 112,
+   "h": 20,
+   "layoutX": 82,
+   "layoutY": 28
+  },
+  {
+   "name": "xp_full",
+   "x": 113,
+   "y": 357,
+   "w": 112,
+   "h": 20,
+   "layoutX": 82,
+   "layoutY": 28
+  },
+  {
+   "name": "frame_skill_0",
+   "x": 855,
+   "y": 154,
+   "w": 60,
+   "h": 72,
+   "layoutX": 206,
+   "layoutY": 0,
+   "body": [
+    6,
+    10,
+    48,
+    56
+   ]
+  },
+  {
+   "name": "icon_flame",
+   "x": 873,
+   "y": 227,
+   "w": 28,
+   "h": 34,
+   "layoutX": 223,
+   "layoutY": 23
+  },
+  {
+   "name": "frame_skill_1",
+   "x": 916,
+   "y": 154,
+   "w": 60,
+   "h": 72,
+   "layoutX": 262,
+   "layoutY": 0,
+   "body": [
+    6,
+    10,
+    48,
+    56
+   ]
+  },
+  {
+   "name": "icon_shield",
+   "x": 902,
+   "y": 227,
+   "w": 28,
+   "h": 34,
+   "layoutX": 279,
+   "layoutY": 23
+  },
+  {
+   "name": "icon_skillpoint",
+   "x": 163,
+   "y": 274,
+   "w": 28,
+   "h": 28,
+   "layoutX": 331,
+   "layoutY": 25
+  },
+  {
+   "name": "frame_currency",
+   "x": 525,
+   "y": 154,
+   "w": 264,
+   "h": 72,
+   "layoutX": 1442,
+   "layoutY": 0,
+   "body": [
+    6,
+    10,
+    252,
+    56
+   ]
+  },
+  {
+   "name": "icon_coin",
+   "x": 931,
+   "y": 227,
+   "w": 30,
+   "h": 30,
+   "layoutX": 1487,
+   "layoutY": 25
+  },
+  {
+   "name": "icon_key",
+   "x": 226,
+   "y": 357,
+   "w": 30,
+   "h": 18,
+   "layoutX": 1621,
+   "layoutY": 31
+  },
+  {
+   "name": "frame_boss",
+   "x": 0,
+   "y": 154,
+   "w": 524,
+   "h": 72,
+   "layoutX": 592,
+   "layoutY": 0,
+   "body": [
+    8,
+    8,
+    508,
+    58
+   ]
+  },
+  {
+   "name": "boss_empty",
+   "x": 0,
+   "y": 334,
+   "w": 452,
+   "h": 22,
+   "layoutX": 628,
+   "layoutY": 38
+  },
+  {
+   "name": "boss_full",
+   "x": 453,
+   "y": 334,
+   "w": 452,
+   "h": 22,
+   "layoutX": 628,
+   "layoutY": 38
+  },
+  {
+   "name": "crosshair",
+   "x": 713,
+   "y": 378,
+   "w": 8,
+   "h": 8,
+   "layoutX": 850,
+   "layoutY": 476
+  },
+  {
+   "name": "frame_prompt",
+   "x": 383,
+   "y": 227,
+   "w": 38,
+   "h": 40,
+   "layoutX": 778,
+   "layoutY": 504,
+   "body": [
+    2,
+    2,
+    34,
+    36
+   ]
+  },
+  {
+   "name": "icon_club",
+   "x": 755,
+   "y": 227,
+   "w": 58,
+   "h": 36,
+   "layoutX": 1389,
+   "layoutY": 907
+  },
+  {
+   "name": "icon_club_active",
+   "x": 814,
+   "y": 227,
+   "w": 58,
+   "h": 36,
+   "layoutX": 1389,
+   "layoutY": 907
+  },
+  {
+   "name": "icon_boots",
+   "x": 0,
+   "y": 227,
+   "w": 36,
+   "h": 46,
+   "layoutX": 41,
+   "layoutY": 902
+  },
+  {
+   "name": "icon_rosary",
+   "x": 977,
+   "y": 154,
+   "w": 36,
+   "h": 50,
+   "layoutX": 37,
+   "layoutY": 898
+  },
+  {
+   "name": "icon_holster",
+   "x": 70,
+   "y": 227,
+   "w": 36,
+   "h": 46,
+   "layoutX": 39,
+   "layoutY": 902
+  },
+  {
+   "name": "icon_parry",
+   "x": 107,
+   "y": 227,
+   "w": 46,
+   "h": 46,
+   "layoutX": 32,
+   "layoutY": 902
+  },
+  {
+   "name": "icon_leech",
+   "x": 154,
+   "y": 227,
+   "w": 48,
+   "h": 44,
+   "layoutX": 32,
+   "layoutY": 904
+  },
+  {
+   "name": "icon_ashheart",
+   "x": 336,
+   "y": 227,
+   "w": 46,
+   "h": 42,
+   "layoutX": 32,
+   "layoutY": 904
+  }
+ ]
+}
