@@ -91,6 +91,36 @@ public sealed partial class Player
         return true;
     }
 
+    /// <summary>
+    /// True if this player can take weapon <paramref name="kind"/> from the floor: a ranged one fits into a free ranged
+    /// place or the <see cref="Bag"/>, a melee one only into the bag (the melee hand is never empty).
+    /// </summary>
+    public bool HasRoomFor(WeaponKind kind) =>
+        HasBagRoom || (Weapons.Info(kind).Hand == WeaponHand.Ranged && Array.IndexOf(_rangedSlots, null) >= 0);
+
+    /// <summary>
+    /// Takes weapon <paramref name="kind"/> from the floor (issue #434): a ranged one goes straight into the first free
+    /// ranged place - the weapon in the hand stays the same - otherwise, like a melee one, into the <see cref="Bag"/>
+    /// (<see cref="Stow(WeaponKind, RangedWeapon?)"/>). <paramref name="ranged"/> is the weapon with the magazine it was
+    /// dropped with, or null (ready and full). Returns false (and keeps nothing) if there is no room.
+    /// </summary>
+    public bool PickUp(WeaponKind kind, RangedWeapon? ranged)
+    {
+        var free = Array.IndexOf(_rangedSlots, null);
+        if (free < 0 || Weapons.Info(kind).Hand != WeaponHand.Ranged)
+        {
+            return Stow(kind, ranged);
+        }
+
+        if (ranged is not null && ranged.Kind != kind)
+        {
+            throw new ArgumentException($"The weapon {ranged.Kind} is no {kind}.", nameof(ranged));
+        }
+
+        _rangedSlots[free] = ranged ?? new RangedWeapon(kind, _balance);
+        return true;
+    }
+
     /// <summary>Adds <paramref name="kind"/> to the <see cref="Items"/> - an item needs no place and is always taken.</summary>
     internal void Take(ItemKind kind) => _items.Add(kind);
 
