@@ -27,8 +27,8 @@ internal interface IWeaponView
 
 /// <summary>
 /// The weapons in the hands: the silver blade in the left hand, the pistol in the right. Both are the designer's models
-/// with their hands (<see cref="WeaponModels"/>, issue #249); club, rifle and blunderbuss - and a weapon whose model is
-/// missing - are placeholder boxes without a hand.
+/// with their hands (<see cref="WeaponModels"/>, issue #249); the club is a model held and swung like the blade (issue
+/// #403). Rifle and blunderbuss - and a weapon whose model is missing - are placeholder boxes without a hand.
 /// Movement by code, all of it soft so the player seems to glide through the world: a slow, gentle bob while walking,
 /// hands that trail behind when looking around or walking sideways ("weapon sway"), a dip with the landing nod,
 /// a swing of the blade, recoil and a muzzle flash for the pistol. Models and boxes move the same way.
@@ -209,7 +209,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         // Wind-up while charging: the tip turns back to the left, the hand pulls back. Fully charged, it trembles.
         var tremble = _fullyCharged ? MathF.Sin(_time * 45f) * 0.0012f : 0f;
 
-        if (_melee == WeaponKind.SilverBlade && models is { Blade: { } blade, BladeHand: { } bladeHand })
+        if (models is not null && models.TryGetMelee(_melee, out var blade, out var bladeHand))
         {
             var grip = WeaponPose.Blade(t, _windUp, tremble) * modelMotion;
             DrawOnePart(blade, grip);

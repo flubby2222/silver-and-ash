@@ -44,6 +44,9 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `blade-charged` | die Silberklinge voll aufgeladen: zurückgezogen und zitternd |
 | `blade-swing-half` | ein schneller Klingenhieb halb ausgeholt: der Unterarm dreht sich zur Schulter (#265) |
 | `blade-swing-full` | ein schneller Klingenhieb auf dem Höhepunkt: der Unterarm dreht sich zur Schulter (#265) |
+| `club-rest` | die Keule als Modell in der Hand, in Ruhe, gehalten wie die Klinge (#403) |
+| `club-swing-half` | ein schneller Keulenhieb halb ausgeholt, dieselbe Bewegung wie bei der Klinge (#403) |
+| `showroom-club` | die Keule in der Hand vor der liegenden Keule (Worn) im Schauraum (#403) |
 | `gorm` | Gorm aus 6 m in seinem Bossraum |
 | `gorm-swing-windup` | Gorm wirbelt die Kette über dem Kopf: die Ankündigung des Kettenschwungs, die Kette gerade zu seiner Rechten; in einer 6 m hohen Halle wie sein Bossraum (#254) |
 | `gorm-swing` | Gorm im Kettenschwung von seiner Linken zu seiner Rechten, ein Drittel des Bogens; in einer 6 m hohen Halle wie sein Bossraum (#254) |

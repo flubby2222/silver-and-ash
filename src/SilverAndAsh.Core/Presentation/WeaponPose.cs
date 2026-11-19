@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Gameplay;
 
 namespace SilverAndAsh.Core.Presentation;
 
@@ -21,6 +22,7 @@ public static class WeaponPose
     public const string Fittings = "fittings";
     public const string Flash = "flash";
     public const string Sword = "sword";
+    public const string Club = "club";
 
     /// <summary>The cuff of a sleeve with the short piece of sleeve behind it: hangs rigidly on the weapon.</summary>
     public const string Cuff = "arm_cuff";
@@ -93,6 +95,20 @@ public static class WeaponPose
 
     /// <summary>The silver blade is one part.</summary>
     public static IReadOnlyList<RigPart> BladeParts { get; } = [new(Sword, null)];
+
+    /// <summary>The club is one part as well (assets/models/club.glb, issue #403).</summary>
+    public static IReadOnlyList<RigPart> ClubParts { get; } = [new(Club, null)];
+
+    /// <summary>
+    /// The model files of a melee weapon held like the blade - its pose, swing and sleeve (issue #403): the silver blade
+    /// and the club. Null: the weapon has no model and is drawn as placeholder boxes.
+    /// </summary>
+    public static MeleeModelFiles? MeleeModel(WeaponKind kind) => kind switch
+    {
+        WeaponKind.SilverBlade => new("blade.glb", "blade_hand.glb", BladeParts),
+        WeaponKind.Club => new("club.glb", "club_hand.glb", ClubParts),
+        _ => null,
+    };
 
     /// <summary>
     /// A hand file (pistol_hand.glb, blade_hand.glb) is a sleeve in two parts, both drawn on the frame of the stock or
@@ -321,3 +337,6 @@ public static class WeaponPose
 
     private static float Radians(float degrees) => degrees * MathF.PI / 180f;
 }
+
+/// <summary>A melee weapon's model files (in assets/models): the weapon with its <paramref name="Parts"/> and its sleeve.</summary>
+public sealed record MeleeModelFiles(string Weapon, string Hand, IReadOnlyList<RigPart> Parts);
