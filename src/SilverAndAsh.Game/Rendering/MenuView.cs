@@ -24,6 +24,7 @@ internal sealed class MenuView
     private static readonly Color Text = new(220, 220, 228, 255);
 
     private Vector2 _lastMouse = new(float.NaN, float.NaN);
+    private int? _held;
 
     /// <summary>
     /// A menu with buttons <paramref name="buttonHeight"/> pixels high, <paramref name="gap"/> pixels apart - lower
@@ -48,19 +49,30 @@ internal sealed class MenuView
     public bool Clicked { get; private set; }
 
     /// <summary>
+    /// Keeps the selection on <paramref name="index"/> - on the slider being dragged (issue #426) -, so the pointer does
+    /// not move it to the rows it passes; null lets the pointer select again.
+    /// </summary>
+    public void Hold(int? index)
+    {
+        _held = index;
+        Selected = index ?? Selected;
+    }
+
+    /// <summary>
     /// Call when the menu appears: the selection starts at the top, and wherever the pointer happens to rest counts
     /// as "not moved" - so it does not snatch the selection before the player touches the mouse.
     /// </summary>
     public void Open()
     {
         Selected = 0;
+        _held = null;
         _lastMouse = Raylib.GetMousePosition();
     }
 
     /// <summary>
     /// Reads mouse and keyboard for buttons <paramref name="items"/> starting at height <paramref name="top"/>.
     /// Returns the button that was chosen this frame (-1 for none). <paramref name="step"/> is -1 / +1 when the
-    /// selected button was nudged left or right (arrow keys, or a click on its left or right half) - for value rows.
+    /// selected button was nudged left or right with the arrow keys - for value rows.
     /// </summary>
     public int Update(IReadOnlyList<string> items, int top, out int step) =>
         Update(items.Select((_, i) => ButtonRect(i, top)).ToArray(), out step);
@@ -117,18 +129,17 @@ internal sealed class MenuView
             }
         }
 
-        if (hovered >= 0 && mouse != _lastMouse)
+        if (hovered >= 0 && mouse != _lastMouse && _held is null)
         {
             Selected = hovered;
         }
 
         _lastMouse = mouse;
 
+        // A click only chooses its button; the sliders of the settings follow the mouse on their own (issue #426).
         if (hovered >= 0 && Raylib.IsMouseButtonPressed(MouseButton.Left))
         {
             Selected = hovered;
-            var rect = buttons[hovered];
-            step = mouse.X < rect.X + rect.Width / 3f ? -1 : mouse.X > rect.X + rect.Width * 2f / 3f ? 1 : 0;
             return hovered;
         }
 

@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Behoben
+- **Regler mit der Maus ziehen:** In den Einstellungen folgt ein Regler jetzt der gedrückten Maus in beide Richtungen, ein Klick setzt ihn an die Klickstelle. Bisher änderte nur jeder einzelne Klick den Wert um einen Schritt, je nachdem, in welches Drittel der Zeile er fiel; Ziehen bewirkte nichts, und zurück nach links ging es nur Klick für Klick ganz links in der Zeile. Links/Rechts arbeiten wie bisher, ein Klick auf „Display“ schaltet weiter um (#426)
+
 ## [0.11.1] – 2026-11-19
 
 ### Behoben

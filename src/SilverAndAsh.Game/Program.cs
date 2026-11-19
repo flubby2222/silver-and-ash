@@ -324,6 +324,7 @@ static void RunGame(
         // menuPage says which page of the open menu is shown.
         var menuPage = MenuPage.Main;
         var settingsMenu = SettingsMenu.NewMenu();
+        var settingsDrag = new SettingsSliderDrag();
         var quitMenu = new MenuView();
 
 #if DEBUG
@@ -894,7 +895,7 @@ static void RunGame(
             switch (menuPage)
             {
                 case MenuPage.Settings:
-                    var back = SettingsMenu.Update(settingsMenu, settings, out var changed) == SettingsMenu.Back;
+                    var back = SettingsMenu.Update(settingsMenu, settingsDrag, settings, out var changed) == SettingsMenu.Back;
                     PlayMenuClick(settingsMenu);
                     ChangeSettings(changed);
                     menuPage = back ? MenuPage.Main : menuPage;
