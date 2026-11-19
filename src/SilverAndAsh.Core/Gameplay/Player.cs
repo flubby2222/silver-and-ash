@@ -303,7 +303,7 @@ public sealed partial class Player
     /// </summary>
     private List<Boon> DrawOffer()
     {
-        var pool = Enum.GetValues<Boon>().ToList();
+        var pool = Enum.GetValues<Boon>().Where(CanOffer).ToList();
         var offer = new List<Boon>();
         while (offer.Count < _boons.Offered && pool.Count > 0)
         {
@@ -314,6 +314,13 @@ public sealed partial class Player
 
         return offer;
     }
+
+    /// <summary>
+    /// Whether a new offer may hold <paramref name="boon"/>. Health only while taking it - on top of every waiting offer
+    /// that already holds it - stays within <see cref="BoonBalance.HealthCap"/> (issue #435); all others always.
+    /// </summary>
+    private bool CanOffer(Boon boon) => boon != Boon.Health
+        || MaxHealth + (_boons.Health * (_offers.Count(offer => offer.Contains(Boon.Health)) + 1)) <= _boons.HealthCap;
 
     private readonly BoonBalance _boons;
     private readonly Random _random;
