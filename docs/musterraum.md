@@ -1,6 +1,6 @@
 # Musterraum
 
-Der Musterraum (englisch *showroom*, Issue #283) zeigt alle Bauteile des Spiels nebeneinander – unter Spielbedingungen, mit Licht, Nebel, Bild-Variante, Musik und Geräuschen. Er ist für Grafikdesigner, die ein neues Modell in allen Wandvarianten und Raumhöhen sehen wollen, und für Code-Sitzungen, die etwas an Türen, Kisten oder Gegnern ändern.
+Der Musterraum (auch „Schauraum“, englisch *showroom*, Issue #283; Begriffe im [Glossar](glossar.md)) zeigt alle Bauteile des Spiels nebeneinander – unter Spielbedingungen, mit Licht, Nebel, Bild-Variante, Musik und Geräuschen. Er ist für Grafikdesigner, die ein neues Modell in allen Wandvarianten und Raumhöhen sehen wollen, und für Code-Sitzungen, die etwas an Türen, Kisten oder Gegnern ändern.
 
 ## Starten
 
