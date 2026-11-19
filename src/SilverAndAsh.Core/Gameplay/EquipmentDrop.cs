@@ -6,7 +6,8 @@ namespace SilverAndAsh.Core.Gameplay;
 /// <summary>
 /// A piece of equipment lying in the level (decision record 0008, issue #317): a weapon (<see cref="WeaponDrop"/>) or
 /// an item (<see cref="ItemDrop"/>). It falls to the floor and stays there. A player takes it with F - walking over it
-/// does nothing. A weapon needs a free place in the bag; an item needs none and is always taken.
+/// does nothing. A weapon needs a free place - a ranged one goes into a free ranged place first, then into the bag
+/// (issue #434); an item needs none and is always taken.
 /// </summary>
 public abstract class EquipmentDrop : IInteractable
 {
@@ -46,12 +47,12 @@ public abstract class EquipmentDrop : IInteractable
 
     /// <summary>
     /// "Take Rifle (Forged)" in the colour of its tier; for a weapon "Inventory full" (F does nothing, it stays lying)
-    /// when every place of <paramref name="player"/>'s bag is taken. An item is always taken.
+    /// when <paramref name="player"/> has no room for it (<see cref="Player.HasRoomFor"/>). An item is always taken.
     /// </summary>
     public InteractionOffer OfferFor(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
-        return Piece.IsWeapon && !player.HasBagRoom
+        return this is WeaponDrop weapon && !player.HasRoomFor(weapon.Kind)
             ? new InteractionOffer("Inventory full", false, Piece.Tier)
             : new InteractionOffer($"Take {Piece.Name} ({Piece.Tier})", true, Piece.Tier);
     }
