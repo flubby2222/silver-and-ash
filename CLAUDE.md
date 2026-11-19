@@ -1,6 +1,6 @@
 # CLAUDE.md – Arbeitsregeln für Silver & Ash
 
-Hier steht nur, was sich nicht aus dem Code ablesen lässt. Die Hintergründe stehen in [docs/entscheidungen/](docs/entscheidungen/), die Arbeitsweise in [ADR 0009](docs/entscheidungen/0009-leitung-designer-auto-merge.md).
+Hier steht nur, was sich nicht aus dem Code ablesen lässt. Die Hintergründe stehen in [docs/entscheidungen/](docs/entscheidungen/), die Arbeitsweise in [ADR 0009](docs/entscheidungen/0009-leitung-designer-auto-merge.md). Die Begriffe des Projekts erklärt das [Glossar](docs/glossar.md).
 
 ## Rollen
 
