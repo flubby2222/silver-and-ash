@@ -8,6 +8,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ### Hinzugefügt
 - **Ghul-Augen kündigen den Schlag an:** Holt ein Ghul zum Schlag aus, leuchten seine Augen blutrot und werden in drei harten Stufen heller, bis er zuschlägt (eine halbe Sekunde, so lange wie das Ausholen). Jeder Ghul leuchtet für sich; ein toter Ghul leuchtet nicht. Zeitpunkt, Schaden und Balancing bleiben gleich. Dauer und Stärke sind vorläufig bis zum nächsten Spieltest (#447)
+- **Der Lebensbalken wächst mit:** Oben links steht jetzt der Lebensbalken über dem Erfahrungsbalken, ein Pixel je Lebenspunkt (bei 854×480). Jedes Lebens-Upgrade macht ihn länger, der Rahmen wandert mit, und ein Teilstrich markiert jedes Upgrade, jeder fünfte lang. Das höchste Leben endet bei 235 (vorläufig); danach bietet das Spiel kein Lebens-Upgrade mehr an. Die Fähigkeitspunkte stehen in einer zweiten Reihe darunter, die Ausdauer bleibt allein unten in der Mitte. Auf schmalen Fenstern (16:10) rückt der Bossbalken nach rechts, wenn der Lebensbalken lang ist (#435)
 
 ### Geändert
 - **Aufgehobene Fernwaffen landen gleich im Waffenplatz:** Ist einer der drei Fernwaffen-Plätze frei, kommt eine mit F aufgehobene Fernwaffe direkt dorthin (auf den ersten freien) und lässt sich sofort mit Mausrad oder 1/2/3 wählen. Die Waffe in der Hand wechselt dabei nicht. Sind alle Plätze belegt, geht sie wie bisher ins Inventar; erst wenn auch das voll ist, steht „Inventory full“. Nahkampfwaffen kommen weiter ins Inventar, denn die Hand ist nie leer (nach dem Spieltest vom 19.11., #434)
