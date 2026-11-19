@@ -112,7 +112,9 @@ public static class GlbScene
             {
                 var offset = view.TryGetProperty("byteOffset", out var o) ? o.GetInt64() : 0L;
                 var length = view.GetProperty("byteLength").GetInt64();
-                if (view.GetProperty("buffer").GetInt32() != 0 || offset < 0 || length < 0 || offset + length > bufferLength)
+                // "length > bufferLength - offset" rather than "offset + length > bufferLength": the sum of two huge
+                // numbers wraps around to a negative one and would pass.
+                if (view.GetProperty("buffer").GetInt32() != 0 || offset < 0 || length < 0 || length > bufferLength - offset)
                 {
                     throw new InvalidDataException($"A buffer view ({offset} + {length} bytes) lies outside the buffer ({bufferLength} bytes).");
                 }
@@ -144,7 +146,8 @@ public static class GlbScene
             }
 
             var needed = count == 0 ? 0 : offset + (count - 1) * stride + element;
-            if (offset < 0 || count < 0 || count > viewLengths[view] || needed > viewLengths[view])
+            // The offset is checked on its own too: a huge offset makes "needed" wrap around to a negative number.
+            if (offset < 0 || offset > viewLengths[view] || count < 0 || count > viewLengths[view] || needed > viewLengths[view])
             {
                 throw new InvalidDataException($"An accessor needs {needed} bytes, its buffer view has {viewLengths[view]}.");
             }
