@@ -193,10 +193,10 @@ Kisten setzt [`ChestPlacement`](../src/SilverAndAsh.Core/World/ChestPlacement.cs
 
 **Arena** ([`RoomState`](../src/SilverAndAsh.Core/Gameplay/RoomState.cs), Logik in `GameWorld`):
 
-1. Gegner in Kampf- und Bossräumen **schlafen**: Sie stehen bzw. hängen still, bis der Raum betreten wird. Trifft man einen schlafenden Gegner (z. B. durch die offene Tür), wacht sein ganzer Raum auf, wird aber nicht versiegelt.
+1. Gegner in **Kampfräumen** sind vor dem Verriegeln **noch nicht da** (Issue #424): Sie warten auf ihrer Startzelle im Boden (Ghule) bzw. in der Decke (Fledermäuse), werden nicht gezeichnet, sind kein Ziel und kein Hindernis. Durch die offene Tür kann man also niemanden treffen oder herauslocken. Ihre Startzellen hält die Platzierung `difficulty.doorDistance` von den Türen fern. Gegner im **Bossraum** (Gorm) **schlafen** wie bisher: Sie stehen still, bis der Raum betreten wird; trifft man einen, wacht der Raum auf, wird aber nicht versiegelt.
 2. **Betreten** heißt: mit dem **ganzen Körper** im Raum, nicht mehr in der Türzelle. Sonst würde das Gitter auf den Spieler fallen.
-3. Beim **ersten Betreten** eines Kampf- oder Bossraums mit lebenden Gegnern fallen an **allen** seinen Türen Gitter herunter, die Gegner erwachen (Ereignis `RoomSealed`).
-4. Sind alle Gegner des Raums tot, ist er **geräumt** (`RoomCleared`). Die Gitter heben sich, die Tür, durch die man kam, **öffnet sich von selbst**, die anderen lassen sich mit F öffnen.
+3. Beim **ersten Betreten** eines Kampf- oder Bossraums mit lebenden Gegnern fallen an **allen** seinen Türen Gitter herunter, die Gegner erwachen (Ereignis `RoomSealed`). Im Kampfraum **erscheint** dabei die erste **Welle** (Ereignis `WaveEmerged`, noch ohne Geräusch): Ghule wachsen aus dem Boden, Fledermäuse sinken aus der Decke, in `difficulty.emergeTime` Sekunden. Solange greifen sie nicht an und nehmen keinen Schaden. Ein Kampfraum hat eine Liste von Wellen; heute genau eine mit allen seinen Gegnern. Ist eine Welle tot und eine weitere übrig, erscheint die nächste.
+4. Sind alle Gegner des Raums tot (alle Wellen), ist er **geräumt** (`RoomCleared`). Die Gitter heben sich, die Tür, durch die man kam, **öffnet sich von selbst**, die anderen lassen sich mit F öffnen.
 5. Ein geräumter Raum versiegelt sich **nie wieder**. Ein Kampfraum ohne Gegner gilt beim Betreten sofort als geräumt.
 
 ## Karte

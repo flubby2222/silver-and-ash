@@ -45,6 +45,22 @@ public sealed class RoomState
     /// <summary>The enemies that started in this room.</summary>
     internal List<ITarget> Enemies { get; } = [];
 
+    /// <summary>
+    /// The waves of a combat room (issue #424): each one comes out of the floor and ceiling when the one before is dead,
+    /// the first when the room seals. Today a combat room has exactly one wave - all its enemies. Empty in every other
+    /// room (there the enemies are there from the start).
+    /// </summary>
+    internal List<List<ITarget>> Waves { get; } = [];
+
+    /// <summary>How many of its <see cref="Waves"/> have come out so far.</summary>
+    public int WavesReleased { get; private set; }
+
+    /// <summary>How many waves it has (0 unless it is a combat room with enemies).</summary>
+    public int WaveCount => Waves.Count;
+
+    /// <summary>The next wave that is still hidden, or null when all have come out.</summary>
+    internal List<ITarget>? ReleaseNextWave() => WavesReleased < Waves.Count ? Waves[WavesReleased++] : null;
+
     internal void Discover() => IsDiscovered = true;
 
     internal void Enter() => IsEntered = true;

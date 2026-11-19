@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Behoben
+- **Kein Festsitzen mehr in Kampfräumen:** Bisher standen die Gegner eines Kampfraums schon vor dem Betreten im Raum. Man konnte sie durch die offene Tür treffen und herauslocken. Danach blieb der verriegelte Raum für immer zu. Jetzt sind die Gegner erst da, wenn sich der Raum verriegelt: Ghule wachsen aus dem Boden, Fledermäuse sinken aus der Decke, nie nah an einer Tür. In dieser kurzen Phase greifen sie nicht an und nehmen keinen Schaden. Die Dauer steht als `emergeTime` in `balance.json`. Der Bossraum mit Gorm bleibt wie bisher (#424)
+
 ## [0.11.1] – 2026-11-19
 
 ### Behoben

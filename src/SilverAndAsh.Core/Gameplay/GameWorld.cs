@@ -152,8 +152,60 @@ public sealed class GameWorld
                 {
                     _asleep.Add(enemy.Id);
                 }
+
+                // Issue #424: in a combat room it is not even there yet - it waits inside the floor (a ghoul) or the
+                // ceiling (a bat) on its start cell, which the level generator keeps away from the doors
+                // (difficulty.doorDistance), and comes out when the room seals. Nobody can lure it out through an
+                // open door. The boss room stays as it was: Gorm stands there from the start.
+                if (room.Kind == RoomKind.Combat)
+                {
+                    Hide(enemy);
+                }
             }
         }
+
+        // Today one wave per combat room: all its enemies. More waves would come out one after the other.
+        foreach (var room in _rooms.Where(room => room.Kind == RoomKind.Combat && room.Enemies.Count > 0))
+        {
+            room.Waves.Add([.. room.Enemies]);
+        }
+    }
+
+    // Puts an enemy of a combat room inside the floor (ghoul) or the ceiling (bat) of its start cell.
+    private void Hide(ITarget enemy)
+    {
+        switch (enemy)
+        {
+            case Ghoul ghoul:
+                ghoul.Emergence.Hide(new Vector3(0f, -BodySizes.Ghoul.Height, 0f));
+                break;
+            case Bat bat:
+                var ceiling = Level.CellAt(bat.Position).CeilingHeight;
+                bat.Emergence.Hide(new Vector3(0f, ceiling - bat.Position.Y, 0f));
+                break;
+        }
+    }
+
+    // A wave comes out: its enemies wake up and rise out of the floor or sink out of the ceiling. Nothing to hear yet
+    // (a new kind of sound needs a listening test first) - only the event, for effects later.
+    private void Release(RoomState room, IReadOnlyList<ITarget> wave)
+    {
+        var emergeTicks = SimulationClock.SecondsToTicks(Balance.Difficulty.EmergeTime);
+        foreach (var enemy in wave)
+        {
+            _asleep.Remove(enemy.Id);
+            switch (enemy)
+            {
+                case Ghoul ghoul:
+                    ghoul.Emergence.Start(emergeTicks);
+                    break;
+                case Bat bat:
+                    bat.Emergence.Start(emergeTicks);
+                    break;
+            }
+        }
+
+        _events.Add(new WaveEmerged(room.Index, room.WavesReleased - 1, wave.Select(enemy => enemy.Id).ToList()));
     }
 
     /// <summary>
@@ -600,6 +652,11 @@ public sealed class GameWorld
         room.Seal();
         UpdateLevel();
         _events.Add(new RoomSealed(room.Index));
+        if (room.ReleaseNextWave() is { } wave)
+        {
+            Release(room, wave);
+        }
+
         if (room.Kind == RoomKind.Boss && _gorm is { IsDead: false })
         {
             _events.Add(new BossFightStarted());
@@ -607,11 +664,24 @@ public sealed class GameWorld
     }
 
     // When the last enemy of an arena is dead, its grates rise. The door the player came through is open (they walked
-    // through it), so it is free again at once; the others open with F as before.
+    // through it), so it is free again at once; the others open with F as before. While a combat room still has a
+    // hidden wave, the next one comes out instead once all that came out before are dead (today there is only one).
     private void ClearRooms()
     {
-        foreach (var room in _rooms.Where(room => room.IsSealed && room.Enemies.All(IsDead)))
+        foreach (var room in _rooms.Where(room => room.IsSealed))
         {
+            var released = room.Waves.Take(room.WavesReleased).SelectMany(wave => wave);
+            if (room.WavesReleased < room.WaveCount && released.All(IsDead))
+            {
+                Release(room, room.ReleaseNextWave()!);
+                continue;
+            }
+
+            if (!room.Enemies.All(IsDead))
+            {
+                continue;
+            }
+
             foreach (var id in room.DoorIds)
             {
                 _doors[id].Lift();
@@ -649,13 +719,30 @@ public sealed class GameWorld
         }
     }
 
+    // Wakes the enemies of a room that are there - not those still hidden in the floor or the ceiling (they wake when
+    // their wave comes out).
     private void WakeUp(RoomState room)
     {
-        foreach (var enemy in room.Enemies)
+        foreach (var enemy in room.Enemies.Where(enemy => !IsHidden(enemy)))
         {
             _asleep.Remove(enemy.Id);
         }
     }
+
+    private static bool IsHidden(ITarget enemy) => enemy switch
+    {
+        Ghoul ghoul => ghoul.Emergence.IsHidden,
+        Bat bat => bat.Emergence.IsHidden,
+        _ => false,
+    };
+
+    // Only an enemy that is fully out acts (issue #424: while it comes out it does not attack).
+    private static bool IsOut(ITarget enemy) => enemy switch
+    {
+        Ghoul ghoul => ghoul.Emergence.IsPresent,
+        Bat bat => bat.Emergence.IsPresent,
+        _ => true,
+    };
 
     private bool TouchesDoorOf(RoomState room, Player player)
     {
@@ -1242,7 +1329,8 @@ public sealed class GameWorld
             _events.Insert(eventsBefore + 1, new TargetHitBy(target.Id, attacker.Id, hit.Weapon));
         }
 
-        // A sleeping enemy that is hit wakes up - together with its whole room (the room is not sealed by that).
+        // A sleeping enemy that is hit wakes up - together with its whole room (the room is not sealed by that). Since
+        // issue #424 this is only the boss room: a combat room's enemies are hidden (not hittable) until it seals.
         if (_asleep.Contains(target.Id))
         {
             foreach (var room in _rooms.Where(room => room.Enemies.Contains(target)))
@@ -1321,7 +1409,7 @@ public sealed class GameWorld
                 .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, ghoul)).Select(target => target.Body))
                 .Concat(StandingChests.Select(chest => chest.RoundBody))
                 .ToList();
-            if (!_asleep.Contains(ghoul.Id) && !IsShowroom)
+            if (!_asleep.Contains(ghoul.Id) && IsOut(ghoul) && !IsShowroom)
             {
                 ghoul.Act(_enemyLevel, Players, obstacles, _events, EnemyPaths());
             }
@@ -1341,7 +1429,7 @@ public sealed class GameWorld
         var batEventsFrom = _events.Count;
         foreach (var bat in _bats)
         {
-            if (!_asleep.Contains(bat.Id) && !IsShowroom)
+            if (!_asleep.Contains(bat.Id) && IsOut(bat) && !IsShowroom)
             {
                 bat.Act(_enemyLevel, Players, _events);
             }
