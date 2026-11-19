@@ -3,8 +3,8 @@ namespace SilverAndAsh.Core.Gameplay;
 /// <summary>
 /// Charging the silver blade: hold the button, release to swing harder. Linear from 0 (released at once) to 1
 /// (held for <see cref="MeleeBalance.ChargeTime"/>). Charging costs up to
-/// <see cref="MeleeBalance.ChargeStaminaSegments"/> stamina segments, linearly as well - and stops when the
-/// stamina cannot pay for the next bit.
+/// <see cref="MeleeBalance.ChargeStaminaSegments"/> stamina segments, linearly as well - and stops (holds the charge
+/// reached) when the stamina cannot pay for the next bit.
 /// <para>
 /// Its own small class (like <see cref="Cooldown"/>): the player only starts, ticks and releases it, and what the
 /// charge is worth is decided by a damage rule (<see cref="ChargeBonus"/>). Items can later change either side.
@@ -35,22 +35,34 @@ public sealed class MeleeCharge
     /// <summary>True once the blade is fully charged - holding on costs nothing more.</summary>
     public bool IsFull => _ticks >= _fullTicks;
 
+    /// <summary>
+    /// True once the stamina could not pay for the next bit (issue #413): the charge holds where it is until the
+    /// button is let go, costs nothing more and does not keep the bar from refilling - like a full charge.
+    /// </summary>
+    public bool IsStalled { get; private set; }
+
+    /// <summary>True while charging still pays bit by bit: charging, not yet full and not stalled.</summary>
+    public bool IsPaying => IsCharging && !IsFull && !IsStalled;
+
     /// <summary>Starts charging (the button was just pressed).</summary>
     public void Start()
     {
         IsCharging = true;
+        IsStalled = false;
         _ticks = 0;
         _paid = 0;
     }
 
     /// <summary>
     /// One more tick of holding: charges a bit further if not yet full and the stamina can pay for that bit.
-    /// The cost is spread evenly: after half the time, half the cost is paid.
+    /// The cost is spread evenly: after half the time, half the cost is paid. If the stamina cannot pay, the charge
+    /// stalls for the rest of this hold (<see cref="IsStalled"/>) - otherwise the bar could never refill while the
+    /// button is held (issue #413: a dash during charging used up the last bit).
     /// </summary>
     public void Tick(Stamina stamina)
     {
         ArgumentNullException.ThrowIfNull(stamina);
-        if (!IsCharging || _ticks >= _fullTicks)
+        if (!IsPaying)
         {
             return;
         }
@@ -64,6 +76,10 @@ public sealed class MeleeCharge
             _ticks++;
             _paid = owed;
         }
+        else
+        {
+            IsStalled = true;
+        }
     }
 
     /// <summary>Stops charging (the button was let go) and returns how far it was charged.</summary>
@@ -71,6 +87,7 @@ public sealed class MeleeCharge
     {
         var charge = Fraction;
         IsCharging = false;
+        IsStalled = false;
         _ticks = 0;
         _paid = 0;
         return charge;
