@@ -79,6 +79,17 @@ using (log)
             log?.Info($"Level '{levelPath}' loaded: {level.Width} x {level.Depth} cells.");
         }
 
+        // Start option: --room assets/rooms/combat/l-hall.txt - one room template on its own, entered from its first
+        // door slot (issue #528, docs/level-format.md); --no-enemies leaves its enemies out.
+        RoomPreview? preview = null;
+        if (options.Room is { } room)
+        {
+            preview = new RoomPreview(RoomPreview.Load(room.Path, AppContext.BaseDirectory), room.WithEnemies);
+            newWorld = preview.NewWorld;
+            nextWorld = preview.NextWorld;
+            log?.Info($"Room template '{preview.Template.Name}' on its own{(room.WithEnemies ? string.Empty : ", without enemies")}.");
+        }
+
 #if DEBUG
         // Test option: --give club - every run (and restart) starts with these weapons, to try them before they can
         // be found. Only in the debug version.
@@ -132,6 +143,7 @@ using (log)
                 var compare = photo == LaunchOptions.ComparePhotos;
                 var scenes = photo == LaunchOptions.AllPhotos ? PhotoScenes.All
                     : compare ? PhotoScenes.LookComparison
+                    : preview is not null ? [preview.EntrancePhoto(seed ?? 0)]
                     : [PhotoScenes.Find(photo)!];
                 photos = new PhotoRequest(
                     scenes, folder, RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), compare);
