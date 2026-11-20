@@ -244,6 +244,7 @@ public sealed class ShowroomLayout
         var consumables = new List<ExhibitConsumable>();
         var weapons = new List<ExhibitWeapon>();
         var items = new List<ExhibitItem>();
+        var skeletons = new List<ExhibitCrossbowSkeleton>();
         foreach (var place in placed)
         {
             var (x, z) = (place.X, place.Z);
@@ -255,6 +256,7 @@ public sealed class ShowroomLayout
                 EnemyPiece { Enemy: ShowroomEnemy.Ghoul } => BodySizes.Ghoul.Height + 0.5f,
                 EnemyPiece { Enemy: ShowroomEnemy.Bat } => BodySizes.Bat.HoverHeight + 1f,
                 EnemyPiece => BodySizes.Gorm.Height + 0.6f,
+                CrossbowSkeletonPiece skeleton => AddSkeleton(skeletons, new ExhibitCrossbowSkeleton(skeleton.Stance, level.CellCenter(x, z), Vector3.UnitZ)),
                 WeaponPiece weapon => Add(weapons, new ExhibitWeapon(weapon.Weapon, level.CellCenter(x, z))),
                 ItemPiece item => Add(items, new ExhibitItem(item.Item, level.CellCenter(x, z))),
                 LootPiece pile => Add(loot, new ExhibitLoot(pile.Loot, pile.Amount, level.CellCenter(x, z))),
@@ -286,7 +288,7 @@ public sealed class ShowroomLayout
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
             level, doors, chests, SurfaceVariants.Of(looks, lookOfCell),
-            new ShowroomExhibits(stairs, loot, consumables, weapons, items), labels, sections, placed);
+            new ShowroomExhibits(stairs, loot, consumables, weapons, items) { CrossbowSkeletons = skeletons }, labels, sections, placed);
     }
 
     /// <summary>
@@ -345,6 +347,12 @@ public sealed class ShowroomLayout
     {
         stairs = position;
         return Stairs.Height + 0.4f;
+    }
+
+    private static float AddSkeleton(List<ExhibitCrossbowSkeleton> skeletons, ExhibitCrossbowSkeleton skeleton)
+    {
+        skeletons.Add(skeleton);
+        return CrossbowSkeletonLook.Height + 0.5f;
     }
 
     private static float Add<T>(List<T> list, T item)

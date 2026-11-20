@@ -15,6 +15,7 @@ Alles unter `assets/` ist per Skript erzeugt, nichts heruntergeladen (`CLAUDE.md
 | `models/door_frame_normal_a.glb`, `models/door_frame_normal_a.png`, `models/door_frame_normal_b.glb`, `models/door_frame_normal_b.png`, `models/door_frame_normal_c.glb`, `models/door_frame_normal_c.png`, `models/door_frame_locked_a.glb`, `models/door_frame_locked_a.png`, `models/door_frame_locked_b.glb`, `models/door_frame_locked_b.png`, `models/door_frame_locked_c.glb`, `models/door_frame_locked_c.png`, `models/door_frame_boss_a.glb`, `models/door_frame_boss_a.png`, `models/door_frame_boss_b.glb`, `models/door_frame_boss_b.png`, `models/door_frame_boss_c.glb`, `models/door_frame_boss_c.png` | `tools/models/door.py` (mit `tools/models/psx.py`; liest `textures/catacomb_wall*.png` und `palette/hauptpalette.json`) | 2026-11-17 |
 | `models/stairs_spiral_a.glb`, `models/stairs_spiral_a.png`, `models/stairs_spiral_b.glb`, `models/stairs_spiral_b.png`, `models/stairs_spiral_c.glb`, `models/stairs_spiral_c.png` | `tools/models/stairs.py` (mit `tools/models/psx.py`; liest `textures/catacomb_wall*.png`, `textures/catacomb_floor*.png` und `palette/hauptpalette.json`) | 2026-11-17 |
 | `models/well_of_sirius_bereit.glb`, `models/well_of_sirius_verbraucht.glb`, `models/well_of_sirius.png` | `tools/models/well_of_sirius.py` (mit `tools/models/psx.py`; liest `palette/hauptpalette.json`; Übergabe aus `design/proben/grafik/brunnen-438/brunnen3.py`, Issue #438; Prüfung `tools/models/check_closed.py`) | 2026-11-19 |
+| `models/crossbow_skeleton_rest.glb`, `models/crossbow_skeleton_rest.png`, `models/crossbow_skeleton_announce.glb`, `models/crossbow_skeleton_announce.png` | `tools/models/crossbow_skeleton.py` (mit `tools/models/psx.py`; liest `palette/hauptpalette.json`; Übergabe der abgenommenen Probe „F flach“ aus Issue #334, Runde 4, Issue #497; Prüfung `tools/models/check_closed.py`) | 2026-11-20 |
 | `models/shock_wave.glb`, `models/shock_wave.png` | `tools/models/shock_wave.py` (mit `tools/models/psx.py`; liest `textures/catacomb_wall.png` und `palette/hauptpalette.json`) | 2026-11-18 |
 | `models/cracked_wall_a.glb`, `models/cracked_wall_b.glb`, `models/cracked_wall_c.glb`, `models/cracked_wall_a.png`, `models/cracked_wall_b.png`, `models/cracked_wall_c.png` | `tools/models/cracked_wall.py` (mit `tools/models/psx.py`; liest `textures/catacomb_wall*.png`) | 2026-11-17 |
 | `textures/catacomb_wall.png`, `textures/catacomb_floor.png`, `textures/catacomb_ceiling.png` | `tools/textures/catacomb.py` (mit `tools/models/psx.py`) | 2026-11-16 |
@@ -47,6 +48,7 @@ Modelle mit Blender 5.3 ohne Oberfläche; das Skript schreibt nach `assets/model
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/gorm.py
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/door.py
 "D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/cracked_wall.py
+"D:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python tools/models/crossbow_skeleton.py
 ```
 
 Level-Texturen ebenso; das Skript schreibt nach `assets/textures/`:

@@ -292,6 +292,12 @@ public static class PhotoScenes
             studio => new PhotoSetup(BesideTheGhoul(studio, ahead: 1.8f, aside: 0f)) { ShowsShotBodies = true }),
         new("ghoul-shotbody-side", "The showroom's ghoul from 1.8 m to its side, with what a shot can hit drawn over it as wires (issue #433).",
             studio => new PhotoSetup(BesideTheGhoul(studio, ahead: 0f, aside: 1.8f)) { ShowsShotBodies = true }),
+        new("crossbow-skeleton-rest-4m", "The showroom's crossbow skeleton at rest, 4 m in front of it: crossbow lowered, eyes dark (issue #497).",
+            studio => new PhotoSetup(BeforeCrossbowSkeleton(studio, CrossbowSkeletonStance.Rest, 4f))),
+        new("crossbow-skeleton-announce-4m", "The showroom's crossbow skeleton announcing a shot, 4 m in front of it: crossbow raised, eyes red (issue #497).",
+            studio => new PhotoSetup(BeforeCrossbowSkeleton(studio, CrossbowSkeletonStance.Announce, 4f))),
+        new("crossbow-skeleton-announce-2m", "The showroom's crossbow skeleton announcing a shot, 2 m in front of it - the red eyes up close (issue #497).",
+            studio => new PhotoSetup(BeforeCrossbowSkeleton(studio, CrossbowSkeletonStance.Announce, 2f))),
         new("model-probe-4m", "One target on a bare floor, 4 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 4)) { IsModelProbe = true }),
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",
@@ -378,6 +384,17 @@ public static class PhotoScenes
         var side = new Vector3(ghoul.Facing.Z, 0f, -ghoul.Facing.X);
         world.Player.PlaceAt(ghoul.Position + (ghoul.Facing * ahead) + (side * aside));
         PhotoStudio.Face(world.Player, ghoul.Position + (ghoul.Facing * BodySizes.Ghoul.HeadForward / 2f) + new Vector3(0f, BodySizes.Ghoul.TorsoHeight / 2f, 0f));
+        return world;
+    }
+
+    // The showroom with a player `distance` m in front of its crossbow skeleton in `stance` (it looks south, along +Z),
+    // looking at its chest (issue #497).
+    private static GameWorld BeforeCrossbowSkeleton(PhotoStudio studio, CrossbowSkeletonStance stance, float distance)
+    {
+        var world = BeforeEquipment(studio, piece => piece is CrossbowSkeletonPiece shown && shown.Stance == stance);
+        var skeleton = world.Showroom!.CrossbowSkeletons.First(exhibit => exhibit.Stance == stance);
+        world.Player.PlaceAt(skeleton.Position + (skeleton.Facing * distance));
+        PhotoStudio.Face(world.Player, skeleton.Position + new Vector3(0f, CrossbowSkeletonLook.Height * 0.6f, 0f));
         return world;
     }
 
