@@ -1,0 +1,3 @@
+F1 Grabwächter, Laternenstab: Dreiecke 2528 {'leg_l': 220, 'leg_r': 220, 'torso': 608, 'head': 120, 'eyes': 24, 'arm_l': 184, 'arm_r': 184, 'gear': 732, 'pole': 236}, x -0.88..1.05, y 0.00..2.39, z -0.51..1.09
+F2 Veteran mit Hellebarde: Dreiecke 2438 {'leg_l': 220, 'leg_r': 220, 'torso': 640, 'head': 120, 'eyes': 24, 'arm_l': 184, 'arm_r': 184, 'gear': 556, 'halberd': 290}, x -0.90..1.14, y 0.00..2.59, z -0.69..0.80
+F3 Totenwache mit Standarte: Dreiecke 2422 {'leg_l': 220, 'leg_r': 220, 'torso': 608, 'head': 120, 'eyes': 24, 'arm_l': 184, 'arm_r': 184, 'gear': 596, 'standard': 266}, x -0.87..1.08, y 0.00..2.46, z -0.36..0.83

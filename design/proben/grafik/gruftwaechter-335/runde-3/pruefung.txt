@@ -1,0 +1,46 @@
+Pruefung 1: je Teil im Skript (Kante mit genau einer Flaeche = offen):
+F1 Grabwächter, Laternenstab: Teile 9, Dreiecke 2528, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000028 m3 (muss > 0 sein)
+    leg_l: 220 Dreiecke, offen 0, mehrfach 0, Raum 0.0598
+    leg_r: 220 Dreiecke, offen 0, mehrfach 0, Raum 0.0598
+    torso: 608 Dreiecke, offen 0, mehrfach 0, Raum 0.4402
+    head: 120 Dreiecke, offen 0, mehrfach 0, Raum 0.0175
+    eyes: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_l: 184 Dreiecke, offen 0, mehrfach 0, Raum 0.0444
+    arm_r: 184 Dreiecke, offen 0, mehrfach 0, Raum 0.0443
+    gear: 732 Dreiecke, offen 0, mehrfach 0, Raum 0.0015
+    pole: 236 Dreiecke, offen 0, mehrfach 0, Raum 0.0186
+F2 Veteran mit Hellebarde: Teile 9, Dreiecke 2438, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000028 m3 (muss > 0 sein)
+    leg_l: 220 Dreiecke, offen 0, mehrfach 0, Raum 0.0598
+    leg_r: 220 Dreiecke, offen 0, mehrfach 0, Raum 0.0598
+    torso: 640 Dreiecke, offen 0, mehrfach 0, Raum 0.4890
+    head: 120 Dreiecke, offen 0, mehrfach 0, Raum 0.0200
+    eyes: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_l: 184 Dreiecke, offen 0, mehrfach 0, Raum 0.0438
+    arm_r: 184 Dreiecke, offen 0, mehrfach 0, Raum 0.0439
+    gear: 556 Dreiecke, offen 0, mehrfach 0, Raum 0.0009
+    halberd: 290 Dreiecke, offen 0, mehrfach 0, Raum 0.0196
+F3 Totenwache mit Standarte: Teile 9, Dreiecke 2422, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000028 m3 (muss > 0 sein)
+    leg_l: 220 Dreiecke, offen 0, mehrfach 0, Raum 0.0598
+    leg_r: 220 Dreiecke, offen 0, mehrfach 0, Raum 0.0598
+    torso: 608 Dreiecke, offen 0, mehrfach 0, Raum 0.3760
+    head: 120 Dreiecke, offen 0, mehrfach 0, Raum 0.0191
+    eyes: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_l: 184 Dreiecke, offen 0, mehrfach 0, Raum 0.0440
+    arm_r: 184 Dreiecke, offen 0, mehrfach 0, Raum 0.0441
+    gear: 596 Dreiecke, offen 0, mehrfach 0, Raum 0.0296
+    standard: 266 Dreiecke, offen 0, mehrfach 0, Raum 0.0210
+
+Pruefung 2: Durchdringung aller Koerper paarweise (BVH-Dreieckstest), Ruhe und Ankuendigung.
+Erlaubt ist nur der Waffenschaft in der Manschette (Regel 23: keine Hand modelliert, Manschette verdeckt den Griff).
+F1 ruhend: 39 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x pole/shaft (35 Dreieckspaare, erstes bei x 0.67 y 1.27 z 0.73)
+F1 ankuendigung: 39 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x pole/shaft (30 Dreieckspaare, erstes bei x 0.85 y 1.53 z 0.14)
+F2 ruhend: 47 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x halberd/shaft (35 Dreieckspaare, erstes bei x 0.69 y 1.27 z 0.7)
+F2 ankuendigung: 47 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x halberd/shaft (33 Dreieckspaare, erstes bei x 1.22 y 1.6 z 0.24)
+F3 ruhend: 46 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x standard/shaft (35 Dreieckspaare, erstes bei x 0.67 y 1.27 z 0.74)
+F3 ankuendigung: 46 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x standard/shaft (30 Dreieckspaare, erstes bei x 0.86 y 1.48 z 0.22)
