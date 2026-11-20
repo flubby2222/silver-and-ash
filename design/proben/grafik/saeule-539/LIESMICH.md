@@ -1,6 +1,10 @@
 # Freistehende Säule (Probestück zu #539)
 
-Erzeugt mit `design/proben/grafik/saeule-539/saeule.py` (Blender 5.3, Aufruf im Kopf des Skripts, etwa 40 s, zwei Läufe liefern byte-gleiche Dateien). Nur Stein-Reihe der Hauptpalette, Flat Shading, keine Texturkörnung. Sockel und Kapitell sind das Profil des Wandpfeilers (#536), ins Runde gedreht. Nichts im Spiel integriert; Wandpfeiler und Tür dienen in den Bildern nur als gelesene Nachbarn.
+**Maße gelten über die Ecken: Alle Teile der Säule liegen im Kreis R 0,5 m, die Ecken von Sockelfuß und Kapitellplatten berühren ihn.**
+
+**Stand nach Urteil: nur das 12-Eck wird weitergeführt; das 8-Eck (`saeule_8_*`, Vergleichsbilder) bleibt nur als Beleg.**
+
+Erzeugt mit `design/proben/grafik/saeule-539/saeule.py` (Blender 5.3, Aufruf im Kopf des Skripts, etwa 40 s, zwei Läufe liefern byte-gleiche Dateien). Nur Stein-Reihe der Hauptpalette, Flat Shading, Körnung aus der Wandkachel. Sockel und Kapitell sind das Profil des Wandpfeilers (#536), ins Runde gedreht. Nichts im Spiel integriert; Wandpfeiler und Tür dienen in den Bildern nur als gelesene Nachbarn.
 
 ## Maße (Raum 6 m, Ursprung Mitte, Boden y = 0)
 
@@ -18,9 +22,10 @@ Dreiecke: **12-Eck 284**, 8-Eck 188 (Requisit-Spanne 100 bis 400). Je Seitenzahl
 
 - **Radius gegen Formenlehre:** Dort stehen Sockel und Kapitell 1,0 breit über den Flächen. Bei einem 8-Eck wären das 1,08 über den Ecken, also außerhalb des Kreises R 0,5. Ich lege die Ecken auf R 0,5 und den Schaft auf R 0,4375 (Vorsprung 1/16 wie am Wandpfeiler). Das ist eine Abweichung von der Formenlehre und bleibt zu bestätigen.
 - **Seitenzahl: 12-Eck empfohlen.** Beide gebaut (`vergleich-8eck-12eck-*.png`, `einzel-8eck-a.png`, `draufsicht-kreis.png`). Im Spielbild in 8 m lesen beide als Säule; das 8-Eck zeigt schon aus 3 m harte Kanten und eine Silhouette mit Knick, das 12-Eck wirkt rund und füllt den Kreis besser (Flächenmitte 0,483 statt 0,462). Mehrpreis 96 Dreiecke.
-- **Textur ohne Naht:** Atlas 192 x 384, Schaftstreifen 168 px breit (2,625 m, 12 x 14 px; Umfang 2,718 m, 3,5 % gestaucht), rundum periodisch, u läuft genau 0 bis 1 des Streifens. Schaft 10 Trommeln zu 32 px (0,5 m) mit waagerechter Fuge (2 px dunkel, 1 px Schatten) auf dem 64-px-Raster, keine senkrechten Fugen, jede Trommel ein Stück. Stufen je Zelle 14 x 8 px (0, +1, -1 Stein-Stufen), keine Körnung. Beweis: `naht.png` (Blick auf die Nahtstelle von +x), `textur-streifen.png` (Streifen zweimal nebeneinander).
+- **Textur ohne Naht, mit Wandkörnung:** Atlas 216 x 384, Schaftstreifen 192 px breit (3 Wandkacheln zu 64 px = 3,0 m; Umfang 2,718 m, 10 % gestreckt), rundum periodisch, u läuft genau 0 bis 1. Die Stufenzellen sind entfernt. Die Körnung kommt aus der Wandkachel (`catacomb_wall*.png`): Fugen herausgerechnet (Mörtelmaske, 1 px aufgeweitet, aus den Nachbarn gefüllt), Hochpass über 9 x 9 px gegen das Blockmuster, Abweichung auf -2 bis +2 Stufen begrenzt; sie wird je Trommel mit zufälligem Versatz über den Streifen gekachelt (Kachelbreite teilt den Streifen, daher nahtlos). Schaft 10 Trommeln zu 32 px mit waagerechter Fuge (2 px Stufe 2, darüber 1 px Schatten Stufe 6, Trommelkante +1), dazu wenige Ausbrüche und Risse (Stufe 7 und höher). Sockel und Kapitell tragen dieselbe Körnung. Beweis: `naht.png`, `textur-streifen.png`, `atlas-a-b-c.png`.
+- **Skript-Prüfungen:** Steinfläche hat weniger als 3 % Pixel unter Stufe 8 (Fuge, Schatten und Stein bleiben getrennte Stufen, auf Pfeiler B gingen die Fugen durch Zusammenquetschen verloren); Fugenzeilen sind exakt Stufe 2, Schattenzeile Stufe 6; mittlere Helligkeit des Schafts höchstens die der Wandpfeilerkachel (die Säule ist heller als die Wand, nicht heller als der Wandpfeiler); jedes Pixel in der Stein-Reihe.
 - **Eigener Abschluss:** Sockel mit dunkler Bodenfuge unten und heller Fase oben; Kapitell mit Kehle im Schatten, Wulst oben hell, unten dunkel, Platte mit heller Oberkante. Deck- und Standfläche eigene Farben (Stufe 12 und 3).
-- **Farben:** nur Stein-Reihe, 13 verschiedene Stufen je Textur, geprüft im Skript (jedes Pixel ist eine Farbe der Reihe). Die Wandvarianten a, b, c unterscheiden sich in den Samen (Zellen, Ausbrüche, Risse); die Grundstufe 11 ergibt sich aus der Wandkachel plus 4 und wird bei 11 gedeckelt, sodass alle drei gleich hell sind.
+- **Farben:** nur Stein-Reihe, geprüft im Skript (jedes Pixel ist eine Farbe der Reihe). Die Varianten a, b, c nehmen die jeweilige Wandkachel und eigene Samen für Versatz, Ausbrüche, Risse; die Grundstufe 11 ergibt sich aus der Wandkachel plus 4 und wird bei 11 gedeckelt, alle drei gleich hell.
 
 ## Bilder
 
@@ -38,7 +43,7 @@ Alle in `design/proben/grafik/saeule-539/`.
 
 ## Offene Fragen und Schwächen
 
-- Die Zellen mit Stufenwechsel (14 px breit) sind aus der Nähe als Rechtecke zu sehen und können wie senkrechte Quaderfugen wirken. Gewollt sind nur Trommelfugen; bei Bedarf Zellen breiter oder die Stufen auf zwei Zeilen beschränken.
+- Die Körnung ist in 3 m noch etwas blockig (Rest des Wandmusters, 10 % Streckung macht Pixel in Umfangsrichtung breiter); bei Bedarf Hochpassradius vergrößern.
 - Boden und Decke in den Szenen sind die alten Vorschau-Texturen von `psx.py`, nicht die Hauptpalette. Sie dienen nur als Kulisse.
 - In 8 m im Nebel sind Wandpfeiler hinter den Säulen kaum zu erkennen; die Säulen selbst bleiben lesbar.
 - Die Formenlehre sagt 1,0 breit über den Flächen für Sockel und Kapitell; ich habe auf 1,0 über den Ecken gekürzt. Falls die Leitung 1,0 über den Flächen will, muss der Kreisradius oder der Schaft neu entschieden werden.

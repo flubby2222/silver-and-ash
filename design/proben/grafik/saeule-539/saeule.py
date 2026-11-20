@@ -2,7 +2,7 @@
 
 Alles entsteht aus diesem einen Skript: die Modelle (.glb je Seitenzahl 12/8 und Wandvariante a, b, c), die Atlas-Bilder,
 die Probebilder. Gebaut auf tools/models/psx.py; Sockel und Kapitell sind die Profile des Wandpfeilers (Probestueck #536),
-ins Runde gedreht. Nur Stein-Reihe der Hauptpalette, keine Textur-Kornung (Rauschen nur in ganzen Stein-Stufen).
+ins Runde gedreht. Nur Stein-Reihe der Hauptpalette, Koernung aus der Wandkachel (Stein-Stufen).
 Nichts wird ins Spiel uebernommen.
 
 Spiel-Achsen: x seitlich, y oben, z vorn; Meter. Ursprung: Mitte der Saeule auf dem Boden.
@@ -47,11 +47,11 @@ HEIGHT, CB = 6.0, 5.5                      # Raumhoehe, Kapitell-Unterkante
 DRUM = 0.5                                 # Trommelhoehe
 ONLY = os.environ.get("S539_ONLY", "")     # nur fuer Versuche: "modelle" = nur Modelle
 
-# Atlas 192 x 384 (Pixel, Zeile 0 = unten). Der Schaftstreifen ist 168 breit und rundum periodisch.
-ATLAS = (192, 384)
-STRIP = 168                                # 2,625 m bei 64 px/m; Umfang 12-Eck 2,718 m (3,5 % gestaucht)
+# Atlas 216 x 384 (Pixel, Zeile 0 = unten). Der Schaftstreifen ist 192 breit (drei Wandkacheln) und rundum periodisch.
+ATLAS = (216, 384)
+STRIP = 192                                # 3,0 m bei 64 px/m; Umfang 12-Eck 2,718 m (10 % gedehnt)
 RECT_PX = {"schaft": (0, 0, STRIP, 320), "sockel": (0, 320, STRIP, 352), "kapitell": (0, 352, STRIP, 384),
-           "oben": (168, 8, 180, 16), "unten": (180, 8, 192, 16)}
+           "oben": (192, 8, 204, 16), "unten": (204, 8, 216, 16)}
 
 
 def _uv_rects():
@@ -117,79 +117,102 @@ def only_stein(tex):
 SEEDS = {"a": 11, "b": 23, "c": 37}
 
 
+def _wrap_box(a, r):
+    """Gleitender Mittelwert (Kantenlaenge 2r+1), rundum periodisch."""
+    out = np.zeros_like(a, float)
+    for dy in range(-r, r + 1):
+        for dx in range(-r, r + 1):
+            out += np.roll(np.roll(a, dy, 0), dx, 1)
+    return out / (2 * r + 1) ** 2
+
+
+def grain_of(variant):
+    """Steinkoernung der Wand: Wandkachel (64 x 64) in Stein-Stufen, Moertel (deutlich unter dem Mittel, um 1 Pixel
+    erweitert) durch Nachbarn ersetzt, grosse Quaderunterschiede per Hochpass entfernt, Rest als ganze Stufen-Abweichung
+    (Betrag hoechstens 2). Periodisch in u und v. Es bleibt nur die feine Koernung, kein Quadermuster."""
+    idx = nearest_idx(load_tile(WALL_FILES[variant])).astype(float)
+    mortar = idx <= np.median(idx) - 3
+    mortar = mortar | np.roll(mortar, 1, 0) | np.roll(mortar, -1, 0) | np.roll(mortar, 1, 1) | np.roll(mortar, -1, 1)
+    work = np.where(mortar, np.nan, idx)
+    for _ in range(12):
+        if not np.isnan(work).any():
+            break
+        pad = np.pad(work, 1, mode="wrap")
+        nb = np.stack([pad[1 + dy:65 + dy, 1 + dx:65 + dx] for dy in (-1, 0, 1) for dx in (-1, 0, 1)])
+        with np.errstate(all="ignore"):
+            fill = np.nanmean(nb, axis=0)
+        work = np.where(np.isnan(work), fill, work)
+    work = np.where(np.isnan(work), np.nanmean(work), work)
+    dev = work - _wrap_box(work, 4)
+    return np.clip(np.round(dev * 1.5), -2, 2).astype(int)
+
+
 def column_atlas(variant):
-    """Atlas als Feld (384, 192, 3), Zeile 0 unten. Alle Farben aus der Stein-Reihe (Indizes).
-    Schaft: zehn Trommeln zu 0,5 m (32 px) mit waagerechter Fuge (2 px dunkel, 1 px Schatten darueber nicht noetig), Stufen je
-    Zelle 14 x 8 px (in u rundherum periodisch, Stufe 0/+1/-1), keine senkrechten Fugen: jede Trommel ist ein Stueck."""
+    """Atlas als Feld (384, ATLAS[0], 3), Zeile 0 unten. Alle Farben aus der Stein-Reihe.
+    Schaft: zehn Trommeln zu 0,5 m (32 px) mit waagerechter Fuge (2 px dunkel, 1 px Schatten), keine senkrechten Fugen.
+    Steinflaeche mit der Koernung der Wandkachel (Stufen base +-2, nie unter 9: Fuge 2 und Schatten 6 bleiben getrennt),
+    je Trommel um einen festen Versatz verschoben, rundum periodisch (Streifen = drei Kacheln)."""
     rng = np.random.default_rng(SEEDS[variant])
     wall_mean = nearest_idx(load_tile(WALL_FILES[variant])).mean()
     base = int(min(max(round(wall_mean) + 4, 9), 11))
+    dev = grain_of(variant)
+    reps = STRIP // 64
     idx = np.zeros((ATLAS[1], ATLAS[0]), int) + 2
 
-    cw, ch = 14, 8
-    ncx = STRIP // cw
-
-    def cell_tone(rows, rr0):
-        g = rng.choice([-1, 0, 0, 0, 1], size=(rows // ch + 1, ncx))
+    def grain(rows, y0, dx, dy):
         out = np.zeros((rows, STRIP), int)
         for r in range(rows):
-            out[r] = np.repeat(g[(r + rr0) // ch], cw)
+            out[r] = np.tile(np.roll(dev[(y0 + r + dy) % 64], dx), reps)
         return out
 
-    # Schaft
-    sh = np.zeros((320, STRIP), int) + base
-    drum_tone = rng.choice([-1, 0, 1, 0], size=10)
+    sh = np.zeros((320, STRIP), int)
     for d in range(10):
-        sh[d * 32:(d + 1) * 32] += drum_tone[d]
-    sh += cell_tone(320, 0)
+        sh[d * 32:(d + 1) * 32] = base + grain(32, 0, int(rng.integers(0, 64)), int(rng.integers(0, 64)))
     for d in range(10):
         r0 = d * 32
-        sh[r0 + 31, :] = np.clip(sh[r0 + 31, :] + 2, 0, 14)       # Oberkante der Trommel: Fase, hell
-        sh[r0 + 29:r0 + 31, :] = np.clip(sh[r0 + 29:r0 + 31, :] + 1, 0, 14)
+        sh[r0 + 31, :] = np.clip(sh[r0 + 31, :] + 1, 0, 14)       # Oberkante der Trommel: Fase, heller
         sh[r0 + 2, :] = 6                                          # Schatten ueber der Fuge
         sh[r0:r0 + 2, :] = 2                                       # Fuge, 2 px
-    # kleine Ausbrueche und Risse (periodisch in u)
-    for _ in range(14):
+    for _ in range(14):                                            # kleine Ausbrueche
         cx, cy = int(rng.integers(0, STRIP)), int(rng.integers(0, 310))
         w, h = int(rng.integers(2, 4)), int(rng.integers(1, 3))
         for dx in range(w):
             for dy in range(h):
-                if sh[(cy + 4 + dy) % 320, (cx + dx) % STRIP] > 4 and (cy + 4 + dy) % 32 > 3:
-                    sh[(cy + 4 + dy) % 320, (cx + dx) % STRIP] = max(base - 3, 4)
-    for _ in range(5):
+                if (cy + 4 + dy) % 32 > 3:
+                    sh[(cy + 4 + dy) % 320, (cx + dx) % STRIP] = max(base - 3, 7)
+    for _ in range(5):                                             # Risse
         cx, cy, ln = int(rng.integers(0, STRIP)), int(rng.integers(0, 300)), int(rng.integers(5, 11))
         for k in range(ln):
             y = cy + 4 + k
             if y % 32 > 3 and y < 320:
-                sh[y, (cx + (k // 4)) % STRIP] = 5
+                sh[y, (cx + (k // 4)) % STRIP] = 7
     idx[0:320, 0:STRIP] = sh
 
-    # Sockel (Zeilen 320..351): 28 px senkrecht, 4 px Fase oben
-    so = np.zeros((32, STRIP), int) + base + 1
-    so += cell_tone(32, 3)[:32]
-    so[0:3, :] = 4                       # Bodenfuge, dunkel
-    so[3, :] = 7
-    so[27, :] = 8
-    so[28:32, :] = 13                    # Fase, lichtseitig
-    idx[320:352, 0:STRIP] = so
+    def band(values, rows_y0, shift):
+        g = grain(32, rows_y0, shift, rows_y0)
+        out = np.zeros((32, STRIP), int)
+        for r in range(32):
+            lo, kind = values[r]
+            out[r] = np.clip(lo + g[r], 0, 14) if kind else lo
+        return out
 
-    # Kapitell (Zeilen 352..383), von unten nach oben in 1/16 (4 px): Fase 0-3, senkrecht 4-7, Kehle 8-11, Wulst 12-19,
-    # Fase 20-23, Platte 24-31
-    ka = np.zeros((32, STRIP), int) + base + 1
-    ka += cell_tone(32, 5)[:32]
-    ka[0:4, :] = 8
-    ka[4:8, :] = base + 1
-    ka[7, :] = 5
-    ka[8:12, :] = 5                      # Kehle im Schatten
-    ka[12:16, :] = 12                    # Wulst, Oberseite
-    ka[16:20, :] = 6                     # Wulst, Unterseite
-    ka[20:24, :] = 13                    # Fase oben, lichtseitig
-    ka[24:31, :] = base + 2
-    ka[31, :] = 12                       # Oberkante
-    idx[352:384, 0:STRIP] = ka
+    # Sockel: Bodenfuge, Steinflaeche base+1, Fase oben
+    so = [(4, 0)] * 3 + [(7, 0)] + [(base + 1, 1)] * 23 + [(8, 0)] + [(13, 1)] * 4
+    idx[320:352, 0:STRIP] = band(so, 0, 17)
+    # Kapitell von unten (1/16 = 4 px): Fase 0-3, senkrecht 4-7, Kehle 8-11, Wulst 12-19, Fase 20-23, Platte 24-31
+    ka = ([(8, 0)] * 4 + [(base + 1, 1)] * 3 + [(6, 0)] + [(6, 0)] * 4 + [(12, 1)] * 4 + [(7, 0)] * 4 + [(13, 1)] * 4
+          + [(base + 1, 1)] * 7 + [(12, 0)])
+    assert len(ka) == 32
+    idx[352:384, 0:STRIP] = band(ka, 32, 41)
 
-    idx[8:16, 168:180] = 12              # Deckflaeche
-    idx[8:16, 180:192] = 3               # Standflaeche
+    idx[8:16, STRIP:STRIP + 12] = 12     # Deckflaeche
+    idx[8:16, STRIP + 12:STRIP + 24] = 3  # Standflaeche
+    # Pruefungen: Fugen und Steinflaeche bleiben getrennte Stufen; nicht heller als der Wandpfeiler
+    stone = sh[(np.arange(320) % 32) > 3]
+    assert (stone <= 7).mean() < 0.03, (stone <= 7).mean()
+    assert (sh[(np.arange(320) % 32) < 2] == 2).all() and (sh[(np.arange(320) % 32) == 2] == 6).all()
+    fa = nearest_idx(frame_atlas(variant)[0:64, 64:128][::-1])
+    assert idx[0:320, 0:STRIP][(np.arange(320) % 32 > 3)].mean() <= fa.mean(), (idx[0:320, 0:STRIP].mean(), fa.mean())
     tex = STEIN[np.clip(idx, 0, 14)].astype(float)
     return tex, base
 
@@ -760,7 +783,7 @@ def sheet_texture(v="a"):
     img = zoom_px(two, 3)
     img[:, STRIP * 3 - 1:STRIP * 3 + 1] = (230, 70, 70)
     img = np.concatenate([np.tile(BG, (30, img.shape[1], 1)), img], 0)
-    text(img, "Schaftstreifen 168 x 320 px, zweimal nebeneinander (rote Linie = Naht); Trommelfugen alle 32 px", 6, 4, 16)
+    text(img, "Schaftstreifen 192 x 320 px, zweimal nebeneinander (rote Linie = Naht); Trommelfugen alle 32 px", 6, 4, 16)
     return img
 
 
