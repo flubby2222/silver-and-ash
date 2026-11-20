@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.World;
@@ -306,6 +307,102 @@ public class EnemyPlacementTests
 
         Assert.All(counts, count => Assert.InRange(count, 0, batsOnly.MaxBatsPerRoom));
         Assert.Contains(batsOnly.MaxBatsPerRoom, counts);
+    }
+
+    // The doors of a room and its enemies (ghouls and bats alike: both by the cell under them).
+    private static List<(int X, int Z)> DoorCells(GeneratedLevel generated, PlacedRoom room) =>
+        generated.Doors.Where(door => door.RoomA == room.Index || door.RoomB == room.Index).Select(door => (door.X, door.Z)).ToList();
+
+    [Fact]
+    public void Beside_a_door_no_enemy_stands_nearer_than_the_side_distance_straight_ahead_the_door_distance_is_enough()
+    {
+        // Issue #490: "Nach vorne hin ging die Spawndistanz. Problematisch ist es zu den Seiten hin." Levels built as
+        // the game builds them; every enemy of a combat room against every door of its room.
+        var levelZero = new LevelZero(Templates);
+        var checkedEnemies = 0;
+        var nearStraightAhead = 0;
+        var nearBats = 0;
+        for (var seed = 0; seed < 100; seed++)
+        {
+            var generated = levelZero.Build(seed, Balance.Default);
+            foreach (var room in generated.Rooms.Where(room => room.Kind == RoomKind.Combat))
+            {
+                var doors = DoorCells(generated, room);
+                var floor = room.FloorCells.ToHashSet();
+
+                // The rule only holds if the room has a cell for it - the shipped rooms all have plenty.
+                Assert.Contains(room.FloorCells, cell => doors.All(door => !DoorSides.Breaks(door, cell, floor, Difficulty)));
+                foreach (var (enemy, isBat) in Ghouls(generated, room).Select(cell => (cell, false)).Concat(Bats(generated, room).Select(cell => (cell, true))))
+                {
+                    checkedEnemies++;
+                    foreach (var door in doors)
+                    {
+                        var (metres, degrees) = DoorSides.From(door, enemy, floor);
+                        var what = isBat ? "a bat" : "a ghoul";
+                        Assert.False(
+                            DoorSides.Breaks(door, enemy, floor, Difficulty),
+                            $"Seed {seed}, room {room.Index}: {what} {metres} m from a door, {degrees} degrees off the way in.");
+                        if (metres < Difficulty.SideDoorDistance)
+                        {
+                            nearStraightAhead++;
+                            nearBats += isBat ? 1 : 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Straight ahead the old distance still counts: enemies do stand there nearer than the side distance (bats too).
+        Assert.True(checkedEnemies > 1000, $"Only {checkedEnemies} enemies checked.");
+        Assert.True(nearStraightAhead > 100, $"Only {nearStraightAhead} enemies straight ahead of a door nearer than the side distance.");
+        Assert.True(nearBats > 10, $"Only {nearBats} bats straight ahead of a door nearer than the side distance.");
+    }
+
+    [Fact]
+    public void A_room_without_a_cell_clear_of_its_doors_gets_its_one_enemy_on_the_cell_farthest_from_them()
+    {
+        // The fallback for small rooms: no cell keeps distances like these, so each combat room gets exactly one enemy
+        // (it is never empty) - on the least bad cell, here the one farthest from its nearest door.
+        var tooFar = Difficulty with { DoorDistance = 1000f, SideDoorDistance = 1000f };
+        for (var seed = 0; seed < 20; seed++)
+        {
+            var generated = EnemyPlacement.Populate(LevelGenerator.Generate(Templates, seed, Balance.Default.Layout), tooFar);
+            Assert.All(generated.Rooms.Where(room => room.Kind == RoomKind.Combat), room =>
+            {
+                var doors = DoorCells(generated, room);
+                var enemy = Assert.Single(Ghouls(generated, room).Concat(Bats(generated, room)));
+                var best = room.FloorCells.Max(cell => doors.Min(door => Metres(cell, door)));
+
+                Assert.Equal(best, doors.Min(door => Metres(enemy, door)), 0.001f);
+            });
+        }
+    }
+
+    [Fact]
+    public void Without_a_cell_clear_of_its_door_the_one_enemy_stands_straight_ahead_as_far_in_as_the_room_goes()
+    {
+        // Least bad means: in front of the door, where whoever comes in sees it, rather than beside it - even if a cell
+        // beside the door would lie farther away. Rooms with one door, so that "in front" is clear.
+        var tooFar = Difficulty with { DoorDistance = 500f, SideDoorDistance = 1000f };
+        var rooms = 0;
+        for (var seed = 0; seed < 40; seed++)
+        {
+            var generated = EnemyPlacement.Populate(LevelGenerator.Generate(Templates, seed, Balance.Default.Layout), tooFar);
+            foreach (var room in generated.Rooms.Where(room => room.Kind == RoomKind.Combat && DoorCells(generated, room).Count == 1))
+            {
+                var door = DoorCells(generated, room)[0];
+                var floor = room.FloorCells.ToHashSet();
+                var enemy = Assert.Single(Ghouls(generated, room).Concat(Bats(generated, room)));
+                var ahead = room.FloorCells.Where(cell => DoorSides.From(door, cell, floor).Degrees <= tooFar.DoorConeAngle + 0.01f).ToList();
+                var (metres, degrees) = DoorSides.From(door, enemy, floor);
+
+                Assert.True(degrees <= tooFar.DoorConeAngle + 0.01f, $"Seed {seed}, room {room.Index}: the enemy stands {degrees} degrees off the way in.");
+                Assert.Equal(ahead.Max(cell => DoorSides.From(door, cell, floor).Metres), metres, 0.001f);
+                rooms++;
+            }
+        }
+
+        Assert.True(rooms >= 5, $"Only {rooms} combat rooms with one door.");
     }
 
     [Fact]
