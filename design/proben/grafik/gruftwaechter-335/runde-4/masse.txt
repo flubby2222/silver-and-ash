@@ -1,0 +1,2 @@
+G1 Grabwächter, behutsam: Dreiecke 2644 {'leg_l': 280, 'leg_r': 280, 'torso': 704, 'head': 160, 'eyes': 24, 'arm_l': 248, 'arm_r': 184, 'gear': 528, 'pole': 236}, x -1.07..1.09, y 0.00..2.52, z -0.45..1.05
+G2 Grabwächter, ausgebaut: Dreiecke 2936 {'leg_l': 280, 'leg_r': 280, 'torso': 704, 'head': 160, 'eyes': 24, 'arm_l': 248, 'arm_r': 184, 'gear': 820, 'pole': 236}, x -1.07..1.09, y 0.00..2.52, z -0.45..1.05
