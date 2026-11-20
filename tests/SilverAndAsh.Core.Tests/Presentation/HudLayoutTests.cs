@@ -21,17 +21,17 @@ public class HudLayoutTests
     private static readonly HudCanvas Design = new(854, 480);
 
     /// <summary>16:9, 16:10, 21:9, 32:9 and the narrow 4:3 and 5:4 (taller canvas).</summary>
-    // 792: the life frame then starts so that a sixth item would end on it without spacing (VitalsBodyX mod 36 < 6).
+    // 792: the stamina frame then starts so that a sixth item would end on it without spacing (StaminaBodyX mod 36 < 6).
     public static TheoryData<int> PictureWidths => new() { 854, 768, 1120, 1706, 640, 600, 792 };
 
     /// <summary>The groups of the HUD, each by the frames that make it.</summary>
     private static readonly Dictionary<string, string[]> Groups = new()
     {
         ["items"] = ["frame_item_0", "frame_item_1"],
-        ["vitals"] = ["frame_vitals"],
+        ["stamina"] = ["frame_stamina"],
         ["weapons"] = ["frame_weapon_0", "frame_weapon_1", "frame_weapon_2", "frame_weapon_3",
             "frame_weapon_0_active", "frame_weapon_1_active", "frame_weapon_2_active", "frame_weapon_3_active"],
-        ["level"] = ["frame_level", "frame_xp", "frame_skill_0"],
+        ["level"] = ["frame_level", "frame_life", "life_frame_end", "frame_xp", "frame_skill_0"],
         ["boss"] = ["frame_boss"],
         ["currency"] = ["frame_currency"],
         ["toast"] = ["frame_toast"],
@@ -78,6 +78,8 @@ public class HudLayoutTests
         Items = Enum.GetValues<ItemKind>().Concat(Enum.GetValues<ItemKind>()).ToList(),
         Boss = new HudBoss(Gorm.Name, 0.5f),
         ConsecratedSecondsLeft = 12.5f,
+        MaxLife = Balance.Default.Boons.HealthCap, // the longest life bar the game can reach (issue #435)
+        LifePerTick = Balance.Default.Boons.Health,
     };
 
     private static HudPicture Arrange(HudReadout readout, string? toast = null, HudCanvas? canvas = null) =>
@@ -149,13 +151,16 @@ public class HudLayoutTests
     [Fact]
     public void Every_frame_has_a_body_inside_its_ornament_and_other_parts_are_all_body()
     {
+        // Issue #435: the life frame is drawn cut to the bar's length and closed by its end cap; its body runs on into
+        // that cap (and no further), as the end cap's own ornament closes it.
+        static int Closing(HudPart part) => part.Name == "frame_life" ? Parts["life_frame_end"].Width - part.Body.X : 0;
         Assert.All(Parts.All, part =>
         {
-            Assert.True(part.Body.X >= 0 && part.Body.Y >= 0 && part.Body.Right <= part.Width && part.Body.Bottom <= part.Height,
+            Assert.True(part.Body.X >= 0 && part.Body.Y >= 0 && part.Body.Right <= part.Width + Closing(part) && part.Body.Bottom <= part.Height,
                 $"{part.Name}: body {part.Body} leaves the part");
             if (part.Name.StartsWith("frame_", StringComparison.Ordinal))
             {
-                Assert.True(part.Body.Width < part.Width && part.Body.Height < part.Height, $"{part.Name} has no ornament around its body");
+                Assert.True(part.Body.Width < part.Width + Closing(part) && part.Body.Height < part.Height, $"{part.Name} has no ornament around its body");
             }
             else
             {
@@ -172,7 +177,7 @@ public class HudLayoutTests
         var picture = Arrange(Busy(), canvas: canvas);
 
         var bottomFrames = picture.Parts.Where(part => part.Name.StartsWith("frame_item", StringComparison.Ordinal)
-            || part.Name == "frame_vitals" || part.Name.StartsWith("frame_weapon", StringComparison.Ordinal)).ToList();
+            || part.Name == "frame_stamina" || part.Name.StartsWith("frame_weapon", StringComparison.Ordinal)).ToList();
 
         Assert.NotEmpty(bottomFrames);
         Assert.All(bottomFrames, part => Assert.Equal(canvas.Height - HudLayout.Spacing, Layout.BodyOf(part).Bottom));
@@ -188,17 +193,20 @@ public class HudLayoutTests
         var gap = HudLayout.Spacing;
         HudRect Body(string name) => Layout.BodyOf(picture.Parts.First(part => part.Name == name));
 
-        // Left: the spacing from the left edge (and the top edge for the top row).
-        Assert.Equal((gap, gap), (Body("frame_level").X, Body("frame_level").Y));
+        // Left: the spacing from the left edge (and the top edge for the top row: the life frame, issue #435).
+        Assert.Equal(gap, Body("frame_level").X);
+        Assert.Equal(gap, Body("frame_life").Y);
         Assert.Equal(gap, Body("frame_item_0").X);
 
         // Right: the spacing from the right edge.
         Assert.Equal((canvas.Width - gap, gap), (Body("frame_currency").Right, Body("frame_currency").Y));
         Assert.Equal(canvas.Width - gap, Body("frame_weapon_3").Right);
 
-        // Middle: centred (within the half pixel of an odd difference); the boss the spacing below the top edge.
-        Assert.InRange(Body("frame_vitals").X + Body("frame_vitals").Right - canvas.Width, -1, 0);
-        Assert.InRange(Body("frame_boss").X + Body("frame_boss").Right - canvas.Width, -1, 0);
+        // Middle: centred (within the half pixel of an odd difference); the boss the spacing below the top edge, centred
+        // unless the life bar reaches that far - then the spacing right of it (issue #435).
+        Assert.InRange(Body("frame_stamina").X + Body("frame_stamina").Right - canvas.Width, -1, 0);
+        var bossCentred = (canvas.Width - Body("frame_boss").Width) / 2;
+        Assert.Equal(Math.Max(bossCentred, Body("frame_life").Right + gap), Body("frame_boss").X);
         Assert.Equal(gap, Body("frame_boss").Y);
     }
 
@@ -217,12 +225,14 @@ public class HudLayoutTests
         {
             ["items"] = Row(name => name.StartsWith("frame_item", StringComparison.Ordinal)),
             ["weapons"] = Row(name => name.StartsWith("frame_weapon", StringComparison.Ordinal)),
-            ["level"] = Row(name => name is "frame_level" or "frame_xp" or "frame_skill_0"),
+            ["level and life"] = Row(name => name is "frame_level" or "frame_life"),
+            ["level and experience"] = Row(name => name is "frame_level" or "frame_xp"),
         };
 
         Assert.True(rows["items"].Count >= 4, "Too few item frames - the case would prove little.");
         Assert.Equal(4, rows["weapons"].Count);
-        Assert.Equal(3, rows["level"].Count);
+        Assert.Equal(2, rows["level and life"].Count);
+        Assert.Equal(2, rows["level and experience"].Count);
         foreach (var (name, row) in rows)
         {
             for (var i = 1; i < row.Count; i++)
@@ -232,15 +242,19 @@ public class HudLayoutTests
             }
         }
 
-        // The small experience frame stands in the middle of the level frame's height, the skill frame level with it.
-        var (level, xp, skill) = (rows["level"][0], rows["level"][1], rows["level"][2]);
-        Assert.InRange((2 * xp.Y) + xp.Height - ((2 * level.Y) + level.Height), -1, 1);
-        Assert.Equal(level.Y, skill.Y);
+        // Issue #435, layout B: the life frame over the experience frame, one column, the spacing apart; the level frame
+        // in the middle of their height; the skill frame in a second row the spacing below, at the left edge.
+        HudRect Body(string name) => Layout.BodyOf(Single(picture, name));
+        var (level, life, xp, skill) = (Body("frame_level"), Body("frame_life"), Body("frame_xp"), Body("frame_skill_0"));
+        Assert.Equal(life.X, xp.X);
+        Assert.Equal(life.Bottom + HudLayout.Spacing, xp.Y);
+        Assert.InRange((2 * level.Y) + level.Height - (life.Y + xp.Bottom), -1, 1);
+        Assert.Equal((HudLayout.Spacing, xp.Bottom + HudLayout.Spacing), (skill.X, skill.Y));
 
         // Between the groups of the bottom row at least the spacing as well.
-        var vitals = Layout.BodyOf(Single(picture, "frame_vitals"));
-        Assert.True(vitals.X - rows["items"][^1].Right >= HudLayout.Spacing, $"items run up to the life frame on {canvas}");
-        Assert.True(rows["weapons"][0].X - vitals.Right >= HudLayout.Spacing, $"weapons run up to the life frame on {canvas}");
+        var stamina = Body("frame_stamina");
+        Assert.True(stamina.X - rows["items"][^1].Right >= HudLayout.Spacing, $"items run up to the stamina frame on {canvas}");
+        Assert.True(rows["weapons"][0].X - stamina.Right >= HudLayout.Spacing, $"weapons run up to the stamina frame on {canvas}");
     }
 
     [Theory]
@@ -468,9 +482,10 @@ public class HudLayoutTests
     public void Life_and_stamina_show_no_number_but_ammo_silver_level_and_keys_do()
     {
         var picture = Arrange(Busy());
-        var vitals = Layout.Bounds(Single(picture, "frame_vitals"));
+        var stamina = Layout.Bounds(Single(picture, "frame_stamina"));
+        var life = Layout.BodyOf(Single(picture, "frame_life"));
 
-        Assert.DoesNotContain(picture.Texts, text => Layout.Bounds(text).Overlaps(vitals));
+        Assert.DoesNotContain(picture.Texts, text => Layout.Bounds(text).Overlaps(stamina) || Layout.Bounds(text).Overlaps(life));
         var texts = picture.Texts.Select(text => text.Text).ToList();
         Assert.Contains("99", texts);    // level and keys
         Assert.Equal(2, texts.Count(text => text == "99"));
@@ -479,27 +494,73 @@ public class HudLayoutTests
         Assert.Single(texts, text => text == MostRounds.ToString(CultureInfo.InvariantCulture));
     }
 
+    /// <summary>The highest health at the start and after some health boons, up to the cap (issue #435).</summary>
+    public static TheoryData<int> MaxLives => new()
+    {
+        Balance.Default.Player.MaxHealth,
+        Balance.Default.Player.MaxHealth + (3 * Balance.Default.Boons.Health),
+        Balance.Default.Boons.HealthCap,
+    };
+
+    [Theory]
+    [MemberData(nameof(MaxLives))]
+    public void The_life_bar_is_one_pixel_per_point_of_the_highest_health_and_its_frame_ends_with_it(int maxLife)
+    {
+        var picture = Arrange(Calm() with { MaxLife = maxLife, LifePerTick = Balance.Default.Boons.Health });
+
+        var bar = Layout.Bounds(Single(picture, "life_bar_empty"));
+        var cap = Layout.Bounds(Single(picture, "life_cap_empty"));
+        Assert.Equal(bar.Right, cap.X);
+        Assert.Equal(maxLife, cap.Right - bar.X);
+
+        // The frame is cut to the bar and closed by its end cap right behind the cut; the bar fills its ground.
+        var frame = Single(picture, "frame_life");
+        var end = Single(picture, "life_frame_end");
+        Assert.Equal((frame.X + frame.Width, frame.Y), (end.X, end.Y));
+        var ground = Layout.BodyOf(frame).Inset(HudLayout.Rim);
+        Assert.Equal((ground.X, ground.Right), (bar.X, cap.Right));
+        Assert.Equal(Parts["frame_life"].Width + Parts["life_frame_end"].Width - (Longest - maxLife), Layout.Bounds(end).Right - frame.X);
+    }
+
+    [Fact]
+    public void A_higher_maximum_moves_the_end_of_the_bar_and_its_frame_by_as_many_pixels()
+    {
+        // The counter-check to the length: same life share, two maxima - only the right end moves.
+        var start = Balance.Default.Player.MaxHealth;
+        var grown = start + (4 * Balance.Default.Boons.Health);
+        var before = Arrange(Calm() with { MaxLife = start });
+        var after = Arrange(Calm() with { MaxLife = grown });
+
+        Assert.Equal(Single(before, "life_bar_empty").X, Single(after, "life_bar_empty").X);
+        Assert.Equal(Single(before, "frame_life").X, Single(after, "frame_life").X);
+        Assert.Equal(grown - start, Single(after, "life_cap_empty").X - Single(before, "life_cap_empty").X);
+        Assert.Equal(grown - start, Single(after, "life_frame_end").X - Single(before, "life_frame_end").X);
+    }
+
     [Theory]
     [InlineData(1f)]
     [InlineData(0.5f)]
     [InlineData(0.01f)]
     [InlineData(0f)]
-    public void The_life_bar_fills_from_the_left_and_nothing_marks_its_level(float life)
+    public void The_life_bar_fills_from_the_left_and_nothing_but_its_ticks_lies_on_it(float life)
     {
-        var width = (int)MathF.Round(Parts["life_full"].Width * life);
-        Assert.True(life == 0f || width > 0, "A sliver of life must still show - the case would prove nothing.");
-        var picture = Arrange(Calm() with { Life = life });
+        var maxLife = Balance.Default.Player.MaxHealth;
+        var shape = LifeBar.Shape(maxLife, life, Balance.Default.Boons.Health, Parts["life_cap_empty"].Width, Longest);
+        Assert.True(life == 0f || shape.Filled > 0, "A sliver of life must still show - the case would prove nothing.");
+        var picture = Arrange(Calm() with { Life = life, MaxLife = maxLife, LifePerTick = Balance.Default.Boons.Health });
 
-        var empty = Single(picture, "life_empty");
-        Assert.Equal(width, picture.Parts.SingleOrDefault(part => part.Name == "life_full").Width);
-        if (width > 0)
+        var empty = Single(picture, "life_bar_empty");
+        Assert.Equal(shape.Filled, picture.Parts.SingleOrDefault(part => part.Name == "life_bar_full").Width);
+        if (shape.Filled > 0)
         {
-            Assert.Equal(empty.X, Single(picture, "life_full").X);
+            Assert.Equal((empty.X, empty.Y), (Single(picture, "life_bar_full").X, Single(picture, "life_bar_full").Y));
         }
 
-        // Issue #387: the light edge at the fill level is gone - nothing but the two bar parts lies on the bar.
-        var bar = Layout.Bounds(empty);
-        Assert.All(picture.Parts.Where(part => part.Name is not ("life_empty" or "life_full" or "frame_vitals")),
+        Assert.Equal(life == 1f, picture.Parts.Any(part => part.Name == "life_cap_full"));
+
+        // Issue #387: no light edge at the fill level - only the bar parts and the tick marks lie on the bar.
+        var bar = Union([Layout.Bounds(empty), Layout.Bounds(Single(picture, "life_cap_empty"))])!.Value;
+        Assert.All(picture.Parts.Where(part => !part.Name.StartsWith("life_", StringComparison.Ordinal) && part.Name != "frame_life"),
             part => Assert.False(Layout.Bounds(part).Overlaps(bar), $"{part.Name} lies on the life bar"));
         Assert.DoesNotContain(picture.Texts, text => Layout.Bounds(text).Overlaps(bar));
         Assert.DoesNotContain(picture.ReloadVeils, veil => veil.Overlaps(bar));
@@ -508,14 +569,83 @@ public class HudLayoutTests
     [Fact]
     public void Almost_full_life_rounds_to_the_full_bar_and_not_one_pixel_short()
     {
-        var full = Parts["life_full"].Width;
-        var life = (full - 0.4f) / full; // rounds to the whole bar, cutting off would leave one pixel short
-        Assert.Equal(full - 1, (int)(full * life));
+        var maxLife = Balance.Default.Player.MaxHealth;
+        var cap = Parts["life_cap_empty"].Width;
+        var inner = maxLife - (2 * cap);
+        var life = (inner - 0.4f) / inner; // rounds to the whole bar, cutting off would leave one pixel short
+        Assert.Equal(inner - 1, (int)(inner * life));
 
-        var picture = Arrange(Calm() with { Life = life });
+        var picture = Arrange(Calm() with { Life = life, MaxLife = maxLife });
 
-        Assert.Equal(full, Single(picture, "life_full").Width);
+        Assert.Equal(maxLife - cap, Single(picture, "life_bar_full").Width);
+        Single(picture, "life_cap_full");
     }
+
+    [Theory]
+    [InlineData(1f)]
+    [InlineData(0.5f)]
+    [InlineData(0f)]
+    public void The_life_bar_has_a_tick_per_health_boon_every_fifth_long_dark_over_the_fill(float life)
+    {
+        var maxLife = Balance.Default.Boons.HealthCap;
+        var step = Balance.Default.Boons.Health;
+        var picture = Arrange(Calm() with { Life = life, MaxLife = maxLife, LifePerTick = step });
+        var bar = Single(picture, "life_bar_empty");
+        var cap = Parts["life_cap_empty"].Width;
+        var filled = picture.Parts.SingleOrDefault(part => part.Name == "life_bar_full").Width;
+
+        var ticks = picture.Parts.Where(part => part.Name.StartsWith("life_tick", StringComparison.Ordinal)).OrderBy(part => part.X).ToList();
+        Assert.Equal((maxLife - (2 * cap) - 1) / step, ticks.Count);
+        for (var i = 0; i < ticks.Count; i++)
+        {
+            var tick = ticks[i];
+            var number = i + 1;
+            var isLong = number % LifeBar.LongTickEvery == 0;
+            var isDark = tick.X - bar.X < filled;
+            Assert.Equal(bar.X + cap + (number * step), tick.X);
+            Assert.Equal((isLong ? "life_tick_long_" : "life_tick_") + (isDark ? "full" : "empty"), tick.Name);
+
+            // On the bar where the table puts it (long ones reach higher), never past its edge.
+            var rect = Layout.Bounds(tick);
+            Assert.Equal(Parts[tick.Name].LayoutY - Parts["life_bar_empty"].LayoutY, rect.Y - bar.Y);
+            Assert.True(rect.Y > bar.Y && rect.Bottom < Layout.Bounds(bar).Bottom, $"{tick.Name} at {rect} leaves the bar");
+        }
+
+        Assert.Contains(ticks, tick => tick.Name.Contains("long", StringComparison.Ordinal));
+        Assert.Equal(life == 1f, ticks.All(tick => tick.Name.EndsWith("_full", StringComparison.Ordinal)));
+        Assert.Equal(life == 0f, ticks.All(tick => tick.Name.EndsWith("_empty", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void A_long_life_bar_pushes_the_boss_right_on_a_narrow_canvas_but_not_on_a_wide_one()
+    {
+        // Issue #435: at the cap the life frame reaches past where the centred boss would start on 16:10.
+        static HudRect Body(HudPicture picture, string name) => Layout.BodyOf(Single(picture, name));
+        var fight = Calm() with { Boss = new HudBoss(Gorm.Name, 0.5f), MaxLife = Balance.Default.Boons.HealthCap };
+        var bossWidth = Parts["frame_boss"].Body.Width;
+
+        var narrow = Arrange(fight, canvas: HudCanvas.For(HudCanvas.MinimumWidth));
+        Assert.True(Body(narrow, "frame_life").Right + HudLayout.Spacing > (HudCanvas.MinimumWidth - bossWidth) / 2,
+            "The life bar ends before the centred boss - the case would prove nothing.");
+        Assert.Equal(Body(narrow, "frame_life").Right + HudLayout.Spacing, Body(narrow, "frame_boss").X);
+
+        var wide = Arrange(fight, canvas: Design);
+        Assert.Equal((Design.Width - bossWidth) / 2, Body(wide, "frame_boss").X);
+        Assert.True(Body(wide, "frame_boss").X > Body(wide, "frame_life").Right + HudLayout.Spacing);
+    }
+
+    [Fact]
+    public void The_life_bar_never_grows_past_its_longest_part()
+    {
+        var picture = Arrange(Calm() with { MaxLife = Longest + 50 });
+
+        Assert.Equal(Parts["life_bar_empty"].Width, Single(picture, "life_bar_empty").Width);
+        Assert.Equal(Parts["frame_life"].Width, Single(picture, "frame_life").Width);
+        Assert.True(Balance.Default.Boons.HealthCap <= Longest, "The cap lets the life bar outgrow its parts.");
+    }
+
+    /// <summary>The longest life bar the parts can draw: the stretched bar and its end cap.</summary>
+    private static int Longest => Parts["life_bar_empty"].Width + Parts["life_cap_empty"].Width;
 
     [Fact]
     public void The_stamina_fills_its_five_segments_one_after_the_other()
@@ -693,7 +823,8 @@ public class HudLayoutTests
 
         Assert.DoesNotContain(picture.Parts, part => part.Name == "crosshair" || part.Name.StartsWith("frame_weapon", StringComparison.Ordinal));
         Assert.DoesNotContain(picture.Texts, text => text.Text.StartsWith("Consecrated", StringComparison.Ordinal));
-        Single(picture, "frame_vitals");
+        Single(picture, "frame_stamina");
+        Single(picture, "frame_life");
     }
 
     [Theory]

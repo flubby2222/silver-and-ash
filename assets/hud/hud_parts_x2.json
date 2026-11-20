@@ -2,7 +2,7 @@
  "image": "hud_parts_x2.png",
  "scale": 2,
  "width": 1024,
- "height": 392,
+ "height": 548,
  "designWidth": 1708,
  "designHeight": 960,
  "notes": [
@@ -710,6 +710,128 @@
    "h": 42,
    "layoutX": 32,
    "layoutY": 904
+  },
+  {
+   "name": "frame_life",
+   "x": 0,
+   "y": 393,
+   "w": 646,
+   "h": 50,
+   "layoutX": 72,
+   "layoutY": 2,
+   "body": [
+    4,
+    10,
+    652,
+    36
+   ],
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "life_frame_end",
+   "x": 647,
+   "y": 393,
+   "w": 14,
+   "h": 50,
+   "layoutX": 718,
+   "layoutY": 2,
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "life_bar_empty",
+   "x": 0,
+   "y": 491,
+   "w": 624,
+   "h": 28,
+   "layoutX": 82,
+   "layoutY": 16,
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "life_cap_empty",
+   "x": 625,
+   "y": 520,
+   "w": 16,
+   "h": 28,
+   "layoutX": 706,
+   "layoutY": 16,
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "life_bar_full",
+   "x": 0,
+   "y": 520,
+   "w": 624,
+   "h": 28,
+   "layoutX": 82,
+   "layoutY": 16,
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "life_cap_full",
+   "x": 642,
+   "y": 520,
+   "w": 16,
+   "h": 28,
+   "layoutX": 706,
+   "layoutY": 16,
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "life_tick_full",
+   "x": 668,
+   "y": 520,
+   "w": 2,
+   "h": 8,
+   "layoutX": 108,
+   "layoutY": 32,
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "life_tick_long_full",
+   "x": 662,
+   "y": 520,
+   "w": 2,
+   "h": 18,
+   "layoutX": 148,
+   "layoutY": 22,
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "life_tick_empty",
+   "x": 665,
+   "y": 520,
+   "w": 2,
+   "h": 8,
+   "layoutX": 108,
+   "layoutY": 32,
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "life_tick_long_empty",
+   "x": 659,
+   "y": 520,
+   "w": 2,
+   "h": 18,
+   "layoutX": 148,
+   "layoutY": 22,
+   "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "frame_stamina",
+   "x": 0,
+   "y": 444,
+   "w": 732,
+   "h": 46,
+   "layoutX": 488,
+   "layoutY": 914,
+   "body": [
+    6,
+    10,
+    720,
+    30
+   ],
+   "source": "tools/hud/hud_lebensbalken.py"
   }
  ]
 }
