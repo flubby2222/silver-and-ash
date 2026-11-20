@@ -1,0 +1,5 @@
+Textur heute == assets/models/ghoul.png: True
+H: Dreiecke 1024, Faktor 1.0, x -0.359..0.358, y -0.020..0.935, z -0.441..0.652; je Teil {'torso': 256, 'head': 120, 'jaw': 36, 'upper_arm_px': 36, 'forearm_px': 162, 'upper_arm_nx': 36, 'forearm_nx': 162, 'thigh_px': 36, 'shin_px': 72, 'thigh_nx': 36, 'shin_nx': 72}
+A: Dreiecke 1024, Faktor 1.3, x -0.466..0.465, y -0.026..1.215, z -0.573..0.847; je Teil {'torso': 256, 'head': 120, 'jaw': 36, 'upper_arm_px': 36, 'forearm_px': 162, 'upper_arm_nx': 36, 'forearm_nx': 162, 'thigh_px': 36, 'shin_px': 72, 'thigh_nx': 36, 'shin_nx': 72}
+B: Dreiecke 1024, Faktor 1.3, x -0.528..0.527, y -0.026..1.189, z -0.573..0.988; je Teil {'torso': 256, 'head': 120, 'jaw': 36, 'upper_arm_px': 36, 'forearm_px': 162, 'upper_arm_nx': 36, 'forearm_nx': 162, 'thigh_px': 36, 'shin_px': 72, 'thigh_nx': 36, 'shin_nx': 72}
+C: Dreiecke 1096, Faktor 1.3, x -0.528..0.527, y -0.031..1.271, z -0.573..0.988; je Teil {'torso': 328, 'head': 120, 'jaw': 36, 'upper_arm_px': 36, 'forearm_px': 162, 'upper_arm_nx': 36, 'forearm_nx': 162, 'thigh_px': 36, 'shin_px': 72, 'thigh_nx': 36, 'shin_nx': 72}
