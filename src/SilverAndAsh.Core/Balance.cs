@@ -424,6 +424,20 @@ public sealed record DifficultyBalance
     public float DoorDistance { get; init; } = 4f;
 
     /// <summary>
+    /// Half the angle (degrees) of the cone straight into the room through a door, seen from the door cell (issue
+    /// #490). Inside it an enemy only needs <see cref="DoorDistance"/>; beside it - next to the door frame, where
+    /// whoever comes in does not see it - it needs <see cref="SideDoorDistance"/>.
+    /// </summary>
+    public float DoorConeAngle { get; init; } = 30f;
+
+    /// <summary>
+    /// Least distance (metres, cell middle to cell middle) of an enemy from a door of its room when it stands outside
+    /// the door's cone (<see cref="DoorConeAngle"/>) - to the side of the door (issue #490). Never below
+    /// <see cref="DoorDistance"/>.
+    /// </summary>
+    public float SideDoorDistance { get; init; } = 10f;
+
+    /// <summary>
     /// Least distance (metres, flat, cell middle to the player's feet) of a combat room's enemy from every player when
     /// it comes out (issue #445). A start cell nearer than this to a player is swapped for the nearest free cell of
     /// the room that keeps this distance and <see cref="DoorDistance"/>; with none, the free cell farthest from all

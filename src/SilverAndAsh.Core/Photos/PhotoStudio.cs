@@ -263,11 +263,16 @@ public sealed class PhotoStudio
 
     /// <summary>
     /// Level 0 with every room on the map and every teleporter found, the player on the one in the start hall (issue
-    /// #480: the travel hint).
+    /// #480: the destination choice). <paramref name="sealBossGate"/>: the first seed whose boss-gate teleporter stands in
+    /// a combat room, that room sealed with its enemies alive, as if another player fought there (co-op) - so the picture
+    /// shows a sealed destination.
     /// </summary>
-    public GameWorld AtStartTeleporter()
+    public GameWorld AtStartTeleporter(bool sealBossGate)
     {
-        var world = StartRun();
+        var world = sealBossGate
+            ? Enumerable.Range(Seed, SeedsToTry).Select(seed => _levelZero.NewRun(seed, Balance)).FirstOrDefault(BossGateInCombatRoom)
+                ?? throw new InvalidOperationException("No seed puts the boss-gate teleporter into a combat room.")
+            : StartRun();
         foreach (var room in world.Rooms)
         {
             room.Discover();
@@ -280,8 +285,20 @@ public sealed class PhotoStudio
 
         var start = world.Teleporters.First(teleporter => teleporter.Plan.Site == TeleporterSite.Start);
         world.Player.PlaceAt(start.Position);
+        if (sealBossGate)
+        {
+            BossGateRoom(world)!.Seal();
+        }
+
         return world;
     }
+
+    private static bool BossGateInCombatRoom(GameWorld world) => BossGateRoom(world) is { Kind: RoomKind.Combat, WaveCount: > 0 };
+
+    private static RoomState? BossGateRoom(GameWorld world) =>
+        world.Teleporters.FirstOrDefault(teleporter => teleporter.Plan.Site == TeleporterSite.BossGate) is { } gate
+            ? world.Rooms.FirstOrDefault(room => room.Cells.Contains((gate.Plan.X, gate.Plan.Z)))
+            : null;
 
     /// <summary>
     /// A bare hall cut in two by a wall with one door of <paramref name="kind"/> in it, <paramref name="cells"/> cells
