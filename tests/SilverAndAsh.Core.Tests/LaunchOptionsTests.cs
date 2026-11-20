@@ -365,4 +365,109 @@ public class LaunchOptionsTests
 
         Assert.Contains("--showroom", error.Message);
     }
+
+    [Fact]
+    public void Without_room_option_there_is_no_room()
+    {
+        Assert.Null(LaunchOptions.Parse([]).Room);
+    }
+
+    [Fact]
+    public void Room_option_chooses_a_template_with_enemies()
+    {
+        var options = LaunchOptions.Parse(["--room", "assets/rooms/combat/l-hall.txt"]);
+
+        Assert.Equal(new RoomOptions("assets/rooms/combat/l-hall.txt", WithEnemies: true), options.Room);
+        Assert.True(options.IsGenerated);
+    }
+
+    [Theory]
+    [InlineData("--room", "assets/rooms/combat/l-hall.txt", "--no-enemies")]
+    [InlineData("--no-enemies", "--room", "assets/rooms/combat/l-hall.txt")]
+    public void No_enemies_leaves_them_out_wherever_it_stands(string first, string second, string third)
+    {
+        var options = LaunchOptions.Parse([first, second, third]);
+
+        Assert.Equal(new RoomOptions("assets/rooms/combat/l-hall.txt", WithEnemies: false), options.Room);
+    }
+
+    [Fact]
+    public void Room_goes_with_seed_weapons_and_the_entrance_photo()
+    {
+        var options = LaunchOptions.Parse(
+            ["--room", "assets/rooms/combat/l-hall.txt", "--seed", "7", "--give", "club", "--photo", "entrance", "--out", "pictures"]);
+
+        Assert.Equal(7, options.Seed);
+        Assert.Equal([WeaponKind.Club], options.Give);
+        Assert.Equal(RoomOptions.EntrancePhoto, options.Photo);
+        Assert.Equal("pictures", options.PhotoFolder);
+        Assert.NotNull(options.Room);
+    }
+
+    [Theory]
+    [InlineData("--room")]
+    [InlineData("--room", "--seed", "3")]
+    [InlineData("--room", " ")]
+    public void Room_without_a_file_is_an_error(params string[] args)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(args));
+
+        Assert.Contains("'--room' needs a room template file", error.Message);
+    }
+
+    [Fact]
+    public void Room_may_come_only_once()
+    {
+        var error = Assert.Throws<ArgumentException>(
+            () => LaunchOptions.Parse(["--room", "assets/rooms/combat/l-hall.txt", "--room", "assets/rooms/boss/great-hall.txt"]));
+
+        Assert.Contains("only once", error.Message);
+    }
+
+    [Fact]
+    public void No_enemies_without_a_room_is_an_error()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--no-enemies"]));
+
+        Assert.Contains("'--no-enemies' only goes with '--room <file>'", error.Message);
+    }
+
+    [Theory]
+    [InlineData("--level", "heights")]
+    [InlineData("--showroom")]
+    [InlineData("--clip", "all")]
+    [InlineData("--bench", "room-combat")]
+    public void Room_cannot_be_combined_with_another_place(params string[] other)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--room", "assets/rooms/combat/l-hall.txt", .. other]));
+
+        Assert.Contains("'--room'", error.Message);
+    }
+
+    [Theory]
+    [InlineData("all")]
+    [InlineData("room-combat")]
+    public void With_a_room_the_only_photo_is_the_entrance(string scene)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--room", "assets/rooms/combat/l-hall.txt", "--photo", scene]));
+
+        Assert.Contains("only photo is '--photo entrance'", error.Message);
+    }
+
+    [Fact]
+    public void The_entrance_photo_needs_a_room()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--photo", "entrance"]));
+
+        Assert.Contains("needs a room", error.Message);
+    }
+
+    [Fact]
+    public void The_unknown_option_message_names_room()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--rooms"]));
+
+        Assert.Contains("--room <file>", error.Message);
+        Assert.Contains("--no-enemies", error.Message);
+    }
 }

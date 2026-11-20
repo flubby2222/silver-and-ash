@@ -37,9 +37,14 @@ namespace SilverAndAsh.Core;
 /// <c>--window &lt;width&gt;x&lt;height&gt;</c>: open the window in this size instead of 1280 x 720 - for photos and tries
 /// in other window shapes, e.g. 21:9 (issue #350). Only in the debug version. Null: the standard size.
 /// </param>
+/// <param name="Room">
+/// <c>--room &lt;file&gt;</c> (and <c>--no-enemies</c>): walk through this one room template instead of a level (issue #528).
+/// Null: play a level.
+/// </param>
 public sealed partial record LaunchOptions(
     string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null, string? Photo = null, string? PhotoFolder = null,
-    int? Look = null, string? Bench = null, string? Clip = null, bool Showroom = false, WindowSize? Window = null)
+    int? Look = null, string? Bench = null, string? Clip = null, bool Showroom = false, WindowSize? Window = null,
+    RoomOptions? Room = null)
 {
     /// <summary>Smallest window <c>--window</c> accepts, in pixels per side.</summary>
     public const int SmallestWindowSide = 200;
@@ -75,6 +80,7 @@ public sealed partial record LaunchOptions(
     public static LaunchOptions Parse(IReadOnlyList<string> args)
     {
         ArgumentNullException.ThrowIfNull(args);
+        (args, var room) = RoomOptions.Extract(args);
         var levelName = DefaultLevelName;
         int? seed = null;
         var give = new List<Gameplay.WeaponKind>();
@@ -156,7 +162,7 @@ public sealed partial record LaunchOptions(
                     }
 
                     photo = args[++i];
-                    if (photo is not (AllPhotos or ListPhotos or ComparePhotos) && Photos.PhotoScenes.Find(photo) is null)
+                    if (photo is not (AllPhotos or ListPhotos or ComparePhotos or RoomOptions.EntrancePhoto) && Photos.PhotoScenes.Find(photo) is null)
                     {
                         throw new ArgumentException($"Unknown photo scene '{photo}'. Scenes: {scenes}.");
                     }
@@ -220,7 +226,7 @@ public sealed partial record LaunchOptions(
 
                 default:
                     throw new ArgumentException(
-                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom, --window <width>x<height>.");
+                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom, --window <width>x<height>, --room <file>, --no-enemies.");
             }
         }
 
@@ -250,7 +256,9 @@ public sealed partial record LaunchOptions(
             throw new ArgumentException($"'--photo {ComparePhotos}' takes every picture variant; leave out '--look'.");
         }
 
-        return new LaunchOptions(levelName, seed, give, photo, photoFolder, look, bench, clip, showroom, window);
+        var options = new LaunchOptions(levelName, seed, give, photo, photoFolder, look, bench, clip, showroom, window, room);
+        RoomOptions.Check(options);
+        return options;
     }
 
     private static WindowSize ParseWindowSize(string? text)
