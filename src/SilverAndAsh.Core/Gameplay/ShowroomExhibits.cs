@@ -28,6 +28,13 @@ public sealed record ExhibitCrossbowSkeleton(CrossbowSkeletonStance Stance, Vect
 public sealed record ExhibitCryptWarden(CryptWardenStance Stance, Vector3 Position, Vector3 Facing);
 
 /// <summary>
+/// A wall pillar standing in the showroom against a wall of <paramref name="Variant"/> under a ceiling of
+/// <paramref name="CeilingHeight"/> metres, on the floor at <paramref name="Position"/> (the wall's face), looking along
+/// <paramref name="Facing"/> (issue #536). Only decoration: no body, no collision (<see cref="WallPillarLook"/>).
+/// </summary>
+public sealed record ExhibitWallPillar(TextureVariant Variant, float CeilingHeight, Vector3 Position, Vector3 Facing);
+
+/// <summary>
 /// What the showroom (issue #283) puts into a world besides its level, doors, chests and enemies. A world with exhibits
 /// is a showroom (<see cref="GameWorld.IsShowroom"/>): its enemies are exhibits that neither move, attack nor take damage,
 /// and its staircase stands from the start but cannot be climbed. A normal game never has exhibits.
@@ -45,4 +52,7 @@ public sealed record ShowroomExhibits(
 
     /// <summary>Crypt wardens standing as figures (issue #530).</summary>
     public IReadOnlyList<ExhibitCryptWarden> CryptWardens { get; init; } = [];
+
+    /// <summary>Wall pillars against the north walls of the sections (issue #536).</summary>
+    public IReadOnlyList<ExhibitWallPillar> WallPillars { get; init; } = [];
 }

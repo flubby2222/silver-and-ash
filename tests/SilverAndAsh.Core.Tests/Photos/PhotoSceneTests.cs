@@ -112,6 +112,8 @@ public class PhotoSceneTests
             "ghoul-shotbody-front", "ghoul-shotbody-side",
             "crossbow-skeleton-rest-4m", "crossbow-skeleton-announce-4m", "crossbow-skeleton-announce-2m",
             "crypt-warden-rest-4m", "crypt-warden-announce-4m", "crypt-warden-announce-2m",
+            "wall-pillar-a-corridor", "wall-pillar-a-room", "wall-pillar-b-corridor", "wall-pillar-b-room",
+            "wall-pillar-c-corridor", "wall-pillar-c-room",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -509,6 +511,28 @@ public class PhotoSceneTests
         Assert.Equal(1f, Vector3.Dot(Vector3.Normalize(flat), warden.Facing), 0.001f);
         var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
         Assert.True(Vector3.Dot(looking, -Vector3.Normalize(flat)) > 0.99f);
+    }
+
+    [Theory]
+    [InlineData("wall-pillar-a-corridor", TextureVariant.A, 3.5f)]
+    [InlineData("wall-pillar-b-room", TextureVariant.B, 6f)]
+    [InlineData("wall-pillar-c-corridor", TextureVariant.C, 3.5f)]
+    [InlineData("wall-pillar-c-room", TextureVariant.C, 6f)]
+    public void The_wall_pillar_scenes_look_at_a_pillar_of_their_variant_and_height(string name, TextureVariant variant, float ceiling)
+    {
+        // Issue #536: the player stands on open floor of the part, south-east of the pillar, and looks at it.
+        var setup = Built(name);
+        setup.Run();
+        var world = setup.World;
+        var pillar = world.Showroom!.WallPillars.MinBy(exhibit => Vector3.Distance(exhibit.Position, world.Player.Position))!;
+
+        Assert.Equal(variant, pillar.Variant);
+        Assert.Equal(ceiling, pillar.CeilingHeight);
+        Assert.Equal(ceiling, world.Level.CellAt(world.Player.Position).CeilingHeight);
+        Assert.False(world.Level.CellAt(world.Player.Position).IsSolid);
+        var towards = Vector3.Normalize((pillar.Position - world.Player.Position) with { Y = 0f });
+        var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
+        Assert.True(Vector3.Dot(looking, towards) > 0.99f);
     }
 
     [Fact]

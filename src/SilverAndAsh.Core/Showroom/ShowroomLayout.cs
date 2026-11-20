@@ -50,7 +50,8 @@ public sealed record ShowroomSection(int Index, TextureVariant Variant, int Corr
 /// height. Every wall piece (doors, cracked wall) stands once per section, in the north wall of the corridor part with a
 /// closet behind - where doors stand in the game too: every door cell of a generated level has the corridor ceiling,
 /// the boss gate's as well. Every other piece stands once, in a row through the middle of the room parts (taking turns
-/// between the sections), where there is room for its height. Built
+/// between the sections), where there is room for its height. Wall pillars stand against the north wall of every part
+/// (issue #536). Built
 /// from <see cref="ShowroomPieces.All"/> with a fixed rule - the same list always gives the same showroom.
 /// </summary>
 public sealed class ShowroomLayout
@@ -102,7 +103,7 @@ public sealed class ShowroomLayout
     /// <summary>The texture variants: each section in its own, its closets and doors too; the passages in A.</summary>
     public SurfaceVariants Surfaces { get; }
 
-    /// <summary>Stairs, loot, consumables and weapons on the floor.</summary>
+    /// <summary>Stairs, loot, consumables and weapons on the floor, figures and wall pillars.</summary>
     public ShowroomExhibits Exhibits { get; }
 
     /// <summary>A label above every piece and at the start of every part.</summary>
@@ -287,10 +288,64 @@ public sealed class ShowroomLayout
             }
         }
 
+        var pillars = WallPillars(level, sections, wallPieces.Count);
+        labels.AddRange(PillarLabels(sections, pillars));
+
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
             level, doors, chests, SurfaceVariants.Of(looks, lookOfCell),
-            new ShowroomExhibits(stairs, loot, consumables, weapons, items) { CrossbowSkeletons = skeletons, CryptWardens = wardens }, labels, sections, placed);
+            new ShowroomExhibits(stairs, loot, consumables, weapons, items)
+            {
+                CrossbowSkeletons = skeletons,
+                CryptWardens = wardens,
+                WallPillars = [.. pillars.Select(pillar => pillar.Pillar)],
+            },
+            labels, sections, placed);
+    }
+
+    /// <summary>The label above the first wall pillar of <paramref name="part"/>.</summary>
+    public static string PillarLabel(ShowroomPart part) => part == ShowroomPart.Corridor ? "Pillar 3.5 m" : "Pillar 6 m";
+
+    /// <summary>
+    /// The wall pillars (issue #536): against the north wall of every part, in the variant and under the ceiling of
+    /// that part. In the corridor one between each two doors, in the room one every <see cref="WallStep"/> cells, keeping
+    /// a cell of bare wall at each end.
+    /// </summary>
+    private static List<(int Section, ShowroomPart Part, ExhibitWallPillar Pillar)> WallPillars(
+        Level level, IReadOnlyList<ShowroomSection> sections, int doorCount)
+    {
+        var pillars = new List<(int, ShowroomPart, ExhibitWallPillar)>();
+        foreach (var section in sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                var start = section.StartOf(part);
+                var columns = part == ShowroomPart.Corridor
+                    ? Enumerable.Range(0, Math.Max(doorCount - 1, 1)).Select(gap => start + 2 + (WallStep / 2) + (WallStep * gap))
+                    : Enumerable.Range(0, ((section.Length - 4) / WallStep) + 1).Select(step => start + 2 + (WallStep * step));
+                foreach (var x in columns)
+                {
+                    var (position, facing) = WallPillarLook.Place(level, x, section.NorthRow, RoomSide.North);
+                    pillars.Add((section.Index, part, new ExhibitWallPillar(section.Variant, ShowroomSection.CeilingOf(part), position, facing)));
+                }
+            }
+        }
+
+        return pillars;
+    }
+
+    /// <summary>One label per part of every section, above the first wall pillar of that part.</summary>
+    private static IEnumerable<ShowroomLabel> PillarLabels(
+        IReadOnlyList<ShowroomSection> sections, List<(int Section, ShowroomPart Part, ExhibitWallPillar Pillar)> pillars)
+    {
+        foreach (var section in sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                var first = pillars.First(pillar => pillar.Section == section.Index && pillar.Part == part).Pillar;
+                yield return new ShowroomLabel(PillarLabel(part), first.Position + new Vector3(0f, 2.4f, 0.6f));
+            }
+        }
     }
 
     /// <summary>
