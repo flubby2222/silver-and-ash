@@ -6,7 +6,9 @@ namespace SilverAndAsh.Core.Tests.World;
 /// <summary>Issue #490: the rule itself - straight into the room the door distance, beside the door the side distance.</summary>
 public class DoorClearanceTests
 {
-    private static readonly DifficultyBalance Difficulty = Balance.Default.Difficulty;
+    // The cone is still provisional (#490): every expectation below about "ahead" or "beside" depends on it, so the
+    // scenario sets it itself. 30 degrees lets (4, 2) below in (26.6 degrees) and leaves the diagonal (45 degrees) out.
+    private static readonly DifficultyBalance Difficulty = Balance.Default.Difficulty with { DoorConeAngle = 30f };
 
     // A room of 7 x 6 cells (columns 0..6, rows 1..6) with its door at (3, 0) in the north wall: the way in is +Z.
     private static readonly List<(int X, int Z)> Room =
@@ -56,6 +58,31 @@ public class DoorClearanceTests
 
         // With the same distance everywhere the least bad cell is simply the farthest one.
         Assert.Equal((0, 2), DoorClearance.LeastBad(room, [door], tooFar with { SideDoorDistance = 100f }));
+    }
+
+    [Fact]
+    public void A_door_at_a_corner_points_between_the_floor_cells_it_touches()
+    {
+        // An L of floor around the door at (0, 0): (1, 0) and (0, 1) lie equally near, so the way in is the diagonal
+        // between them. Taking only one of them would point along a wall.
+        List<(int X, int Z)> corner = [(1, 0), (0, 1), (1, 1), (2, 2), (2, 0)];
+        var door = DoorClearance.Of((0, 0), corner);
+
+        Assert.Equal(1f / MathF.Sqrt(2f), door.Inward.X, 0.0001f);
+        Assert.Equal(1f / MathF.Sqrt(2f), door.Inward.Y, 0.0001f);
+        // Acos near 1 is coarse in float; one of the two cells alone would give 45 degrees.
+        Assert.Equal(0f, DoorClearance.AngleDegrees((2, 2), door), 0.1f);
+    }
+
+    [Fact]
+    public void A_cone_of_exactly_45_degrees_takes_in_the_diagonal_cells()
+    {
+        // (2, 1) lies exactly 45 degrees beside the way in; the rounding of the angle must not push it out of the cone.
+        var cone45 = Difficulty with { DoorConeAngle = 45f, DoorDistance = 4f, SideDoorDistance = 10f };
+
+        Assert.Equal(4f, DoorClearance.Needed((2, 1), Door, cone45));
+        Assert.Equal(4f, DoorClearance.Needed((4, 1), Door, cone45));
+        Assert.Equal(10f, DoorClearance.Needed((1, 1), Door, cone45));
     }
 
     [Fact]
