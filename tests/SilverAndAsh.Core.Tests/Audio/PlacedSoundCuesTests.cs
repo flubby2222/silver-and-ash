@@ -78,8 +78,8 @@ public class PlacedSoundCuesTests
     [Fact]
     public void Sounds_without_a_place_play_as_before_in_the_middle()
     {
-        // One's own weapon, being hit: no place - the same cues as without directional sound.
-        GameEvent[] events = [new ShotFired(ToTheRight, Vector3.UnitZ), new PlayerHit(0, 10), new TargetHitBy(0, 0, Weapon.Blade)];
+        // Being hit, a shot and a blade hit without a place: the same cues as without directional sound.
+        GameEvent[] events = [new ShotFired(0, ToTheRight, Vector3.UnitZ), new PlayerHit(0, 10), new TargetHitBy(0, 0, Weapon.Blade)];
 
         var placed = new SoundCues(1).For(events, Old, Listener, Values);
         var before = new SoundCues(1).For(events, Old);

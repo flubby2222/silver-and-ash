@@ -11,7 +11,7 @@ namespace SilverAndAsh.Core.Tests.Audio;
 /// </summary>
 public class SoundCuesTests
 {
-    private static readonly ShotFired PistolShot = new(Vector3.Zero, Vector3.UnitZ);
+    private static readonly ShotFired PistolShot = new(0, Vector3.Zero, Vector3.UnitZ);
     private static readonly TargetHitBy BladeHit = new(0, 0, Weapon.Blade);
     private static readonly SoundPack Old = SoundPack.Old;
 
@@ -50,7 +50,7 @@ public class SoundCuesTests
     [Fact]
     public void A_swing_without_a_hit_plays_no_blade()
     {
-        Assert.Empty(new SoundCues(1).For([new MeleeSwung(Vector3.Zero, Vector3.UnitZ)], Old));
+        Assert.Empty(new SoundCues(1).For([new MeleeSwung(0, Vector3.Zero, Vector3.UnitZ)], Old));
     }
 
     [Fact]

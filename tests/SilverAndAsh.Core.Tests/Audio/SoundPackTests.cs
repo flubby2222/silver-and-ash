@@ -9,13 +9,13 @@ namespace SilverAndAsh.Core.Tests.Audio;
 public class SoundPackTests
 {
     private static readonly SoundPack Pack1 = SoundPack.Pack1;
-    private static readonly MeleeSwung BladeSwing = new(Vector3.Zero, Vector3.UnitZ);
+    private static readonly MeleeSwung BladeSwing = new(0, Vector3.Zero, Vector3.UnitZ);
     private static readonly TargetHitBy BladeHit = new(0, 0, Weapon.Blade);
 
     public static TheoryData<GameEvent, SoundKind, string[]> Pack1Events => new()
     {
-        { new ShotFired(Vector3.Zero, Vector3.UnitZ), SoundKind.Pistol, ["p1-schuss-1.wav", "p1-schuss-2.wav", "p1-schuss-3.wav"] },
-        { new ShotFired(Vector3.Zero, Vector3.UnitZ, Consecrated: true), SoundKind.ConsecratedShot, ["p1-schuss-geweiht-1.wav", "p1-schuss-geweiht-2.wav"] },
+        { new ShotFired(0, Vector3.Zero, Vector3.UnitZ), SoundKind.Pistol, ["p1-schuss-1.wav", "p1-schuss-2.wav", "p1-schuss-3.wav"] },
+        { new ShotFired(0, Vector3.Zero, Vector3.UnitZ, Consecrated: true), SoundKind.ConsecratedShot, ["p1-schuss-geweiht-1.wav", "p1-schuss-geweiht-2.wav"] },
         { new ReloadStarted(0), SoundKind.ReloadStarted, ["p1-nachladen-start.wav"] },
         { new ReloadFinished(0), SoundKind.ReloadFinished, ["p1-nachladen-bereit.wav"] },
         { BladeSwing, SoundKind.BladeSwing, ["p1-schwung-1.wav", "p1-schwung-2.wav"] },
@@ -180,7 +180,7 @@ public class SoundPackTests
     [Fact]
     public void The_old_pack_plays_a_consecrated_shot_like_any_pistol_shot()
     {
-        var cue = Assert.Single(new SoundCues(1).For([new ShotFired(Vector3.Zero, Vector3.UnitZ, Consecrated: true)], SoundPack.Old));
+        var cue = Assert.Single(new SoundCues(1).For([new ShotFired(0, Vector3.Zero, Vector3.UnitZ, Consecrated: true)], SoundPack.Old));
 
         Assert.Equal("pistole.wav", cue.File);
     }
@@ -276,7 +276,7 @@ public class SoundPackTests
     public void A_pistol_shot_to_gorms_head_plays_the_shot_and_his_head_hit()
     {
         var cues = new SoundCues(1).For(
-            [new ShotFired(Vector3.Zero, Vector3.UnitZ), new GormHit(9, 10, Critical: true), new TargetHitBy(9, 0, Weapon.Pistol)],
+            [new ShotFired(0, Vector3.Zero, Vector3.UnitZ), new GormHit(9, 10, Critical: true), new TargetHitBy(9, 0, Weapon.Pistol)],
             Pack1);
 
         Assert.Equal([SoundKind.Pistol, SoundKind.GormHeadHurt], cues.Select(cue => cue.Kind));
@@ -317,7 +317,7 @@ public class SoundPackTests
     public void A_pistol_hit_on_a_bat_plays_the_shot_and_the_bats_hit()
     {
         var cues = new SoundCues(1).For(
-            [new ShotFired(Vector3.Zero, Vector3.UnitZ), new BatHit(4, 10), new TargetHitBy(4, 0, Weapon.Pistol)], Pack1);
+            [new ShotFired(0, Vector3.Zero, Vector3.UnitZ), new BatHit(4, 10), new TargetHitBy(4, 0, Weapon.Pistol)], Pack1);
 
         Assert.Equal([SoundKind.Pistol, SoundKind.BatHurt], cues.Select(cue => cue.Kind));
     }
