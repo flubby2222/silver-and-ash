@@ -66,12 +66,13 @@ public sealed class GameWorld
     /// start closed. Their cells must be walkable in <paramref name="level"/>. <paramref name="rooms"/> (optional) are
     /// the rooms of a generated level: enemies in combat and boss rooms sleep until a player enters, then the room
     /// becomes an arena (see <see cref="RoomState"/>). <paramref name="chests"/> (optional) are the chests of a generated
-    /// level; a combat room's chest rises once its room is cleared. <paramref name="teleporters"/> (optional) are the
-    /// teleporters of a generated level; they all start locked (issue #436).
+    /// level; a combat room's chest rises once its room is cleared. <paramref name="well"/> (optional) is its Well of
+    /// Sirius. <paramref name="teleporters"/> (optional) are the teleporters of a generated level; they all start
+    /// locked (issue #436).
     /// </summary>
     public GameWorld(
         Level level, int seed = 0, Balance? balance = null, IReadOnlyList<LevelDoor>? doors = null,
-        IReadOnlyList<PlacedRoom>? rooms = null, IReadOnlyList<ChestPlan>? chests = null,
+        IReadOnlyList<PlacedRoom>? rooms = null, IReadOnlyList<ChestPlan>? chests = null, WellPlan? well = null,
         IReadOnlyList<TeleporterPlan>? teleporters = null)
     {
         ArgumentNullException.ThrowIfNull(level);
@@ -113,9 +114,10 @@ public sealed class GameWorld
             .FirstOrDefault();
 
         // The player cannot walk through standing dummies or living ghouls; lying or dead ones are stepped over.
-        // ... nor through chests that stand (or are rising) - but they can jump onto them.
+        // ... nor through chests that stand (or are rising) - but they can jump onto them - nor through the well.
+        Well = well is null ? null : new WellOfSirius(well, level, Balance.Well);
         Player = new Player(
-            Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body), Balance, _random,
+            Level, () => Targets.Where(target => target.IsHittable).Select(target => target.Body).Concat(WellBodies), Balance, _random,
             () => StandingChests.Select(chest => chest.Body));
 
         // The equipment still to be found, shared by all players. What they start with is not in it (no doubles).
@@ -428,6 +430,12 @@ public sealed class GameWorld
     /// <summary>True while the boss room is sealed and Gorm lives: his health bar shows.</summary>
     public bool IsBossFightOn => _gorm is { IsDead: false } && _rooms.Any(room => room.Kind == RoomKind.Boss && room.IsSealed);
 
+    /// <summary>The Well of Sirius of the level, or null if it has none (issue #438).</summary>
+    public WellOfSirius? Well { get; }
+
+    // The well's solid circle for players, if the level has one.
+    private IEnumerable<CylinderBody> WellBodies => Well is null ? [] : [Well.Body];
+
     /// <summary>The chests of the level, in the order they were given (hidden ones included).</summary>
     public IReadOnlyList<Chest> Chests => _chests;
 
@@ -489,7 +497,7 @@ public sealed class GameWorld
     // The chests that block the way: standing or rising, not those still waiting under the floor (decision record 0008).
     private IEnumerable<Chest> StandingChests => _chests.Where(chest => chest.RiseFraction > 0f);
 
-    // The level ghouls and Gorm find their way in: EnemyLevel with the cells of standing chests as walls, so they plan
+    // The level ghouls and Gorm find their way in: EnemyLevel with the cells of standing chests (and the well) as walls, so they plan
     // a way round a chest instead of pushing against it. Not the cell a player stands in (on a chest) - the way to
     // them must stay findable. Built anew only when those cells change. It is only a map for planning: it has no
     // enemy starts (a chest may stand where an enemy started), and the player's start and the dummies' cells stay open.
@@ -501,6 +509,7 @@ public sealed class GameWorld
             .ToHashSet();
         var walls = StandingChests
             .Select(chest => Level.ToGrid(chest.Position.X, chest.Position.Z))
+            .Concat(Well is null ? [] : [(Well.Plan.X, Well.Plan.Z)])
             .Where(cell => !open.Contains(cell))
             .ToList();
         if (_enemyPaths is null || !walls.SequenceEqual(_enemyPathWalls))
@@ -532,7 +541,7 @@ public sealed class GameWorld
     /// A fresh world for the same level: full health, every enemy back at its start - but with a new seed (taken
     /// from this one), so the bats fly differently than last time. The balancing values stay the same.
     /// </summary>
-    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan, _roomPlan, _chestPlan, _teleporterPlan)
+    public GameWorld Restarted() => new(_levelWithOpenDoors, new Random(Seed).Next(), Balance, _doorPlan, _roomPlan, _chestPlan, Well?.Plan, _teleporterPlan)
     {
         Surfaces = Surfaces,
     };
@@ -573,7 +582,8 @@ public sealed class GameWorld
     /// <summary>Everything that can be used with F: doors, chests, the stairs and equipment on the floor; people later.</summary>
     // The showroom's staircase is only on display: it is never offered (no level change there).
     private IEnumerable<IInteractable> Interactables =>
-        _doors.Concat<IInteractable>(_chests).Concat(_equipmentDrops).Concat(_stairs is null || IsShowroom ? [] : [_stairs]);
+        _doors.Concat<IInteractable>(_chests).Concat(_equipmentDrops).Concat(_stairs is null || IsShowroom ? [] : [_stairs])
+            .Concat(Well is null ? [] : [Well]);
 
     private void Interact(Player player)
     {
@@ -606,6 +616,18 @@ public sealed class GameWorld
             case EquipmentDrop drop when drop.OfferFor(player).IsPossible:
                 Take(drop, player);
                 break;
+            case WellOfSirius well:
+                UseWell(well, player);
+                break;
+        }
+    }
+
+    // Provisional (issue #438): price, chances and the most throws are not decided - using the well only spends it.
+    private void UseWell(WellOfSirius well, Player player)
+    {
+        if (well.Use())
+        {
+            _events.Add(new WellOfSiriusUsed(player.Id));
         }
     }
 
@@ -1533,10 +1555,11 @@ public sealed class GameWorld
 
         foreach (var ghoul in _ghouls)
         {
-            // Every ghoul is blocked by the players, the other living ghouls, the standing dummies and the chests.
+            // Every ghoul is blocked by the players, the other living ghouls, the standing dummies, the chests and the well.
             var obstacles = Players.Select(player => player.Body)
                 .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, ghoul)).Select(target => target.Body))
                 .Concat(StandingChests.Select(chest => chest.RoundBody))
+                .Concat(WellBodies)
                 .ToList();
             if (!_asleep.Contains(ghoul.Id) && IsOut(ghoul) && !IsShowroom)
             {
@@ -1551,6 +1574,7 @@ public sealed class GameWorld
             var obstacles = Players.Select(player => player.Body)
                 .Concat(Targets.Where(target => target.IsHittable && !ReferenceEquals(target, _gorm)).Select(target => target.Body))
                 .Concat(StandingChests.Select(chest => chest.RoundBody))
+                .Concat(WellBodies)
                 .ToList();
             _gorm.Act(_enemyLevel, Players, obstacles, _events, EnemyPaths());
         }

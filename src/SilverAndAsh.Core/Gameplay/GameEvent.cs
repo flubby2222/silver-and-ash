@@ -106,6 +106,12 @@ public sealed record ChestUnlocked(int ChestId, int PlayerId) : GameEvent;
 /// <summary>Player <paramref name="PlayerId"/> opened the chest <paramref name="ChestId"/> of <paramref name="Tier"/>; its contents jump out.</summary>
 public sealed record ChestOpened(int ChestId, int PlayerId, ChestTier Tier) : GameEvent;
 
+/// <summary>
+/// Player <paramref name="PlayerId"/> used the Well of Sirius; it is spent now (issue #438). No sound yet - a new kind
+/// of sound needs a listening test first.
+/// </summary>
+public sealed record WellOfSiriusUsed(int PlayerId) : GameEvent;
+
 /// <summary>Player <paramref name="PlayerId"/> picked up pickup <paramref name="PickupId"/> of <paramref name="Kind"/>.</summary>
 public sealed record PickupTaken(int PickupId, int PlayerId, ConsumableKind Kind) : GameEvent;
 

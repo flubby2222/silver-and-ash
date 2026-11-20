@@ -166,8 +166,8 @@ internal sealed class TexturedModel : IDisposable
     /// lock of a chest. <paramref name="tint"/> makes the part brighter or darker (1: as it is; capped at full white).
     /// </summary>
     /// <paramref name="alternate"/>: index of a picture given to <see cref="TryLoad"/> as an alternate, drawn instead of
-    /// the part's own texture (null: its own).
-    public void DrawPart(int index, Matrix4x4 frame, float tint = 1f, int? alternate = null)
+    /// the part's own texture (null: its own). <paramref name="uvOffset"/> moves its texture coordinates (flowing water).
+    public void DrawPart(int index, Matrix4x4 frame, float tint = 1f, int? alternate = null, Vector2 uvOffset = default)
     {
         var part = _parts[index];
 
@@ -187,7 +187,7 @@ internal sealed class TexturedModel : IDisposable
         foreach (var corner in part.Indices)
         {
             var color = _cornerColors[corner];
-            var uv = part.TexCoords[corner];
+            var uv = part.TexCoords[corner] + uvOffset;
             var world = _worldCorners[corner];
             Rlgl.Color4ub(color.R, color.G, color.B, color.A);
             Rlgl.TexCoord2f(uv.X, uv.Y);
