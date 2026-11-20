@@ -27,7 +27,7 @@ REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 SRC = os.path.join(REPO, "assets", "hud")
 OUT = os.path.join(sys.argv[sys.argv.index("--") + 1], "hud") if "--" in sys.argv and len(sys.argv) > sys.argv.index("--") + 1 else SRC
 MARK = "tools/hud/hud_lebensbalken.py"
-# Nieten als Relief (Issue #412): am Lebensbalken je eine auf dem unteren Rand unter jedem langen Strich (jedes fuenfte Upgrade)
+# Nieten als Relief (Issue #412): am Lebensbalken je eine auf dem unteren Rand zwischen den langen Strichen (siehe rivet_centres)
 _nspec = importlib.util.spec_from_file_location("hud_nieten", os.path.join(HERE, "hud_nieten.py"))
 NIETEN = importlib.util.module_from_spec(_nspec)
 _nspec.loader.exec_module(NIETEN)
@@ -147,6 +147,7 @@ def make_parts(atlas, table):
         out.append(("life_tick_long_" + state, tick(18, col), bx + BAR_CAP + 50, by + 6, None))
     fv = table["frame_vitals"]
     b = fv["body"]
+    # Zeilen 20 bis 50 von frame_vitals sind die Zeile des Lebens (30 Zeilen); ohne sie bleibt die Ausdauer allein (siehe Kopf)
     out.append(("frame_stamina", vcut(part("frame_vitals"), 20, 50), fv["layoutX"], fv["layoutY"] + 30, [b[0], b[1], b[2], b[3] - 30]))
     for name, im, lx, ly, bd in out:
         assert im.shape[0] % 2 == 0 and im.shape[1] % 2 == 0 and lx % 2 == 0 and ly % 2 == 0, name
@@ -154,22 +155,31 @@ def make_parts(atlas, table):
     return out
 
 
-def add_rivets(parts):
-    """Nieten unter den langen Strichen auf dem unteren Rand der Fassung des Lebensbalkens (Teile werden veraendert).
+def rivet_centres(frame_width, pitch):
+    """Mitten der Nieten auf dem unteren Rand von frame_life im doppelten Raster (auch Quelle der Wahrheit fuer die Pruefung).
 
-    Die Striche stehen bei x = Balkenanfang + Abschluss + Schritt * Pixel je Lebenspunkt * i (wie LifeBar.Shape); der Balken beginnt
-    10 px (doppeltes Raster) hinter dem Anfang der Fassung. Das Spiel schneidet die Fassung von rechts, die Lage vom linken Ende
-    bleibt, also stehen die Nieten immer genau unter den Strichen.
+    Das Spiel schneidet die Fassung von rechts (HudLayout.CutFrame): Ihre sichtbare Breite ist 6 + 2 * Lebensmaximum. Das
+    Lebensmaximum waechst in Schritten von pitch / 2, also liegt der Schnitt immer bei 6 plus einem Vielfachen von pitch (10).
+    Eine Niete (Radius 3) wird angeschnitten, wenn der Schnitt 2 px vor bis 3 px hinter ihrer Mitte liegt. Die Mitten bei
+    5 * pitch * k (50, 100, 150 ...; mittig zwischen den langen Strichen bei 26 + 50 k) haben zum Schnitt immer 6 px Abstand
+    (Niete ganz sichtbar) oder -4 px (Niete ganz weg): nie ein Stummel. Die Pruefung rechnet das fuer jede Laenge nach.
+    """
+    step = pitch * LONG_EVERY
+    return list(range(step, frame_width - 10, step))
+
+
+def add_rivets(parts):
+    """Nieten auf dem unteren Rand der Fassung des Lebensbalkens, zwischen den langen Strichen (Teile werden veraendert).
+
+    Die Lage haengt vom Schnitt ab, nicht von den Strichen; Begruendung und Rechnung in rivet_centres. Geprueft wird sie fuer jede
+    Laenge von tools/hud/hud_nieten_pruefen.py.
     """
     for name, im, lx, ly, bd in parts:
         if name != "frame_life":
             continue
-        pitch = STEP * PXHP
         y = bd[1] + bd[3] - 1 - round(2.2 * 2) // 2   # Mitte des unteren Randes (Randstaerke 4,4 px)
-        x = 10 + BAR_CAP + pitch * LONG_EVERY
-        while x + 4 < im.shape[1] - 6:
+        for x in rivet_centres(im.shape[1], STEP * PXHP):
             NIETEN.stamp_dome_u8(im, x, y, 3)
-            x += pitch * LONG_EVERY
 
 
 # ---------------------------------------------------------------- Anhaengen
@@ -224,4 +234,5 @@ def main():
     append("hud_parts", plain)
 
 
-main()
+if __name__ == "__main__":
+    main()
