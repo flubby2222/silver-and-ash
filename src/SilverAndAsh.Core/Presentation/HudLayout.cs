@@ -159,8 +159,8 @@ public sealed class HudLayout
     public static string? IconOf(ItemKind kind) => ItemIcons.GetValueOrDefault(kind);
 
     /// <summary>
-    /// The line under the top left group (issue #387): level, experience and skill frames and, while a boon waits, the
-    /// yellow hint under them with its shadow. The same on every canvas - the group keeps to the top left corner. The
+    /// The line under the top left group (issues #387, #435): level, life, experience and skill frames and, while a boon
+    /// waits, the yellow hint under them with its shadow. The same on every canvas - the group keeps to the top left corner. The
     /// menus start their frame of values <see cref="Spacing"/> below it (<see cref="MenuLayout.SheetTopUnder"/>).
     /// </summary>
     public int TopLeftBottom => LevelHintTop() + _font.CapHeight + 1;
@@ -168,11 +168,15 @@ public sealed class HudLayout
     /// <summary>The rectangle a placed part covers.</summary>
     public HudRect Bounds(HudPlacedPart part) => new(part.X, part.Y, part.Width, _parts[part.Name].Height);
 
-    /// <summary>The body of a placed frame on the canvas: its silver rim, without the ornament around.</summary>
+    /// <summary>
+    /// The body of a placed frame on the canvas: its silver rim, without the ornament around. A frame cut from the right
+    /// (the life frame, issue #435) has a body shorter by as many columns.
+    /// </summary>
     public HudRect BodyOf(HudPlacedPart part)
     {
-        var body = _parts[part.Name].Body;
-        return body with { X = part.X + body.X, Y = part.Y + body.Y };
+        var whole = _parts[part.Name];
+        var body = whole.Body;
+        return new HudRect(part.X + body.X, part.Y + body.Y, body.Width - (whole.Width - part.Width), body.Height);
     }
 
     /// <summary>The rectangle a placed text covers, with its shadow one pixel below and right.</summary>
@@ -189,7 +193,7 @@ public sealed class HudLayout
         var picture = new Builder(this);
 
         ArrangeItems(picture, readout.Items, canvas);
-        ArrangeVitals(picture, readout, canvas);
+        ArrangeStamina(picture, readout, canvas);
         if (!readout.IsDead)
         {
             ArrangeWeapons(picture, readout, canvas);
@@ -197,10 +201,10 @@ public sealed class HudLayout
             picture.Part("crosshair", (canvas.Width / 2) - (crosshair.Width / 2), (canvas.Height / 2) - (crosshair.Height / 2));
         }
 
-        ArrangeLevel(picture, readout);
+        var life = ArrangeLevel(picture, readout);
         if (readout.Boss is { } boss)
         {
-            ArrangeBoss(picture, boss, canvas);
+            ArrangeBoss(picture, boss, canvas, life.Right + Spacing);
         }
 
         ArrangeCurrency(picture, readout, canvas);
@@ -245,7 +249,7 @@ public sealed class HudLayout
         return places;
     }
 
-    // Bottom left: one frame per item, as many as fit before the life frame; more items end in a "+N" frame.
+    // Bottom left: one frame per item, as many as fit before the stamina frame; more items end in a "+N" frame.
     private void ArrangeItems(Builder picture, IReadOnlyList<ItemKind> items, HudCanvas canvas)
     {
         if (items.Count == 0)
@@ -255,7 +259,7 @@ public sealed class HudLayout
 
         var body = _parts["frame_item_0"].Body;
         var step = body.Width + Spacing;
-        var fit = Math.Max(1, (VitalsBodyX(canvas) - Spacing) / step);
+        var fit = Math.Max(1, (StaminaBodyX(canvas) - Spacing) / step);
         var shown = items.Count <= fit ? items.Count : fit - 1;
 
         for (var i = 0; i < Math.Min(items.Count, fit); i++)
@@ -276,11 +280,11 @@ public sealed class HudLayout
         }
     }
 
-    // Bottom middle: the life bar and five stamina segments, both without a number, one above the other.
-    private void ArrangeVitals(Builder picture, HudReadout readout, HudCanvas canvas)
+    // Bottom middle: the five stamina segments without a number (the life bar went to the top left, issue #435).
+    private void ArrangeStamina(Builder picture, HudReadout readout, HudCanvas canvas)
     {
-        var ground = picture.Frame("frame_vitals", VitalsBodyX(canvas), BottomBodyTop(canvas)).Inset(Rim);
-        var life = _parts["life_empty"];
+        var body = _parts["frame_stamina"].Body;
+        var ground = picture.Frame("frame_stamina", StaminaBodyX(canvas), canvas.Height - Spacing - body.Height).Inset(Rim);
 
         const int Segments = 5;
         var segments = Enumerable.Range(0, Segments).Select(i => _parts[$"stamina_{i}_empty"]).ToList();
@@ -289,20 +293,12 @@ public sealed class HudLayout
         var rowWidth = segments.Max(segment => segment.LayoutX + segment.Width) - rowLeft;
         var rowHeight = segments.Max(segment => segment.LayoutY + segment.Height) - rowTop;
 
-        var rows = Spread(ground.Y, ground.Height, [life.Height, rowHeight]);
-        var lifeX = Spread(ground.X, ground.Width, [life.Width])[0];
-        picture.Part("life_empty", lifeX, rows[0]);
-        var filled = (int)MathF.Round(_parts["life_full"].Width * readout.Life);
-        if (filled > 0)
-        {
-            picture.Part("life_full", lifeX, rows[0], filled);
-        }
-
         var rowX = Spread(ground.X, ground.Width, [rowWidth])[0];
+        var rowY = Spread(ground.Y, ground.Height, [rowHeight])[0];
         for (var i = 0; i < Segments; i++)
         {
             var x = rowX + (segments[i].LayoutX - rowLeft);
-            var y = rows[1] + (segments[i].LayoutY - rowTop);
+            var y = rowY + (segments[i].LayoutY - rowTop);
             picture.Part($"stamina_{i}_empty", x, y);
             var width = _parts[$"stamina_{i}_full"].Width;
             var share = Math.Clamp((readout.Stamina * Segments) - i, 0f, 1f);
@@ -391,17 +387,21 @@ public sealed class HudLayout
         return top;
     }
 
-    // Top left: the level with its number, the experience bar, and while a boon waits the skill point and the hint.
-    private void ArrangeLevel(Builder picture, HudReadout readout)
+    // Top left (issue #435, layout B): the life bar above the experience bar, the level frame with its number left of
+    // them in the middle of the stack, and while a boon waits the skill point in a second row with the hint under it.
+    // Returns the body of the life frame.
+    private HudRect ArrangeLevel(Builder picture, HudReadout readout)
     {
-        var level = picture.Frame("frame_level", Spacing, Spacing);
+        var lines = TopLeft();
+        var level = picture.Frame("frame_level", Spacing, lines.LevelY);
         var levelGround = level.Inset(Rim);
         var number = readout.Level.ToString(CultureInfo.InvariantCulture);
         var scale = TextSize(number, PixelFont.NumberScale).Width <= levelGround.Width ? PixelFont.NumberScale : 1;
         picture.CentredText(number, levelGround, scale, HudTextColor.Main);
 
-        var xpBody = _parts["frame_xp"].Body;
-        var xp = picture.Frame("frame_xp", level.Right + Spacing, Spread(level.Y, level.Height, [xpBody.Height])[0]);
+        var life = ArrangeLife(picture, readout, lines.StackX, lines.LifeY);
+
+        var xp = picture.Frame("frame_xp", lines.StackX, lines.ExperienceY);
         var bar = picture.CentredPart("xp_empty", xp.Inset(Rim));
         var filled = (int)MathF.Round(_parts["xp_full"].Width * readout.Experience);
         if (filled > 0)
@@ -409,36 +409,77 @@ public sealed class HudLayout
             picture.Part("xp_full", bar.X, bar.Y, filled);
         }
 
-        if (readout.PendingBoons <= 0)
+        if (readout.PendingBoons > 0)
         {
-            return;
+            var skill = picture.Frame("frame_skill_0", Spacing, lines.SkillY);
+            picture.CentredPart("icon_skillpoint", skill.Inset(Rim));
+            picture.Text(LevelUpHint, Spacing, LevelHintTop(), 1, HudTextColor.Hint);
         }
 
-        var skill = picture.Frame("frame_skill_0", xp.Right + Spacing, Spacing);
-        picture.CentredPart("icon_skillpoint", skill.Inset(Rim));
-
-        picture.Text(LevelUpHint, Spacing, LevelHintTop(), 1, HudTextColor.Hint);
+        return life;
     }
 
-    // Where the hint to level up starts: Spacing under the ornament of the level, experience and skill frames, placed as
-    // ArrangeLevel places them (bodies on line Spacing, the experience body centred on the level body).
+    // The life bar (issue #435): as long as the highest health (LifeBar.Shape), in a frame cut to its length and closed by
+    // its end cap, filled from the left, with a tick mark per health boon. Returns the frame's body.
+    private HudRect ArrangeLife(Builder picture, HudReadout readout, int bodyX, int bodyY)
+    {
+        var bar = _parts["life_bar_empty"];
+        var cap = _parts["life_cap_empty"];
+        var shape = LifeBar.Shape(readout.MaxLife, readout.Life, readout.LifePerTick, cap.Width, bar.Width + cap.Width);
+
+        var (frame, body) = picture.CutFrame("frame_life", bodyX, bodyY, shape.Length + (2 * Rim));
+        picture.Part("life_frame_end", frame.X + frame.Width, frame.Y);
+
+        var x = body.X + Rim;
+        var y = Spread(body.Y, body.Height, [bar.Height])[0];
+        var capX = x + shape.Length - cap.Width;
+        picture.Part("life_bar_empty", x, y, shape.Length - cap.Width);
+        picture.Part("life_cap_empty", capX, y);
+        if (shape.Filled > 0)
+        {
+            picture.Part("life_bar_full", x, y, shape.Filled);
+        }
+
+        if (shape.IsFull)
+        {
+            picture.Part("life_cap_full", capX, y);
+        }
+
+        foreach (var tick in shape.Ticks)
+        {
+            var name = (tick.IsLong ? "life_tick_long_" : "life_tick_") + (tick.IsOverFill ? "full" : "empty");
+            picture.Part(name, x + tick.X, y + (_parts[name].LayoutY - bar.LayoutY));
+        }
+
+        return body;
+    }
+
+    // The lines of the top left group, the same on every canvas: the life body on line Spacing, the experience body
+    // Spacing under it, both from column StackX; the level body in the middle of their height left of them; the skill
+    // body Spacing under the stack.
+    private (int StackX, int LifeY, int ExperienceY, int LevelY, int SkillY) TopLeft()
+    {
+        var level = _parts["frame_level"].Body;
+        var experienceY = Spacing + _parts["frame_life"].Body.Height + Spacing;
+        var stackBottom = experienceY + _parts["frame_xp"].Body.Height;
+        var levelY = Spread(Spacing, stackBottom - Spacing, [level.Height])[0];
+        return (Spacing + level.Width + Spacing, Spacing, experienceY, levelY, stackBottom + Spacing);
+    }
+
+    // Where the hint to level up starts: Spacing under the ornament of the skill frame, placed as ArrangeLevel places it
+    // (the lowest frame of the group).
     private int LevelHintTop()
     {
-        var level = _parts["frame_level"];
-        var xp = _parts["frame_xp"];
         var skill = _parts["frame_skill_0"];
-        var xpBodyY = Spread(Spacing, level.Body.Height, [xp.Body.Height])[0];
-        var ornamentBottom = Math.Max(
-            Spacing - level.Body.Y + level.Height,
-            Math.Max(xpBodyY - xp.Body.Y + xp.Height, Spacing - skill.Body.Y + skill.Height));
-        return ornamentBottom + Spacing;
+        return TopLeft().SkillY - skill.Body.Y + skill.Height + Spacing;
     }
 
-    // Top middle, only in a boss fight: the boss's name above a thin bar of his health.
-    private void ArrangeBoss(Builder picture, HudBoss boss, HudCanvas canvas)
+    // Top middle, only in a boss fight: the boss's name above a thin bar of his health. Centred, but never left of
+    // `leftmost` - a long life bar pushes it right on a narrow canvas (issue #435).
+    private void ArrangeBoss(Builder picture, HudBoss boss, HudCanvas canvas, int leftmost)
     {
         var body = _parts["frame_boss"].Body;
-        var ground = picture.Frame("frame_boss", (canvas.Width - body.Width) / 2, Spacing).Inset(Rim);
+        var ground = picture.Frame("frame_boss", Math.Max((canvas.Width - body.Width) / 2, leftmost), Spacing).Inset(Rim);
         var bar = _parts["boss_empty"];
         var name = TextSize(boss.Name, 1);
         var rows = Spread(ground.Y, ground.Height, [name.Height, bar.Height]);
@@ -493,7 +534,7 @@ public sealed class HudLayout
         picture.Text(toast, x + eye.Width + SignGap, Spread(ground.Y, ground.Height, [text.Height])[0], 1, HudTextColor.Pickup);
     }
 
-    private int VitalsBodyX(HudCanvas canvas) => (canvas.Width - _parts["frame_vitals"].Body.Width) / 2;
+    private int StaminaBodyX(HudCanvas canvas) => (canvas.Width - _parts["frame_stamina"].Body.Width) / 2;
 
     private static int BottomBodyTop(HudCanvas canvas) => canvas.Height - Spacing - BottomBodyHeight;
 
@@ -526,6 +567,21 @@ public sealed class HudLayout
             var body = layout._parts[name].Body;
             Part(name, bodyX - body.X, bodyY - body.Y);
             return body with { X = bodyX, Y = bodyY };
+        }
+
+        // A frame whose body has its top left corner at a place of the canvas and is `bodyWidth` wide: the part cut from
+        // the right by what the body is shorter than in the table. Returns the placed part and the body.
+        public (HudPlacedPart Frame, HudRect Body) CutFrame(string name, int bodyX, int bodyY, int bodyWidth)
+        {
+            var whole = layout._parts[name];
+            var cut = whole.Body.Width - bodyWidth;
+            if (cut < 0 || cut >= whole.Width)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bodyWidth), bodyWidth, $"{name} cannot be cut to this body.");
+            }
+
+            var placed = Part(name, bodyX - whole.Body.X, bodyY - whole.Body.Y, whole.Width - cut);
+            return (placed, whole.Body with { X = bodyX, Y = bodyY, Width = bodyWidth });
         }
 
         // A part centred in a rectangle of the canvas.

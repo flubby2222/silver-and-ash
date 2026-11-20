@@ -201,6 +201,7 @@
     "offered": 3,                       // how many different boons a level up offers
     "staminaRegen": 0.05,               // stamina refills 5 % faster
     "health": 5,                        // +5 maximum health, healed at once
+    "healthCap": 235,                   // no more health boons offered once one would go beyond this (life bar: 1 px per point)
     "damage": 0.05,                     // +5 % damage with every weapon
     "experience": 0.025                 // +2.5 % experience per kill
   },

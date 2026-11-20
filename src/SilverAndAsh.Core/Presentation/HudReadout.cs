@@ -33,6 +33,10 @@ public readonly record struct HudBoss(string Name, float Health);
 /// True while the melee weapon is in use - charged or swung, until it is ready again (issue #388): the large rounds
 /// number of the chosen ranged weapon gives way meanwhile.
 /// </param>
+/// <param name="MaxLife">
+/// The highest health of the player (issue #435): the life bar is as long, one pixel per point on a canvas 480 lines high.
+/// </param>
+/// <param name="LifePerTick">What one health boon adds: the life bar has a tick mark every so many points (issue #435).</param>
 public sealed record HudReadout(
     bool IsDead,
     float Life,
@@ -46,7 +50,9 @@ public sealed record HudReadout(
     IReadOnlyList<ItemKind> Items,
     HudBoss? Boss,
     float ConsecratedSecondsLeft,
-    bool IsMeleeInUse = false)
+    bool IsMeleeInUse = false,
+    int MaxLife = 100,
+    int LifePerTick = 5)
 {
     /// <summary>The HUD of <paramref name="player"/> in <paramref name="world"/> as it is now.</summary>
     public static HudReadout Of(GameWorld world, Player player)
@@ -80,7 +86,9 @@ public sealed record HudReadout(
             player.Items.ToList(),
             boss,
             player.IsConsecrated ? player.ConsecratedSecondsLeft : 0f,
-            player.MeleeCharge.IsCharging || !player.MeleeCooldown.IsReady);
+            player.MeleeCharge.IsCharging || !player.MeleeCooldown.IsReady,
+            player.MaxHealth,
+            world.Balance.Boons.Health);
     }
 
     private static float Fraction(int part, int whole) => whole > 0 ? Math.Clamp((float)part / whole, 0f, 1f) : 0f;
