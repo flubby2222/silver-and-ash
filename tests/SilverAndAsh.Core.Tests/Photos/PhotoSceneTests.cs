@@ -37,6 +37,34 @@ public class PhotoSceneTests
         Assert.Equal(menu, Built(name).Menu);
     }
 
+    // Issue #480: after the scene's tick the player stands on the start-hall teleporter, the boss gate free or sealed.
+    [Theory]
+    [InlineData("teleporter-hint", TravelState.Ready)]
+    public void The_travel_scenes_show_the_boss_gate_free_or_sealed(string name, TravelState bossGate)
+    {
+        var setup = Built(name);
+        setup.Run();
+        var choices = setup.World.TravelChoices(setup.World.Player);
+
+        Assert.Equal(TravelState.Here, choices.Single(choice => choice.Teleporter.Plan.Site == TeleporterSite.Start).State);
+        Assert.Equal(bossGate, choices.Single(choice => choice.Teleporter.Plan.Site == TeleporterSite.BossGate).State);
+    }
+
+    [Theory]
+    [InlineData("teleporter-locked-3m", 3f, false)]
+    [InlineData("teleporter-unlocked-3m", 3f, true)]
+    [InlineData("teleporter-locked-10m", 10f, false)]
+    [InlineData("teleporter-unlocked-10m", 10f, true)]
+    public void The_teleporter_scenes_stand_at_their_distance(string name, float metres, bool unlocked)
+    {
+        var setup = Built(name);
+        setup.Run();
+        var teleporter = setup.World.Teleporters.Single();
+
+        Assert.Equal(unlocked, teleporter.IsUnlocked);
+        Assert.Equal(metres, Vector2.Distance(new(teleporter.Position.X, teleporter.Position.Z), new(setup.World.Player.Position.X, setup.World.Player.Position.Z)), 0.01f);
+    }
+
     [Fact]
     public void Scenes_of_the_game_show_no_menu()
     {
@@ -73,6 +101,8 @@ public class PhotoSceneTests
             "cracked-wall-break-after",
             "showroom-a-corridor", "showroom-a-room", "showroom-b-corridor", "showroom-b-room", "showroom-c-corridor",
             "showroom-c-room", "stairs-4m", "stairs-10m", "well-ready", "well-spent",
+            "teleporter-locked-3m", "teleporter-unlocked-3m", "teleporter-locked-10m", "teleporter-unlocked-10m",
+            "teleporter-hint",
             "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
             "menu-title", "menu-pause", "menu-settings", "menu-quit",
             "ghoul-shotbody-front", "ghoul-shotbody-side",

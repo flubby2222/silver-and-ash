@@ -231,6 +231,12 @@ public sealed record TeleportersBalance
     /// unlocks it, and only from there can they travel.
     /// </summary>
     public float Radius { get; init; } = 0.8f;
+
+    /// <summary>
+    /// Metres above a teleporter's floor up to which a player's feet still stand on it (issue #480): high enough that
+    /// a jump (1.3 m) does not leave it, low enough that a ledge or platform above it does not count.
+    /// </summary>
+    public float Height { get; init; } = 1.5f;
 }
 
 /// <summary>Equipment as loot (decision records 0006 and 0008): how a draw from the loot pool chooses.</summary>

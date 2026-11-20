@@ -230,7 +230,8 @@
 
   // Teleporters at special places of a level (start room, in front of the boss door). Stepping onto one unlocks it for all players.
   "teleporters": {
-    "radius": 0.8                       // metres from its middle within which the feet stand on it (to unlock it and to travel from it)
+    "radius": 0.8,                      // metres from its middle within which the feet stand on it (to unlock it and to travel from it)
+    "height": 1.5                       // metres above its floor up to which the feet still stand on it (a jump stays on it, a ledge above does not)
   },
 
   // Chests (decision record 0006). About every fourth combat room gets one; it rises from the floor once the room is cleared.

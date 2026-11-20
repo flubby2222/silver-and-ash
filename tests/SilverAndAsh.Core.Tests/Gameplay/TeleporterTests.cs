@@ -261,4 +261,176 @@ public class TeleporterTests
 
         Assert.Equal(Ground(world.Teleporters[0].Position), Ground(world.Player.Position));
     }
+
+    // ---- Issue #480 ----
+
+    [Fact]
+    public void The_whole_way_from_the_choice_to_the_destination_runs_through_the_tick()
+    {
+        var world = OnSecondTeleporter();
+
+        // The choice lists the unlocked teleporters only: 1 is where the player stands, 0 is free, 2 is still locked.
+        Assert.Equal(
+            [new TravelChoice(world.Teleporters[0], TravelState.Ready), new TravelChoice(world.Teleporters[1], TravelState.Here)],
+            world.TravelChoices(world.Player));
+
+        var target = world.TravelChoices(world.Player).First(choice => choice.CanTravel).Teleporter.Id;
+        var events = Run(world, PlayerInput.None with { TeleportTo = target }, 1);
+        events.AddRange(Run(world, PlayerInput.None, 30));
+
+        Assert.Single(events.OfType<PlayerTeleported>());
+        Assert.Same(world.Teleporters[0], world.TeleporterUnder(world.Player));
+        Assert.Equal(Ground(world.Teleporters[0].Position), Ground(world.Player.Position));
+        Assert.Equal(world.Teleporters[0].Position.Y, world.Player.Position.Y, 3);
+        Assert.Equal(TravelState.Here, world.TravelChoices(world.Player).Single(choice => choice.Teleporter.Id == 0).State);
+    }
+
+    [Fact]
+    public void A_player_who_stands_on_no_teleporter_gets_no_choice()
+    {
+        var world = OnSecondTeleporter();
+        Run(world, Forward, 120, () => world.TeleporterUnder(world.Player) is null);
+
+        Assert.Empty(world.TravelChoices(world.Player));
+    }
+
+    // Trap 1: the reach must not count a teleporter above or below the feet. Teleporter 0 stands one cell (2 m) east
+    // of the start; the radius would reach it on the ground plane.
+    [Fact]
+    public void A_teleporter_on_a_platform_above_the_feet_is_out_of_reach()
+    {
+        TeleporterPlan[] plans = [new(3, 1, 0, TeleporterSite.Start)];
+        var balance = Balance.Default with { Teleporters = Balance.Default.Teleporters with { Radius = 2.05f } };
+        var world = new GameWorld(LevelParser.Parse("#####\n#.P3#\n#...#\n#####"), 1, balance, teleporters: plans);
+
+        Run(world, PlayerInput.None, 5);
+
+        Assert.True(world.Teleporters[0].Position.Y > world.Player.Position.Y + 0.5f);
+        Assert.False(world.Teleporters[0].IsUnlocked);
+    }
+
+    [Theory]
+    [InlineData(0.95f, false)]
+    [InlineData(1.05f, true)]
+    public void How_high_above_a_teleporter_the_feet_still_count_comes_from_the_balancing_values(float height, bool unlocks)
+    {
+        // Teleporter 0 stands in a pit 1 m below the floor the player stands on.
+        TeleporterPlan[] plans = [new(3, 1, 0, TeleporterSite.Start)];
+        var balance = Balance.Default with { Teleporters = Balance.Default.Teleporters with { Radius = 2.05f, Height = height } };
+        var world = new GameWorld(LevelParser.Parse("#####\n#.P_#\n#...#\n#####"), 1, balance, teleporters: plans);
+
+        Run(world, PlayerInput.None, 5);
+
+        Assert.Equal(1f, world.Player.Position.Y - world.Teleporters[0].Position.Y, 3);
+        Assert.Equal(unlocks, world.Teleporters[0].IsUnlocked);
+    }
+
+    [Fact]
+    public void A_jump_does_not_leave_the_teleporter_with_the_default_height()
+    {
+        var world = OnSecondTeleporter();
+        Run(world, PlayerInput.None with { Jump = true }, 1);
+        var highest = 0f;
+        Run(world, PlayerInput.None, 120, () =>
+        {
+            highest = MathF.Max(highest, world.Player.Position.Y - world.Teleporters[1].Position.Y);
+            Assert.Same(world.Teleporters[1], world.TeleporterUnder(world.Player));
+            return highest > 0.1f && world.Player.IsGrounded;
+        });
+
+        Assert.True(highest > 1f, $"the jump only reached {highest} m");
+    }
+
+    // Trap 2: a strike or shot in the travel tick. The attack happens where the player stands and the travel is refused;
+    // one tick later the travel works (counter-check).
+    private static void AssertAttackWinsOverTravel(Func<int, PlayerInput> attack, Func<GameEvent, bool> isAttack)
+    {
+        var probe = OnSecondTeleporter();
+        var ticks = 0;
+        do
+        {
+            probe.Tick(attack(ticks));
+            ticks++;
+            Assert.True(ticks < 120, "the attack never came");
+        }
+        while (!probe.Events.Any(isAttack));
+
+        var asked = OnSecondTeleporter();
+        var notAsked = OnSecondTeleporter();
+        for (var tick = 0; tick < ticks - 1; tick++)
+        {
+            asked.Tick(attack(tick));
+            notAsked.Tick(attack(tick));
+        }
+
+        asked.Tick(attack(ticks - 1) with { TeleportTo = 0 });
+        notAsked.Tick(attack(ticks - 1));
+
+        Assert.Contains(asked.Events, e => isAttack(e));
+        Assert.DoesNotContain(asked.Events, e => e is PlayerTeleported);
+        Assert.Equal(notAsked.Player.Position, asked.Player.Position);
+        Assert.Equal(notAsked.Events, asked.Events);
+
+        asked.Tick(PlayerInput.None with { TeleportTo = 0 });
+        Assert.Single(asked.Events.OfType<PlayerTeleported>());
+    }
+
+    [Fact]
+    public void A_strike_in_the_travel_tick_happens_here_and_the_travel_is_refused()
+    {
+        // The blade swings when the button is let go: pressed for one tick, released in the next.
+        AssertAttackWinsOverTravel(tick => PlayerInput.None with { Melee = tick == 0 }, e => e is MeleeSwung);
+    }
+
+    [Fact]
+    public void A_shot_in_the_travel_tick_happens_here_and_the_travel_is_refused()
+    {
+        AssertAttackWinsOverTravel(_ => PlayerInput.None with { Shoot = true }, e => e is ShotFired);
+    }
+
+    // Trap 3: in co-op another player may have sealed the room of the destination. With one player the same state comes
+    // from a combat room without doors: walked in, it seals (and its teleporter is unlocked); walked out again, the player
+    // stands on the start teleporter while the fight behind them is still on.
+    private const string OpenArena = "#####\n#.P.#\n#...#\n#...#\n#...#\n#...#\n#...#\n#.G.#\n#####";
+
+    private static GameWorld DestinationSealed()
+    {
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 1, 5, 2, 0, Rows(1, 2), [], []),
+            new(1, RoomKind.Combat, "middle", 0, 3, 5, 5, 1, Rows(3, 7), [(2, 7)], []),
+        ];
+        TeleporterPlan[] teleporters = [new(2, 1, 0, TeleporterSite.Start), new(2, 3, 1, TeleporterSite.BossGate)];
+        var world = new GameWorld(LevelParser.Parse(OpenArena), 1, Balance.Default, [], rooms, teleporters: teleporters);
+
+        Run(world, Forward, 240, () => world.Teleporters[1].IsUnlocked);
+        Assert.True(world.Teleporters[1].IsUnlocked, "the walk never reached the teleporter in the combat room");
+        Assert.True(world.Rooms[1].IsSealed);
+
+        Run(world, Forward with { Move = new Vector2(0f, -1f) }, 240, () => world.TeleporterUnder(world.Player) is not null);
+        Assert.Same(world.Teleporters[0], world.TeleporterUnder(world.Player));
+        Assert.True(world.Rooms[1].IsSealed);
+        Assert.False(world.Player.IsDead);
+        return world;
+    }
+
+    [Fact]
+    public void A_destination_in_a_sealed_room_is_shown_as_sealed_and_refused()
+    {
+        var world = DestinationSealed();
+        Assert.Equal(TravelState.Sealed, world.TravelChoices(world.Player).Single(choice => choice.Teleporter.Id == 1).State);
+        Assert.False(world.TravelChoices(world.Player).Single(choice => choice.Teleporter.Id == 1).CanTravel);
+
+        AssertRefused(DestinationSealed, 1);
+
+        // Counter-check: once the fight is over the same destination is free.
+        world.Ghouls[0].TakeDamage(10_000, []);
+        Run(world, PlayerInput.None, 60, () => !world.Rooms[1].IsSealed);
+        Assert.False(world.Rooms[1].IsSealed);
+        Assert.Equal(TravelState.Ready, world.TravelChoices(world.Player).Single(choice => choice.Teleporter.Id == 1).State);
+
+        world.Tick(PlayerInput.None with { TeleportTo = 1 });
+
+        Assert.Equal(Ground(world.Teleporters[1].Position), Ground(world.Player.Position));
+    }
 }
