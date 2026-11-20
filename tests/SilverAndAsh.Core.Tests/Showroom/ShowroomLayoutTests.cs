@@ -387,7 +387,8 @@ public class ShowroomLayoutTests
             }
 
             // The wall stops the player at its radius; a pillar with a body would stop it a pillar's depth earlier.
-            Assert.InRange(world.Player.Position.Z, pillar.Position.Z, pillar.Position.Z + BodySizes.Player.Radius + 0.05f);        }
+            Assert.InRange(world.Player.Position.Z, pillar.Position.Z, pillar.Position.Z + BodySizes.Player.Radius + 0.05f);
+        }
     }
 
     [Fact]

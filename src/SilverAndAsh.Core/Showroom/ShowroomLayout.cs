@@ -289,14 +289,7 @@ public sealed class ShowroomLayout
         }
 
         var pillars = WallPillars(level, sections, wallPieces.Count);
-        foreach (var section in sections)
-        {
-            foreach (var part in Enum.GetValues<ShowroomPart>())
-            {
-                var first = pillars.First(pillar => pillar.Section == section.Index && pillar.Part == part).Pillar;
-                labels.Add(new ShowroomLabel(PillarLabel(part), first.Position + new Vector3(0f, 2.4f, 0.6f)));
-            }
-        }
+        labels.AddRange(PillarLabels(sections, pillars));
 
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
@@ -339,6 +332,20 @@ public sealed class ShowroomLayout
         }
 
         return pillars;
+    }
+
+    /// <summary>One label per part of every section, above the first wall pillar of that part.</summary>
+    private static IEnumerable<ShowroomLabel> PillarLabels(
+        IReadOnlyList<ShowroomSection> sections, List<(int Section, ShowroomPart Part, ExhibitWallPillar Pillar)> pillars)
+    {
+        foreach (var section in sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                var first = pillars.First(pillar => pillar.Section == section.Index && pillar.Part == part).Pillar;
+                yield return new ShowroomLabel(PillarLabel(part), first.Position + new Vector3(0f, 2.4f, 0.6f));
+            }
+        }
     }
 
     /// <summary>

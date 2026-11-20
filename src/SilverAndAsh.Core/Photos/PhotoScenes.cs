@@ -390,6 +390,7 @@ public static class PhotoScenes
         PhotoStudio.Face(world.Player, pillar.Position + new Vector3(0f, Math.Min(ceiling * 0.45f, 2f), 0f));
         return world;
     }
+
     // One item of each tier lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in its colour (issue #317).
     private static IEnumerable<PhotoScene> EquipmentTierScenes()
     {

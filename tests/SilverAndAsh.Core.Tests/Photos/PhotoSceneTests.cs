@@ -534,6 +534,7 @@ public class PhotoSceneTests
         var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
         Assert.True(Vector3.Dot(looking, towards) > 0.99f);
     }
+
     [Fact]
     public void The_gorm_scene_looks_at_gorm()
     {
