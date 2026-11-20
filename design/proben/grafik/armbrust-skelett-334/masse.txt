@@ -1,0 +1,4 @@
+A Wächter: Dreiecke {'skelett': 960, 'armbrust': 162, 'lendentuch': 12} (Summe 1134), x -0.43..0.54, y 0.03..1.86, z -0.09..1.02
+B Kapuzenschütze: Dreiecke {'skelett': 396, 'armbrust': 162, 'kutte': 292} (Summe 850), x -0.52..0.48, y 0.03..1.97, z -0.40..0.88
+C Schildträger: Dreiecke {'skelett': 912, 'ruestung': 300, 'lendentuch': 12} (Summe 1224), x -0.53..0.62, y 0.03..1.98, z -0.23..1.06
+Farben in der Textur: ruhe 20, angriff 22 (Grenze 32)
