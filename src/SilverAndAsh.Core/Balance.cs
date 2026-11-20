@@ -753,8 +753,33 @@ public sealed record GormBalance
     /// <summary>Warning before the chain throw (the hook glows red), in seconds.</summary>
     public float ThrowWindUp { get; init; } = 0.5f;
 
-    /// <summary>The hook flies this fast (m/s), straight to where the player stood when it was thrown.</summary>
+    /// <summary>The hook flies this fast (m/s), straight to the point he aimed at (<see cref="HookLead"/>).</summary>
     public float HookSpeed { get; init; } = 18f;
+
+    /// <summary>
+    /// How much he aims ahead of a moving player (issue #437, provisional): 1 = to where they will be when the hook
+    /// arrives if they keep their pace, 0 = where they stand.
+    /// </summary>
+    public float HookLead { get; init; } = 1f;
+
+    /// <summary>... but at most this far (metres) ahead of where they stand - a far runner is missed.</summary>
+    public float HookLeadMax { get; init; } = 6f;
+
+    /// <summary>
+    /// This long before the throw (seconds) his aim locks: he stands rigid and no longer turns - whoever stops or dodges
+    /// now escapes (issue #437, provisional). Not shortened in phase 2.
+    /// </summary>
+    public float HookLockTime { get; init; } = 0.2f;
+
+    /// <summary>
+    /// After this long chasing a player without an attack (seconds) he stops and throws, even right after a throw and
+    /// if he could not otherwise (issue #437, provisional; 0 = never). Needs a clear line and the target within
+    /// <see cref="FarRange"/>.
+    /// </summary>
+    public float ChaseThrowTime { get; init; } = 8f;
+
+    /// <summary>... the last this many seconds of it his hook swings at his side: the warning.</summary>
+    public float ChaseWarnTime { get; init; } = 2f;
 
     /// <summary>Damage of the hook.</summary>
     public int ThrowDamage { get; init; } = 20;
