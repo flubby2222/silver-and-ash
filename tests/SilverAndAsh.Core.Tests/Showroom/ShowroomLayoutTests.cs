@@ -97,6 +97,27 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void The_crypt_warden_stands_once_per_pose_where_its_piece_is_looking_south()
+    {
+        // Issue #530: a figure only, on the floor in the middle of its cell, looking at the south walkway.
+        var places = Layout.Placed.Where(place => place.Piece is CryptWardenPiece).ToList();
+        var exhibits = Layout.Exhibits.CryptWardens;
+
+        Assert.Equal(Enum.GetValues<CryptWardenStance>().Order(), places.Select(place => ((CryptWardenPiece)place.Piece).Stance).Order());
+        Assert.Equal(places.Count, exhibits.Count);
+        foreach (var place in places)
+        {
+            var exhibit = Assert.Single(exhibits, exhibit => exhibit.Stance == ((CryptWardenPiece)place.Piece).Stance);
+            Assert.Equal(Layout.Level.CellCenter(place.X, place.Z), exhibit.Position);
+            Assert.Equal(Vector3.UnitZ, exhibit.Facing);
+        }
+
+        var label = Assert.Single(Layout.Labels, label => label.Text == "Crypt warden (announce)");
+        Assert.True(label.Position.Y > CryptWardenLook.Height);
+        Assert.Empty(new ShowroomExhibits(null, [], [], [], []).CryptWardens);
+    }
+
+    [Fact]
     public void Equipment_of_all_four_tiers_lies_in_the_showroom_and_can_be_taken()
     {
         // Issue #317: an item of each tier besides the weapons (Worn and Forged only so far), all taken with F.
