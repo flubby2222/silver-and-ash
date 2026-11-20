@@ -309,6 +309,7 @@ public static class PhotoScenes
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 10)) { IsModelProbe = true }),
         .. ShowroomScenes(),
+        .. WallPillarScenes(),
         new("equipment-rifle", "The rifle (Forged) lying in the showroom, 0.8 m away: \"[F] Take Rifle (Forged)\" in steel blue (issue #317).",
             studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle }))),
         .. EquipmentTierScenes(),
@@ -353,6 +354,41 @@ public static class PhotoScenes
                     studio => new PhotoSetup(ShowroomLayout.Build().ViewOf(section.Index, part, studio.Balance)));
             }
         }
+    }
+
+    // The wall pillars of the showroom (issue #536): for every wall variant and part, from the south side of the part a
+    // little east of its second pillar, looking at it at the height of the eye - the pillar beside the bare wall.
+    private static IEnumerable<PhotoScene> WallPillarScenes()
+    {
+        foreach (var section in ShowroomLayout.Build().Sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                var height = part == ShowroomPart.Corridor ? "3.5 m" : "6 m";
+                yield return new(
+                    $"wall-pillar-{section.Variant.ToString().ToLowerInvariant()}-{part.ToString().ToLowerInvariant()}",
+                    $"The wall pillars of the showroom against wall variant {section.Variant} under a ceiling of {height} (issue #536).",
+                    studio => new PhotoSetup(BeforeWallPillar(studio, section.Index, part)));
+            }
+        }
+    }
+
+    private static GameWorld BeforeWallPillar(PhotoStudio studio, int sectionIndex, ShowroomPart part)
+    {
+        var layout = ShowroomLayout.Build();
+        var section = layout.Sections[sectionIndex];
+        var ceiling = ShowroomSection.CeilingOf(part);
+        var pillar = layout.Exhibits.WallPillars
+            .Where(pillar => pillar.Variant == section.Variant && pillar.CeilingHeight == ceiling)
+            .OrderBy(pillar => pillar.Position.X)
+            .Skip(1)
+            .First();
+        var (x, z) = Level.ToGrid(pillar.Position.X, pillar.Position.Z + 0.01f);
+        var world = layout.NewWorldAt(x, section.SouthRowOf(part), pillar.Position, studio.Balance);
+        var south = ((section.SouthRowOf(part) + 1) * Level.CellSize) - 0.5f;
+        world.Player.PlaceAt(new Vector3(pillar.Position.X + 1.5f, layout.Level.CellCenter(x, z).Y, south));
+        PhotoStudio.Face(world.Player, pillar.Position + new Vector3(0f, Math.Min(ceiling * 0.45f, 2f), 0f));
+        return world;
     }
 
     // One item of each tier lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in its colour (issue #317).

@@ -14,6 +14,12 @@ public class ShowroomLayoutTests
 
     private static IEnumerable<PlacedPiece> FloorPieces(ShowroomLayout layout) => layout.Placed.Where(place => place.Piece is not WallPiece);
 
+    // The wall pillars standing in `part` of `section`, west to east.
+    private static List<ExhibitWallPillar> PillarsOf(ShowroomSection section, ShowroomPart part) => Layout.Exhibits.WallPillars
+        .Where(pillar => pillar.Variant == section.Variant && pillar.CeilingHeight == ShowroomSection.CeilingOf(part))
+        .OrderBy(pillar => pillar.Position.X)
+        .ToList();
+
     // Walkable cells reachable from the start; `blocked` cells count as wall.
     private static HashSet<(int X, int Z)> Reachable(Level level, ISet<(int X, int Z)>? blocked = null)
     {
@@ -311,6 +317,78 @@ public class ShowroomLayoutTests
         Assert.Equal(Layout.Exhibits.Loot, again.Exhibits.Loot);
         Assert.Equal(Layout.Exhibits.Weapons, again.Exhibits.Weapons);
         Assert.Equal(Layout.Exhibits.Consumables, again.Exhibits.Consumables);
+        Assert.Equal(Layout.Exhibits.WallPillars, again.Exhibits.WallPillars);
+    }
+
+    [Fact]
+    public void Wall_pillars_stand_at_every_wall_variant_at_corridor_and_room_height()
+    {
+        foreach (var section in Layout.Sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                var ceiling = ShowroomSection.CeilingOf(part);
+                var pillars = PillarsOf(section, part);
+                Assert.True(pillars.Count >= 2, $"Section {section.Variant}, {part}: only {pillars.Count} pillar(s).");
+                Assert.All(pillars, pillar =>
+                {
+                    Assert.Equal(section.Variant, pillar.Variant);
+                    Assert.Equal(ceiling, pillar.CeilingHeight);
+                    Assert.NotNull(WallPillarLook.FileName(pillar.Variant, pillar.CeilingHeight));
+                });
+                Assert.Contains(Layout.Labels, label => label.Text == ShowroomLayout.PillarLabel(part)
+                    && Level.ToGrid(label.Position.X, label.Position.Z) == Level.ToGrid(pillars[0].Position.X, pillars[0].Position.Z + 0.01f));
+            }
+        }
+    }
+
+    [Fact]
+    public void Every_wall_pillar_stands_in_the_grid_against_the_bare_north_wall_of_its_part()
+    {
+        var doorCells = Layout.Doors.Select(door => (door.X, door.Z)).ToHashSet();
+        foreach (var pillar in Layout.Exhibits.WallPillars)
+        {
+            // Placed on the grid: in the middle of a cell's north wall, on its floor, looking south into the cell. The
+            // middle of a cell's wall always lies on a whole metre, so the pillar's texture runs on with the wall's.
+            var section = Layout.Sections.Single(section => section.Variant == pillar.Variant);
+            var part = pillar.CeilingHeight == ShowroomSection.CeilingOf(ShowroomPart.Corridor) ? ShowroomPart.Corridor : ShowroomPart.Room;
+            var (x, z) = Level.ToGrid(pillar.Position.X, pillar.Position.Z + 0.01f);
+            Assert.Equal(section.NorthRow, z);
+            Assert.InRange(x, section.StartOf(part) + 1, section.StartOf(part) + section.Length - 2);
+            Assert.Equal(WallPillarLook.Place(Layout.Level, x, z, RoomSide.North), (pillar.Position, pillar.Facing));
+            Assert.Equal(MathF.Round(pillar.Position.X), pillar.Position.X);
+
+            // The cell in front is open floor under the pillar's ceiling; the wall behind it is solid and no doorway,
+            // and neither is any cell beside it - the pillar never stands in front of a door.
+            Assert.False(Layout.Level[x, z].IsSolid);
+            Assert.Equal(pillar.CeilingHeight, Layout.Level[x, z].CeilingHeight);
+            foreach (var beside in new[] { x - 1, x, x + 1 })
+            {
+                Assert.True(Layout.Level[beside, z - 1].IsSolid, $"Pillar at ({x}, {z}): no wall behind it at {beside}.");
+                Assert.DoesNotContain((beside, z - 1), doorCells);
+            }
+        }
+
+        var cells = Layout.Exhibits.WallPillars.Select(pillar => (pillar.Position.X, pillar.Position.Z)).ToList();
+        Assert.Equal(cells.Count, cells.Distinct().Count());
+    }
+
+    [Fact]
+    public void A_wall_pillar_is_only_decoration_one_walks_right_up_to_the_wall_behind_it()
+    {
+        // No body, no collision: walking north at a pillar ends at the wall, not in front of the pillar.
+        foreach (var pillar in Layout.Exhibits.WallPillars)
+        {
+            var (x, z) = Level.ToGrid(pillar.Position.X, pillar.Position.Z + 0.01f);
+            var world = Layout.NewWorldAt(x, z + 1, pillar.Position + new Vector3(0f, 1.5f, 0f));
+            for (var tick = 0; tick < 120; tick++)
+            {
+                world.Tick(PlayerInput.None with { Move = new Vector2(0f, 1f) });
+            }
+
+            // The wall stops the player at its radius; a pillar with a body would stop it a pillar's depth earlier.
+            Assert.InRange(world.Player.Position.Z, pillar.Position.Z, pillar.Position.Z + BodySizes.Player.Radius + 0.05f);
+        }
     }
 
     [Fact]

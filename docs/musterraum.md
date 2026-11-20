@@ -28,7 +28,8 @@ Der Rundgang ist eine Schleife aus **drei Abschnitten**, einer je Wandvariante *
   - **Warum im Gang:** Im Spiel haben alle Türzellen Ganghöhe, auch die des Bosstors (geprüft an 100 erzeugten Ebenen). So sieht man jede Tür, wie sie im Spiel steht.
   - **Warum schmal:** Der Gang ist drei Zellen breit. Wer in der Mitte geht, ist höchstens zwei Zellen von jeder Tür entfernt. Die Laterne ist das einzige Licht, also liegt keine Tür im Dunkeln.
 - **Einmal**, verteilt auf die drei Raum-Teile, mit mindestens 6 m Abstand: die vier Kisten (offen zu öffnen), die Wendeltreppe (steht, ist aber kein Ausgang), Ghul, Fledermaus und Gorm, das Armbrust-Skelett in Ruhe und beim Ankündigen (nur als Figur, ohne Körper und ohne Schuss; Issue #497), die Waffen und vier Gegenstände (je einer jeder Stufe) in ihrer Stufenfarbe, Silber, Blutphiole und Weihmunition.
-- Über jedem Stück steht sein englischer Name, an jedem Teil „Wall A - corridor 3.5 m“ usw. Schilder hinter Wänden, weiter als 16 m entfernt oder nicht ganz im Bild werden nicht gezeichnet.
+- **Wandpfeiler** (Issue #536) stehen vor der Nordwand jedes Teils, in dessen Wandvariante und Höhe: im Gang ein flacher Pfeiler (3,5 m) zwischen je zwei Türen, im Raum ein tieferer (6 m) alle 8 m. Sie stehen in der Mitte einer Zellenwand, so dass ihre Fugen mit der Wand weiterlaufen. Reiner Schmuck: keine Kollision, kein Einfluss auf Schritte und Schüsse. Die Zuordnung Wandvariante + Deckenhöhe → Modell steht in `WallPillarLook`; in echten Räumen stehen noch keine (Issue #284).
+- Über jedem Stück steht sein englischer Name, an jedem Teil „Wall A - corridor 3.5 m“ usw., über dem ersten Pfeiler eines Teils „Pillar 3.5 m“ bzw. „Pillar 6 m“. Schilder hinter Wänden, weiter als 16 m entfernt oder nicht ganz im Bild werden nicht gezeichnet.
 
 **Gegner sind Ausstellungsstücke:** Sie bewegen sich nicht, greifen nicht an und nehmen keinen Schaden. Es gibt keine Arenen, keine Siegel, keinen Bosskampf und keinen Ebenenwechsel. Silber, Schlüssel, Phiole und Munition nimmst du wie im Spiel beim Darüberlaufen auf – dann fehlen sie bis zum nächsten Start.
 
@@ -58,7 +59,7 @@ Je Teil gibt es eine Foto-Szene mit genau diesem Aufbau (siehe [foto-skript.md](
 dotnet run --project src/SilverAndAsh.Game -- --photo showroom-a-corridor --out fotos
 ```
 
-Szenen: `showroom-a-corridor`, `showroom-a-room`, `showroom-b-corridor`, `showroom-b-room`, `showroom-c-corridor`, `showroom-c-room`. Der Blick geht vom Westende des südlichen Laufwegs schräg auf die Nordwand; weit entfernte Stücke liegen – wie im Spiel – im Dunkeln. Das Armbrust-Skelett hat eigene Szenen von vorn: `crossbow-skeleton-rest-4m`, `crossbow-skeleton-announce-4m` und `crossbow-skeleton-announce-2m`. Für ein bestimmtes Stück aus der Nähe baut `ShowroomLayout.NewWorldAt(x, z, blickziel)` eine Welt mit dem Spieler an einer Zelle.
+Szenen: `showroom-a-corridor`, `showroom-a-room`, `showroom-b-corridor`, `showroom-b-room`, `showroom-c-corridor`, `showroom-c-room`. Der Blick geht vom Westende des südlichen Laufwegs schräg auf die Nordwand; weit entfernte Stücke liegen – wie im Spiel – im Dunkeln. Das Armbrust-Skelett hat eigene Szenen von vorn: `crossbow-skeleton-rest-4m`, `crossbow-skeleton-announce-4m` und `crossbow-skeleton-announce-2m`. Die Wandpfeiler zeigen `wall-pillar-a-corridor` bis `wall-pillar-c-room` (je Wandvariante und Höhe). Für ein bestimmtes Stück aus der Nähe baut `ShowroomLayout.NewWorldAt(x, z, blickziel)` eine Welt mit dem Spieler an einer Zelle.
 
 ## Wie es funktioniert
 
