@@ -231,6 +231,12 @@ internal sealed class PlaceholderGormView : IGormView
 
             ShadedBox.Draw(Matrix4x4.CreateTranslation(hook), new Vector3(0.22f, 0.22f, 0.22f), Warning);
         }
+
+        if (gorm.LyingHook is { } lying)
+        {
+            // Missed (issue #437): the hook lies on the floor until his pause ends.
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(lying + new Vector3(0f, 0.11f, 0f)), new Vector3(0.22f, 0.22f, 0.22f), Rust);
+        }
     }
 
     private static Color Blend(Color from, Color to, float amount) => GormFloorEffects.Blend(from, to, amount);
@@ -238,7 +244,8 @@ internal sealed class PlaceholderGormView : IGormView
 
 /// <summary>
 /// What lies on the floor around Gorm, the same for the model and the boxes: the red warning circle before the hammer
-/// (as far as the shock wave reaches) and the falling stones with their growing shadows. The shock wave itself draws
+/// (as far as the shock wave reaches), the falling stones with their growing shadows and the dust at his foot while his
+/// throw is locked (issue #437). The shock wave itself draws
 /// <see cref="ShockwaveView"/>; without its model it falls back to <see cref="WaveRing"/>.
 /// </summary>
 internal static class GormFloorEffects
@@ -247,6 +254,7 @@ internal static class GormFloorEffects
     private static readonly Color Wave = new(220, 210, 190, 255);
     private static readonly Color Shadow = new(12, 10, 10, 255);
     private static readonly Color Stone = new(96, 92, 88, 255);
+    private static readonly Color Dust = new(150, 138, 120, 255);
 
     public static void Draw(Gorm gorm)
     {
@@ -270,6 +278,28 @@ internal static class GormFloorEffects
             // The circle the wave will cover, pulsing ever brighter.
             var strength = 0.4f + (0.6f * gorm.StateProgress);
             Ring(gorm.Position, gorm.ShockwaveReach, Blend(new Color(60, 10, 10, 255), Warning, strength), 0.06f);
+        }
+
+        if (gorm.HookAim is not null)
+        {
+            HookLockDust(gorm);
+        }
+    }
+
+    // Issue #437: his aim has locked for the throw - he plants his front foot and dust puffs up around it, rising
+    // until the hook flies. The only sign besides his freeze; no sound.
+    private static void HookLockDust(Gorm gorm)
+    {
+        const int Puffs = 7;
+        var foot = gorm.Position + (gorm.Facing * 0.6f);
+        var rise = gorm.StateProgress;
+        for (var puff = 0; puff < Puffs; puff++)
+        {
+            var angle = puff * 2f * MathF.PI / Puffs;
+            var radius = 0.35f + (0.3f * rise);
+            var size = 0.1f + (0.08f * ((puff % 3) / 2f));
+            var spot = foot + new Vector3(MathF.Cos(angle) * radius, 0.05f + (0.25f * rise * (1f + (puff % 2))), MathF.Sin(angle) * radius);
+            ShadedBox.Draw(Matrix4x4.CreateRotationY(angle) * Matrix4x4.CreateTranslation(spot), new Vector3(size, size, size), Dust);
         }
     }
 

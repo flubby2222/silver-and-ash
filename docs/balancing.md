@@ -100,6 +100,20 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 20.11.2026 (#437, vorläufig)
+
+**Anlass:** Issue #437: Wer lange vor Gorm wegläuft, soll nicht für immer sicher sein. Urteil des Menschen: Vorhalt mit Einrasten (Variante B) und Wurf nach langer Verfolgung mit Warnung (Variante B).
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `gorm.hookLead` | – (zielt auf die Füße) | 1 (**vorläufig**) | Er zielt dorthin, wo das Ziel bei gleichem Tempo ankommt, wenn der Haken es erreicht. |
+| `gorm.hookLeadMax` | – | 6 m (**vorläufig**) | Weiter voraus zielt er nie; bei 25 m Abstand läuft ein Spieler sonst über 9 m weit. |
+| `gorm.hookLockTime` | – | 0,2 s (**vorläufig**) | 12 Ticks vor dem Wurf rastet das Ziel ein, Gorm erstarrt. Wer dann stehen bleibt oder ausweicht, entkommt. |
+| `gorm.chaseThrowTime` | – | 8 s (**vorläufig**) | So lange darf man ihm ohne Angriff davonlaufen, dann wirft er doch – auch direkt nach einem Wurf. |
+| `gorm.chaseWarnTime` | – | 2 s (**vorläufig**) | Die letzten 2 s davon schwingt der Haken sichtbar. |
+
+**Bot-Kampf (Zufalls-Bot aus `PlayerTickTraceTests`, 60 Seeds × 4000 Ticks):** Hakentreffer 56 → 65, Seeds mit mindestens einem Treffer 39 → 45. Der Zufalls-Bot wechselt oft das Tempo und entkommt dem Vorhalt manchmal, wird aber im Mittel öfter getroffen.
+
 ### Zwischenschritt – 19.11.2026 (#430, vorläufig)
 
 **Anlass:** Issue #430: Gorms Kettenschwung soll weiter reichen, damit ein einzelner Schritt zurück nicht reicht.
