@@ -90,7 +90,7 @@ public sealed record PhotoSetup(GameWorld World)
 
 /// <summary>
 /// A menu a photo shows (issue #349): none, the title screen, the pause menu, the settings opened from it or the
-/// question before quitting (issue #371).
+/// question before quitting (issue #371), or the destination choice of the teleporters over the game (issue #480).
 /// </summary>
 public enum PhotoMenu
 {
@@ -99,4 +99,5 @@ public enum PhotoMenu
     Pause,
     Settings,
     Quit,
+    Travel,
 }
