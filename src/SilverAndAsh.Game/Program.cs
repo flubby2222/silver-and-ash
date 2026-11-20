@@ -382,6 +382,11 @@ static void RunGame(
         var boonOpenSeconds = 0f;
         Boon? chosenBoon = null;
 
+        // The destination choice of the teleporters (issue #480, T at an unlocked teleporter); the chosen destination
+        // waits for the next tick, like a chosen bonus.
+        var travelWindow = new TravelWindow();
+        int? travelTo = null;
+
         // The menu with the map page (Tab) and the equipment page (G), issue #348: Core keeps which page is open; the key
         // and a click wait for the next tick, like a chosen bonus.
         MenuKey? menuKey = null;
@@ -646,7 +651,7 @@ static void RunGame(
                 equipmentCard.Draw();
             }
 
-            if (!boonOpen && !player.Menu.IsOpen && !frozen)
+            if (!boonOpen && !player.Menu.IsOpen && !travelWindow.IsOpen && !frozen)
             {
                 // The travel hint only where F offers nothing, so the two never share the line.
                 var target = gameWorld.InteractionTarget(player);
@@ -675,6 +680,10 @@ static void RunGame(
             else if (boonOpen && !frozen)
             {
                 BoonWindow.Draw(player, gameWorld.Balance.Boons);
+            }
+            else if (travelWindow.IsOpen && !frozen)
+            {
+                travelWindow.Draw(gameWorld, gameWorld.TravelChoices(player));
             }
 
             if (menuOpen)
@@ -797,10 +806,17 @@ static void RunGame(
                 }
                 else
                 {
-                    menuOpen = setup.Menu != PhotoMenu.None;
+                    // The destination choice is a window over the game, not a menu (issue #480).
+                    if (setup.Menu == PhotoMenu.Travel)
+                    {
+                        travelWindow.Open(gameWorld.TravelChoices(gameWorld.Player));
+                    }
+
+                    menuOpen = setup.Menu is not (PhotoMenu.None or PhotoMenu.Travel);
                     DrawScreen(SimulationClock.SecondsPerTick, frozen: menuOpen, debugInfo: false);
                 }
 
+                travelWindow.Close();
                 menuOpen = false;
                 menuPage = MenuPage.Main;
             }
@@ -1069,8 +1085,9 @@ static void RunGame(
             }
             else if (Raylib.IsKeyPressed(KeyboardKey.Escape))
             {
-                if (!menuOpen && (boonOpen || player.Menu.IsOpen))
+                if (!menuOpen && (boonOpen || player.Menu.IsOpen || travelWindow.IsOpen))
                 {
+                    travelWindow.Close();
                     // The menu lives in Core: it closes with the next tick, like with Tab or G.
                     if (player.Menu.IsOpen)
                     {
@@ -1148,7 +1165,7 @@ static void RunGame(
 
             // Both pages of the menu free the mouse, so it can click the tabs (issue #390).
             var playerMenuOpen = player.Menu.IsOpen;
-            var capture = FocusPause.CapturesMouse(menuOpen, endSummary is not null, onTitle, boonOpen || playerMenuOpen);
+            var capture = FocusPause.CapturesMouse(menuOpen, endSummary is not null, onTitle, boonOpen || playerMenuOpen || travelWindow.IsOpen);
             if (capture && !input.IsMouseCaptured)
             {
                 input.CaptureMouse();
@@ -1159,7 +1176,7 @@ static void RunGame(
             }
 
             // 1. Input: looking around happens every frame, so it feels immediate.
-            var playerInput = input.Read(keysWithFreeMouse: (boonOpen || playerMenuOpen) && !frozen);
+            var playerInput = input.Read(keysWithFreeMouse: (boonOpen || playerMenuOpen || travelWindow.IsOpen) && !frozen);
             player.Look(playerInput, settings.MouseSensitivity);
             interactPressed |= playerInput.Interact;
             slotChosen = playerInput.SelectSlot ?? slotChosen;
@@ -1168,7 +1185,7 @@ static void RunGame(
             // The bonus choice (decision record 0008): X opens and closes it while boons wait; it stays open while walking
             // and when hit - only X or Esc close it (issue #346). Several level ups come one after the other. A dead
             // player takes no boon (Core), so the window closes and X stays locked - display only.
-            if (!frozen && !player.Menu.IsOpen && !escClosedOverlay && !player.IsDead && Raylib.IsKeyPressed(KeyboardKey.X)
+            if (!frozen && !player.Menu.IsOpen && !travelWindow.IsOpen && !escClosedOverlay && !player.IsDead && Raylib.IsKeyPressed(KeyboardKey.X)
                 && player.PendingBoons > 0)
             {
                 boonOpen = !boonOpen;
@@ -1189,7 +1206,7 @@ static void RunGame(
             // the same key closes, the other turns the page - not while the bonus choice is open. Only the player closes it,
             // neither moving nor a hit (issue #346). Not Tab with Alt held: Alt+Tab leaves the window. A click is picked
             // only once the equipment page has been open for a moment.
-            if (!frozen && !boonOpen && !escClosedOverlay)
+            if (!frozen && !boonOpen && !travelWindow.IsOpen && !escClosedOverlay)
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.G))
                 {
@@ -1207,6 +1224,20 @@ static void RunGame(
                 }
             }
 
+            // The destination choice (issue #480): T at an unlocked teleporter, not over another window. Which destinations
+            // there are and whether they are free comes from Core; the travel goes into the tick as input.
+            if (!frozen && !boonOpen && !player.Menu.IsOpen && !escClosedOverlay)
+            {
+                var choices = gameWorld.TravelChoices(player);
+                travelWindow.Toggle(choices);
+                travelTo ??= travelWindow.Update(gameWorld, choices, Raylib.GetFrameTime());
+            }
+            else
+            {
+                // Under another window, the menu or the end screen it closes - so it never stays over a new run.
+                travelWindow.Close();
+            }
+
             inventoryOpenSeconds = inventoryOpen ? inventoryOpenSeconds + Raylib.GetFrameTime() : 0f;
             if (inventoryOpen && !frozen)
             {
@@ -1222,9 +1253,10 @@ static void RunGame(
                 {
                     ChooseBoon = chosenBoon, Interact = interactPressed, Paused = frozen,
                     SelectSlot = slotChosen, CycleSlot = Math.Sign(wheelSteps),
-                    PressMenu = menuKey, InventoryClick = inventoryClick,
+                    PressMenu = menuKey, InventoryClick = inventoryClick, TeleportTo = travelTo,
                 });
                 chosenBoon = null;
+                travelTo = null;
                 menuKey = null;
                 inventoryClick = null;
                 interactPressed = false;
