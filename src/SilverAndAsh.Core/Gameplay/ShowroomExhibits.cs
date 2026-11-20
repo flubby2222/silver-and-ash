@@ -22,6 +22,12 @@ public sealed record ExhibitItem(ItemKind Kind, Vector3 Position);
 public sealed record ExhibitCrossbowSkeleton(CrossbowSkeletonStance Stance, Vector3 Position, Vector3 Facing);
 
 /// <summary>
+/// A crypt warden standing in the showroom in <paramref name="Stance"/>, looking along <paramref name="Facing"/>
+/// (issue #530). Only a figure: no body, no collision, no attack - the enemy itself comes with issue #335.
+/// </summary>
+public sealed record ExhibitCryptWarden(CryptWardenStance Stance, Vector3 Position, Vector3 Facing);
+
+/// <summary>
 /// What the showroom (issue #283) puts into a world besides its level, doors, chests and enemies. A world with exhibits
 /// is a showroom (<see cref="GameWorld.IsShowroom"/>): its enemies are exhibits that neither move, attack nor take damage,
 /// and its staircase stands from the start but cannot be climbed. A normal game never has exhibits.
@@ -36,4 +42,7 @@ public sealed record ShowroomExhibits(
 {
     /// <summary>Crossbow skeletons standing as figures (issue #497).</summary>
     public IReadOnlyList<ExhibitCrossbowSkeleton> CrossbowSkeletons { get; init; } = [];
+
+    /// <summary>Crypt wardens standing as figures (issue #530).</summary>
+    public IReadOnlyList<ExhibitCryptWarden> CryptWardens { get; init; } = [];
 }

@@ -39,6 +39,12 @@ public sealed record EnemyPiece(string Label, ShowroomEnemy Enemy) : ShowroomPie
 /// </summary>
 public sealed record CrossbowSkeletonPiece(string Label, CrossbowSkeletonStance Stance) : ShowroomPiece(Label);
 
+/// <summary>
+/// The crypt warden in <paramref name="Stance"/>, as a figure only (issue #530): it neither moves, attacks nor blocks the
+/// way.
+/// </summary>
+public sealed record CryptWardenPiece(string Label, CryptWardenStance Stance) : ShowroomPiece(Label);
+
 /// <summary>A weapon lying on the floor, glowing in the colour of its tier - taken with F, as in the game.</summary>
 public sealed record WeaponPiece(string Label, WeaponKind Weapon) : ShowroomPiece(Label);
 
@@ -74,6 +80,8 @@ public static class ShowroomPieces
         new EnemyPiece("Gorm", ShowroomEnemy.Gorm),
         new CrossbowSkeletonPiece("Crossbow skeleton (rest)", CrossbowSkeletonStance.Rest),
         new CrossbowSkeletonPiece("Crossbow skeleton (announce)", CrossbowSkeletonStance.Announce),
+        new CryptWardenPiece("Crypt warden (rest)", CryptWardenStance.Rest),
+        new CryptWardenPiece("Crypt warden (announce)", CryptWardenStance.Announce),
         new WeaponPiece("Silver Blade (Worn)", WeaponKind.SilverBlade),
         new WeaponPiece("Club (Worn)", WeaponKind.Club),
         new WeaponPiece("Pistol (Worn)", WeaponKind.Pistol),
