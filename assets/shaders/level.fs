@@ -17,6 +17,7 @@ uniform vec3 fogColor;         // colour everything fades into
 uniform float fogStart;        // metres: fog begins
 uniform float fogEnd;          // metres: only fog left; also the range of the lantern
 uniform float lanternMinimum;  // brightness far away (0..1)
+uniform float glow;            // a part that shines by itself (issue #480): the lantern never makes it darker than this (0: none)
 
 // Picture variants (issue #234, decision record 0010). Variant 1 - the game as it is - has both switched off.
 uniform int quantize;          // 1: rasterise the colour to 5 bits per channel with the dot pattern
@@ -51,7 +52,7 @@ void main()
     // calculation differently by 1/255 here and there - this way the pictures stay bit for bit the same.
     if (quantize == 0 && patternFade == 0)
     {
-        float lantern = 1.0 - (1.0 - lanternMinimum) * clamp(distanceToCamera / fogEnd, 0.0, 1.0);
+        float lantern = max(1.0 - (1.0 - lanternMinimum) * clamp(distanceToCamera / fogEnd, 0.0, 1.0), glow);
         float fog = smoothstep(fogStart, fogEnd, distanceToCamera);
         vec3 lit = surface * colDiffuse.rgb * lantern;
         finalColor = vec4(mix(lit, fogColor, fog), 1.0);
@@ -66,8 +67,8 @@ void main()
         discard;
     }
 
-    // Lantern: full light close by, falling evenly to the minimum at fogEnd.
-    float lantern = 1.0 - (1.0 - lanternMinimum) * clamp(distanceToCamera / fogEnd, 0.0, 1.0);
+    // Lantern: full light close by, falling evenly to the minimum at fogEnd; never below the glow.
+    float lantern = max(1.0 - (1.0 - lanternMinimum) * clamp(distanceToCamera / fogEnd, 0.0, 1.0), glow);
 
     // Fog: 0 before fogStart, 1 after fogEnd, soft S-curve in between. Not with the pattern fade.
     float fog = patternFade == 1 ? 0.0 : smoothstep(fogStart, fogEnd, distanceToCamera);

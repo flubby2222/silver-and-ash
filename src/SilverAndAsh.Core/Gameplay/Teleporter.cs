@@ -30,9 +30,18 @@ public sealed class Teleporter
     /// <summary>True once a player has stepped onto it. It stays unlocked for the rest of the run.</summary>
     public bool IsUnlocked { get; private set; }
 
-    /// <summary>True if the feet at <paramref name="feet"/> are within <paramref name="radius"/> of its middle (on the ground plane).</summary>
-    public bool Reaches(Vector3 feet, float radius) =>
-        new Vector2(feet.X - Position.X, feet.Z - Position.Z).LengthSquared() <= radius * radius;
+    /// <summary>
+    /// True if the feet at <paramref name="feet"/> are within <paramref name="radius"/> of its middle on the ground plane
+    /// and stand on its floor or up to <paramref name="height"/> above it (issue #480: a ledge above or a pit below does
+    /// not count; a jump does).
+    /// </summary>
+    public bool Reaches(Vector3 feet, float radius, float height) =>
+        feet.Y >= Position.Y - FloorTolerance
+        && feet.Y <= Position.Y + height
+        && new Vector2(feet.X - Position.X, feet.Z - Position.Z).LengthSquared() <= radius * radius;
+
+    // Feet resting on the floor may sit a hair below it after a landing.
+    private const float FloorTolerance = 0.05f;
 
     internal void Unlock() => IsUnlocked = true;
 }
