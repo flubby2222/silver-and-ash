@@ -142,6 +142,43 @@ public class EmergenceTests
     }
 
     [Fact]
+    public void An_enemy_that_gives_way_to_a_player_does_not_come_out_beside_a_door()
+    {
+        // Issue #490: where an enemy comes out instead of its start cell, the same rule holds as for the start cells -
+        // straight in front of a door the door distance, beside it the side distance.
+        var difficulty = Balance.Difficulty;
+        var moved = 0;
+        for (var seed = 0; seed < Levels; seed++)
+        {
+            var generated = LevelZero.Build(seed, Balance);
+            foreach (var plan in generated.Rooms.Where(room => room.Kind == RoomKind.Combat))
+            {
+                var probe = StartingIn(generated, seed, plan);
+                var first = EnemiesOf(probe, probe.Rooms[plan.Index]).OrderBy(enemy => enemy.Id).First();
+                var world = StartingAt(generated, seed, Cell(first.Body.Position), Balance);
+                var room = world.Rooms[plan.Index];
+                var enemies = EnemiesOf(world, room);
+                var starts = enemies.ToDictionary(enemy => enemy.Id, enemy => enemy.Body.Position);
+                var doors = DoorCells(world, room);
+                var floor = room.Cells.ToHashSet();
+
+                world.Tick(PlayerInput.None);
+
+                foreach (var enemy in enemies.Where(enemy => enemy.Body.Position != starts[enemy.Id]))
+                {
+                    moved++;
+                    var cell = Cell(enemy.Body.Position);
+                    Assert.All(doors, door => Assert.False(
+                        World.DoorSides.Breaks(door, cell, floor, difficulty),
+                        $"Seed {seed}, room {room.Index}: enemy {enemy.Id} comes out {World.DoorSides.From(door, cell, floor)} (metres, degrees) from a door."));
+                }
+            }
+        }
+
+        Assert.True(moved > 100, $"Only {moved} enemies gave way.");
+    }
+
+    [Fact]
     public void Without_any_cell_far_enough_an_enemy_comes_out_on_the_free_cell_farthest_from_the_players()
     {
         // A player distance no room can keep: every enemy has to give way, each to the farthest cell still free
@@ -164,9 +201,11 @@ public class EmergenceTests
                 var where = $"Seed {seed}, room {room.Index}";
                 var player = world.Player.Position;
                 var occupied = enemies.Select(enemy => Cell(enemy.Body.Position)).ToHashSet();
+                // Clear of the doors as issue #490 has it: beside a door the side distance, straight ahead the door distance.
+                var floor = room.Cells.ToHashSet();
                 var free = room.Cells
                     .Where(cell => !occupied.Contains(cell))
-                    .Where(cell => doors.All(door => Metres(cell, door) >= balance.Difficulty.DoorDistance))
+                    .Where(cell => doors.All(door => !World.DoorSides.Breaks(door, cell, floor, balance.Difficulty)))
                     .ToList();
                 var nearestEnemy = enemies.Min(enemy => FlatMetres(enemy.Body.Position, player));
                 Assert.Equal(enemies.Count, occupied.Count);

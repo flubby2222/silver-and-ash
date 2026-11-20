@@ -100,6 +100,43 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 20.11.2026 (#490, vorläufig)
+
+**Anlass:** Issue #490: Gegner standen seitlich neben der Tür und waren beim Eintreten nicht zu sehen. Urteil des Menschen: Nach vorne reicht der bisherige Türabstand, zu den Seiten nicht.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `difficulty.doorConeAngle` | – (Kreis um die Tür) | 30° (**vorläufig**) | Halber Winkel des Kegels geradeaus in den Raum. Darin sieht man einen Gegner beim Eintreten sofort; dort reicht `doorDistance` (4 m). 45° ließe die Zelle zwei Reihen hinein und zwei zur Seite (5,7 m) zu. |
+| `difficulty.sideDoorDistance` | – | 10 m (**vorläufig**) | Abstand außerhalb des Kegels. Der Richtwert 8 m ließ die Zelle zwei Reihen hinein und vier zur Seite zu (8,9 m, 63°); sie liegt außerhalb des Sichtfelds (gut 51° halbe Breite). 10 m schließt sie aus, das Budget wird weiter voll ausgegeben. |
+
+**Messung (250 Seeds, 3254 Kampfräume, 24278 Gegner, Ghule und Fledermäuse; Abstand und Winkel zur nächsten Tür des eigenen Raums):**
+
+Vorher (Kreis von 4 m um jede Tür):
+
+| Abstand \ Winkel | 0–30° | 30–45° | 45–60° | 60–90° | > 90° |
+|---|---|---|---|---|---|
+| 4–6 m | 2029 | 0 | 697 | 938 | 0 |
+| 6–8 m | 1789 | 463 | 748 | 780 | 0 |
+| 8–10 m | 2244 | 0 | 365 | 899 | 0 |
+| 10–12 m | 2245 | 730 | 493 | 466 | 0 |
+| ≥ 12 m | 5778 | 1302 | 1198 | 1114 | 0 |
+
+Seitlich (> 30°) und näher als 8 m: 3626 Gegner = 14,9 %.
+
+Nachher (30°, 10 m):
+
+| Abstand \ Winkel | 0–30° | 30–45° | 45–60° | 60–90° | > 90° |
+|---|---|---|---|---|---|
+| 4–6 m | 2687 | 0 | 0 | 0 | 0 |
+| 6–8 m | 2384 | 0 | 0 | 0 | 0 |
+| 8–10 m | 3033 | 0 | 0 | 0 | 0 |
+| 10–12 m | 2822 | 963 | 683 | 782 | 0 |
+| ≥ 12 m | 6721 | 1486 | 1387 | 1330 | 0 |
+
+Seitlich und näher als 10 m: 0 %. Kein Kampfraum braucht die Notlösung (Gegner auf der am wenigsten schlechten Zelle), das Budget wird in allen Räumen voll ausgegeben, die Zahl der Gegner bleibt gleich.
+
+**Offen:** Bot-Durchläufe des Testers und Spieltest.
+
 ### Zwischenschritt – 20.11.2026 (#437, vorläufig)
 
 **Anlass:** Issue #437: Wer lange vor Gorm wegläuft, soll nicht für immer sicher sein. Urteil des Menschen: Vorhalt mit Einrasten (Variante B) und Wurf nach langer Verfolgung mit Warnung (Variante B).
