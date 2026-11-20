@@ -111,6 +111,7 @@ public class PhotoSceneTests
             "menu-title", "menu-pause", "menu-settings", "menu-quit",
             "ghoul-shotbody-front", "ghoul-shotbody-side",
             "crossbow-skeleton-rest-4m", "crossbow-skeleton-announce-4m", "crossbow-skeleton-announce-2m",
+            "crypt-warden-rest-4m", "crypt-warden-announce-4m", "crypt-warden-announce-2m",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -486,6 +487,26 @@ public class PhotoSceneTests
         var flat = (world.Player.Position - skeleton.Position) with { Y = 0f };
         Assert.Equal(distance, flat.Length(), 0.01f);
         Assert.Equal(1f, Vector3.Dot(Vector3.Normalize(flat), skeleton.Facing), 0.001f);
+        var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
+        Assert.True(Vector3.Dot(looking, -Vector3.Normalize(flat)) > 0.99f);
+    }
+
+    [Theory]
+    [InlineData("crypt-warden-rest-4m", CryptWardenStance.Rest, 4f)]
+    [InlineData("crypt-warden-announce-4m", CryptWardenStance.Announce, 4f)]
+    [InlineData("crypt-warden-announce-2m", CryptWardenStance.Announce, 2f)]
+    public void The_crypt_warden_scenes_stand_in_front_of_the_warden_in_its_pose(string name, CryptWardenStance stance, float distance)
+    {
+        // Issue #530: the player stands `distance` m in front of the showroom's warden of that pose, looking at it.
+        var setup = Built(name);
+        setup.Run();
+        var world = setup.World;
+        var warden = world.Showroom!.CryptWardens.MinBy(exhibit => Vector3.Distance(exhibit.Position, world.Player.Position))!;
+
+        Assert.Equal(stance, warden.Stance);
+        var flat = (world.Player.Position - warden.Position) with { Y = 0f };
+        Assert.Equal(distance, flat.Length(), 0.01f);
+        Assert.Equal(1f, Vector3.Dot(Vector3.Normalize(flat), warden.Facing), 0.001f);
         var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
         Assert.True(Vector3.Dot(looking, -Vector3.Normalize(flat)) > 0.99f);
     }
