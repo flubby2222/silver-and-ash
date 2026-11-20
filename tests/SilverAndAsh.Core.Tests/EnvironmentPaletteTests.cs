@@ -3,33 +3,57 @@ using System.Text.Json;
 namespace SilverAndAsh.Core.Tests;
 
 /// <summary>
-/// Issue #280: the environment (wall, floor, ceiling, cracked wall, door frames, rubble door) is painted with the colours
+/// Issue #280: the environment (every PNG in assets/textures, cracked wall, door frames, secret-room wall door) is painted with the colours
 /// of the main palette's ground rows only - the row Stein - and the frame of the boss gate may add the row Werkstein
-/// (art bible, colour rule 6). The door leaves are not part of this yet: wood and iron need greyer steps in the palette.
+/// (art bible, colour rule 6). The door leaves and the spiral stairs are named exceptions (issue #543).
 /// </summary>
 public class EnvironmentPaletteTests
 {
     private const string PalettePath = "assets/palette/hauptpalette.json";
 
+    // Every PNG in assets/models belongs to exactly one of these groups. A new file that is in none makes
+    // Every_model_texture_belongs_to_exactly_one_group fail, so it has to be placed on purpose.
+    private static readonly string[] StoneModels =
+    [
+        "cracked_wall_a", "cracked_wall_b", "cracked_wall_c", "door_cracked",
+        "door_frame_normal_a", "door_frame_normal_b", "door_frame_normal_c",
+        "door_frame_locked_a", "door_frame_locked_b", "door_frame_locked_c",
+    ];
+
+    private static readonly string[] StoneAndWerksteinModels = ["door_frame_boss_a", "door_frame_boss_b", "door_frame_boss_c"];
+
+    /// <summary>Not environment (figures, weapons, chests, enemies, effects): they keep their own colours.</summary>
+    private static readonly string[] NotEnvironmentModels =
+    [
+        "bat", "blade", "club", "ghoul", "pistol", "shock_wave", "well_of_sirius",
+        "chest_beggar", "chest_guard", "chest_king", "chest_vampire",
+        "crossbow_skeleton_announce", "crossbow_skeleton_rest", "crypt_warden_announce", "crypt_warden_rest",
+        "gorm_body", "gorm_body_phase2", "gorm_limbs", "teleporter_locked", "teleporter_unlocked",
+    ];
+
+    /// <summary>
+    /// Environment, but still outside the palette on purpose - follow-up issue #543: the door leaves need a muted wood and a
+    /// grey iron in the palette first (with the rows Holz and Eisen they change by 9 to 13.5 per channel); the spiral stairs
+    /// carry the brass of their lamp and the Werkstein, which the check does not allow for them yet.
+    /// </summary>
+    private static readonly string[] ExceptionModelsIssue543 =
+    [
+        "door_normal", "door_locked", "door_boss", "stairs_spiral_a", "stairs_spiral_b", "stairs_spiral_c",
+    ];
+
     public static TheoryData<string> StoneOnly()
     {
         var data = new TheoryData<string>();
-        foreach (var kind in new[] { "wall", "floor", "ceiling" })
+        foreach (var file in Directory.GetFiles(RepositoryFiles.Find("assets/textures"), "*.png").Order())
         {
-            foreach (var variant in new[] { "", "_b", "_c" })
-            {
-                data.Add($"assets/textures/catacomb_{kind}{variant}.png");
-            }
+            data.Add("assets/textures/" + Path.GetFileName(file));
         }
 
-        foreach (var variant in new[] { "a", "b", "c" })
+        foreach (var name in StoneModels)
         {
-            data.Add($"assets/models/cracked_wall_{variant}.png");
-            data.Add($"assets/models/door_frame_normal_{variant}.png");
-            data.Add($"assets/models/door_frame_locked_{variant}.png");
+            data.Add($"assets/models/{name}.png");
         }
 
-        data.Add("assets/models/door_cracked.png");
         return data;
     }
 
@@ -52,7 +76,7 @@ public class EnvironmentPaletteTests
         var palette = RepositoryFiles.Find(PalettePath);
         var allowed = GroundColors(palette);
         allowed.UnionWith(RowColors(palette, "akzent", "Werkstein"));
-        var file = RepositoryFiles.Find($"assets/models/door_frame_boss_{variant}.png");
+        var file = RepositoryFiles.Find($"assets/models/{StoneAndWerksteinModels.Single(n => n.EndsWith(variant))}.png");
 
         Assert.Empty(ForeignColors(file, allowed));
         Assert.NotEmpty(ForeignColors(file, GroundColors(palette))); // the gate really uses its Werkstein
@@ -104,6 +128,38 @@ public class EnvironmentPaletteTests
         Assert.Throws<FileNotFoundException>(() => RepositoryFiles.Find("assets/palette/not_there.json"));
         Assert.Throws<FileNotFoundException>(() => GroundColors(Path.Combine(Path.GetTempPath(), "silver-ash-missing.json")));
         Assert.Throws<InvalidOperationException>(() => RowColors(RepositoryFiles.Find(PalettePath), "akzent", "Gibt es nicht"));
+    }
+
+    [Fact]
+    public void Every_model_texture_belongs_to_exactly_one_group()
+    {
+        var files = Directory.GetFiles(RepositoryFiles.Find("assets/models"), "*.png").Select(Path.GetFileNameWithoutExtension).OfType<string>();
+
+        Assert.Empty(Unplaced(files));
+    }
+
+    [Fact]
+    public void A_new_model_texture_in_no_group_is_found_and_no_name_is_in_two_groups()
+    {
+        Assert.Equal(["rubble_block"], Unplaced(["door_cracked", "rubble_block", "bat"]));
+
+        var all = StoneModels.Concat(StoneAndWerksteinModels).Concat(NotEnvironmentModels).Concat(ExceptionModelsIssue543).ToList();
+        Assert.Equal(all.Count, all.Distinct().Count());
+    }
+
+    [Fact]
+    public void Every_listed_model_texture_exists()
+    {
+        foreach (var name in StoneModels.Concat(StoneAndWerksteinModels).Concat(NotEnvironmentModels).Concat(ExceptionModelsIssue543))
+        {
+            Assert.True(File.Exists(RepositoryFiles.Find($"assets/models/{name}.png")), $"{name}.png is listed but missing.");
+        }
+    }
+
+    private static List<string> Unplaced(IEnumerable<string> names)
+    {
+        var placed = StoneModels.Concat(StoneAndWerksteinModels).Concat(NotEnvironmentModels).Concat(ExceptionModelsIssue543).ToHashSet();
+        return names.Where(name => !placed.Contains(name)).Order().ToList();
     }
 
     private static HashSet<(byte R, byte G, byte B)> ForeignColors(string path, HashSet<(byte R, byte G, byte B)> allowed) =>
