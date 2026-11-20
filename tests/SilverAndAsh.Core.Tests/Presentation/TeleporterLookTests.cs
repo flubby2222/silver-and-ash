@@ -136,6 +136,35 @@ public class TeleporterLookTests
         }
     }
 
+    // Issue #480: what the game draws and how.
+    [Fact]
+    public void The_look_names_the_parts_of_the_files_in_their_order()
+    {
+        Assert.Equal([Body, Crystal], TeleporterLook.Parts.Select(part => part.Name));
+        Assert.All(TeleporterLook.Parts, part => Assert.Null(part.Parent));
+        Assert.True(File.Exists(Model(TeleporterLook.FileName(unlocked: false))));
+        Assert.True(File.Exists(Model(TeleporterLook.FileName(unlocked: true))));
+        Assert.NotEqual(TeleporterLook.FileName(unlocked: false), TeleporterLook.FileName(unlocked: true));
+    }
+
+    [Theory]
+    [InlineData(Crystal, true, true)]
+    [InlineData(Crystal, false, false)]
+    [InlineData(Body, true, false)]
+    [InlineData(Body, false, false)]
+    public void Only_the_crystal_of_an_unlocked_teleporter_glows(string part, bool unlocked, bool glows)
+    {
+        Assert.Equal(glows, TeleporterLook.Glows(part, unlocked));
+    }
+
+    [Fact]
+    public void Every_place_has_its_own_english_name()
+    {
+        var names = Enum.GetValues<SilverAndAsh.Core.World.TeleporterSite>().Select(TeleporterLook.PlaceName).ToList();
+
+        Assert.Equal(["Start Hall", "Boss Gate"], names);
+    }
+
     private static readonly VectorComparer VectorTolerance = new();
 
     private static string Model(string file)

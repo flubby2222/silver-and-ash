@@ -225,6 +225,65 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
+    /// A long bare hall with a teleporter <paramref name="metres"/> in front of the player, who looks at its crystal
+    /// (issue #480). <paramref name="unlocked"/>: it has been found already and its crystal shines.
+    /// </summary>
+    public GameWorld TeleporterHall(float metres, bool unlocked)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(metres, 2f);
+        var cells = (int)MathF.Ceiling(metres / Level.CellSize);
+        const int Width = 9;
+        const int PlayerRow = 2;
+        var depth = PlayerRow + cells + 3;
+        var text = new StringBuilder();
+        for (var z = 0; z < depth; z++)
+        {
+            for (var x = 0; x < Width; x++)
+            {
+                var wall = x == 0 || z == 0 || x == Width - 1 || z == depth - 1;
+                text.Append(wall ? '#' : x == Width / 2 && z == PlayerRow ? 'P' : '.');
+            }
+
+            text.Append('\n');
+        }
+
+        var world = new GameWorld(LevelParser.Parse(text.ToString()), Seed, Balance,
+            teleporters: [new TeleporterPlan(Width / 2, PlayerRow + cells, 0, TeleporterSite.Start)]);
+        var teleporter = world.Teleporters[0];
+        if (unlocked)
+        {
+            teleporter.Unlock();
+        }
+
+        // The player's cell is the nearest whole one; the last bit forward makes the distance exact.
+        world.Player.PlaceAt(teleporter.Position - new Vector3(0f, 0f, metres));
+        Face(world.Player, teleporter.Position + new Vector3(0f, TeleporterLook.CrystalHeight, 0f));
+        return world;
+    }
+
+    /// <summary>
+    /// Level 0 with every room on the map and every teleporter found, the player on the one in the start hall (issue
+    /// #480: the travel hint).
+    /// </summary>
+    public GameWorld AtStartTeleporter()
+    {
+        var world = StartRun();
+        foreach (var room in world.Rooms)
+        {
+            room.Discover();
+        }
+
+        foreach (var teleporter in world.Teleporters)
+        {
+            teleporter.Unlock();
+        }
+
+        var start = world.Teleporters.First(teleporter => teleporter.Plan.Site == TeleporterSite.Start);
+        world.Player.PlaceAt(start.Position);
+        return world;
+    }
+
+    /// <summary>
     /// A bare hall cut in two by a wall with one door of <paramref name="kind"/> in it, <paramref name="cells"/> cells
     /// (2 m each, so 6 m by default, at most 5 cells) in front of the player, who looks at its middle (issue #245).
     /// <paramref name="sideways"/>: the wall runs North/South and the passage along X (the door model turned a quarter).
