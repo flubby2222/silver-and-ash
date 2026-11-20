@@ -52,10 +52,6 @@ internal static class CrossbowSkeletonViews
             }
         }
     }
-
-    /// <summary>Turns a figure looking along +Z to <paramref name="facing"/> and stands it at <paramref name="position"/>.</summary>
-    public static Matrix4x4 Place(Vector3 position, Vector3 facing) =>
-        Matrix4x4.CreateRotationY(MathF.Atan2(facing.X, facing.Z)) * Matrix4x4.CreateTranslation(position);
 }
 
 /// <summary>The models: one per pose, nothing moves in the files. The red eyes are in the announce model's picture.</summary>
@@ -68,7 +64,7 @@ internal sealed class ModelCrossbowSkeletonView(TexturedModel rest, TexturedMode
     {
         var model = stance == CrossbowSkeletonStance.Announce ? announce : rest;
         _turns.AsSpan().Fill(Matrix4x4.Identity);
-        model.Rig.Pose(_turns, CrossbowSkeletonViews.Place(position, facing), _frames);
+        model.Rig.Pose(_turns, ModelPlacement.Place(position, facing), _frames);
         model.Draw(_frames);
     }
 
@@ -90,7 +86,7 @@ internal sealed class PlaceholderCrossbowSkeletonView : ICrossbowSkeletonView
 
     public void Draw(CrossbowSkeletonStance stance, Vector3 position, Vector3 facing)
     {
-        var body = CrossbowSkeletonViews.Place(position, facing);
+        var body = ModelPlacement.Place(position, facing);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.45f, 0f) * body, new Vector3(0.3f, 0.9f, 0.16f), Bone);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 1.25f, 0f) * body, new Vector3(0.36f, 0.7f, 0.18f), Bone);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 1.73f, 0.02f) * body, new Vector3(0.18f, 0.24f, 0.2f), Bone);

@@ -48,10 +48,6 @@ internal static class CryptWardenViews
             }
         }
     }
-
-    /// <summary>Turns a figure looking along +Z to <paramref name="facing"/> and stands it at <paramref name="position"/>.</summary>
-    public static Matrix4x4 Place(Vector3 position, Vector3 facing) =>
-        Matrix4x4.CreateRotationY(MathF.Atan2(facing.X, facing.Z)) * Matrix4x4.CreateTranslation(position);
 }
 
 /// <summary>The models: one per pose, nothing moves in the files. The red eye is in the announce model's picture.</summary>
@@ -64,7 +60,7 @@ internal sealed class ModelCryptWardenView(TexturedModel rest, TexturedModel ann
     {
         var model = stance == CryptWardenStance.Announce ? announce : rest;
         _turns.AsSpan().Fill(Matrix4x4.Identity);
-        model.Rig.Pose(_turns, CryptWardenViews.Place(position, facing), _frames);
+        model.Rig.Pose(_turns, ModelPlacement.Place(position, facing), _frames);
         model.Draw(_frames);
     }
 
@@ -86,7 +82,7 @@ internal sealed class PlaceholderCryptWardenView : ICryptWardenView
 
     public void Draw(CryptWardenStance stance, Vector3 position, Vector3 facing)
     {
-        var body = CryptWardenViews.Place(position, facing);
+        var body = ModelPlacement.Place(position, facing);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.6f, 0f) * body, new Vector3(0.6f, 1.2f, 0.4f), Cloth);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 1.6f, 0f) * body, new Vector3(0.9f, 0.9f, 0.55f), Cloth);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 2.25f, 0.05f) * body, new Vector3(0.4f, 0.5f, 0.4f), Socket);
