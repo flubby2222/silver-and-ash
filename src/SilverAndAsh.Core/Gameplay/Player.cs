@@ -969,7 +969,7 @@ public sealed partial class Player
         {
             var charge = MeleeCharge.Release();
             MeleeCooldown.TryUse();
-            _events.Add(new MeleeSwung(EyePosition, View.Forward, charge, Melee));
+            _events.Add(new MeleeSwung(Id, EyePosition, View.Forward, charge, Melee) { Place = EyePosition });
         }
     }
 
@@ -988,7 +988,7 @@ public sealed partial class Player
         {
             // Consecrated ammunition: the weapon is ready again sooner.
             ranged.Cooldown.TryUse(IsConsecrated ? _consecratedFireRate : 1f);
-            _events.Add(new ShotFired(EyePosition, View.Forward, IsConsecrated, ranged.Kind));
+            _events.Add(new ShotFired(Id, EyePosition, View.Forward, IsConsecrated, ranged.Kind) { Place = EyePosition });
         }
     }
 
