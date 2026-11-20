@@ -187,14 +187,14 @@ public sealed class Bat : ITarget
 
         var taken = Math.Min(damage, Health);
         Health -= taken;
-        events.Add(new BatHit(Id, taken));
+        events.Add(new BatHit(Id, taken) { Place = Centre });
 
         // Being hit wakes it up, even if it never saw the attacker.
         _alerted = true;
         if (IsDead)
         {
             _corpseTicksLeft = _corpseTicks;
-            events.Add(new BatDied(Id));
+            events.Add(new BatDied(Id) { Place = Centre });
         }
     }
 
@@ -295,7 +295,7 @@ public sealed class Bat : ITarget
         _flapTicksLeft = FlapTicks;
         if (State != BatState.Lurking)
         {
-            events.Add(new BatFlapped(Id, Centre));
+            events.Add(new BatFlapped(Id, Centre) { Place = Centre });
         }
     }
 
@@ -315,7 +315,7 @@ public sealed class Bat : ITarget
             if (_spitTicksLeft <= _spitWindUpTicks && CanSee(level, target))
             {
                 _spitWarned = true;
-                events.Add(new BatSpitWindUp(Id));
+                events.Add(new BatSpitWindUp(Id) { Place = Centre });
             }
 
             return;
@@ -327,7 +327,7 @@ public sealed class Bat : ITarget
         }
 
         var aim = target.EyePosition - new Vector3(0f, _bat.SpitAimBelowEyes, 0f);
-        events.Add(new BatSpat(Id, Centre, Vector3.Normalize(aim - Centre)));
+        events.Add(new BatSpat(Id, Centre, Vector3.Normalize(aim - Centre)) { Place = Centre });
         _spitWarned = false;
         _spitTicksLeft = _spitTicks;
     }
@@ -352,7 +352,7 @@ public sealed class Bat : ITarget
         State = BatState.Screeching;
         _stateTicksLeft = _screechTicks;
         _diveGoal = target.Position + new Vector3(0f, target.Body.Height / 2f, 0f);
-        events.Add(new BatScreeched(Id));
+        events.Add(new BatScreeched(Id) { Place = Centre });
     }
 
     /// <summary>
@@ -383,7 +383,7 @@ public sealed class Bat : ITarget
         }
         else if (blocked || step >= distance)
         {
-            events.Add(new BatDiveMissed(Id));
+            events.Add(new BatDiveMissed(Id) { Place = Centre });
             State = BatState.Rising;
         }
     }
