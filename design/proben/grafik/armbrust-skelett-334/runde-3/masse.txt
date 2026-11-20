@@ -1,0 +1,20 @@
+A2 ruhe: Dreiecke {'skelett': 1142, 'armbrust': 198, 'ausruestung': 142, 'stoff': 36} (Summe 1518), Figur x -0.49..0.60, y 0.03..1.86, z -0.18..1.09, Breite 1.08, Hoehe 1.86; Armbrust samt Sehne: x -0.49..0.60, Breite 1.08, y 1.31..1.45, z 0.02..1.09
+A2 ank: Dreiecke {'skelett': 1142, 'armbrust': 198, 'ausruestung': 142, 'stoff': 36} (Summe 1518), Figur x -0.48..0.60, y 0.03..1.85, z -0.18..1.06, Breite 1.08, Hoehe 1.85; Armbrust samt Sehne: x -0.48..0.60, Breite 1.08, y 1.51..1.67, z -0.02..1.06
+B1 ruhe: Dreiecke {'skelett': 1142, 'armbrust': 298, 'ausruestung': 142, 'stoff': 36, 'sehne': 32} (Summe 1650), Figur x -0.49..0.60, y 0.03..1.86, z -0.18..1.05, Breite 1.09, Hoehe 1.86; Armbrust samt Sehne: x -0.49..0.60, Breite 1.09, y 1.31..1.54, z 0.02..1.05
+B1 ank: Dreiecke {'skelett': 1142, 'armbrust': 298, 'ausruestung': 142, 'stoff': 36, 'sehne': 32} (Summe 1650), Figur x -0.42..0.61, y 0.03..1.85, z -0.18..1.05, Breite 1.03, Hoehe 1.85; Armbrust samt Sehne: x -0.42..0.61, Breite 1.03, y 1.51..1.78, z -0.02..1.05
+B2 ruhe: Dreiecke {'skelett': 1142, 'armbrust': 262, 'ausruestung': 142, 'stoff': 36, 'sehne': 32} (Summe 1614), Figur x -0.52..0.63, y 0.03..1.86, z -0.18..1.05, Breite 1.15, Hoehe 1.86; Armbrust samt Sehne: x -0.52..0.63, Breite 1.15, y 1.31..1.52, z 0.02..1.05
+B2 ank: Dreiecke {'skelett': 1142, 'armbrust': 262, 'ausruestung': 142, 'stoff': 36, 'sehne': 32} (Summe 1614), Figur x -0.45..0.64, y 0.03..1.85, z -0.18..1.05, Breite 1.09, Hoehe 1.85; Armbrust samt Sehne: x -0.45..0.64, Breite 1.09, y 1.51..1.76, z -0.02..1.05
+B3 ruhe: Dreiecke {'skelett': 1142, 'armbrust': 270, 'ausruestung': 142, 'stoff': 36, 'sehne': 32} (Summe 1622), Figur x -0.51..0.62, y 0.03..1.86, z -0.18..1.06, Breite 1.14, Hoehe 1.86; Armbrust samt Sehne: x -0.51..0.62, Breite 1.14, y 1.31..1.62, z 0.02..1.06
+B3 ank: Dreiecke {'skelett': 1142, 'armbrust': 270, 'ausruestung': 142, 'stoff': 36, 'sehne': 32} (Summe 1622), Figur x -0.45..0.63, y 0.03..1.87, z -0.18..1.05, Breite 1.08, Hoehe 1.87; Armbrust samt Sehne: x -0.45..0.63, Breite 1.08, y 1.51..1.87, z -0.02..1.05
+Farben in der Textur: ruhe 23, angriff 25 (Grenze 32)
+Silhouette aus 10 m im Spiel (854x480, ohne Raum): Figur, Haltung: Pixelflaeche, Breite px, Hoehe px, Helligkeit 0..255
+  G ruhe: 402 px, 26 x 35, Helligkeit 40.5
+  A2 ruhe: 592 px, 38 x 64, Helligkeit 52.5
+  B1 ruhe: 617 px, 38 x 64, Helligkeit 50.9
+  B2 ruhe: 616 px, 42 x 64, Helligkeit 52.3
+  B3 ruhe: 624 px, 40 x 64, Helligkeit 52.0
+  G ank: 402 px, 26 x 35, Helligkeit 40.5
+  A2 ank: 607 px, 37 x 65, Helligkeit 53.0
+  B1 ank: 648 px, 35 x 65, Helligkeit 52.0
+  B2 ank: 640 px, 39 x 65, Helligkeit 53.0
+  B3 ank: 653 px, 38 x 66, Helligkeit 52.6
