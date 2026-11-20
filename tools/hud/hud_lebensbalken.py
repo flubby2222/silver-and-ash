@@ -18,14 +18,22 @@ feinen Atlas, nur gestreckt und geschnitten, ohne neue Farbe:
   frame_stamina                   frame_vitals ohne die Zeile des Lebens (30 Zeilen kuerzer), fuer die Ausdauer allein.
 Der einfache Atlas bekommt dieselben Teile mit jedem zweiten Pixel (genau halbe Lage und Groesse).
 """
-import sys, os, json, zlib, struct
+import sys, os, re, json, zlib, struct
 import numpy as np
+import importlib.util
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 SRC = os.path.join(REPO, "assets", "hud")
 OUT = os.path.join(sys.argv[sys.argv.index("--") + 1], "hud") if "--" in sys.argv and len(sys.argv) > sys.argv.index("--") + 1 else SRC
 MARK = "tools/hud/hud_lebensbalken.py"
+# Nieten als Relief (Issue #412): am Lebensbalken je eine auf dem unteren Rand unter jedem langen Strich (jedes fuenfte Upgrade)
+_nspec = importlib.util.spec_from_file_location("hud_nieten", os.path.join(HERE, "hud_nieten.py"))
+NIETEN = importlib.util.module_from_spec(_nspec)
+_nspec.loader.exec_module(NIETEN)
+STEP = int(re.search(r'"health"\s*:\s*(\d+)', open(os.path.join(REPO, "assets", "balance.json"), encoding="utf-8").read()).group(1))  # Lebenspunkte je Upgrade
+PXHP = 2                     # Pixel je Lebenspunkt im doppelten Raster
+LONG_EVERY = 5               # jeder fuenfte Strich ist lang (wie LifeBar.LongTickEvery)
 
 MAX_BAR = 640               # laengste Lebensleiste im doppelten Raster (320 px bei 854 x 480, also bis 320 Lebenspunkte)
 FRAME_CAP, BAR_CAP = 14, 16  # rechte Abschluesse im doppelten Raster (wie in der Probe)
@@ -139,11 +147,29 @@ def make_parts(atlas, table):
         out.append(("life_tick_long_" + state, tick(18, col), bx + BAR_CAP + 50, by + 6, None))
     fv = table["frame_vitals"]
     b = fv["body"]
-    out.append(("frame_stamina", vcut(part("frame_vitals"), 18, 48), fv["layoutX"], fv["layoutY"] + 30, [b[0], b[1], b[2], b[3] - 30]))
+    out.append(("frame_stamina", vcut(part("frame_vitals"), 20, 50), fv["layoutX"], fv["layoutY"] + 30, [b[0], b[1], b[2], b[3] - 30]))
     for name, im, lx, ly, bd in out:
         assert im.shape[0] % 2 == 0 and im.shape[1] % 2 == 0 and lx % 2 == 0 and ly % 2 == 0, name
         assert bd is None or all(v % 2 == 0 for v in bd), name
     return out
+
+
+def add_rivets(parts):
+    """Nieten unter den langen Strichen auf dem unteren Rand der Fassung des Lebensbalkens (Teile werden veraendert).
+
+    Die Striche stehen bei x = Balkenanfang + Abschluss + Schritt * Pixel je Lebenspunkt * i (wie LifeBar.Shape); der Balken beginnt
+    10 px (doppeltes Raster) hinter dem Anfang der Fassung. Das Spiel schneidet die Fassung von rechts, die Lage vom linken Ende
+    bleibt, also stehen die Nieten immer genau unter den Strichen.
+    """
+    for name, im, lx, ly, bd in parts:
+        if name != "frame_life":
+            continue
+        pitch = STEP * PXHP
+        y = bd[1] + bd[3] - 1 - round(2.2 * 2) // 2   # Mitte des unteren Randes (Randstaerke 4,4 px)
+        x = 10 + BAR_CAP + pitch * LONG_EVERY
+        while x + 4 < im.shape[1] - 6:
+            NIETEN.stamp_dome_u8(im, x, y, 3)
+            x += pitch * LONG_EVERY
 
 
 # ---------------------------------------------------------------- Anhaengen
@@ -192,6 +218,7 @@ def append(name, parts):
 def main():
     x2 = json.load(open(os.path.join(SRC, "hud_parts_x2.json"), encoding="utf-8"))
     fine = make_parts(read_png(os.path.join(SRC, "hud_parts_x2.png")), {p["name"]: p for p in x2["parts"]})
+    add_rivets(fine)
     plain = [(n, im[::2, ::2].copy(), lx // 2, ly // 2, None if bd is None else [v // 2 for v in bd]) for n, im, lx, ly, bd in fine]
     append("hud_parts_x2", fine)
     append("hud_parts", plain)

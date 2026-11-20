@@ -10,6 +10,7 @@ Aufbau: Die Teileliste (Namen, Lage, Groesse) kommt aus den heutigen Massetabell
 assets/menu/menu_parts.json. Jedes heutige Teil entsteht hier mit demselben Namen an doppelter Lage (layoutX/Y, x, y, w, h und
 body mal 2) im 1708 x 960 grossen Entwurf. Gezeichnet wird mit der Zeichenflaeche aus tools/hud/hud_hochaufgeloest.py
 (Metall-Rahmen als Cycles-Rendering, 8 feste Silberstufen, Bayer-Raster in den Verlaeufen, keine Glaettung), hier mit Alpha-Kanal.
+Nieten (Issue #412): Rahmen und Reiter tragen runde Nieten als Relief (tools/hud/hud_nieten.py): Ecken, an Reitern auch alle 80 px.
 Abweichungen (nur Zeichen von Waffen und Gegenstaenden: groesser und heller; Rahmen ohne Giebel und Fialen) stehen in
 design/proben/grafik/hud-atlas-402/abweichungen.md. Ohne Schrift: Zahlen und Texte zeichnet das Spiel selbst.
 Ohne Zufall ausser dem Renderer (Cycles, fester Seed, CPU); zwei Laeufe liefern bitgleiche Dateien (tools/hud/hud_atlas_pruefen.py).
@@ -29,6 +30,10 @@ HHM = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(HHM)
 HB = HHM.HB
 c01 = HHM.c01
+# Nieten als Relief (Issue #412): Halbkugeln in den sechs Silberstufen des Rahmens, Code in tools/hud/hud_nieten.py
+_nspec = importlib.util.spec_from_file_location("hud_nieten", os.path.join(HERE, "hud_nieten.py"))
+NIETEN = importlib.util.module_from_spec(_nspec)
+_nspec.loader.exec_module(NIETEN)
 
 S = 2  # Massstab gegenueber dem heutigen Atlas (854 x 480 -> 1708 x 960)
 DW, DH = 854 * S, 480 * S
@@ -162,6 +167,15 @@ def crosshair(cv):
         cv.blend(x0, y0, cv.cov_of(sd_circle(cx, cy, rr * S), x0, y0, x1, y1), col, al)
 
 
+def rivets(cv, ux, uy, uw, uh, ring, edges=False):
+    """Nieten auf einen Rahmen (Aussenrechteck in Entwurfseinheiten wie bei cv.frame): Ecken immer, Kanten nur an Reitern."""
+    x0, y0, w, h = round(ux * S), round(uy * S), round(uw * S), round(uh * S)
+    put = lambda cx, cy, r: NIETEN.stamp_dome(cv.img, cx, cy, r)  # noqa: E731
+    NIETEN.rivet_corners(put, x0, y0, w, h)
+    if edges:
+        NIETEN.rivet_edges(put, x0, y0, w, h, round(ring * S))
+
+
 # ---------------------------------------------------------------- Teile des HUD
 # Zeichen: Name -> (Form, Mitte x, Mitte y, Radius, Farbe 1, Farbe 2, Zeichen-Klasse "wi" = Waffe/Gegenstand (groesser) oder "z" (1x))
 def _icons():
@@ -218,6 +232,7 @@ def draw_hud_part(cv, p):
         ring, cham, studs = FRAME_STYLE[key]
         bx, by, bw, bh = p["body"]
         cv.frame(lx + bx, ly + by, bw, bh, "rect", ring=ring, cham=cham, studs=studs, tint=BRASS if n.endswith("_active") else None)
+        rivets(cv, lx + bx, ly + by, bw, bh, ring)
     else:  # Leisten: NAME_empty / NAME_full
         base, state = n.rsplit("_", 1)
         base = "stamina" if base.startswith("stamina") else base
@@ -233,6 +248,7 @@ def draw_menu_part(cv, p, sh):
     n, lx, ly, w, h = p["name"], p["layoutX"], p["layoutY"], p["w"], p["h"]
     if n == "panel":
         cv.frame(40, 62, 774, 390, "rect", ring=3.2, cham=3.2, studs=True, fill=PANEL, fill_alpha=0.78)
+        rivets(cv, 40, 62, 774, 390, 3.2)
     elif n == "gable":
         cv.frame(412, 186, 30, 19, "tri", ring=2.6, fill_alpha=0, studs=False)
         cv.icon("eye", 427, 197, 3.2, BRASS_L, BRASS_M, detail=(40, 20, 10))
@@ -254,6 +270,7 @@ def draw_menu_part(cv, p, sh):
         active = n.endswith("_active")
         top = y0 if active else y0 + 8
         cv.frame(x0, top, x1 - x0, y1 - top, "rect", ring=2.4, cham=2.2, studs=False)
+        rivets(cv, x0, top, x1 - x0, y1 - top, 2.4, edges=True)
         if active:
             diamond(cv, (x0 + x1) / 2, y0 - 4, 4.0, BRASS_L, BRASS_M)
     else:
