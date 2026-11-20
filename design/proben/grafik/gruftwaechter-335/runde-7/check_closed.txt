@@ -1,0 +1,6 @@
+﻿== J1
+gruftwaechter_J1.glb: geschlossen (2944 Dreiecke, 0 offene Kanten)
+== K1
+gruftwaechter_K1.glb: geschlossen (2992 Dreiecke, 0 offene Kanten)
+== K2
+gruftwaechter_K2.glb: geschlossen (2992 Dreiecke, 0 offene Kanten)
