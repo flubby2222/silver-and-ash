@@ -74,6 +74,24 @@ dotnet run --project src/SilverAndAsh.Game -- --level heights
 dotnet run --project src/SilverAndAsh.Game -- --give club
 ```
 
+**Eine einzelne Raum-Vorlage begehen** (Issue #528), etwa um eine neue Vorlage zu prüfen: `--room <datei>` baut ein geschlossenes Level aus genau dieser Datei aus `assets/rooms/`. Der Ordner bestimmt die Raumart wie im Generator. Um die Vorlage läuft ein Ring aus Wand. Man steht im **ersten Türplatz** (`+`, in Leserichtung zuerst) und blickt in den Raum; alle anderen Türplätze sind Wand. Gegner und Kisten werden nach denselben Regeln wie auf Ebene 0 verteilt. Ein Kampfraum versiegelt sich beim Betreten, seine Gegner kommen hervor, ein Bossraum hat Gorm. Nach dem Tod beginnt derselbe Raum von vorn. Die Option geht auch im Release; mit `--seed` und `--give` lässt sie sich kombinieren, nicht mit `--level` oder `--showroom`:
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --room assets/rooms/combat/l-hall.txt
+```
+
+Mit `--no-enemies` bleibt der Raum **ohne Gegner** (Kisten gibt es trotzdem), um ihn in Ruhe anzusehen:
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --room assets/rooms/combat/l-hall.txt --no-enemies
+```
+
+Das **Foto vom Eingang** (nur Debug-Version, siehe [foto-skript.md](foto-skript.md)) zeigt das erste Bild im Türplatz und heißt nach der Vorlage, hier `room-combat-l-hall.png`:
+
+```
+dotnet run --project src/SilverAndAsh.Game -- --room assets/rooms/combat/l-hall.txt --photo entrance --out fotos
+```
+
 Die beiden `--` trennen die Optionen für `dotnet` von denen für das Spiel. Erlaubt sind Namen aus Kleinbuchstaben, Ziffern und `-`. `--level generated` ist dasselbe wie gar kein `--level`.
 
 ## Im Code
