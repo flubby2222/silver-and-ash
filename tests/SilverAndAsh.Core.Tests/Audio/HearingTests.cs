@@ -104,6 +104,30 @@ public class HearingTests
     }
 
     [Theory]
+    [InlineData("near")]
+    [InlineData("middle")]
+    [InlineData("far")]
+    [InlineData("beyond")]
+    public void Near_middle_and_far_count_the_whole_way_up_and_across_too(string where)
+    {
+        // Issue #501: aslant - above, to the side and behind. The distance counts in all three directions, not only on
+        // the ground; the same distance straight ahead would give the same volume.
+        var span = Values.Range - Values.NearDistance;
+        var (distance, volume) = where switch
+        {
+            "near" => (Values.NearDistance * 0.9f, 1f),
+            "middle" => (Values.NearDistance + (span * 0.25f), MathF.Pow(0.75f, Values.Rolloff)),
+            "far" => (Values.NearDistance + (span * 0.75f), MathF.Pow(0.25f, Values.Rolloff)),
+            _ => (Values.Range * 1.1f, 0f),
+        };
+        var aslant = Vector3.Normalize(new Vector3(1f, 0.5f, -2f));
+
+        var mix = Hearing.Mix(Ears, Vector3.UnitZ, Ears + (aslant * distance), Values);
+
+        Assert.Equal(volume, mix.Volume, Tolerance);
+    }
+
+    [Theory]
     [InlineData(0f)]
     [InlineData(0.01f)]
     [InlineData(25f)]
@@ -171,6 +195,19 @@ public class HearingTests
     }
 
     [Fact]
+    public void Ones_own_shot_and_swing_are_in_the_middle_another_players_come_from_where_they_are()
+    {
+        // Issue #501: the weapon in one's own hand stays in the head; in co-op another player's shot comes from them.
+        var listener = new SoundListener(0, Ears, Vector3.UnitZ);
+        var there = Ears + new Vector3(-Middle, 0f, 0f); // to the listener's right
+        GameEvent[] own = [new ShotFired(0, there, Vector3.UnitZ) { Place = there }, new MeleeSwung(0, there, Vector3.UnitZ) { Place = there }];
+        GameEvent[] others = [new ShotFired(1, there, Vector3.UnitZ) { Place = there }, new MeleeSwung(1, there, Vector3.UnitZ) { Place = there }];
+
+        Assert.All(own, gameEvent => Assert.Equal(SoundMix.Centre, Hearing.MixFor(gameEvent, listener, Values)));
+        Assert.All(others, gameEvent => Assert.Equal(Values.MaxPan, Hearing.MixFor(gameEvent, listener, Values).Pan, Tolerance));
+    }
+
+    [Fact]
     public void A_chest_opened_by_the_listener_is_still_heard_from_the_chest()
     {
         // Opening is the chest's sound, not the player's body: it has a player, but is no IPlayerSound.
@@ -185,7 +222,7 @@ public class HearingTests
         var listener = new SoundListener(0, Ears, Vector3.UnitZ);
 
         Assert.Equal(SoundMix.Centre, Hearing.MixFor(new PlayerHit(0, 10), listener, Values));
-        Assert.Equal(SoundMix.Centre, Hearing.MixFor(new ShotFired(Ears + Vector3.UnitX, Vector3.UnitZ), listener, Values));
+        Assert.Equal(SoundMix.Centre, Hearing.MixFor(new ShotFired(0, Ears + Vector3.UnitX, Vector3.UnitZ), listener, Values));
         Assert.Equal(new SoundMix(0f, 1f), SoundMix.Centre);
     }
 
