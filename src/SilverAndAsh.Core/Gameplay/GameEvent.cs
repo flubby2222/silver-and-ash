@@ -37,8 +37,9 @@ public abstract record GameEvent
 }
 
 /// <summary>
-/// A sound a player makes with their own body or hands (steps, jumps, reloading): the player who makes it hears it in
-/// the middle of the head, every other player from where it happened (issue #491, online co-op).
+/// A sound a player makes with their own body or hands (steps, jumps, reloading, their shots and blade swings): the
+/// player who makes it hears it in the middle of the head, every other player from where it happened (issues #491,
+/// #501, online co-op).
 /// </summary>
 public interface IPlayerSound
 {
@@ -47,20 +48,24 @@ public interface IPlayerSound
 }
 
 /// <summary>
-/// The melee weapon <paramref name="Weapon"/> (the silver blade unless said otherwise) was swung from
-/// <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/>, charged by <paramref name="Charge"/>
-/// (0 = not at all, 1 = fully).
+/// Player <paramref name="PlayerId"/> swung the melee weapon <paramref name="Weapon"/> (the silver blade unless said
+/// otherwise) from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/>, charged by
+/// <paramref name="Charge"/> (0 = not at all, 1 = fully). The swinging player hears it in the middle, every other player
+/// from where it was swung (issue #501).
 /// </summary>
 public sealed record MeleeSwung(
-    Vector3 Origin, Vector3 Direction, float Charge = 0f, WeaponKind Weapon = WeaponKind.SilverBlade) : GameEvent;
+    int PlayerId, Vector3 Origin, Vector3 Direction, float Charge = 0f, WeaponKind Weapon = WeaponKind.SilverBlade)
+    : GameEvent, IPlayerSound;
 
 /// <summary>
-/// The ranged weapon <paramref name="Weapon"/> (the pistol unless said otherwise) was fired from
-/// <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/> - with consecrated ammunition if
-/// <paramref name="Consecrated"/>.
+/// Player <paramref name="PlayerId"/> fired the ranged weapon <paramref name="Weapon"/> (the pistol unless said
+/// otherwise) from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/> - with consecrated ammunition if
+/// <paramref name="Consecrated"/>. The shooter hears it in the middle, every other player from where it was fired
+/// (issue #501).
 /// </summary>
 public sealed record ShotFired(
-    Vector3 Origin, Vector3 Direction, bool Consecrated = false, WeaponKind Weapon = WeaponKind.Pistol) : GameEvent;
+    int PlayerId, Vector3 Origin, Vector3 Direction, bool Consecrated = false, WeaponKind Weapon = WeaponKind.Pistol)
+    : GameEvent, IPlayerSound;
 
 /// <summary>Player <paramref name="PlayerId"/> started reloading (R, or a shot with an empty magazine).</summary>
 public sealed record ReloadStarted(int PlayerId) : GameEvent, IPlayerSound;
