@@ -444,6 +444,9 @@ static void RunGame(
         // The Well of Sirius, ready or spent (issue #438); without its model a stone placeholder.
         using var wellView = WellOfSiriusView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
+        // The teleporters, locked or unlocked (issue #480); without their models placeholder boxes.
+        using var teleporterView = TeleporterView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
         newWeaponView = () => new WeaponView(weaponModels, levelShader);
@@ -537,6 +540,7 @@ static void RunGame(
             chestView.Draw(gameWorld.Chests, seconds);
             stairsView.Draw(gameWorld.Stairs, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             wellView.Draw(gameWorld.Well, seconds, viewCone);
+            teleporterView.Draw(gameWorld.Teleporters, viewCone, levelShader);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
@@ -644,7 +648,13 @@ static void RunGame(
 
             if (!boonOpen && !player.Menu.IsOpen && !frozen)
             {
-                InteractionPrompt.Draw(gameWorld.InteractionTarget(player), player);
+                // The travel hint only where F offers nothing, so the two never share the line.
+                var target = gameWorld.InteractionTarget(player);
+                InteractionPrompt.Draw(target, player);
+                if (target is null && gameWorld.TeleporterUnder(player) is not null)
+                {
+                    TravelWindow.DrawHint();
+                }
             }
 
             levelNameSeconds = MathF.Max(0f, levelNameSeconds - frameSeconds);

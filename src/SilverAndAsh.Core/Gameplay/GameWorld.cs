@@ -450,7 +450,7 @@ public sealed class GameWorld
             return;
         }
 
-        foreach (var teleporter in _teleporters.Where(teleporter => !teleporter.IsUnlocked && teleporter.Reaches(player.Position, Balance.Teleporters.Radius)))
+        foreach (var teleporter in _teleporters.Where(teleporter => !teleporter.IsUnlocked && StandsOn(player, teleporter)))
         {
             teleporter.Unlock();
             _events.Add(new TeleporterUnlocked(teleporter.Id, player.Id, teleporter.Position));
@@ -469,14 +469,50 @@ public sealed class GameWorld
             return null;
         }
 
-        return _teleporters.FirstOrDefault(teleporter => teleporter.IsUnlocked && teleporter.Reaches(player.Position, Balance.Teleporters.Radius));
+        return _teleporters.FirstOrDefault(teleporter => teleporter.IsUnlocked && StandsOn(player, teleporter));
     }
+
+    /// <summary>
+    /// The destinations <paramref name="player"/> can see in the travel choice (issue #480): every unlocked teleporter in
+    /// number order, each marked as the one they stand on, ready, or in a sealed room. Locked ones are left out. Empty
+    /// when they could not travel at all (see <see cref="TeleporterUnder"/>).
+    /// </summary>
+    public IReadOnlyList<TravelChoice> TravelChoices(Player player)
+    {
+        if (TeleporterUnder(player) is not { } from)
+        {
+            return [];
+        }
+
+        return _teleporters
+            .Where(teleporter => teleporter.IsUnlocked)
+            .Select(teleporter => new TravelChoice(teleporter, TravelStateOf(teleporter, from)))
+            .ToList();
+    }
+
+    private TravelState TravelStateOf(Teleporter teleporter, Teleporter from) =>
+        ReferenceEquals(teleporter, from) ? TravelState.Here
+        : IsInSealedRoom(teleporter) ? TravelState.Sealed
+        : TravelState.Ready;
+
+    private bool StandsOn(Player player, Teleporter teleporter) =>
+        teleporter.Reaches(player.Position, Balance.Teleporters.Radius, Balance.Teleporters.Height);
 
     private bool IsInSealedRoom(Player player) =>
         _roomOfCell.TryGetValue(Level.ToGrid(player.Position.X, player.Position.Z), out var room) && room.IsSealed;
 
+    // Issue #480, trap 3: in co-op another player's fight may have sealed the room a teleporter stands in.
+    private bool IsInSealedRoom(Teleporter teleporter) =>
+        _roomOfCell.TryGetValue((teleporter.Plan.X, teleporter.Plan.Z), out var room) && room.IsSealed;
+
+    // Issue #480, trap 2: a strike or shot of this tick happens where the player stood; travelling in the same tick
+    // would hit from the old place but knock back from the new one. The attack wins, the travel is refused.
+    private static bool AttacksThisTick(Player player) =>
+        player.Events.Any(e => e is MeleeSwung or ShotFired);
+
     // Issue #436, input TeleportTo: from the unlocked teleporter the player stands on to another unlocked one. Anything
-    // else - no choice, an unknown number, a locked or the same teleporter, not standing on one, a sealed room - does nothing.
+    // else - no choice, an unknown number, a locked or the same teleporter, not standing on one, a sealed room here or
+    // there, an attack in the same tick - does nothing.
     private void Teleport(Player player, int? target)
     {
         if (target is not { } id || id < 0 || id >= _teleporters.Count || TeleporterUnder(player) is not { } from)
@@ -485,7 +521,7 @@ public sealed class GameWorld
         }
 
         var to = _teleporters[id];
-        if (!to.IsUnlocked || ReferenceEquals(to, from))
+        if (!to.IsUnlocked || TravelStateOf(to, from) != TravelState.Ready || AttacksThisTick(player))
         {
             return;
         }

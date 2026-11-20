@@ -9,13 +9,14 @@ public static class Lighting
 {
     /// <summary>
     /// Brightness of the lantern the player carries: 1 right in front of the player, falling evenly to
-    /// <paramref name="minimum"/> at <paramref name="range"/> metres and staying there.
+    /// <paramref name="minimum"/> at <paramref name="range"/> metres and staying there. A part that shines by itself
+    /// (<paramref name="glow"/>, issue #480) is never darker than its glow; 0 is no glow.
     /// </summary>
-    public static float LanternBrightness(float distance, float range, float minimum)
+    public static float LanternBrightness(float distance, float range, float minimum, float glow = 0f)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(range);
         var t = Math.Clamp(distance / range, 0f, 1f);
-        return 1f - (1f - minimum) * t;
+        return MathF.Max(1f - (1f - minimum) * t, glow);
     }
 
     /// <summary>

@@ -13,6 +13,7 @@ internal sealed class LevelShader : IDisposable
 {
     private readonly int _viewPositionLocation;
     private readonly int _flashLocation;
+    private readonly int _glowLocation;
 
     public LevelShader(string shaderDirectory)
     {
@@ -30,6 +31,8 @@ internal sealed class LevelShader : IDisposable
         // "Locations" are the slots of the uniform variables in the compiled shader program.
         _viewPositionLocation = Raylib.GetShaderLocation(Shader, "viewPos");
         _flashLocation = Raylib.GetShaderLocation(Shader, "flash");
+        _glowLocation = Raylib.GetShaderLocation(Shader, "glow");
+        SetFloat("glow", 0f);
 
         // These values do not change while playing - set them once.
         SetFloat("fogStart", LookSettings.FogStart);
@@ -85,6 +88,17 @@ internal sealed class LevelShader : IDisposable
         Rlgl.DrawRenderBatchActive();
         var value = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, Math.Clamp(amount, 0f, 1f));
         Raylib.SetShaderValue(Shader, _flashLocation, value, ShaderUniformDataType.Vec4);
+    }
+
+    /// <summary>
+    /// Lets what is drawn next shine by itself (issue #480): the lantern never makes it darker than
+    /// <paramref name="amount"/> (0..1, 0 = lit as usual); the fog still covers it far away.
+    /// </summary>
+    public void SetGlow(float amount)
+    {
+        // As with the flash: triangles collected before must not get the new value.
+        Rlgl.DrawRenderBatchActive();
+        Raylib.SetShaderValue(Shader, _glowLocation, Math.Clamp(amount, 0f, 1f), ShaderUniformDataType.Float);
     }
 
     /// <summary>Ends drawing figures.</summary>

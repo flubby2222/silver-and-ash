@@ -167,7 +167,8 @@ internal sealed class TexturedModel : IDisposable
     /// </summary>
     /// <paramref name="alternate"/>: index of a picture given to <see cref="TryLoad"/> as an alternate, drawn instead of
     /// the part's own texture (null: its own). <paramref name="uvOffset"/> moves its texture coordinates (flowing water).
-    public void DrawPart(int index, Matrix4x4 frame, float tint = 1f, int? alternate = null, Vector2 uvOffset = default)
+    /// <paramref name="unlit"/>: every side at full brightness, no shading by direction (a glowing crystal, issue #480).
+    public void DrawPart(int index, Matrix4x4 frame, float tint = 1f, int? alternate = null, Vector2 uvOffset = default, bool unlit = false)
     {
         var part = _parts[index];
 
@@ -175,7 +176,7 @@ internal sealed class TexturedModel : IDisposable
         for (var i = 0; i < part.Positions.Length; i++)
         {
             _worldCorners[i] = Vector3.Transform(part.Positions[i], frame);
-            var brightness = SmoothShading.Brightness(Vector3.TransformNormal(part.Normals[i], frame), Facing) * tint;
+            var brightness = unlit ? 1f : SmoothShading.Brightness(Vector3.TransformNormal(part.Normals[i], frame), Facing) * tint;
             var level = (byte)Math.Clamp(MathF.Round(brightness * 255f), 0f, 255f);
             _cornerColors[i] = new Color(level, level, level, (byte)255);
         }
