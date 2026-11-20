@@ -341,4 +341,105 @@ public class GormHookTests
         Assert.Null(duel.Gorm.ChaseWarning);
         Assert.DoesNotContain(duel.Events, e => e is GormWindUp);
     }
+
+    /// <summary>One tick of the approach in <see cref="ApproachFromBeyondFarRange"/>: the distance Gorm decides on, and what came of it.</summary>
+    private readonly record struct ApproachTick(float Distance, float? Warning, bool Threw);
+
+    /// <summary>
+    /// After a missed throw the player runs ahead and keeps more than <c>FarRange</c> + 3 m away until the chase count
+    /// has run out (warning full), then stands still. Gorm walks up to them; returns every tick from then on until he
+    /// throws (at most ten seconds).
+    /// </summary>
+    private static List<ApproachTick> ApproachFromBeyondFarRange()
+    {
+        var duel = new Duel(-12f, level: Hall(depth: 60, playerRow: 10));
+        duel.UntilLocked();
+        duel.UntilHookEnds(RunRight);
+        Assert.False(duel.Saw<HookHit>());
+        var away = PlayerInput.None with { Move = new Vector2(0f, 1f) };
+        for (var tick = 0; tick < 3 * ChaseThrowTicks && duel.Gorm.ChaseWarning != 1f; tick++)
+        {
+            duel.Tick(FlatDistance(duel.Gorm.Position, duel.Player.Position) < Values.FarRange + 3f ? away : PlayerInput.None);
+        }
+
+        Assert.Equal(1f, duel.Gorm.ChaseWarning);
+        Assert.Equal(GormState.Walking, duel.Gorm.State);
+        duel.Events.Clear();
+
+        var ticks = new List<ApproachTick>();
+        for (var tick = 0; tick < 10 * Second && !duel.Saw<GormWindUp>(); tick++)
+        {
+            // Gorm decides on the distance at the start of his part of the tick; the standing player does not move.
+            var distance = FlatDistance(duel.Gorm.Position, duel.Player.Position);
+            duel.Tick(PlayerInput.None);
+            ticks.Add(new ApproachTick(distance, duel.Gorm.ChaseWarning, duel.Saw<GormWindUp>()));
+        }
+
+        return ticks;
+    }
+
+    [Fact]
+    public void A_target_in_sight_but_beyond_far_range_is_not_thrown_at_after_the_chase()
+    {
+        var ticks = ApproachFromBeyondFarRange();
+
+        var beyond = ticks.TakeWhile(tick => tick.Distance > Values.FarRange).ToList();
+        Assert.True(beyond.Count > Second, "He walked up for over a second with the chase run out.");
+        Assert.All(beyond, tick => Assert.False(tick.Threw, $"He threw at {tick.Distance} m."));
+        Assert.All(beyond, tick => Assert.Equal(1f, tick.Warning));
+
+        // The last tick beyond is just beyond: one step of his walk.
+        var step = Values.Speed / SimulationClock.TicksPerSecond;
+        Assert.InRange(beyond[^1].Distance - Values.FarRange, 0f, step + 0.001f);
+    }
+
+    [Fact]
+    public void A_target_just_within_far_range_is_thrown_at_after_the_chase()
+    {
+        var ticks = ApproachFromBeyondFarRange();
+
+        var throwing = Assert.Single(ticks, tick => tick.Threw);
+        Assert.Equal(ticks[^1], throwing);
+        Assert.InRange(Values.FarRange - throwing.Distance, 0f, (Values.Speed / SimulationClock.TicksPerSecond) + 0.001f);
+    }
+
+    [Fact]
+    public void With_two_players_the_chase_counts_on_when_his_target_dies_and_starts_over_when_both_are_dead()
+    {
+        // Behind a full wall across the hall, so the count runs without a throw. Both players stand at the start.
+        var level = Hall(wall: (_, z) => z == 8);
+        var first = new Player(level, balance: Tough);
+        var second = new Player(level, balance: Tough);
+        var gorm = new Gorm(9, first.Position + new Vector3(0f, 0f, 23f), -Vector3.UnitZ, Tough, new Random(1));
+        var events = new List<GameEvent>();
+        void Tick()
+        {
+            first.Tick(PlayerInput.None);
+            second.Tick(PlayerInput.None);
+            gorm.Act(level, [first, second], [first.Body, second.Body], events);
+        }
+
+        var ticks = 0;
+        while (gorm.ChaseWarning is null && ticks < ChaseThrowTicks)
+        {
+            Tick();
+            ticks++;
+        }
+
+        Assert.Equal(ChaseThrowTicks - ChaseWarnTicks, ticks);
+
+        // His target - one of the two - dies; he turns to the other, and the count goes on instead of starting over.
+        var target = FlatDistance(gorm.Position, first.Position) <= FlatDistance(gorm.Position, second.Position) ? first : second;
+        target.TakeDamage(Tough.Player.MaxHealth, []);
+        Assert.True(target.IsDead);
+        Tick();
+        Assert.Equal(1f / ChaseWarnTicks, gorm.ChaseWarning);
+
+        // Only when no player is left alive does it start over.
+        var other = target == first ? second : first;
+        other.TakeDamage(Tough.Player.MaxHealth, []);
+        Tick();
+        Assert.Null(gorm.ChaseWarning);
+        Assert.DoesNotContain(events, e => e is GormWindUp);
+    }
 }

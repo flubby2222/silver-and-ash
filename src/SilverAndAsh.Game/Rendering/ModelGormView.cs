@@ -262,7 +262,6 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
 
     private void DrawHook(Matrix4x4 hook, bool hookGlows)
     {
-
         if (hookGlows)
         {
             var pulse = MathF.Sin(_time * 12f);
