@@ -1,0 +1,25 @@
+Werte (Hauptpalette-Vorschlag zu #543), erzeugt von palette_probe.py
+
+Eisen NEU: #1E1E1F=(30, 30, 31) H30 S0.03  #323234=(50, 50, 52) H50 S0.04  #4A4A4C=(74, 74, 76) H74 S0.03  #68686B=(104, 104, 107) H104 S0.03
+  Helligkeit: [30, 50, 74, 104], Abstaende [20, 24, 30]
+Holz A: #25211E=(37, 33, 30) H34 S0.19  #3F3933=(63, 57, 51) H58 S0.19  #5C524A=(92, 82, 74) H84 S0.20  #7B6D63=(123, 109, 99) H112 S0.20
+  Helligkeit: [34, 58, 84, 112], Abstaende [24, 26, 28]
+Holz B: #27211B=(39, 33, 27) H34 S0.31  #43382F=(67, 56, 47) H58 S0.30  #615044=(97, 80, 68) H84 S0.30  #836A5B=(131, 106, 91) H112 S0.31
+  Helligkeit: [34, 58, 84, 112], Abstaende [24, 25, 28]
+Zum Vergleich Eisen heute (Stufen 1 bis 7) Abstaende: [21, 24, 26, 32, 32, 31]
+Zum Vergleich Holz heute Abstaende: [12, 17, 31, 23, 25, 23, 20], Saettigung Stufen 2 bis 5: [0.54, 0.58, 0.58, 0.59]
+Wand-Kachel A (Stein): mittlere Helligkeit 110.3, Stein-Stufen 4 bis 10: [55, 65, 71, 78, 86, 96, 103]
+
+Mittlere Abweichung gegen die heutige Tuer-Textur, je Kanal R/G/B (Betrag, ueber die Felder Bretter, Platte, Band, Kante;
+Schloss, Glas und Dunkelfeld bleiben unveraendert und zaehlen nicht), in Klammern die mittlere Verschiebung mit Vorzeichen:
+  door_normal heutige Reihen (Referenz)   13.6   6.3  15.7   (+7.8 -4.0 -9.0)
+  door_normal Holz A + Eisen NEU          10.7  10.7  13.6   (-6.3 -2.8 -2.0)
+  door_normal Holz B + Eisen NEU          10.9  10.4  11.4   (-2.9 -4.0 -6.0)
+  door_locked heutige Reihen (Referenz)    5.3   7.0  16.9   (-0.2 +2.3 +16.7)
+  door_locked Holz A + Eisen NEU           8.3   9.0  13.2   (-3.0 -4.4 -12.2)
+  door_locked Holz B + Eisen NEU           8.3   9.0  13.2   (-3.0 -4.4 -12.2)
+  door_boss   heutige Reihen (Referenz)    9.2   7.3   8.9   (+1.6 -4.0 -2.3)
+  door_boss   Holz A + Eisen NEU           9.9   9.7  14.2   (-4.7 -2.2 -12.2)
+  door_boss   Holz B + Eisen NEU          10.2   9.7  16.0   (-3.4 -2.2 -14.2)
+
+Farben je umgerechnetem Atlas (nur die vier Felder): A/normal 8; A/locked 4; A/boss 5; B/normal 8; B/locked 4; B/boss 5
