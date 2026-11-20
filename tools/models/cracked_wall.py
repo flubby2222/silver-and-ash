@@ -38,6 +38,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 from psx import V, Part, rects_from_pixels, save_image, export_material, export_glb, report_parts  # noqa: E402
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "tools", "palette"))
+import snap as palette_snap  # noqa: E402
+
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(TOOLS))
 OUT_DIR = os.path.join(ROOT, "assets", "models")
@@ -51,7 +54,8 @@ SEEDS = {"a": 111, "b": 123, "c": 137}          # wie im Probestueck: Grundzahl 
 RECTS = {"panel": (0, 0, 128, 128), "stone": (4, 100, 28, 124)}
 UV = rects_from_pixels(RECTS, TEX)
 
-# Zusaetzliche Farben (die Wand-Textur hat 24; zusammen bleibt es unter 32)
+# Zusaetzliche Farben fuer Riss, Abplatzung und Staub; vor dem Speichern liegen sie wie das ganze Bild auf der Reihe Stein
+# der Hauptpalette (Issue #280). Die Wand-Textur selbst besteht schon nur aus Stein-Stufen und bleibt unberuehrt.
 C_DEEP = np.array((46, 38, 44), float)        # tiefster Riss
 C_MID = np.array((78, 66, 72), float)         # Riss, Rand
 C_HI = np.array((150, 134, 138), float)       # helle Kante unter dem Riss
@@ -191,7 +195,7 @@ def main():
         bpy.ops.wm.read_factory_settings(use_empty=True)
         coll = bpy.data.collections.new("Risse")
         bpy.context.scene.collection.children.link(coll)
-        img = paint(tile, SEEDS[var])
+        img = palette_snap.snap(paint(tile, SEEDS[var]), palette_snap.colours("Stein"))
         colours = len({tuple(p) for p in img.reshape(-1, 3).astype(int)})
         label = f"cracked_wall_{var}"
         image = save_image(label, img[::-1], os.path.join(OUT_DIR, f"{label}.png"))     # save_image: Zeile 0 unten

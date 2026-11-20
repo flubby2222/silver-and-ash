@@ -48,6 +48,9 @@ import bpy  # noqa: E402
 from psx import (V, G, Part, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
                  export_material, export_glb, report_parts)
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "tools", "palette"))
+import snap as palette_snap  # noqa: E402
+
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(TOOLS))
 OUT_DIR = os.path.join(ROOT, "assets", "models")
@@ -654,8 +657,24 @@ def write(name, tex, parts):
     print(f"TEXTUR {name} {w}x{h} Farben {colours_of(tex)}")
 
 
+def paint_on_stein(pixel_rects, painters_, size, paint=4):
+    """Wie psx.paint_atlas, aber ohne k-Means: das in paint-facher Groesse gemalte und verkleinerte Bild wird Pixel fuer
+    Pixel auf die naechste Stufe der Reihe Stein der Hauptpalette gesetzt (Issue #280). Feld [y][x][rgb], Zeile 0 unten."""
+    w, h = size if isinstance(size, tuple) else (size, size)
+    atlas = np.zeros((h * paint, w * paint, 3))
+    for name, (x0, y0, x1, y1) in pixel_rects.items():
+        ph, pw = (y1 - y0) * paint, (x1 - x0) * paint
+        U, V_ = np.meshgrid((np.arange(pw) + 0.5) / pw, (np.arange(ph) + 0.5) / ph)
+        atlas[y0 * paint:y1 * paint, x0 * paint:x1 * paint] = painters_[name](U, V_)
+    small = atlas.reshape(h, paint, w, paint, 3).mean(axis=(1, 3))
+    return palette_snap.snap(np.clip(small, 0, 255), palette_snap.colours("Stein"))
+
+
 def build(kind, rects, painters_, parts):
-    write(f"door_{kind}", paint_atlas(rects, painters_, TEX, colors=32, seed=7), parts)
+    # Fluegel (Holz, Eisen, Messing, Glas): noch die alte Farbtabelle aus k-Means, nicht in der Hauptpalette; die Palette hat
+    # kein gedaempftes Holz und kein graues Eisen wie sie (Issue #280, offen). Nur die Risswand liegt auf der Reihe Stein.
+    tex = paint_on_stein(rects, painters_, TEX) if kind == "cracked" else paint_atlas(rects, painters_, TEX, colors=32, seed=7)
+    write(f"door_{kind}", tex, parts)
 
 
 def build_frame(kind, variant, stein, werkstein):

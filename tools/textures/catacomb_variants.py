@@ -3,7 +3,7 @@
 Aufruf (aus dem Repository-Wurzelverzeichnis):
     blender.exe --background --python tools/textures/catacomb_variants.py   (Blender 5.3)
 
-Schreibt nach assets/textures/: catacomb_<wall|floor|ceiling>_b.png und _c.png (64x64, hoechstens 24 Farben,
+Schreibt nach assets/textures/: catacomb_<wall|floor|ceiling>_b.png und _c.png (64x64, nur Farben der Reihe Stein, hoechstens 15,
 nahtlos, 1 m je Kachel). Die vorhandenen Texturen (Fassung 2, tools/textures/catacomb.py) bleiben unveraendert und
 sind Variante "a". Die Hilfsfunktionen (Rauschen, Mauerlagen, Fugen) kommen aus diesem Skript, ohne es zu aendern.
 Wie das Spiel die Varianten auf die Raeume verteilt, steht in SurfaceVariants im Core.
