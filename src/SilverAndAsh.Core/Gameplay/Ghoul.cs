@@ -120,12 +120,25 @@ public sealed class Ghoul : ITarget
     public CylinderBody Body => new(Position, BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height);
 
     /// <summary>
-    /// The head: where it is drawn - pushed forward, in the top part of the body, narrow
-    /// (<see cref="BodySizes.Ghoul"/>). The rest of the body, also its upper front beside the head, is body.
+    /// What a shot hits (issue #433): the torso, a little in front of its feet, and the head in front of that - the
+    /// shape of the model, not the round body it walks with (<see cref="BodySizes.Ghoul"/>).
+    /// </summary>
+    public IReadOnlyList<CylinderBody> ShotBodies =>
+    [
+        new(Position + Facing * BodySizes.Ghoul.TorsoForward, BodySizes.Ghoul.TorsoRadius, BodySizes.Ghoul.TorsoHeight),
+        new(
+            Position + Facing * BodySizes.Ghoul.HeadForward + new Vector3(0f, BodySizes.Ghoul.HeadTop - BodySizes.Ghoul.HeadHeight, 0f),
+            BodySizes.Ghoul.HeadRadius,
+            BodySizes.Ghoul.HeadHeight),
+    ];
+
+    /// <summary>
+    /// The head: where it is drawn - pushed forward, high up, narrow (<see cref="BodySizes.Ghoul"/>). The rest, also
+    /// its shoulders beside the head, is body.
     /// </summary>
     public HitZone ZoneAt(Vector3 point)
     {
-        var high = point.Y >= Position.Y + BodySizes.Ghoul.Height - BodySizes.Ghoul.HeadHeight;
+        var high = point.Y >= Position.Y + BodySizes.Ghoul.HeadTop - BodySizes.Ghoul.HeadHeight;
         var flatOffset = (point - Position) with { Y = 0f };
         var forward = Vector3.Dot(flatOffset, Facing);
         var side = MathF.Abs(Vector3.Dot(flatOffset, new Vector3(Facing.Z, 0f, -Facing.X)));

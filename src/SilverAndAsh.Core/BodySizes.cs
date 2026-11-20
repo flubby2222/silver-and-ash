@@ -57,26 +57,50 @@ public static class BodySizes
         public const float HeadWidth = 0.7f;
     }
 
-    /// <summary>The ghoul.</summary>
+    /// <summary>
+    /// The ghoul. Two bodies (issue #433): the round <see cref="Radius"/> x <see cref="Height"/> one for walking and
+    /// bumping, and a shot body that follows the model (assets/models/ghoul.glb, resting pose): a torso and the head
+    /// in front of it. The model is 0.72 m wide, 0.94 m high at the top of its head, and reaches from 0.44 m behind
+    /// its feet (shins) to 0.65 m in front (hands on the floor).
+    /// </summary>
     public static class Ghoul
     {
-        /// <summary>Radius of its body in metres - a bit wider than the player, it crawls on all fours.</summary>
+        /// <summary>Radius of its body for walking and bumping, in metres - it crawls on all fours.</summary>
         public const float Radius = 0.4f;
 
-        /// <summary>Height of its body in metres - crawling, so much lower than the player.</summary>
+        /// <summary>Height of its body for walking and bumping, in metres - crawling, so much lower than the player.</summary>
         public const float Height = 1f;
 
+        /// <summary>Shot body, torso: its middle this far in front of the feet, in metres (the model's back and arms).</summary>
+        public const float TorsoForward = 0.05f;
+
+        /// <summary>Shot body, torso: radius in metres - holds the model's shoulders and upper arms (0.42 m).</summary>
+        public const float TorsoRadius = 0.42f;
+
+        /// <summary>Shot body, torso: from the floor up to here, in metres (the model's back and shoulders: 0.76 m).</summary>
+        public const float TorsoHeight = 0.78f;
+
+        /// <summary>Shot body, head: its middle this far in front of the feet, in metres (the model's head: 0.23 .. 0.43 m).</summary>
+        public const float HeadForward = 0.33f;
+
+        /// <summary>Shot body, head: radius in metres (the model's head with the jaw: 0.10 m around its middle).</summary>
+        public const float HeadRadius = 0.11f;
+
+        /// <summary>Shot body, head: its top above the feet, in metres (the model's head: 0.94 m).</summary>
+        public const float HeadTop = 0.95f;
+
+        /// <summary>Shot body, head: this high, from <see cref="HeadTop"/> down (the model's jaw begins at 0.70 m).</summary>
+        public const float HeadHeight = 0.26f;
+
+        /// <summary>A hit counts as on the head this wide (side to side), in metres - the head's width.</summary>
+        public const float HeadWidth = 2f * HeadRadius;
+
         /// <summary>
-        /// The top part of this height (in metres) can be the head - where the drawn head is (2 cm to spare): from
-        /// 0.68 m above the feet up.
+        /// A hit counts as on the head from this far in front of the feet, in metres - where the head begins. A shot at
+        /// the face meets the torso first (it reaches <see cref="TorsoForward"/> + <see cref="TorsoRadius"/>), which is
+        /// further in front, so it still counts as the head.
         /// </summary>
-        public const float HeadHeight = 0.32f;
-
-        /// <summary>Width of the head (side to side), in metres: the drawn head is 0.26 m wide.</summary>
-        public const float HeadWidth = 0.3f;
-
-        /// <summary>How far in front of the body's middle the head begins, in metres (the drawn head: 0.21 m).</summary>
-        public const float HeadFrontStart = 0.19f;
+        public const float HeadFrontStart = HeadForward - HeadRadius;
 
         /// <summary>Height of its eyes above its feet (for seeing players), in metres.</summary>
         public const float EyeHeight = 0.8f;
