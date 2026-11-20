@@ -1,18 +1,20 @@
 # Formenlehre Gotik
 
-Verbindliche Vorlage für alle Raum-Bausteine (Issue #247) von Silver & Ash. Sie ergänzt die [Art Bible](art-bible.md). Alle Maße sind Meter, Vielfache von 1/16 m. Die Skizzen erzeugt `tools/design/formenlehre_gotik.py` (`python tools/design/formenlehre_gotik.py`); die Bilder liegen in `docs/design/bilder/`, das Übersichtsblatt ist `bilder/uebersicht.png`. Eigene Zeichnungen, keine Formen aus fremden Spielen oder Filmen.
+Verbindliche Vorlage für alle Raum-Bausteine (Issue #247) von Silver & Ash. Sie ergänzt die [Art Bible](art-bible.md). Alle Maße sind Meter, Vielfache von 1/16 m. Die Skizzen erzeugt `tools/design/formenlehre_gotik.py` (`python tools/design/formenlehre_gotik.py`); die Bilder liegen in `docs/design/formenlehre-gotik/`, das Übersichtsblatt ist `formenlehre-gotik/uebersicht.png`. Eigene Zeichnungen, keine Formen aus fremden Spielen oder Filmen.
+
+**Herkunft der Regeln:** Hinter einer Regel steht in eckigen Klammern die Quelle (Liste unten): [RDK-B] = RDK Labor „Bogen (in der Architektur)“, [RDK-D] = RDK Labor „Dienst“, [W-S] = Wikipedia „Spitzbogen“, [W-K] = Wikipedia „Kreuzrippengewölbe“, [W-Sä] = Wikipedia „Säule“. **[Setzung]** heißt: eigene Festlegung für das Spiel, nicht aus einer Quelle (Raster, Maße in 1/16 m, Dreieckszahlen). Die Quellen belegen die Begriffe und Bauweisen, die Zahlen sind Setzung.
 
 ## Raster, an dem alles hängt
 
-- Zelle 2 × 2 m. Gänge 3,5 m breit und 3,5 m hoch; Räume (start, combat, boss) 6 m breit. Die Raumhöhe steht im Level; **die Wandzonen gelten für beide Höhen**.
-- Textur 64 Pixel je Meter: 1 m = 64 Texel, 1/16 m = 4 Texel. Lagerfugen alle 0,25 m (16 Texel).
-- Kleinste Stufe eines Profils: 1/16 m. Was kleiner ist, wird Textur, nie Geometrie.
+- [Setzung] Zelle 2 × 2 m. Gänge 3,5 m breit und 3,5 m hoch; Räume (start, combat, boss) 6 m breit. Die Raumhöhe steht im Level; **die Wandzonen gelten für beide Höhen**.
+- [Setzung] Textur 64 Pixel je Meter: 1 m = 64 Texel, 1/16 m = 4 Texel. Lagerfugen alle 0,25 m (16 Texel).
+- [Setzung] Kleinste Stufe eines Profils: 1/16 m. Was kleiner ist, wird Textur, nie Geometrie.
 
 ## Bogenarten
 
-![Bogenarten](bilder/bogenarten.png)
+![Bogenarten](formenlehre-gotik/bogenarten.png)
 
-Ein Bogen besteht aus zwei Kreisbögen; der Mittelpunkt liegt auf der Kämpferlinie, bei Spitzbögen jeweils auf der Gegenseite. Spannweite s, Radius R.
+Ein Spitzbogen besteht aus zwei Kreisbögen, deren Mittelpunkte auf der Kämpferlinie liegen, jeweils auf der Gegenseite der Achse. Liegen sie in den Kämpferpunkten, ist der Radius gleich der Spannweite (gleichseitig); liegen sie dazwischen, ist der Bogen gedrückt, außerhalb überhöht (Lanzett) [RDK-B, W-S]. Der Rundbogen hat einen Mittelpunkt in der Mitte der Kämpferlinie und ist die ältere, romanische Form [RDK-B]. Spannweite s, Radius R. Die Radien der Tabelle sind [Setzung], auf 1/16 m gerundete Beispiele.
 
 | Art | R | Stich bei s = 2 m | Wo |
 |---|---|---|---|
@@ -23,14 +25,16 @@ Ein Bogen besteht aus zwei Kreisbögen; der Mittelpunkt liegt auf der Kämpferli
 
 Regeln:
 
-1. **Rundbogen nur unterirdisch-schlicht:** Nischen, Gräber, Kammern. Alles, was tragend oder Portal ist, ist spitz.
-2. **Der Scheitel der Innenkante liegt höchstens auf Deckenhöhe.** Im 3,5-m-Gang passt bei Kämpfer 2 m nur der gedrückte Spitzbogen (Scheitel 3,458).
-3. Kämpferlinie und Mittelpunkte der beiden Kreise müssen auf einem 1/16-m-Punkt liegen.
-4. Kein Bogen ohne Kämpfer: Der Ansatz sitzt auf einer Platte oder einem Kapitell.
+1. **Rundbogen nur unterirdisch-schlicht:** Nischen, Gräber, Kammern. Alles, was tragend oder Portal ist, ist spitz. [Setzung für den Katakomben-Ton; gotische Bauten setzen den Spitzbogen vor allem an tragenden Teilen wie Rippen und Gurten, RDK-B]
+2. **Der Scheitel der Innenkante liegt höchstens auf Deckenhöhe.** Im 3,5-m-Gang passt bei Kämpfer 2 m nur der gedrückte Spitzbogen (Scheitel 3,458). [Setzung, folgt aus der Geometrie]
+3. [Setzung] Kämpferlinie und Mittelpunkte der beiden Kreise müssen auf einem 1/16-m-Punkt liegen.
+4. Kein Bogen ohne Kämpfer: Der Ansatz sitzt auf einer Platte oder einem Kapitell. [Der Kämpfer ist die Stelle, an der der Bogen ansetzt, RDK-B]
 
 ## Wand in drei Zonen
 
-![Wandzonen](bilder/wandzonen.png)
+Die Dreiteilung und alle Zahlen dieses Abschnitts sind [Setzung] für das Spiel, keine Vorgabe aus den Quellen.
+
+![Wandzonen](formenlehre-gotik/wandzonen.png)
 
 | Zone | Höhe | Form |
 |---|---|---|
@@ -42,31 +46,33 @@ Die Steinfläche ist die einzige Zone, die mit der Raumhöhe wächst. Die Lagerf
 
 ## Profile
 
-![Profile](bilder/profile.png)
+![Profile](formenlehre-gotik/profile.png)
 
-- Fase an jeder Kante, die ein Spieler sieht: 1/16 m. Eine Fase ist ein Dreieckspaar, mehr nicht.
-- Ausladung gegenüber dem Schaft höchstens 1/8 m.
-- Kapitell: 0,5 m hoch, Stufen aus 1/16 m und 1/8 m (Platte, Wulst, Platte).
-- Gurtbogen und Rippe: Querschnitt 0,5 breit, 0,25 hoch, unten Fase 1/16. Der Fuß ist so breit wie der Pfeiler, auf dem er steht.
-- Sockel von Pfeiler und Säule: 0,5 m hoch, 1/16 m breiter als der Schaft je Seite.
+- [Setzung] Fase an jeder Kante, die ein Spieler sieht: 1/16 m. Eine Fase ist ein Dreieckspaar, mehr nicht.
+- [Setzung] Ausladung gegenüber dem Schaft höchstens 1/8 m.
+- Kapitell: Eine Säule hat Basis, Schaft und Kapitell [W-Sä]. Maß [Setzung]: 0,5 m hoch, Stufen aus 1/16 m und 1/8 m (Platte, Wulst, Platte).
+- Gurtbogen und Rippe: Rippen sind Bögen, die das Gewölbe bilden und tragen, Gurtbögen trennen die Joche [W-K]. Der Dienst ist ein schlanker Wandvorsprung, der Bögen und Rippen aufnimmt [RDK-D]. Maß [Setzung]: Querschnitt 0,5 breit, 0,25 hoch, unten Fase 1/16. Der Fuß ist so breit wie der Pfeiler, auf dem er steht.
+- [Setzung] Sockel von Pfeiler und Säule: 0,5 m hoch, 1/16 m breiter als der Schaft je Seite.
 
 ## Die Bausteine
 
-Zu jedem Baustein: Maße, Dreiecks-Rahmen (Richtwert, vom Modell zu bestätigen) und Kontaktstelle zur Wand.
+Zu jedem Baustein: Maße, Dreiecks-Rahmen und Kontaktstelle zur Wand. **Alle Maße sind [Setzung]; die Dreieckszahlen sind zusätzlich nur eine Schätzung** (an keinem Modell gemessen, das fertige Modell bestätigt oder ersetzt sie). Die Bauformen selbst (Wandpfeiler als Dienst, Gurtbogen, Säule mit Basis und Kapitell) stützen [RDK-D, W-K, W-Sä].
 
 | Baustein | Maße | Dreiecke | Kontakt zur Wand |
 |---|---|---|---|
-| [Wandpfeiler](bilder/wandpfeiler.png) | Schaft 0,5 breit, 0,25 tief; Sockel 0,625 × 0,3125; Kapitell 0,5 hoch bei 3,0 bis 3,5 | etwa 40 | Zahn 1/8 m in die Wand alle 0,5 m; Fuß im Sockel, Kopf im Abschluss |
-| [Freie Säule](bilder/saeule.png) | Achteck, Umkreis 0,9; Sockel und Kapitell 1,0 | etwa 80 | freistehend, mindestens 0,5 m von der Wand; Trommeln 0,5 hoch |
-| [Deckenbogen](bilder/deckenbogen.png) | Gurtbogen quer zum Gang: lichte Weite 3,5, Kämpfer 1,625, R 1,875, Ring 0,25 dick und 0,5 tief | etwa 100 | Fuß = Grundriss des Wandpfeilers; Scheitel taucht in die Decke |
-| [Wandnische](bilder/nische.png) | Rundbogen, Weite 1,0, Tiefe 0,5, Sohle 0,5, Kämpfer 1,5, Scheitel 2,0; Rahmen 1/16 | etwa 60 | Rahmen bündig mit der Wandebene |
-| [Türrahmen](bilder/tuerrahmen.png) | Pfostenband 1/8, Kämpferplatte 1/8 hoch bei 2,0, Lauf 1/8, R 1,5625, Scheitel 3,458; Boss: drei gestaffelte Läufe, Kämpfer 1,875, R 1,75 | etwa 120, Boss 200 | Bogenfeld bündig in der Wandebene; Wandfugen enden am Rahmen |
+| [Wandpfeiler](formenlehre-gotik/wandpfeiler.png) | Schaft 0,5 breit, 0,25 tief; Sockel 0,625 × 0,3125; Kapitell 0,5 hoch bei 3,0 bis 3,5 | etwa 40 | Zahn 1/8 m in die Wand alle 0,5 m; Fuß im Sockel, Kopf im Abschluss |
+| [Freie Säule](formenlehre-gotik/saeule.png) | Achteck, Umkreis 0,9; Sockel und Kapitell 1,0 | etwa 80 | freistehend, mindestens 0,5 m von der Wand; Trommeln 0,5 hoch |
+| [Deckenbogen](formenlehre-gotik/deckenbogen.png) | Gurtbogen quer zum Gang: lichte Weite 3,5, Kämpfer 1,625, R 1,875, Ring 0,25 dick und 0,5 tief | etwa 100 | Fuß = Grundriss des Wandpfeilers; Scheitel taucht in die Decke |
+| [Wandnische](formenlehre-gotik/nische.png) | Rundbogen, Weite 1,0, Tiefe 0,5, Sohle 0,5, Kämpfer 1,5, Scheitel 2,0; Rahmen 1/16 | etwa 60 | Rahmen bündig mit der Wandebene |
+| [Türrahmen](formenlehre-gotik/tuerrahmen.png) | Pfostenband 1/8, Kämpferplatte 1/8 hoch bei 2,0, Lauf 1/8, R 1,5625, Scheitel 3,458; Boss: drei gestaffelte Läufe, Kämpfer 1,875, R 1,75 | etwa 120, Boss 200 | Bogenfeld bündig in der Wandebene; Wandfugen enden am Rahmen |
+
+**Warum der Gurtbogen-Kämpfer (1,625 m) tiefer sitzt als der Tür-Kämpfer (2 m):** Das ist Absicht. Ein Spitzbogen braucht mindestens die halbe Spannweite als Stich. Über der lichten Weite von 3,5 m des Gangs sind das 1,75 m; bei Kämpfer 2 m läge der Scheitel bei rund 3,75 m und damit über der 3,5-m-Decke. Die Tür ist nur 2 m weit und passt deshalb bei Kämpfer 2 m. Beide Werte folgen aus Regel 2 der Bogenarten und sind keine Unstimmigkeit.
 
 Das **Maßwerk** (Stäbe, Dreipässe, Fenstergliederung) ist nur Textur: Es hat keine Geometrie. Spitzbogen, Rippe, Pfeiler und Kapitell sind dagegen echte Geometrie; sie bleiben mit den Richtwerten oben im Rahmen eines PS1-nahen Modells.
 
 ## Fugen laufen weiter
 
-![Kontakt](bilder/kontakt.png)
+![Kontakt](formenlehre-gotik/kontakt.png)
 
 **Kein Baustein endet mit nackter Kante auf der Wandfläche.** Jeder Baustein
 
@@ -78,13 +84,24 @@ Werkstein (helle Reihe) bleibt besonderen Portalen vorbehalten (Art Bible, Regel
 
 ## Quellen
 
-Nur zum Nachschlagen der Begriffe und Verhältnisse gelesen; Worte und Zeichnungen sind eigen, nichts kopiert.
+Nur zum Nachschlagen der Begriffe und Bauweisen gelesen, nichts heruntergeladen. Worte und Zeichnungen sind eigen, nichts kopiert. Alle Adressen wurden am 2026-11-20 abgerufen und waren erreichbar.
 
-- Wikipedia, Artikel „Spitzbogen“, „Gotik“, „Kreuzrippengewölbe“, „Säule“ (de.wikipedia.org/wiki/Spitzbogen, /Gotik, /Kreuzrippengewölbe, /Säule) und „Romanesque architecture“ (en.wikipedia.org/wiki/Romanesque_architecture).
-- Nicht erreichbar zum Zeitpunkt der Erstellung (HTTP 403 und 429): Encyclopaedia Britannica und die Essays des Metropolitan Museum of Art; sie wurden nicht benutzt.
+Fachlexikon:
+
+- [RDK-B] RDK Labor (Reallexikon zur Deutschen Kunstgeschichte), „Bogen (in der Architektur)“: https://www.rdklabor.de/wiki/Bogen_(in_der_Architektur) – Kämpfer, Rundbogen, Spitzbogen und seine Varianten.
+- [RDK-D] RDK Labor, „Dienst“: https://www.rdklabor.de/wiki/Dienst – Dienst als Wandvorsprung für Bögen und Rippen.
+
+Nachschlagewerk, nur ergänzend:
+
+- [W-S] Wikipedia, „Spitzbogen“: https://de.wikipedia.org/wiki/Spitzbogen
+- [W-K] Wikipedia, „Kreuzrippengewölbe“: https://de.wikipedia.org/wiki/Kreuzrippengewölbe
+- [W-Sä] Wikipedia, „Säule“: https://de.wikipedia.org/wiki/Säule
+
+Nicht benutzt, weil nicht abrufbar oder ohne tragenden Text: Encyclopaedia Britannica (HTTP 403), Metropolitan Museum of Art (HTTP 429), Historic England (HTTP 403), Getty Art & Architecture Thesaurus (erreichbar, aber ohne Text zum Begriff).
 
 ## Offen
 
 - Die Fugenphase der Spieltextur `catacomb_wall.png` liegt nicht exakt auf dem 16-Texel-Raster; die Skizzen zeigen das Soll.
-- Die Dreiecks-Richtwerte sind geschätzt und gelten, bis ein Modell sie ersetzt.
+- Die Dreieckszahlen sind eine Schätzung und gelten, bis ein Modell sie ersetzt.
+- Als Fachquelle trägt bisher nur ein Lexikon (RDK Labor); eine zweite (Denkmalamt, Museum) fehlt noch.
 - Eine Säule Ø 0,9 m hat denselben Umkreis wie die Basis (1,0); an engen Stellen Abstand prüfen.

@@ -3,7 +3,7 @@
 Aufruf (reines Python 3, ohne Blender, ohne Zusatzpakete; nichts wird heruntergeladen):
   python tools/design/formenlehre_gotik.py [<Ausgabeordner>]
 
-Ohne Ausgabeordner schreibt das Skript nach docs/design/bilder. Es zeichnet alle Skizzen selbst (eigene Linien- und
+Ohne Ausgabeordner schreibt das Skript nach docs/design/formenlehre-gotik. Es zeichnet alle Skizzen selbst (eigene Linien- und
 Flaechenroutinen, eigener PNG-Schreiber, Schrift "Kapitell" aus design/proben/grafik/schrift). Farben kommen nur aus
 assets/palette/hauptpalette.json. Kein Zufall, keine Zeitstempel: ein zweiter Lauf ergibt bitgleiche Dateien.
 
@@ -23,7 +23,7 @@ REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(REPO, "design", "proben", "grafik", "schrift"))
 import schrift as SCH  # noqa: E402
 
-OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, "docs", "design", "bilder")
+OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, "docs", "design", "formenlehre-gotik")
 
 # ---------------------------------------------------------------- Farben (nur Hauptpalette)
 with open(os.path.join(REPO, "assets", "palette", "hauptpalette.json"), encoding="utf-8") as _f:
