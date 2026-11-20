@@ -1,0 +1,3 @@
+D Hammerträger: Dreiecke 2232 {'leg_l': 224, 'leg_r': 288, 'torso': 692, 'head': 264, 'eyes': 24, 'arm_r': 160, 'arm_l': 160, 'hammer': 348, 'chain': 72}, x -0.87..1.24, y 0.01..2.61, z -0.64..0.99
+E Sargdeckel-Kutte: Dreiecke 1780 {'body': 460, 'straps': 232, 'head': 264, 'eyes': 24, 'arm_l': 160, 'shield': 272, 'arm_r': 160, 'flail': 208}, x -1.07..1.03, y 0.01..2.51, z -0.51..0.93
+F Laternenträger: Dreiecke 1932 {'leg_l': 160, 'leg_r': 224, 'torso': 580, 'head': 316, 'eyes': 24, 'arm_r': 160, 'arm_l': 160, 'pole': 308}, x -0.87..1.04, y -0.35..2.89, z -0.42..1.11

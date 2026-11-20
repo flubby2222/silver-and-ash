@@ -1,0 +1,29 @@
+Pruefung je Teil im Skript (Kante mit genau einer Flaeche = offen):
+D Hammerträger: Teile 9, Dreiecke 2232, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000024 m3 (muss > 0 sein)
+    leg_l: 224 Dreiecke, offen 0, mehrfach 0, Raum 0.0878
+    leg_r: 288 Dreiecke, offen 0, mehrfach 0, Raum 0.0949
+    torso: 692 Dreiecke, offen 0, mehrfach 0, Raum 0.5363
+    head: 264 Dreiecke, offen 0, mehrfach 0, Raum 0.0301
+    eyes: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_r: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0446
+    arm_l: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0432
+    hammer: 348 Dreiecke, offen 0, mehrfach 0, Raum 0.0507
+    chain: 72 Dreiecke, offen 0, mehrfach 0, Raum 0.0025
+E Sargdeckel-Kutte: Teile 8, Dreiecke 1780, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000023 m3 (muss > 0 sein)
+    body: 460 Dreiecke, offen 0, mehrfach 0, Raum 1.1576
+    straps: 232 Dreiecke, offen 0, mehrfach 0, Raum 0.0043
+    head: 264 Dreiecke, offen 0, mehrfach 0, Raum 0.0719
+    eyes: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_l: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0648
+    shield: 272 Dreiecke, offen 0, mehrfach 0, Raum 0.0944
+    arm_r: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0629
+    flail: 208 Dreiecke, offen 0, mehrfach 0, Raum 0.0442
+F Laternenträger: Teile 8, Dreiecke 1932, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000020 m3 (muss > 0 sein)
+    leg_l: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0875
+    leg_r: 224 Dreiecke, offen 0, mehrfach 0, Raum 0.0905
+    torso: 580 Dreiecke, offen 0, mehrfach 0, Raum 0.8120
+    head: 316 Dreiecke, offen 0, mehrfach 0, Raum 0.0559
+    eyes: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_r: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0561
+    arm_l: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0561
+    pole: 308 Dreiecke, offen 0, mehrfach 0, Raum 0.0366
