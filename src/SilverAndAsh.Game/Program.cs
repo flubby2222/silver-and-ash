@@ -313,6 +313,9 @@ static void RunGame(
         var equipmentCard = new EquipmentCard();
         var input = new RaylibInput();
 
+        // Test display of a photo scene (issue #433): what a shot can hit, as wires over the figures.
+        var shotBodiesShown = false;
+
         // Title screen first; during a run Esc opens the menu (the world stands still - alone).
         var onTitle = true;
         var menuOpen = false;
@@ -565,10 +568,19 @@ static void RunGame(
             impactMarks.Draw();
             wallBreakView.Draw(doorView);
 
-            // Last: the weapons in the hands, in front of everything else.
-            weaponView.Draw(camera.Position, camera.Target - camera.Position);
+            // Last: the weapons in the hands, in front of everything else - not in the test display, where they would
+            // hide the figure (issue #433).
+            if (!shotBodiesShown)
+            {
+                weaponView.Draw(camera.Position, camera.Target - camera.Position);
+            }
 
             levelShader.EndFigures();
+            if (shotBodiesShown)
+            {
+                ShotBodyView.Draw(gameWorld.Targets);
+            }
+
             Raylib.EndMode3D();
 
             // The edge effects in the small picture, so they get its big pixels (issue #370); not over the end screen.
@@ -699,6 +711,7 @@ static void RunGame(
                 var suffix = photos.Compare ? $"-look{look.Number}" : string.Empty;
                 var setup = scene.Build(studio);
                 StartFresh(setup.World);
+                shotBodiesShown = setup.ShowsShotBodies;
                 if (setup.IsModelProbe)
                 {
                     // The single target of the model probe: the loaded model, as in the game.
@@ -788,6 +801,7 @@ static void RunGame(
             {
                 var setup = clip.Build(studio);
                 StartFresh(setup.World);
+                shotBodiesShown = setup.ShowsShotBodies;
                 var clipFolder = Path.Combine(photos.Folder, clip.Name);
                 Directory.CreateDirectory(clipFolder);
                 foreach (var old in Directory.EnumerateFiles(clipFolder, "frame-*.png"))

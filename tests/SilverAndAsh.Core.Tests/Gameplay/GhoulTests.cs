@@ -89,11 +89,11 @@ public class GhoulTests
     {
         // Looking along +X, standing on a 0.5 m platform.
         var ghoul = new Ghoul(7, new Vector3(0f, 0.5f, 0f), Vector3.UnitX);
-        var headHeight = 0.5f + BodySizes.Ghoul.Height - BodySizes.Ghoul.HeadHeight / 2f;
+        var headHeight = 0.5f + BodySizes.Ghoul.HeadTop - BodySizes.Ghoul.HeadHeight / 2f;
         var r = BodySizes.Ghoul.Radius;
 
         Assert.Equal(HitZone.Head, ghoul.ZoneAt(new Vector3(r, headHeight, 0f)));                    // front, high
-        Assert.Equal(HitZone.Head, ghoul.ZoneAt(new Vector3(0.3f, 0.5f + BodySizes.Ghoul.Height, 0.1f)));
+        Assert.Equal(HitZone.Head, ghoul.ZoneAt(new Vector3(0.3f, 0.5f + BodySizes.Ghoul.HeadTop, 0.1f)));
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(-r, headHeight, 0f)));                   // back, high
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0f, headHeight, r)));                    // side, high
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(r, 0.7f, 0f)));                          // front, low
@@ -110,6 +110,36 @@ public class GhoulTests
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0.3f, high, 0.2f)));
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0.3f, high, -0.2f)));
         Assert.Equal(HitZone.Body, ghoul.ZoneAt(new Vector3(0.12f, high, 0f)));                      // still above the neck
+    }
+
+    [Fact]
+    public void Shots_hit_a_torso_and_a_head_in_front_of_it_that_turn_with_the_ghoul()
+    {
+        // Issue #433: looking along +X, standing on a 0.5 m platform.
+        var ghoul = new Ghoul(7, new Vector3(2f, 0.5f, 3f), Vector3.UnitX);
+
+        var torso = ghoul.ShotBodies[0];
+        var head = ghoul.ShotBodies[1];
+
+        Assert.Equal(2, ghoul.ShotBodies.Count);
+        Assert.Equal(new Vector3(2f + BodySizes.Ghoul.TorsoForward, 0.5f, 3f), torso.Position);
+        Assert.Equal(BodySizes.Ghoul.TorsoRadius, torso.Radius);
+        Assert.Equal(BodySizes.Ghoul.TorsoHeight, torso.Height);
+        Assert.Equal(new Vector3(2f + BodySizes.Ghoul.HeadForward, 0.5f + (BodySizes.Ghoul.HeadTop - BodySizes.Ghoul.HeadHeight), 3f), head.Position);
+        Assert.Equal(BodySizes.Ghoul.HeadRadius, head.Radius);
+        Assert.Equal(BodySizes.Ghoul.HeadHeight, head.Height);
+    }
+
+    [Fact]
+    public void A_shot_at_the_face_that_first_meets_the_torso_still_counts_as_the_head()
+    {
+        // A shot from close above meets the front of the torso (further forward than the head) at face height.
+        var ghoul = new Ghoul(7, Vector3.Zero, Vector3.UnitX);
+        var front = BodySizes.Ghoul.TorsoForward + BodySizes.Ghoul.TorsoRadius;
+        var faceHeight = BodySizes.Ghoul.HeadTop - BodySizes.Ghoul.HeadHeight + 0.02f;
+
+        Assert.True(faceHeight < BodySizes.Ghoul.TorsoHeight);
+        Assert.Equal(HitZone.Head, ghoul.ZoneAt(new Vector3(front, faceHeight, 0f)));
     }
 
     [Fact]
