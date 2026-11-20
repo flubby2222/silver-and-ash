@@ -65,15 +65,21 @@ def abklang(x):
     return (letzte + 1) * 0.01
 
 
+def ende(x):
+    """Spitze (dBFS) der letzten 50 ms: Prüfung auf abgeschnittene Enden."""
+    k = x[-2205:]
+    return 20 * math.log10(max(abs(v) for v in k) + 1e-9)
+
+
 def main():
     zeilen = [
         "# Messwerte Teleporter-Hörprobe (#476)\n",
         "Erzeugt von `messen.py`. Alles gemessen, nichts gehört. Spitze = höchster Abtastwert; "
         "mittlere Lautstärke = ffmpeg `volumedetect`; Anteil über 3 kHz = Pegel nach Hochpass 3 kHz "
         "minus Gesamtpegel (je kleiner, desto weniger Höhen); Einsätze = Pegelsprünge über 8 dB in 50 ms "
-        "(10-ms- und 30-ms-Fenster); Abklang = Zeit bis 40 dB unter Spitze.\n",
-        "| Datei | Länge s | Spitze dBFS | Mittel dB | über 3 kHz dB | Einsätze 10/30 ms | Abklang s | Spektrogramm |",
-        "|---|---|---|---|---|---|---|---|",
+        "(10-ms- und 30-ms-Fenster); Abklang = Zeit bis 40 dB unter Spitze; Ende = Spitze der letzten 50 ms (Soll: höchstens -50 dBFS, sonst endet der Klang abgeschnitten).\n",
+        "| Datei | Länge s | Spitze dBFS | Mittel dB | über 3 kHz dB | Einsätze 10/30 ms | Abklang s | Ende dBFS | Spektrogramm |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for p in sorted(HIER.glob("*.wav")):
         x = lies(p)
@@ -82,8 +88,8 @@ def main():
         png = p.with_suffix(".png")
         ffmpeg("-y", "-i", str(p), "-lavfi", "showspectrumpic=s=640x320:legend=1:scale=log", str(png))
         zeilen.append(
-            "| %s | %.2f | %.1f | %.1f | %.1f | %d / %d | %.2f | ![](%s) |"
-            % (p.name, len(x) / 44100, peak, mean, hm - mean, einsaetze(x, 10), einsaetze(x, 30), abklang(x), png.name)
+            "| %s | %.2f | %.1f | %.1f | %.1f | %d / %d | %.2f | %.1f | ![](%s) |"
+            % (p.name, len(x) / 44100, peak, mean, hm - mean, einsaetze(x, 10), einsaetze(x, 30), abklang(x), ende(x), png.name)
         )
     (HIER / "messwerte.md").write_text("\n".join(zeilen) + "\n", encoding="utf-8")
 

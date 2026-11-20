@@ -189,6 +189,15 @@ def sog(sek, rng, von, bis, hoch=True, tief=1400.0, q=1.2):
 
 # ---------- Abschluss ----------
 
+def ausblenden(x, sek):
+    """Weiches Ausblenden (Kosinus-Quadrat) über die letzten `sek` Sekunden."""
+    x = list(x)
+    m = min(n(sek), len(x))
+    for i in range(m):
+        x[-1 - i] *= math.sin(0.5 * math.pi * i / m) ** 2
+    return x
+
+
 def abschluss(x, ein=0.004, aus=0.03):
     x = list(x)
     # Gleichanteil und Tiefenrumpeln unter 30 Hz weg, sonst knackt der Anfang
@@ -218,9 +227,16 @@ def freischalten_a():
     """A, Horn mit Glimmen: ein dunkler Hornstoß (98 Hz, wächst an), darüber
     ein Glimmen aus leisen Körnchen, das beim Ausklingen aufgeht."""
     rng = random.Random(4761)
-    h = horn(1.3, 98.0, 98.0, anstieg=0.18, halten=0.25, abfall=3.4)
+    # Nachbesserung 20.11.2026: Der Klang hackte am Ende ab (Horn und Körnchen
+    # endeten bei 1,3 s auf -30 dB, der Hall fiel dann in 50 ms um 20 dB).
+    # Jetzt: Horn länger (2,0 s), Körnchen blenden vor ihrem Ende weich aus,
+    # die ganze Mischung läuft in 1,2 s auf null (Kosinus), Hall-Nachlauf 0,15 s.
+    h = horn(2.0, 98.0, 98.0, anstieg=0.18, halten=0.25, abfall=3.4)
     g = glimmen(1.3, rng, dichte=16.0, laut=0.10, form=lambda s: 0.25 + 0.75 * s)
-    return abschluss(hall(mische(h, g), 0.3))
+    g = ausblenden(g, 0.6)
+    g = g + [0.0] * (len(h) - len(g))
+    m = ausblenden(mische(h, g), 1.2)
+    return abschluss(hall(m, 0.15), aus=0.12)
 
 
 def freischalten_b():
@@ -261,9 +277,11 @@ def reise_b_ab():
     """B, Kristall-Sog: ein Kristallton (165 Hz) schwillt an, Rauschen zieht
     zusammen (Mittenfrequenz fällt von 1500 auf 500 Hz), Ende abrupt gedämpft."""
     rng = random.Random(4765)
-    k = kristall(0.8, 165.0, abfall=-1.6, anstieg=0.5)
-    s = sog(0.8, rng, 1500.0, 500.0, hoch=True, tief=1800.0)
-    return abschluss(mische(k, [v * 0.3 for v in s]), aus=0.06)
+    # Nachbesserung 20.11.2026: Die Abreise endete mitten im Anschwellen (letzte
+    # 50 ms bei -14 dB). Jetzt 1,3 s lang, die letzten 0,7 s blenden weich aus.
+    k = kristall(1.3, 165.0, abfall=-1.6, anstieg=0.5)
+    s = sog(1.3, rng, 1500.0, 500.0, hoch=True, tief=1800.0)
+    return abschluss(ausblenden(mische(k, [v * 0.3 for v in s]), 0.7), aus=0.3)
 
 
 def reise_b_an():
