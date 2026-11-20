@@ -121,6 +121,8 @@ Abweichung: Die dunklen Bänder der Kistenplatzhalter im Code (56, 44, 36; 52, 5
 - **Die Ankündigung ist die wichtigste Haltung.** Zwischen Ruhe und Ausholen muss die Silhouette deutlich wechseln (beim Ghul: von niedrig und breit zu hoch und schmal).
 - **Modell und Trefferkörper passen zusammen, und das Spiel gibt vor.** Die Maße stehen in `BodySizes` im Core; die Kopfzone des Ghuls ist dort nach dem heutigen Platzhalter bemessen. Das Modell legt Körper und Kopf in diese Maße. Passt eine Gestalt nicht hinein (zum Beispiel ein Kopf an langem Hals), ändert der Designer nichts stillschweigend, sondern schlägt in den Notizen neue Maße vor. Darüber entscheidet die Leitung, weil es das Spiel verändert; umgesetzt wird es von einer Code-Sitzung.
 
+**Raum-Bausteine:** Bogenarten, Wand in drei Zonen, Profile und die Maße von Wandpfeiler, Säule, Deckenbogen, Nische und Türrahmen stehen in der [Formenlehre Gotik](formenlehre-gotik.md) und sind für alle Bausteine verbindlich.
+
 Hintergrund mit Quellen: [Grundlagen Grafik](grundlagen-grafik.md), Abschnitte 3 und 4 und der Nachtrag d. Verbindlich sind nur die Regeln in diesem Dokument.
 
 ## Vom Modell ins Spiel
