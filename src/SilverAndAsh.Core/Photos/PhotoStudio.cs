@@ -193,6 +193,38 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
+    /// A bare hall with the Well of Sirius in its middle, 4 m in front of the player, who looks at its middle (issue #438).
+    /// <paramref name="spent"/>: it has been used already and stands dry.
+    /// </summary>
+    public GameWorld Well(bool spent)
+    {
+        const int Width = 9;
+        const int Depth = 8;
+        const int PlayerRow = 2;
+        const int WellRow = PlayerRow + 2;
+        var text = new StringBuilder();
+        for (var z = 0; z < Depth; z++)
+        {
+            for (var x = 0; x < Width; x++)
+            {
+                var wall = x == 0 || z == 0 || x == Width - 1 || z == Depth - 1;
+                text.Append(wall ? '#' : x == Width / 2 && z == PlayerRow ? 'P' : '.');
+            }
+
+            text.Append('\n');
+        }
+
+        var world = new GameWorld(LevelParser.Parse(text.ToString()), Seed, Balance, well: new WellPlan(Width / 2, WellRow, 0));
+        if (spent)
+        {
+            world.Well!.Use();
+        }
+
+        Face(world.Player, world.Well!.Position + new Vector3(0f, WellOfSirius.Height / 2f, 0f));
+        return world;
+    }
+
+    /// <summary>
     /// A bare hall cut in two by a wall with one door of <paramref name="kind"/> in it, <paramref name="cells"/> cells
     /// (2 m each, so 6 m by default, at most 5 cells) in front of the player, who looks at its middle (issue #245).
     /// <paramref name="sideways"/>: the wall runs North/South and the passage along X (the door model turned a quarter).

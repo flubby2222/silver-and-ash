@@ -255,6 +255,12 @@
     "bossOpenTime": 2.2                 // the same for a boss door (two heavy iron leaves)
   },
 
+  // The Well of Sirius (#438). Price per throw, chances and the most throws are still open: using it only spends it.
+  "well": {
+    "levelChance": 1,                   // chance that a level has a well (at most one); provisional: every level
+    "collisionRadius": 0.95             // m: the circle nobody walks through
+  },
+
   "bloodVial": {
     "heal": 30                          // health it gives back (never above the maximum)
   },
