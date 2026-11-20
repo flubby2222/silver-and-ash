@@ -470,6 +470,9 @@ static void RunGame(
         // The crypt warden (issue #530) - likewise only the showroom's figure for now.
         using var cryptWardenView = CryptWardenViews.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
+        // The wall pillars (issue #536) - for now only in the showroom; without their models the walls stay bare.
+        using var wallPillarView = WallPillarView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
         newWeaponView = () => new WeaponView(weaponModels, levelShader);
@@ -566,6 +569,7 @@ static void RunGame(
             teleporterView.Draw(gameWorld.Teleporters, viewCone, levelShader);
             crossbowSkeletonView.Draw(gameWorld.Showroom?.CrossbowSkeletons ?? [], viewCone);
             cryptWardenView.Draw(gameWorld.Showroom?.CryptWardens ?? [], viewCone);
+            wallPillarView.Draw(gameWorld.Showroom?.WallPillars ?? [], viewCone, levelTextures);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
