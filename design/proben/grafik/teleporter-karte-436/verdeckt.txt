@@ -1,0 +1,6 @@
+A 1280 x 720: 63.1 % des Bildes verdeckt (Unterschied zum Hintergrund mit Platzhalter-HUD)
+B 1280 x 720: 35.7 % des Bildes verdeckt (Unterschied zum Hintergrund mit Platzhalter-HUD)
+C 1280 x 720: 74.8 % des Bildes verdeckt (Unterschied zum Hintergrund mit Platzhalter-HUD)
+A 854 x 480: 63.2 % des Bildes verdeckt (Unterschied zum Hintergrund mit Platzhalter-HUD)
+B 854 x 480: 35.6 % des Bildes verdeckt (Unterschied zum Hintergrund mit Platzhalter-HUD)
+C 854 x 480: 74.8 % des Bildes verdeckt (Unterschied zum Hintergrund mit Platzhalter-HUD)
