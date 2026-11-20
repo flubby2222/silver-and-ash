@@ -72,6 +72,7 @@ public class ChestTests
 
         Assert.True(chest.IsOpen);
         Assert.Contains(new ChestOpened(chest.Id, world.Player.Id, ChestTier.Guard), events);
+        Assert.Equal(chest.Position, events.OfType<ChestOpened>().Single().Place); // heard from the chest (#491)
         var silver = Assert.Single(world.Loot);
         Assert.Equal(LootKind.Silver, silver.Kind);
         Assert.Equal(27, silver.Amount);

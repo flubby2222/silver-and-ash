@@ -116,6 +116,10 @@ public class BalanceFileTests
     [InlineData("pistol", "magazineSize")]
     [InlineData("pistol", "reloadTime")]
     [InlineData("experience", "firstLevel")]
+    [InlineData("hearing", "range")]
+    [InlineData("hearing", "nearDistance")]
+    [InlineData("hearing", "rolloff")]
+    [InlineData("hearing", "maxPan")]
     public void Zero_is_refused_where_it_would_break_the_game(string section, string name)
     {
         var result = BalanceFile.Parse($$"""{ "{{section}}": { "{{name}}": 0 } }""");
@@ -149,6 +153,8 @@ public class BalanceFileTests
     [InlineData("""{ "difficulty": { "ghoulShareFar": 2 } }""", "difficulty.ghoulShareFar")]
     [InlineData("""{ "difficulty": { "batShareNear": 1.1 } }""", "difficulty.batShareNear")]
     [InlineData("""{ "difficulty": { "batShareFar": 3 } }""", "difficulty.batShareFar")]
+    [InlineData("""{ "hearing": { "maxPan": 1.2 } }""", "hearing.maxPan")]
+    [InlineData("""{ "difficulty": { "doorConeAngle": 91 } }""", "difficulty.doorConeAngle")]
     public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);
@@ -162,6 +168,8 @@ public class BalanceFileTests
     [InlineData("doorDistance", 0.75f)]
     [InlineData("playerDistance", 0f)]
     [InlineData("playerDistance", 0.75f)]
+    [InlineData("sideDoorDistance", 0f)]
+    [InlineData("sideDoorDistance", 0.75f)]
     public void Door_and_player_distance_below_one_cell_fall_back_to_their_standard(string name, float cells)
     {
         // Issue #445: an enemy must never stand in a doorway nor come out on a player's cell.
@@ -180,6 +188,29 @@ public class BalanceFileTests
 
         Assert.Equal(Level.CellSize, result.Balance.Difficulty.DoorDistance);
         Assert.Equal(Level.CellSize, result.Balance.Difficulty.PlayerDistance);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void A_side_door_distance_below_the_door_distance_puts_both_back_to_their_standards()
+    {
+        // Issue #490: beside a door an enemy must keep at least as far as straight in front of it.
+        var door = (Balance.Default.Difficulty.SideDoorDistance + Level.CellSize).ToString(CultureInfo.InvariantCulture);
+        var side = Balance.Default.Difficulty.SideDoorDistance.ToString(CultureInfo.InvariantCulture);
+        var result = BalanceFile.Parse($$"""{ "difficulty": { "doorDistance": {{door}}, "sideDoorDistance": {{side}} } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains("difficulty.doorDistance") && w.Contains("difficulty.sideDoorDistance"));
+    }
+
+    [Fact]
+    public void A_door_cone_of_a_right_angle_and_a_side_distance_equal_to_the_door_distance_are_allowed()
+    {
+        var metres = Balance.Default.Difficulty.DoorDistance.ToString(CultureInfo.InvariantCulture);
+        var result = BalanceFile.Parse($$"""{ "difficulty": { "doorConeAngle": 90, "sideDoorDistance": {{metres}} } }""");
+
+        Assert.Equal(90f, result.Balance.Difficulty.DoorConeAngle);
+        Assert.Equal(Balance.Default.Difficulty.DoorDistance, result.Balance.Difficulty.SideDoorDistance);
         Assert.Empty(result.Warnings);
     }
 
@@ -203,6 +234,25 @@ public class BalanceFileTests
 
         Assert.Equal(Balance.Default.Bat, result.Balance.Bat);
         Assert.Contains(result.Warnings, w => w.Contains($"bat.{min}") && w.Contains($"bat.{max}"));
+    }
+
+    [Fact]
+    public void A_near_distance_beyond_the_hearing_range_falls_back_to_both_standards()
+    {
+        var result = BalanceFile.Parse("""{ "hearing": { "nearDistance": 12, "range": 10 } }""");
+
+        Assert.Equal(Balance.Default.Hearing, result.Balance.Hearing);
+        Assert.Contains(result.Warnings, w => w.Contains("hearing.nearDistance") && w.Contains("hearing.range"));
+    }
+
+    [Fact]
+    public void A_near_distance_as_far_as_the_hearing_range_is_allowed()
+    {
+        var result = BalanceFile.Parse("""{ "hearing": { "nearDistance": 10, "range": 10 } }""");
+
+        Assert.Equal(10f, result.Balance.Hearing.NearDistance);
+        Assert.Equal(10f, result.Balance.Hearing.Range);
+        Assert.Empty(result.Warnings);
     }
 
     [Fact]

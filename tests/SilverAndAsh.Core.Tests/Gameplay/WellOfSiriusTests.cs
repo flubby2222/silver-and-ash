@@ -106,6 +106,7 @@ public class WellOfSiriusTests
 
         Assert.True(world.Well!.IsSpent);
         Assert.Contains(new WellOfSiriusUsed(world.Player.Id), events);
+        Assert.Equal(world.Well.Position, events.OfType<WellOfSiriusUsed>().Single().Place); // heard from the well (#491)
 
         // Provisional (issue #438): nothing paid, nothing given - the rules are not decided yet.
         Assert.Equal(silver, world.Player.Silver);

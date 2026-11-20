@@ -42,12 +42,9 @@ public static class EnemyPlacement
                 bosses.Add(room.BossSlots is { Count: > 0 } slots ? slots[0] : Middle(room));
             }
 
-            var doors = generated.Doors
-                .Where(door => door.RoomA == room.Index || door.RoomB == room.Index)
-                .Select(door => (door.X, door.Z))
-                .ToList();
+            var doors = DoorClearance.OfRoom(room, generated.Doors);
             var free = Shuffled(room.FloorCells, random)
-                .Where(cell => doors.All(door => Metres(cell, door) >= difficulty.DoorDistance))
+                .Where(cell => DoorClearance.Keeps(cell, doors, difficulty))
                 .Where(cell => !bosses.Contains(cell))
                 .ToList();
             var placed = new List<((int X, int Z) Cell, Kind Kind)>();
@@ -72,10 +69,10 @@ public static class EnemyPlacement
                 budget -= kind == Kind.Ghoul ? difficulty.GhoulCost : difficulty.BatCost;
             }
 
-            // A combat room is never empty: one enemy even without budget or free place (then anywhere on its floor).
+            // A combat room is never empty: one enemy even without budget or free place (then on the least bad cell).
             if (room.Kind == RoomKind.Combat && placed.Count == 0)
             {
-                var cell = free.Count > 0 ? free[0] : room.FloorCells[random.Next(room.FloorCells.Count)];
+                var cell = free.Count > 0 ? free[0] : DoorClearance.LeastBad(room.FloorCells, doors, difficulty);
                 placed.Add((cell, ghoulWeight > 0f || batWeight <= 0f || difficulty.MaxBatsPerRoom <= 0 ? Kind.Ghoul : Kind.Bat));
             }
 

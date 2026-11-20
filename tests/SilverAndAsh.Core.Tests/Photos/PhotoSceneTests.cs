@@ -32,6 +32,8 @@ public class PhotoSceneTests
     [InlineData("menu-pause", PhotoMenu.Pause)]
     [InlineData("menu-settings", PhotoMenu.Settings)]
     [InlineData("menu-quit", PhotoMenu.Quit)]
+    [InlineData("menu-travel", PhotoMenu.Travel)]
+    [InlineData("menu-travel-sealed", PhotoMenu.Travel)]
     public void The_menu_scenes_show_their_menu(string name, PhotoMenu menu)
     {
         Assert.Equal(menu, Built(name).Menu);
@@ -40,6 +42,8 @@ public class PhotoSceneTests
     // Issue #480: after the scene's tick the player stands on the start-hall teleporter, the boss gate free or sealed.
     [Theory]
     [InlineData("teleporter-hint", TravelState.Ready)]
+    [InlineData("menu-travel", TravelState.Ready)]
+    [InlineData("menu-travel-sealed", TravelState.Sealed)]
     public void The_travel_scenes_show_the_boss_gate_free_or_sealed(string name, TravelState bossGate)
     {
         var setup = Built(name);
@@ -102,7 +106,7 @@ public class PhotoSceneTests
             "showroom-a-corridor", "showroom-a-room", "showroom-b-corridor", "showroom-b-room", "showroom-c-corridor",
             "showroom-c-room", "stairs-4m", "stairs-10m", "well-ready", "well-spent",
             "teleporter-locked-3m", "teleporter-unlocked-3m", "teleporter-locked-10m", "teleporter-unlocked-10m",
-            "teleporter-hint",
+            "teleporter-hint", "menu-travel", "menu-travel-sealed",
             "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
             "menu-title", "menu-pause", "menu-settings", "menu-quit",
             "ghoul-shotbody-front", "ghoul-shotbody-side",

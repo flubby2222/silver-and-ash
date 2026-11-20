@@ -65,6 +65,7 @@ public static class BalanceFile
     {
         ["difficulty.doorDistance"] = Level.CellSize,
         ["difficulty.playerDistance"] = Level.CellSize,
+        ["difficulty.sideDoorDistance"] = Level.CellSize,
     };
 
     /// <summary>Highest sensible values. A jump may at most bring the head up to the ceiling.</summary>
@@ -104,6 +105,8 @@ public static class BalanceFile
         ["gorm.swingArc"] = 360,
         ["gorm.phase2Health"] = 1,
         ["gorm.equipmentVampiricChance"] = 1,
+        ["hearing.maxPan"] = 1,
+        ["difficulty.doorConeAngle"] = 90,
     };
 
     /// <summary>Values that must stay below a limit (a penalty of 100 % would mean standing still).</summary>
@@ -127,10 +130,12 @@ public static class BalanceFile
         ("gorm", "silverMin", "silverMax"),
         ("gorm", "nearRange", "farRange"),
         ("gorm", "swingLow", "swingHigh"),
+        ("difficulty", "doorDistance", "sideDoorDistance"),
         ("chests.beggar", "silverMin", "silverMax"),
         ("chests.guard", "silverMin", "silverMax"),
         ("chests.king", "silverMin", "silverMax"),
         ("chests.vampire", "silverMin", "silverMax"),
+        ("hearing", "nearDistance", "range"),
     ];
 
     /// <summary>Reads the file at <paramref name="path"/>. A missing or unreadable file gives the standard values.</summary>

@@ -163,8 +163,8 @@ public sealed class GameWorld
                 }
 
                 // Issue #424: in a combat room it is not even there yet - it waits inside the floor (a ghoul) or the
-                // ceiling (a bat) on its start cell, which the level generator keeps away from the doors
-                // (difficulty.doorDistance), and comes out when the room seals. Nobody can lure it out through an
+                // ceiling (a bat) on its start cell, which the level generator keeps clear of the doors
+                // (DoorClearance), and comes out when the room seals. Nobody can lure it out through an
                 // open door. The boss room stays as it was: Gorm stands there from the start.
                 if (room.Kind == RoomKind.Combat)
                 {
@@ -221,15 +221,16 @@ public sealed class GameWorld
     // Issue #445: nobody comes out right in front of a player. The start cells were chosen with the level, before
     // anybody stood in the room; now the players' places are known. An enemy whose start cell is nearer than
     // difficulty.playerDistance to any player comes out on the nearest free cell of the room that keeps that distance
-    // to every player and difficulty.doorDistance to every door - or, if there is none, on the free cell farthest from
-    // all players (away from the doors if possible). No chance involved: the same places give the same cells.
+    // to every player and keeps clear of every door (DoorClearance, issue #490: straight in difficulty.doorDistance,
+    // beside the door difficulty.sideDoorDistance) - or, if there is none, on the free cell farthest from all players
+    // (clear of the doors if possible). No chance involved: the same places give the same cells.
     private void KeepAwayFromPlayers(RoomState room, IReadOnlyList<ITarget> wave)
     {
         var difficulty = Balance.Difficulty;
         var players = Players.Select(player => new Vector2(player.Position.X, player.Position.Z)).ToList();
-        var doors = room.DoorIds.Select(id => Middle((_doors[id].X, _doors[id].Z))).ToList();
+        var doors = room.DoorIds.Select(id => DoorClearance.Of((_doors[id].X, _doors[id].Z), room.Cells)).ToList();
 
-        // Metres from the middle of a cell to the nearest player (or the middle of the nearest door).
+        // Metres from the middle of a cell to the nearest player.
         static float Nearest(List<Vector2> places, (int X, int Z) cell) =>
             places.Count == 0 ? float.MaxValue : places.Min(place => Vector2.Distance(Middle(cell), place));
 
@@ -247,7 +248,7 @@ public sealed class GameWorld
                 continue;
             }
 
-            var awayFromDoors = free.Where(cell => Nearest(doors, cell) >= difficulty.DoorDistance).ToList();
+            var awayFromDoors = free.Where(cell => DoorClearance.Keeps(cell, doors, difficulty)).ToList();
             var allowed = awayFromDoors.Where(cell => Nearest(players, cell) >= difficulty.PlayerDistance).ToList();
             var choice = allowed.Count > 0
                 ? allowed.MinBy(cell => Vector2.Distance(Middle(cell), Middle(start)))
@@ -663,7 +664,7 @@ public sealed class GameWorld
     {
         if (well.Use())
         {
-            _events.Add(new WellOfSiriusUsed(player.Id));
+            _events.Add(new WellOfSiriusUsed(player.Id) { Place = well.Position });
         }
     }
 
@@ -690,7 +691,7 @@ public sealed class GameWorld
     private void OpenChest(Chest chest, Player opener)
     {
         chest.Open();
-        _events.Add(new ChestOpened(chest.Id, opener.Id, chest.Tier));
+        _events.Add(new ChestOpened(chest.Id, opener.Id, chest.Tier) { Place = chest.Position });
 
         var towards = FacingTowards(chest.Position, opener.Position);
         var lid = new Vector3(0f, Chest.Height, 0f);
@@ -759,7 +760,7 @@ public sealed class GameWorld
     {
         door.Open(player.Position);
         UpdateLevel();
-        _events.Add(new DoorOpened(door.Id));
+        _events.Add(new DoorOpened(door.Id) { Place = (door.BoxMin + door.BoxMax) / 2f });
     }
 
     // After doors changed: a new level in which exactly the blocking doors are walls, for everybody.
