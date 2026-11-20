@@ -29,6 +29,12 @@ public sealed record PhotoSetup(GameWorld World)
     public bool IsModelProbe { get; init; }
 
     /// <summary>
+    /// True for a test picture (issue #433): the game draws what a shot can hit (<see cref="ITarget.ShotBodies"/>) as
+    /// wires over the figures, to see whether it fits the models.
+    /// </summary>
+    public bool ShowsShotBodies { get; init; }
+
+    /// <summary>
     /// Runs the ticks of this scene on <see cref="World"/>; <paramref name="afterTick"/> is called after each one (the
     /// game reads the events there). Returns how many ticks ran.
     /// </summary>
