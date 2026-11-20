@@ -1,42 +1,45 @@
 # Entwurf: Skills, Statuseffekte und Altar (#104)
 
-- **Stand:** 2. Fassung, 2026-11-20, nach den Urteilen des Menschen in [#104](https://github.com/flubby2222/silver-and-ash/issues/104) (Kommentare vom 20.11.). Noch nichts davon ist gebaut.
+- **Stand:** 3. Fassung, 2026-11-20, nach Runde 4 der Urteile des Menschen in [#104](https://github.com/flubby2222/silver-and-ash/issues/104). Noch nichts davon ist gebaut.
 - **Grundlagen:** [ADR 0005](../entscheidungen/0005-ebenen-raeume-durchlauf.md) (jede 3. Stufe ein Skillpunkt, Altarraum, Fenster halten nie an), [ADR 0003](../entscheidungen/0003-online-coop-offenhalten.md) (Coop offen), [ADR 0006](../entscheidungen/0006-kisten-beute-rarity.md) und [0008](../entscheidungen/0008-ausruestung-haendler-waffenkammer.md) (Seltenheit), ADR 0011 (PR #481, noch offen: Skills gehören in 1.0).
 - **Alle Zahlen sind vorläufige Startwerte** in `assets/balance.json` (neue Abschnitte `skills` und `statusEffects`), angepasst in der Balancing-Runde.
+- **Auslegung der Leitung (vorläufig):** Es bleibt bei 1 Skillpunkt alle 3 Stufen. Die Katakomben geben nicht mehr Punkte als heute (2 bis 3). Ausbau II und III bleiben im Entwurf und werden mit späteren Ebenen erreichbar.
 
 ## Zusammenfassung
 
-1. **Ein Skillpunkt alle 3 Stufen.** Ein voller Lauf durch Ebene 0 bringt heute **3 Punkte**, wer Räume auslässt **2**.
-2. **Punkte zahlen alles:** 1. Punkt = aktiver Skill, 2. Punkt = sein Statuseffekt, jeder weitere = eine Ausbaustufe.
-3. **Ein aktiver Skill je Lauf** (Taste **Q**). Der erste Altarbesuch bietet **drei zufällige** von fünf.
+1. **Ein Skillpunkt alle 3 Stufen.** Ein voller Lauf durch die Katakomben (Ebene 0) bringt heute **2 oder 3 Punkte**, wer Räume auslässt **2**.
+2. **Punkte zahlen alles:** 1. Punkt = aktiver Skill, 2. Punkt = sein Statuseffekt, jeder weitere = eine Ausbaustufe. **Fünf Punkte** bauen einen Skill ganz aus; mehr haben keine Verwendung.
+3. **Ein aktiver Skill je Lauf** (Taste **Q**). Der erste Altarbesuch bietet **drei zufällige** von fünf Skills, der zweite **drei zufällige** von fünf Statuseffekten.
 4. **Fünf Statuseffekte:** Leech, Stun, Holy Fire (Weihfeuer), Grave Chill (Grabeskälte), Marked (Gezeichnet). Startwerte halb so stark wie zuerst vorgeschlagen.
-5. **Waffen** würfeln beim Fund, ob sie einen Effekt tragen. Er löst je Treffer mit **10 bis 25 %** aus, je nach Seltenheit.
-6. **Synergie:** Tragen Waffe und Skill denselben Effekt, hält er **1,5-mal so lange** (Leech: 1,5-mal so stark).
-7. **Erneut ausgelöst** frischt die Dauer auf, stärker wird nichts. Verschiedene Effekte liegen gleichzeitig.
-8. **Bosse taumeln** bei Stun nur kurz und sind danach einige Sekunden immun.
-9. **Am Gegner:** farbiger Schimmer, ein Effekt passend zum Status, darüber die Restzeit als kleine Zahl. Kein Rot.
-10. **Altar** im eigenen Raum mit eigenem Teleporter. Kein Skill erhöht das maximale Leben.
+5. **Waffen:** **30 %** der gefundenen Waffen tragen einen Effekt. Er löst je Treffer mit **10 bis 25 %** aus, je nach Seltenheit.
+6. **Ausbau** ab dem dritten Punkt in **fester Reihenfolge je Skill** (I, II, III).
+7. **Synergie:** Tragen Waffe und Skill denselben Effekt, hält er **1,5-mal so lange** (Leech: 1,5-mal so stark).
+8. **Erneut ausgelöst** frischt die Dauer auf, stärker wird nichts. Verschiedene Effekte liegen gleichzeitig.
+9. **Bosse taumeln** bei Stun nur kurz und sind danach einige Sekunden immun.
+10. **Am Gegner:** farbiger Schimmer, ein Effekt passend zum Status, darüber die Restzeit als kleine Zahl. Kein Rot.
+11. **Altar** im eigenen Raum mit eigenem Teleporter. Kein Skill erhöht das maximale Leben.
+12. **Erfahrungskurve:** in 1.0 unverändert; ab Ebene 1 gleiche Kosten je Stufe mit Schwellen (Abschnitt 7).
 
 ## 1. Ablauf eines Laufs
 
-**Erfahrung heute** (`assets/balance.json`, `experience`; Rechnung in `Player.ExperienceToNextLevel`, `src/SilverAndAsh.Core/Gameplay/Player.cs`): Stufe 0 → 1 kostet 100, jede weitere Stufe 1,25-mal so viel (gerundet). Ein Ghul gibt 30, eine Fledermaus 20; **Gorm gibt keine Erfahrung** (`GameWorld.Damage`, `src/SilverAndAsh.Core/Gameplay/GameWorld.cs`, nur Ghul und Fledermaus).
+**Erfahrung heute** (`assets/balance.json`, `experience`; Rechnung in `Player.ExperienceToNextLevel`, `src/SilverAndAsh.Core/Gameplay/Player.cs`): Stufe 0 → 1 kostet 100, jede weitere Stufe 1,25-mal so viel (gerundet). Ein Ghul gibt 30, eine Fledermaus 20; **Gorm gibt keine Erfahrung** (`GameWorld.Damage`, `src/SilverAndAsh.Core/Gameplay/GameWorld.cs`, nur Ghul und Fledermaus). Erfahrung bekommt nur, wer den tödlichen Treffer setzt. Tod setzt die Stufe auf 0 zurück.
 
 | Stufe | 1 | 2 | **3** | 4 | 5 | **6** | 7 | 8 | **9** | 10 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Erfahrung gesamt | 100 | 225 | **381** | 576 | 820 | **1125** | 1506 | 1983 | **2579** | 3324 |
 
-**Report vom 19.11.** (`docs/balancing.md`, 500 Ebenen): 96,9 Gegner, 2671 Erfahrung bei vollem Räumen, also **27,6 je Kill**.
+**Balance-Report** (Stand `main` vom 20.11., 500 Ebenen, alle Räume geräumt): 96,9 Gegner (73,3 Ghule, 23,5 Fledermäuse), **2671 Erfahrung** (kleinste Ebene 2140, größte 3230), also **27,6 je Kill**. „Player level reached“: im Schnitt **8,65**, nie unter 8, nie über 9.
 
 | Punkt | bei Stufe | nach etwa | im Lauf (13 Kampfräume, rund 7,5 Gegner je Raum) | wofür |
 |---|---|---|---|---|
-| 1 | 3 | 14 Kills | Kampfraum 2 bis 3 | aktiver Skill |
+| 1 | 3 | 14 Kills | Kampfraum 2 | aktiver Skill |
 | 2 | 6 | 41 Kills | Kampfraum 5 bis 6 | Statuseffekt |
-| 3 | 9 | 93 Kills | erst fast am Ende, vor dem Bosstor | Ausbaustufe I |
+| 3 | 9 | 94 Kills | erst fast am Ende, vor dem Bosstor – und nur in etwa zwei von drei Ebenen | Ausbaustufe I |
 
-- **Voller Lauf: 3 Punkte**, der dritte aber erst kurz vor Gorm. Erfahrungs-Boni (+2,5 % je Wahl) ziehen das nur wenig vor.
-- **Lauf mit ausgelassenen Räumen** (Sieg am 15.11. nach 9 von 14 Räumen): etwa 60 Kills, Stufe 7, **2 Punkte** – Skill und Effekt, kein Ausbau.
+- **Voller Lauf: 2 oder 3 Punkte** (Stufe 8 oder 9); der dritte kommt erst kurz vor Gorm und fehlt bei Ebenen mit wenig Gegnern. Erfahrungs-Boni (+2,5 % je Wahl) ziehen das nur wenig vor.
+- **Lauf mit ausgelassenen Räumen** (Sieg am 15.11. nach 9 von 14 Räumen): etwa 60 Kills, rund 1650 Erfahrung, Stufe 7, **2 Punkte** – Skill und Effekt, kein Ausbau.
 - Der Altar steht deshalb **auf etwa einem Drittel des Wegs** (Punkt 1 kommt früh), sein **Teleporter** macht Punkt 3 einlösbar: vom Bosstor zum Altar und zurück.
-- **Ausbaustufen II und III erreicht in 1.0 (nur Ebene 0) kaum jemand.** Sie sind für spätere Ebenen gedacht (siehe „Noch offen“).
+- **Ausbaustufen II und III** sind in den Katakomben nicht erreichbar. Sie bleiben im Entwurf und kommen mit den späteren Ebenen (Abschnitt 7).
 
 ## 2. Altar
 
@@ -46,19 +49,21 @@
 
 | Stand | Angebot | kostet |
 |---|---|---|
-| noch kein Skill | **drei zufällige** der fünf aktiven Skills (eigener Zufall aus dem Seed) | 1 Punkt |
-| Skill, kein Effekt | die fünf Statuseffekte, frei wählbar | 1 Punkt |
-| Skill und Effekt | die nächste Ausbaustufe (I, dann II, dann III) | 1 Punkt |
+| noch kein Skill | **drei zufällige** der fünf aktiven Skills | 1 Punkt |
+| Skill, kein Effekt | **drei zufällige** der fünf Statuseffekte | 1 Punkt |
+| Skill und Effekt | die nächste Ausbaustufe, **feste Reihenfolge je Skill** (I, dann II, dann III) | 1 Punkt |
+| ganz ausgebaut | nichts mehr; Punkte bleiben liegen | – |
 
+- **Zufall** für beide Angebote aus einem eigenen Generator, gestartet aus dem Seed der Welt: gleicher Seed, gleiches Angebot; keine anderen Würfe verschieben sich.
 - Ohne Punkt ist alles grau, lesbar bleibt es. Bewegen oder ein Treffer schließt das Fenster; die Welt läuft weiter.
-- Das Angebot der drei Skills bleibt bis zur Wahl gleich (erneutes Öffnen würfelt nicht neu).
-- **Coop:** Jeder Spieler hat eigene Punkte, eigenen Skill, eigenes Angebot; der Altar verbraucht sich nicht.
+- Ein Angebot bleibt bis zur Wahl gleich (erneutes Öffnen würfelt nicht neu).
+- **Coop:** Jeder Spieler hat eigene Punkte, eigenen Skill, eigene Angebote; der Altar verbraucht sich nicht.
 - **Aussehen:** hüfthoher, verwitterter Steinblock mit Silberschale und zwei Kerzen; die Kerzen brennen (Messing), solange ein Punkt offen ist. Kartensymbol Kerze. Name „Ash Altar“ (vorläufig).
 - **Kein HP-Ausbau:** Kein Skill, Effekt oder Ausbau hebt das maximale Leben. Der Deckel bleibt `boons.healthCap` (235); am Deckel kommen wie heute keine Leben-Boni mehr (`Player.cs`, Bonus-Angebot). Leech heilt nur bis zum Maximum.
 
 ## 3. Aktive Skills
 
-Gemeinsam: Taste **Q** (neues Feld `UseSkill` in `PlayerInput`), Werte unter `skills.<name>`, Spieltexte englisch. **Der Statuseffekt des Skills löst bei jedem Treffer des Skills sicher aus** (keine Chance); bei Bloodlust bei jedem eigenen Treffer während des Rauschs.
+Gemeinsam: Taste **Q** (neues Feld `UseSkill` in `PlayerInput`), Werte unter `skills.<name>`, Spieltexte englisch. **Der Statuseffekt des Skills löst bei jedem Treffer des Skills sicher aus** (keine Chance); bei Bloodlust bei jedem eigenen Treffer während des Rauschs. Die Ausbaustufen stehen je Skill in fester Reihenfolge.
 
 | Skill | Wirkung (vorläufig) | Effekt geht auf | Ausbau I | Ausbau II | Ausbau III |
 |---|---|---|---|---|---|
@@ -91,7 +96,7 @@ Startwerte = etwa die Hälfte des ersten Vorschlags (5 %, 1 s, 4 s, 40 %/4 s, 25
 
 ## 5. Waffen mit Statuseffekt
 
-- **Beim Fund** (Kiste, Gorm, Händler) würfelt die Waffe, ob sie einen Effekt trägt, und welchen (gleich verteilt). Die Startwaffen (Silver Blade, Pistol) tragen keinen.
+- **Beim Fund** (Kiste, Gorm, Händler) würfelt die Waffe, ob sie einen Effekt trägt: **30 %**, für alle Seltenheiten gleich (`statusEffects.weaponShare`). Welcher Effekt, ist gleich verteilt. Die Startwaffen (Silver Blade, Pistol) tragen keinen. Der Anteil ist bewusst niedrig, weil später weitere Ebenen mehr Waffen bringen.
 - **Auslöse-Chance je Treffer** nach Seltenheit (`ItemTier` in `src/SilverAndAsh.Core/Gameplay/Weapons.cs`):
 
 | Seltenheit | Worn | Forged | Royal | Vampiric |
@@ -109,36 +114,88 @@ Startwerte = etwa die Hälfte des ersten Vorschlags (5 %, 1 s, 4 s, 40 %/4 s, 25
 - **Effekte als Zustand am Gegner:** eine kleine Klasse (etwa `StatusEffects`) je Gegner mit Restzeit in Ticks je Art, Quelle (Spieler-Id) und Synergie-Merker; `GameWorld.Tick` zählt sie herunter, als eigene Methode, nicht als weiterer Zweig in `Tick`.
 - **Wirkung über vorhandene Wege:** Marked als Schadensregel nach `IDamageRule` (`src/SilverAndAsh.Core/Gameplay/Damage.cs`; `Hit` braucht dazu den Zustand des Ziels); Holy Fire als Schaden durch `GameWorld.Damage`; Grave Chill als Tempo-Faktor und Stun als Pause in `Ghoul.cs`, `Bat.cs`, `Gorm.cs`; Leech über `Player.Heal` mit gesammelten Bruchteilen (Leben ist ganzzahlig).
 - **Ereignisse für Klang und Anzeige:** `StatusApplied`, `StatusEnded`, `SkillUsed`, `SkillPointGained`, `AltarChoice` in `GameEvent.cs`; Klänge als Tabelleneinträge in `SoundCues.cs`; die Anzeige liest einen Zustand aus Core (Muster `HudReadout`).
-- **Online-Coop offen:** Q und die Altar-Wahl sind Eingaben im Tick; Punkte, Skill und Angebot je Spieler; Effekte merken ihren Auslöser; Zufall nur mit Seed im Spielzustand; kein veränderlicher `static`-Zustand.
+- **Online-Coop offen:** Q und die Altar-Wahl sind Eingaben im Tick; Punkte, Skill und Angebote je Spieler; Effekte merken ihren Auslöser; Zufall nur mit Seed im Spielzustand; kein veränderlicher `static`-Zustand.
 
-## 7. Schnitt in Issues
+## 7. Erfahrungskurve
 
-Je Zeile ein Issue und ein kleiner PR, Code-PRs nacheinander. Bild und Klang laufen als Probestücke daneben.
+**Erfahrungskurve** = was jede Stufe an Erfahrung kostet. Heute ist sie **exponentiell** (jede Stufe kostet einen festen Faktor mehr als die vorige). Der Mensch schlägt vor: gleiche Kosten je Stufe, ab **Schwellen** (englisch *Thresholds*, z. B. Stufe 20) höher. Jeder Stufenaufstieg bringt außerdem eine **Bonus-Wahl** (Boon, ADR 0008); die Kurve bestimmt also auch, wie viele Boni ein Lauf sammelt.
 
-**Code**
-1. Skillpunkte zählen (Stufe 3, 6, 9; Tod setzt zurück; HUD-Hinweis als Platzhalter).
-2. Statuseffekte: Grundgerüst und Marked (Zustand, Ticks, Auffrischen, Ereignisse; Test ohne Skill über einen Testauslöser).
-3. Holy Fire (Schaden über Zeit, Kill für den Auslöser).
-4. Grave Chill (Tempo von Ghul, Fledermaus, Gorm).
-5. Stun mit Taumeln und Immunität bei Gorm.
-6. Leech (Bruchteile, nie über das Maximum).
-7. Anzeige am Gegner: Platzhalter-Schimmer und Timer.
-8. Waffen-Effekte: Wurf beim Fund, Chance je Seltenheit, Anzeige im Inventar.
-9. Altarraum im Generator (Test über 100 Ebenen, gleicher Seed = gleicher Grundriss).
-10. Teleporter am Altar.
-11. Altar bedienen: drei zufällige Skills, Effektwahl, Ausbau (Fehlerzweige: kein Punkt, tot, alles ausgebaut).
-12. bis 16. je ein Skill mit Ausbau I: Bloodlust, Holy Water, Ash Nova, Phantom Step, Silver Volley.
-17. Synergie.
-18. Balance-Report und Bot (Punkte je Lauf, gewählte Skills und Effekte).
+**Rechenweg** (wie `Player.AddExperience` und `BalanceReport.LevelReached`):
 
-**Bild:** Altar-Probestück und Einbau; Probenblatt der fünf Effekte am Ghul (Schimmer, Flammen, Reif …, mit Timer); HUD-Feld für Q mit Leiste bzw. Abklingzeit; je Skill ein kleines Probenblatt.
+- Kosten heute: `kosten(n) = round(100 · 1,25^n)` für den Schritt von Stufe n auf n + 1.
+- Erfahrung bis Stufe L: `summe(L) = kosten(0) + … + kosten(L − 1)`.
+- Erreichte Stufe: das größte L mit `summe(L) ≤ Erfahrung`. Skillpunkte: `L / 3`, abgerundet.
 
-**Klang** (neue Kategorien, also Hörprobe vor dem Einbau): Altar und Skillpunkt; je Effekt ein Auslöse-Klang; je Skill ein Klang beim Auslösen.
+**Annahmen** (nachgerechnet, nicht gemessen – außer Ebene 1):
+
+| | Ebene 1 Katakomben | Ebene 2 Kerker | Ebene 3 Schlosshalle | Ebene 4 (nur Annahme) |
+|---|---|---|---|---|
+| Erfahrung der Ebene | **2671** (Report) | 4006 | 6010 | 9015 |
+| Erfahrung gesamt | 2671 | 6678 | 12687 | 21702 |
+
+- Jede weitere Ebene bringt **1,5-mal so viel** Erfahrung wie die vorige: `erfahrung(n) = 2671 · 1,5^(n − 1)` (stärkere Gegner geben mehr, dazu etwas mehr Gegner). Ebenen hier ab 1 gezählt; im Code heißen die Katakomben Ebene 0.
+- Alle Räume geräumt, ein Spieler allein, keine Erfahrungs-Boni. Im Coop teilen sich die Spieler die Kills und kommen je weniger weit.
+- Ein Skill braucht **5 Punkte** bis ganz ausgebaut (Stufe 15); was darüber liegt, hat keine Verwendung.
+
+**Drei Varianten** (Stufe / Skillpunkte am Ende der Ebene; in Klammern kleinste und größte Katakomben-Ebene des Reports):
+
+| Variante | Kosten je Stufe | 1. Punkt nach | nach Ebene 1 | nach Ebene 2 | nach Ebene 3 | nach Ebene 4 | Boni bis Ebene 3 |
+|---|---|---|---|---|---|---|---|
+| **A – heute** | `round(100 · 1,25^n)`: 100, 125 … 745 (9 → 10), 931 … 2274 (14 → 15) | 381 Erf. ≈ **14 Kills** | **9 / 3** (8–9 / 2–3) | 12 / 4 | **15 / 5** | 17 / 5 | 15 |
+| **B – gleich mit Schwellen** | 270 bis Stufe 10, ab Stufe 10 → 11: 540, ab 20 → 21: 1080 | 810 Erf. ≈ **29 Kills** | **9 / 3** (7–10 / 2–3) | 17 / 5 | 24 / 8 | 32 / 10 | 24 |
+| **C – heute bis Stufe 10, dann gleich** | wie A bis 9 → 10 (745), ab 10 → 11: 1200, ab 20 → 21: 2400 | 381 Erf. ≈ **14 Kills** | **9 / 3** (8–9 / 2–3) | 12 / 4 | **17 / 5** | 22 / 7 | 17 |
+
+**Gegenprobe der Annahme:** Punkte nach Ebene 3 bzw. 4, wenn jede Ebene 1,25-, 1,5- oder 2-mal so viel bringt wie die vorige.
+
+| Variante | ×1,25 | ×1,5 | ×2 |
+|---|---|---|---|
+| A | 4 / 5 | 5 / 5 | 5 / 6 |
+| B | 7 / 8 | 8 / 10 | 9 / 16 |
+| C | 5 / 6 | 5 / 7 | 7 / 10 |
+
+**Was die Zahlen zeigen:**
+
+- **Die Katakomben bleiben in allen drei Varianten bei 2 bis 3 Punkten.** Die Varianten unterscheiden sich erst ab Ebene 2 – und die gibt es in 1.0 nicht.
+- **A** bremst sich selbst: Mehr Erfahrung je Ebene wird durch die steigenden Kosten aufgefangen; Ebene 3 endet bei 4 bis 5 Punkten, ob ×1,25 oder ×2. Dafür bringt jede spätere Ebene nur 2 bis 3 Stufen, also nur 2 bis 3 Boni in 20 Minuten.
+- **B** setzt die Idee wörtlich um, kostet aber zweimal: Der erste Punkt kommt doppelt so spät (29 statt 14 Kills), und nach Ebene 3 liegen 8 Punkte da, 3 davon ohne Verwendung, dazu 24 Boni. Das ist das schnelle Skalieren, das der Mensch vermeiden will.
+- **C** behält den schnellen Anfang von A und macht ab Stufe 10 jeden Aufstieg gleich teuer, mit Schwelle bei 20. Ebene 3 endet bei 5 Punkten (ganz ausgebaut), jede spätere Ebene bringt 3 bis 5 Stufen statt 2 bis 3. Die Schwellen-Werte hängen aber stärker an der Annahme (×2 ergäbe 7 Punkte).
+
+**Empfehlung:** **In 1.0 Variante A behalten, nichts an `balance.json` ändern.** **Variante C** wird der Plan für Ebene 1 (Kerker): als Issue mit Label `später`, die Werte 1200 und 2400 dann mit der gemessenen Erfahrung des Kerkers festlegen (Balance-Report über beide Ebenen).
+
+**Was sich für den Spieler ändert:** In 1.0 nichts – der erste Skillpunkt kommt nach etwa 14 Kills, am Ende der Katakomben hat er 2 oder 3; ab dem Kerker kostet dann jede Stufe gleich viel, und ein Skill ist am Ende der Schlosshalle ganz ausgebaut.
 
 ## Noch offen
 
-1. **Ausbau II und III kommen in 1.0 kaum vor** (siehe Abschnitt 1). *Empfehlung:* in 1.0 nur Ausbau I bauen, II und III als Issues mit Label `später` für die nächsten Ebenen.
-2. **Wie oft trägt eine gefundene Waffe überhaupt einen Effekt?** *Empfehlung:* 40 %, für alle Seltenheiten gleich; die Seltenheit wirkt schon über die Chance je Treffer.
-3. **Effektwahl am zweiten Altar: alle fünf oder drei zufällige?** *Empfehlung:* alle fünf frei („bevorzugter Statuseffekt“), damit man passend zu einer gefundenen Waffe wählen kann.
-4. **Ausbaustufen in fester Reihenfolge oder wählbar?** *Empfehlung:* feste Reihenfolge I, II, III – bei höchstens einem Ausbau je Lauf lohnt keine Wahl.
-5. **Farben für Leech, Stun und Marked** stehen noch nicht in der Art-Bible. *Empfehlung:* Probenblatt des Grafikdesigners mit den Vorschlägen aus Abschnitt 4, Urteil beim nächsten Spieltest.
+1. **Farben für Leech, Stun und Marked** stehen noch nicht in der Art-Bible. *Empfehlung:* Probenblatt des Grafikdesigners mit den Vorschlägen aus Abschnitt 4, Urteil beim nächsten Spieltest.
+2. **Auslegung zu den Skillpunkten** (1 je 3 Stufen, Katakomben 2 bis 3, Kurve nach Abschnitt 7) ist vorläufig und wartet auf die Bestätigung des Menschen.
+
+## 8. Schnitt in Issues
+
+Je Zeile ein Issue und ein kleiner PR, Code-PRs nacheinander. Jedes Issue ist für sich spielbar und testbar: Zuerst tragen **Waffen** die Effekte, dann erst kommt der Altar. **Größe:** S bis etwa 200 geänderte Zeilen, M bis etwa 400, L bis etwa 800 (mit Tests). Für alle gilt: Logik in `Core` ohne Raylib, Werte in `balance.json` (mit Obergrenzen in `BalanceFile.cs`), Klang und Anzeige über Ereignisse aus `Core`, alles je Spieler („ein Spieler“), Zufall aus dem Seed.
+
+**Code**
+
+| # | Issue | Ziel (ein Satz) | hängt ab von | Größe |
+|---|---|---|---|---|
+| 1 | Skillpunkte zählen | Stufe 3, 6, 9 … gibt je Spieler einen Punkt (Ereignis `SkillPointGained`, Tod setzt zurück), das HUD zeigt die Zahl als Platzhalter. | – | S |
+| 2 | Statuseffekte: Grundgerüst und Marked | Gegner tragen Effekte mit Restzeit in Ticks und Quelle; Marked erhöht den Schaden über eine `IDamageRule`; Ereignisse `StatusApplied`/`StatusEnded`. | – | M |
+| 3 | Waffen mit Effekt | 30 % der gefundenen Waffen tragen einen Effekt aus der Liste der gebauten (anfangs nur Marked), Chance je Treffer nach Seltenheit, Anzeige in Inventar und Fundmeldung. | 2 | M |
+| 4 | Anzeige am Gegner | Platzhalter-Schimmer in der Effektfarbe und Timer über dem Kopf, gelesen aus einem Zustand in `Core`. | 2 | M |
+| 5 | Holy Fire | Schaden über Zeit durch `GameWorld.Damage`, der Kill zählt für den Auslöser; Eintrag in der Waffenliste. | 3 | S |
+| 6 | Grave Chill | Ghul, Fledermaus und Gorm gehen langsamer, Ankündigungen bleiben gleich lang; Eintrag in der Waffenliste. | 3 | S |
+| 7 | Stun | Gegner stehen still, ein ausholender Ghul bricht ab; Gorm taumelt nur kurz und ist danach immun. | 3 | M |
+| 8 | Leech | Anteil des Schadens heilt den Angreifer, Bruchteile gesammelt, nie über das Maximum. | 3 | S |
+| 9 | Altarraum im Generator | Raumart `Altar` mit den Regeln aus Abschnitt 2, einer je Ebene; Test über 100 Ebenen, gleicher Seed = gleicher Grundriss. | – | M |
+| 10 | Teleporter am Altar | `TeleporterSite.Altar` wird platziert und freigeschaltet wie Start und Bosstor. | 9 | S |
+| 11 | Altar bedienen und erster Skill | F öffnet „Ash Altar“, drei zufällige Skills aus den gebauten (anfangs nur Ash Nova), Q löst ihn aus; Fehlerzweige: kein Punkt, tot, Fenster schließt bei Bewegung. | 1, 10 | L |
+| 12 | Effektwahl am Altar | Zweiter Punkt: drei zufällige Effekte, der gewählte löst bei jedem Skilltreffer sicher aus. | 11, 5–8 | M |
+| 13 | Ausbau I | Dritter Punkt: nächste Ausbaustufe in fester Reihenfolge, zuerst Ash Nova I; „ganz ausgebaut“ als eigener Fehlerzweig. | 12 | S |
+| 14–17 | je ein weiterer Skill mit Ausbau I | Bloodlust, Holy Water, Phantom Step, Silver Volley – jeder kommt ins Altar-Angebot. | 13 | je M |
+| 18 | Synergie | Gleicher Effekt an Waffe und Skill: Dauer ×1,5 (Leech: Stärke ×1,5). | 12 | S |
+| 19 | Balance-Report und Bot | Report zeigt Punkte je Ebene (A aus Abschnitt 7), Bot wählt Skills und Effekte. | 11 | M |
+
+**Mit Label `später`** (kommen mit Ebene 1): Ausbau II und III aller Skills; Erfahrungskurve nach Variante C.
+
+**Bild:** Altar-Probestück und Einbau; Probenblatt der fünf Effekte am Ghul (Schimmer, Flammen, Reif …, mit Timer; klärt die offenen Farben); HUD-Feld für Q mit Leiste bzw. Abklingzeit; je Skill ein kleines Probenblatt.
+
+**Klang** (neue Kategorien, also Hörprobe vor dem Einbau): Altar und Skillpunkt; je Effekt ein Auslöse-Klang; je Skill ein Klang beim Auslösen.
