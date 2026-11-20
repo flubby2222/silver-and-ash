@@ -155,8 +155,11 @@ public enum SoundKind
     SkillPoint,
 }
 
-/// <summary>One sound to play now: which file, at which volume (0 to 1, before <see cref="SoundBoard.MasterVolume"/>).</summary>
-public readonly record struct SoundCue(SoundKind Kind, string File, float Volume);
+/// <summary>
+/// One sound to play now: which file, at which volume (0 to 1, before <see cref="SoundBoard.MasterVolume"/>) and how far
+/// to the side (<see cref="SoundMix.Pan"/>: -1 left, 0 the middle, 1 right; issue #491).
+/// </summary>
+public readonly record struct SoundCue(SoundKind Kind, string File, float Volume, float Pan = 0f);
 
 /// <summary>
 /// The files of assets/audio/ and their volumes, as the audio designer handed them over (issues #267, #290; which file
@@ -399,10 +402,58 @@ public sealed class SoundCues
     public IReadOnlyList<SoundCue> For(IEnumerable<GameEvent> events, SoundPack pack, Vector3? listener = null)
     {
         ArgumentNullException.ThrowIfNull(events);
+        return Cues(events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener)), pack, _ => SoundMix.Centre);
+    }
+
+    /// <summary>
+    /// Like the other <see cref="For(IEnumerable{GameEvent}, SoundPack, Vector3?)"/>, but placed (issue #491): every
+    /// sound with a place is heard from there by <paramref name="listener"/> (<see cref="Hearing.MixFor"/>) - quieter
+    /// with distance, silent beyond <see cref="HearingBalance.Range"/>, to the side it comes from. A sound without a place
+    /// and the listener's own body sounds stay in the middle at full volume. Of several events of one kind in a tick the
+    /// loudest decides.
+    /// </summary>
+    public IReadOnlyList<SoundCue> For(
+        IEnumerable<GameEvent> events, SoundPack pack, SoundListener listener, HearingBalance hearing)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        ArgumentNullException.ThrowIfNull(hearing);
+        return Cues(
+            events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener.Ears)),
+            pack,
+            gameEvent => Hearing.MixFor(gameEvent, listener, hearing));
+    }
+
+    /// <summary>The cues for <paramref name="events"/> (already filtered by earshot), each kind with the loudest of its <paramref name="mixFor"/>.</summary>
+    private List<SoundCue> Cues(IEnumerable<GameEvent> events, SoundPack pack, Func<GameEvent, SoundMix> mixFor)
+    {
         ArgumentNullException.ThrowIfNull(pack);
         _tick++;
-        var kinds = events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener))
-            .Select(SoundBoard.KindFor).OfType<SoundKind>().Distinct().ToList();
+        var mixes = new Dictionary<SoundKind, SoundMix>();
+        var kinds = new List<SoundKind>();
+        foreach (var gameEvent in events)
+        {
+            if (SoundBoard.KindFor(gameEvent) is not { } kind)
+            {
+                continue;
+            }
+
+            var mix = mixFor(gameEvent);
+            if (mix.Volume <= 0f)
+            {
+                continue;
+            }
+
+            if (!mixes.TryGetValue(kind, out var heard))
+            {
+                kinds.Add(kind);
+                mixes[kind] = mix;
+            }
+            else if (mix.Volume > heard.Volume)
+            {
+                mixes[kind] = mix;
+            }
+        }
+
         if (kinds.Contains(SoundKind.Blade))
         {
             kinds.Remove(SoundKind.BladeSwing);
@@ -428,7 +479,8 @@ public sealed class SoundCues
                 _lastPlayedTick[kind] = _tick;
             }
 
-            cues.Add(new SoundCue(kind, files[NextVariant(set, files.Length)], SoundBoard.SoundVolume));
+            var mix = mixes[kind];
+            cues.Add(new SoundCue(kind, files[NextVariant(set, files.Length)], SoundBoard.SoundVolume * mix.Volume, mix.Pan));
         }
 
         return cues;

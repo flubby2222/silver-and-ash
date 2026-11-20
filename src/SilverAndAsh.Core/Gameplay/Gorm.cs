@@ -269,7 +269,7 @@ public sealed class Gorm : ITarget
         // Reported is what he really lost - a deadly hit counts only his last health.
         var taken = Math.Min(damage, Health);
         Health -= taken;
-        events.Add(new GormHit(Id, taken, critical));
+        events.Add(new GormHit(Id, taken, critical) { Place = Position });
         if (IsDead)
         {
             Velocity = Vector3.Zero;
@@ -278,7 +278,7 @@ public sealed class Gorm : ITarget
             HookAim = null;
             LyingHook = null;
             _stones.Clear();
-            events.Add(new GormDied(Id));
+            events.Add(new GormDied(Id) { Place = Position });
             return;
         }
 
@@ -292,7 +292,7 @@ public sealed class Gorm : ITarget
             LyingHook = null;
             Attack = null;
             Begin(GormState.Roaring, _gorm.RoarTime);
-            events.Add(new GormRoared(Id));
+            events.Add(new GormRoared(Id) { Place = Position });
         }
     }
 
@@ -516,7 +516,7 @@ public sealed class Gorm : ITarget
             });
             Attack = chosen;
             _lastAttack = chosen;
-            events.Add(new GormWindUp(Id, chosen));
+            events.Add(new GormWindUp(Id, chosen) { Place = Position });
             Stand(level, obstacles);
             return;
         }
@@ -549,7 +549,7 @@ public sealed class Gorm : ITarget
         while (_strideDistance >= StepLength)
         {
             _strideDistance -= StepLength;
-            events.Add(new GormStepped(Id));
+            events.Add(new GormStepped(Id) { Place = Position });
         }
     }
 
@@ -608,7 +608,7 @@ public sealed class Gorm : ITarget
                 _reachedByWave.Clear();
                 _waveHit = false;
                 State = GormState.Slamming;
-                events.Add(new GormSlammed(Id));
+                events.Add(new GormSlammed(Id) { Place = Position });
                 if (IsInPhase2 && target is not null)
                 {
                     LoosenStones(level, target, events);
@@ -621,7 +621,7 @@ public sealed class Gorm : ITarget
                 _swingAngle = -SwingHalfArc;
                 _sweptPlayers.Clear();
                 Begin(GormState.Swinging, Quicker(_gorm.SwingTime));
-                events.Add(new GormSwingStarted(Id));
+                events.Add(new GormSwingStarted(Id) { Place = Position });
                 break;
 
             default:
@@ -631,7 +631,7 @@ public sealed class Gorm : ITarget
                 _hookTravelled = 0f;
                 Hook = Hand;
                 State = GormState.Throwing;
-                events.Add(new GormThrew(Id, Hand, _hookDirection));
+                events.Add(new GormThrew(Id, Hand, _hookDirection) { Place = Hand });
                 break;
         }
     }

@@ -664,7 +664,7 @@ public sealed class GameWorld
     {
         if (well.Use())
         {
-            _events.Add(new WellOfSiriusUsed(player.Id));
+            _events.Add(new WellOfSiriusUsed(player.Id) { Place = well.Position });
         }
     }
 
@@ -691,7 +691,7 @@ public sealed class GameWorld
     private void OpenChest(Chest chest, Player opener)
     {
         chest.Open();
-        _events.Add(new ChestOpened(chest.Id, opener.Id, chest.Tier));
+        _events.Add(new ChestOpened(chest.Id, opener.Id, chest.Tier) { Place = chest.Position });
 
         var towards = FacingTowards(chest.Position, opener.Position);
         var lid = new Vector3(0f, Chest.Height, 0f);
@@ -760,7 +760,7 @@ public sealed class GameWorld
     {
         door.Open(player.Position);
         UpdateLevel();
-        _events.Add(new DoorOpened(door.Id));
+        _events.Add(new DoorOpened(door.Id) { Place = (door.BoxMin + door.BoxMax) / 2f });
     }
 
     // After doors changed: a new level in which exactly the blocking doors are walls, for everybody.
