@@ -1,4 +1,5 @@
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Showroom;
@@ -31,6 +32,12 @@ public enum ShowroomEnemy
 
 /// <summary>An enemy as a harmless exhibit: it neither moves, attacks nor takes damage. At most one Gorm.</summary>
 public sealed record EnemyPiece(string Label, ShowroomEnemy Enemy) : ShowroomPiece(Label);
+
+/// <summary>
+/// The crossbow skeleton in <paramref name="Stance"/>, as a figure only (issue #497): it neither moves, shoots nor
+/// blocks the way.
+/// </summary>
+public sealed record CrossbowSkeletonPiece(string Label, CrossbowSkeletonStance Stance) : ShowroomPiece(Label);
 
 /// <summary>A weapon lying on the floor, glowing in the colour of its tier - taken with F, as in the game.</summary>
 public sealed record WeaponPiece(string Label, WeaponKind Weapon) : ShowroomPiece(Label);
@@ -65,6 +72,8 @@ public static class ShowroomPieces
         new EnemyPiece("Ghoul", ShowroomEnemy.Ghoul),
         new EnemyPiece("Bat", ShowroomEnemy.Bat),
         new EnemyPiece("Gorm", ShowroomEnemy.Gorm),
+        new CrossbowSkeletonPiece("Crossbow skeleton (rest)", CrossbowSkeletonStance.Rest),
+        new CrossbowSkeletonPiece("Crossbow skeleton (announce)", CrossbowSkeletonStance.Announce),
         new WeaponPiece("Silver Blade (Worn)", WeaponKind.SilverBlade),
         new WeaponPiece("Club (Worn)", WeaponKind.Club),
         new WeaponPiece("Pistol (Worn)", WeaponKind.Pistol),

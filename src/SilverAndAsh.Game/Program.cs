@@ -452,6 +452,9 @@ static void RunGame(
         // The teleporters, locked or unlocked (issue #480); without their models placeholder boxes.
         using var teleporterView = TeleporterView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
+        // The crossbow skeleton (issue #497) - for now only as the showroom's figure; without its models placeholder boxes.
+        using var crossbowSkeletonView = CrossbowSkeletonViews.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
         newWeaponView = () => new WeaponView(weaponModels, levelShader);
@@ -546,6 +549,7 @@ static void RunGame(
             stairsView.Draw(gameWorld.Stairs, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             wellView.Draw(gameWorld.Well, seconds, viewCone);
             teleporterView.Draw(gameWorld.Teleporters, viewCone, levelShader);
+            crossbowSkeletonView.Draw(gameWorld.Showroom?.CrossbowSkeletons ?? [], viewCone);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);

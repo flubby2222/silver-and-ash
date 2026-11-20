@@ -110,6 +110,7 @@ public class PhotoSceneTests
             "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
             "menu-title", "menu-pause", "menu-settings", "menu-quit",
             "ghoul-shotbody-front", "ghoul-shotbody-side",
+            "crossbow-skeleton-rest-4m", "crossbow-skeleton-announce-4m", "crossbow-skeleton-announce-2m",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -466,6 +467,26 @@ public class PhotoSceneTests
         Assert.Equal(1.8f, flat.Length(), 0.01f);
         Assert.Equal(ahead, Vector3.Dot(Vector3.Normalize(flat), facing), 0.001f);
         var looking = Vector3.Normalize(setup.World.Player.View.Forward with { Y = 0f });
+        Assert.True(Vector3.Dot(looking, -Vector3.Normalize(flat)) > 0.99f);
+    }
+
+    [Theory]
+    [InlineData("crossbow-skeleton-rest-4m", CrossbowSkeletonStance.Rest, 4f)]
+    [InlineData("crossbow-skeleton-announce-4m", CrossbowSkeletonStance.Announce, 4f)]
+    [InlineData("crossbow-skeleton-announce-2m", CrossbowSkeletonStance.Announce, 2f)]
+    public void The_crossbow_skeleton_scenes_stand_in_front_of_the_skeleton_in_its_pose(string name, CrossbowSkeletonStance stance, float distance)
+    {
+        // Issue #497: the player stands `distance` m in front of the showroom's skeleton of that pose, looking at it.
+        var setup = Built(name);
+        setup.Run();
+        var world = setup.World;
+        var skeleton = world.Showroom!.CrossbowSkeletons.MinBy(exhibit => Vector3.Distance(exhibit.Position, world.Player.Position))!;
+
+        Assert.Equal(stance, skeleton.Stance);
+        var flat = (world.Player.Position - skeleton.Position) with { Y = 0f };
+        Assert.Equal(distance, flat.Length(), 0.01f);
+        Assert.Equal(1f, Vector3.Dot(Vector3.Normalize(flat), skeleton.Facing), 0.001f);
+        var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
         Assert.True(Vector3.Dot(looking, -Vector3.Normalize(flat)) > 0.99f);
     }
 

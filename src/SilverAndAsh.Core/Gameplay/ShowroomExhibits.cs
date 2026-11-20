@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Core.Gameplay;
 
@@ -15,6 +16,12 @@ public sealed record ExhibitWeapon(WeaponKind Kind, Vector3 Position);
 public sealed record ExhibitItem(ItemKind Kind, Vector3 Position);
 
 /// <summary>
+/// A crossbow skeleton standing in the showroom in <paramref name="Stance"/>, looking along <paramref name="Facing"/>
+/// (issue #497). Only a figure: no body, no collision, no shots - the enemy itself comes with issue #334.
+/// </summary>
+public sealed record ExhibitCrossbowSkeleton(CrossbowSkeletonStance Stance, Vector3 Position, Vector3 Facing);
+
+/// <summary>
 /// What the showroom (issue #283) puts into a world besides its level, doors, chests and enemies. A world with exhibits
 /// is a showroom (<see cref="GameWorld.IsShowroom"/>): its enemies are exhibits that neither move, attack nor take damage,
 /// and its staircase stands from the start but cannot be climbed. A normal game never has exhibits.
@@ -25,4 +32,8 @@ public sealed record ShowroomExhibits(
     IReadOnlyList<ExhibitLoot> Loot,
     IReadOnlyList<ExhibitConsumable> Consumables,
     IReadOnlyList<ExhibitWeapon> Weapons,
-    IReadOnlyList<ExhibitItem> Items);
+    IReadOnlyList<ExhibitItem> Items)
+{
+    /// <summary>Crossbow skeletons standing as figures (issue #497).</summary>
+    public IReadOnlyList<ExhibitCrossbowSkeleton> CrossbowSkeletons { get; init; } = [];
+}
