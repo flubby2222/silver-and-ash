@@ -1,0 +1,23 @@
+Belege Probestueck Texturen #244
+
+Nahtlos: Randsprung / Innensprung (Rand / staerkste Innenkante, hoechstens 1; Bestand zum Vergleich); mittlere Helligkeit; Farben
+  Bestand wall     a  Naht 0.38  Mittel 112.7  Farben 24
+  Bestand wall     b  Naht 0.80  Mittel 112.7  Farben 24
+  Bestand wall     c  Naht 0.39  Mittel 112.6  Farben 24
+  Bestand floor    a  Naht 0.49  Mittel  78.0  Farben 24
+  Bestand floor    b  Naht 0.15  Mittel  78.0  Farben 23
+  Bestand floor    c  Naht 1.00  Mittel  78.0  Farben 20
+  Bestand ceiling  a  Naht 0.52  Mittel  44.7  Farben 24
+  Bestand ceiling  b  Naht 1.02  Mittel  44.6  Farben 24
+  Bestand ceiling  c  Naht 0.53  Mittel  44.6  Farben 21
+  neu     wall     d  Naht 0.76  Mittel 112.6  Farben 10  Palette ok  Moos-Pixel   0  bitgleich ja  sha256 31cf670e03abb6ba
+  neu     wall     e  Naht 0.58  Mittel 112.3  Farben 12  Palette ok  Moos-Pixel  37  bitgleich ja  sha256 8affd39080461191
+  neu     wall     f  Naht 0.82  Mittel 112.7  Farben 10  Palette ok  Moos-Pixel   0  bitgleich ja  sha256 58339a5dfbe4a036
+  neu     floor    d  Naht 0.60  Mittel  78.0  Farben  9  Palette ok  Moos-Pixel   0  bitgleich ja  sha256 80520e3de09c3d14
+  neu     floor    e  Naht 0.89  Mittel  77.9  Farben  8  Palette ok  Moos-Pixel   0  bitgleich ja  sha256 b8589b3f8d3f4391
+  neu     floor    f  Naht 0.48  Mittel  78.0  Farben  7  Palette ok  Moos-Pixel   0  bitgleich ja  sha256 0bc7e02abb27ae3f
+  neu     ceiling  d  Naht 0.10  Mittel  44.8  Farben  4  Palette ok  Moos-Pixel   0  bitgleich ja  sha256 a00cd68d58b27b77
+  neu     ceiling  e  Naht 0.73  Mittel  44.7  Farben  3  Palette ok  Moos-Pixel   0  bitgleich ja  sha256 3303f72b34279153
+  neu     ceiling  f  Naht 0.00  Mittel  44.7  Farben  4  Palette ok  Moos-Pixel   0  bitgleich ja  sha256 5f1d7a52142845ce
+
+Gesamt: alles in Ordnung
