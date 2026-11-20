@@ -1,0 +1,27 @@
+Pruefung je Teil im Skript (Kante mit genau einer Flaeche = offen):
+A Plattenträger: Teile 9, Dreiecke 1060, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000020 m3 (muss > 0 sein)
+    leg_l: 104 Dreiecke, offen 0, mehrfach 0, Raum 0.1529
+    leg_r: 104 Dreiecke, offen 0, mehrfach 0, Raum 0.1529
+    torso: 396 Dreiecke, offen 0, mehrfach 0, Raum 1.1361
+    head: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0425
+    eyes: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_r: 48 Dreiecke, offen 0, mehrfach 0, Raum 0.0577
+    maul: 96 Dreiecke, offen 0, mehrfach 0, Raum 0.1012
+    arm_l: 36 Dreiecke, offen 0, mehrfach 0, Raum 0.0500
+    slab: 92 Dreiecke, offen 0, mehrfach 0, Raum 0.2948
+B Glocke: Teile 6, Dreiecke 1312, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000017 m3 (muss > 0 sein)
+    body: 888 Dreiecke, offen 0, mehrfach 0, Raum 2.8521
+    head: 232 Dreiecke, offen 0, mehrfach 0, Raum 0.0538
+    eyes: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_l: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0609
+    arm_r: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0609
+    sword: 120 Dreiecke, offen 0, mehrfach 0, Raum 0.0545
+C Joch: Teile 8, Dreiecke 1124, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000023 m3 (muss > 0 sein)
+    leg_l: 80 Dreiecke, offen 0, mehrfach 0, Raum 0.1721
+    leg_r: 80 Dreiecke, offen 0, mehrfach 0, Raum 0.1721
+    torso: 372 Dreiecke, offen 0, mehrfach 0, Raum 1.1056
+    head: 124 Dreiecke, offen 0, mehrfach 0, Raum 0.0576
+    eyes: 24 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    yoke: 372 Dreiecke, offen 0, mehrfach 0, Raum 0.2784
+    arm_l: 36 Dreiecke, offen 0, mehrfach 0, Raum 0.0392
+    arm_r: 36 Dreiecke, offen 0, mehrfach 0, Raum 0.0392
