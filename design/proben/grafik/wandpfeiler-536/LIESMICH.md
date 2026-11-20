@@ -23,6 +23,8 @@ Jeweils je Wandvariante a, b, c ein eigenes Modell (`modelle/`), alle geschlosse
 
 Je Fassung in `raum/`, `gang/`, `gang_traeger/`: `vorn.png`, `schraeg.png`, `einzel.png` (vorn, Seite, hinten, oben), `detail.png`, `spielaufloesung.png`, `auge-hell.png`. Dazu `blatt-vorn.png`, `blatt-schraeg.png`, `vergleich-tuer*.png`, `wandvarianten-*.png`.
 
+Spielfotos aus dem Musterraum (PR zu #536, Debug-Build, `--photo wall-pillar-<v>-<corridor|room>`): `spiel-wall-pillar-*.png`. Sie zeigen die Spiel-Modelle aus `tools/models/wall_pillar.py`. Dieser Erzeuger liest die auf die Hauptpalette umgerechneten Wände (#542) und hebt sie um 2 statt 5 Stein-Stufen. Die Modelle in `modelle/` hier beruhen noch auf den Wänden vor #542.
+
 ## Offene Fragen
 
 - Rückseite zeigt im Raum eine schwache Dreiecksnaht (flache Schattierung der konkaven Fläche); unsichtbar im Spiel, bei Bedarf Polygon anders zerlegen.

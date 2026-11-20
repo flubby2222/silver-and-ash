@@ -1,7 +1,9 @@
 """Wandpfeiler (Issue #536, Baustein aus der Formenlehre Gotik #281): Pfeiler vor der Wand fuer Gang (3,5 m) und Raum (6 m).
 
 Erzeuger fuer das Spiel. Uebergabe aus dem Probestueck design/proben/grafik/wandpfeiler-536/wandpfeiler.py (Branch
-feat/wandpfeiler-probe-536): gleiche Geometrie und Textur, nur die Fassungen "raum" (hier room) und "gang" (corridor). Die
+feat/wandpfeiler-probe-536): gleiche Geometrie, nur die Fassungen "raum" (hier room) und "gang" (corridor). Anders als das
+Probestueck liest der Erzeuger die auf die Hauptpalette umgerechneten Waende (#542); darum hebt er die Wandstufen nur um
+LIFT = 2 statt 5 und prueft, dass die Fugen sichtbar bleiben (check_joints). Die
 tragende Fassung "gang_traeger" kommt mit dem Gurtbogen (#537). Erzeugt nur Modelle und Texturen nach assets/models/, keine
 Probebilder, dazu die Liste der gelesenen Wand-Texturen (tools/models/wall_pillar_sources.sha256).
 
@@ -13,7 +15,8 @@ auf dem Boden, Wandflaeche z = 0, der Pfeiler steht nach +z vor; die Rueckseite 
 
 Dateien: wall_pillar_<fassung>_<v>.glb und .png, Fassung room oder corridor, v die Wandvariante a, b, c. Ein Knoten
 "pillar", ein Netz, rundum geschlossen. Atlas 128 x 64: links die echte Wand-Textur der Variante (bitgleich, nur gelesen),
-rechts dieselbe Kachel um LIFT Stufen der Reihe Stein heller (pillar_tile); der Pfeiler nutzt nur das rechte Feld.
+rechts dieselbe Kachel um LIFT Stufen der Reihe Stein heller, oben gekappt (pillar_tile); der Pfeiler nutzt nur das
+rechte Feld.
 
   room      Sockel 0 bis 0,5, Schaft bis 5,5 (Tiefe 0,25), Kapitell 5,5 bis 6,0; Sockel und Kapitell Tiefe 0,3125
   corridor  Schaft Tiefe 0,0625, Sockel und Kapitell 0,125; Kapitell 3,0 bis 3,5
@@ -44,7 +47,9 @@ TEXTURES = os.path.join(ROOT, "assets", "textures")
 PALETTE = os.path.join(ROOT, "assets", "palette", "hauptpalette.json")
 SOURCES = os.path.join(TOOLS, "wall_pillar_sources.sha256")
 WALL_FILES = {"a": "catacomb_wall.png", "b": "catacomb_wall_b.png", "c": "catacomb_wall_c.png"}
-LIFT = 5                                           # Stein-Stufen heller als die Wand
+LIFT = 2                                           # Stein-Stufen heller als die Wand
+MIN_STEPS = 5                                      # Stein-Stufen im Pfeiler-Feld mindestens
+MIN_JOINT = 2                                      # Fuge mindestens so viele Stufen dunkler als die Flaeche
 FRAME_SIZE = (128, 64)
 FRAME_RECTS = {"stone": (0, 0, 64, 64), "pillar": (64, 0, 128, 64)}
 FRAME_UV = rects_from_pixels(FRAME_RECTS, FRAME_SIZE)
@@ -76,22 +81,39 @@ def load_tile(name):
     return np.round(a[::-1]).astype(int)
 
 
-def pillar_tile(tile, stein):
-    """Dieselbe Kachel um LIFT Stein-Stufen heller. Alle Stufen der Wand ruecken hinauf; weil die Wand schon bis zur obersten
-    Stufe reicht, werden die Stufen oben zusammengedraengt (lineare Abbildung), so bleiben Fugen und Quader unterscheidbar."""
+def steps_of(tile, stein):
+    """Stein-Stufe (Index in der Reihe Stein) jedes Bildpunkts, flach."""
     flat = tile.reshape(-1, 3)
-    colours = sorted({tuple(int(c) for c in p) for p in flat})
-    idx = {c: int(((stein - np.array(c)) ** 2).sum(1).argmin()) for c in colours}
-    lo, hi, top = min(idx.values()), max(idx.values()), len(stein) - 1
-    new_lo = min(max(lo + LIFT, 0), top)
-    span = max(hi - lo, 1)
-    mapped = {c: int(round(new_lo + (i - lo) * (top - new_lo) / span)) for c, i in idx.items()}
-    return np.array([stein[mapped[tuple(int(c) for c in p)]] for p in flat]).reshape(tile.shape)
+    return np.array([int(((stein - p) ** 2).sum(1).argmin()) for p in flat])
+
+
+def pillar_tile(tile, stein):
+    """Dieselbe Kachel um LIFT Stein-Stufen heller: jede Stufe der Wand rueckt um LIFT hinauf, oben an der hellsten Stufe
+    gekappt. Nur die seltenen hellsten Lichter fallen zusammen; Fugen (dunkle Stufen) und Quaderflaechen (mittlere Stufen)
+    behalten ihren Abstand. Die umgerechneten Waende (#542) reichen schon bis zur obersten Stufe; eine lineare Stauchung
+    in den oberen Rest (wie im Probestueck mit 5 Stufen) drueckte Wand B auf drei Stufen und loeschte ihre Fugen."""
+    top = len(stein) - 1
+    return np.array([stein[min(i + LIFT, top)] for i in steps_of(tile, stein)]).reshape(tile.shape)
+
+
+def check_joints(name, tile, lifted, stein):
+    """Fugen bleiben sichtbar: das Pfeiler-Feld hat mindestens MIN_STEPS Stufen, die Fuge (10. Perzentil der Stufen) liegt
+    mindestens MIN_JOINT Stufen und nicht weniger als auf der Wand unter der Flaeche (Median), und der Pfeiler ist heller."""
+    wall, pillar = steps_of(tile, stein), steps_of(lifted, stein)
+    count = len(set(pillar.tolist()))
+    w_joint, w_face = np.percentile(wall, 10, method="lower"), np.percentile(wall, 50, method="lower")
+    p_joint, p_face = np.percentile(pillar, 10, method="lower"), np.percentile(pillar, 50, method="lower")
+    print(f"FUGEN {name}: Stufen {count}, Wand Fuge {w_joint} Flaeche {w_face}, Pfeiler Fuge {p_joint} Flaeche {p_face}")
+    assert count >= MIN_STEPS, f"{name}: Pfeiler-Feld hat nur {count} Stein-Stufen (mindestens {MIN_STEPS})"
+    assert p_face - p_joint >= max(MIN_JOINT, w_face - w_joint), \
+        f"{name}: Fuge {p_joint} zu nah an der Flaeche {p_face} (Wand {w_joint}/{w_face}, mindestens {MIN_JOINT})"
+    assert p_face > w_face, f"{name}: Pfeiler-Flaeche {p_face} nicht heller als die Wand {w_face}"
 
 
 def atlas(variant, stein):
     tile = load_tile(WALL_FILES[variant])
     lifted = pillar_tile(tile, stein)
+    check_joints(variant, tile, lifted, stein)
     w, h = FRAME_SIZE
     out = np.zeros((h, w, 3))
     for name, t in (("stone", tile), ("pillar", lifted)):
