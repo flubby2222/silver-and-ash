@@ -1419,6 +1419,12 @@ public sealed class GameWorld
         return Vector3.Normalize(forward * MathF.Cos(tilt) + across * MathF.Sin(tilt));
     }
 
+    /// <summary>How far along the ray it meets the nearest of the target's shot bodies, or null if it misses them all.</summary>
+    private static float? NearestShotBody(Vector3 origin, Vector3 direction, ITarget target) =>
+        target.ShotBodies
+            .Select(body => Raycast.AgainstCylinder(origin, direction, body))
+            .Min(); // Min of float? skips the nulls, and is null if all are null.
+
     /// <summary>One bullet (or pellet) along <paramref name="direction"/>: hits up to 1 + pierce targets before the first wall.</summary>
     private void FirePellet(Vector3 origin, Vector3 direction, RangedBalance values, Weapon weapon, Player attacker)
     {
@@ -1427,7 +1433,7 @@ public sealed class GameWorld
 
         // Every target on the ray before the wall, nearest first; the shot takes the first one and pierces on.
         var hits = Targets.Where(candidate => candidate.IsHittable)
-            .Select(candidate => (Target: candidate, Distance: Raycast.AgainstCylinder(origin, direction, candidate.Body)))
+            .Select(candidate => (Target: candidate, Distance: NearestShotBody(origin, direction, candidate)))
             .Where(hit => hit.Distance is { } distance && distance <= reach)
             .OrderBy(hit => hit.Distance)
             .Take(1 + values.Pierce)

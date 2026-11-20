@@ -64,13 +64,86 @@ public class GameWorldGhoulTests
         var world = new GameWorld(LevelParser.Parse("P\n.\n.\nG\n."));
         var ghoul = world.Ghouls[0];
         var head = ghoul.Position + ghoul.Facing * (BodySizes.Ghoul.Radius * 0.8f)
-            + new Vector3(0f, BodySizes.Ghoul.Height - BodySizes.Ghoul.HeadHeight / 2f, 0f);
+            + new Vector3(0f, BodySizes.Ghoul.HeadTop - BodySizes.Ghoul.HeadHeight / 2f, 0f);
         AimAt(world.Player, head);
 
         world.Tick(Shoot);
 
         Assert.True(ghoul.IsDead);
         Assert.Contains(world.Events, e => e is GhoulHit { Critical: true });
+    }
+
+    // Issue #433: shots hit the shape of the model, not the round body the ghoul walks with. From 16 m away, so the
+    // ray runs almost flat over the ghoul (it falls 5 cm per metre) and passes close to the aimed point.
+    private const string LongCorridor = "P\n.\n.\n.\n.\n.\n.\n.\nG";
+
+    [Fact]
+    public void A_shot_at_the_middle_of_the_models_head_is_a_headshot()
+    {
+        var world = new GameWorld(LevelParser.Parse(LongCorridor));
+        var ghoul = world.Ghouls[0];
+
+        ShootAt(world,OnGhoul(ghoul, BodySizes.Ghoul.HeadForward, BodySizes.Ghoul.HeadTop - BodySizes.Ghoul.HeadHeight / 2f, 0f));
+
+        Assert.Contains(world.Events, e => e is GhoulHit { Critical: true });
+    }
+
+    [Fact]
+    public void A_shot_at_the_models_shoulder_hits_the_body()
+    {
+        // The upper arm: beside the head, at shoulder height (the model's shoulders are 0.14 .. 0.35 m to the side).
+        var world = new GameWorld(LevelParser.Parse(LongCorridor));
+        var ghoul = world.Ghouls[0];
+
+        ShootAt(world,OnGhoul(ghoul, BodySizes.Ghoul.TorsoForward, BodySizes.Ghoul.TorsoHeight - 0.1f, BodySizes.Ghoul.TorsoRadius - 0.1f));
+
+        Assert.Contains(world.Events, e => e is GhoulHit { Critical: false });
+        Assert.True(ghoul.Health < Balance.Default.Ghoul.MaxHealth);
+    }
+
+    [Fact]
+    public void A_shot_just_above_the_head_misses()
+    {
+        var world = new GameWorld(LevelParser.Parse(LongCorridor));
+        var ghoul = world.Ghouls[0];
+
+        ShootAt(world,OnGhoul(ghoul, BodySizes.Ghoul.HeadForward, BodySizes.Ghoul.HeadTop + 0.03f, 0f));
+
+        AssertMissed(world, ghoul);
+    }
+
+    [Fact]
+    public void A_shot_just_beside_the_head_misses()
+    {
+        // Above the shoulders, a hand's breadth beside the head: there is nothing of the model there.
+        var world = new GameWorld(LevelParser.Parse(LongCorridor));
+        var ghoul = world.Ghouls[0];
+
+        ShootAt(world,OnGhoul(ghoul, BodySizes.Ghoul.HeadForward, BodySizes.Ghoul.HeadTop - 0.05f, BodySizes.Ghoul.HeadRadius + 0.03f));
+
+        AssertMissed(world, ghoul);
+    }
+
+    [Fact]
+    public void A_shot_just_above_the_back_misses()
+    {
+        var world = new GameWorld(LevelParser.Parse(LongCorridor));
+        var ghoul = world.Ghouls[0];
+
+        ShootAt(world,OnGhoul(ghoul, 0f, BodySizes.Ghoul.TorsoHeight + 0.04f, BodySizes.Ghoul.HeadRadius + 0.14f));
+
+        AssertMissed(world, ghoul);
+    }
+
+    [Fact]
+    public void A_shot_just_beside_the_shoulder_misses()
+    {
+        var world = new GameWorld(LevelParser.Parse(LongCorridor));
+        var ghoul = world.Ghouls[0];
+
+        ShootAt(world,OnGhoul(ghoul, BodySizes.Ghoul.TorsoForward, BodySizes.Ghoul.TorsoHeight - 0.1f, BodySizes.Ghoul.TorsoRadius + 0.03f));
+
+        AssertMissed(world, ghoul);
     }
 
     [Fact]
@@ -118,6 +191,23 @@ public class GameWorldGhoulTests
         // The ghoul is low: look down at it so it is well inside the blade's cone.
         AimAt(world.Player, world.Ghouls[0].Position + new Vector3(0f, 0.6f, 0f));
         return world;
+    }
+
+    /// <summary>A point on the ghoul: this far in front of its feet, this high, this far to its side (metres).</summary>
+    private static Vector3 OnGhoul(Ghoul ghoul, float forward, float up, float side) =>
+        ghoul.Position + ghoul.Facing * forward + new Vector3(0f, up, 0f)
+        + new Vector3(ghoul.Facing.Z, 0f, -ghoul.Facing.X) * side;
+
+    private static void ShootAt(GameWorld world, Vector3 point)
+    {
+        AimAt(world.Player, point);
+        world.Tick(Shoot);
+    }
+
+    private static void AssertMissed(GameWorld world, Ghoul ghoul)
+    {
+        Assert.DoesNotContain(world.Events, e => e is GhoulHit);
+        Assert.Equal(Balance.Default.Ghoul.MaxHealth, ghoul.Health);
     }
 
     private static void Swing(GameWorld world)
