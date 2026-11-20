@@ -304,6 +304,8 @@ def build(old_json, atlas_w, drawer, png_name, out_dir, extra):
     old = json.load(open(old_json, encoding="utf-8"))
     parts, lost_total = [], 0
     for p in old["parts"]:
+        if p.get("source"):  # Teile anderer Skripte (tools/hud/hud_lebensbalken.py) haengt deren Skript danach selbst an
+            continue
         cv = ACanvas()
         is_wi = p["name"] in ICONS and ICONS[p["name"]][6] == "wi"
         nx, ny, nw, nh = new_rect(p, p["name"] in ICONS, is_wi)
