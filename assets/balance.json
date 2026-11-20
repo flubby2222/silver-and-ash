@@ -268,6 +268,15 @@
     "collisionRadius": 0.95             // m: the circle nobody walks through
   },
 
+  // Directional sound (issue #491): what a player hears of a sound with a place (an enemy, a door, a chest, another
+  // player's steps). Provisional until the listening test.
+  "hearing": {
+    "nearDistance": 2,                  // m from the ears: up to here full volume ...
+    "range": 30,                        // m: ... from there fading, silent here (not below nearDistance)
+    "rolloff": 1.5,                     // bend of the fade: 1 = straight, above 1 = falls fast at first, quiet tail
+    "maxPan": 0.8                       // how far a sound right beside the ears goes to that side (1 = only that ear)
+  },
+
   "bloodVial": {
     "heal": 30                          // health it gives back (never above the maximum)
   },

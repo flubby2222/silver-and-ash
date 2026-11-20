@@ -115,6 +115,9 @@ public sealed record Balance
     /// <summary>Teleporters at special places (issue #436): how near a player must come.</summary>
     public TeleportersBalance Teleporters { get; init; } = new();
 
+    /// <summary>Directional sound (issue #491): how far a sound carries, how it fades and how far it goes to one side.</summary>
+    public HearingBalance Hearing { get; init; } = new();
+
     /// <summary>The blood vial: a consumable that heals.</summary>
     public BloodVialBalance BloodVial { get; init; } = new();
 
@@ -449,6 +452,28 @@ public sealed record WellBalance
 
     /// <summary>Radius in metres of the circle nobody walks through.</summary>
     public float CollisionRadius { get; init; } = 0.95f;
+}
+
+/// <summary>
+/// Directional sound (issue #491): what a player hears of a sound with a place in the world (see
+/// <see cref="Audio.Hearing"/>). Provisional until the listening test.
+/// </summary>
+public sealed record HearingBalance
+{
+    /// <summary>Up to this distance (metres, ears to source) a sound is at full volume ...</summary>
+    public float NearDistance { get; init; } = 2f;
+
+    /// <summary>... from there it fades and at this distance it is silent.</summary>
+    public float Range { get; init; } = 30f;
+
+    /// <summary>How the fade bends: 1 = straight, above 1 = it falls fast at first and lingers quietly further out.</summary>
+    public float Rolloff { get; init; } = 1.5f;
+
+    /// <summary>
+    /// How far a sound right beside the ears goes to that side (1 = only in that ear, 0 = always in the middle). Below 1
+    /// so the far ear still hears a little.
+    /// </summary>
+    public float MaxPan { get; init; } = 0.8f;
 }
 
 /// <summary>

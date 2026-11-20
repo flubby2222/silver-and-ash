@@ -116,6 +116,10 @@ public class BalanceFileTests
     [InlineData("pistol", "magazineSize")]
     [InlineData("pistol", "reloadTime")]
     [InlineData("experience", "firstLevel")]
+    [InlineData("hearing", "range")]
+    [InlineData("hearing", "nearDistance")]
+    [InlineData("hearing", "rolloff")]
+    [InlineData("hearing", "maxPan")]
     public void Zero_is_refused_where_it_would_break_the_game(string section, string name)
     {
         var result = BalanceFile.Parse($$"""{ "{{section}}": { "{{name}}": 0 } }""");
@@ -149,6 +153,7 @@ public class BalanceFileTests
     [InlineData("""{ "difficulty": { "ghoulShareFar": 2 } }""", "difficulty.ghoulShareFar")]
     [InlineData("""{ "difficulty": { "batShareNear": 1.1 } }""", "difficulty.batShareNear")]
     [InlineData("""{ "difficulty": { "batShareFar": 3 } }""", "difficulty.batShareFar")]
+    [InlineData("""{ "hearing": { "maxPan": 1.2 } }""", "hearing.maxPan")]
     public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);
@@ -203,6 +208,25 @@ public class BalanceFileTests
 
         Assert.Equal(Balance.Default.Bat, result.Balance.Bat);
         Assert.Contains(result.Warnings, w => w.Contains($"bat.{min}") && w.Contains($"bat.{max}"));
+    }
+
+    [Fact]
+    public void A_near_distance_beyond_the_hearing_range_falls_back_to_both_standards()
+    {
+        var result = BalanceFile.Parse("""{ "hearing": { "nearDistance": 12, "range": 10 } }""");
+
+        Assert.Equal(Balance.Default.Hearing, result.Balance.Hearing);
+        Assert.Contains(result.Warnings, w => w.Contains("hearing.nearDistance") && w.Contains("hearing.range"));
+    }
+
+    [Fact]
+    public void A_near_distance_as_far_as_the_hearing_range_is_allowed()
+    {
+        var result = BalanceFile.Parse("""{ "hearing": { "nearDistance": 10, "range": 10 } }""");
+
+        Assert.Equal(10f, result.Balance.Hearing.NearDistance);
+        Assert.Equal(10f, result.Balance.Hearing.Range);
+        Assert.Empty(result.Warnings);
     }
 
     [Fact]

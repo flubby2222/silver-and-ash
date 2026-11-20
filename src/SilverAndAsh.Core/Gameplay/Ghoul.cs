@@ -156,14 +156,14 @@ public sealed class Ghoul : ITarget
         }
 
         Health = Math.Max(0, Health - damage);
-        events.Add(new GhoulHit(Id, damage, critical));
+        events.Add(new GhoulHit(Id, damage, critical) { Place = Position });
 
         // Being hit wakes it up, even if it never saw the attacker.
         _alerted = true;
         if (IsDead)
         {
             _corpseTicksLeft = _corpseTicks;
-            events.Add(new GhoulDied(Id));
+            events.Add(new GhoulDied(Id) { Place = Position });
         }
     }
 
@@ -215,7 +215,7 @@ public sealed class Ghoul : ITarget
             }
 
             State = GhoulState.Chasing;
-            events.Add(new GhoulNoticed(Id, _target.Id));
+            events.Add(new GhoulNoticed(Id, _target.Id) { Place = Position });
         }
 
         var target = _target!;
@@ -228,7 +228,7 @@ public sealed class Ghoul : ITarget
                     FaceTowards(target.Position);
                     State = GhoulState.WindingUp;
                     _stateTicksLeft = _windUpTicks;
-                    events.Add(new GhoulWindUp(Id));
+                    events.Add(new GhoulWindUp(Id) { Place = Position });
                     Stand(level, obstacles);
                 }
                 else
@@ -248,7 +248,7 @@ public sealed class Ghoul : ITarget
                         target.TakeDamage(_ghoul.AttackDamage, events);
                     }
 
-                    events.Add(new GhoulStruck(Id, hit));
+                    events.Add(new GhoulStruck(Id, hit) { Place = Position });
                     State = GhoulState.Recovering;
                     _stateTicksLeft = _recoverTicks;
                 }

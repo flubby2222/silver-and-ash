@@ -43,7 +43,7 @@ public sealed partial class Player
         while (_strideDistance >= StepLength)
         {
             _strideDistance -= StepLength;
-            _events.Add(new PlayerStepped(Id, _nextFoot));
+            _events.Add(new PlayerStepped(Id, _nextFoot) { Place = Position });
             _nextFoot = _nextFoot == Foot.Left ? Foot.Right : Foot.Left;
         }
     }

@@ -595,7 +595,7 @@ public sealed partial class Player
             weapon.Cooldown.Tick();
             if (weapon.Magazine.Tick())
             {
-                _events.Add(new ReloadFinished(Id));
+                _events.Add(new ReloadFinished(Id) { Place = Position });
             }
         }
     }
@@ -768,7 +768,7 @@ public sealed partial class Player
         var timed = wasQueued || afterDodge || _ticksSinceLanding <= _perfectWindowTicks;
         _perfectJumpQueued = false;
         vertical = _player.JumpSpeed;
-        _events.Add(new PlayerJumped(Id));
+        _events.Add(new PlayerJumped(Id) { Place = Position });
 
         // Every jump costs stamina. Timed and paid = perfect (bonus). Not paid = exhausted (slower).
         // A normal, paid jump changes nothing about bonus or exhaustion.
@@ -894,7 +894,7 @@ public sealed partial class Player
         }
 
         var peak = float.IsNaN(_airPeakY) ? PreviousPosition.Y : MathF.Max(_airPeakY, PreviousPosition.Y);
-        _events.Add(new PlayerLanded(Id, MathF.Max(0f, peak - Position.Y)));
+        _events.Add(new PlayerLanded(Id, MathF.Max(0f, peak - Position.Y)) { Place = Position });
         _airPeakY = float.NaN;
         LandingDip.Land(fallSpeed);
 
@@ -981,7 +981,7 @@ public sealed partial class Player
         {
             if (ranged.Magazine.StartReload())
             {
-                _events.Add(new ReloadStarted(Id));
+                _events.Add(new ReloadStarted(Id) { Place = Position });
             }
         }
         else if (shootPressed && ranged.Cooldown.IsReady && ranged.Magazine.TryTake())
@@ -1045,7 +1045,7 @@ public sealed partial class Player
         _dashTicksLeft = _dashTicks;
         _perfectJumpQueued = false;
         _ticksSinceJumpPressedInAir = Never;
-        _events.Add(new PlayerDashed(Id));
+        _events.Add(new PlayerDashed(Id) { Place = Position });
 
         _airDashUsed = true;
     }
@@ -1065,7 +1065,7 @@ public sealed partial class Player
         _dodgeDirection = wish.LengthSquared() > 0f ? Vector3.Normalize(wish) : View.FlatForward;
         _dodgeTicksLeft = _dodgeTicks;
         _perfectJumpQueued = false;
-        _events.Add(new PlayerDodged(Id));
+        _events.Add(new PlayerDodged(Id) { Place = Position });
 
         // If the dodge runs off a ledge, that stay in the air already had its move - no dash on top
         // (code review finding: dodge + dash = about 8 m of evading).

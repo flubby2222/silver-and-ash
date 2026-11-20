@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Text;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
@@ -9,7 +10,41 @@ namespace SilverAndAsh.Core.Gameplay;
 /// This keeps logic and presentation apart, and a second computer can show the same events later
 /// (rule 5 of decision record 0003, online co-op).
 /// </summary>
-public abstract record GameEvent;
+public abstract record GameEvent
+{
+    /// <summary>
+    /// Where it happened in the world, for directional sound (issue #491): an enemy's body, a door, a chest, a player's
+    /// eyes. Null for what has no place (a level up, a hurt player) - that is heard in the middle. Core only says where;
+    /// who hears it from where is up to the presentation (<see cref="Audio.Hearing"/>).
+    /// <para>
+    /// Not part of equality: two events are equal when the same thing happened, wherever it is heard. So a test can
+    /// still ask for <c>new GhoulDied(id)</c> without knowing where the ghoul fell.
+    /// </para>
+    /// </summary>
+    public Vector3? Place { get; init; }
+
+    /// <summary>Equal when of the same kind - the derived records add their own values; <see cref="Place"/> does not count.</summary>
+    public virtual bool Equals(GameEvent? other) => other is not null && EqualityContract == other.EqualityContract;
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => EqualityContract.GetHashCode();
+
+    /// <summary>
+    /// Leaves <see cref="Place"/> out of the text of an event, like out of its equality: the text stays what happened
+    /// (the tick trace of PlayerTickTraceTests writes it), and a place would come out in the computer's own number format.
+    /// </summary>
+    protected virtual bool PrintMembers(StringBuilder builder) => false;
+}
+
+/// <summary>
+/// A sound a player makes with their own body or hands (steps, jumps, reloading): the player who makes it hears it in
+/// the middle of the head, every other player from where it happened (issue #491, online co-op).
+/// </summary>
+public interface IPlayerSound
+{
+    /// <summary>The player who makes the sound.</summary>
+    int PlayerId { get; }
+}
 
 /// <summary>
 /// The melee weapon <paramref name="Weapon"/> (the silver blade unless said otherwise) was swung from
@@ -28,10 +63,10 @@ public sealed record ShotFired(
     Vector3 Origin, Vector3 Direction, bool Consecrated = false, WeaponKind Weapon = WeaponKind.Pistol) : GameEvent;
 
 /// <summary>Player <paramref name="PlayerId"/> started reloading (R, or a shot with an empty magazine).</summary>
-public sealed record ReloadStarted(int PlayerId) : GameEvent;
+public sealed record ReloadStarted(int PlayerId) : GameEvent, IPlayerSound;
 
 /// <summary>Player <paramref name="PlayerId"/>'s magazine is full again.</summary>
-public sealed record ReloadFinished(int PlayerId) : GameEvent;
+public sealed record ReloadFinished(int PlayerId) : GameEvent, IPlayerSound;
 
 /// <summary>Player <paramref name="PlayerId"/> took the ranged weapon <paramref name="Kind"/> from place <paramref name="Slot"/> into the hand.</summary>
 public sealed record WeaponSwitched(int PlayerId, int Slot, WeaponKind Kind) : GameEvent;
@@ -275,7 +310,7 @@ public sealed record RunLost : GameEvent;
 /// Player <paramref name="PlayerId"/> set down <paramref name="Foot"/>: they walked one step length on the ground
 /// (issue #267). Never in the air or while standing.
 /// </summary>
-public sealed record PlayerStepped(int PlayerId, Foot Foot) : GameEvent;
+public sealed record PlayerStepped(int PlayerId, Foot Foot) : GameEvent, IPlayerSound;
 
 /// <summary>Player <paramref name="PlayerId"/> took <paramref name="Damage"/>.</summary>
 public sealed record PlayerHit(int PlayerId, int Damage) : GameEvent;
@@ -293,13 +328,13 @@ public sealed record DummyKnockedDown(int DummyId) : GameEvent;
 public sealed record DummyStoodUp(int DummyId) : GameEvent;
 
 /// <summary>Player <paramref name="PlayerId"/> jumped off the ground (every jump, also a queued or perfect one; issue #291).</summary>
-public sealed record PlayerJumped(int PlayerId) : GameEvent;
+public sealed record PlayerJumped(int PlayerId) : GameEvent, IPlayerSound;
 
 /// <summary>Player <paramref name="PlayerId"/> started an air dash (issue #291).</summary>
-public sealed record PlayerDashed(int PlayerId) : GameEvent;
+public sealed record PlayerDashed(int PlayerId) : GameEvent, IPlayerSound;
 
 /// <summary>Player <paramref name="PlayerId"/> started a dodge on the ground (issue #291).</summary>
-public sealed record PlayerDodged(int PlayerId) : GameEvent;
+public sealed record PlayerDodged(int PlayerId) : GameEvent, IPlayerSound;
 
 /// <summary>
 /// Player <paramref name="PlayerId"/> came down on the ground after a stay in the air (issue #291).
@@ -307,7 +342,7 @@ public sealed record PlayerDodged(int PlayerId) : GameEvent;
 /// small for a step down, about the jump height for a normal jump. Every landing comes; whether it is loud
 /// enough to be heard is up to the presentation.
 /// </summary>
-public sealed record PlayerLanded(int PlayerId, float FallHeight) : GameEvent;
+public sealed record PlayerLanded(int PlayerId, float FallHeight) : GameEvent, IPlayerSound;
 
 /// <summary>Player <paramref name="PlayerId"/>'s consecrated ammunition ran out by itself (issue #291).</summary>
 public sealed record ConsecrationEnded(int PlayerId) : GameEvent;

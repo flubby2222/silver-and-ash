@@ -62,6 +62,7 @@ public class DoorTests
 
         Assert.True(world.Doors[0].IsOpen);
         Assert.Contains(new DoorOpened(world.Doors[0].Id), events);
+        Assert.Equal((world.Doors[0].BoxMin + world.Doors[0].BoxMax) / 2f, events.OfType<DoorOpened>().Single().Place); // heard from the door (#491)
         Assert.False(world.Level[1, 1].IsSolid);
         Assert.True(world.Player.Position.Z > 4f, $"The player only got to z = {world.Player.Position.Z}.");
     }
