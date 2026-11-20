@@ -1,0 +1,14 @@
+R1 ruhe: Dreiecke {'gesamt': 1134} (Summe 1134), x -0.43..0.54, y 0.03..1.86, z -0.09..1.02, Breite 0.97, Hoehe 1.86
+A1 ruhe: Dreiecke {'skelett': 1070, 'armbrust': 174, 'ausruestung': 88, 'stoff': 12} (Summe 1344), x -0.49..0.60, y 0.03..1.86, z -0.10..1.09, Breite 1.08, Hoehe 1.86
+A1 ank: Dreiecke {'skelett': 1070, 'armbrust': 174, 'ausruestung': 88, 'stoff': 12} (Summe 1344), x -0.48..0.60, y 0.03..1.85, z -0.16..1.06, Breite 1.08, Hoehe 1.85
+A2 ruhe: Dreiecke {'skelett': 1142, 'armbrust': 198, 'ausruestung': 142, 'stoff': 36} (Summe 1518), x -0.49..0.60, y 0.03..1.86, z -0.18..1.09, Breite 1.08, Hoehe 1.86
+A2 ank: Dreiecke {'skelett': 1142, 'armbrust': 198, 'ausruestung': 142, 'stoff': 36} (Summe 1518), x -0.48..0.60, y 0.03..1.85, z -0.18..1.06, Breite 1.08, Hoehe 1.85
+A3 ruhe: Dreiecke {'skelett': 1172, 'armbrust': 306, 'ausruestung': 234, 'stoff': 48} (Summe 1760), x -0.49..0.60, y 0.03..1.86, z -0.18..1.09, Breite 1.08, Hoehe 1.86
+A3 ank: Dreiecke {'skelett': 1172, 'armbrust': 306, 'ausruestung': 234, 'stoff': 48} (Summe 1760), x -0.48..0.60, y 0.03..1.85, z -0.18..1.06, Breite 1.08, Hoehe 1.85
+Farben in der Textur: ruhe 23, angriff 25 (Grenze 32)
+Silhouette aus 10 m im Spiel (854x480, ohne Raum): Figur: Pixelflaeche, Breite px, Hoehe px, mittlere Helligkeit 0..255
+  G: 402 px, 26 x 35, Helligkeit 40.5
+  R1: 504 px, 36 x 64, Helligkeit 52.8
+  A1: 551 px, 38 x 64, Helligkeit 53.6
+  A2: 592 px, 38 x 64, Helligkeit 52.5
+  A3: 602 px, 38 x 64, Helligkeit 51.3
