@@ -347,7 +347,7 @@ def bogenarten():
         c.text(t.x(0), 526, "R = %s m (%s mal Spannweite)" % (fmt(R, 4), fmt(R / 2.0, 3)), TEXT, 2, "m")
         c.text(t.x(0), 552, "Stich %s m" % fmt(rise, 2), TEXT, 2, "m")
         c.text(t.x(0), 578, use, TEXT, 2, "m")
-    c.text(30, 626, "Regel: Scheitel der Innenkante höchstens Deckenhöhe. Im 3,5-m-Gang passt bei Kämpfer 2 m nur der gedrückte Bogen.", TEXT, 2)
+    c.text(30, 626, "Regel: Scheitel der Innenkante höchstens Deckenhöhe. Im 3,5 m hohen Gang passt bei Kämpfer 2 m nur der gedrückte Bogen.", TEXT, 2)
     return c, rows
 
 
@@ -393,14 +393,15 @@ def profile():
     c.path([t.p(p) for p in pf], BAU_HELL, 2, True)
     dim_h(c, t, -0.25, 0.25, -0.38, "0,5", below=True)
     dim_v(c, t, 0.4, 0, -0.25, "0,25", right=True)
-    c.text(t.x(0), 440, "WANDPFEILER", TITEL, 2, "m")
+    c.text(t.x(0), 440, "WANDPFEILER (RAUM)", TITEL, 2, "m")
+    c.text(t.x(0), 466, "im Gang: Tiefe 1/16, Sockel 1/8", TEXT, 2, "m")
     t = T(480, 250, s)
-    oc = [(0.45 * math.cos(math.radians(22.5 + 45 * k)), 0.45 * math.sin(math.radians(22.5 + 45 * k))) for k in range(8)]
-    oc2 = [(0.5 * math.cos(math.radians(22.5 + 45 * k)), 0.5 * math.sin(math.radians(22.5 + 45 * k))) for k in range(8)]
+    oc = [(0.4375 / math.cos(math.radians(22.5)) * math.cos(math.radians(22.5 + 45 * k)), 0.4375 / math.cos(math.radians(22.5)) * math.sin(math.radians(22.5 + 45 * k))) for k in range(8)]
+    oc2 = [(0.5 / math.cos(math.radians(22.5)) * math.cos(math.radians(22.5 + 45 * k)), 0.5 / math.cos(math.radians(22.5)) * math.sin(math.radians(22.5 + 45 * k))) for k in range(8)]
     c.poly([t.p(p) for p in oc], BAU)
     c.path([t.p(p) for p in oc], BAU_HELL, 2, True)
     c.path([t.p(p) for p in oc2], MASS, 2, True)
-    dim_h(c, t, -0.45, 0.45, -0.58, "0,9", below=True)
+    dim_h(c, t, -0.4375, 0.4375, -0.58, "0,875", below=True)
     c.text(t.x(0), 440, "SÄULE (ACHTECK)", TITEL, 2, "m")
     c.text(t.x(0), 466, "Sockel und Kapitell 1,0", TEXT, 2, "m")
     t = T(810, 300, s)
@@ -410,8 +411,8 @@ def profile():
     c.path([t.p(p) for p in pr], BAU_HELL, 2, True)
     dim_h(c, t, -0.25, 0.25, -0.38, "0,5", below=True)
     dim_v(c, t, 0.4, 0, -0.25, "0,25", right=True)
-    c.text(t.x(0), 440, "GURTBOGEN (QUERSCHNITT)", TITEL, 2, "m")
-    c.text(t.x(0), 466, "oben in der Decke, unten Fase 1/16", TEXT, 2, "m")
+    c.text(t.x(0), 440, "GURTBOGEN IM RAUM (QUERSCHNITT)", TITEL, 2, "m")
+    c.text(t.x(0), 466, "im Gang 1/8 dick; unten Fase 1/16", TEXT, 2, "m")
     t = T(1090, 560, s)
     prof = [(0, 0), (0.0625, 0), (0.0625, 0.125), (0.125, 0.125), (0.125, 0.25), (0.0625, 0.25), (0.0625, 0.375), (0, 0.5)]
     c.rect(t.x(-0.4), t.y(0.6), t.x(0), t.y(-0.05), WAND)
@@ -422,13 +423,13 @@ def profile():
     c.text(t.x(-0.4), 380, "KAPITELL SEITE", TITEL, 2)
     notes(c, 30, 520, ["#Regeln für alle Profile", "Fase an jeder Kante, die ein Spieler sieht: 1/16 m",
                        "Ausladung gegenüber dem Schaft höchstens 1/8 m", "Kapitell 0,5 m hoch, in Stufen von 1/16 und 1/8 m",
-                       "Gurtbogen und Rippe: Fuß ist so breit wie der Pfeiler, auf dem er steht"], 26)
+                       "Gurtbogen und Rippe: Fuß so breit und tief wie der Pfeiler darunter"], 26)
     return c
 
 
 # ---------------------------------------------------------------- Bausteine
 def wandpfeiler():
-    c = panel("WANDPFEILER", "Gang 3,5 m: Sockel 0,5, Schaft 2,5, Kapitell 0,5; im 6-m-Raum wird nur der Schaft länger")
+    c = panel("WANDPFEILER", "Ansicht: Sockel 0,5, Schaft bis Kapitell, Kapitell 0,5; im Gang nur 1/16 m Schafttiefe, im Raum 1/4 m")
     t = T(300, 640)
     wall_zoned(c, t, -1.25, 1.25)
     stone_block(c, t, -0.3125, 0.3125, 0, 0.5)
@@ -439,66 +440,82 @@ def wandpfeiler():
     dim_v(c, t, 0.45, 0, 0.5, "0,5", right=True)
     dim_v(c, t, 0.45, 0.5, 3.0, "2,5", right=True)
     dim_v(c, t, 0.45, 3.0, 3.5, "0,5", right=True)
-    tp = T(900, 330)
-    c.rect(tp.x(-1.25), tp.y(0.5), tp.x(1.25), tp.y(0), WAND)
-    c.rect(tp.x(-0.3125), tp.y(0.125), tp.x(0.3125), tp.y(0), BAU_FUGE)
-    c.rect(tp.x(-0.25), tp.y(0), tp.x(0.25), tp.y(-0.25), BAU)
-    c.path([tp.p((-0.3125, 0)), tp.p((-0.3125, -0.3125)), tp.p((0.3125, -0.3125)), tp.p((0.3125, 0))], MASS, 2)
-    c.text(tp.x(0), 100, "GRUNDRISS", TITEL, 2, "m")
-    c.text(tp.x(0), tp.y(-0.3125) + 14, "Wand oben, Raum unten", TEXT, 2, "m")
-    notes(c, 700, 440, ["#Kontakt zur Wand", "Zahn 1/8 m tief in die Wand, alle 0,5 m", "Lagerfugen auf Höhe der Wandfugen",
-                        "Oben im Abschluss, Fuß im Sockel", "#Dreiecke: etwa 40"], 26)
+    for ox, name, d, ds, lab in ((780, "RAUM", 0.25, 0.3125, "0,25 / 0,3125"), (1040, "GANG", 0.0625, 0.125, "0,0625 / 0,125")):
+        tp = T(ox, 330)
+        c.rect(tp.x(-0.5), tp.y(0.5), tp.x(0.5), tp.y(0), WAND)
+        c.rect(tp.x(-0.3125), tp.y(0.125), tp.x(0.3125), tp.y(0), BAU_FUGE)
+        c.rect(tp.x(-0.25), tp.y(0), tp.x(0.25), tp.y(-d), BAU)
+        c.path([tp.p((-0.3125, 0)), tp.p((-0.3125, -ds)), tp.p((0.3125, -ds)), tp.p((0.3125, 0))], MASS, 2)
+        c.text(tp.x(0), 100, "GRUNDRISS " + name, TITEL, 2, "m")
+        c.text(tp.x(0), 126, "Tiefe Schaft / Sockel", TEXT, 2, "m")
+        c.text(tp.x(0), 152, lab, MASS, 2, "m")
+    notes(c, 700, 396, ["#Kontakt zur Wand", "Zahn 1/8 m tief in die Wand, alle 0,5 m", "Lagerfugen auf Höhe der Wandfugen",
+                        "Oben im Abschluss, Fuß im Sockel",
+                        "#Im Gang (2 m breit): Sockel und Kapitell", "höchstens 1/8 m tief je Seite, lichte Breite", "bleibt 1,75 m (Türöffnung)",
+                        "#Trägt der Pfeiler einen Bogen: Kapitell-", "Oberkante = Kämpfer des Bogens (Deckenbogen)",
+                        "#Dreiecke: etwa 40 (Schätzung)"], 24)
     return c
 
 
 def saeule():
-    c = panel("FREIE SÄULE", "Umkreis 0,9 m, acht Seiten; freistehend; Gang 3,5 m")
-    t = T(300, 640)
-    wall_zoned(c, t, -1.75, 1.75)
-    for y0, y1, hw in ((0, 0.5, 0.5), (0.5, 3.0, 0.45), (3.0, 3.5, 0.5)):
+    c = panel("FREIE SÄULE", "nur in Räumen, nie in Gängen; Raumhöhe 6 m: Sockel 0,5, Schaft 5,0, Kapitell 0,5; Schaft 0,875 m")
+    t = T(260, 635, 84)
+    wall_zoned(c, t, -1.4, 1.4, 6.0)
+    for y0, y1, hw in ((0, 0.5, 0.5), (0.5, 5.5, 0.4375), (5.5, 6.0, 0.5)):
         stone_block(c, t, -hw, hw, y0, y1)
-    for sx in (-0.186, 0.186):
-        c.rect(t.x(sx) - 1, t.y(3.0), t.x(sx) + 1, t.y(0.5), BAU_FUGE)
-    dim_h(c, t, -0.45, 0.45, 3.75, "0,9")
+    c.dashed(t.x(-1.5), t.y(3.5), t.x(1.5), t.y(3.5), MASS, 2, 14, 8)
+    c.text(t.x(-1.4), t.y(3.5) - 22, "3,5 m", MASS, 2)
+    dim_h(c, t, -0.4375, 0.4375, 6.25, "0,875 Schaft")
     dim_h(c, t, -0.5, 0.5, -0.1, "1,0", below=True)
-    dim_v(c, t, 0.7, 0.5, 3.0, "2,5", right=True)
-    dim_v(c, t, 0.7, 3.0, 3.5, "0,5", right=True)
+    dim_v(c, t, 0.75, 0, 0.5, "0,5", right=True)
+    dim_v(c, t, 0.75, 0.5, 5.5, "5,0", right=True)
+    dim_v(c, t, 0.75, 5.5, 6.0, "0,5", right=True)
     tp = T(900, 330)
-    oc = [(0.5 * math.cos(math.radians(22.5 + 45 * k)), 0.5 * math.sin(math.radians(22.5 + 45 * k))) for k in range(8)]
-    ic = [(0.45 * math.cos(math.radians(22.5 + 45 * k)), 0.45 * math.sin(math.radians(22.5 + 45 * k))) for k in range(8)]
-    c.poly([tp.p(p) for p in oc], BAU_FUGE)
-    c.poly([tp.p(p) for p in ic], BAU)
-    c.path([tp.p(p) for p in oc], MASS, 2, True)
-    c.text(tp.x(0), 100, "GRUNDRISS", TITEL, 2, "m")
-    notes(c, 700, 440, ["#Kontakt zur Wand", "Freistehend: mindestens 0,5 m Abstand zur Wand",
-                        "Lagerfugen alle 0,25 m, Trommeln 0,5 m hoch", "Mehrere Säulen: Abstand mindestens 2 m",
-                        "#Dreiecke: etwa 80"], 26)
+    for k_r, col in ((0.5, BAU_FUGE), (0.4375, BAU)):
+        rc = k_r / math.cos(math.radians(22.5))
+        pts = [(rc * math.cos(math.radians(22.5 + 45 * k)), rc * math.sin(math.radians(22.5 + 45 * k))) for k in range(8)]
+        c.poly([tp.p(p) for p in pts], col)
+        if k_r == 0.5:
+            c.path([tp.p(p) for p in pts], MASS, 2, True)
+    c.text(tp.x(0), 100, "GRUNDRISS (ACHTECK)", TITEL, 2, "m")
+    c.text(tp.x(0), 126, "0,875 über die Flächen, 0,947 über die Ecken", TEXT, 2, "m")
+    notes(c, 640, 420, ["#Regeln", "Nur in Räumen, nie in Gängen: sie sperrt", "Bewegung und Schüsse; runder Querschnitt",
+                        "Freistehend: mindestens 0,5 m Abstand zur Wand", "Mehrere Säulen: Abstand mindestens 2 m",
+                        "Maß gegen Flächen: Schaft 0,875, Sockel 1,0", "Lagerfugen alle 0,25 m, Trommeln 0,5 m hoch",
+                        "Niedriger Raum 3,5 m: Schaft 2,5 (gestrichelt)",
+                        "#Dreiecke: etwa 80 (Schätzung)"], 26)
     return c
 
 
 def deckenbogen():
-    c = panel("DECKENBOGEN (GURTBOGEN)", "quer über den Gang: lichte Weite 3,5 m, Kämpfer 1,625 m, R = 1,875 m")
+    spring, hw_o, R_o, w = 2.0, 1.0, 1.625, 0.125
+    c = panel("DECKENBOGEN (GURTBOGEN)", "quer über den Gang: Wand zu Wand 2 m, lichte Weite 1,75 m, Kämpfer 2,0 m")
     t = T(350, 640)
-    hw, R, spring = 1.75, 1.875, 1.625
     wall_zoned(c, t, -2.6, 2.6)
-    outer, inner = arch_ring(hw + 0.25, R + 0.25, 0.25, spring)
-    c.poly([t.p((-hw, 0))] + [t.p(p) for p in inner] + [t.p((hw, 0))], OEFFNUNG)
+    c.rect(t.x(-hw_o), t.y(H_GANG), t.x(hw_o), t.y(0), OEFFNUNG)
+    outer, inner = arch_ring(hw_o, R_o, w, spring)
     fill_ring(c, t, outer, inner, BAU)
     c.rect(0, 0, PW, t.y(H_GANG), BG)
     c.text(30, 22, "DECKENBOGEN (GURTBOGEN)", TITEL, 3)
-    c.text(30, 58, "quer über den Gang: lichte Weite 3,5 m, Kämpfer 1,625 m, R = 1,875 m", TEXT, 2)
+    c.text(30, 58, "quer über den Gang: Wand zu Wand 2 m, lichte Weite 1,75 m, Kämpfer 2,0 m", TEXT, 2)
     c.line(t.x(-2.6), t.y(H_GANG), t.x(2.6), t.y(H_GANG), TEXT, 2)
     for sx in (-1, 1):
-        a, b = sorted((sx * 1.75, sx * 2.25))
-        stone_block(c, t, a, b, 0, spring - 0.125)
-        stone_block(c, t, a, b, spring - 0.125, spring)
+        a, b = sorted((sx * 0.875, sx * 1.0))
+        stone_block(c, t, a, b, 0, 0.5)
+        a, b = sorted((sx * 0.9375, sx * 1.0))
+        stone_block(c, t, a, b, 0.5, 1.5)
+        a, b = sorted((sx * 0.875, sx * 1.0))
+        stone_block(c, t, a, b, 1.5, spring)
     c.dashed(t.x(-2.5), t.y(spring), t.x(2.5), t.y(spring), MASS, 2, 14, 8)
-    dim_h(c, t, -1.75, 1.75, 0.2, "3,5")
-    dim_v(c, t, 2.5, 0, spring, "1,625", right=True)
-    dim_v(c, t, 2.5, spring, H_GANG, "1,875", right=True)
-    c.text(t.x(0), 100, "Decke 3,5 m: Scheitel innen etwa 3,5, der Ring taucht ein", TEXT, 2, "m")
-    notes(c, 880, 150, ["#Maße", "Ring 0,25 m dick,", "0,5 m tief", "Fuß = Grundriss des", "Wandpfeilers", "Kämpfer zwei Fugen hoch",
-                        "#Kontakt", "Fuß sitzt auf dem Kapitell,", "Scheitel taucht in die Decke:", "keine nackte Kante", "#Dreiecke: etwa 100"], 26)
+    dim_h(c, t, -1.0, 1.0, 0.2, "2,0 Wand zu Wand")
+    dim_h(c, t, -0.875, 0.875, 1.0, "1,75 lichte Weite")
+    dim_v(c, t, 2.0, 0, spring, "2,0 Kämpfer", right=True)
+    dim_v(c, t, 2.0, spring, H_GANG, "1,5", right=True)
+    c.text(t.x(0), 100, "Außenkante des Rings: Scheitel 3,5 (bündig mit der Decke)", TEXT, 2, "m")
+    c.text(t.x(0), 126, "Innenkante des Rings: Scheitel 3,364", TEXT, 2, "m")
+    notes(c, 880, 150, ["#Maße", "Ring 1/8 m dick, 0,5 m tief", "R außen 1,625, R innen 1,5", "Mittelpunkte 0,625 neben der Achse",
+                        "#Pfeiler", "Kapitell 1,5 bis 2,0, 1/8 m tief:", "dessen Oberkante ist der Kämpfer,", "Ring sitzt bündig darauf",
+                        "#Durchgang", "Kopf des Gruftwächters 2,28:", "Öffnung dort noch 1,70 m", "#Dreiecke: etwa 100 (Schätzung)"], 26)
     return c
 
 
@@ -591,7 +608,7 @@ def main():
     cols, rows_n = 2, (len(pages) + 1) // 2
     ov = Canvas(PW * cols, 90 + PH * rows_n)
     ov.text(30, 20, "FORMENLEHRE GOTIK - ÜBERSICHT", TITEL, 4)
-    ov.text(30, 62, "Silver & Ash, Issue 281; Zelle 2 m, Gang 3,5 m, Textur 64 Pixel je Meter", TEXT, 2)
+    ov.text(30, 62, "Silver & Ash, Issue 281; Zelle 2 m, Gang 2 m breit und 3,5 m hoch, Raum 6 m hoch, Textur 64 Pixel je Meter", TEXT, 2)
     for k, (_, pc) in enumerate(pages):
         ov.blit(pc, (k % cols) * PW, 90 + (k // cols) * PH)
     palette = list(_plist)

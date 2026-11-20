@@ -4,9 +4,23 @@ Verbindliche Vorlage für alle Raum-Bausteine (Issue #247) von Silver & Ash. Sie
 
 **Herkunft der Regeln:** Hinter einer Regel steht in eckigen Klammern die Quelle (Liste unten): [RDK-B] = RDK Labor „Bogen (in der Architektur)“, [RDK-D] = RDK Labor „Dienst“, [W-S] = Wikipedia „Spitzbogen“, [W-K] = Wikipedia „Kreuzrippengewölbe“, [W-Sä] = Wikipedia „Säule“. **[Setzung]** heißt: eigene Festlegung für das Spiel, nicht aus einer Quelle (Raster, Maße in 1/16 m, Dreieckszahlen). Die Quellen belegen die Begriffe und Bauweisen, die Zahlen sind Setzung.
 
+## Grundmaße aus dem Code
+
+Diese Maße sind keine Setzung dieser Seite, sie stehen im Code oder in den Vorlagen; die Seite richtet sich danach:
+
+| Maß | Wert | Stammt aus |
+|---|---|---|
+| Zelle | 2 m | `Level.CellSize` in `src/SilverAndAsh.Core/World/Level.cs` |
+| Gang, Breite | 2 m (genau eine Bodenzelle) | `assets/rooms/corridor/straight.txt`, `bend.txt`, `zigzag.txt` |
+| Gang, Höhe | 3,5 m | `Cell.DefaultCeilingHeight` in `src/SilverAndAsh.Core/World/Cell.cs` |
+| Raum, Höhe | 6 m (die Breite steht je Vorlage in `assets/rooms/` und ist nicht fest) | `RoomTemplate.RoomCeilingHeight` in `src/SilverAndAsh.Core/World/RoomTemplate.cs` |
+| Türöffnung | 1,75 m breit, Kämpfer 2,0 m | `SPRING_N` in `tools/models/door.py` |
+| Spieler | 1,8 m hoch, Radius 0,35 m | `BodySizes.Player` in `src/SilverAndAsh.Core/BodySizes.cs` |
+| Gruftwächter | Kopf 2,28 m hoch (Stab 2,52 m) | `CryptWardenLook` in `src/SilverAndAsh.Core/Presentation/CryptWardenLook.cs` |
+
 ## Raster, an dem alles hängt
 
-- [Setzung] Zelle 2 × 2 m. Gänge 3,5 m breit und 3,5 m hoch; Räume (start, combat, boss) 6 m breit. Die Raumhöhe steht im Level; **die Wandzonen gelten für beide Höhen**.
+- Zelle 2 × 2 m, Gang 2 m breit und 3,5 m hoch, Räume 6 m hoch (siehe Grundmaße). **Die Wandzonen gelten für beide Höhen**; Raumbreiten wechseln je Vorlage.
 - [Setzung] Textur 64 Pixel je Meter: 1 m = 64 Texel, 1/16 m = 4 Texel. Lagerfugen alle 0,25 m (16 Texel).
 - [Setzung] Kleinste Stufe eines Profils: 1/16 m. Was kleiner ist, wird Textur, nie Geometrie.
 
@@ -21,12 +35,12 @@ Ein Spitzbogen besteht aus zwei Kreisbögen, deren Mittelpunkte auf der Kämpfer
 | Rundbogen | 0,5 s | 1,0 | Wandnische, Kammer: der Katakomben-Bogen |
 | gedrückter Spitzbogen | 0,78 s (1,5625 m) | 1,46 | Gänge, Türrahmen (Bestand `door.py`) |
 | gleichseitiger Spitzbogen | 1,0 s | 1,73 | Hallen, hohe Räume |
-| Lanzettbogen | 1,5 s | 2,24 | nur Räume ab 6 m |
+| Lanzettbogen | 1,5 s | 2,24 | nur Räume (6 m hoch) |
 
 Regeln:
 
 1. **Rundbogen nur unterirdisch-schlicht:** Nischen, Gräber, Kammern. Alles, was tragend oder Portal ist, ist spitz. [Setzung für den Katakomben-Ton; gotische Bauten setzen den Spitzbogen vor allem an tragenden Teilen wie Rippen und Gurten, RDK-B]
-2. **Der Scheitel der Innenkante liegt höchstens auf Deckenhöhe.** Im 3,5-m-Gang passt bei Kämpfer 2 m nur der gedrückte Spitzbogen (Scheitel 3,458). [Setzung, folgt aus der Geometrie]
+2. **Der Scheitel der Innenkante liegt höchstens auf Deckenhöhe.** Im 3,5-m-Gang passt bei Kämpfer 2 m nur der gedrückte Spitzbogen (Scheitel 3,458). [Setzung, folgt aus der Geometrie] Die Tabelle gilt für die Höhen: Gang 3,5 m, Raum 6 m.
 3. [Setzung] Kämpferlinie und Mittelpunkte der beiden Kreise müssen auf einem 1/16-m-Punkt liegen.
 4. Kein Bogen ohne Kämpfer: Der Ansatz sitzt auf einer Platte oder einem Kapitell. [Der Kämpfer ist die Stelle, an der der Bogen ansetzt, RDK-B]
 
@@ -52,7 +66,7 @@ Die Steinfläche ist die einzige Zone, die mit der Raumhöhe wächst. Die Lagerf
 - [Setzung] Ausladung gegenüber dem Schaft höchstens 1/8 m.
 - Kapitell: Eine Säule hat Basis, Schaft und Kapitell [W-Sä]. Maß [Setzung]: 0,5 m hoch, Stufen aus 1/16 m und 1/8 m (Platte, Wulst, Platte).
 - Gurtbogen und Rippe: Rippen sind Bögen, die das Gewölbe bilden und tragen, Gurtbögen trennen die Joche [W-K]. Der Dienst ist ein schlanker Wandvorsprung, der Bögen und Rippen aufnimmt [RDK-D]. Maß [Setzung]: Querschnitt 0,5 breit, 0,25 hoch, unten Fase 1/16. Der Fuß ist so breit wie der Pfeiler, auf dem er steht.
-- [Setzung] Sockel von Pfeiler und Säule: 0,5 m hoch, 1/16 m breiter als der Schaft je Seite.
+- [Setzung] Sockel von Pfeiler und Säule: 0,5 m hoch, 1/16 m breiter als der Schaft je Seite (Säule: 0,875 + 0,125 = 1,0).
 
 ## Die Bausteine
 
@@ -60,13 +74,26 @@ Zu jedem Baustein: Maße, Dreiecks-Rahmen und Kontaktstelle zur Wand. **Alle Ma�
 
 | Baustein | Maße | Dreiecke | Kontakt zur Wand |
 |---|---|---|---|
-| [Wandpfeiler](formenlehre-gotik/wandpfeiler.png) | Schaft 0,5 breit, 0,25 tief; Sockel 0,625 × 0,3125; Kapitell 0,5 hoch bei 3,0 bis 3,5 | etwa 40 | Zahn 1/8 m in die Wand alle 0,5 m; Fuß im Sockel, Kopf im Abschluss |
-| [Freie Säule](formenlehre-gotik/saeule.png) | Achteck, Umkreis 0,9; Sockel und Kapitell 1,0 | etwa 80 | freistehend, mindestens 0,5 m von der Wand; Trommeln 0,5 hoch |
-| [Deckenbogen](formenlehre-gotik/deckenbogen.png) | Gurtbogen quer zum Gang: lichte Weite 3,5, Kämpfer 1,625, R 1,875, Ring 0,25 dick und 0,5 tief | etwa 100 | Fuß = Grundriss des Wandpfeilers; Scheitel taucht in die Decke |
+| [Wandpfeiler](formenlehre-gotik/wandpfeiler.png) | Schaft 0,5 breit; Tiefe im Raum 0,25 (Sockel und Kapitell 0,3125), **im Gang 0,0625 (Sockel und Kapitell 0,125)**; Sockel und Kapitell 0,625 breit; Kapitell 0,5 hoch bei 3,0 bis 3,5, trägt er einen Bogen, endet er mit der Kapitell-Oberkante am Kämpfer | etwa 40 | Zahn 1/8 m in die Wand alle 0,5 m; Fuß im Sockel, Kopf im Abschluss |
+| [Freie Säule](formenlehre-gotik/saeule.png) | Achteck, nur in Räumen: Schaft 0,875 über die Flächen (0,947 über die Ecken), Sockel und Kapitell 1,0 über die Flächen; Raum 6 m: Sockel 0,5, Schaft 5,0, Kapitell 0,5 (Raum 3,5 m: Schaft 2,5) | etwa 80 | freistehend, mindestens 0,5 m von der Wand; Trommeln 0,5 hoch |
+| [Deckenbogen](formenlehre-gotik/deckenbogen.png) | Gurtbogen quer zum Gang (2 m breit, 3,5 m hoch): Wand zu Wand 2,0, lichte Weite 1,75, Kämpfer 2,0, R außen 1,625, R innen 1,5, Ring 0,125 dick und 0,5 tief (im Raum 0,25 dick) | etwa 100 | sitzt bündig auf dem Kapitell des Wandpfeilers (Gang: 0,125 tief, 0,5 breit); Außenkante bündig mit der Decke, Fuß so breit wie das Kapitell |
 | [Wandnische](formenlehre-gotik/nische.png) | Rundbogen, Weite 1,0, Tiefe 0,5, Sohle 0,5, Kämpfer 1,5, Scheitel 2,0; Rahmen 1/16 | etwa 60 | Rahmen bündig mit der Wandebene |
 | [Türrahmen](formenlehre-gotik/tuerrahmen.png) | Pfostenband 1/8, Kämpferplatte 1/8 hoch bei 2,0, Lauf 1/8, R 1,5625, Scheitel 3,458; Boss: drei gestaffelte Läufe, Kämpfer 1,875, R 1,75 | etwa 120, Boss 200 | Bogenfeld bündig in der Wandebene; Wandfugen enden am Rahmen |
 
-**Warum der Gurtbogen-Kämpfer (1,625 m) tiefer sitzt als der Tür-Kämpfer (2 m):** Das ist Absicht. Ein Spitzbogen braucht mindestens die halbe Spannweite als Stich. Über der lichten Weite von 3,5 m des Gangs sind das 1,75 m; bei Kämpfer 2 m läge der Scheitel bei rund 3,75 m und damit über der 3,5-m-Decke. Die Tür ist nur 2 m weit und passt deshalb bei Kämpfer 2 m. Beide Werte folgen aus Regel 2 der Bogenarten und sind keine Unstimmigkeit.
+**Wie der Gurtbogen bemessen ist (neu hergeleitet für den 2 m breiten Gang):**
+
+1. Die Pfeiler im Gang sind höchstens 1/8 m tief (siehe Regel unten); zwischen den Kapitell-Vorderkanten bleiben 1,75 m, so viel wie die Türöffnung. Das ist die lichte Weite des Bogens.
+2. Der Kämpfer liegt bei 2,0 m, wie beim Türrahmen. Darunter ist der Durchgang auf voller Breite frei: Spieler (1,8 m) und Gruftwächter-Kopf bei 2,28 m kommen darunter her; auf 2,28 m ist die Öffnung noch 1,70 m breit, auf der Stabspitze (2,52 m) 1,56 m. Der Spieler ist 0,7 m breit (Radius 0,35). Bausteine sind Zierde ohne eigene Kollision; die Zellen bestimmen die Bewegung.
+3. Der gedrückte Bogen mit R innen 1,5 hat Mittelpunkte 0,625 neben der Achse (alles Vielfache von 1/16 m) und einen Stich von 1,364: Scheitel innen 3,364. Der Ring ist 1/8 m dick; R außen 1,625 gibt einen Scheitel außen von genau 3,5 m, also bündig mit der Decke, ohne in sie einzutauchen.
+4. **Kämpfer und Pfeiler an derselben Stelle:** Das Kapitell des Wandpfeilers, der den Bogen trägt, sitzt bei 1,5 bis 2,0 m; seine Oberkante ist der Kämpfer, der Ring setzt bündig darauf an. Ein solcher Pfeiler ist also kürzer (Schaft 0,5 bis 1,5) als ein Pfeiler ohne Bogen, der bis zum Abschluss reicht (Kapitell 3,0 bis 3,5). Es gibt keinen zweiten, höheren Pfeiler hinter dem Bogen.
+
+Alt gegen neu: lichte Weite 3,5 → 1,75 (Wand zu Wand 2,0), Kämpfer 1,625 → 2,0, R 1,875 → 1,5 innen und 1,625 außen, Ring 0,25 → 0,125 dick im Gang. Der Kämpfer ist jetzt derselbe wie beim Türrahmen (2,0 m); der frühere Absatz über einen tieferen Gurtbogen-Kämpfer entfällt, weil er nur zur falschen Gangbreite gehörte.
+
+**Regeln für Pfeiler und Säulen:**
+
+- **Wandpfeiler im Gang:** Sockel und Kapitell höchstens 0,125 m tief je Seite (Schaft 0,0625), damit die lichte Breite nicht unter die Türöffnung (1,75 m) fällt. [Setzung, gestützt auf die Gangbreite 2 m und die Türöffnung 1,75 m aus dem Code] In Räumen darf der Pfeiler tiefer sein (Schaft 0,25, Sockel 0,3125).
+- **Freie Säule nur in Räumen, nie in Gängen** (Antwort des Menschen in #247): Sie sperrt Bewegung und Schüsse, der Querschnitt ist rund (das Achteck ist die PS1-nahe Näherung). Der Mensch sagte „etwa 0,9 m“; **[Setzung der Leitung]** Schaft 0,875 m (14/16 m), damit die Rasterregel gilt. Das Maß ist der Abstand gegenüberliegender Flächen des Achtecks, über die Ecken sind es 0,947 m. Sockel nach der Sockelregel: 0,875 + 2 × 0,0625 = 1,0 m über die Flächen.
+- **Bänder über mehrere Kacheln** folgen der Regel „Anfang, Mitte, Ende“ der Texturen, siehe #282; Profile und Fugen dieser Seite gelten dort unverändert.
 
 Das **Maßwerk** (Stäbe, Dreipässe, Fenstergliederung) ist nur Textur: Es hat keine Geometrie. Spitzbogen, Rippe, Pfeiler und Kapitell sind dagegen echte Geometrie; sie bleiben mit den Richtwerten oben im Rahmen eines PS1-nahen Modells.
 
@@ -104,4 +131,4 @@ Nicht benutzt, weil nicht abrufbar oder ohne tragenden Text: Encyclopaedia Brita
 - Die Fugenphase der Spieltextur `catacomb_wall.png` liegt nicht exakt auf dem 16-Texel-Raster; die Skizzen zeigen das Soll.
 - Die Dreieckszahlen sind eine Schätzung und gelten, bis ein Modell sie ersetzt.
 - Als Fachquelle trägt bisher nur ein Lexikon (RDK Labor); eine zweite (Denkmalamt, Museum) fehlt noch.
-- Eine Säule Ø 0,9 m hat denselben Umkreis wie die Basis (1,0); an engen Stellen Abstand prüfen.
+- Säule: Schaft 0,875 und Sockel 1,0, beide über die Flächen des Achtecks; über die Ecken sind es 0,947 und 1,083. An engen Stellen Abstand prüfen.
