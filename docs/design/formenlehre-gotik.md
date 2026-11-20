@@ -14,7 +14,7 @@ Diese Maße sind keine Setzung dieser Seite, sie stehen im Code oder in den Vorl
 | Gang, Breite | 2 m (genau eine Bodenzelle) | `assets/rooms/corridor/straight.txt`, `bend.txt`, `zigzag.txt` |
 | Gang, Höhe | 3,5 m | `Cell.DefaultCeilingHeight` in `src/SilverAndAsh.Core/World/Cell.cs` |
 | Raum, Höhe | 6 m (die Breite steht je Vorlage in `assets/rooms/` und ist nicht fest) | `RoomTemplate.RoomCeilingHeight` in `src/SilverAndAsh.Core/World/RoomTemplate.cs` |
-| Türöffnung | 1,75 m breit, Kämpfer 2,0 m | `SPRING_N` in `tools/models/door.py` |
+| Türöffnung | 1,75 m breit, Kämpfer 2,0 m | Breite: `frame_normal` in `tools/models/door.py` (halbe Weite 1,0 minus Lauf 0,125, je Seite); Kämpfer: `SPRING_N` ebenda |
 | Spieler | 1,8 m hoch, Radius 0,35 m | `BodySizes.Player` in `src/SilverAndAsh.Core/BodySizes.cs` |
 | Gruftwächter | Kopf 2,28 m hoch (Stab 2,52 m) | `CryptWardenLook` in `src/SilverAndAsh.Core/Presentation/CryptWardenLook.cs` |
 
@@ -65,7 +65,7 @@ Die Steinfläche ist die einzige Zone, die mit der Raumhöhe wächst. Die Lagerf
 - [Setzung] Fase an jeder Kante, die ein Spieler sieht: 1/16 m. Eine Fase ist ein Dreieckspaar, mehr nicht.
 - [Setzung] Ausladung gegenüber dem Schaft höchstens 1/8 m.
 - Kapitell: Eine Säule hat Basis, Schaft und Kapitell [W-Sä]. Maß [Setzung]: 0,5 m hoch, Stufen aus 1/16 m und 1/8 m (Platte, Wulst, Platte).
-- Gurtbogen und Rippe: Rippen sind Bögen, die das Gewölbe bilden und tragen, Gurtbögen trennen die Joche [W-K]. Der Dienst ist ein schlanker Wandvorsprung, der Bögen und Rippen aufnimmt [RDK-D]. Maß [Setzung]: Querschnitt 0,5 breit, 0,25 hoch, unten Fase 1/16. Der Fuß ist so breit wie der Pfeiler, auf dem er steht.
+- Gurtbogen und Rippe: Rippen sind Bögen, die das Gewölbe bilden und tragen, Gurtbögen trennen die Joche [W-K]. Der Dienst ist ein schlanker Wandvorsprung, der Bögen und Rippen aufnimmt [RDK-D]. Maß [Setzung]: Querschnitt 0,5 breit, 0,25 hoch (im Gang 1/8 m dick), unten Fase 1/16. Der Fuß ist so breit wie der Pfeiler, auf dem er steht.
 - [Setzung] Sockel von Pfeiler und Säule: 0,5 m hoch, 1/16 m breiter als der Schaft je Seite (Säule: 0,875 + 0,125 = 1,0).
 
 ## Die Bausteine
@@ -74,9 +74,9 @@ Zu jedem Baustein: Maße, Dreiecks-Rahmen und Kontaktstelle zur Wand. **Alle Ma�
 
 | Baustein | Maße | Dreiecke | Kontakt zur Wand |
 |---|---|---|---|
-| [Wandpfeiler](formenlehre-gotik/wandpfeiler.png) | Schaft 0,5 breit; Tiefe im Raum 0,25 (Sockel und Kapitell 0,3125), **im Gang 0,0625 (Sockel und Kapitell 0,125)**; Sockel und Kapitell 0,625 breit; Kapitell 0,5 hoch bei 3,0 bis 3,5, trägt er einen Bogen, endet er mit der Kapitell-Oberkante am Kämpfer | etwa 40 | Zahn 1/8 m in die Wand alle 0,5 m; Fuß im Sockel, Kopf im Abschluss |
-| [Freie Säule](formenlehre-gotik/saeule.png) | Achteck, nur in Räumen: Schaft 0,875 über die Flächen (0,947 über die Ecken), Sockel und Kapitell 1,0 über die Flächen; Raum 6 m: Sockel 0,5, Schaft 5,0, Kapitell 0,5 (Raum 3,5 m: Schaft 2,5) | etwa 80 | freistehend, mindestens 0,5 m von der Wand; Trommeln 0,5 hoch |
-| [Deckenbogen](formenlehre-gotik/deckenbogen.png) | Gurtbogen quer zum Gang (2 m breit, 3,5 m hoch): Wand zu Wand 2,0, lichte Weite 1,75, Kämpfer 2,0, R außen 1,625, R innen 1,5, Ring 0,125 dick und 0,5 tief (im Raum 0,25 dick) | etwa 100 | sitzt bündig auf dem Kapitell des Wandpfeilers (Gang: 0,125 tief, 0,5 breit); Außenkante bündig mit der Decke, Fuß so breit wie das Kapitell |
+| [Wandpfeiler](formenlehre-gotik/wandpfeiler.png) | Schaft 0,5 breit; Tiefe im Raum 0,25 (Sockel und Kapitell 0,3125), **im Gang 0,0625 (Sockel und Kapitell 0,125)**; Sockel und Kapitell 0,625 breit; Kapitell 0,5 hoch, im Gang bei 3,0 bis 3,5, im 6-m-Raum bei 5,5 bis 6,0; trägt er einen Bogen, endet er mit der Kapitell-Oberkante am Kämpfer | etwa 40 | Zahn 1/8 m in die Wand alle 0,5 m; Fuß im Sockel, Kopf im Abschluss |
+| [Freie Säule](formenlehre-gotik/saeule.png) | Achteck, nur in Räumen: Schaft 0,875 über die Flächen (0,947 über die Ecken), Sockel und Kapitell 1,0 über die Flächen; Raum 6 m: Sockel 0,5, Schaft 5,0, Kapitell 0,5 (falls später ein Raum 3,5 m hoch wird: Schaft 2,5; heute sind alle Räume 6 m hoch) | etwa 80 | freistehend, mindestens 0,5 m von der Wand; Trommeln 0,5 hoch |
+| [Deckenbogen](formenlehre-gotik/deckenbogen.png) | Gurtbogen quer zum Gang (2 m breit, 3,5 m hoch): Wand zu Wand 2,0, lichte Weite 1,75, Kämpfer 2,0, R außen 1,625, R innen 1,5, Ring 0,125 dick und 0,5 tief (im Raum 0,25 dick) | etwa 100 | sitzt bündig auf dem Kapitell des Wandpfeilers (Gang: Kapitell 0,125 tief, 0,625 breit; der Ring ist 0,5 tief und sitzt mittig darauf); Außenkante bündig mit der Decke |
 | [Wandnische](formenlehre-gotik/nische.png) | Rundbogen, Weite 1,0, Tiefe 0,5, Sohle 0,5, Kämpfer 1,5, Scheitel 2,0; Rahmen 1/16 | etwa 60 | Rahmen bündig mit der Wandebene |
 | [Türrahmen](formenlehre-gotik/tuerrahmen.png) | Pfostenband 1/8, Kämpferplatte 1/8 hoch bei 2,0, Lauf 1/8, R 1,5625, Scheitel 3,458; Boss: drei gestaffelte Läufe, Kämpfer 1,875, R 1,75 | etwa 120, Boss 200 | Bogenfeld bündig in der Wandebene; Wandfugen enden am Rahmen |
 
