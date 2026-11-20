@@ -298,6 +298,12 @@ public static class PhotoScenes
             studio => new PhotoSetup(BeforeCrossbowSkeleton(studio, CrossbowSkeletonStance.Announce, 4f))),
         new("crossbow-skeleton-announce-2m", "The showroom's crossbow skeleton announcing a shot, 2 m in front of it - the red eyes up close (issue #497).",
             studio => new PhotoSetup(BeforeCrossbowSkeleton(studio, CrossbowSkeletonStance.Announce, 2f))),
+        new("crypt-warden-rest-4m", "The showroom's crypt warden at rest, 4 m in front of it: pole propped up, eye dull (issue #530).",
+            studio => new PhotoSetup(BeforeCryptWarden(studio, CryptWardenStance.Rest, 4f))),
+        new("crypt-warden-announce-4m", "The showroom's crypt warden announcing its blow, 4 m in front of it: pole raised, eye red (issue #530).",
+            studio => new PhotoSetup(BeforeCryptWarden(studio, CryptWardenStance.Announce, 4f))),
+        new("crypt-warden-announce-2m", "The showroom's crypt warden announcing its blow, 2 m in front of it - the red eye up close (issue #530).",
+            studio => new PhotoSetup(BeforeCryptWarden(studio, CryptWardenStance.Announce, 2f))),
         new("model-probe-4m", "One target on a bare floor, 4 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 4)) { IsModelProbe = true }),
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",
@@ -395,6 +401,17 @@ public static class PhotoScenes
         var skeleton = world.Showroom!.CrossbowSkeletons.First(exhibit => exhibit.Stance == stance);
         world.Player.PlaceAt(skeleton.Position + (skeleton.Facing * distance));
         PhotoStudio.Face(world.Player, skeleton.Position + new Vector3(0f, CrossbowSkeletonLook.Height * 0.6f, 0f));
+        return world;
+    }
+
+    // The showroom with a player `distance` m in front of its crypt warden in `stance` (it looks south, along +Z),
+    // looking at its chest (issue #530).
+    private static GameWorld BeforeCryptWarden(PhotoStudio studio, CryptWardenStance stance, float distance)
+    {
+        var world = BeforeEquipment(studio, piece => piece is CryptWardenPiece shown && shown.Stance == stance);
+        var warden = world.Showroom!.CryptWardens.First(exhibit => exhibit.Stance == stance);
+        world.Player.PlaceAt(warden.Position + (warden.Facing * distance));
+        PhotoStudio.Face(world.Player, warden.Position + new Vector3(0f, CryptWardenLook.Height * 0.6f, 0f));
         return world;
     }
 
