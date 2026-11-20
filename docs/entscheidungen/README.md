@@ -21,3 +21,4 @@ Entscheidungen werden nicht gelöscht. Ändert sich etwas, kommt eine neue Notiz
 | [0008](0008-ausruestung-haendler-waffenkammer.md) | Ausrüstung, Händler und Waffenkammer | angenommen |
 | [0009](0009-leitung-designer-auto-merge.md) | Leitung durch Claude, Designer-Sitzungen und Auto-Merge | angenommen, teilweise abgelöst durch 0010 |
 | [0010](0010-stil-ps1-nah-texturen.md) | Stil: PS1-nah, mit Texturen und weicher Schattierung | angenommen |
+| [0011](0011-umfang-von-1-0.md) | Umfang von 1.0: größer, ohne festen Termin | vorgeschlagen |
