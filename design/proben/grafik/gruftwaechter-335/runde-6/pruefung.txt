@@ -1,0 +1,32 @@
+﻿Pruefung 1: je Teil im Skript (Kante mit genau einer Flaeche = offen):
+J1 Auge auf seiner rechten Seite (links im Bild): Teile 9, Dreiecke 2944, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000026 m3 (muss > 0 sein)
+    leg_l: 280 Dreiecke, offen 0, mehrfach 0, Raum 0.0670
+    leg_r: 280 Dreiecke, offen 0, mehrfach 0, Raum 0.0670
+    torso: 704 Dreiecke, offen 0, mehrfach 0, Raum 0.6650
+    head: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0246
+    eyes: 32 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_l: 248 Dreiecke, offen 0, mehrfach 0, Raum 0.0552
+    arm_r: 184 Dreiecke, offen 0, mehrfach 0, Raum 0.0507
+    gear: 820 Dreiecke, offen 0, mehrfach 0, Raum 0.0107
+    pole: 236 Dreiecke, offen 0, mehrfach 0, Raum 0.0190
+J2 Auge auf seiner linken Seite (rechts im Bild): Teile 9, Dreiecke 2944, offene Kanten 0, Kanten mit mehr als zwei Flaechen 0, kleinster Rauminhalt 0.000026 m3 (muss > 0 sein)
+    leg_l: 280 Dreiecke, offen 0, mehrfach 0, Raum 0.0670
+    leg_r: 280 Dreiecke, offen 0, mehrfach 0, Raum 0.0670
+    torso: 704 Dreiecke, offen 0, mehrfach 0, Raum 0.6650
+    head: 160 Dreiecke, offen 0, mehrfach 0, Raum 0.0246
+    eyes: 32 Dreiecke, offen 0, mehrfach 0, Raum 0.0000
+    arm_l: 248 Dreiecke, offen 0, mehrfach 0, Raum 0.0552
+    arm_r: 184 Dreiecke, offen 0, mehrfach 0, Raum 0.0507
+    gear: 820 Dreiecke, offen 0, mehrfach 0, Raum 0.0107
+    pole: 236 Dreiecke, offen 0, mehrfach 0, Raum 0.0190
+
+Pruefung 2: Durchdringung aller Koerper paarweise (BVH-Dreieckstest), Ruhe und Ankuendigung.
+Erlaubt ist nur der Waffenschaft in der Manschette (keine Hand modelliert).
+J1 ruhend: 27 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x pole/shaft (31 Dreieckspaare, erstes bei x 0.64 y 1.34 z 0.75)
+J1 ankuendigung: 27 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x pole/shaft (30 Dreieckspaare, erstes bei x 1.06 y 2.01 z 0.46)
+J2 ruhend: 27 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x pole/shaft (31 Dreieckspaare, erstes bei x 0.64 y 1.34 z 0.75)
+J2 ankuendigung: 27 Koerper, Paare mit Durchdringung 1 (davon erlaubt 1), NICHT erlaubt 0, Selbstdurchdringung 0
+    erlaubt: arm_r/cuff x pole/shaft (30 Dreieckspaare, erstes bei x 1.06 y 2.01 z 0.46)

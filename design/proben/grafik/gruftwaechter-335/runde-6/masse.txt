@@ -1,0 +1,2 @@
+﻿J1 Auge auf seiner rechten Seite (links im Bild): Dreiecke 2944 {'leg_l': 280, 'leg_r': 280, 'torso': 704, 'head': 160, 'eyes': 32, 'arm_l': 248, 'arm_r': 184, 'gear': 820, 'pole': 236}, x -1.07..1.09, y 0.00..2.52, z -0.45..1.05
+J2 Auge auf seiner linken Seite (rechts im Bild): Dreiecke 2944 {'leg_l': 280, 'leg_r': 280, 'torso': 704, 'head': 160, 'eyes': 32, 'arm_l': 248, 'arm_r': 184, 'gear': 820, 'pole': 236}, x -1.07..1.09, y 0.00..2.52, z -0.45..1.05
