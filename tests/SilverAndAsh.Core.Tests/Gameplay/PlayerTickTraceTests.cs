@@ -31,8 +31,11 @@ public class PlayerTickTraceTests
     // in each run: the tick a stalled charge would have kept the empty bar from refilling).
     // Gorm duel changed on purpose in #430: the chain swing reaches 12 m instead of 8 m, so it hits the bot where it
     // missed before (parcours traces unchanged).
+    // Gorm duel changed on purpose in #437: the hook leads its target and locks 12 ticks before the throw. With seed 325
+    // the bot stopped after every lock and was never pulled any more, so the duel now runs with seed 311, which pulls
+    // and kills the bot before and after #437 (first difference to main: tick 528, a hook that hit now misses).
     // Two parcours seeds: together their bots reach almost every line of the tick (one alone misses a few).
-    private const string GormDuelChecksum = "96A7BD0EF1B6A17085C2BC10AA9E77B3E2B7BDB48DAFDAA993F29E8BDF93577F";
+    private const string GormDuelChecksum = "2B98DA93001979108FDDA97B8F313134A9E23C47A358628B63B0D6D0AD68288E";
 
     [Theory]
     [InlineData(1, "D9933F5097C3E8FAED875CB10664AA4B31447231594EBCB9647AFC7FE5AADE8A")]
@@ -47,7 +50,7 @@ public class PlayerTickTraceTests
     [Fact]
     public void A_bot_run_against_Gorm_gives_the_same_trace_as_before()
     {
-        var trace = GormDuelTrace(seed: 325, ticks: 4000);
+        var trace = GormDuelTrace(seed: 311, ticks: 4000);
 
         Assert.True(GormDuelChecksum == Checksum(trace), $"The Gorm duel trace changed - new checksum {Checksum(trace)}.");
     }
@@ -82,7 +85,7 @@ public class PlayerTickTraceTests
     [Fact]
     public void The_Gorm_bot_is_pulled_and_dies()
     {
-        var trace = GormDuelTrace(seed: 325, ticks: 4000);
+        var trace = GormDuelTrace(seed: 311, ticks: 4000);
 
         Assert.Contains("pulled=True", trace, StringComparison.Ordinal);
         Assert.Contains("health=0", trace, StringComparison.Ordinal);
