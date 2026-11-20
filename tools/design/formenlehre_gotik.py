@@ -453,7 +453,7 @@ def wandpfeiler():
                         "Oben im Abschluss, Fuß im Sockel",
                         "#Im Gang (2 m breit): Sockel und Kapitell", "höchstens 1/8 m tief je Seite, lichte Breite", "bleibt 1,75 m (Türöffnung)",
                         "#Trägt der Pfeiler einen Bogen: Kapitell-", "Oberkante = Kämpfer des Bogens (Deckenbogen)",
-                        "#Dreiecke: etwa 40 (Schätzung)"], 24)
+                        "#Dreiecke: 196 (Gang), 238 (Raum)", "etwa 40 Flächen, an den Metergrenzen geteilt"], 24)
     return c
 
 
@@ -464,7 +464,7 @@ def saeule():
     for y0, y1, hw in ((0, 0.5, 0.5), (0.5, 5.5, 0.4375), (5.5, 6.0, 0.5)):
         stone_block(c, t, -hw, hw, y0, y1)
     c.dashed(t.x(-1.5), t.y(3.5), t.x(1.5), t.y(3.5), MASS, 2, 14, 8)
-    c.text(t.x(-1.4), t.y(3.5) - 22, "3,5 m", MASS, 2)
+    c.text(t.x(-1.4), t.y(3.5) - 22, "3,5 m, falls später", MASS, 2)
     dim_h(c, t, -0.4375, 0.4375, 6.25, "0,875 Schaft")
     dim_h(c, t, -0.5, 0.5, -0.1, "1,0", below=True)
     dim_v(c, t, 0.75, 0, 0.5, "0,5", right=True)
@@ -482,7 +482,8 @@ def saeule():
     notes(c, 640, 420, ["#Regeln", "Nur in Räumen, nie in Gängen: sie sperrt", "Bewegung und Schüsse; runder Querschnitt",
                         "Freistehend: mindestens 0,5 m Abstand zur Wand", "Mehrere Säulen: Abstand mindestens 2 m",
                         "Maß gegen Flächen: Schaft 0,875, Sockel 1,0", "Lagerfugen alle 0,25 m, Trommeln 0,5 m hoch",
-                        "Niedriger Raum 3,5 m: Schaft 2,5 (gestrichelt)",
+                        "Heute sind alle Räume 6 m hoch. Falls später",
+                        "ein Raum 3,5 m hoch wird: Schaft 2,5 (gestrichelt)",
                         "#Dreiecke: etwa 80 (Schätzung)"], 26)
     return c
 
