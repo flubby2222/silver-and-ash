@@ -165,7 +165,7 @@ public class BoonTests
         player.AddExperience(100, []);
         var start = player.Position;
 
-        world.Tick(PlayerInput.None with { ChooseBoon = player.CurrentOffer[0] });
+        world.Tick(PlayerInput.None with { ChooseBoon = Boon.Damage });
         for (var tick = 0; tick < Second / 4; tick++)
         {
             world.Tick(Forward);
@@ -388,6 +388,89 @@ public class BoonTests
         }
 
         return ticks;
+    }
+
+    [Fact]
+    public void Health_is_offered_up_to_the_cap_and_never_beyond_it()
+    {
+        // Issue #435: the life bar is one pixel per point, so the maximum health stops at the cap.
+        var boons = OfferAll.Boons;
+        var world = new GameWorld(LevelParser.Parse("P"), balance: OfferAll);
+        var player = world.Player;
+        var steps = (boons.HealthCap - OfferAll.Player.MaxHealth) / boons.Health;
+        Assert.True(steps > 1, "The cap leaves no room for health boons - the case would prove nothing.");
+
+        for (var step = 0; step < steps; step++)
+        {
+            LevelUp(player);
+            Assert.Contains(Boon.Health, player.CurrentOffer);
+            world.Tick(PlayerInput.None with { ChooseBoon = Boon.Health });
+        }
+
+        Assert.Equal(OfferAll.Player.MaxHealth + (steps * boons.Health), player.MaxHealth);
+        Assert.True(player.MaxHealth + boons.Health > boons.HealthCap, "One more health boon would still fit.");
+        for (var more = 0; more < 3; more++)
+        {
+            LevelUp(player);
+            Assert.DoesNotContain(Boon.Health, player.CurrentOffer);
+            Assert.NotEmpty(player.CurrentOffer);
+            world.Tick(PlayerInput.None with { ChooseBoon = Boon.Damage });
+        }
+
+        Assert.True(player.MaxHealth <= boons.HealthCap);
+    }
+
+    [Fact]
+    public void Two_levels_at_once_offer_health_only_as_often_as_it_still_fits()
+    {
+        // With room for one more health boon, two waiting offers must not both hold it - else both could be taken.
+        var boons = OfferAll.Boons;
+        var world = new GameWorld(LevelParser.Parse("P"), balance: OfferAll);
+        var player = world.Player;
+        var steps = (boons.HealthCap - OfferAll.Player.MaxHealth) / boons.Health;
+        for (var step = 0; step < steps - 1; step++)
+        {
+            LevelUp(player);
+            world.Tick(PlayerInput.None with { ChooseBoon = Boon.Health });
+        }
+
+        player.AddExperience(player.ExperienceToNextLevel - player.Experience, []);
+        var next = (int)MathF.Round(OfferAll.Experience.FirstLevel * MathF.Pow(OfferAll.Experience.Growth, player.Level),
+            MidpointRounding.AwayFromZero);
+        player.AddExperience(next, []);
+        Assert.Equal(2, player.PendingBoons);
+
+        Assert.Contains(Boon.Health, player.CurrentOffer);
+        world.Tick(PlayerInput.None with { ChooseBoon = Boon.Health });
+        Assert.Equal(1, player.PendingBoons);
+        Assert.DoesNotContain(Boon.Health, player.CurrentOffer);
+        Assert.Equal(boons.HealthCap - ((boons.HealthCap - OfferAll.Player.MaxHealth) % boons.Health), player.MaxHealth);
+    }
+
+    [Fact]
+    public void A_cap_below_the_starting_health_never_offers_health()
+    {
+        var balance = OfferAll with { Boons = OfferAll.Boons with { HealthCap = OfferAll.Player.MaxHealth - 1 } };
+        var world = new GameWorld(LevelParser.Parse("P"), balance: balance);
+        var player = world.Player;
+
+        for (var level = 0; level < 5; level++)
+        {
+            LevelUp(player);
+            Assert.DoesNotContain(Boon.Health, player.CurrentOffer);
+            Assert.Equal(Pool.Length - 1, player.CurrentOffer.Count); // the rest of the pool is still offered
+            world.Tick(PlayerInput.None with { ChooseBoon = Boon.Damage });
+        }
+
+        Assert.Equal(balance.Player.MaxHealth, player.MaxHealth);
+    }
+
+    // Exactly one level up, with the experience the game itself asks for.
+    private static void LevelUp(Player player)
+    {
+        Assert.Equal(0, player.PendingBoons);
+        player.AddExperience(player.ExperienceToNextLevel - player.Experience, []);
+        Assert.Equal(1, player.PendingBoons);
     }
 
     private static void Face(Player player, Vector3 point)

@@ -191,6 +191,26 @@ public class HudReadoutTests
     }
 
     [Fact]
+    public void A_health_boon_chosen_in_the_tick_lengthens_the_life_bar_by_one_tick()
+    {
+        // Issue #435: the bar is as long as the highest health and has a tick mark per health boon.
+        var balance = Balance.Default with { Boons = Balance.Default.Boons with { Offered = Enum.GetValues<Boon>().Length } };
+        var world = new GameWorld(LevelParser.Parse("P"), balance: balance);
+        var player = world.Player;
+        var before = HudReadout.Of(world, player);
+        Assert.Equal((balance.Player.MaxHealth, balance.Boons.Health), (before.MaxLife, before.LifePerTick));
+
+        player.AddExperience(player.ExperienceToNextLevel - player.Experience, new List<GameEvent>());
+        Assert.Contains(Boon.Health, player.CurrentOffer);
+        world.Tick(PlayerInput.None with { ChooseBoon = Boon.Health });
+        var after = HudReadout.Of(world, player);
+
+        Assert.Equal(before.MaxLife + balance.Boons.Health, after.MaxLife);
+        Assert.Equal(player.MaxHealth, after.MaxLife);
+        Assert.Equal(balance.Boons.Health, after.LifePerTick);
+    }
+
+    [Fact]
     public void Consecrated_ammunition_shows_its_seconds_left()
     {
         var world = PlainWorld();
