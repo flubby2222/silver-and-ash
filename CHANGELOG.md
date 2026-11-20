@@ -8,6 +8,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ### Hinzugefügt
 - **Ghul-Augen kündigen den Schlag an:** Holt ein Ghul zum Schlag aus, leuchten seine Augen blutrot und werden in drei harten Stufen heller, bis er zuschlägt (eine halbe Sekunde, so lange wie das Ausholen). Jeder Ghul leuchtet für sich; ein toter Ghul leuchtet nicht. Zeitpunkt, Schaden und Balancing bleiben gleich. Dauer und Stärke sind vorläufig bis zum nächsten Spieltest (#447)
+- **Brunnen „Well of Sirius“:** In einem ruhigen Raum (Start, Schatz, Gang oder Geheimraum, nie im Kampfraum) steht je Ebene ein dreistufiger Steinbrunnen, in dessen Schalen das Wasser fließt. Man läuft nicht durch ihn hindurch, Ghule und Gorm gehen um ihn herum, sehen aber über ihn hinweg. Mit F („Use Well of Sirius“) wird er verbraucht und steht danach trocken da. Vorläufig kostet das nichts und bringt nichts: Preis, Gewinnchancen und Zahl der Würfe sind noch nicht entschieden (#438)
 
 ### Geändert
 - **Musik in den Katakomben lauter:** Die Musik im Lauf ist 10 dB lauter als bisher, etwa so laut wie die Musik im Hauptmenü (nach der Hörprobe zum Spieltest vom 19.11.). Klang und Stück sind gleich, der Regler für die Atmosphäre wirkt weiter von 0 bis 100 % (#427)
