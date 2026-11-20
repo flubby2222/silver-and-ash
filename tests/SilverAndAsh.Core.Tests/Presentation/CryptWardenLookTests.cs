@@ -57,7 +57,7 @@ public class CryptWardenLookTests
         // The feet: never below the floor, at most 3 cm above it.
         Assert.InRange(corners.Min(corner => corner.Y), 0f, 0.03f);
 
-        // The top: the label above it is placed from Height; the announce pose twists the body, the head stays about as high.
+        // The top: the label above it is placed from Height (the tip of the propped-up pole; the raised pole reaches about as high).
         Assert.InRange(corners.Max(corner => corner.Y), CryptWardenLook.Height - 0.15f, CryptWardenLook.Height + 0.15f);
     }
 

@@ -30,7 +30,10 @@ public static class CryptWardenLook
     public const string Gear = "gear";
     public const string Pole = "pole";
 
-    /// <summary>About the height of the figure at rest, in metres (top of the head) - for the label above it.</summary>
+    /// <summary>
+    /// Height of the highest point at rest, in metres: the tip of the propped-up pole. The head ends lower, at 2.20 m at
+    /// rest and 2.28 m while announcing. For the label above the figure.
+    /// </summary>
     public const float Height = 2.52f;
 
     /// <summary>
