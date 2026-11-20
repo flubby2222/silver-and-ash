@@ -4,7 +4,7 @@ Erzeuger fuer das Spiel (Uebergabe aus Probestueck 8, Fassung 2, Branch claude/d
 Erzeugt nur die drei Texturen nach assets/textures/, keine Probebilder; die Bilder entstehen im Probestueck-Skript
 design/proben/grafik/level/level_v2.py.
 
-Je 64 x 64 Pixel, 24 Farben, nahtlos kachelbar, eine Kachel = 1 m. Mittlere Helligkeit von Wand und Boden wie die
+Je 64 x 64 Pixel, nur Farben der Reihe Stein der Hauptpalette (hoechstens 15, Issue #280), nahtlos kachelbar, eine Kachel = 1 m. Mittlere Helligkeit von Wand und Boden wie die
 Flaechenfarben in LookSettings; die Decke bewusst auf 72 % der Deckenfarbe.
 
 Aufruf (aus dem Repository-Wurzelverzeichnis):
@@ -21,13 +21,17 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models"))
 import bpy  # noqa: E402
-from psx import WORLD_WALL, WORLD_FLOOR, WORLD_CEILING, quantize, save_image  # noqa: E402
+from psx import WORLD_WALL, WORLD_FLOOR, WORLD_CEILING, save_image  # noqa: E402
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                                "tools", "palette"))
+import snap as palette_snap  # noqa: E402
 
 OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                        "assets", "textures")
 SIZE = 64
 PAINT = 4
-COLORS = 24
+STEIN = palette_snap.colours("Stein")          # die 15 Stufen der Reihe Stein: mehr Farben hat keine Umgebungs-Textur
 
 
 # --- Kachelbares Rauschen -----------------------------------------------------------------------------------------
@@ -100,7 +104,7 @@ def courses(n, heights, width_range, seed):
 def finish(img, base, seed):
     small = img.reshape(SIZE, PAINT, SIZE, PAINT, 3).mean(axis=(1, 3))
     small *= np.asarray(base, float).mean() / small.mean()       # mittlere Helligkeit = heutige Flaechenfarbe
-    return np.clip(quantize(np.clip(small, 0, 255), COLORS, seed), 0, 255)
+    return palette_snap.snap(np.clip(small, 0, 255), STEIN)      # Issue #280: jedes Pixel auf die naechste Stein-Stufe
 
 
 def cracks(img, rng, count, n, strength=0.55):
