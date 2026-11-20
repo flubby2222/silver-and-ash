@@ -75,6 +75,7 @@ public class PhotoSceneTests
             "showroom-c-room", "stairs-4m", "stairs-10m", "well-ready", "well-spent",
             "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
             "menu-title", "menu-pause", "menu-settings", "menu-quit",
+            "ghoul-shotbody-front", "ghoul-shotbody-side",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -408,6 +409,30 @@ public class PhotoSceneTests
         Assert.Equal(
             ["model-probe-10m", "model-probe-4m"],
             setups.Where(pair => pair.Value.IsModelProbe).Select(pair => pair.Key).Order());
+        Assert.Equal(
+            ["ghoul-shotbody-front", "ghoul-shotbody-side"],
+            setups.Where(pair => pair.Value.ShowsShotBodies).Select(pair => pair.Key).Order());
+    }
+
+    [Theory]
+    [InlineData("ghoul-shotbody-front", 1f)]
+    [InlineData("ghoul-shotbody-side", 0f)]
+    public void The_shot_body_scenes_show_the_wires_and_look_at_the_resting_ghoul_from_front_and_side(string name, float ahead)
+    {
+        // Issue #433: the showroom's ghoul never moves; the player stands 1.8 m from it, in front or to its side.
+        var setup = Built(name);
+        var ghoul = setup.World.Ghouls.MinBy(ghoul => Vector3.Distance(ghoul.Position, setup.World.Player.Position))!;
+        var facing = ghoul.Facing;
+
+        setup.Run();
+
+        Assert.True(setup.ShowsShotBodies);
+        Assert.Equal(facing, ghoul.Facing);
+        var flat = (setup.World.Player.Position - ghoul.Position) with { Y = 0f };
+        Assert.Equal(1.8f, flat.Length(), 0.01f);
+        Assert.Equal(ahead, Vector3.Dot(Vector3.Normalize(flat), facing), 0.001f);
+        var looking = Vector3.Normalize(setup.World.Player.View.Forward with { Y = 0f });
+        Assert.True(Vector3.Dot(looking, -Vector3.Normalize(flat)) > 0.99f);
     }
 
     [Fact]
