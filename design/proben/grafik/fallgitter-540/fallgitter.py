@@ -648,7 +648,7 @@ def main():
     rows = export_models()
     if MODELS_ONLY:
         return
-    d = os.path.join(OUT, "bilder")
+    d = os.path.join(OUT, "zustaende")
     for state in LIFT:
         for view in ("frontal", "schraeg"):
             for dist in (3.0, 8.0):

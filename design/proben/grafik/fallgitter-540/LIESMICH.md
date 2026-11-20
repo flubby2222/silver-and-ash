@@ -46,7 +46,7 @@ Atlas 64 x 64 je Gitter (Stab links, Band rechts), nur Stufen 2 bis 5 der Reihe 
 
 ## Bilder
 
-- `bilder/<zu|halb|offen>-<frontal|schraeg>-<3|8>m-<spiel|hell>.png`: 24 Bilder
+- `zustaende/<zu|halb|offen>-<frontal|schraeg>-<3|8>m-<spiel|hell>.png`: 24 Bilder
 - `uebersicht-<3|8>m-<spiel|hell>.png`: je Entfernung und Modus alle Zustände nebeneinander
 - `detail-spitzen-querband.png`, `durchblick-gang.png`, `groessenvergleich.png`
 - `rahmen-vergleich.png`: normal, locked, boss
