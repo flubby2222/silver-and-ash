@@ -1,163 +1,144 @@
-# Entwurf: Skills, Skillpunkte und Altare (#104)
+# Entwurf: Skills, Statuseffekte und Altar (#104)
 
-- **Stand:** Entwurf zur Vorstellung beim Menschen, 2026-11-20. Noch nichts davon ist gebaut.
-- **Grundlagen:** [ADR 0004](../entscheidungen/0004-fortschritt-stufen-beute-skills.md) (Blutrausch wird Skill, Altare planbar statt Zufall), [ADR 0005](../entscheidungen/0005-ebenen-raeume-durchlauf.md) (jede 3. Stufe ein Skillpunkt, Altarraum, Fenster halten nie an), [ADR 0003](../entscheidungen/0003-online-coop-offenhalten.md) (Coop offen), ADR 0011 (noch offen, PR #481: Skills und Altare gehören in 1.0, Meilenstein v0.13).
-- **Alle Zahlen sind vorläufige Startwerte.** Sie kommen in `assets/balance.json` (neuer Abschnitt `skills`) und werden in der Balancing-Runde angepasst.
+- **Stand:** 2. Fassung, 2026-11-20, nach den Urteilen des Menschen in [#104](https://github.com/flubby2222/silver-and-ash/issues/104) (Kommentare vom 20.11.). Noch nichts davon ist gebaut.
+- **Grundlagen:** [ADR 0005](../entscheidungen/0005-ebenen-raeume-durchlauf.md) (jede 3. Stufe ein Skillpunkt, Altarraum, Fenster halten nie an), [ADR 0003](../entscheidungen/0003-online-coop-offenhalten.md) (Coop offen), [ADR 0006](../entscheidungen/0006-kisten-beute-rarity.md) und [0008](../entscheidungen/0008-ausruestung-haendler-waffenkammer.md) (Seltenheit), ADR 0011 (PR #481, noch offen: Skills gehören in 1.0).
+- **Alle Zahlen sind vorläufige Startwerte** in `assets/balance.json` (neue Abschnitte `skills` und `statusEffects`), angepasst in der Balancing-Runde.
 
-## 1. Vorschlag in Kürze
+## Zusammenfassung
 
-- **Skillpunkte:** Jede **3. Stufe** gibt einen Skillpunkt (wie ADR 0005). Ein Lauf erreicht heute etwa Stufe 9 bis 10 (Balance-Report), also **etwa 3 Skillpunkte je Lauf**. Die Bonus-Wahl (X) bleibt daneben unverändert.
-- **Altar:** ein Steinaltar in einem eigenen, ruhigen **Altarraum** (ein Eingang, ohne Schlüssel erreichbar, gegnerfrei), **einer je Ebene**, etwa auf einem Drittel des Wegs zum Boss. Der Altarraum bekommt einen **eigenen Teleporter**, damit man spätere Punkte ohne langen Rückweg einlöst.
-- **Wahl:** Am Altar mit **F** öffnet sich ein kleines Fenster mit **allen Skills** des Spiels. Jeder kostet **1 Skillpunkt** und lässt sich einmal lernen. Keine Ränge, kein Baum, kein Zufall.
-- **Ein Lauf trägt also etwa 3 Skills**, davon **höchstens einen aktiven** (Taste **Q**, z. B. Blutrausch). Lernt man einen zweiten aktiven, ersetzt er den ersten.
-- **Tod:** Skills und offene Skillpunkte sind weg, wie Stufe, Boni und Ausrüstung. Der nächste Lauf beginnt ohne Skills.
+1. **Ein Skillpunkt alle 3 Stufen.** Ein voller Lauf durch Ebene 0 bringt heute **3 Punkte**, wer Räume auslässt **2**.
+2. **Punkte zahlen alles:** 1. Punkt = aktiver Skill, 2. Punkt = sein Statuseffekt, jeder weitere = eine Ausbaustufe.
+3. **Ein aktiver Skill je Lauf** (Taste **Q**). Der erste Altarbesuch bietet **drei zufällige** von fünf.
+4. **Fünf Statuseffekte:** Leech, Stun, Holy Fire (Weihfeuer), Grave Chill (Grabeskälte), Marked (Gezeichnet). Startwerte halb so stark wie zuerst vorgeschlagen.
+5. **Waffen** würfeln beim Fund, ob sie einen Effekt tragen. Er löst je Treffer mit **10 bis 25 %** aus, je nach Seltenheit.
+6. **Synergie:** Tragen Waffe und Skill denselben Effekt, hält er **1,5-mal so lange** (Leech: 1,5-mal so stark).
+7. **Erneut ausgelöst** frischt die Dauer auf, stärker wird nichts. Verschiedene Effekte liegen gleichzeitig.
+8. **Bosse taumeln** bei Stun nur kurz und sind danach einige Sekunden immun.
+9. **Am Gegner:** farbiger Schimmer, ein Effekt passend zum Status, darüber die Restzeit als kleine Zahl. Kein Rot.
+10. **Altar** im eigenen Raum mit eigenem Teleporter. Kein Skill erhöht das maximale Leben.
 
-## 2. Grundmodelle zur Wahl
+## 1. Ablauf eines Laufs
 
-| | **A – Feste Liste, freie Wahl** (Empfehlung) | **B – Drei zufällige zur Wahl** | **C – Aktive Fähigkeiten mit Baum** |
-|---|---|---|---|
-| **So geht es** | Der Altar zeigt alle 8 Skills. Man wählt frei, 1 Punkt je Skill. | Der Altar bietet je Punkt 3 Skills, gezogen mit dem Seed (wie die Bonus-Wahl). | Zwei Plätze für aktive Fähigkeiten (Q, E) mit Abklingzeit; jede hat 2 bis 3 Ausbaustufen; daneben wenige Passive. |
-| **Aufwand** | **klein bis mittel**: eine Liste, ein Fenster, ein Zähler | **mittel**: wie A, dazu Ziehen, Angebote stapeln, Tests über Seeds | **groß**: zwei Tasten, Abklingzeiten im HUD, Ausbaustufen, viel mehr Balancing |
-| **Balancing** | Planbar. Gefahr: alle wählen dasselbe. Gegenmittel: Skills für verschiedene Spielweisen, keiner klar am stärksten. Bot-Durchläufe je Skill sind einfach. | Mehr Abwechslung je Lauf, aber wieder Zufall – genau das sollten Altare laut ADR 0004 abschwächen. | Stärkster Eingriff in Kampf und Tempo; Gorm müsste neu abgestimmt werden. |
-| **Koop** | Einfach: Jeder Spieler hat eigene Punkte und eigene Skills. Die Wahl ist eine Eingabe im Tick. | Einfach, Angebot je Spieler aus dem Seed der Welt. | Mittel: mehr Zustand je Spieler, mehr Ereignisse. |
-| **Passt zu** | „Keep it simple“, ADR 0004 („planbar statt Zufall“) | Bonus-Wahl (gleiches Muster, aber doppelt gemoppelt) | ADR 0005 „Ausbau, Synergien“ – aber weit über 3 Punkte je Lauf hinaus |
+**Erfahrung heute** (`assets/balance.json`, `experience`; Rechnung in `Player.ExperienceToNextLevel`, `src/SilverAndAsh.Core/Gameplay/Player.cs`): Stufe 0 → 1 kostet 100, jede weitere Stufe 1,25-mal so viel (gerundet). Ein Ghul gibt 30, eine Fledermaus 20; **Gorm gibt keine Erfahrung** (`GameWorld.Damage`, `src/SilverAndAsh.Core/Gameplay/GameWorld.cs`, nur Ghul und Fledermaus).
 
-**Empfehlung: Modell A.** Bei nur etwa 3 Punkten je Lauf ist jede Wahl wichtig; sie soll planbar sein, und der Zufall steckt schon in Boni, Kisten und Brunnen. Modell A ist das kleinste, lässt sich später zu B erweitern (Altar zeigt dann nur eine Auswahl) und hält Koop einfach. C wäre ein eigenes Spielsystem und gehört nicht in 1.0.
+| Stufe | 1 | 2 | **3** | 4 | 5 | **6** | 7 | 8 | **9** | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Erfahrung gesamt | 100 | 225 | **381** | 576 | 820 | **1125** | 1506 | 1983 | **2579** | 3324 |
 
-## 3. Skills
+**Report vom 19.11.** (`docs/balancing.md`, 500 Ebenen): 96,9 Gegner, 2671 Erfahrung bei vollem Räumen, also **27,6 je Kill**.
 
-Gemeinsam für alle: Kosten **1 Skillpunkt**, Werte in `balance.json` unter `skills.<name>`, Name und Wirkungssatz im Spiel englisch. Gelernte Skills liegen am Spieler (neuer Zustand in `Player.cs`, Muster wie die Boni in `Boon.cs` und `Player.Choose`). Kein Skill ändert das maximale Leben – so bleibt der Deckel 235 und die Regel „am Deckel keine Leben-Boni mehr“ unberührt.
-
-### Kern für 1.0 (8)
-
-| Skill | Wirkung (Spieltext, englisch) | Art | Spielt zusammen mit | Betroffene Stellen im Code |
+| Punkt | bei Stufe | nach etwa | im Lauf (13 Kampfräume, rund 7,5 Gegner je Raum) | wofür |
 |---|---|---|---|---|
-| **Bloodlust** | "Melee hits fill your blood bar. When it is full, press Q: shoot and run faster for a few seconds." | aktiv (Q) | Silver Blade, Club, Axe, Whip; Fernwaffen im Rausch; Executioner | `Player.cs`: Leiste und Restzeit in Ticks (Muster `Consecrate` / `_consecratedTicksLeft`), Feuerrate in `ranged.Cooldown.TryUse`, Tempo über `SpeedFactor`; `GameWorld.StrikeWithMelee` füllt die Leiste; `PlayerInput` neues Feld `UseSkill`; Ereignisse in `GameEvent.cs`; `SoundCues.cs` (Tabelleneintrag); `HudView.cs`, `ScreenEffectsView.cs` (Bildrand) |
-| **Holy Water** | "Press Q: throw a vial of holy water. The undead burn while they stand in it." | aktiv (Q), Abklingzeit | Club (Rückstoß hinein), Whip (heranziehen hinein), Ghul-Gruppen, Gorm steht still (Keule steckt fest) | neue Klasse für die Pfütze (Position, Radius, Restzeit in Ticks) in `GameWorld`, Schaden über `GameWorld.Damage` an `ITarget`; Wurf als gerader Strahl auf den Boden (ohne neue Flugbahn-Physik); `PlayerInput.UseSkill`; Ereignisse; `ProjectileView.cs`/neue Ansicht |
-| **Second Wind** | "Your stamina bar has one more segment." | passiv | Dodge, Luft-Dash, aufgeladene Schläge, Gorm-Ausweichen | `Stamina.cs` (Kapazität und Segmente, heute fest aus `StaminaJumps`), `Player.cs` (Stamina-Aufbau); `Presentation/HudLayout.cs` und `HudReadout.cs` (Leiste mit einem Segment mehr) |
-| **Phantom Step** | "Dodging costs one stamina segment less." | passiv | Second Wind, Gorms Kettenschwung, Fledermaus-Sturzflug | `Player.cs` Dodge (`Stamina.TryPay(_player.DodgeStaminaSegments)`) |
-| **Executioner** | "Fully charged melee strikes deal 30% more damage." | passiv | Hunter's Axe, Club, Gorm mit steckender Keule, rissige Wände | neue Schadensregel nach `IDamageRule` in `Damage.cs` (liest `Hit.Charge`, Muster `DamageBoonBonus`) |
-| **Fresh Load** | "The first shot after a reload deals 50% more damage." | passiv | Rifle, Blunderbuss, Stake Crossbow, Quickdraw Holster | `Magazine.cs` (Merker „frisch geladen“), `Player.cs` beim Schuss, `Hit` um ein Feld erweitern, Regel in `Damage.cs` |
-| **Last Rites** | "Below a quarter of your health you deal 25% more damage." | passiv | Ashen Heart, Leech, Silver Rosary | `Hit` bekommt den Anteil Leben des Angreifers, Regel in `Damage.cs`; `GameWorld.Damage` setzt den Wert |
-| **Grave Tithe** | "Enemies drop silver more often." | passiv | Händler (Old Plunderer), Well of Sirius | `GameWorld.DropSilver` (Chance je Spieler, der den Kill macht); Werte `silver.*` bleiben, Aufschlag unter `skills` |
+| 1 | 3 | 14 Kills | Kampfraum 2 bis 3 | aktiver Skill |
+| 2 | 6 | 41 Kills | Kampfraum 5 bis 6 | Statuseffekt |
+| 3 | 9 | 93 Kills | erst fast am Ende, vor dem Bosstor | Ausbaustufe I |
 
-Die Prozentzahlen in den Spieltexten sind **vorläufig**; im Spiel kommen sie aus `balance.json` (wie bei den Items).
+- **Voller Lauf: 3 Punkte**, der dritte aber erst kurz vor Gorm. Erfahrungs-Boni (+2,5 % je Wahl) ziehen das nur wenig vor.
+- **Lauf mit ausgelassenen Räumen** (Sieg am 15.11. nach 9 von 14 Räumen): etwa 60 Kills, Stufe 7, **2 Punkte** – Skill und Effekt, kein Ausbau.
+- Der Altar steht deshalb **auf etwa einem Drittel des Wegs** (Punkt 1 kommt früh), sein **Teleporter** macht Punkt 3 einlösbar: vom Bosstor zum Altar und zurück.
+- **Ausbaustufen II und III erreicht in 1.0 (nur Ebene 0) kaum jemand.** Sie sind für spätere Ebenen gedacht (siehe „Noch offen“).
 
-**Blutrausch im Einzelnen (vorläufig):** Leiste füllt sich nur durch Nahkampftreffer (z. B. 8 Treffer bis voll), Q bei voller Leiste: 6 s lang Fernwaffen 1,5-mal so schnell und 20 % schneller laufen. Wirkt nur auf den eigenen Spieler. Mit Geweihter Munition: Faktoren werden multipliziert, nicht ersetzt – das muss die Balancing-Runde ansehen.
+## 2. Altar
 
-### Später (Label `später`)
+- **Raum:** eigene Raumart `Altar` (ADR 0005): ein Eingang, ohne Schlüssel erreichbar, gegnerfrei, nie hinter verschlossener Tür, kein Brunnen darin. Genau einer je Ebene, etwa auf einem Drittel des Wegs zum Boss.
+- **Teleporter:** dritter Ort neben Start und Bosstor (`TeleporterSite` in `src/SilverAndAsh.Core/World/TeleporterPlan.cs` bekommt `Altar`, Platzierung in `TeleporterPlacement.cs`, Freischalten wie heute in `src/SilverAndAsh.Core/Gameplay/Teleporter.cs`).
+- **Bedienen:** **F** öffnet das Fenster „Ash Altar“. Was es zeigt, hängt vom Stand des Spielers ab:
 
-| Skill | Wirkung | Art | Spielt zusammen mit | Betroffene Stellen |
+| Stand | Angebot | kostet |
+|---|---|---|
+| noch kein Skill | **drei zufällige** der fünf aktiven Skills (eigener Zufall aus dem Seed) | 1 Punkt |
+| Skill, kein Effekt | die fünf Statuseffekte, frei wählbar | 1 Punkt |
+| Skill und Effekt | die nächste Ausbaustufe (I, dann II, dann III) | 1 Punkt |
+
+- Ohne Punkt ist alles grau, lesbar bleibt es. Bewegen oder ein Treffer schließt das Fenster; die Welt läuft weiter.
+- Das Angebot der drei Skills bleibt bis zur Wahl gleich (erneutes Öffnen würfelt nicht neu).
+- **Coop:** Jeder Spieler hat eigene Punkte, eigenen Skill, eigenes Angebot; der Altar verbraucht sich nicht.
+- **Aussehen:** hüfthoher, verwitterter Steinblock mit Silberschale und zwei Kerzen; die Kerzen brennen (Messing), solange ein Punkt offen ist. Kartensymbol Kerze. Name „Ash Altar“ (vorläufig).
+- **Kein HP-Ausbau:** Kein Skill, Effekt oder Ausbau hebt das maximale Leben. Der Deckel bleibt `boons.healthCap` (235); am Deckel kommen wie heute keine Leben-Boni mehr (`Player.cs`, Bonus-Angebot). Leech heilt nur bis zum Maximum.
+
+## 3. Aktive Skills
+
+Gemeinsam: Taste **Q** (neues Feld `UseSkill` in `PlayerInput`), Werte unter `skills.<name>`, Spieltexte englisch. **Der Statuseffekt des Skills löst bei jedem Treffer des Skills sicher aus** (keine Chance); bei Bloodlust bei jedem eigenen Treffer während des Rauschs.
+
+| Skill | Wirkung (vorläufig) | Effekt geht auf | Ausbau I | Ausbau II | Ausbau III |
+|---|---|---|---|---|---|
+| **Bloodlust** | Nahkampftreffer füllen eine Leiste (8 Treffer). Volle Leiste, Q: 6 s lang Fernwaffen 1,5-mal so schnell, 20 % schneller laufen. | jeden Treffer im Rausch | Rausch 8 s | auch Kopftreffer füllen die Leiste | Kills im Rausch heilen 5 |
+| **Holy Water** | Q wirft eine Phiole; eine Pfütze (Radius 3 m, 4 s) brennt Untote mit 10 Schaden/s. Abklingzeit 12 s. | jeden Gegner in der Pfütze (aufgefrischt) | Radius 3,5 m | Abklingzeit 8 s | zwei Ladungen |
+| **Ash Nova** | Q: Aschering um den Spieler, 4 m, 30 Schaden, stößt 2 m zurück. Abklingzeit 10 s. | jeden Getroffenen | Radius 5 m | 45 Schaden | zweiter Ring 1 s später |
+| **Phantom Step** | Q: 6 m in Blickrichtung durch Gegner hindurch, dabei unverwundbar, je durchquertem Gegner 25 Schaden. Ohne Ausdauer. Abklingzeit 8 s. | jeden Durchquerten | Abklingzeit 6 s | zwei Ladungen | nächster Nahkampftreffer danach +30 % |
+| **Silver Volley** | Q: Fächer aus 5 Silbernägeln, je 15 Schaden, 15 m. Abklingzeit 9 s. | jeden getroffenen Gegner (einmal je Wurf) | 7 Nägel | Nägel durchschlagen einen Gegner | Abklingzeit 6 s |
+
+**Aus der 1. Fassung übernommen:** Bloodlust und Holy Water samt Werten; Frenzied Blood und Crimson Feast sind jetzt Ausbau II und III von Bloodlust, Executioner steckt in Phantom Step III, die Rückstoß-Idee aus Chain Breaker in Ash Nova. Die passiven Skills (Second Wind, Grave Tithe …) entfallen: Ein Lauf trägt nur den einen aktiven Skill.
+
+**Anbindung im Code:** Bloodlust nach dem Muster der Geweihten Munition (`_consecratedTicksLeft` in `Player.cs`, Feuerrate über den Cooldown der Fernwaffe); Phantom Step über die vorhandene Dash-Bewegung (`player.dashDistance`, Wände wie bei `MoveThroughLevel`); Silver Volley über Schrot-Logik wie die Blunderbuss (`pellets`, `spread`, `pierce`); Holy Water als neues Objekt in `GameWorld` (Position, Radius, Restzeit in Ticks); alle Treffer laufen durch `GameWorld.Damage`, damit Kill und Erfahrung beim richtigen Spieler landen.
+
+## 4. Statuseffekte
+
+Startwerte = etwa die Hälfte des ersten Vorschlags (5 %, 1 s, 4 s, 40 %/4 s, 25 %/6 s). **Synergie** (Skill und eine ausgerüstete Waffe tragen denselben Effekt): jede Auslösung durch diesen Spieler hält 1,5-mal so lange (`statusEffects.synergyFactor`); Leech hat keine Dauer und wird 1,5-mal so stark.
+
+| Effekt (im Spiel) | Wirkung | Startwert | mit Synergie | gegen Gorm | Schimmer und Effekt | Timer |
+|---|---|---|---|---|---|---|
+| **Leech** (Lifedrain) | Anteil des Schadens als Leben für den Angreifer | 2,5 % je Treffer | 3,75 % | voll | fahles Violett, dünner Faden zum Spieler | keiner (sofort) |
+| **Stun** | Gegner betäubt: kein Gehen, kein Angriff; ein ausholender Ghul bricht ab | 0,5 s | 0,75 s | **Taumeln 0,2 s**, bricht keine Ankündigung ab, danach **5 s immun** | Silbergrau, kreisende Funken über dem Kopf | ja |
+| **Holy Fire** (Weihfeuer) | Schaden über Zeit, alle 0,5 s | 2 s, 5 Schaden/s | 3 s | voll | weißgold, kleine Flammen am Körper | ja |
+| **Grave Chill** (Grabeskälte) | langsamer (nur Bewegung, Ankündigungen bleiben gleich lang) | 20 % für 2 s | 3 s | voll | blassblau, Reif und kalter Hauch | ja |
+| **Marked** (Gezeichnet) | Gegner nimmt mehr Schaden, von allen Spielern | 12,5 % für 3 s | 4,5 s | voll | Aschweiß, ein Zeichen auf der Brust | ja |
+
+- **Auffrischen:** Neue Dauer = die längere von Rest und neuer Dauer; die Stärke bleibt. Verschiedene Effekte liegen nebeneinander.
+- **Timer, wörtlich gewünscht** („Überm Kopf ein kleiner Timer“): Restzeit je Effekt als kleine Zahl in seiner Farbe, Spielschrift englisch, also „0.4s“. Mehrere Effekte stehen untereinander, höchstens drei.
+- **Rot bleibt frei** für die Angriffs-Ankündigung (Ghul-Augen, Art-Bible). Farben kommen aus der Hauptpalette; Weihfeuer aus der Reihe Messing/Gold, aber klar weg vom Gold der Stufe *Royal*.
+- **Kills durch Holy Fire** zählen für den Spieler, der es ausgelöst hat.
+
+## 5. Waffen mit Statuseffekt
+
+- **Beim Fund** (Kiste, Gorm, Händler) würfelt die Waffe, ob sie einen Effekt trägt, und welchen (gleich verteilt). Die Startwaffen (Silver Blade, Pistol) tragen keinen.
+- **Auslöse-Chance je Treffer** nach Seltenheit (`ItemTier` in `src/SilverAndAsh.Core/Gameplay/Weapons.cs`):
+
+| Seltenheit | Worn | Forged | Royal | Vampiric |
 |---|---|---|---|---|
-| **Frenzied Blood** | Ausbau von Bloodlust: auch Kopftreffer füllen die Leiste. | passiv, braucht Bloodlust | Pistol, Rifle, Hunter's Eye | `GameWorld.FireShot`, Bloodlust-Zustand |
-| **Crimson Feast** | Kills im Blutrausch heilen ein wenig. | passiv, braucht Bloodlust | Silver Rosary, Leech | `GameWorld` beim Kill, `Player.Heal` |
-| **Ash Ward** | Der erste Treffer nach Betreten eines Kampfraums wird abgefangen. | passiv | Arena-Türen, Gorm | `Player.TakeDamage`, `GameWorld.EnterRooms` |
-| **Grave Sense** | Die Karte zeigt Kisten und den Altar auch in unbetretenen Räumen. | passiv | Karte (M), Schlüssel | `MapView.cs`, Kartendaten aus `GameWorld` |
-| **Chain Breaker** | Rückstoß von Club und Whip wirft Gegner um (kurz betäubt). | passiv | Club, Whip, Holy Water | `Knockback.cs`, `Ghoul.cs`, `Bat.cs` |
-| **Undertaker's Luck** | Kisten enthalten etwas öfter Ausrüstung. | passiv | Kisten, Schlüssel, Beute-Topf | `GameWorld.OpenChest`, `LootPool.cs` |
+| Chance je Treffer | 10 % | 15 % | 20 % | 25 % |
 
-Ausbau-Skills (Frenzied Blood, Crimson Feast) und alles, was Wirtschaft oder Karte ändert, kommt erst nach 1.0 – bei 3 Punkten je Lauf würden sie die Wahl nur verwässern.
+- Heute sind alle Waffen Worn oder Forged (`Weapons.Info`); Royal und Vampiric gelten für spätere Waffen.
+- **Blunderbuss:** eine Auslösung je Schuss und Gegner, nicht je Kugel (sonst neunfache Chance).
+- **Zufall** aus einem eigenen Generator, gestartet aus dem Seed der Welt (wie `LootPool`, `_lootRandom`, `_shotRandom` in `GameWorld`): gleicher Seed, gleiche Würfe; keine anderen Würfe verschieben sich.
+- Inventar und Fundmeldung zeigen den Effekt (z. B. „Club – Grave Chill“).
 
-## 4. Altar
+## 6. Architektur
 
-- **Aussehen (für den Grafikdesigner):** ein hüfthoher, verwitterter Steinblock mit eingelassener **Silberschale** und zwei niedergebrannten Kerzen; die Kerzen brennen (Messing-Reihe), solange der Spieler einen offenen Skillpunkt hat, sonst sind sie aus. Kein Rot, keine Stufenfarben, kein weiches Glühen (Art-Bible).
-- **Name im Spiel:** "Ash Altar" (vorläufig).
-- **Platzierung:**
-  - eigene Raumart `Altar` (ADR 0005): ein Eingang, ohne Schlüssel erreichbar, gegnerfrei, Schutzraum wie Schatzraum und Händler;
-  - genau einer je Ebene, etwa **auf einem Drittel des Wegs** vom Start zum Boss (der Händler steht auf halbem Weg) – so findet man ihn meist kurz nach dem ersten Punkt (Stufe 3);
-  - **eigener Teleporter** im Altarraum (dritter Ort neben Start und Bosstor): freigeschaltet beim Betreten; so löst man spätere Punkte ein, ohne zurückzulaufen;
-  - der **Brunnen** steht nie im Altarraum (jeder Ort hat seinen eigenen Raum, leichter lesbar); nie hinter einer verschlossenen Tür, nie neben dem Geheimraum;
-  - auf der Karte ein eigenes Symbol (z. B. Kerze), wie das Münz-Symbol des Händlers.
-- **Bedienung:**
-  - **F** am Altar öffnet das Fenster „Ash Altar“: Liste der Skills mit Name, Wirkungssatz, „active“/„passive“, Häkchen für gelernte; oben die offenen Skillpunkte;
-  - wählen mit Klick oder Zifferntaste, solange das Fenster offen ist; ohne Punkt ist alles grau, das Fenster lässt sich trotzdem lesen;
-  - Bewegen oder ein Treffer schließt es; die Welt läuft weiter (ADR 0005, 0008);
-  - HUD: bei neuem Punkt kurz „Skill point – find the Ash Altar“; ein aktiver Skill zeigt ein kleines Feld mit „Q“ und Leiste bzw. Abklingzeit;
-  - im Koop: Jeder Spieler hat eigene Punkte und eigene Skills; der Altar verbraucht sich nicht.
-- **Klänge für die Hörprobe** (neue Kategorien, also Hörprobe vor dem Einbau):
-  1. Skillpunkt erhalten (Familie *Beute und Bedienung*: klein, hell, kurz);
-  2. Skill am Altar gelernt (tiefer Stein- oder Glockenschlag, eine Geste);
-  3. Blutrausch bereit (Leiste voll, kurz);
-  4. Blutrausch beginnt und endet (zwei Gesten: Anschwellen, Abklingen);
-  5. Holy Water: Phiole zerspringt und zischt (eine Geste), dazu ein leises Zischen der Pfütze, das Untote treffen.
+- **Core ohne Raylib:** Effekte, Skills und Altar liegen ganz in `SilverAndAsh.Core`.
+- **Effekte als Zustand am Gegner:** eine kleine Klasse (etwa `StatusEffects`) je Gegner mit Restzeit in Ticks je Art, Quelle (Spieler-Id) und Synergie-Merker; `GameWorld.Tick` zählt sie herunter, als eigene Methode, nicht als weiterer Zweig in `Tick`.
+- **Wirkung über vorhandene Wege:** Marked als Schadensregel nach `IDamageRule` (`src/SilverAndAsh.Core/Gameplay/Damage.cs`; `Hit` braucht dazu den Zustand des Ziels); Holy Fire als Schaden durch `GameWorld.Damage`; Grave Chill als Tempo-Faktor und Stun als Pause in `Ghoul.cs`, `Bat.cs`, `Gorm.cs`; Leech über `Player.Heal` mit gesammelten Bruchteilen (Leben ist ganzzahlig).
+- **Ereignisse für Klang und Anzeige:** `StatusApplied`, `StatusEnded`, `SkillUsed`, `SkillPointGained`, `AltarChoice` in `GameEvent.cs`; Klänge als Tabelleneinträge in `SoundCues.cs`; die Anzeige liest einen Zustand aus Core (Muster `HudReadout`).
+- **Online-Coop offen:** Q und die Altar-Wahl sind Eingaben im Tick; Punkte, Skill und Angebot je Spieler; Effekte merken ihren Auslöser; Zufall nur mit Seed im Spielzustand; kein veränderlicher `static`-Zustand.
 
-## 5. Offene Entscheidungen für den Menschen
+## 7. Schnitt in Issues
 
-**Frage 1: Wie wählt man Skills am Altar?**
-1. Feste Liste, freie Wahl: alle Skills sichtbar, 1 Punkt je Skill (Empfehlung)
-2. Der Altar bietet je Punkt drei zufällige Skills zur Wahl
-3. Aktive Fähigkeiten auf Q und E mit Ausbaustufen, dazu wenige passive
+Je Zeile ein Issue und ein kleiner PR, Code-PRs nacheinander. Bild und Klang laufen als Probestücke daneben.
 
-**Frage 2: Wie oft gibt es einen Skillpunkt?**
-1. Jede 3. Stufe, etwa 3 je Lauf (Empfehlung)
-2. Jede 2. Stufe, etwa 4 bis 5 je Lauf
-3. Jede 3. Stufe, dazu einer geschenkt beim ersten Altarbesuch
+**Code**
+1. Skillpunkte zählen (Stufe 3, 6, 9; Tod setzt zurück; HUD-Hinweis als Platzhalter).
+2. Statuseffekte: Grundgerüst und Marked (Zustand, Ticks, Auffrischen, Ereignisse; Test ohne Skill über einen Testauslöser).
+3. Holy Fire (Schaden über Zeit, Kill für den Auslöser).
+4. Grave Chill (Tempo von Ghul, Fledermaus, Gorm).
+5. Stun mit Taumeln und Immunität bei Gorm.
+6. Leech (Bruchteile, nie über das Maximum).
+7. Anzeige am Gegner: Platzhalter-Schimmer und Timer.
+8. Waffen-Effekte: Wurf beim Fund, Chance je Seltenheit, Anzeige im Inventar.
+9. Altarraum im Generator (Test über 100 Ebenen, gleicher Seed = gleicher Grundriss).
+10. Teleporter am Altar.
+11. Altar bedienen: drei zufällige Skills, Effektwahl, Ausbau (Fehlerzweige: kein Punkt, tot, alles ausgebaut).
+12. bis 16. je ein Skill mit Ausbau I: Bloodlust, Holy Water, Ash Nova, Phantom Step, Silver Volley.
+17. Synergie.
+18. Balance-Report und Bot (Punkte je Lauf, gewählte Skills und Effekte).
 
-**Frage 3: Wo steht der Altar?**
-1. Eigener Altarraum auf einem Drittel des Wegs, mit eigenem Teleporter (Empfehlung)
-2. Eigener Altarraum ohne Teleporter
-3. Im Startraum, kein eigener Raum (weicht von ADR 0005 ab)
+**Bild:** Altar-Probestück und Einbau; Probenblatt der fünf Effekte am Ghul (Schimmer, Flammen, Reif …, mit Timer); HUD-Feld für Q mit Leiste bzw. Abklingzeit; je Skill ein kleines Probenblatt.
 
-**Frage 4: Wie viele aktive Skills (Taste Q) trägt ein Lauf?**
-1. Höchstens einen; ein neuer aktiver ersetzt den alten (Empfehlung)
-2. Zwei, auf Q und E
-3. Nur Blutrausch ist aktiv, alle anderen Skills sind passiv
+**Klang** (neue Kategorien, also Hörprobe vor dem Einbau): Altar und Skillpunkt; je Effekt ein Auslöse-Klang; je Skill ein Klang beim Auslösen.
 
-**Frage 5: Woran sieht man den Blutrausch?**
-1. Ruhiger dunkelroter Bildrand und die Leiste im HUD (Empfehlung)
-2. Kein Rot: Bild leicht entsättigt, Rand dunkel
-3. Nur Leiste im HUD und Klang, kein Bildrand
+## Noch offen
 
-## 6. Schnitt in Issues
-
-Reihenfolge innerhalb jeder Spalte; Code-PRs einzeln nacheinander. Bild und Klang laufen als Probestücke daneben und kommen erst nach Abnahme ins Spiel.
-
-### Code
-
-1. **Skillpunkte zählen** – `Player` bekommt Skillpunkte; Wert `skills.pointEveryLevels` in `balance.json`.
-   - Test: Stufe 3, 6, 9 geben je einen Punkt, Stufe 1, 2, 4 keinen; mehrere Stufen in einem Tick geben mehrere Punkte.
-   - Ereignis `SkillPointGained`; Tod setzt alles zurück (zwei Läufe im Test).
-   - HUD-Hinweis „Skill point“ (Platzhalter-Text).
-2. **Altarraum im Generator** – Raumart `Altar`, ein bis zwei Raum-Vorlagen, Kartensymbol.
-   - Test über 100 Ebenen: genau ein Altarraum, ein Eingang, ohne Schlüssel erreichbar, gegnerfrei, kein Brunnen darin.
-   - Gleicher Seed = gleicher Grundriss; andere Räume, Kisten und Gegner verschieben sich nicht (eigener Zufall aus dem Seed).
-3. **Altar bedienen** – Altar als `IInteractable` (Platzhalter-Kasten), Fenster, Eingabe `LearnSkill` in `PlayerInput`.
-   - Lernen kostet einen Punkt, ohne Punkt nichts; ein Skill nur einmal.
-   - Bewegen oder Treffer schließt das Fenster; die Welt läuft weiter.
-   - Fehlerzweige mit eigenen Tests (kein Punkt, schon gelernt, tot).
-4. **Teleporter am Altar** – dritter Teleporter-Ort.
-   - Test über 100 Ebenen; Freischalten beim Betreten; Reise vom Bosstor zum Altar.
-5. **Bloodlust** – Leiste, Q (`UseSkill`), Wirkung, Ereignisse, HUD-Feld, Bildrand.
-   - Tests mit echten Treffern Tick für Tick: Leiste füllt sich nur durch Nahkampf; Q bei nicht voller Leiste tut nichts; Dauer endet genau nach den Ticks aus `balance.json`.
-   - Gegenprobe: Feuerrate im Rausch messbar höher.
-6. **Passive I: Second Wind, Phantom Step** – Ausdauer.
-   - Test: Segmente, Dodge-Kosten, mit und ohne Skill.
-7. **Passive II: Executioner, Fresh Load, Last Rites** – Schadensregeln.
-   - Test je Regel; Gegenprobe: Regel aus, Schaden wie vorher.
-8. **Passive III: Grave Tithe**.
-   - Test mit festem Seed: mehr Silber-Drops über viele Kills; nur für den Spieler mit dem Kill.
-9. **Holy Water** – Wurf, Pfütze, Schaden je Tick, Abklingzeit.
-   - Tests: Ghul in der Pfütze nimmt Schaden, außerhalb nicht; Pfütze endet nach ihrer Zeit; Abklingzeit.
-   - Spieler nehmen keinen Schaden (Koop).
-10. **Balance-Report und Bot** – Skillpunkte je Lauf, gewählte Skills, Laufzeit mit und ohne Skills; Ergebnis in `docs/balancing.md`.
-
-### Bild
-
-1. **Altar-Probestück** (Modell per Blender-Skript, Kerzen an/aus) – Probenblatt mit vier Ansichten; Urteil der Leitung.
-2. **Altar-Einbau** – Modell ersetzt den Platzhalter; Eintrag in `assets/HERKUNFT.md`; Foto im Musterraum.
-3. **HUD-Teile** – Feld für den aktiven Skill (Q, Leiste, Abklingzeit), Skillpunkt-Hinweis, Rahmen des Altarfensters, Kartensymbol; als Atlas-Teile in Richtung A.
-4. **Blutrausch-Bildrand** – Probenblatt mit den Fassungen aus Frage 5.
-5. **Holy Water** – Phiole und Pfütze am Boden, Probenblatt.
-
-### Klang
-
-1. **Hörprobe Skills** – die fünf Klänge aus Abschnitt 4, je mit Skript; Urteil des Menschen.
-2. **Einbau** – abgenommene Klänge als Tabelleneinträge in `SoundCues.cs`; Eintrag in `assets/HERKUNFT.md`.
-
-## Unsicherheiten
-
-- **3 Punkte je Lauf** ist aus den letzten Balance-Reports geschätzt (Stufe 9 bis 10). Mit neuen Gegnern (v0.14) kann sich das verschieben.
-- **Zusammenspiel Blutrausch und Geweihte Munition** (beide machen die Pistole schneller) muss die Balancing-Runde ansehen.
-- **Holy Water** braucht eine neue Art Objekt in der Welt (Fläche mit Schaden über Zeit); das ist der größte Code-Schritt der Liste.
-- **Last Rites** erweitert `Hit` um den Lebensanteil des Angreifers – kleine Änderung an einer viel genutzten Stelle.
-- Ein **dunkelroter Bildrand** berührt die Regel „Rot ist reserviert für Blut, Treffer, Gefahr“: Blutrausch ist Blut, der Rand muss sich aber klar vom Treffer-Blitz unterscheiden (ruhig statt aufblitzend).
+1. **Ausbau II und III kommen in 1.0 kaum vor** (siehe Abschnitt 1). *Empfehlung:* in 1.0 nur Ausbau I bauen, II und III als Issues mit Label `später` für die nächsten Ebenen.
+2. **Wie oft trägt eine gefundene Waffe überhaupt einen Effekt?** *Empfehlung:* 40 %, für alle Seltenheiten gleich; die Seltenheit wirkt schon über die Chance je Treffer.
+3. **Effektwahl am zweiten Altar: alle fünf oder drei zufällige?** *Empfehlung:* alle fünf frei („bevorzugter Statuseffekt“), damit man passend zu einer gefundenen Waffe wählen kann.
+4. **Ausbaustufen in fester Reihenfolge oder wählbar?** *Empfehlung:* feste Reihenfolge I, II, III – bei höchstens einem Ausbau je Lauf lohnt keine Wahl.
+5. **Farben für Leech, Stun und Marked** stehen noch nicht in der Art-Bible. *Empfehlung:* Probenblatt des Grafikdesigners mit den Vorschlägen aus Abschnitt 4, Urteil beim nächsten Spieltest.
