@@ -162,6 +162,12 @@ public sealed record BoonBalance
     /// <summary>Health: this much more maximum health per choice - and healed at once.</summary>
     public int Health { get; init; } = 5;
 
+    /// <summary>
+    /// The most maximum health the Health boon can bring (issue #435): no level up offers it once one more would go
+    /// beyond this. The life bar is one pixel per point, so this also bounds its length in the HUD.
+    /// </summary>
+    public int HealthCap { get; init; } = 235;
+
     /// <summary>Damage: this much more damage with every weapon per choice (0.05 = +5 % of the base damage).</summary>
     public float Damage { get; init; } = 0.05f;
 
