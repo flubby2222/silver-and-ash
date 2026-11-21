@@ -1,0 +1,18 @@
+Reihen zu Issue #543 Runde 2 (neutrales Eisen, kontrastreicher), erzeugt von eisen_kontrast.py
+
+P1: #1E1E1F=(30, 30, 31)  #323234=(50, 50, 52)  #4A4A4C=(74, 74, 76)  #68686B=(104, 104, 107)  Helligkeit [30, 50, 74, 104]  Abstaende [20, 24, 30]
+   Saettigung [0.032, 0.038, 0.026, 0.028]
+K1: #222223=(34, 34, 35)  #3A3A3B=(58, 58, 59)  #58585A=(88, 88, 90)  #7C7C7E=(124, 124, 126)  Helligkeit [34, 58, 88, 124]  Abstaende [24, 30, 36]
+   Saettigung [0.029, 0.017, 0.022, 0.016]
+K2: #202021=(32, 32, 33)  #3E3E3F=(62, 62, 63)  #68686A=(104, 104, 106)  #949497=(148, 148, 151)  Helligkeit [32, 62, 104, 148]  Abstaende [30, 42, 44]
+   Saettigung [0.03, 0.016, 0.019, 0.02]
+K3: #1E1E1F=(30, 30, 31)  #404041=(64, 64, 65)  #747476=(116, 116, 118)  #B0B0B4=(176, 176, 180)  Helligkeit [30, 64, 116, 176]  Abstaende [34, 52, 60]
+   Saettigung [0.032, 0.015, 0.017, 0.022]
+
+Holz der Normaltuer (Bretter, unveraendert): mittlere Helligkeit 76.2; Boss-Planken 34.1
+Messung je Reihe (Helligkeit 0 bis 255): Niet - Beschlag (Soll >= 30), Beschlag - Holz der Normaltuer (Betrag, Soll >= 20)
+  P1  Niet-Beschlag +30.1   Beschlag-Holz  -2.0   zu schwach
+  K1  Niet-Beschlag +36.0   Beschlag-Holz +12.0   zu schwach
+  K2  Niet-Beschlag +44.1   Beschlag-Holz +28.0   ERFUELLT
+  K3  Niet-Beschlag +60.2   Beschlag-Holz +40.0   ERFUELLT
+Im Spielbild schrumpfen Unterschiede mit der Laterne: bei 2 m mal 0.93, bei 4 m mal 0.86, bei 8 m mal 0.71 (nur Laternenanteil, ohne Nebel)

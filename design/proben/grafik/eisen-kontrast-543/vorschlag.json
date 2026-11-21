@@ -1,0 +1,158 @@
+{
+ "empfehlung": "K2",
+ "eisen": {
+  "P1": [
+   {
+    "hex": "#1E1E1F",
+    "rgb": [
+     30,
+     30,
+     31
+    ],
+    "helligkeit": 30
+   },
+   {
+    "hex": "#323234",
+    "rgb": [
+     50,
+     50,
+     52
+    ],
+    "helligkeit": 50
+   },
+   {
+    "hex": "#4A4A4C",
+    "rgb": [
+     74,
+     74,
+     76
+    ],
+    "helligkeit": 74
+   },
+   {
+    "hex": "#68686B",
+    "rgb": [
+     104,
+     104,
+     107
+    ],
+    "helligkeit": 104
+   }
+  ],
+  "K1": [
+   {
+    "hex": "#222223",
+    "rgb": [
+     34,
+     34,
+     35
+    ],
+    "helligkeit": 34
+   },
+   {
+    "hex": "#3A3A3B",
+    "rgb": [
+     58,
+     58,
+     59
+    ],
+    "helligkeit": 58
+   },
+   {
+    "hex": "#58585A",
+    "rgb": [
+     88,
+     88,
+     90
+    ],
+    "helligkeit": 88
+   },
+   {
+    "hex": "#7C7C7E",
+    "rgb": [
+     124,
+     124,
+     126
+    ],
+    "helligkeit": 124
+   }
+  ],
+  "K2": [
+   {
+    "hex": "#202021",
+    "rgb": [
+     32,
+     32,
+     33
+    ],
+    "helligkeit": 32
+   },
+   {
+    "hex": "#3E3E3F",
+    "rgb": [
+     62,
+     62,
+     63
+    ],
+    "helligkeit": 62
+   },
+   {
+    "hex": "#68686A",
+    "rgb": [
+     104,
+     104,
+     106
+    ],
+    "helligkeit": 104
+   },
+   {
+    "hex": "#949497",
+    "rgb": [
+     148,
+     148,
+     151
+    ],
+    "helligkeit": 148
+   }
+  ],
+  "K3": [
+   {
+    "hex": "#1E1E1F",
+    "rgb": [
+     30,
+     30,
+     31
+    ],
+    "helligkeit": 30
+   },
+   {
+    "hex": "#404041",
+    "rgb": [
+     64,
+     64,
+     65
+    ],
+    "helligkeit": 64
+   },
+   {
+    "hex": "#747476",
+    "rgb": [
+     116,
+     116,
+     118
+    ],
+    "helligkeit": 116
+   },
+   {
+    "hex": "#B0B0B4",
+    "rgb": [
+     176,
+     176,
+     180
+    ],
+    "helligkeit": 176
+   }
+  ]
+ },
+ "holz": "unveraendert (heutiges Holz der Tuerfluegel)"
+}
