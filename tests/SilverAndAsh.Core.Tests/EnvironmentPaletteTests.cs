@@ -159,15 +159,27 @@ public class EnvironmentPaletteTests
     public void The_spiral_stairs_have_only_Stein_Werkstein_and_Messing(string name)
     {
         var palette = RepositoryFiles.Find(PalettePath);
+        var werkstein = RowColors(palette, "akzent", "Werkstein");
+        var brass = RowColors(palette, "akzent", "Messing/Gold");
         var allowed = StoneColors(palette);
-        allowed.UnionWith(RowColors(palette, "akzent", "Werkstein"));
-        allowed.UnionWith(RowColors(palette, "akzent", "Messing/Gold"));
+        allowed.UnionWith(werkstein);
+        allowed.UnionWith(brass);
         allowed.Add(UnusedField);
         var file = RepositoryFiles.Find($"assets/models/{name}.png");
 
         var foreign = ForeignColors(file, allowed);
         Assert.True(foreign.Count == 0, $"{name}.png has {foreign.Count} colours outside Stein, Werkstein and Messing/Gold, e.g. {Show(foreign.FirstOrDefault())}.");
-        Assert.NotEmpty(ForeignColors(file, StoneColors(palette))); // the stairs really use Werkstein and brass
+        AssertUsesRow(file, werkstein, "Werkstein");
+        AssertUsesRow(file, brass, "Messing/Gold");
+    }
+
+    // The black of unused atlas fields belongs to neither row, so it can never count as a use.
+    private static void AssertUsesRow(string file, HashSet<(byte R, byte G, byte B)> row, string rowName)
+    {
+        var used = ForeignColors(file, []);
+        used.Remove(UnusedField);
+        used.IntersectWith(row);
+        Assert.True(used.Count > 0, $"{Path.GetFileName(file)} uses no colour of the row {rowName}.");
     }
 
     [Fact]
