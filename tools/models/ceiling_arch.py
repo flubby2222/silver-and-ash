@@ -1,6 +1,6 @@
 """Deckenbogen (Issue #537, Baustein aus der Formenlehre Gotik #281): Gurtbogen quer ueber den Gang auf zwei Pfeilern.
 
-Erzeuger fuer das Spiel. Uebergabe aus dem Probestueck design/proben/grafik/deckenbogen-537/deckenbogen.py: gleiche
+Erzeuger fuer das Spiel. Uebergabe aus dem Probestueck deckenbogen.py auf dem Branch feat/deckenbogen-probe-537 (Stand 774ce69): gleiche
 Geometrie (gedrueckter Spitzbogen, sechs Keilsteine je Haelfte, Zaehne an Fuss und Schlussstein) und dieselben tragenden
 Pfeiler (Fassung "gang_traeger"). Anders als das Probestueck liest der Erzeuger die auf die Hauptpalette umgerechneten
 Waende (#542) und teilt Pfeiler-Profil, Wand-Kachel, aufgehellte Kachel und Welt-UV mit wall_pillar.py (pillar_kit.py).

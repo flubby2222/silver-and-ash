@@ -6,7 +6,8 @@ namespace SilverAndAsh.Core.World;
 /// </summary>
 /// <param name="IsSolid">True for walls: nothing can enter the cell.</param>
 /// <param name="FloorHeight">Height of the walkable floor in metres.</param>
-/// <param name="CeilingHeight">Height of the ceiling in metres.</param>
+/// <param name="CeilingHeight">Height of the ceiling in metres, absolute like the floor (not above it): whoever stands a
+/// model on a cell checks the clear height <c>CeilingHeight - FloorHeight</c>.</param>
 public readonly record struct Cell(bool IsSolid, float FloorHeight, float CeilingHeight)
 {
     /// <summary>Standard floor height for version 1.0.</summary>

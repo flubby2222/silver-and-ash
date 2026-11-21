@@ -51,16 +51,18 @@ public static class CeilingArchLook
     /// <summary>
     /// Where an arch stands across the walkable cell (<paramref name="x"/>, <paramref name="z"/>) of
     /// <paramref name="level"/>: on its floor in its middle, looking along the corridor. The cell must lie in a corridor
-    /// one cell wide under the corridor ceiling - walls on two opposite sides, open floor on the other two.
+    /// one cell wide with the corridor's clear height (ceiling minus floor) - walls on two opposite sides, open floor on
+    /// the other two. A raised floor with a ceiling raised as far is fine; a step under the corridor ceiling is not.
     /// </summary>
     /// <exception cref="ArgumentException">If the cell is no such corridor cell.</exception>
     public static (Vector3 Position, Vector3 Facing) Place(Level level, int x, int z)
     {
         ArgumentNullException.ThrowIfNull(level);
         var cell = level[x, z];
-        if (cell.IsSolid || cell.CeilingHeight != CeilingHeight)
+        // The ceiling height is absolute: on a raised floor (a step) the arch would reach through the ceiling.
+        if (cell.IsSolid || cell.CeilingHeight - cell.FloorHeight != CeilingHeight)
         {
-            throw new ArgumentException($"Cell ({x}, {z}) is no open floor under a ceiling of {CeilingHeight} m.", nameof(level));
+            throw new ArgumentException($"Cell ({x}, {z}) is no open floor with {CeilingHeight} m clear height.", nameof(level));
         }
 
         var facing = Along(level, x, z)

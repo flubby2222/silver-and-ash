@@ -9,9 +9,12 @@ public class CeilingArchLookTests
     private const float Tolerance = 0.0001f;
 
     // A corridor one cell wide along z (west and east walls) and one along x (north and south walls), both under the
-    // corridor ceiling; the middle cell of the first stands one step high (0.5 m).
-    private const string AlongZ = "###\n#P#\n#2#\n#.#\n###";
+    // corridor ceiling on the ground floor.
+    private const string AlongZ = "###\n#P#\n#.#\n#.#\n###";
     private const string AlongX = "#####\n#P..#\n#####";
+
+    // The same corridor along z, its middle cell one step high (0.5 m) - the parser keeps its ceiling at 3.5 m.
+    private const string StepAlongZ = "###\n#P#\n#2#\n#.#\n###";
 
     [Theory]
     [InlineData(TextureVariant.A, "ceiling_arch_a.glb")]
@@ -74,12 +77,14 @@ public class CeilingArchLookTests
     }
 
     [Theory]
-    [InlineData(AlongZ, 1, 2, 0f, 1f, 0.5f)]
+    [InlineData(AlongZ, 1, 2, 0f, 1f, 0f)]
     [InlineData(AlongX, 2, 1, 1f, 0f, 0f)]
+    [InlineData(AlongZ, 1, 2, 0f, 1f, 0.5f)]
     public void An_arch_stands_on_the_floor_in_the_middle_of_the_cell_looking_along_the_corridor(
         string map, int x, int z, float facingX, float facingZ, float floor)
     {
-        var level = LevelParser.Parse(map);
+        // floor > 0: the whole cell is raised, its ceiling as far as its floor, so the clear height stays 3.5 m.
+        var level = With(LevelParser.Parse(map), x, z, cell => cell with { FloorHeight = floor, CeilingHeight = floor + CeilingArchLook.CeilingHeight });
         var (position, facing) = CeilingArchLook.Place(level, x, z);
 
         Assert.Equal(new Vector3(facingX, 0f, facingZ), facing);
@@ -129,6 +134,31 @@ public class CeilingArchLookTests
     }
 
     [Fact]
+    public void On_a_step_under_the_corridor_ceiling_no_arch_is_placed()
+    {
+        // The step's ceiling is absolute 3.5 m, its floor 0.5 m: an arch standing on it would reach 0.5 m through the
+        // ceiling. The same corridor without the step takes the arch.
+        var level = LevelParser.Parse(StepAlongZ);
+        Assert.Equal(0.5f, level[1, 2].FloorHeight);
+        Assert.Equal(CeilingArchLook.CeilingHeight, level[1, 2].CeilingHeight);
+
+        Assert.Throws<ArgumentException>(() => CeilingArchLook.Place(level, 1, 2));
+        CeilingArchLook.Place(LevelParser.Parse(AlongZ), 1, 2);
+    }
+
+    [Fact]
+    public void On_a_wall_cell_no_arch_is_placed_even_between_walls_with_open_floor_before_and_behind()
+    {
+        // The cell (1, 2) is a wall with the standard floor and ceiling: walls west and east, open floor north and
+        // south - so only its being a wall forbids the arch.
+        var level = LevelParser.Parse("###\n#P#\n###\n#.#\n###");
+        Assert.Equal(Cell.Wall, level[1, 2]);
+        Assert.True(level[0, 2].IsSolid && level[2, 2].IsSolid && !level[1, 1].IsSolid && !level[1, 3].IsSolid);
+
+        Assert.Throws<ArgumentException>(() => CeilingArchLook.Place(level, 1, 2));
+    }
+
+    [Fact]
     public void Under_a_room_ceiling_no_arch_is_placed()
     {
         var corridor = LevelParser.Parse(AlongZ);
@@ -171,6 +201,22 @@ public class CeilingArchLookTests
                 $"The ceiling arches were built on '{line}', which is no longer in assets/textures. " +
                 "Run tools/models/ceiling_arch.py again (see assets/HERKUNFT.md).");
         }
+    }
+
+    // A copy of level with the cell (x, z) changed by change.
+    private static Level With(Level level, int x, int z, Func<Cell, Cell> change)
+    {
+        var cells = new Cell[level.Width, level.Depth];
+        for (var cx = 0; cx < level.Width; cx++)
+        {
+            for (var cz = 0; cz < level.Depth; cz++)
+            {
+                cells[cx, cz] = level[cx, cz];
+            }
+        }
+
+        cells[x, z] = change(cells[x, z]);
+        return new Level(cells, 1, 1, null, [], [], []);
     }
 
     private static List<string> Lines(string path) => File.ReadAllLines(path)
