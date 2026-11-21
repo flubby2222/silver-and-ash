@@ -20,6 +20,45 @@ public class ShowroomLayoutTests
         .OrderBy(pillar => pillar.Position.X)
         .ToList();
 
+    // The ceiling arches standing in the arch corridor of `section`, west to east.
+    private static List<ExhibitCeilingArch> ArchesOf(ShowroomSection section) => Layout.Exhibits.CeilingArches
+        .Where(arch => arch.Variant == section.Variant)
+        .OrderBy(arch => arch.Position.X)
+        .ToList();
+
+    // A player's position tick by tick, walking from the dead end of the arch corridor of `section` east (forward) and
+    // `sideways` to the right, in a world of the showroom's cells with `exhibits`, until it is two cells into the room.
+    // The player starts at the dead end: the same cells, only the start moved there.
+    private static List<Vector3> Walk(ShowroomExhibits exhibits, ShowroomSection section, float sideways)
+    {
+        var cells = new Cell[Layout.Level.Width, Layout.Level.Depth];
+        for (var x = 0; x < Layout.Level.Width; x++)
+        {
+            for (var z = 0; z < Layout.Level.Depth; z++)
+            {
+                cells[x, z] = Layout.Level[x, z];
+            }
+        }
+
+        var level = new Level(cells, section.ArchCorridorX, section.ArchCorridorRow);
+        var world = new GameWorld(level, 0, null, Layout.Doors, null, Layout.Chests)
+        {
+            Surfaces = Layout.Surfaces,
+            Showroom = exhibits,
+        };
+        PhotoStudio.Face(world.Player, world.Player.EyePosition + Vector3.UnitX);
+
+        var path = new List<Vector3>();
+        var end = (section.RoomX + 2) * Level.CellSize;
+        for (var tick = 0; tick < 1800 && world.Player.Position.X < end; tick++)
+        {
+            world.Tick(PlayerInput.None with { Move = new Vector2(sideways, 1f) });
+            path.Add(world.Player.Position);
+        }
+
+        return path;
+    }
+
     // Walkable cells reachable from the start; `blocked` cells count as wall.
     private static HashSet<(int X, int Z)> Reachable(Level level, ISet<(int X, int Z)>? blocked = null)
     {
@@ -318,6 +357,85 @@ public class ShowroomLayoutTests
         Assert.Equal(Layout.Exhibits.Weapons, again.Exhibits.Weapons);
         Assert.Equal(Layout.Exhibits.Consumables, again.Exhibits.Consumables);
         Assert.Equal(Layout.Exhibits.WallPillars, again.Exhibits.WallPillars);
+        Assert.Equal(Layout.Exhibits.CeilingArches, again.Exhibits.CeilingArches);
+    }
+
+    [Fact]
+    public void A_sequence_of_three_ceiling_arches_spans_the_arch_corridor_of_every_section_in_its_variant()
+    {
+        foreach (var section in Layout.Sections)
+        {
+            var arches = ArchesOf(section);
+            var row = section.ArchCorridorRow;
+            Assert.Equal(3, arches.Count);
+            Assert.All(arches, arch => Assert.Equal(section.Variant, arch.Variant));
+            Assert.NotNull(CeilingArchLook.FileName(section.Variant));
+
+            // On the grid: through the middle of a corridor cell, looking along it, one every 4 m as in the probe, the
+            // first a cell in from the corridor's mouth.
+            Assert.Equal([.. ShowroomLayout.ArchColumns(section)], arches.Select(arch => Level.ToGrid(arch.Position.X, arch.Position.Z).X).Reverse());
+            Assert.All(arches, arch => Assert.Equal(row, Level.ToGrid(arch.Position.X, arch.Position.Z).Z));
+            Assert.Equal([4f, 4f], arches.Zip(arches.Skip(1), (west, east) => east.Position.X - west.Position.X));
+            Assert.All(arches, arch =>
+            {
+                var (x, z) = Level.ToGrid(arch.Position.X, arch.Position.Z);
+                Assert.Equal(CeilingArchLook.Place(Layout.Level, x, z), (arch.Position, arch.Facing));
+                Assert.Equal(Vector3.UnitX, arch.Facing);
+            });
+            Assert.InRange(ShowroomLayout.ArchColumns(section).Min(), section.ArchCorridorX + 1, section.RoomX - 2);
+
+            // The corridor: one cell wide (2 m) under the corridor ceiling in the section's variant, walls along both
+            // sides from its dead end in the west to its mouth into the room - and no doorway in them.
+            var doorCells = Layout.Doors.Select(door => (door.X, door.Z)).ToHashSet();
+            Assert.True(Layout.Level[section.ArchCorridorX - 1, row].IsSolid);
+            for (var x = section.ArchCorridorX; x < section.RoomX; x++)
+            {
+                Assert.False(Layout.Level[x, row].IsSolid);
+                Assert.Equal(CeilingArchLook.CeilingHeight, Layout.Level[x, row].CeilingHeight);
+                Assert.Equal(section.Variant, Layout.Surfaces.At(x, row, SurfaceKind.Wall));
+                foreach (var side in new[] { row - 1, row + 1 })
+                {
+                    Assert.True(Layout.Level[x, side].IsSolid, $"Arch corridor of {section.Variant}: no wall at ({x}, {side}).");
+                    Assert.DoesNotContain((x, side), doorCells);
+                }
+            }
+
+            Assert.False(Layout.Level[section.RoomX, row].IsSolid);
+            Assert.Contains((section.ArchCorridorX, row), Reachable(Layout.NewWorld().Level));
+            Assert.Contains(Layout.Labels, label => label.Text == ShowroomLayout.ArchLabel
+                && Level.ToGrid(label.Position.X, label.Position.Z) == (section.RoomX - 1, row));
+        }
+    }
+
+    [Theory]
+    [InlineData(-0.5f)]
+    [InlineData(0f)]
+    [InlineData(0.5f)]
+    public void A_ceiling_arch_is_only_decoration_one_walks_the_same_path_under_it_as_without_it(float sideways)
+    {
+        // Tick by tick from the dead end of every arch corridor east into the room: along the north wall (sideways -0.5,
+        // to the left), down the middle (0) and along the south wall (+0.5) - under every arch and past its pillars. The
+        // same walk in a world without the arches takes the same steps.
+        var without = Layout.Exhibits with { CeilingArches = [] };
+        foreach (var section in Layout.Sections)
+        {
+            var arches = ArchesOf(section);
+            var withArches = Walk(Layout.Exhibits, section, sideways);
+            var withoutArches = Walk(without, section, sideways);
+            Assert.Equal(withoutArches, withArches);
+
+            // The walk really passed under all three arches and out of the corridor, and along a wall it really kept to
+            // that wall: a pillar with a body would push it off a pillar's depth, an arch with one would stop it.
+            Assert.True(withArches[^1].X > section.RoomX * Level.CellSize, $"Section {section.Variant}: the walk ended at {withArches[^1]}.");
+            // Along a wall the player's middle keeps its radius off the wall's face; down the middle, the corridor's middle.
+            var lane = arches[0].Position.Z + (MathF.Sign(sideways) * ((CeilingArchLook.Width / 2f) - BodySizes.Player.Radius));
+            foreach (var arch in arches)
+            {
+                var under = withArches.Where(step => MathF.Abs(step.X - arch.Position.X) < 0.3f).ToList();
+                Assert.NotEmpty(under);
+                Assert.All(under, step => Assert.InRange(step.Z, lane - 0.05f, lane + 0.05f));
+            }
+        }
     }
 
     [Fact]

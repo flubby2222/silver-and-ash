@@ -67,7 +67,7 @@ internal sealed class WallPillarView : IDisposable
 
             // Nothing of the pillar moves in its file: it is turned to look into the cell and stood on the wall's face.
             _turns.AsSpan().Fill(Matrix4x4.Identity);
-            model.Rig.Pose(_turns, CryptWardenViews.Place(pillar.Position, pillar.Facing), _frames);
+            model.Rig.Pose(_turns, ModelPlacement.Place(pillar.Position, pillar.Facing), _frames);
             model.DrawPart(0, _frames[0]);
         }
     }

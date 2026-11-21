@@ -114,6 +114,7 @@ public class PhotoSceneTests
             "crypt-warden-rest-4m", "crypt-warden-announce-4m", "crypt-warden-announce-2m",
             "wall-pillar-a-corridor", "wall-pillar-a-room", "wall-pillar-b-corridor", "wall-pillar-b-room",
             "wall-pillar-c-corridor", "wall-pillar-c-room",
+            "ceiling-arch-a", "ceiling-arch-b", "ceiling-arch-c", "ceiling-arch-sequence",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -533,6 +534,32 @@ public class PhotoSceneTests
         var towards = Vector3.Normalize((pillar.Position - world.Player.Position) with { Y = 0f });
         var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
         Assert.True(Vector3.Dot(looking, towards) > 0.99f);
+    }
+
+    [Theory]
+    [InlineData("ceiling-arch-a", TextureVariant.A, 1)]
+    [InlineData("ceiling-arch-b", TextureVariant.B, 1)]
+    [InlineData("ceiling-arch-c", TextureVariant.C, 1)]
+    [InlineData("ceiling-arch-sequence", TextureVariant.A, 3)]
+    public void The_ceiling_arch_scenes_look_down_an_arch_corridor_of_their_variant(string name, TextureVariant variant, int arches)
+    {
+        // Issue #537: the player stands in the arch corridor (3.5 m) east of the arches and looks west along it; in front
+        // of it every arch of the scene, within 12 m.
+        var setup = Built(name);
+        setup.Run();
+        var world = setup.World;
+        var ahead = world.Showroom!.CeilingArches
+            .Where(arch => arch.Position.X < world.Player.Position.X && MathF.Abs(arch.Position.Z - world.Player.Position.Z) < 0.01f)
+            .OrderByDescending(arch => arch.Position.X)
+            .ToList();
+
+        Assert.Equal(3, ahead.Count);
+        Assert.All(ahead, arch => Assert.Equal(variant, arch.Variant));
+        Assert.InRange(world.Player.Position.X - ahead[arches - 1].Position.X, 2f, 12.5f);
+        Assert.Equal(CeilingArchLook.CeilingHeight, world.Level.CellAt(world.Player.Position).CeilingHeight);
+        Assert.False(world.Level.CellAt(world.Player.Position).IsSolid);
+        var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
+        Assert.True(Vector3.Dot(looking, -Vector3.UnitX) > 0.99f);
     }
 
     [Fact]

@@ -20,6 +20,7 @@ public class EnvironmentPaletteTests
         "door_frame_locked_a", "door_frame_locked_b", "door_frame_locked_c",
         "wall_pillar_corridor_a", "wall_pillar_corridor_b", "wall_pillar_corridor_c",
         "wall_pillar_room_a", "wall_pillar_room_b", "wall_pillar_room_c",
+        "ceiling_arch_a", "ceiling_arch_b", "ceiling_arch_c",
     ];
 
     private static readonly string[] StoneAndWerksteinModels = ["door_frame_boss_a", "door_frame_boss_b", "door_frame_boss_c"];
