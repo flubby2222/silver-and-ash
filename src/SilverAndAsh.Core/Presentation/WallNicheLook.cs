@@ -123,7 +123,7 @@ public static class WallNicheLook
             return FileName(size, variant);
         }
 
-        _ = FileName(size, variant);
+        CheckSizeAndVariant(size, variant);
         return $"wall_niche_{file}_{variant.ToString().ToLowerInvariant()}.glb";
     }
 
@@ -131,6 +131,8 @@ public static class WallNicheLook
     /// The hole a niche of <paramref name="form"/> against the <paramref name="wall"/> side of the cell (<paramref name="x"/>,
     /// <paramref name="z"/>) leaves in the wall face (<see cref="Level.WithWallCutouts"/>), or null if it leaves none - a
     /// flat niche stands in front of the wall. A deep niche takes the whole width of the cell's wall from the floor up.
+    /// Its model lays the joints of the wall texture as for a floor at 0 m and a niche in the middle of a cell's wall
+    /// (a whole metre, see tools/models/wall_niche_deep.py): on a raised floor its joints would slip against the wall's.
     /// </summary>
     public static WallCutout? Cutout(WallNicheForm form, int x, int z, RoomSide wall)
     {
@@ -195,13 +197,19 @@ public static class WallNicheLook
     /// <summary>The file of the niche of <paramref name="size"/> for <paramref name="variant"/>, e.g. wall_niche_room_b.glb.</summary>
     public static string FileName(WallNicheSize size, TextureVariant variant)
     {
+        CheckSizeAndVariant(size, variant);
+        return $"wall_niche_{size.ToString().ToLowerInvariant()}_{variant.ToString().ToLowerInvariant()}.glb";
+    }
+
+    // Throws for a size without a niche or a variant other than A, B and C.
+    private static void CheckSizeAndVariant(WallNicheSize size, TextureVariant variant)
+    {
         if (variant is not (TextureVariant.A or TextureVariant.B or TextureVariant.C))
         {
             throw new ArgumentOutOfRangeException(nameof(variant), variant, null);
         }
 
         _ = Depth(size);
-        return $"wall_niche_{size.ToString().ToLowerInvariant()}_{variant.ToString().ToLowerInvariant()}.glb";
     }
 
     /// <summary>

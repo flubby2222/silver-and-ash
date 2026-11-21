@@ -149,7 +149,7 @@ public sealed class Level
     /// <summary>
     /// The holes left in wall faces for models set into the wall (issue #553, <see cref="LevelGeometry"/>). Only the
     /// picture: cells, walking, collision, sight and shots do not know them. A hole whose wall a later copy no longer has
-    /// (the cell closed, the cell behind opened) is simply not drawn.
+    /// (the cell closed, the cell behind opened) or that no longer fits under its cell's ceiling is simply not drawn.
     /// </summary>
     public IReadOnlyList<WallCutout> WallCutouts { get; private init; } = [];
 

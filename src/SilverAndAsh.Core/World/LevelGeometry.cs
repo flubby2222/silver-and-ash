@@ -62,7 +62,7 @@ public static class LevelGeometry
                     var neighbour = level[x + dx, z + dz];
                     if (neighbour.IsSolid)
                     {
-                        if (cutouts.TryGetValue((x, z, dx, dz), out var cutout))
+                        if (cutouts.TryGetValue((x, z, dx, dz), out var cutout) && Fits(cutout, cell))
                         {
                             AddWallAround(faces, cutout, normal, cell);
                         }
@@ -127,6 +127,10 @@ public static class LevelGeometry
             new Vector3(x1, ceiling, z0), new Vector3(x1, ceiling, z1), new Vector3(x0, ceiling, z1), new Vector3(x0, ceiling, z0),
             -Vector3.UnitY, SurfaceKind.Ceiling));
     }
+
+    // A hole still fits under the cell's ceiling: a later copy of the level may have lowered the ceiling or raised the
+    // floor (Level.WithCells). If not, the wall face is drawn whole, as for a hole whose wall is gone.
+    private static bool Fits(WallCutout cutout, Cell cell) => cutout.Top <= cell.CeilingHeight - cell.FloorHeight;
 
     /// <summary>
     /// The wall face of a cell with a hole (issue #553): up to four pieces around it - left and right of it at full

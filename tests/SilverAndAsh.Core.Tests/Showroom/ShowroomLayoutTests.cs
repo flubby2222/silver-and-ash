@@ -586,6 +586,19 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void Every_deep_niche_stands_where_the_joints_of_its_model_meet_the_wall()
+    {
+        // The model lays its joints for a floor at 0 m and its middle on a whole metre (WallNicheLook.Cutout).
+        var holes = Layout.Level.WallCutouts;
+
+        Assert.NotEmpty(holes);
+        Assert.All(holes, hole => Assert.Equal(0f, Layout.Level[hole.X, hole.Z].FloorHeight));
+        Assert.All(
+            Layout.Exhibits.WallNiches.Where(niche => niche.Form != WallNicheForm.Flat),
+            niche => Assert.Equal(MathF.Round(niche.Position.X), niche.Position.X));
+    }
+
+    [Fact]
     public void Every_wall_niche_stands_in_the_grid_on_the_bare_south_wall_of_its_part()
     {
         var doorCells = Layout.Doors.Select(door => (door.X, door.Z)).ToHashSet();

@@ -61,6 +61,42 @@ public class WallCutoutTests
         }
     }
 
+    [Theory]
+    [MemberData(nameof(Sides))]
+    public void On_a_raised_floor_the_hole_and_the_pieces_rise_with_it(RoomSide side)
+    {
+        // A cell half a metre up, 3.5 m clear: the hole counts from its floor, not from 0 m.
+        const float floor = 0.5f;
+        var raised = Enclosed.WithCells([(1, 1, new Cell(false, floor, floor + 3.5f))]);
+        var cutout = new WallCutout(1, 1, side, 0.5f, 1.25f, 0.25f, 3f);
+
+        var spans = WallsOn(raised.WithWallCutouts([cutout]), cutout).Select(piece => Span(piece, cutout)).ToHashSet();
+
+        var ceiling = floor + 3.5f;
+        (float, float, float, float)[] expected =
+        [
+            (0f, cutout.From, floor, ceiling),
+            (cutout.To, Level.CellSize, floor, ceiling),
+            (cutout.From, cutout.To, floor, floor + cutout.Bottom),
+            (cutout.From, cutout.To, floor + cutout.Top, ceiling),
+        ];
+        Assert.Equal(expected.ToHashSet(), spans);
+    }
+
+    [Theory]
+    [InlineData(0f, 2.5f)]
+    [InlineData(1f, 3.5f)]
+    public void A_hole_that_no_longer_fits_under_the_ceiling_is_not_drawn(float floor, float ceiling)
+    {
+        // A later copy lowers the ceiling or raises the floor below the hole's top: the whole wall face again, as without.
+        var cutout = new WallCutout(1, 1, RoomSide.South, 0f, Level.CellSize, 0f, 3f);
+        var lower = (1, 1, new Cell(false, floor, ceiling));
+
+        var changed = Enclosed.WithWallCutouts([cutout]).WithCells([lower]);
+
+        Assert.Equal(LevelGeometry.Build(Enclosed.WithCells([lower])), LevelGeometry.Build(changed));
+    }
+
     [Fact]
     public void A_niche_wide_hole_leaves_only_the_wall_above_it()
     {
