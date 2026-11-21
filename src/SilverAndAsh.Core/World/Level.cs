@@ -143,7 +143,53 @@ public sealed class Level
             cells[x, z] = cell;
         }
 
-        return new Level(cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells);
+        return new Level(cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells) { WallCutouts = WallCutouts };
+    }
+
+    /// <summary>
+    /// The holes left in wall faces for models set into the wall (issue #553, <see cref="LevelGeometry"/>). Only the
+    /// picture: cells, walking, collision, sight and shots do not know them. A hole whose wall a later copy no longer has
+    /// (the cell closed, the cell behind opened) is simply not drawn.
+    /// </summary>
+    public IReadOnlyList<WallCutout> WallCutouts { get; private init; } = [];
+
+    /// <summary>A copy of this level with <paramref name="cutouts"/> as its holes in wall faces (cells, start and figures stay).</summary>
+    /// <exception cref="ArgumentException">
+    /// If a hole is not in front of a wall of an open cell, does not lie within the cell's side and clear height, or a
+    /// side has two holes.
+    /// </exception>
+    public Level WithWallCutouts(IEnumerable<WallCutout> cutouts)
+    {
+        ArgumentNullException.ThrowIfNull(cutouts);
+        var list = cutouts.ToList();
+        foreach (var cutout in list)
+        {
+            CheckCutout(cutout);
+        }
+
+        if (list.Select(cutout => (cutout.X, cutout.Z, cutout.Side)).Distinct().Count() != list.Count)
+        {
+            throw new ArgumentException("A wall side can have at most one hole.", nameof(cutouts));
+        }
+
+        return new Level(_cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells) { WallCutouts = list };
+    }
+
+    private void CheckCutout(WallCutout cutout)
+    {
+        var (x, z) = (cutout.X, cutout.Z);
+        var (dx, dz) = cutout.Behind;
+        if (!IsInside(x, z) || this[x, z].IsSolid || !this[x + dx, z + dz].IsSolid)
+        {
+            throw new ArgumentException($"Cell {x}/{z} is no open cell with a wall on its {cutout.Side} side.", nameof(cutout));
+        }
+
+        var clear = this[x, z].CeilingHeight - this[x, z].FloorHeight;
+        if (!(cutout.From >= 0f && cutout.From < cutout.To && cutout.To <= CellSize
+            && cutout.Bottom >= 0f && cutout.Bottom < cutout.Top && cutout.Top <= clear))
+        {
+            throw new ArgumentException($"The hole at cell {x}/{z} does not lie within its wall face.", nameof(cutout));
+        }
     }
 
     /// <summary>
@@ -152,7 +198,7 @@ public sealed class Level
     /// </summary>
     public Level WithEnemies(
         IEnumerable<(int X, int Z)> ghoulCells, IEnumerable<(int X, int Z)> batCells, IEnumerable<(int X, int Z)>? bossCells = null) =>
-        new(_cells, PlayerStartX, PlayerStartZ, _dummyCells, ghoulCells, batCells, bossCells);
+        new(_cells, PlayerStartX, PlayerStartZ, _dummyCells, ghoulCells, batCells, bossCells) { WallCutouts = WallCutouts };
 
     /// <summary>True if (x, z) is a grid position inside the level.</summary>
     public bool IsInside(int x, int z) => x >= 0 && x < Width && z >= 0 && z < Depth;

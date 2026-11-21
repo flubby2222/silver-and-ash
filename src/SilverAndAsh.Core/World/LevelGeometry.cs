@@ -43,6 +43,7 @@ public static class LevelGeometry
     {
         ArgumentNullException.ThrowIfNull(level);
         var faces = new List<Face>();
+        var cutouts = level.WallCutouts.ToDictionary(cutout => (cutout.X, cutout.Z, cutout.Behind.Dx, cutout.Behind.Dz));
 
         for (var z = 0; z < level.Depth; z++)
         {
@@ -61,7 +62,15 @@ public static class LevelGeometry
                     var neighbour = level[x + dx, z + dz];
                     if (neighbour.IsSolid)
                     {
-                        faces.Add(WallFace(x, z, dx, dz, normal, cell.FloorHeight, cell.CeilingHeight));
+                        if (cutouts.TryGetValue((x, z, dx, dz), out var cutout))
+                        {
+                            AddWallAround(faces, cutout, normal, cell);
+                        }
+                        else
+                        {
+                            faces.Add(WallFace(x, z, dx, dz, normal, cell.FloorHeight, cell.CeilingHeight));
+                        }
+
                         continue;
                     }
 
@@ -119,8 +128,38 @@ public static class LevelGeometry
             -Vector3.UnitY, SurfaceKind.Ceiling));
     }
 
-    /// <summary>The wall face on the border between walkable cell (x, z) and its solid neighbour (x+dx, z+dz).</summary>
-    private static Face WallFace(int x, int z, int dx, int dz, Vector3 normal, float bottom, float top)
+    /// <summary>
+    /// The wall face of a cell with a hole (issue #553): up to four pieces around it - left and right of it at full
+    /// height, under and over it across its width. Pieces without area are left out.
+    /// </summary>
+    private static void AddWallAround(List<Face> faces, WallCutout cutout, Vector3 normal, Cell cell)
+    {
+        var (x, z, (dx, dz)) = (cutout.X, cutout.Z, cutout.Behind);
+        var (floor, ceiling) = (cell.FloorHeight, cell.CeilingHeight);
+        (float From, float To, float Bottom, float Top)[] pieces =
+        [
+            (0f, cutout.From, floor, ceiling),
+            (cutout.To, Level.CellSize, floor, ceiling),
+            (cutout.From, cutout.To, floor, floor + cutout.Bottom),
+            (cutout.From, cutout.To, floor + cutout.Top, ceiling),
+        ];
+
+        foreach (var (from, to, bottom, top) in pieces)
+        {
+            if (to > from && top > bottom)
+            {
+                faces.Add(WallFace(x, z, dx, dz, normal, bottom, top, from, to));
+            }
+        }
+    }
+
+    /// <summary>
+    /// The wall face on the border between walkable cell (x, z) and its solid neighbour (x+dx, z+dz), or the part of it
+    /// from <paramref name="from"/> to <paramref name="to"/> metres along the border (from the corner with the smaller
+    /// x or z; without them the whole border).
+    /// </summary>
+    private static Face WallFace(
+        int x, int z, int dx, int dz, Vector3 normal, float bottom, float top, float from = 0f, float to = Level.CellSize)
     {
         // The two ends of the shared border line, on the ground plane.
         Vector2 start, end;
@@ -131,14 +170,14 @@ public static class LevelGeometry
         if (dx != 0)
         {
             var borderX = dx < 0 ? x0 : x0 + size;
-            start = new Vector2(borderX, z0);
-            end = new Vector2(borderX, z0 + size);
+            start = new Vector2(borderX, z0 + from);
+            end = new Vector2(borderX, z0 + to);
         }
         else
         {
             var borderZ = dz < 0 ? z0 : z0 + size;
-            start = new Vector2(x0, borderZ);
-            end = new Vector2(x0 + size, borderZ);
+            start = new Vector2(x0 + from, borderZ);
+            end = new Vector2(x0 + to, borderZ);
         }
 
         // Order the corners counter-clockwise as seen from the room (the side the normal points to).
