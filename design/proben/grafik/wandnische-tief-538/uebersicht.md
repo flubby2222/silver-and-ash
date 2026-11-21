@@ -11,9 +11,10 @@ Probestueck ausserhalb des Spiels. Alles aus einem Skript: `wandnische_tief.py` 
 | `raum-empfehlung-538.png` | Empfehlung (0,3 m) im 6-m-Raum neben Tuerrahmen und Wandpfeiler, frontal und schraeg |
 | `gang-empfehlung-538.png` | Empfehlung in der 3,5-m-Gangwand, frontal |
 | `blatt-nische-regal-538.png` | Nische leer / Flaschen / Kerzen / Schaedel; Zeile 1 Regal frontal, Zeile 2 Regal schraeg, Zeile 3 ohne Bord frontal, Zeile 4 Regal im Gang mit 1,8-m-Figur |
-| `blatt-nische-flaschen-538.png` | Nacharbeit Flaschen (#553): Anordnung a und b, je Regal und ohne Bord, frontal, schraeg, im Gang mit 1,8-m-Figur, unten Spielaufloesung 854x480 aus 3 m (Blau-Fassung: `blatt-nische-flaschen-blau-538.png`) |
-| `einzel-flaschen.png`, `spielaufloesung-flaschen-a.png`, `spielaufloesung-flaschen-b.png` | Flaschen einzeln (vorn, Seite, hinten, schraeg oben); 854x480 aus 3 m |
-| `fuellungen-detail.png` | Fuellungsmodelle (Flaschen a/b gruen und blau, Kerzen brennend und aus, Schaedel) in der Regal-Nische, Naheinstellung |
+| `blatt-nische-flaschen-r3-538.png` | Nacharbeit Flaschen Runde 3 (#553): Pyramide und Stapel, je Regal und ohne Bord, frontal, schraeg, im Gang mit 1,8-m-Figur, unten Spielaufloesung 854x480 aus 3 m (Blau-Fassung: `blatt-nische-flaschen-r3-blau-538.png`) |
+| `staub-vergleich-538.png` | Nahaufnahme ohne und mit Staub, Pyramide und Stapel |
+| `einzel-flaschen-r3.png`, `spielaufloesung-flaschen-pyramide.png`, `spielaufloesung-flaschen-stapel.png` | Flaschen einzeln (vorn, Seite, hinten, schraeg oben); 854x480 aus 3 m |
+| `fuellungen-detail.png` | Fuellungsmodelle (Flaschen Pyramide/Stapel gruen und blau, Kerzen brennend und aus, Schaedel) in der Regal-Nische, Naheinstellung |
 | `rahmen-vergleich.png` | Rahmen buendig gegen 1/16 m vorspringend (Tiefe 0,3 m) |
 | `einzel-t30.png`, `einzel-t15.png`, `einzel-regal-t30.png` | vorn, Seite, hinten, schraeg oben je Fassung |
 | `spielaufloesung-t30.png` | 854 x 480, 70 Grad, Augenhoehe 1,6 m |
@@ -21,8 +22,8 @@ Probestueck ausserhalb des Spiels. Alles aus einem Skript: `wandnische_tief.py` 
 ## Modelle (`modelle/`)
 
 Je Wandvariante a, b, c (Wandkacheln aus `assets/textures`): `wandnische_t15_*.glb`, `wandnische_t30_*.glb`, `wandnische_regal_t30_*.glb`;
-Fuellungen: `fuellung_flaschen_a_gruen`, `fuellung_flaschen_a_blau`, `fuellung_flaschen_b_gruen`, `fuellung_flaschen_b_blau`, `fuellung_kerzen_brennend`, `fuellung_kerzen_aus`, `fuellung_schaedel`
-(.glb mit .png-Atlas). Alle 28 Dateien mit `python tools/models/check_closed.py <glb>` geprueft: rundum geschlossen, 0 offene Kanten.
+Fuellungen: `fuellung_flaschen_{pyramide,stapel}_{gruen,blau,glatt}` (glatt = ohne Staub), `fuellung_kerzen_brennend`, `fuellung_kerzen_aus`, `fuellung_schaedel`
+(.glb mit .png-Atlas). Alle Dateien mit `python tools/models/check_closed.py <glb>` geprueft: rundum geschlossen, 0 offene Kanten.
 
 | Modell | Dreiecke | Teile |
 | --- | --- | --- |
@@ -102,3 +103,16 @@ Urteil des Menschen: "Sehen aus wie Batterien. Und vllt auch auf eine seite stap
 - **Anordnung b (schraeg)**: vier Flaschen mit dem Hals 18 Grad nach oben geneigt, Boeden an der Laibung, dazu zwei stehende. Die Hals-Linien und die stehenden Umrisse lesen sich am klarsten.
 - Alles nur Hauptpalette (assert), rundum geschlossen (`check_closed.py`, 0 offene Kanten), zwei Laeufe bitgleich (sha256 ueber alle 32 Dateien in `modelle/`).
 - Die alten Modelle `fuellung_flaschen_gruen/blau` sind entfernt.
+
+### Runde 3: Weinkeller-Stapel in der Ecke, Staub
+
+Urteil des Menschen: Anordnung wie im Weinkeller, uebereinander, aber in einer Ecke; die Flaschenform ist angenommen und bleibt unveraendert (56 Dreiecke je Flasche); dazu etwas Staub als Textur. Die Anordnungen a und b sind verworfen und entfernt.
+
+- **Ecke**: Stapel in der Ecke aus linker Laibung (x -0,5) und Rueckwand. Alle Flaschen liegen in Richtung der Nischentiefe, keine geneigt, keine stehend. Fuge zwischen den Sechsecken 4 mm, damit jede Flasche einzeln sichtbar bleibt. Reihenfolge der Helligkeitsstufen je Flasche leicht verschoben (drei Toene im Wechsel).
+- **Pyramide** (6 Flaschen, 336 Dreiecke): Lagen 3, 2, 1, versetzt um eine halbe Flasche; Boeden mit dem dunklen Kreis nach vorn, Hals mit Korken zur Rueckwand. Liest sich als Honigwabe aus dunklen Kreisen.
+- **Stapel** (7 Flaschen, 392 Dreiecke): Lagen 3, 2, 2; Haelse mit Korken nach vorn. Die Korken sind kleine Farbtupfer und zeigen die Flaschenform deutlich.
+- **Staub**: Pixelkacheln (24x28 Pixel, 1 Pixel etwa 1,6 cm) auf allen nach oben zeigenden Glasflaechen, je Helligkeitsstufe eine eigene Kachel mit zwei helleren, entsaettigten Stufen derselben Palettenreihe (Haut/Knochen) als Sprenkel; die Boeden haben leicht gesprenkelte Ringe. Nur Hauptpalette (assert). Die Flasche bleibt gruen. Ohne Staub: `fuellung_flaschen_*_glatt`.
+- Ragen die Flaschenenden aus der Nische? Ja: Die Flasche ist 0,36 m lang, die Nische 0,3 m tief; das Ende liegt buendig mit der Vorderkante des Rahmens (z 0,3605, 0,0625 m vor der Wand). Das Bord steht an der Wand, die Flaschen darunter ragen ueber diese Ebene hinaus.
+- Alles rundum geschlossen (`check_closed.py`), zwei Laeufe bitgleich (sha256 ueber alle 36 Dateien in `modelle/`).
+- **Offen**: Aus 3 m ist der Staub kaum zu sehen; sichtbar wirkt er in der Naheinstellung (`staub-vergleich-538.png`). Wirkt der Stapel aus 3 m klein, kann man die Ecke mit einer vierten Lage fuellen (die Hoehe ginge bis 0,42 m, ueber das Bord).
+

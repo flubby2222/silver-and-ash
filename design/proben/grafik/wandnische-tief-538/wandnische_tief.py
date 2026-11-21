@@ -515,41 +515,68 @@ def hexring(cx, cy, r, z, k0=0):
 
 
 # Flaschen ------------------------------------------------------------------------------------------------------------------
-# Nacharbeit #553: Flaschen mit Bauch, Schulter, schmalem Hals und Korken; Sechseck als Querschnitt, 56 Dreiecke je Flasche.
-# Zwei Anordnungen: a = quer liegend, Haelse im Profil, abwechselnd links/rechts; b = mit dem Hals nach oben geneigt, dazu zwei stehende.
-# Der Stapel lehnt an der linken Laibung (x = -0,5), die rechte Haelfte der Sohle bleibt frei.
+# Das Flaschenmodell (Form) ist seit Runde 2 angenommen und bleibt unveraendert: Sechseck-Querschnitt, Bauch, Schulter, Hals,
+# Korken, Boden mit dunklem Kreis, 56 Dreiecke je Flasche. Runde 3 (#553): Anordnung wie im Weinkeller (liegend, in versetzten Lagen
+# uebereinander, in die Ecke aus linker Laibung und Rueckwand geschoben) und Staub als Pixeltextur auf den nach oben zeigenden Flaechen.
+# Die Flaschen liegen in Richtung der Nischentiefe (z); das Ende liegt buendig mit der Vorderkante des Rahmens (0,0625 m vor der Wand).
 
 GLAS = {
     "gruen": dict(dark=HK[0], mid=HK[1], light=HK[2], hi=HK[3]),
     "blau": dict(dark=ST[0], mid=ST[2], light=ST[4], hi=ST[5]),
 }
+# Staub: je Glasstufe zwei hellere, entsaettigte Stufen derselben Reihe (Haut/Knochen) als Sprenkel
+STAUB = {"gruen": dict(dark=(HK[1], HK[2]), mid=(HK[2], HK[3]), light=(HK[3], HK[4]), hi=(HK[4], HK[5])),
+         "blau": dict(dark=(ST[1], ST[3]), mid=(ST[3], ST[4]), light=(ST[5], HK[4]), hi=(HK[4], HK[5]))}
 # Profil von unten (Boden) nach oben (Korken): (Hoehe auf der Achse, Radius an den Ecken des Sechsecks)
 FS = 1.1                                           # Massstab: etwas groesser als eine echte Flasche, damit sie aus 3 m lesbar bleibt
 FL_PROFIL = [(h * FS, r * FS) for (h, r) in ((0.0, 0.054), (0.165, 0.054), (0.205, 0.020), (0.285, 0.020), (0.325, 0.028))]
 FL_L = 0.325 * FS
-FL_RF = 0.054 * FS * math.cos(math.radians(30))   # halbe Breite ueber die flachen Seiten
+FL_R = 0.054 * FS
+FL_RF = FL_R * math.cos(math.radians(30))          # halbe Breite ueber die flachen Seiten
 FL_KORK_AB = 0.285 * FS
+FL_SIZE = (96, 72)
+TILE_W, TILE_H = 24, 28                            # Staubkachel: 24 Pixel entlang der Flasche, 28 rund um die Flasche
+TILE_Y = 40
 
 
-def bottle_atlas(tint):
+def bottle_atlas(tint, dust=True):
     g = GLAS[tint]
+    st_ = STAUB[tint]
 
-    def disc(w, h):
+    def disc(w, h, dusty=False):
+        rs = np.random.RandomState(5)
         out = np.zeros((h, w, 3))
         for py in range(h):
             for px in range(w):
                 rho = math.hypot(px - (w - 1) / 2, py - (h - 1) / 2) / (w / 2)
                 col = g["dark"] if rho < 0.42 else g["mid"] if rho < 0.70 else g["light"] if rho < 0.90 else g["mid"]
+                if dusty and rho >= 0.42 and rs.rand() < 0.22:
+                    col = st_["mid"][0] if rho < 0.70 else st_["light"][0]
                 out[py, px] = col
         return out
 
+    def tile(shade, seed):
+        def fn(w, h):
+            rs = np.random.RandomState(seed)
+            out = np.zeros((h, w, 3)) + np.array(g[shade], float)
+            r = rs.rand(h, w)
+            out[r < 0.24] = np.array(st_[shade][0], float)
+            out[r < 0.08] = np.array(st_[shade][1], float)
+            return out
+        return fn
+
     colors = {"dark": g["dark"], "mid": g["mid"], "light": g["light"], "hi": g["hi"], "cork": HZ[3]}
-    return swatch_atlas(colors, {"disc": ((0, 16, 16, 32), disc)})
+    extra = {"disc": ((0, 16, 16, 32), disc)}
+    if dust:
+        extra["discd"] = ((16, 16, 32, 32), lambda w, h: disc(w, h, True))
+        for i, shade in enumerate(("dark", "mid", "light", "hi")):
+            extra["d_" + shade] = ((TILE_W * i, TILE_Y, TILE_W * (i + 1), TILE_Y + TILE_H), tile(shade, 11 + i))
+    return swatch_atlas(colors, extra, FL_SIZE)
 
 
-def bottle_into(fl, base, theta, yaw):
-    """Eine Flasche. base = Mittelpunkt des Bodens (Welt), theta = Neigung um z (0 stehend, -90 Grad liegend, Hals nach +x,
-    +90 Grad liegend, Hals nach -x; dazwischen geneigt), yaw = Drehung um die senkrechte Achse."""
+def bottle_into(fl, base, theta, yaw, dust=True, off=0.0):
+    """Eine Flasche. base = Mittelpunkt des Bodens (Welt), theta = Neigung um z (0 stehend, -90 Grad liegend, Hals nach +x),
+    yaw = Drehung um die senkrechte Achse (+90 Grad: Hals nach -z, -90 Grad: Hals nach +z). off verschiebt die Helligkeitsstufe."""
     ct, st = math.cos(theta), math.sin(theta)
     cy, sy = math.cos(yaw), math.sin(yaw)
 
@@ -561,6 +588,7 @@ def bottle_into(fl, base, theta, yaw):
     for (h, r) in FL_PROFIL:
         rings.append([V(r * math.cos(math.radians(30 + 60 * k)), h, r * math.sin(math.radians(30 + 60 * k))) for k in range(6)])
     r0 = FL_PROFIL[0][1]
+    disc_name = "discd" if dust else "disc"
 
     def disc_uv(p, rect):
         u0, v0, u1, v1 = rect
@@ -568,55 +596,54 @@ def bottle_into(fl, base, theta, yaw):
 
     def style(n, mid):
         if n.y < -0.9:
-            return ("planar", "disc", disc_uv)
+            return ("planar", disc_name, disc_uv)
         if n.y > 0.9 or mid.y > FL_KORK_AB:
             return ("swatch", "cork")
         w = rv(n)
-        s = w.y * 0.6 + w.z * 0.55 + w.x * 0.25
-        return ("swatch", "hi" if s > 0.7 else "light" if s > 0.42 else "mid" if s > 0.08 else "dark")
+        s = w.y * 0.6 + w.z * 0.55 + w.x * 0.25 + off
+        shade = "hi" if s > 0.7 else "light" if s > 0.42 else "mid" if s > 0.08 else "dark"
+        if not dust or w.y < 0.15:
+            return ("swatch", shade)
+        m = math.atan2(n.z, n.x) % (2 * math.pi)
+
+        def uv(p, rect, m=m):
+            u0, v0, u1, v1 = rect
+            d = (math.atan2(p.z, p.x) - m + math.pi) % (2 * math.pi) - math.pi
+            a = min(max(p.y * 64.0 / TILE_W, 0.02), 0.98)
+            b = min(max((m + d + 0.55) * FL_R * 64.0 / TILE_H, 0.02), 0.98)
+            return (u0 + (u1 - u0) * a, v0 + (v1 - v0) * b)
+        return ("planar", "d_" + shade, uv)
 
     fl.solid(ring_solid(rings), V(0, FL_L / 2, 0), style, lambda p: rv(p) + base)
 
 
-FL_A = [   # (x des Bodens bzw. des Halses, y Mitte, z, Hals nach, yaw in Grad) - quer liegend, Haelse im Profil
-    (-0.485, FL_RF / FS, 0.168, "r", 0), (-0.455, FL_RF / FS, 0.058, "l", 3),
-    (-0.490, FL_RF / FS + 0.081, 0.212, "l", 0), (-0.490, FL_RF / FS + 0.081, 0.113, "r", -3),
-    (-0.475, FL_RF / FS + 0.162, 0.168, "r", 0), (-0.480, FL_RF / FS + 0.162, 0.062, "l", 3),
-]
-FL_A_STEH = [(-0.045, 0.0, 0.16)]
-NEIG = 18.0
-FL_B = [   # mit dem Hals nach oben geneigt, Boeden an der linken Laibung: (x, y, z, yaw)
-    (-0.455, 0.0445, 0.078, 5), (-0.460, 0.0445, 0.168, -6),
-    (-0.455, 0.141, 0.120, 0), (-0.470, 0.141, 0.208, 5),
-]
-FL_B_STEH = [(-0.03, 0.0, 0.09), (0.045, 0.0, 0.195)]
+PX, PY = 0.124, 0.1065                 # Mittenabstand der Flaschen: 4 mm Fuge zwischen den Sechsecken
+X0 = -0.5 + FL_R + 0.003               # erste Flasche an der linken Laibung
+Y0 = FL_RF + 0.001
+Z_FRONT = 0.3605                       # vorderes Ende buendig mit dem Rahmen (0,0625 m vor der Wand, 0,3 m Tiefe)
+Z_BACK = 0.003
+TONES = (0.0, -0.10, 0.08)
+LAGEN = {   # (Versatz in Flaschenabstaenden, Anzahl) je Lage von unten
+    "pyramide": ((0.0, 3), (0.5, 2), (1.0, 1)),     # Boeden nach vorn
+    "stapel": ((0.0, 3), (0.5, 2), (0.0, 2)),       # Haelse mit Korken nach vorn
+}
 
 
-def build_flaschen(tint, anord):
-    arr, pix = bottle_atlas(tint)
-    part = fpart("flaschen_%s_%s" % (anord, tint), pix)
-    fl = Fill(part, pix)
-    n = 0
-    if anord == "a":
-        for (x, y, z, hals, yaw) in FL_A:
-            y, z = y * FS, z * FS
-            if hals == "r":
-                bottle_into(fl, V(x, y, z), math.radians(-90), math.radians(yaw))
+def build_flaschen(tint, layout, dust=True):
+    arr, pix = bottle_atlas(tint, dust)
+    part = fpart("flaschen_%s_%s%s" % (layout, tint, "" if dust else "_glatt"), pix, FL_SIZE)
+    fl = Fill(part, pix, FL_SIZE)
+    k = 0
+    for j, (dx0, cnt) in enumerate(LAGEN[layout]):
+        for i in range(cnt):
+            x, y = X0 + (dx0 + i) * PX, Y0 + j * PY
+            tone = TONES[k % 3]
+            if layout == "pyramide":
+                bottle_into(fl, V(x, y, Z_FRONT), math.radians(-90), math.radians(90), dust, tone)
             else:
-                bottle_into(fl, V(x + FL_L, y, z), math.radians(90), math.radians(yaw))
-            n += 1
-        for (x, y, z) in FL_A_STEH:
-            bottle_into(fl, V(x, y, z * FS), 0.0, math.radians(20))
-            n += 1
-        assert n == 7
-    else:
-        for (x, y, z, yaw) in FL_B:
-            bottle_into(fl, V(x, y * FS, z * FS), math.radians(-(90.0 - NEIG)), math.radians(yaw))
-            n += 1
-        for (x, y, z) in FL_B_STEH:
-            bottle_into(fl, V(x, y, z * FS), 0.0, math.radians(20))
-            n += 1
-        assert n == 6
+                bottle_into(fl, V(x, y, Z_BACK), math.radians(-90), math.radians(-90), dust, tone)
+            k += 1
+    assert k == (6 if layout == "pyramide" else 7)
     return part, arr
 
 
@@ -760,10 +787,12 @@ def build_schaedel():
 
 
 FUELLUNGEN = {
-    "flaschen_a_gruen": lambda: build_flaschen("gruen", "a"),
-    "flaschen_a_blau": lambda: build_flaschen("blau", "a"),
-    "flaschen_b_gruen": lambda: build_flaschen("gruen", "b"),
-    "flaschen_b_blau": lambda: build_flaschen("blau", "b"),
+    "flaschen_pyramide_gruen": lambda: build_flaschen("gruen", "pyramide"),
+    "flaschen_pyramide_blau": lambda: build_flaschen("blau", "pyramide"),
+    "flaschen_pyramide_glatt": lambda: build_flaschen("gruen", "pyramide", False),
+    "flaschen_stapel_gruen": lambda: build_flaschen("gruen", "stapel"),
+    "flaschen_stapel_blau": lambda: build_flaschen("blau", "stapel"),
+    "flaschen_stapel_glatt": lambda: build_flaschen("gruen", "stapel", False),
     "kerzen_brennend": lambda: build_kerzen(True),
     "kerzen_aus": lambda: build_kerzen(False),
     "schaedel": build_schaedel,
@@ -1108,7 +1137,7 @@ def fills_for(kind, c, where):
 
 def sheet_regal(v="a"):
     c_regal, c_flach = cfg_of("t30", regal=True), cfg_of("t30")
-    cols = [("leer", None, None), ("Flaschen", "flaschen_a_gruen", "sohle"), ("Kerzen", "kerzen_brennend", "bord"),
+    cols = [("leer", None, None), ("Flaschen", "flaschen_pyramide_gruen", "sohle"), ("Kerzen", "kerzen_brennend", "bord"),
             ("Schaedel", "schaedel", "bord")]
     rows = []
     for cam, label, c, rg in (("nah_front", "frontal", c_regal, "Regal"), ("nah_schraeg", "schraeg", c_regal, "Regal"),
@@ -1124,8 +1153,8 @@ def sheet_regal(v="a"):
 def fill_detail():
     c = cfg_of("t30", regal=True)
     rows = []
-    for group in ((("Flaschen a gruen", "flaschen_a_gruen", "sohle"), ("Flaschen a blau", "flaschen_a_blau", "sohle"),
-                   ("Flaschen b gruen", "flaschen_b_gruen", "sohle"), ("Flaschen b blau", "flaschen_b_blau", "sohle")),
+    for group in ((("Pyramide gruen", "flaschen_pyramide_gruen", "sohle"), ("Pyramide blau", "flaschen_pyramide_blau", "sohle"),
+                   ("Stapel gruen", "flaschen_stapel_gruen", "sohle"), ("Stapel blau", "flaschen_stapel_blau", "sohle")),
                   (("Kerzen brennend", "kerzen_brennend", "bord"), ("Kerzen aus", "kerzen_aus", "bord"),
                    ("Schaedel", "schaedel", "bord"))):
         cells = []
@@ -1145,38 +1174,52 @@ def raum_flaschen(kind, c, size=(854, 480)):
     return shot(it, (0.0, 1.6, 3.0), (0.0, 1.25, 0.0), 70, size, "spiel")
 
 
+CAMS["staub"] = ((0.15, 0.78, 0.55), (-1.0, 0.68, 0.0), 40)
+
+
 def sheet_flaschen(tint="gruen"):
     c_regal, c_flach = cfg_of("t30", regal=True), cfg_of("t30")
     cols = []
-    for a in ("a", "b"):
+    for lay in ("pyramide", "stapel"):
         for c, rg in ((c_regal, "Regal"), (c_flach, "ohne Bord")):
-            cols.append((a, c, rg))
+            cols.append((lay, c, rg))
     rows = []
     for cam, label in (("nah_front", "frontal"), ("nah_schraeg", "schraeg"), ("gang_figur", "im Gang mit Figur 1,8 m")):
         r = []
-        for a, c, rg in cols:
-            ex = [("fill", "flaschen_%s_%s" % (a, tint), c, 0.5, -1, 0.0, 0.0)]
-            r.append(titled(cell(gang_scene("a", c, ex), cam, size=(427, 310)), "Anordnung %s, %s, %s" % (a, rg, label)))
+        for lay, c, rg in cols:
+            ex = [("fill", "flaschen_%s_%s" % (lay, tint), c, 0.5, -1, 0.0, 0.0)]
+            r.append(titled(cell(gang_scene("a", c, ex), cam, size=(427, 310)), "%s, %s, %s" % (lay, rg, label)))
         rows.append(hcat(r))
-    spiel = [titled(raum_flaschen("flaschen_%s_%s" % (a, tint), c_regal), "Anordnung %s, 854x480, 3 m Abstand, frontal" % a)
-             for a in ("a", "b")]
+    spiel = [titled(raum_flaschen("flaschen_%s_%s" % (lay, tint), c_regal), "%s, 854x480, 3 m Abstand, frontal" % lay)
+             for lay in ("pyramide", "stapel")]
     rows.append(hcat(spiel))
+    return vcat(rows)
+
+
+def staub_vergleich():
+    c = cfg_of("t30", regal=True)
+    rows = []
+    for lay in ("pyramide", "stapel"):
+        cells = []
+        for t, name in (("glatt", "ohne Staub"), ("gruen", "mit Staub")):
+            it = gang_scene("a", c, [("fill", "flaschen_%s_%s" % (lay, t), c, 0.5, -1, 0.0, 0.0)], fig=False)
+            cells.append(titled(cell(it, "staub", size=(560, 420)), "%s, %s, Nahaufnahme" % (lay, name)))
+        rows.append(hcat(cells))
     return vcat(rows)
 
 
 def einzel_flaschen():
     c = cfg_of("t30", regal=True)
     rows = []
-    for a in ("a", "b"):
-        it = [("floor", -3, 3, -3, 3), ("fill", "flaschen_%s_gruen" % a, c, 0.0, 0, 0.0, 0.0)]
+    for lay in ("pyramide", "stapel"):
+        it = [("floor", -3, 3, -3, 3), ("fill", "flaschen_%s_gruen" % lay, c, 0.0, 0, 0.0, 0.0)]
         cells = []
-        for name, loc, size in (("vorn", (0, 0.2, 8), 1.1), ("Seite", (8, 0.2, -0.15), 1.1), ("hinten", (0, 0.2, -8), 1.1),
-                                ("schraeg oben", (0.6, 1.0, 0.7), None)):
+        for name, loc, size in (("vorn", (-0.3, 0.2, 8), 0.9), ("Seite", (8, 0.2, -0.15), 0.9), ("hinten", (-0.3, 0.2, -8), 0.9),
+                                ("schraeg oben", (0.4, 0.8, 0.7), None)):
             if size:
-                tgt = (0, 0.17, -0.15)
-                cells.append(titled(shot(it, loc, tgt, 0, (360, 220), "hell", ortho=size), "%s - %s" % (a, name)))
+                cells.append(titled(shot(it, (loc[0] if name != "Seite" else loc[0], loc[1], loc[2]), (-0.3 if name != "Seite" else 0, 0.17, -0.15), 0, (360, 220), "hell", ortho=size), "%s - %s" % (lay, name)))
             else:
-                cells.append(titled(shot(it, loc, (-0.1, 0.1, -0.15), 45, (360, 220), "hell"), "%s - %s" % (a, name)))
+                cells.append(titled(shot(it, loc, (-0.3, 0.1, -0.15), 45, (360, 220), "hell"), "%s - %s" % (lay, name)))
         rows.append(hcat(cells))
     return vcat(rows)
 
@@ -1204,12 +1247,13 @@ def main():
     if want("regal"):
         png(sheet_regal(), os.path.join(OUT, "blatt-nische-regal-538.png"))
     if want("flaschen"):
-        png(sheet_flaschen(), os.path.join(OUT, "blatt-nische-flaschen-538.png"))
-        png(sheet_flaschen("blau"), os.path.join(OUT, "blatt-nische-flaschen-blau-538.png"))
-        png(einzel_flaschen(), os.path.join(OUT, "einzel-flaschen.png"))
+        png(sheet_flaschen(), os.path.join(OUT, "blatt-nische-flaschen-r3-538.png"))
+        png(sheet_flaschen("blau"), os.path.join(OUT, "blatt-nische-flaschen-r3-blau-538.png"))
+        png(staub_vergleich(), os.path.join(OUT, "staub-vergleich-538.png"))
+        png(einzel_flaschen(), os.path.join(OUT, "einzel-flaschen-r3.png"))
         c3 = cfg_of("t30", regal=True)
-        for a in ("a", "b"):
-            png(raum_flaschen("flaschen_%s_gruen" % a, c3), os.path.join(OUT, "spielaufloesung-flaschen-%s.png" % a))
+        for lay in ("pyramide", "stapel"):
+            png(raum_flaschen("flaschen_%s_gruen" % lay, c3), os.path.join(OUT, "spielaufloesung-flaschen-%s.png" % lay))
     if want("detail"):
         png(fill_detail(), os.path.join(OUT, "fuellungen-detail.png"))
     if want("einzel"):
