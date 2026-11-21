@@ -4,6 +4,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.Showroom;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Photos;
@@ -117,6 +118,9 @@ public class PhotoSceneTests
             "ceiling-arch-a", "ceiling-arch-b", "ceiling-arch-c", "ceiling-arch-sequence",
             "wall-niche-a-corridor", "wall-niche-a-room", "wall-niche-b-corridor", "wall-niche-b-room",
             "wall-niche-c-corridor", "wall-niche-c-room",
+            "portcullis-closed-room", "portcullis-closed-closet", "portcullis-closed-far",
+            "portcullis-half-room", "portcullis-half-closet", "portcullis-half-far",
+            "portcullis-open-room", "portcullis-open-closet", "portcullis-open-far",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -588,6 +592,57 @@ public class PhotoSceneTests
         var towards = Vector3.Normalize((niche.Position - world.Player.Position) with { Y = 0f });
         var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
         Assert.True(Vector3.Dot(looking, towards) > 0.99f);
+    }
+
+    [Theory]
+    [InlineData("portcullis-closed-room", 3f)]
+    [InlineData("portcullis-closed-closet", -3f)]
+    [InlineData("portcullis-closed-far", 6f)]
+    [InlineData("portcullis-half-room", 3f)]
+    [InlineData("portcullis-half-closet", -3f)]
+    [InlineData("portcullis-half-far", 6f)]
+    [InlineData("portcullis-open-room", 3f)]
+    [InlineData("portcullis-open-closet", -3f)]
+    [InlineData("portcullis-open-far", 6f)]
+    public void The_portcullis_scenes_look_at_the_doorway_from_open_floor(string name, float back)
+    {
+        // Issue #540: in front of the door plane (room), behind it (closet) or 6 m back, looking at the doorway.
+        var setup = Built(name);
+        setup.Run();
+        var world = setup.World;
+        var portcullis = Assert.Single(world.Showroom!.Portcullises, exhibit => exhibit.Variant == TextureVariant.A);
+
+        Assert.False(world.Level.CellAt(world.Player.Position).IsSolid);
+        Assert.Equal(back, world.Player.Position.Z - portcullis.Position.Z, 0.01f);
+        var towards = Vector3.Normalize((portcullis.Position - world.Player.Position) with { Y = 0f });
+        var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
+        Assert.True(Vector3.Dot(looking, towards) > 0.99f);
+    }
+
+    [Theory]
+    [InlineData("portcullis-closed-room")]
+    [InlineData("portcullis-half-room")]
+    [InlineData("portcullis-open-room")]
+    public void The_portcullis_scenes_show_the_grate_shut_half_lifted_and_open(string name)
+    {
+        // The grate's height comes from the world's ticks, as in the game: shut on the floor, about halfway, not drawn.
+        var setup = Built(name);
+        setup.Run();
+        var height = ShowroomGrateCycle.Height(setup.World.Ticks, setup.World.Balance.Grates);
+
+        switch (name)
+        {
+            case "portcullis-closed-room":
+                Assert.Equal(0f, height);
+                break;
+            case "portcullis-half-room":
+                Assert.InRange(height, 1.4f, 2f);
+                Assert.True(GratePose.IsDrawn(height));
+                break;
+            default:
+                Assert.False(GratePose.IsDrawn(height));
+                break;
+        }
     }
 
     [Fact]

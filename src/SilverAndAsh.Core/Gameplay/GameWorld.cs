@@ -357,6 +357,12 @@ public sealed class GameWorld
     /// <summary>True once a player climbed the spiral staircase that rises after the boss room is cleared: the run is won.</summary>
     public bool IsWon { get; private set; }
 
+    /// <summary>
+    /// The ticks the world has run since it was made; paused ticks do not count. A clock for things that move by the
+    /// tick alone, such as the showroom's portcullis (issue #540).
+    /// </summary>
+    public long Ticks { get; private set; }
+
     /// <summary>True when every player is dead before the run was won.</summary>
     public bool IsLost => !IsWon && Players.All(player => player.IsDead);
 
@@ -1554,6 +1560,8 @@ public sealed class GameWorld
         {
             return;
         }
+
+        Ticks++;
 
         // A level up waits for its bonus - but the world goes on (decision record 0008): the choice comes in as input
         // whenever the player makes it (online co-op rule 2 - everything that changes the game is tick input).
