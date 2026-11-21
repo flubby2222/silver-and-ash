@@ -262,6 +262,12 @@
     "bossOpenTime": 2.2                 // the same for a boss door (two heavy iron leaves)
   },
 
+  // Portcullises (#540), in ticks (60 a second). Only the picture so far: the grate does not block yet.
+  "grates": {
+    "fallTicks": 63,                    // falling shut: two jerks, then the drop; shut from 3/4 of the time (tick 47)
+    "liftTicks": 126                    // rising fully open, evenly
+  },
+
   // The Well of Sirius (#438). Price per throw, chances and the most throws are still open: using it only spends it.
   "well": {
     "levelChance": 1,                   // chance that a level has a well (at most one); provisional: every level

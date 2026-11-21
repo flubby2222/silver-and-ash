@@ -479,6 +479,9 @@ static void RunGame(
         // The wall niches (issue #538) - for now only in the showroom; without their models the walls stay bare.
         using var wallNicheView = WallNicheView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
+        // The portcullis (issue #540) - for now only in the showroom, falling and lifting in a loop.
+        using var portcullisView = PortcullisView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
         newWeaponView = () => new WeaponView(weaponModels, levelShader);
@@ -578,6 +581,9 @@ static void RunGame(
             wallPillarView.Draw(gameWorld.Showroom?.WallPillars ?? [], viewCone, levelTextures);
             ceilingArchView.Draw(gameWorld.Showroom?.CeilingArches ?? [], viewCone, levelTextures);
             wallNicheView.Draw(gameWorld.Showroom?.WallNiches ?? [], viewCone, levelTextures);
+            portcullisView.Draw(
+                gameWorld.Showroom?.Portcullises ?? [], ShowroomGrateCycle.Height(gameWorld.Ticks, gameWorld.Balance.Grates),
+                viewCone, gameWorld.Surfaces, levelTextures);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
