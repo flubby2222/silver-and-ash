@@ -516,7 +516,8 @@ def deckenbogen():
     c.text(t.x(0), 126, "Innenkante des Rings: Scheitel 3,364", TEXT, 2, "m")
     notes(c, 880, 150, ["#Maße", "Ring 1/8 m dick, 0,5 m tief", "R außen 1,625, R innen 1,5", "Mittelpunkte 0,625 neben der Achse",
                         "#Pfeiler", "Kapitell 1,5 bis 2,0, 1/8 m tief:", "dessen Oberkante ist der Kämpfer,", "Ring sitzt bündig darauf",
-                        "#Durchgang", "Kopf des Gruftwächters 2,28:", "Öffnung dort noch 1,70 m", "#Dreiecke: etwa 100 (Schätzung)"], 26)
+                        "#Durchgang", "Kopf des Gruftwächters 2,28:", "Öffnung dort noch 1,70 m", "#Dreiecke: 152 Bogen, 516 mit Pfeilern",
+                        "Fuß und Schlussstein R außen 1,75:", "Zähne 1/8 m in Wand und Decke"], 26)
     return c
 
 
