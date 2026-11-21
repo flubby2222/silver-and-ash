@@ -4,8 +4,9 @@ namespace SilverAndAsh.Core.Tests;
 
 /// <summary>
 /// Issue #280: the environment (every PNG in assets/textures, cracked wall, door frames, secret-room wall door) is painted with the colours
-/// of the main palette's ground rows only - the row Stein - and the frame of the boss gate may add the row Werkstein
-/// (art bible, colour rule 6). The door leaves and the spiral stairs are named exceptions (issue #543).
+/// of the palette row Stein only, and the frame of the boss gate may add the row Werkstein (art bible, colour rule 6).
+/// Issue #543: the door leaves keep the wood, iron and brass they have today, listed here as the named rows "Tür"; the spiral
+/// stairs use Stein, Werkstein and the brass of their lamp (Messing/Gold).
 /// </summary>
 public class EnvironmentPaletteTests
 {
@@ -25,6 +26,12 @@ public class EnvironmentPaletteTests
 
     private static readonly string[] StoneAndWerksteinModels = ["door_frame_boss_a", "door_frame_boss_b", "door_frame_boss_c"];
 
+    /// <summary>The door leaves (with their head panels): only the colours of the rows "Tür" below.</summary>
+    private static readonly string[] DoorLeafModels = ["door_normal", "door_locked", "door_boss"];
+
+    /// <summary>The spiral stairs: Stein for wall and steps, Werkstein for the edges, Messing/Gold for the lamp.</summary>
+    private static readonly string[] StairsModels = ["stairs_spiral_a", "stairs_spiral_b", "stairs_spiral_c"];
+
     /// <summary>Not environment (figures, weapons, chests, enemies, effects): they keep their own colours.</summary>
     private static readonly string[] NotEnvironmentModels =
     [
@@ -35,14 +42,34 @@ public class EnvironmentPaletteTests
     ];
 
     /// <summary>
-    /// Environment, but still outside the palette on purpose - follow-up issue #543: the door leaves need a muted wood and a
-    /// grey iron in the palette first (with the rows Holz and Eisen they change by 9 to 13.5 per channel); the spiral stairs
-    /// carry the brass of their lamp and the Werkstein, which the check does not allow for them yet.
+    /// The colours the door atlases have today (issue #543: the human judged the doors good as they are). They are not in
+    /// the main palette: several wood tones fall on a colour of Stein in the 15-bit picture of the game, which the palette
+    /// file forbids within its rows. A new colour in a door atlas has to be added here on purpose.
     /// </summary>
-    private static readonly string[] ExceptionModelsIssue543 =
-    [
-        "door_normal", "door_locked", "door_boss", "stairs_spiral_a", "stairs_spiral_b", "stairs_spiral_c",
-    ];
+    private static readonly Dictionary<string, (byte R, byte G, byte B)[]> DoorRows = new()
+    {
+        ["Tür Holz"] =
+        [
+            (16, 12, 16), (36, 30, 32), (65, 54, 45), (84, 70, 58), (93, 77, 64), (101, 84, 69), (110, 92, 76),
+            (24, 19, 24), (28, 23, 29), (34, 28, 35), (37, 32, 39), (41, 35, 43), (46, 39, 48),
+        ],
+        ["Tür Eisen"] =
+        [
+            (88, 91, 102), (108, 111, 124), (136, 141, 157), (197, 203, 226),
+            (25, 21, 27), (37, 34, 39), (44, 45, 52), (48, 49, 58), (52, 54, 64), (59, 61, 71), (73, 73, 81),
+            (89, 92, 104), (125, 130, 146), (185, 191, 213),
+            (93, 88, 100), (134, 129, 150), (198, 191, 220),
+        ],
+        ["Tür Messing"] =
+        [
+            (47, 31, 25), (71, 56, 31), (71, 57, 30), (131, 85, 50), (133, 87, 50), (133, 91, 52), (143, 114, 60), (144, 114, 60),
+            (145, 115, 60), (166, 129, 68), (166, 129, 69), (167, 129, 69), (215, 172, 90), (227, 151, 86), (230, 148, 85),
+        ],
+        ["Tür Glut"] = [(218, 104, 60), (220, 107, 62), (221, 109, 63), (226, 128, 75), (227, 125, 73), (233, 135, 79)],
+    };
+
+    /// <summary>Atlas fields no face uses (door leaves, stairs): black, never on screen.</summary>
+    private static readonly (byte R, byte G, byte B) UnusedField = (0, 0, 0);
 
     public static TheoryData<string> StoneOnly()
     {
@@ -60,36 +87,106 @@ public class EnvironmentPaletteTests
         return data;
     }
 
+    public static TheoryData<string> DoorLeaves() => [.. DoorLeafModels];
+
+    public static TheoryData<string> Stairs() => [.. StairsModels];
+
     [Theory]
     [MemberData(nameof(StoneOnly))]
-    public void Environment_texture_has_only_colours_of_the_ground_rows(string file)
+    public void Environment_texture_has_only_colours_of_the_row_Stein(string file)
     {
-        var allowed = GroundColors(RepositoryFiles.Find(PalettePath));
+        var allowed = StoneColors(RepositoryFiles.Find(PalettePath));
         var foreign = ForeignColors(RepositoryFiles.Find(file), allowed);
 
-        Assert.True(foreign.Count == 0, $"{file} has {foreign.Count} colours outside the ground rows, e.g. {Show(foreign.FirstOrDefault())}.");
+        Assert.True(foreign.Count == 0, $"{file} has {foreign.Count} colours outside the row Stein, e.g. {Show(foreign.FirstOrDefault())}.");
     }
 
     [Theory]
     [InlineData("a")]
     [InlineData("b")]
     [InlineData("c")]
-    public void The_boss_frame_has_only_ground_colours_and_the_row_Werkstein(string variant)
+    public void The_boss_frame_has_only_Stein_and_the_row_Werkstein(string variant)
     {
         var palette = RepositoryFiles.Find(PalettePath);
-        var allowed = GroundColors(palette);
+        var allowed = StoneColors(palette);
         allowed.UnionWith(RowColors(palette, "akzent", "Werkstein"));
         var file = RepositoryFiles.Find($"assets/models/{StoneAndWerksteinModels.Single(n => n.EndsWith(variant))}.png");
 
         Assert.Empty(ForeignColors(file, allowed));
-        Assert.NotEmpty(ForeignColors(file, GroundColors(palette))); // the gate really uses its Werkstein
+        Assert.NotEmpty(ForeignColors(file, StoneColors(palette))); // the gate really uses its Werkstein
+    }
+
+    [Theory]
+    [MemberData(nameof(DoorLeaves))]
+    public void A_door_leaf_has_only_the_colours_of_the_rows_Tuer(string name)
+    {
+        var foreign = ForeignColors(RepositoryFiles.Find($"assets/models/{name}.png"), DoorColors());
+
+        Assert.True(foreign.Count == 0, $"{name}.png has {foreign.Count} colours outside the rows Tür, e.g. {Show(foreign.FirstOrDefault())}.");
+    }
+
+    [Fact]
+    public void Every_colour_of_the_rows_Tuer_is_used_by_a_door_leaf()
+    {
+        // No dead entries: the rows list what the doors have today, not a range of tolerated colours.
+        var used = new HashSet<(byte, byte, byte)>();
+        foreach (var name in DoorLeafModels)
+        {
+            var rgba = TestPng.Read(RepositoryFiles.Find($"assets/models/{name}.png")).Rgba;
+            used.UnionWith(ForeignColors(rgba, []));
+        }
+
+        Assert.Empty(DoorColors().Except(used).Select(Show));
+        Assert.Equal(DoorRows.Values.Sum(row => row.Length) + 1, DoorColors().Count); // no colour in two rows
+    }
+
+    [Fact]
+    public void A_foreign_colour_in_a_door_atlas_makes_the_check_fail()
+    {
+        // Counter-proof: one pixel of the wood door painted with a colour of the main palette that no door has (Blutrot).
+        var (_, _, rgba) = TestPng.Read(RepositoryFiles.Find("assets/models/door_normal.png"));
+        Assert.Empty(ForeignColors(rgba, DoorColors()));
+
+        var blood = RowColors(RepositoryFiles.Find(PalettePath), "akzent", "Blutrot").First();
+        var changed = (byte[])rgba.Clone();
+        (changed[0], changed[1], changed[2]) = blood;
+
+        Assert.Equal([blood], ForeignColors(changed, DoorColors()));
+    }
+
+    [Theory]
+    [MemberData(nameof(Stairs))]
+    public void The_spiral_stairs_have_only_Stein_Werkstein_and_Messing(string name)
+    {
+        var palette = RepositoryFiles.Find(PalettePath);
+        var werkstein = RowColors(palette, "akzent", "Werkstein");
+        var brass = RowColors(palette, "akzent", "Messing/Gold");
+        var allowed = StoneColors(palette);
+        allowed.UnionWith(werkstein);
+        allowed.UnionWith(brass);
+        allowed.Add(UnusedField);
+        var file = RepositoryFiles.Find($"assets/models/{name}.png");
+
+        var foreign = ForeignColors(file, allowed);
+        Assert.True(foreign.Count == 0, $"{name}.png has {foreign.Count} colours outside Stein, Werkstein and Messing/Gold, e.g. {Show(foreign.FirstOrDefault())}.");
+        AssertUsesRow(file, werkstein, "Werkstein");
+        AssertUsesRow(file, brass, "Messing/Gold");
+    }
+
+    // The black of unused atlas fields belongs to neither row, so it can never count as a use.
+    private static void AssertUsesRow(string file, HashSet<(byte R, byte G, byte B)> row, string rowName)
+    {
+        var used = ForeignColors(file, []);
+        used.Remove(UnusedField);
+        used.IntersectWith(row);
+        Assert.True(used.Count > 0, $"{Path.GetFileName(file)} uses no colour of the row {rowName}.");
     }
 
     [Fact]
     public void One_foreign_pixel_makes_the_check_fail()
     {
         // Counter-proof: a real environment texture with a single pixel changed by one step is found.
-        var allowed = GroundColors(RepositoryFiles.Find(PalettePath));
+        var allowed = StoneColors(RepositoryFiles.Find(PalettePath));
         var (width, height, rgba) = TestPng.Read(RepositoryFiles.Find("assets/textures/catacomb_wall.png"));
         Assert.Empty(ForeignColors(rgba, allowed));
 
@@ -102,10 +199,27 @@ public class EnvironmentPaletteTests
     }
 
     [Fact]
+    public void A_colour_of_another_ground_row_is_foreign_in_the_environment()
+    {
+        // Counter-proof for the narrowed check (PR #542): the rows Haut/Knochen and Stoff are ground rows, but no wall colour.
+        var palette = RepositoryFiles.Find(PalettePath);
+        var rgba = TestPng.Read(RepositoryFiles.Find("assets/textures/catacomb_wall.png")).Rgba;
+
+        foreach (var row in new[] { "Haut/Knochen", "Stoff" })
+        {
+            var color = RowColors(palette, "grund", row).First();
+            var changed = (byte[])rgba.Clone();
+            (changed[0], changed[1], changed[2]) = color;
+
+            Assert.Equal([color], ForeignColors(changed, StoneColors(palette)));
+        }
+    }
+
+    [Fact]
     public void A_picture_painted_with_free_colours_is_rejected()
     {
         // The state before issue #280: 24 colours that were no palette colours. Here a smooth ramp stands for them.
-        var allowed = GroundColors(RepositoryFiles.Find(PalettePath));
+        var allowed = StoneColors(RepositoryFiles.Find(PalettePath));
         var rgba = new byte[64 * 4];
         for (var i = 0; i < 64; i++)
         {
@@ -129,7 +243,7 @@ public class EnvironmentPaletteTests
     public void A_missing_palette_or_row_is_an_error_and_not_an_empty_pass()
     {
         Assert.Throws<FileNotFoundException>(() => RepositoryFiles.Find("assets/palette/not_there.json"));
-        Assert.Throws<FileNotFoundException>(() => GroundColors(Path.Combine(Path.GetTempPath(), "silver-ash-missing.json")));
+        Assert.Throws<FileNotFoundException>(() => StoneColors(Path.Combine(Path.GetTempPath(), "silver-ash-missing.json")));
         Assert.Throws<InvalidOperationException>(() => RowColors(RepositoryFiles.Find(PalettePath), "akzent", "Gibt es nicht"));
     }
 
@@ -146,23 +260,33 @@ public class EnvironmentPaletteTests
     {
         Assert.Equal(["rubble_block"], Unplaced(["door_cracked", "rubble_block", "bat"]));
 
-        var all = StoneModels.Concat(StoneAndWerksteinModels).Concat(NotEnvironmentModels).Concat(ExceptionModelsIssue543).ToList();
+        var all = AllGroups().ToList();
         Assert.Equal(all.Count, all.Distinct().Count());
     }
 
     [Fact]
     public void Every_listed_model_texture_exists()
     {
-        foreach (var name in StoneModels.Concat(StoneAndWerksteinModels).Concat(NotEnvironmentModels).Concat(ExceptionModelsIssue543))
+        foreach (var name in AllGroups())
         {
             Assert.True(File.Exists(RepositoryFiles.Find($"assets/models/{name}.png")), $"{name}.png is listed but missing.");
         }
     }
 
+    private static IEnumerable<string> AllGroups() =>
+        StoneModels.Concat(StoneAndWerksteinModels).Concat(DoorLeafModels).Concat(StairsModels).Concat(NotEnvironmentModels);
+
     private static List<string> Unplaced(IEnumerable<string> names)
     {
-        var placed = StoneModels.Concat(StoneAndWerksteinModels).Concat(NotEnvironmentModels).Concat(ExceptionModelsIssue543).ToHashSet();
+        var placed = AllGroups().ToHashSet();
         return names.Where(name => !placed.Contains(name)).Order().ToList();
+    }
+
+    private static HashSet<(byte R, byte G, byte B)> DoorColors()
+    {
+        var colors = DoorRows.Values.SelectMany(row => row).ToHashSet();
+        colors.Add(UnusedField);
+        return colors;
     }
 
     private static HashSet<(byte R, byte G, byte B)> ForeignColors(string path, HashSet<(byte R, byte G, byte B)> allowed) =>
@@ -183,17 +307,7 @@ public class EnvironmentPaletteTests
         return foreign;
     }
 
-    private static HashSet<(byte R, byte G, byte B)> GroundColors(string palettePath)
-    {
-        var colors = new HashSet<(byte, byte, byte)>();
-        using var document = JsonDocument.Parse(File.ReadAllText(palettePath));
-        foreach (var row in document.RootElement.GetProperty("grund").EnumerateArray())
-        {
-            colors.UnionWith(Colors(row));
-        }
-
-        return colors;
-    }
+    private static HashSet<(byte R, byte G, byte B)> StoneColors(string palettePath) => RowColors(palettePath, "grund", "Stein");
 
     private static HashSet<(byte R, byte G, byte B)> RowColors(string palettePath, string group, string name)
     {
