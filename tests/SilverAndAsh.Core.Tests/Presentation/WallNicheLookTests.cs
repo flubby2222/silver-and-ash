@@ -249,6 +249,107 @@ public class WallNicheLookTests
         }
     }
 
+    [Theory]
+    [InlineData(WallNicheForm.Flat, WallNicheSize.Room, TextureVariant.B, "wall_niche_room_b.glb")]
+    [InlineData(WallNicheForm.Deep, WallNicheSize.Corridor, TextureVariant.A, "wall_niche_deep_a.glb")]
+    [InlineData(WallNicheForm.Deep, WallNicheSize.Room, TextureVariant.A, "wall_niche_deep_a.glb")]
+    [InlineData(WallNicheForm.DeepWithShelf, WallNicheSize.Corridor, TextureVariant.C, "wall_niche_shelf_c.glb")]
+    [InlineData(WallNicheForm.DeepWithShelf, WallNicheSize.Room, TextureVariant.B, "wall_niche_shelf_b.glb")]
+    public void A_deep_niche_has_one_file_per_wall_variant_for_both_sizes(
+        WallNicheForm form, WallNicheSize size, TextureVariant variant, string file)
+    {
+        Assert.Equal(file, WallNicheLook.FileName(form, size, variant));
+    }
+
+    [Fact]
+    public void A_deep_niche_has_files_only_for_the_three_wall_variants()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => WallNicheLook.FileName(WallNicheForm.Deep, WallNicheSize.Corridor, (TextureVariant)99));
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => WallNicheLook.FileName((WallNicheForm)99, WallNicheSize.Corridor, TextureVariant.A));
+    }
+
+    [Fact]
+    public void The_forms_have_their_parts()
+    {
+        Assert.Equal(WallNicheLook.Parts, WallNicheLook.PartsOf(WallNicheForm.Flat));
+        Assert.Equal(["frame", "wall", "sill"], WallNicheLook.PartsOf(WallNicheForm.Deep).Select(part => part.Name));
+        Assert.Equal(
+            ["frame", "wall", "sill", "shelf"], WallNicheLook.PartsOf(WallNicheForm.DeepWithShelf).Select(part => part.Name));
+    }
+
+    [Theory]
+    [InlineData(WallNicheForm.Deep, TextureVariant.A)]
+    [InlineData(WallNicheForm.Deep, TextureVariant.B)]
+    [InlineData(WallNicheForm.Deep, TextureVariant.C)]
+    [InlineData(WallNicheForm.DeepWithShelf, TextureVariant.A)]
+    [InlineData(WallNicheForm.DeepWithShelf, TextureVariant.B)]
+    [InlineData(WallNicheForm.DeepWithShelf, TextureVariant.C)]
+    public void Every_deep_niche_file_fills_its_hole_and_reaches_its_depth_into_the_wall(WallNicheForm form, TextureVariant variant)
+    {
+        var path = RepositoryFiles.Find($"assets/models/{WallNicheLook.FileName(form, WallNicheSize.Corridor, variant)}");
+        Assert.True(File.Exists(path), $"{path} is missing.");
+        var parts = GlbScene.Read(File.ReadAllBytes(path)).ToDictionary(part => part.Name);
+        Assert.Equal(WallNicheLook.PartsOf(form).Select(part => part.Name).Order(), parts.Keys.Order());
+        Assert.All(parts.Values, part => Assert.Equal(Vector3.Zero, part.Pivot));
+
+        // The piece of wall is exactly as wide and high as the hole the niche leaves, so no gap shows at its edges.
+        var hole = WallNicheLook.Cutout(form, 1, 1, RoomSide.North)!.Value;
+        var wall = parts[WallNicheLook.WallPiece];
+        Assert.Equal(-(hole.To - hole.From) / 2f, wall.PositionMin.X, Tolerance);
+        Assert.Equal((hole.To - hole.From) / 2f, wall.PositionMax.X, Tolerance);
+        Assert.Equal(hole.Bottom, wall.PositionMin.Y, Tolerance);
+        Assert.Equal(hole.Top, wall.PositionMax.Y, Tolerance);
+
+        // Nothing reaches beside or above the hole; the pocket goes PocketDepth into the wall, its back a little further.
+        var min = parts.Values.Select(part => part.PositionMin).Aggregate(Vector3.Min);
+        var max = parts.Values.Select(part => part.PositionMax).Aggregate(Vector3.Max);
+        Assert.True(min.X >= wall.PositionMin.X - Tolerance && max.X <= wall.PositionMax.X + Tolerance);
+        Assert.True(min.Y >= 0f && max.Y <= hole.Top + Tolerance);
+        Assert.True(min.Z < -WallNicheLook.PocketDepth);
+        Assert.True(max.Z <= WallNicheLook.Depth(WallNicheSize.Corridor) + Tolerance);
+    }
+
+    [Theory]
+    [InlineData(RoomSide.North)]
+    [InlineData(RoomSide.East)]
+    [InlineData(RoomSide.South)]
+    [InlineData(RoomSide.West)]
+    public void A_deep_niche_leaves_a_hole_the_width_of_the_cell_up_to_its_height(RoomSide wall)
+    {
+        Assert.Equal(
+            new WallCutout(3, 4, wall, 0f, Level.CellSize, 0f, WallNicheLook.DeepHeight),
+            WallNicheLook.Cutout(WallNicheForm.Deep, 3, 4, wall));
+        Assert.Equal(WallNicheLook.Cutout(WallNicheForm.Deep, 3, 4, wall), WallNicheLook.Cutout(WallNicheForm.DeepWithShelf, 3, 4, wall));
+        Assert.Null(WallNicheLook.Cutout(WallNicheForm.Flat, 3, 4, wall));
+    }
+
+    [Fact]
+    public void Only_a_deep_niche_reaches_into_the_wall()
+    {
+        Assert.Equal(0f, WallNicheLook.SetIn(WallNicheForm.Flat));
+        Assert.Equal(0.3f, WallNicheLook.SetIn(WallNicheForm.Deep));
+        Assert.Equal(0.3f, WallNicheLook.SetIn(WallNicheForm.DeepWithShelf));
+    }
+
+    [Fact]
+    public void The_deep_niches_were_built_on_the_wall_textures_in_the_game()
+    {
+        // tools/models/wall_niche_deep.py builds the deep niches on the wall textures and notes which ones it read.
+        var built = Lines(RepositoryFiles.Find("tools/models/wall_niche_deep_sources.sha256"));
+        var current = Lines(RepositoryFiles.Find("assets/textures/textures.sha256"));
+
+        Assert.Equal(3, built.Count);
+        foreach (var line in built)
+        {
+            Assert.True(
+                current.Contains(line),
+                $"The deep wall niches were built on '{line}', which is no longer in assets/textures. " +
+                "Run tools/models/wall_niche_deep.py again (see assets/HERKUNFT.md).");
+        }
+    }
+
     // A copy of level with every open cell changed by change.
     private static Level Changed(Level level, Func<Cell, Cell> change)
     {
