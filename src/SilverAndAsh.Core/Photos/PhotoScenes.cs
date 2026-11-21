@@ -311,6 +311,7 @@ public static class PhotoScenes
         .. ShowroomScenes(),
         .. WallPillarScenes(),
         .. CeilingArchScenes(),
+        .. WallNicheScenes(),
         new("equipment-rifle", "The rifle (Forged) lying in the showroom, 0.8 m away: \"[F] Take Rifle (Forged)\" in steel blue (issue #317).",
             studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle }))),
         .. EquipmentTierScenes(),
@@ -419,6 +420,40 @@ public static class PhotoScenes
     {
         var variant = layout.Sections[sectionIndex].Variant;
         return [.. layout.Exhibits.CeilingArches.Where(arch => arch.Variant == variant).OrderByDescending(arch => arch.Position.X)];
+    }
+
+    // The wall niches of the showroom (issue #538): for every wall variant and part, 3 m in front of the part's second niche
+    // and a little east of it, looking at it at the height of its sill and back - frame, plate and the wall around it.
+    private static IEnumerable<PhotoScene> WallNicheScenes()
+    {
+        foreach (var section in ShowroomLayout.Build().Sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                var height = part == ShowroomPart.Corridor ? "3.5 m" : "6 m";
+                yield return new(
+                    $"wall-niche-{section.Variant.ToString().ToLowerInvariant()}-{part.ToString().ToLowerInvariant()}",
+                    $"A wall niche of the showroom in wall variant {section.Variant} under a ceiling of {height}, from 3 m (issue #538).",
+                    studio => new PhotoSetup(BeforeWallNiche(studio, section.Index, part)));
+            }
+        }
+    }
+
+    private static GameWorld BeforeWallNiche(PhotoStudio studio, int sectionIndex, ShowroomPart part)
+    {
+        var layout = ShowroomLayout.Build();
+        var section = layout.Sections[sectionIndex];
+        var size = part == ShowroomPart.Corridor ? WallNicheSize.Corridor : WallNicheSize.Room;
+        var niches = layout.Exhibits.WallNiches
+            .Where(niche => niche.Variant == section.Variant && niche.Size == size)
+            .OrderBy(niche => niche.Position.X)
+            .ToList();
+        var niche = niches[Math.Min(1, niches.Count - 1)];
+        var (x, _) = Level.ToGrid(niche.Position.X, niche.Position.Z);
+        var world = layout.NewWorldAt(x, section.NorthRow, niche.Position, studio.Balance);
+        world.Player.PlaceAt(niche.Position + (niche.Facing * 3f) + new Vector3(0.8f, 0f, 0f));
+        PhotoStudio.Face(world.Player, niche.Position + new Vector3(0f, 1.3f, 0f));
+        return world;
     }
 
     private static GameWorld BeforeWallPillar(PhotoStudio studio, int sectionIndex, ShowroomPart part)
