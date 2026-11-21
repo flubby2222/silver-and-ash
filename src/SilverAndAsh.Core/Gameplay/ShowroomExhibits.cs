@@ -42,6 +42,13 @@ public sealed record ExhibitWallPillar(TextureVariant Variant, float CeilingHeig
 public sealed record ExhibitCeilingArch(TextureVariant Variant, Vector3 Position, Vector3 Facing);
 
 /// <summary>
+/// A wall niche set on a wall of <paramref name="Variant"/> in the showroom, of <paramref name="Size"/>, on the floor at
+/// <paramref name="Position"/> (the wall's face), looking along <paramref name="Facing"/> (issue #538). Only decoration:
+/// no body, no collision (<see cref="WallNicheLook"/>).
+/// </summary>
+public sealed record ExhibitWallNiche(TextureVariant Variant, WallNicheSize Size, Vector3 Position, Vector3 Facing);
+
+/// <summary>
 /// What the showroom (issue #283) puts into a world besides its level, doors, chests and enemies. A world with exhibits
 /// is a showroom (<see cref="GameWorld.IsShowroom"/>): its enemies are exhibits that neither move, attack nor take damage,
 /// and its staircase stands from the start but cannot be climbed. A normal game never has exhibits.
@@ -65,4 +72,7 @@ public sealed record ShowroomExhibits(
 
     /// <summary>Ceiling arches across the arch corridors of the sections (issue #537).</summary>
     public IReadOnlyList<ExhibitCeilingArch> CeilingArches { get; init; } = [];
+
+    /// <summary>Wall niches on the south walls of the sections, corridor and room (issue #538).</summary>
+    public IReadOnlyList<ExhibitWallNiche> WallNiches { get; init; } = [];
 }

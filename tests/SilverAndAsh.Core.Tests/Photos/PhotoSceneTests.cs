@@ -115,6 +115,8 @@ public class PhotoSceneTests
             "wall-pillar-a-corridor", "wall-pillar-a-room", "wall-pillar-b-corridor", "wall-pillar-b-room",
             "wall-pillar-c-corridor", "wall-pillar-c-room",
             "ceiling-arch-a", "ceiling-arch-b", "ceiling-arch-c", "ceiling-arch-sequence",
+            "wall-niche-a-corridor", "wall-niche-a-room", "wall-niche-b-corridor", "wall-niche-b-room",
+            "wall-niche-c-corridor", "wall-niche-c-room",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -560,6 +562,32 @@ public class PhotoSceneTests
         Assert.False(world.Level.CellAt(world.Player.Position).IsSolid);
         var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
         Assert.True(Vector3.Dot(looking, -Vector3.UnitX) > 0.99f);
+    }
+
+    [Theory]
+    [InlineData("wall-niche-a-corridor", TextureVariant.A, WallNicheSize.Corridor)]
+    [InlineData("wall-niche-a-room", TextureVariant.A, WallNicheSize.Room)]
+    [InlineData("wall-niche-b-corridor", TextureVariant.B, WallNicheSize.Corridor)]
+    [InlineData("wall-niche-b-room", TextureVariant.B, WallNicheSize.Room)]
+    [InlineData("wall-niche-c-corridor", TextureVariant.C, WallNicheSize.Corridor)]
+    [InlineData("wall-niche-c-room", TextureVariant.C, WallNicheSize.Room)]
+    public void The_wall_niche_scenes_look_at_a_niche_of_their_variant_and_size_from_3_m(string name, TextureVariant variant, WallNicheSize size)
+    {
+        // Issue #538: the player stands on open floor of the part, 3 m in front of the niche, and looks at it.
+        var setup = Built(name);
+        setup.Run();
+        var world = setup.World;
+        var niche = world.Showroom!.WallNiches.MinBy(exhibit => Vector3.Distance(exhibit.Position, world.Player.Position))!;
+
+        Assert.Equal(variant, niche.Variant);
+        Assert.Equal(size, niche.Size);
+        var cell = world.Level.CellAt(world.Player.Position);
+        Assert.False(cell.IsSolid);
+        Assert.Equal(size, WallNicheLook.SizeFor(cell.CeilingHeight - cell.FloorHeight));
+        Assert.Equal(3f, Vector3.Dot(world.Player.Position - niche.Position, niche.Facing), 0.01f);
+        var towards = Vector3.Normalize((niche.Position - world.Player.Position) with { Y = 0f });
+        var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
+        Assert.True(Vector3.Dot(looking, towards) > 0.99f);
     }
 
     [Fact]
