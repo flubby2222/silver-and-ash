@@ -11,7 +11,9 @@ Probestueck ausserhalb des Spiels. Alles aus einem Skript: `wandnische_tief.py` 
 | `raum-empfehlung-538.png` | Empfehlung (0,3 m) im 6-m-Raum neben Tuerrahmen und Wandpfeiler, frontal und schraeg |
 | `gang-empfehlung-538.png` | Empfehlung in der 3,5-m-Gangwand, frontal |
 | `blatt-nische-regal-538.png` | Nische leer / Flaschen / Kerzen / Schaedel; Zeile 1 Regal frontal, Zeile 2 Regal schraeg, Zeile 3 ohne Bord frontal, Zeile 4 Regal im Gang mit 1,8-m-Figur |
-| `fuellungen-detail.png` | die fuenf Fuellungsmodelle (Flaschen gruen und blau, Kerzen brennend und aus, Schaedel) in der Regal-Nische, Naheinstellung |
+| `blatt-nische-flaschen-538.png` | Nacharbeit Flaschen (#553): Anordnung a und b, je Regal und ohne Bord, frontal, schraeg, im Gang mit 1,8-m-Figur, unten Spielaufloesung 854x480 aus 3 m (Blau-Fassung: `blatt-nische-flaschen-blau-538.png`) |
+| `einzel-flaschen.png`, `spielaufloesung-flaschen-a.png`, `spielaufloesung-flaschen-b.png` | Flaschen einzeln (vorn, Seite, hinten, schraeg oben); 854x480 aus 3 m |
+| `fuellungen-detail.png` | Fuellungsmodelle (Flaschen a/b gruen und blau, Kerzen brennend und aus, Schaedel) in der Regal-Nische, Naheinstellung |
 | `rahmen-vergleich.png` | Rahmen buendig gegen 1/16 m vorspringend (Tiefe 0,3 m) |
 | `einzel-t30.png`, `einzel-t15.png`, `einzel-regal-t30.png` | vorn, Seite, hinten, schraeg oben je Fassung |
 | `spielaufloesung-t30.png` | 854 x 480, 70 Grad, Augenhoehe 1,6 m |
@@ -19,14 +21,15 @@ Probestueck ausserhalb des Spiels. Alles aus einem Skript: `wandnische_tief.py` 
 ## Modelle (`modelle/`)
 
 Je Wandvariante a, b, c (Wandkacheln aus `assets/textures`): `wandnische_t15_*.glb`, `wandnische_t30_*.glb`, `wandnische_regal_t30_*.glb`;
-Fuellungen: `fuellung_flaschen_gruen`, `fuellung_flaschen_blau`, `fuellung_kerzen_brennend`, `fuellung_kerzen_aus`, `fuellung_schaedel`
+Fuellungen: `fuellung_flaschen_a_gruen`, `fuellung_flaschen_a_blau`, `fuellung_flaschen_b_gruen`, `fuellung_flaschen_b_blau`, `fuellung_kerzen_brennend`, `fuellung_kerzen_aus`, `fuellung_schaedel`
 (.glb mit .png-Atlas). Alle 28 Dateien mit `python tools/models/check_closed.py <glb>` geprueft: rundum geschlossen, 0 offene Kanten.
 
 | Modell | Dreiecke | Teile |
 | --- | --- | --- |
 | Nische 0,15 m und 0,3 m (je a/b/c) | 322 | Gewaende 176, Platte 126, Sohlbank 20 |
 | Nische Regal 0,3 m (je a/b/c) | 342 | wie oben plus Bord 20 |
-| Flaschen (gruen oder blau) | 384 | 13 liegende Sechskant-Flaschen im Dreieckstapel (4-3-2... je Reihe), je Flasche Koerper, Hals, Boden |
+| Flaschen Anordnung a (gruen oder blau) | 392 | 6 quer liegende und 1 stehende Flasche, je 56 Dreiecke |
+| Flaschen Anordnung b (gruen oder blau) | 336 | 4 mit dem Hals nach oben geneigte und 2 stehende Flaschen |
 | Kerzen brennend | 424 | fuenf Kerzen unterschiedlicher Hoehe, schief heruntergebrannt, Wachsreste, Flamme (40 Dreiecke) |
 | Kerzen aus | 384 | dieselben Kerzen mit Docht, ohne Flamme |
 | Schaedel | 264 | drei Schaedel (Knochen-Reihe) mit Augenhoehlen, Nase, Zaehnen |
@@ -69,15 +72,12 @@ Der Baustein ist ein Wandstueck und bringt seine eigene Wandflaeche mit:
 ## Regal-Fassung und Fuellungen
 
 - **Regal-Tiefe: 0,3 m**, ein Bord (y 0,875 bis 1,0, 1/8 m = 8 Pixel dick, laeuft ueber die ganze Tiefe, Vorderkante in der Wandebene; Fugen im Raster). Darunter 0,375 m freie Hoehe (Flaschen), darueber bis zum Kaempfer etwa 0,25 m (Kerzen, Schaedel).
-- **Flaschen**: liegend, im Stapel, gehoeren unter das Bord auf die Sohle (Regal) oder auf die Sohle der Nische ohne Bord. Der Stapel ist schwer und breit und liest sich schon ohne Bord als Weinregal.
+- **Flaschen**: neu gebaut (siehe Abschnitt Nacharbeit Flaschen); gehoeren unter das Bord auf die Sohle (Regal) oder ohne Bord auf die Sohle.
 - **Kerzen**: gehoeren auf das Bord. Auf der Sohle ohne Bord sind sie bei 0,5 m Hoehe klein und gehen im Dunkel der Rueckwand unter; auf dem Bord stehen sie im Blickfeld und heben sich vor der dunklen Rueckwand ab.
 - **Schaedel**: ebenfalls auf das Bord (Augenhoehe, drei Gesichter in Blickrichtung); ohne Bord wirken sie am Boden verloren.
 - Kurz: Regal-Fassung = Flaschen unten, Kerzen oder Schaedel oben; Nische ohne Bord = Flaschen. Kerzen und Schaedel nur mit Bord.
 - **Kerzen unbeleuchtet**: `fuellung_kerzen_aus` hat Docht statt Flamme und gar kein Licht. In der Beleuchtung des Spiels (keine Lichtquellen) ist die Fassung "aus" die Grundfassung; "brennend" ist dieselbe Figur plus Flamme als Koerper in Messing/Gold und wuerde im Spiel erst durch einen Leuchteffekt aus `Core`-Ereignissen lebendig. Ich liefere keine Leuchtquelle.
-- **Flaschenfarben**: Es gibt kein Gruen und kein Blau in der Hauptpalette als eigene Reihe; ich habe aus vorhandenen Stufen gebaut.
-  - Vorschlag A (im Bild als Standard): dunkles Flaschengruen aus der Reihe Haut/Knochen, Stufen 0 bis 3 (16/25/20, 40/58/43, 72/89/67, 109/118/96).
-  - Vorschlag B: dunkles Blau aus der Reihe Stoff, Stufen 0, 2, 4, 5 (18/17/34, 30/34/62, 60/75/116, 86/107/154).
-  - Nach meinem Eindruck liest sich A in der Nische besser (dunkler Stapel gegen die Rueckwand, dazu gehoert der Olivton zu den Knochenfarben der Schaedel). Der Mensch kann zwischen A und B wahlen; beide Modelle liegen bei, kein Rot.
+- **Flaschenfarben**: Gruen ist Standard (Reihe Haut/Knochen, Stufen 0 bis 3), Blau die Alternative (Reihe Stoff, Stufen 0, 2, 4, 5), Korken aus der Reihe Holz. Kein Rot.
 
 ## Fuellung in der Nische platzieren
 
@@ -88,6 +88,17 @@ Die Fuellungen sind eigene Props, Ursprung: Mitte unten (x 0, y 0), z von 0 bis 
 - Das Wandstueck ist 2 x 3 m gross und dupliziert die Wandkachel; die Nische kann nur in 2-m-Raster gesetzt werden (nicht beliebig an einer Wand).
 - Im Streiflicht ist die Tiefe 0,15 gegen 0,3 kaum zu unterscheiden.
 - "Kerzen brennend" liegt mit 424 Dreiecken knapp ueber der Art-Bible-Spanne.
-- Die Flaschen sind sechseckig (grobe Rundung), bei harten Pixeln lesen sie sich als Fassboden mit Mulde.
+- Die Flaschen sind aus 3 m klein (etwa 35 Pixel breit bei 854x480); die Form liest sich, aber nicht auf den ersten Blick.
 - Die Figur (rot, 1,8 m) ist ein Quader, nur als Massstab.
 - Der Hintergrund der Tuer im Raumbild (Schwarz) ist nur der Bildhintergrund, kein Modell.
+
+## Nacharbeit Flaschen (#553)
+
+Urteil des Menschen: "Sehen aus wie Batterien. Und vllt auch auf eine seite stapeln." Daraufhin nur die Flaschen neu gebaut:
+
+- **Form am Umriss**: Bauch (Sechseck-Querschnitt), Schulter, schmaler Hals, Muendung mit aufgeweitetem Korken (Holz-Reihe). Der Boden ist ein Sechseck mit dunklerem Kreis in der Mitte (Einwoelbung). 4 Baender, 56 Dreiecke je Flasche, Laenge 0,36 m, Mass 1,1 mal einer 0,33-m-Flasche, damit sie aus 3 m lesbar bleibt. Aufrecht passt sie unter das Bord (0,357 m gegen 0,375 m).
+- **Stapel an der linken Laibung** (x -0,5), die rechte Haelfte der Sohle bleibt frei (a bis x -0,017, b bis x 0,10).
+- **Anordnung a (quer)**: drei Lagen quer liegend, je zwei tief und versetzt, Haelse abwechselnd nach links und rechts, dazu eine stehende Flasche neben dem Stapel. Hals und Bauch liegen im Profil.
+- **Anordnung b (schraeg)**: vier Flaschen mit dem Hals 18 Grad nach oben geneigt, Boeden an der Laibung, dazu zwei stehende. Die Hals-Linien und die stehenden Umrisse lesen sich am klarsten.
+- Alles nur Hauptpalette (assert), rundum geschlossen (`check_closed.py`, 0 offene Kanten), zwei Laeufe bitgleich (sha256 ueber alle 32 Dateien in `modelle/`).
+- Die alten Modelle `fuellung_flaschen_gruen/blau` sind entfernt.

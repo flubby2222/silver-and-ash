@@ -515,11 +515,20 @@ def hexring(cx, cy, r, z, k0=0):
 
 
 # Flaschen ------------------------------------------------------------------------------------------------------------------
+# Nacharbeit #553: Flaschen mit Bauch, Schulter, schmalem Hals und Korken; Sechseck als Querschnitt, 56 Dreiecke je Flasche.
+# Zwei Anordnungen: a = quer liegend, Haelse im Profil, abwechselnd links/rechts; b = mit dem Hals nach oben geneigt, dazu zwei stehende.
+# Der Stapel lehnt an der linken Laibung (x = -0,5), die rechte Haelfte der Sohle bleibt frei.
 
 GLAS = {
     "gruen": dict(dark=HK[0], mid=HK[1], light=HK[2], hi=HK[3]),
     "blau": dict(dark=ST[0], mid=ST[2], light=ST[4], hi=ST[5]),
 }
+# Profil von unten (Boden) nach oben (Korken): (Hoehe auf der Achse, Radius an den Ecken des Sechsecks)
+FS = 1.1                                           # Massstab: etwas groesser als eine echte Flasche, damit sie aus 3 m lesbar bleibt
+FL_PROFIL = [(h * FS, r * FS) for (h, r) in ((0.0, 0.054), (0.165, 0.054), (0.205, 0.020), (0.285, 0.020), (0.325, 0.028))]
+FL_L = 0.325 * FS
+FL_RF = 0.054 * FS * math.cos(math.radians(30))   # halbe Breite ueber die flachen Seiten
+FL_KORK_AB = 0.285 * FS
 
 
 def bottle_atlas(tint):
@@ -530,50 +539,84 @@ def bottle_atlas(tint):
         for py in range(h):
             for px in range(w):
                 rho = math.hypot(px - (w - 1) / 2, py - (h - 1) / 2) / (w / 2)
-                col = g["dark"] if rho < 0.34 else g["mid"] if rho < 0.64 else g["light"] if rho < 0.86 else g["mid"]
+                col = g["dark"] if rho < 0.42 else g["mid"] if rho < 0.70 else g["light"] if rho < 0.90 else g["mid"]
                 out[py, px] = col
-        out[h - 4, 4:6] = g["hi"]
         return out
 
-    colors = {"dark": g["dark"], "mid": g["mid"], "light": g["light"], "hi": g["hi"]}
+    colors = {"dark": g["dark"], "mid": g["mid"], "light": g["light"], "hi": g["hi"], "cork": HZ[3]}
     return swatch_atlas(colors, {"disc": ((0, 16, 16, 32), disc)})
 
 
-def build_flaschen(tint):
-    arr, pix = bottle_atlas(tint)
-    part = fpart("flaschen_" + tint, pix)
-    fl = Fill(part, pix)
-    r, L, Ls, rn = 0.0675, 0.15, 0.07, 0.028
-    dx, dy = 0.125, 0.108
-    layers = [(5, 0), (4, 1), (3, 2)]
-    zfront = 0.25
-    k = 0
-    for n_in, row in layers:
-        for i in range(n_in):
-            x = (i - (n_in - 1) / 2) * dx
-            y = r * 0.866 + row * dy
-            zf = zfront - (0.012 if (i + row) % 2 else 0.0)
-            T = make_T(0, 0, 0)
-            zb, zs, ze = zf, zf - L, zf - L - Ls
-            rings = [hexring(x, y, r, zb), hexring(x, y, r, zs), hexring(x, y, rn, ze)]
-            centre = V(x, y, (zb + ze) / 2)
+def bottle_into(fl, base, theta, yaw):
+    """Eine Flasche. base = Mittelpunkt des Bodens (Welt), theta = Neigung um z (0 stehend, -90 Grad liegend, Hals nach +x,
+    +90 Grad liegend, Hals nach -x; dazwischen geneigt), yaw = Drehung um die senkrechte Achse."""
+    ct, st = math.cos(theta), math.sin(theta)
+    cy, sy = math.cos(yaw), math.sin(yaw)
 
-            def style(n, mid, x=x, y=y, zb=zb):
-                if n.z > 0.9:
-                    def f(p, rect, x=x, y=y):
-                        u0, v0, u1, v1 = rect
-                        return (u0 + (u1 - u0) * (0.5 + (p.x - x) / (2 * r)), v0 + (v1 - v0) * (0.5 + (p.y - y) / (2 * r)))
-                    return ("planar", "disc", f)
-                if n.y > 0.8:
-                    return ("swatch", "light")
-                if n.y > 0.3:
-                    return ("swatch", "mid")
-                if n.y > -0.3:
-                    return ("swatch", "mid" if n.z > -0.3 else "dark")
-                return ("swatch", "dark")
-            fl.solid(ring_solid(rings), centre, style, T)
-            k += 1
-    assert k == 12
+    def rv(v):
+        x1, y1 = v.x * ct - v.y * st, v.x * st + v.y * ct
+        return V(x1 * cy + v.z * sy, y1, -x1 * sy + v.z * cy)
+
+    rings = []
+    for (h, r) in FL_PROFIL:
+        rings.append([V(r * math.cos(math.radians(30 + 60 * k)), h, r * math.sin(math.radians(30 + 60 * k))) for k in range(6)])
+    r0 = FL_PROFIL[0][1]
+
+    def disc_uv(p, rect):
+        u0, v0, u1, v1 = rect
+        return (u0 + (u1 - u0) * (0.5 + p.x / (2 * r0)), v0 + (v1 - v0) * (0.5 + p.z / (2 * r0)))
+
+    def style(n, mid):
+        if n.y < -0.9:
+            return ("planar", "disc", disc_uv)
+        if n.y > 0.9 or mid.y > FL_KORK_AB:
+            return ("swatch", "cork")
+        w = rv(n)
+        s = w.y * 0.6 + w.z * 0.55 + w.x * 0.25
+        return ("swatch", "hi" if s > 0.7 else "light" if s > 0.42 else "mid" if s > 0.08 else "dark")
+
+    fl.solid(ring_solid(rings), V(0, FL_L / 2, 0), style, lambda p: rv(p) + base)
+
+
+FL_A = [   # (x des Bodens bzw. des Halses, y Mitte, z, Hals nach, yaw in Grad) - quer liegend, Haelse im Profil
+    (-0.485, FL_RF / FS, 0.168, "r", 0), (-0.455, FL_RF / FS, 0.058, "l", 3),
+    (-0.490, FL_RF / FS + 0.081, 0.212, "l", 0), (-0.490, FL_RF / FS + 0.081, 0.113, "r", -3),
+    (-0.475, FL_RF / FS + 0.162, 0.168, "r", 0), (-0.480, FL_RF / FS + 0.162, 0.062, "l", 3),
+]
+FL_A_STEH = [(-0.045, 0.0, 0.16)]
+NEIG = 18.0
+FL_B = [   # mit dem Hals nach oben geneigt, Boeden an der linken Laibung: (x, y, z, yaw)
+    (-0.455, 0.0445, 0.078, 5), (-0.460, 0.0445, 0.168, -6),
+    (-0.455, 0.141, 0.120, 0), (-0.470, 0.141, 0.208, 5),
+]
+FL_B_STEH = [(-0.03, 0.0, 0.09), (0.045, 0.0, 0.195)]
+
+
+def build_flaschen(tint, anord):
+    arr, pix = bottle_atlas(tint)
+    part = fpart("flaschen_%s_%s" % (anord, tint), pix)
+    fl = Fill(part, pix)
+    n = 0
+    if anord == "a":
+        for (x, y, z, hals, yaw) in FL_A:
+            y, z = y * FS, z * FS
+            if hals == "r":
+                bottle_into(fl, V(x, y, z), math.radians(-90), math.radians(yaw))
+            else:
+                bottle_into(fl, V(x + FL_L, y, z), math.radians(90), math.radians(yaw))
+            n += 1
+        for (x, y, z) in FL_A_STEH:
+            bottle_into(fl, V(x, y, z * FS), 0.0, math.radians(20))
+            n += 1
+        assert n == 7
+    else:
+        for (x, y, z, yaw) in FL_B:
+            bottle_into(fl, V(x, y * FS, z * FS), math.radians(-(90.0 - NEIG)), math.radians(yaw))
+            n += 1
+        for (x, y, z) in FL_B_STEH:
+            bottle_into(fl, V(x, y, z * FS), 0.0, math.radians(20))
+            n += 1
+        assert n == 6
     return part, arr
 
 
@@ -717,8 +760,10 @@ def build_schaedel():
 
 
 FUELLUNGEN = {
-    "flaschen_gruen": lambda: build_flaschen("gruen"),
-    "flaschen_blau": lambda: build_flaschen("blau"),
+    "flaschen_a_gruen": lambda: build_flaschen("gruen", "a"),
+    "flaschen_a_blau": lambda: build_flaschen("blau", "a"),
+    "flaschen_b_gruen": lambda: build_flaschen("gruen", "b"),
+    "flaschen_b_blau": lambda: build_flaschen("blau", "b"),
     "kerzen_brennend": lambda: build_kerzen(True),
     "kerzen_aus": lambda: build_kerzen(False),
     "schaedel": build_schaedel,
@@ -964,6 +1009,8 @@ def export_fills():
         o_edges, multi = W["edge_report"](part)
         assert o_edges == 0 and multi == 0, (kind, o_edges, multi)
         tris = W["triangles"](part)
+        if kind.startswith("flaschen"):
+            assert tris <= 400, (kind, tris)
         W["export_glb"]([part.build(coll, mat, smooth=False)], os.path.join(d, tag + ".glb"))
         print("FUELLUNG %s: %d Dreiecke, Farben %d, x %.3f bis %.3f, y 0 bis %.3f, z %.3f bis %.3f" % (
             tag, tris, ncol, lo[0], hi[0], hi[1], lo[2], hi[2]))
@@ -1061,7 +1108,7 @@ def fills_for(kind, c, where):
 
 def sheet_regal(v="a"):
     c_regal, c_flach = cfg_of("t30", regal=True), cfg_of("t30")
-    cols = [("leer", None, None), ("Flaschen", "flaschen_gruen", "sohle"), ("Kerzen", "kerzen_brennend", "bord"),
+    cols = [("leer", None, None), ("Flaschen", "flaschen_a_gruen", "sohle"), ("Kerzen", "kerzen_brennend", "bord"),
             ("Schaedel", "schaedel", "bord")]
     rows = []
     for cam, label, c, rg in (("nah_front", "frontal", c_regal, "Regal"), ("nah_schraeg", "schraeg", c_regal, "Regal"),
@@ -1076,14 +1123,62 @@ def sheet_regal(v="a"):
 
 def fill_detail():
     c = cfg_of("t30", regal=True)
-    cells = []
-    for name, kind, where in (("Flaschen gruen", "flaschen_gruen", "sohle"), ("Flaschen blau", "flaschen_blau", "sohle"),
-                              ("Kerzen brennend", "kerzen_brennend", "bord"), ("Kerzen aus", "kerzen_aus", "bord"),
-                              ("Schaedel", "schaedel", "bord")):
-        it = gang_scene("a", c, fills_for(kind, c, where), fig=False)
-        y = 0.7 if where == "sohle" else 1.2
-        cells.append(titled(shot(it, (0.2, y, 1.1), (-1.0, y, 0.0), 40, (420, 420), "spiel"), name))
-    return hcat(cells)
+    rows = []
+    for group in ((("Flaschen a gruen", "flaschen_a_gruen", "sohle"), ("Flaschen a blau", "flaschen_a_blau", "sohle"),
+                   ("Flaschen b gruen", "flaschen_b_gruen", "sohle"), ("Flaschen b blau", "flaschen_b_blau", "sohle")),
+                  (("Kerzen brennend", "kerzen_brennend", "bord"), ("Kerzen aus", "kerzen_aus", "bord"),
+                   ("Schaedel", "schaedel", "bord"))):
+        cells = []
+        for name, kind, where in group:
+            it = gang_scene("a", c, fills_for(kind, c, where), fig=False)
+            y = 0.7 if where == "sohle" else 1.2
+            cells.append(titled(shot(it, (0.2, y, 1.1), (-1.0, y, 0.0), 40, (420, 420), "spiel"), name))
+        rows.append(hcat(cells))
+    return vcat(rows)
+
+
+def raum_flaschen(kind, c, size=(854, 480)):
+    """Spielauflösung aus 3 m Abstand, frontal, 6-m-Raum."""
+    it = [("floor", -8, 8, -1, 14), ("wallgap", "a", -6, 6, 6.0, [(-1, 1, True)]), ("niche", c, "a", 0, 0.0, 0.0)]
+    if kind:
+        it.append(("fill", kind, c, 0.5, 0, 0.0, 0.0))
+    return shot(it, (0.0, 1.6, 3.0), (0.0, 1.25, 0.0), 70, size, "spiel")
+
+
+def sheet_flaschen(tint="gruen"):
+    c_regal, c_flach = cfg_of("t30", regal=True), cfg_of("t30")
+    cols = []
+    for a in ("a", "b"):
+        for c, rg in ((c_regal, "Regal"), (c_flach, "ohne Bord")):
+            cols.append((a, c, rg))
+    rows = []
+    for cam, label in (("nah_front", "frontal"), ("nah_schraeg", "schraeg"), ("gang_figur", "im Gang mit Figur 1,8 m")):
+        r = []
+        for a, c, rg in cols:
+            ex = [("fill", "flaschen_%s_%s" % (a, tint), c, 0.5, -1, 0.0, 0.0)]
+            r.append(titled(cell(gang_scene("a", c, ex), cam, size=(427, 310)), "Anordnung %s, %s, %s" % (a, rg, label)))
+        rows.append(hcat(r))
+    spiel = [titled(raum_flaschen("flaschen_%s_%s" % (a, tint), c_regal), "Anordnung %s, 854x480, 3 m Abstand, frontal" % a)
+             for a in ("a", "b")]
+    rows.append(hcat(spiel))
+    return vcat(rows)
+
+
+def einzel_flaschen():
+    c = cfg_of("t30", regal=True)
+    rows = []
+    for a in ("a", "b"):
+        it = [("floor", -3, 3, -3, 3), ("fill", "flaschen_%s_gruen" % a, c, 0.0, 0, 0.0, 0.0)]
+        cells = []
+        for name, loc, size in (("vorn", (0, 0.2, 8), 1.1), ("Seite", (8, 0.2, -0.15), 1.1), ("hinten", (0, 0.2, -8), 1.1),
+                                ("schraeg oben", (0.6, 1.0, 0.7), None)):
+            if size:
+                tgt = (0, 0.17, -0.15)
+                cells.append(titled(shot(it, loc, tgt, 0, (360, 220), "hell", ortho=size), "%s - %s" % (a, name)))
+            else:
+                cells.append(titled(shot(it, loc, (-0.1, 0.1, -0.15), 45, (360, 220), "hell"), "%s - %s" % (a, name)))
+        rows.append(hcat(cells))
+    return vcat(rows)
 
 
 STEPS = os.environ.get("W538T_ONLY")
@@ -1108,6 +1203,13 @@ def main():
         png(view_gangwand(c), os.path.join(OUT, "gang-empfehlung-538.png"))
     if want("regal"):
         png(sheet_regal(), os.path.join(OUT, "blatt-nische-regal-538.png"))
+    if want("flaschen"):
+        png(sheet_flaschen(), os.path.join(OUT, "blatt-nische-flaschen-538.png"))
+        png(sheet_flaschen("blau"), os.path.join(OUT, "blatt-nische-flaschen-blau-538.png"))
+        png(einzel_flaschen(), os.path.join(OUT, "einzel-flaschen.png"))
+        c3 = cfg_of("t30", regal=True)
+        for a in ("a", "b"):
+            png(raum_flaschen("flaschen_%s_gruen" % a, c3), os.path.join(OUT, "spielaufloesung-flaschen-%s.png" % a))
     if want("detail"):
         png(fill_detail(), os.path.join(OUT, "fuellungen-detail.png"))
     if want("einzel"):
