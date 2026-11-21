@@ -32,14 +32,14 @@ Ein Spitzbogen besteht aus zwei Kreisbögen, deren Mittelpunkte auf der Kämpfer
 
 | Art | R | Stich bei s = 2 m | Wo |
 |---|---|---|---|
-| Rundbogen | 0,5 s | 1,0 | Wandnische, Kammer: der Katakomben-Bogen |
+| Rundbogen | 0,5 s | 1,0 | Kammer: der Katakomben-Bogen (die abgenommene Wandnische aus #538 ist gedrückt spitz) |
 | gedrückter Spitzbogen | 0,78 s (1,5625 m) | 1,46 | Gänge, Türrahmen (Bestand `door.py`) |
 | gleichseitiger Spitzbogen | 1,0 s | 1,73 | Hallen, hohe Räume |
 | Lanzettbogen | 1,5 s | 2,24 | nur Räume (6 m hoch) |
 
 Regeln:
 
-1. **Rundbogen nur unterirdisch-schlicht:** Nischen, Gräber, Kammern. Alles, was tragend oder Portal ist, ist spitz. [Setzung für den Katakomben-Ton; gotische Bauten setzen den Spitzbogen vor allem an tragenden Teilen wie Rippen und Gurten, RDK-B]
+1. **Rundbogen nur unterirdisch-schlicht:** Gräber, Kammern. Alles, was tragend oder Portal ist, ist spitz. Ausnahme: Die Wandnische wurde in #538 als gedrückter Spitzbogen abgenommen und bleibt so. [Setzung für den Katakomben-Ton; gotische Bauten setzen den Spitzbogen vor allem an tragenden Teilen wie Rippen und Gurten, RDK-B]
 2. **Der Scheitel der Innenkante liegt höchstens auf Deckenhöhe.** Im 3,5-m-Gang passt bei Kämpfer 2 m nur der gedrückte Spitzbogen (Scheitel 3,458). [Setzung, folgt aus der Geometrie] Die Tabelle gilt für die Höhen: Gang 3,5 m, Raum 6 m.
 3. [Setzung] Kämpferlinie und Mittelpunkte der beiden Kreise müssen auf einem 1/16-m-Punkt liegen.
 4. Kein Bogen ohne Kämpfer: Der Ansatz sitzt auf einer Platte oder einem Kapitell. [Der Kämpfer ist die Stelle, an der der Bogen ansetzt, RDK-B]
@@ -77,7 +77,7 @@ Zu jedem Baustein: Maße, Dreiecks-Rahmen und Kontaktstelle zur Wand. **Alle Ma�
 | [Wandpfeiler](formenlehre-gotik/wandpfeiler.png) | Schaft 0,5 breit; Tiefe im Raum 0,25 (Sockel und Kapitell 0,3125), **im Gang 0,0625 (Sockel und Kapitell 0,125)**; Sockel und Kapitell 0,625 breit; Kapitell 0,5 hoch, im Gang bei 3,0 bis 3,5, im 6-m-Raum bei 5,5 bis 6,0; trägt er einen Bogen, endet er mit der Kapitell-Oberkante am Kämpfer | 196 (Gang), 238 (Raum), gemessen an den Modellen aus #536: etwa 40 Flächen, für die Welt-Textur an den Metergrenzen geteilt | Zahn 1/8 m in die Wand alle 0,5 m; Fuß im Sockel, Kopf im Abschluss |
 | [Freie Säule](formenlehre-gotik/saeule.png) | Achteck, nur in Räumen: Schaft 0,875 über die Flächen (0,947 über die Ecken), Sockel und Kapitell 1,0 über die Flächen; Raum 6 m: Sockel 0,5, Schaft 5,0, Kapitell 0,5 (falls später ein Raum 3,5 m hoch wird: Schaft 2,5; heute sind alle Räume 6 m hoch) | etwa 80 | freistehend, mindestens 0,5 m von der Wand; Trommeln 0,5 hoch |
 | [Deckenbogen](formenlehre-gotik/deckenbogen.png) | Gurtbogen quer zum Gang (2 m breit, 3,5 m hoch): Wand zu Wand 2,0, lichte Weite 1,75, Kämpfer 2,0, R außen 1,625, R innen 1,5, Ring 0,125 dick und 0,5 tief (im Raum 0,25 dick); sechs Keilsteine je Hälfte, Fuß und Schlussstein außen auf R 1,75 aufgeweitet; lichte Höhe 3,364 in der Mitte | 152 (Bogen), 516 mit beiden Pfeilern (je 182), gemessen an den Modellen aus #537 | sitzt bündig auf dem Kapitell des Wandpfeilers (Gang: Kapitell 0,125 tief, 0,625 breit; der Ring ist 0,5 tief und sitzt mittig darauf); Außenkante bündig mit der Decke; Zahn 1/8 m in jede Wand (Fuß) und in die Decke (Schlussstein) |
-| [Wandnische](formenlehre-gotik/nische.png) | Rundbogen, Weite 1,0, Tiefe 0,5, Sohle 0,5, Kämpfer 1,5, Scheitel 2,0; Rahmen 1/16 | etwa 60 | Rahmen bündig mit der Wandebene |
+| [Wandnische](formenlehre-gotik/nische.png) | gedrückter Spitzbogen (abgenommen in #538): Öffnung 1,0, R 13/16 (0,8125), Mittelpunkte 0,3125 neben der Achse, Kämpfer 1,25, Scheitel 2,0, Sohle 0,5; Rahmen zwei gestufte Bänder zu je 1/8 (Breite 1,5); steht im Gang 0,125 vor, im Raum 0,25 | 312, gemessen an den Modellen aus #538 | Rückseiten 1/8 m in der Wand; die Rückplatte zeigt die Wandtextur abgedunkelt in Weltlage, darum sitzt die Nische mittig auf einer Zellenwand |
 | [Türrahmen](formenlehre-gotik/tuerrahmen.png) | Pfostenband 1/8, Kämpferplatte 1/8 hoch bei 2,0, Lauf 1/8, R 1,5625, Scheitel 3,458; Boss: drei gestaffelte Läufe, Kämpfer 1,875, R 1,75 | etwa 120, Boss 200 | Bogenfeld bündig in der Wandebene; Wandfugen enden am Rahmen |
 
 **Wie der Gurtbogen bemessen ist (neu hergeleitet für den 2 m breiten Gang):**
