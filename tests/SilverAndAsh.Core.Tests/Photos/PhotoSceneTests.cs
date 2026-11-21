@@ -117,6 +117,10 @@ public class PhotoSceneTests
             "ceiling-arch-a", "ceiling-arch-b", "ceiling-arch-c", "ceiling-arch-sequence",
             "wall-niche-a-corridor", "wall-niche-a-room", "wall-niche-b-corridor", "wall-niche-b-room",
             "wall-niche-c-corridor", "wall-niche-c-room",
+            "wall-niche-deep-a-corridor", "wall-niche-deep-a-room", "wall-niche-deep-b-corridor", "wall-niche-deep-b-room",
+            "wall-niche-deep-c-corridor", "wall-niche-deep-c-room",
+            "wall-niche-shelf-a-corridor", "wall-niche-shelf-a-room", "wall-niche-shelf-b-corridor", "wall-niche-shelf-b-room",
+            "wall-niche-shelf-c-corridor", "wall-niche-shelf-c-room",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -573,12 +577,32 @@ public class PhotoSceneTests
     [InlineData("wall-niche-c-room", TextureVariant.C, WallNicheSize.Room)]
     public void The_wall_niche_scenes_look_at_a_niche_of_their_variant_and_size_from_3_m(string name, TextureVariant variant, WallNicheSize size)
     {
-        // Issue #538: the player stands on open floor of the part, 3 m in front of the niche, and looks at it.
+        The_wall_niche_scenes_look_at_a_niche_of_their_form_variant_and_size_from_3_m(name, WallNicheForm.Flat, variant, size);
+    }
+
+    [Theory]
+    [InlineData("wall-niche-deep-a-corridor", WallNicheForm.Deep, TextureVariant.A, WallNicheSize.Corridor)]
+    [InlineData("wall-niche-deep-a-room", WallNicheForm.Deep, TextureVariant.A, WallNicheSize.Room)]
+    [InlineData("wall-niche-deep-b-corridor", WallNicheForm.Deep, TextureVariant.B, WallNicheSize.Corridor)]
+    [InlineData("wall-niche-deep-b-room", WallNicheForm.Deep, TextureVariant.B, WallNicheSize.Room)]
+    [InlineData("wall-niche-deep-c-corridor", WallNicheForm.Deep, TextureVariant.C, WallNicheSize.Corridor)]
+    [InlineData("wall-niche-deep-c-room", WallNicheForm.Deep, TextureVariant.C, WallNicheSize.Room)]
+    [InlineData("wall-niche-shelf-a-corridor", WallNicheForm.DeepWithShelf, TextureVariant.A, WallNicheSize.Corridor)]
+    [InlineData("wall-niche-shelf-a-room", WallNicheForm.DeepWithShelf, TextureVariant.A, WallNicheSize.Room)]
+    [InlineData("wall-niche-shelf-b-corridor", WallNicheForm.DeepWithShelf, TextureVariant.B, WallNicheSize.Corridor)]
+    [InlineData("wall-niche-shelf-b-room", WallNicheForm.DeepWithShelf, TextureVariant.B, WallNicheSize.Room)]
+    [InlineData("wall-niche-shelf-c-corridor", WallNicheForm.DeepWithShelf, TextureVariant.C, WallNicheSize.Corridor)]
+    [InlineData("wall-niche-shelf-c-room", WallNicheForm.DeepWithShelf, TextureVariant.C, WallNicheSize.Room)]
+    public void The_wall_niche_scenes_look_at_a_niche_of_their_form_variant_and_size_from_3_m(
+        string name, WallNicheForm form, TextureVariant variant, WallNicheSize size)
+    {
+        // Issues #538 and #553: the player stands on open floor of the part, 3 m in front of the niche, and looks at it.
         var setup = Built(name);
         setup.Run();
         var world = setup.World;
         var niche = world.Showroom!.WallNiches.MinBy(exhibit => Vector3.Distance(exhibit.Position, world.Player.Position))!;
 
+        Assert.Equal(form, niche.Form);
         Assert.Equal(variant, niche.Variant);
         Assert.Equal(size, niche.Size);
         var cell = world.Level.CellAt(world.Player.Position);

@@ -434,21 +434,38 @@ public static class PhotoScenes
                 yield return new(
                     $"wall-niche-{section.Variant.ToString().ToLowerInvariant()}-{part.ToString().ToLowerInvariant()}",
                     $"A wall niche of the showroom in wall variant {section.Variant} under a ceiling of {height}, from 3 m (issue #538).",
-                    studio => new PhotoSetup(BeforeWallNiche(studio, section.Index, part)));
+                    studio => new PhotoSetup(BeforeWallNiche(studio, section.Index, part, WallNicheForm.Flat)));
+            }
+        }
+
+        // The deep niches (issue #553): the same view of the part's first deep niche without and with a shelf.
+        foreach (var section in ShowroomLayout.Build().Sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                foreach (var (form, name, shown) in new[] { (WallNicheForm.Deep, "deep", "deep wall niche"), (WallNicheForm.DeepWithShelf, "shelf", "deep wall niche with a shelf") })
+                {
+                    var height = part == ShowroomPart.Corridor ? "3.5 m" : "6 m";
+                    yield return new(
+                        $"wall-niche-{name}-{section.Variant.ToString().ToLowerInvariant()}-{part.ToString().ToLowerInvariant()}",
+                        $"A {shown} of the showroom in wall variant {section.Variant} under a ceiling of {height}, from 3 m (issue #553).",
+                        studio => new PhotoSetup(BeforeWallNiche(studio, section.Index, part, form)));
+                }
             }
         }
     }
 
-    private static GameWorld BeforeWallNiche(PhotoStudio studio, int sectionIndex, ShowroomPart part)
+    // The second flat niche of the part, or the first deep one of its form.
+    private static GameWorld BeforeWallNiche(PhotoStudio studio, int sectionIndex, ShowroomPart part, WallNicheForm form)
     {
         var layout = ShowroomLayout.Build();
         var section = layout.Sections[sectionIndex];
         var size = part == ShowroomPart.Corridor ? WallNicheSize.Corridor : WallNicheSize.Room;
         var niches = layout.Exhibits.WallNiches
-            .Where(niche => niche.Variant == section.Variant && niche.Size == size)
+            .Where(niche => niche.Variant == section.Variant && niche.Size == size && niche.Form == form)
             .OrderBy(niche => niche.Position.X)
             .ToList();
-        var niche = niches[Math.Min(1, niches.Count - 1)];
+        var niche = niches[form == WallNicheForm.Flat ? Math.Min(1, niches.Count - 1) : 0];
         var (x, _) = Level.ToGrid(niche.Position.X, niche.Position.Z);
         var world = layout.NewWorldAt(x, section.NorthRow, niche.Position, studio.Balance);
         world.Player.PlaceAt(niche.Position + (niche.Facing * 3f) + new Vector3(0.8f, 0f, 0f));

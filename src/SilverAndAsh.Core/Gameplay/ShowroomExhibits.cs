@@ -46,7 +46,14 @@ public sealed record ExhibitCeilingArch(TextureVariant Variant, Vector3 Position
 /// <paramref name="Position"/> (the wall's face), looking along <paramref name="Facing"/> (issue #538). Only decoration:
 /// no body, no collision (<see cref="WallNicheLook"/>).
 /// </summary>
-public sealed record ExhibitWallNiche(TextureVariant Variant, WallNicheSize Size, Vector3 Position, Vector3 Facing);
+public sealed record ExhibitWallNiche(TextureVariant Variant, WallNicheSize Size, Vector3 Position, Vector3 Facing)
+{
+    /// <summary>
+    /// How the niche is built (issue #553): flat on the wall, or deep in a hole of the wall face (the level carries the
+    /// hole, <see cref="WallNicheLook.Cutout"/>).
+    /// </summary>
+    public WallNicheForm Form { get; init; } = WallNicheForm.Flat;
+}
 
 /// <summary>
 /// What the showroom (issue #283) puts into a world besides its level, doors, chests and enemies. A world with exhibits

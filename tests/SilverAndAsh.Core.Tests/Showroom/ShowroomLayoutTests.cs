@@ -26,9 +26,10 @@ public class ShowroomLayoutTests
         .OrderBy(arch => arch.Position.X)
         .ToList();
 
-    // The wall niches of `size` set on the walls of `section`, west to east.
-    private static List<ExhibitWallNiche> NichesOf(ShowroomSection section, WallNicheSize size) => Layout.Exhibits.WallNiches
-        .Where(niche => niche.Variant == section.Variant && niche.Size == size)
+    // The wall niches of `size` and `form` (the flat ones of issue #538 unless named) set on the walls of `section`, west to east.
+    private static List<ExhibitWallNiche> NichesOf(ShowroomSection section, WallNicheSize size, WallNicheForm form = WallNicheForm.Flat) =>
+        Layout.Exhibits.WallNiches
+        .Where(niche => niche.Variant == section.Variant && niche.Size == size && niche.Form == form)
         .OrderBy(niche => niche.Position.X)
         .ToList();
 
@@ -531,6 +532,57 @@ public class ShowroomLayoutTests
                     && Level.ToGrid(label.Position.X, label.Position.Z) == Level.ToGrid(niches[0].Position.X, niches[0].Position.Z - 0.01f));
             }
         }
+    }
+
+    [Fact]
+    public void Deep_niches_with_and_without_shelf_stand_at_every_wall_variant_in_both_sizes()
+    {
+        foreach (var section in Layout.Sections)
+        {
+            foreach (var (part, size) in new[] { (ShowroomPart.Corridor, WallNicheSize.Corridor), (ShowroomPart.Room, WallNicheSize.Room) })
+            {
+                // Between the flat niches, taking turns: without shelf, with shelf, without ...
+                var deep = Layout.Exhibits.WallNiches
+                    .Where(niche => niche.Variant == section.Variant && niche.Size == size && niche.Form != WallNicheForm.Flat)
+                    .OrderBy(niche => niche.Position.X)
+                    .ToList();
+                Assert.Equal([.. ShowroomLayout.DeepNicheColumns(section, part)], deep.Select(niche => Level.ToGrid(niche.Position.X, niche.Position.Z - 0.01f).X));
+                Assert.Equal(
+                    deep.Select((_, index) => index % 2 == 0 ? WallNicheForm.Deep : WallNicheForm.DeepWithShelf),
+                    deep.Select(niche => niche.Form));
+
+                foreach (var form in new[] { WallNicheForm.Deep, WallNicheForm.DeepWithShelf })
+                {
+                    var first = NichesOf(section, size, form);
+                    Assert.NotEmpty(first);
+                    Assert.Contains(Layout.Labels, label => label.Text == ShowroomLayout.DeepNicheLabel(form)
+                        && Level.ToGrid(label.Position.X, label.Position.Z) == Level.ToGrid(first[0].Position.X, first[0].Position.Z - 0.01f));
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void Every_deep_niche_and_only_a_deep_niche_leaves_its_hole_in_the_wall()
+    {
+        var holes = Layout.Exhibits.WallNiches
+            .Select(niche =>
+            {
+                var (x, z) = Level.ToGrid(niche.Position.X, niche.Position.Z - 0.01f);
+                return WallNicheLook.Cutout(niche.Form, x, z, RoomSide.South);
+            })
+            .OfType<WallCutout>()
+            .ToHashSet();
+
+        Assert.NotEmpty(holes);
+        Assert.Equal(holes, Layout.Level.WallCutouts.ToHashSet());
+        Assert.Equal(holes.Count, Layout.Level.WallCutouts.Count);
+
+        // The holes reach the picture of the world the showroom starts (drawn from the level as built, doors open) and
+        // the level that blocks (doors closed) alike.
+        var world = Layout.NewWorld();
+        Assert.Equal(Layout.Level.WallCutouts, world.LevelAsBuilt.WallCutouts);
+        Assert.Equal(Layout.Level.WallCutouts, world.Level.WallCutouts);
     }
 
     [Fact]
