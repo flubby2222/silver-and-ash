@@ -14,7 +14,7 @@ auf dem Boden, Tuerflaeche in der x/y-Ebene, Dicke in z. Durchgang = Zelle des S
 
 Je Tuerart zwei Sorten Dateien:
   door_<art>.glb               nur bewegliche Teile (leaf_a, leaf_b bzw. leaf, lock), kein Stein; jeder Fluegel traegt seinen
-                               Teil von Kopffeld, Querband und beim Boss der leuchtenden Scheibe (Issue #429; bis dahin
+                               Teil von Kopffeld und beim Boss der leuchtenden Scheibe (Issue #429; bis dahin
                                stand das in einem festen Knoten "portal"). Eigener Atlas 128 x 128, 32 Farben.
   door_frame_<art>_<v>.glb     der Steinrahmen fuer die Wandvariante v (a, b, c): Knoten "portal_front" (Stein der +z-Seite)
                                und "portal_back" (Stein der -z-Seite), beide fest. Atlas 128 x 64: links die echte
@@ -275,9 +275,10 @@ def faces(t, proud):
     return [tuple(sorted((f * (t / 2 - 0.005), f * (t / 2 + proud)))) for f in (-1, 1)]
 
 
-def leaf_rect(name, side, x_j, thick, top, kind, inner=0.005):
-    """Rechteckiger Fluegel; Scharnierkante bei side * (x_j - thick/2 - 0.035); der Fluegel schwingt dort um y. Der
-    Steinpfosten (im Rahmen) fuellt den Rest bis x_j. Beschlag wie in Runde 1, hellere Baender."""
+def leaf_rect(name, side, x_j, thick, top, kind, inner=0.005, fittings_top=None):
+    """Rechteckiger Fluegel bis `top` (dem Bogenansatz: die Bretter laufen ohne Fuge ins Kopffeld, Issue #543); Scharnierkante
+    bei side * (x_j - thick/2 - 0.035); der Fluegel schwingt dort um y. Der Steinpfosten (im Rahmen) fuellt den Rest bis x_j.
+    Beschlag wie in Runde 1, hellere Baender; das oberste Band sitzt 0,25 unter `fittings_top` (ohne Angabe: `top`)."""
     proud = 0.03
     px = side * (x_j - thick / 2 - proud - 0.005)
     part = Part(name, (px, 0, 0), UV)
@@ -285,7 +286,7 @@ def leaf_rect(name, side, x_j, thick, top, kind, inner=0.005):
     lo, hi = sorted((px, side * inner))
     part.box((lo, 0, -t), (hi, top, t), lambda n: "planks" if abs(n.z) > 0.9 else "edge")
     for z0, z1 in faces(thick, 0.025):
-        for y in (0.45, 1.0, top - 0.25):
+        for y in (0.45, 1.0, (top if fittings_top is None else fittings_top) - 0.25):
             strap(part, px, side, y, 0.8 if kind != "boss" else 0.5, 0.075, z0, z1)
         if kind == "normal":
             rx = px - side * 0.7
@@ -469,7 +470,7 @@ def stufenportal(parts, hw0, R0, spring, zs, z_door, plate_x_in, vertical_reveal
 
 # --- Tuerarten ----------------------------------------------------------------------------------------------------
 
-LEAF_TOP_N = 1.94
+LEAF_TOP_N = 1.94               # Normal: Bezug fuer das oberste Beschlagband (bis #543 auch die Oberkante des Fluegels)
 SPRING_N = 2.0                  # Normal und Verschlossen: Bogenansatz, Lauf R = 1,5625 (Scheitel 3,458), Oeffnung 1,75 m
 POST_N = 0.105                  # Pfosten an der Scharnierseite (Normal): Dicke 0,14 / 2 + Beschlag 0,03 + Luft
 POST_L = 0.135                  # Locked: Dicke 0,14 / 2 + Platten und Baender 0,06 + Luft
@@ -507,30 +508,25 @@ def frame_boss():
 
 
 def head_normal(part, kind, sides):
-    """Kopffeld (Holz oder Eisenplatten) im Bogen des Laufs, Querband auf der Fuge zum Fluegel: die Haelften `sides` an den
-    Fluegel `part` (Issue #429: bis #303 stand das Kopffeld fest im Knoten "portal" und blieb beim Oeffnen stehen). Ein
-    Fuellstueck im Fluegel schliesst die Fuge zwischen Fluegel und Kopffeld (vorn und hinten deckt sie das Querband)."""
+    """Kopffeld (Holz oder Eisenplatten) im Bogen des Laufs: die Haelften `sides` an den Fluegel `part` (Issue #429: bis #303
+    stand das Kopffeld fest im Knoten "portal" und blieb beim Oeffnen stehen). Der Fluegel reicht bis an den Bogenansatz;
+    Querband und Fuellstueck auf der Fuge sind weg (Issue #543: ein Rest aus der Zeit vor #429, das Urteil des Menschen)."""
     hw = 0.875
     apex = SPRING_N + math.sqrt(1.4375 ** 2 - 0.5625 ** 2)
     head_panel(part, hw, SPRING_N, apex, -0.07, 0.07, "planks" if kind == "normal" else "plate", sides)
-    for s in sides:
-        lo, hi = sorted((0.0, s * hw))
-        part.box((lo, LEAF_TOP_N - 0.01, -0.065), (hi, SPRING_N + 0.01, 0.065), "edge")
-        for z0, z1 in faces(0.14, 0.025):
-            part.box((lo, LEAF_TOP_N, z0), (hi, SPRING_N + 0.06, z1), "iron")
-            if kind == "normal":                                                        # ein Band im Kopf, spitz zulaufend
+    if kind == "normal":                                                                # ein Band im Kopf, spitz zulaufend
+        for s in sides:
+            for z0, z1 in faces(0.14, 0.025):
                 strap(part, s * (hw - 0.01), s, 2.5, 0.9, 0.065, z0, z1)
 
 
 def head_boss(part, side):
-    """Kopffeld im innersten Lauf mit leuchtender Scheibe, Eisenband ueber dem Fluegel: die Haelfte `side` an den Fluegel."""
+    """Kopffeld im innersten Lauf mit leuchtender Scheibe: die Haelfte `side` an den Fluegel. Kein Eisenband mehr auf der
+    Fuge zum Fluegel (Issue #543, wie bei Normal und Verschlossen)."""
     xc, hw = 1.0 - 1.75, 0.625
     r = 1.75 - 0.375
     apex = SPRING_B + math.sqrt(r * r - xc * xc)
     head_panel(part, hw, SPRING_B, apex, -0.1, 0.1, "planks", (side,))
-    lo, hi = sorted((0.0, side * hw))
-    for z0, z1 in faces(0.2, 0.03):
-        part.box((lo, SPRING_B, z0), (hi, SPRING_B + 0.0625, z1), "iron")
     cy = 2.375
     disc = [(0.21 * math.cos(2 * math.pi * k / 10), cy + 0.21 * math.sin(2 * math.pi * k / 10)) for k in range(10)]
     for f in (-1, 1):
@@ -543,10 +539,10 @@ def locked_leaf():
     px = x_j - POST_L
     part = Part("leaf", (px, 0, 0), UV)
     t = thick / 2
-    part.box((-0.995, 0, -t), (px, LEAF_TOP_N, t), "edge")
+    part.box((-0.995, 0, -t), (px, SPRING_N, t), "edge")                 # bis an den Bogenansatz (Issue #543)
     cols, rows, gap = 2, 3, 0.03
     width = px + 0.995
-    cw, rh = (width - gap * (cols + 1)) / cols, (LEAF_TOP_N - gap * (rows + 1)) / rows
+    cw, rh = (width - gap * (cols + 1)) / cols, (SPRING_N - gap * (rows + 1)) / rows
     for z0, z1 in faces(thick, 0.02):
         for i in range(cols):
             for j in range(rows):
@@ -557,7 +553,7 @@ def locked_leaf():
         for y in (0.4, 1.0, 1.55):
             part.box((-0.995, y - 0.09, za), (px, y + 0.09, zb), "iron")
         for x in (-0.65, 0.5):
-            part.box((x - 0.07, 0.0, za), (x + 0.07, LEAF_TOP_N, zb), "iron")
+            part.box((x - 0.07, 0.0, za), (x + 0.07, SPRING_N, zb), "iron")
     return part
 
 
@@ -577,8 +573,8 @@ def lock_node():
 def parts_for(kind):
     """Nichts steht fest (Issue #429): jeder Fluegel traegt seinen Teil des Kopffelds."""
     if kind == "normal":
-        a = leaf_rect("leaf_a", +1, 1.0, 0.14, LEAF_TOP_N, "normal")
-        b = leaf_rect("leaf_b", -1, 1.0, 0.14, LEAF_TOP_N, "normal")
+        a = leaf_rect("leaf_a", +1, 1.0, 0.14, SPRING_N, "normal", fittings_top=LEAF_TOP_N)
+        b = leaf_rect("leaf_b", -1, 1.0, 0.14, SPRING_N, "normal", fittings_top=LEAF_TOP_N)
         head_normal(a, "normal", (1,))
         head_normal(b, "normal", (-1,))
         return [a, b]
