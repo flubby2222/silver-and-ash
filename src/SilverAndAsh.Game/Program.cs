@@ -473,6 +473,9 @@ static void RunGame(
         // The wall pillars (issue #536) - for now only in the showroom; without their models the walls stay bare.
         using var wallPillarView = WallPillarView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
+        // The ceiling arches (issue #537) - for now only in the showroom; without their models the corridor stays bare.
+        using var ceilingArchView = CeilingArchView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
         newWeaponView = () => new WeaponView(weaponModels, levelShader);
@@ -570,6 +573,7 @@ static void RunGame(
             crossbowSkeletonView.Draw(gameWorld.Showroom?.CrossbowSkeletons ?? [], viewCone);
             cryptWardenView.Draw(gameWorld.Showroom?.CryptWardens ?? [], viewCone);
             wallPillarView.Draw(gameWorld.Showroom?.WallPillars ?? [], viewCone, levelTextures);
+            ceilingArchView.Draw(gameWorld.Showroom?.CeilingArches ?? [], viewCone, levelTextures);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);

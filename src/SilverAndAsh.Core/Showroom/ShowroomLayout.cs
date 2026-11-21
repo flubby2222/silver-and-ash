@@ -40,6 +40,16 @@ public sealed record ShowroomSection(int Index, TextureVariant Variant, int Corr
     /// <summary>Floor rows of the corridor part.</summary>
     public const int CorridorRows = 3;
 
+    /// <summary>
+    /// The row of the arch corridor (issue #537): one cell wide under the corridor ceiling, south of the corridor part
+    /// with a wall between, from <see cref="ArchCorridorX"/> east to the room part, where it opens into the room's
+    /// south-west corner. Ceiling arches span it (<see cref="ShowroomLayout.ArchColumns"/>).
+    /// </summary>
+    public int ArchCorridorRow => SouthRow;
+
+    /// <summary>The first (west) column of the arch corridor; it is a dead end there.</summary>
+    public int ArchCorridorX => CorridorX + 1;
+
     /// <summary>The ceiling height of <paramref name="part"/>, in metres.</summary>
     public static float CeilingOf(ShowroomPart part) => part == ShowroomPart.Corridor ? Cell.DefaultCeilingHeight : RoomTemplate.RoomCeilingHeight;
 }
@@ -51,13 +61,20 @@ public sealed record ShowroomSection(int Index, TextureVariant Variant, int Corr
 /// closet behind - where doors stand in the game too: every door cell of a generated level has the corridor ceiling,
 /// the boss gate's as well. Every other piece stands once, in a row through the middle of the room parts (taking turns
 /// between the sections), where there is room for its height. Wall pillars stand against the north wall of every part
-/// (issue #536). Built
+/// (issue #536); ceiling arches span a corridor one cell wide south of every corridor part (issue #537). Built
 /// from <see cref="ShowroomPieces.All"/> with a fixed rule - the same list always gives the same showroom.
 /// </summary>
 public sealed class ShowroomLayout
 {
     /// <summary>Name shown briefly at the start.</summary>
     public const string Name = "THE SHOWROOM";
+
+    /// <summary>The label at the mouth of every arch corridor (issue #537).</summary>
+    public const string ArchLabel = "Ceiling arch";
+
+    // Number of ceiling arches in a sequence and the cells from one to the next.
+    private const int ArchCount = 3;
+    private const int ArchStep = 2;
 
     // Cells from one door to the next in a wall (a closet of 3 and a wall between), and from one floor piece to the next.
     private const int WallStep = 4;
@@ -176,6 +193,8 @@ public sealed class ShowroomLayout
                 var start = section.StartOf(part);
                 Carve(start, section.NorthRow, start + length - 1, section.SouthRowOf(part), ShowroomSection.CeilingOf(part), index);
             }
+
+            Carve(section.ArchCorridorX, section.ArchCorridorRow, section.RoomX - 1, section.ArchCorridorRow, Cell.DefaultCeilingHeight, index);
         }
 
         // The passages that join the sections into a loop: A's west end to the way back, A to B in the east, B to C in
@@ -290,6 +309,8 @@ public sealed class ShowroomLayout
 
         var pillars = WallPillars(level, sections, wallPieces.Count);
         labels.AddRange(PillarLabels(sections, pillars));
+        var arches = CeilingArches(level, sections);
+        labels.AddRange(sections.Select(section => new ShowroomLabel(ArchLabel, Above(section.RoomX - 1, section.ArchCorridorRow, 2.6f))));
 
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
@@ -299,6 +320,7 @@ public sealed class ShowroomLayout
                 CrossbowSkeletons = skeletons,
                 CryptWardens = wardens,
                 WallPillars = [.. pillars.Select(pillar => pillar.Pillar)],
+                CeilingArches = arches,
             },
             labels, sections, placed);
     }
@@ -332,6 +354,36 @@ public sealed class ShowroomLayout
         }
 
         return pillars;
+    }
+
+    /// <summary>
+    /// The columns of the ceiling arches in the arch corridor of <paramref name="section"/>, east to west: a sequence of
+    /// <see cref="ArchCount"/>, one every <see cref="ArchStep"/> cells (4 m, as in the probe), the first a cell into the
+    /// corridor from its mouth.
+    /// </summary>
+    public static IEnumerable<int> ArchColumns(ShowroomSection section)
+    {
+        ArgumentNullException.ThrowIfNull(section);
+        return Enumerable.Range(0, ArchCount).Select(step => section.RoomX - 3 - (ArchStep * step));
+    }
+
+    /// <summary>
+    /// The ceiling arches (issue #537): a sequence across the arch corridor of every section, in its variant, placed
+    /// on the grid by <see cref="CeilingArchLook.Place"/>.
+    /// </summary>
+    private static List<ExhibitCeilingArch> CeilingArches(Level level, IReadOnlyList<ShowroomSection> sections)
+    {
+        var arches = new List<ExhibitCeilingArch>();
+        foreach (var section in sections)
+        {
+            foreach (var x in ArchColumns(section))
+            {
+                var (position, facing) = CeilingArchLook.Place(level, x, section.ArchCorridorRow);
+                arches.Add(new ExhibitCeilingArch(section.Variant, position, facing));
+            }
+        }
+
+        return arches;
     }
 
     /// <summary>One label per part of every section, above the first wall pillar of that part.</summary>

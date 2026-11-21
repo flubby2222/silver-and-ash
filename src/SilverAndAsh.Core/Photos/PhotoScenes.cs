@@ -310,6 +310,7 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.Arena('G', 10)) { IsModelProbe = true }),
         .. ShowroomScenes(),
         .. WallPillarScenes(),
+        .. CeilingArchScenes(),
         new("equipment-rifle", "The rifle (Forged) lying in the showroom, 0.8 m away: \"[F] Take Rifle (Forged)\" in steel blue (issue #317).",
             studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle }))),
         .. EquipmentTierScenes(),
@@ -371,6 +372,53 @@ public static class PhotoScenes
                     studio => new PhotoSetup(BeforeWallPillar(studio, section.Index, part)));
             }
         }
+    }
+
+    // The ceiling arches of the showroom (issue #537): for every wall variant the arch nearest the corridor's mouth from
+    // 2.5 m east of it, looking up at it - arch, pillars and the wall behind; then down the arch corridor of section A from
+    // its mouth, the sequence of three one behind the other.
+    private static IEnumerable<PhotoScene> CeilingArchScenes()
+    {
+        foreach (var section in ShowroomLayout.Build().Sections)
+        {
+            yield return new(
+                $"ceiling-arch-{section.Variant.ToString().ToLowerInvariant()}",
+                $"A ceiling arch of the showroom across a corridor 2 m wide in wall variant {section.Variant}, from 2.5 m (issue #537).",
+                studio => new PhotoSetup(BeforeCeilingArch(studio, section.Index)));
+        }
+
+        yield return new(
+            "ceiling-arch-sequence",
+            "Down the showroom's arch corridor of wall variant A from its mouth: three ceiling arches, 4 m apart (issue #537).",
+            studio => new PhotoSetup(AlongCeilingArches(studio)));
+    }
+
+    private static GameWorld BeforeCeilingArch(PhotoStudio studio, int sectionIndex)
+    {
+        var layout = ShowroomLayout.Build();
+        var arch = ArchesOf(layout, sectionIndex)[0];
+        var (x, z) = Level.ToGrid(arch.Position.X, arch.Position.Z);
+        var world = layout.NewWorldAt(x + 1, z, arch.Position, studio.Balance);
+        world.Player.PlaceAt(arch.Position + new Vector3(2.5f, 0f, 0f));
+        PhotoStudio.Face(world.Player, arch.Position + new Vector3(0f, 2.4f, 0f));
+        return world;
+    }
+
+    private static GameWorld AlongCeilingArches(PhotoStudio studio)
+    {
+        var layout = ShowroomLayout.Build();
+        var arches = ArchesOf(layout, 0);
+        var (x, z) = Level.ToGrid(arches[0].Position.X, arches[0].Position.Z);
+        var world = layout.NewWorldAt(x + 2, z, arches[^1].Position, studio.Balance);
+        PhotoStudio.Face(world.Player, arches[^1].Position + new Vector3(0f, 1.9f, 0f));
+        return world;
+    }
+
+    // The ceiling arches of a section, from the corridor's mouth (east) inward.
+    private static List<ExhibitCeilingArch> ArchesOf(ShowroomLayout layout, int sectionIndex)
+    {
+        var variant = layout.Sections[sectionIndex].Variant;
+        return [.. layout.Exhibits.CeilingArches.Where(arch => arch.Variant == variant).OrderByDescending(arch => arch.Position.X)];
     }
 
     private static GameWorld BeforeWallPillar(PhotoStudio studio, int sectionIndex, ShowroomPart part)
