@@ -21,6 +21,8 @@ public class EnvironmentPaletteTests
         "wall_pillar_corridor_a", "wall_pillar_corridor_b", "wall_pillar_corridor_c",
         "wall_pillar_room_a", "wall_pillar_room_b", "wall_pillar_room_c",
         "ceiling_arch_a", "ceiling_arch_b", "ceiling_arch_c",
+        "wall_niche_corridor_a", "wall_niche_corridor_b", "wall_niche_corridor_c",
+        "wall_niche_room_a", "wall_niche_room_b", "wall_niche_room_c",
     ];
 
     private static readonly string[] StoneAndWerksteinModels = ["door_frame_boss_a", "door_frame_boss_b", "door_frame_boss_c"];
