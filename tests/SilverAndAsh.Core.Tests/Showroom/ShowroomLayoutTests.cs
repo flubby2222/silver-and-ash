@@ -636,6 +636,59 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void One_portcullis_per_section_stands_in_the_north_wall_of_the_room_part_with_a_closet_behind()
+    {
+        Assert.Equal(Layout.Sections.Count, Layout.Exhibits.Portcullises.Count);
+        foreach (var section in Layout.Sections)
+        {
+            var portcullis = Assert.Single(Layout.Exhibits.Portcullises, portcullis => portcullis.Variant == section.Variant);
+            var (x, z) = (portcullis.X, portcullis.Z);
+            Assert.Equal(ShowroomLayout.PortcullisCell(section), (x, z));
+            Assert.Equal(RoomSide.North, portcullis.Side);
+            Assert.Equal(Layout.Level.CellCenter(x, z), portcullis.Position);
+            Assert.Equal(section.DoorRow, z);
+            Assert.InRange(x, section.RoomX + 1, section.RoomX + section.Length - 2);
+
+            // Wall either side of the doorway; in front the 6 m room, behind a closet of corridor height in the same
+            // variant - so the photos show it from the room and from the 3.5 m side.
+            Assert.True(Layout.Level[x - 1, z].IsSolid && Layout.Level[x + 1, z].IsSolid);
+            Assert.Equal(RoomTemplate.RoomCeilingHeight, Layout.Level[x, z + 1].CeilingHeight);
+            Assert.Equal(Cell.DefaultCeilingHeight, Layout.Level[x, z].CeilingHeight);
+            Assert.Equal(Cell.DefaultCeilingHeight, Layout.Level[x, z - 1].CeilingHeight);
+            Assert.Equal(section.Variant, Layout.Surfaces.At(x, z, SurfaceKind.Wall));
+            Assert.Equal(section.Variant, Layout.Surfaces.At(x, z - 1, SurfaceKind.Wall));
+
+            // No door of the corridor part and no wall pillar beside it.
+            Assert.DoesNotContain(Layout.Doors, door => door.X == x && door.Z == z);
+            Assert.All(PillarsOf(section, ShowroomPart.Room), pillar =>
+                Assert.True(MathF.Abs(pillar.Position.X - portcullis.Position.X) >= 2 * Level.CellSize));
+            Assert.Contains(Layout.Labels, label => label.Text == ShowroomLayout.PortcullisLabel
+                && Level.ToGrid(label.Position.X, label.Position.Z) == (x, z + 1));
+        }
+    }
+
+    [Fact]
+    public void For_now_one_walks_through_the_portcullis_into_its_closet()
+    {
+        // Part 1 of issue #540 is only the picture: the doorway stays open, nothing blocks it (part 2 brings that).
+        var open = Reachable(Layout.NewWorld().Level);
+        foreach (var portcullis in Layout.Exhibits.Portcullises)
+        {
+            Assert.Contains((portcullis.X, portcullis.Z - 1), open);
+            var world = Layout.NewWorldAt(portcullis.X, portcullis.Z + 1, portcullis.Position - new Vector3(0f, -1.5f, Level.CellSize));
+            for (var tick = 0; tick < 120; tick++)
+            {
+                world.Tick(PlayerInput.None with { Move = new Vector2(0f, 1f) });
+            }
+
+            // Through the doorway and into the closet (its two rows lie north of it).
+            var (x, z) = Level.ToGrid(world.Player.Position.X, world.Player.Position.Z);
+            Assert.Equal(portcullis.X, x);
+            Assert.True(z < portcullis.Z, $"The player stopped in row {z}, not behind the portcullis in row {portcullis.Z}.");
+        }
+    }
+
+    [Fact]
     public void Every_piece_and_every_part_has_a_label()
     {
         foreach (var place in Layout.Placed)

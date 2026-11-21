@@ -7,6 +7,7 @@ namespace SilverAndAsh.Core.Tests;
 /// of the palette row Stein only, and the frame of the boss gate may add the row Werkstein (art bible, colour rule 6).
 /// Issue #543: the door leaves keep the wood, iron and brass they have today, listed here as the named rows "Tür"; the spiral
 /// stairs use Stein, Werkstein and the brass of their lamp (Messing/Gold).
+/// Issue #540: the portcullis is painted with the neutral iron K2 (row "Gitter Eisen"), its guide ring with the wall tile.
 /// </summary>
 public class EnvironmentPaletteTests
 {
@@ -24,6 +25,7 @@ public class EnvironmentPaletteTests
         "ceiling_arch_a", "ceiling_arch_b", "ceiling_arch_c",
         "wall_niche_corridor_a", "wall_niche_corridor_b", "wall_niche_corridor_c",
         "wall_niche_room_a", "wall_niche_room_b", "wall_niche_room_c",
+        "portcullis_guide_a", "portcullis_guide_b", "portcullis_guide_c",
         "wall_niche_deep_a", "wall_niche_deep_b", "wall_niche_deep_c",
         "wall_niche_shelf_a", "wall_niche_shelf_b", "wall_niche_shelf_c",
     ];
@@ -35,6 +37,15 @@ public class EnvironmentPaletteTests
 
     /// <summary>The spiral stairs: Stein for wall and steps, Werkstein for the edges, Messing/Gold for the lamp.</summary>
     private static readonly string[] StairsModels = ["stairs_spiral_a", "stairs_spiral_b", "stairs_spiral_c"];
+
+    /// <summary>The portcullis (issue #540): only the neutral iron row "Gitter Eisen" below.</summary>
+    private static readonly string[] GrateModels = ["portcullis"];
+
+    /// <summary>
+    /// The neutral iron K2 from issue #543, dark to light. It is not in the main palette: the human chose it for the
+    /// portcullis only, because the bluish row Eisen draws the eye next to the rosy stone; the door leaves keep their iron.
+    /// </summary>
+    private static readonly (byte R, byte G, byte B)[] GrateIronRow = [(32, 32, 33), (62, 62, 63), (104, 104, 106), (148, 148, 151)];
 
     /// <summary>Not environment (figures, weapons, chests, enemies, effects): they keep their own colours.</summary>
     private static readonly string[] NotEnvironmentModels =
@@ -177,6 +188,29 @@ public class EnvironmentPaletteTests
         AssertUsesRow(file, brass, "Messing/Gold");
     }
 
+    [Fact]
+    public void The_portcullis_has_only_and_all_colours_of_the_row_Gitter_Eisen()
+    {
+        var used = ForeignColors(RepositoryFiles.Find($"assets/models/{GrateModels.Single()}.png"), []);
+
+        Assert.Equal(GrateIronRow.Order(), used.Order());
+    }
+
+    [Fact]
+    public void The_bluish_iron_of_the_palette_in_the_portcullis_atlas_makes_the_check_fail()
+    {
+        // Counter-proof: one pixel of the grate painted with the iron the probe had before issue #543 (row Eisen).
+        var allowed = GrateIronRow.ToHashSet();
+        var (_, _, rgba) = TestPng.Read(RepositoryFiles.Find("assets/models/portcullis.png"));
+        Assert.Empty(ForeignColors(rgba, allowed));
+
+        var bluish = RowColors(RepositoryFiles.Find(PalettePath), "akzent", "Eisen").First(c => !allowed.Contains(c));
+        var changed = (byte[])rgba.Clone();
+        (changed[0], changed[1], changed[2]) = bluish;
+
+        Assert.Equal([bluish], ForeignColors(changed, allowed));
+    }
+
     // The black of unused atlas fields belongs to neither row, so it can never count as a use.
     private static void AssertUsesRow(string file, HashSet<(byte R, byte G, byte B)> row, string rowName)
     {
@@ -278,7 +312,8 @@ public class EnvironmentPaletteTests
     }
 
     private static IEnumerable<string> AllGroups() =>
-        StoneModels.Concat(StoneAndWerksteinModels).Concat(DoorLeafModels).Concat(StairsModels).Concat(NotEnvironmentModels);
+        StoneModels.Concat(StoneAndWerksteinModels).Concat(DoorLeafModels).Concat(StairsModels).Concat(GrateModels)
+            .Concat(NotEnvironmentModels);
 
     private static List<string> Unplaced(IEnumerable<string> names)
     {

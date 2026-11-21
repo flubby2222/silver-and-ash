@@ -1,5 +1,6 @@
 using System.Numerics;
 using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
 
@@ -56,6 +57,14 @@ public sealed record ExhibitWallNiche(TextureVariant Variant, WallNicheSize Size
 }
 
 /// <summary>
+/// A portcullis in a normal door frame in the showroom, in the door cell (<paramref name="X"/>, <paramref name="Z"/>)
+/// of a wall of <paramref name="Variant"/>, in the wall on <paramref name="Side"/> of the room in front, on the floor at
+/// <paramref name="Position"/> (the middle of the cell). It falls and lifts in a loop (<see cref="SilverAndAsh.Core.Showroom.ShowroomGrateCycle"/>,
+/// issue #540). Only a picture for now: the cell stays open, nothing is blocked or pushed (that comes with part 2).
+/// </summary>
+public sealed record ExhibitPortcullis(TextureVariant Variant, int X, int Z, RoomSide Side, Vector3 Position);
+
+/// <summary>
 /// What the showroom (issue #283) puts into a world besides its level, doors, chests and enemies. A world with exhibits
 /// is a showroom (<see cref="GameWorld.IsShowroom"/>): its enemies are exhibits that neither move, attack nor take damage,
 /// and its staircase stands from the start but cannot be climbed. A normal game never has exhibits.
@@ -82,4 +91,7 @@ public sealed record ShowroomExhibits(
 
     /// <summary>Wall niches on the south walls of the sections, corridor and room (issue #538).</summary>
     public IReadOnlyList<ExhibitWallNiche> WallNiches { get; init; } = [];
+
+    /// <summary>Portcullises in the north walls of the room parts, one per section (issue #540).</summary>
+    public IReadOnlyList<ExhibitPortcullis> Portcullises { get; init; } = [];
 }

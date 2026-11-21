@@ -312,6 +312,7 @@ public static class PhotoScenes
         .. WallPillarScenes(),
         .. CeilingArchScenes(),
         .. WallNicheScenes(),
+        .. PortcullisScenes(),
         new("equipment-rifle", "The rifle (Forged) lying in the showroom, 0.8 m away: \"[F] Take Rifle (Forged)\" in steel blue (issue #317).",
             studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle }))),
         .. EquipmentTierScenes(),
@@ -470,6 +471,48 @@ public static class PhotoScenes
         var world = layout.NewWorldAt(x, section.NorthRow, niche.Position, studio.Balance);
         world.Player.PlaceAt(niche.Position + (niche.Facing * 3f) + new Vector3(0.8f, 0f, 0f));
         PhotoStudio.Face(world.Player, niche.Position + new Vector3(0f, 1.3f, 0f));
+        return world;
+    }
+
+    // The portcullis of section A (issue #540): shut, half lifted and open, from the room 3 m in front of it, from its
+    // closet behind it and from 6 m back in the room. The world's ticks pick the point of the showroom's loop
+    // (ShowroomGrateCycle); a scene's world starts at tick 0.
+    private static IEnumerable<PhotoScene> PortcullisScenes()
+    {
+        foreach (var (state, ticks) in PortcullisStates())
+        {
+            foreach (var (where, back) in new[] { ("room", 3f), ("closet", -3f), ("far", 6f) })
+            {
+                yield return new(
+                    $"portcullis-{state}-{where}",
+                    $"The portcullis of the showroom {state}, seen from {where} (issue #540).",
+                    studio => new PhotoSetup(BeforePortcullis(studio, back)) { Ticks = ticks(studio.Balance.Grates) });
+            }
+        }
+    }
+
+    // Shut: 30 ticks into the shut hold. Half: 55 % into the lift, the grate about 1.7 m up (the lift stretches with
+    // its length, so the share holds for any LiftTicks). Open: in the open hold.
+    private static IEnumerable<(string State, Func<GratesBalance, int> Ticks)> PortcullisStates()
+    {
+        const int hold = ShowroomGrateCycle.HoldTicks;
+        yield return ("closed", timing => hold + timing.FallTicks + 30);
+        yield return ("half", timing => (2 * hold) + timing.FallTicks + (int)MathF.Round(timing.LiftTicks * PortcullisHalfLiftShare));
+        yield return ("open", _ => 10);
+    }
+
+    // The share of the lift at which the half-lifted portcullis scenes are taken (issue #540).
+    private const float PortcullisHalfLiftShare = 0.55f;
+
+    // back: metres south of the door plane (into the room); negative: north, into the closet. A little to the side, so
+    // the depth of the frame shows, looking at the middle of the doorway.
+    private static GameWorld BeforePortcullis(PhotoStudio studio, float back)
+    {
+        var layout = ShowroomLayout.Build();
+        var portcullis = layout.Exhibits.Portcullises[0];
+        var world = layout.NewWorldAt(portcullis.X, portcullis.Z, portcullis.Position, studio.Balance);
+        world.Player.PlaceAt(portcullis.Position + new Vector3(0.6f, 0f, back));
+        PhotoStudio.Face(world.Player, portcullis.Position + new Vector3(0f, 1.6f, 0f));
         return world;
     }
 
