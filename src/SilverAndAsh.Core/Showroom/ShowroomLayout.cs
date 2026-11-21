@@ -234,6 +234,15 @@ public sealed class ShowroomLayout
             }
         }
 
+        // One portcullis per section in the north wall of the room part (issue #540), a closet of corridor height behind
+        // it: from the front the 6 m room, from the back the 3.5 m closet.
+        foreach (var section in sections)
+        {
+            var (x, z) = PortcullisCell(section);
+            Carve(x, z, x, z, Cell.DefaultCeilingHeight, section.Index);
+            Carve(x - 1, z - DoorRowOffset + ClosetRow, x + 1, z - 1, Cell.DefaultCeilingHeight, section.Index);
+        }
+
         // Floor pieces take turns between the room parts of the sections, in the middle row, west to east.
         var ghouls = new List<(int X, int Z)>();
         var bats = new List<(int X, int Z)>();
@@ -313,6 +322,13 @@ public sealed class ShowroomLayout
         labels.AddRange(sections.Select(section => new ShowroomLabel(ArchLabel, Above(section.RoomX - 1, section.ArchCorridorRow, 2.6f))));
         var niches = WallNiches(level, sections);
         labels.AddRange(NicheLabels(niches));
+        var portcullises = sections.Select(section =>
+        {
+            var (x, z) = PortcullisCell(section);
+            return new ExhibitPortcullis(section.Variant, x, z, RoomSide.North, level.CellCenter(x, z));
+        }).ToList();
+        labels.AddRange(portcullises.Select(portcullis => new ShowroomLabel(
+            PortcullisLabel, new Vector3(portcullis.Position.X, PortcullisLabelHeight, ((portcullis.Z + 1) * Level.CellSize) + 0.3f))));
 
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
@@ -324,9 +340,26 @@ public sealed class ShowroomLayout
                 WallPillars = [.. pillars.Select(pillar => pillar.Pillar)],
                 CeilingArches = arches,
                 WallNiches = niches,
+                Portcullises = portcullises,
             },
             labels, sections, placed);
     }
+
+    /// <summary>
+    /// The door cell of the portcullis of <paramref name="section"/> (issue #540): in the north wall of the room part,
+    /// between its first two wall pillars.
+    /// </summary>
+    public static (int X, int Z) PortcullisCell(ShowroomSection section)
+    {
+        ArgumentNullException.ThrowIfNull(section);
+        return (section.RoomX + 2 + (WallStep / 2), section.DoorRow);
+    }
+
+    /// <summary>The label above the lintel of every portcullis, on the side of the room.</summary>
+    public const string PortcullisLabel = "Portcullis";
+
+    // Above the lintel (3.5 m), so the falling grate does not run through the label.
+    private const float PortcullisLabelHeight = 4.1f;
 
     /// <summary>The label above the first wall pillar of <paramref name="part"/>.</summary>
     public static string PillarLabel(ShowroomPart part) => part == ShowroomPart.Corridor ? "Pillar 3.5 m" : "Pillar 6 m";
