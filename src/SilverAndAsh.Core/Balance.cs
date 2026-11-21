@@ -109,6 +109,9 @@ public sealed record Balance
     /// <summary>Doors: how long they take to swing open.</summary>
     public DoorsBalance Doors { get; init; } = new();
 
+    /// <summary>Portcullises (issue #540): how long one takes to fall and to rise.</summary>
+    public GratesBalance Grates { get; init; } = new();
+
     /// <summary>The Well of Sirius (issue #438): how often a level has one and how wide it stands.</summary>
     public WellBalance Well { get; init; } = new();
 
@@ -514,6 +517,19 @@ public sealed record DoorsBalance
         World.DoorKind.Cracked => 0f,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
     };
+}
+
+/// <summary>
+/// Portcullises (issue #540): ticks (60 a second) a grate takes to fall shut and to rise fully open. The fall keeps its
+/// shape for any length: two jerks, then the drop and a short bounce (see <see cref="Presentation.GratePose"/>).
+/// </summary>
+public sealed record GratesBalance
+{
+    /// <summary>Fall "b - two jerks" as the human chose it: shut from tick 47 of 63.</summary>
+    public int FallTicks { get; init; } = 63;
+
+    /// <summary>An even rise, a little slower at start and end.</summary>
+    public int LiftTicks { get; init; } = 126;
 }
 
 /// <summary>Balancing values of the blood vial.</summary>
