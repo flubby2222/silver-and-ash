@@ -474,17 +474,18 @@ public static class PhotoScenes
         }
     }
 
-    // Shut: 30 ticks into the shut hold. Half: 69 ticks into the lift, the grate about 1.7 m up. Open: in the open hold.
+    // Shut: 30 ticks into the shut hold. Half: 55 % into the lift, the grate about 1.7 m up (the lift stretches with
+    // its length, so the share holds for any LiftTicks). Open: in the open hold.
     private static IEnumerable<(string State, Func<GratesBalance, int> Ticks)> PortcullisStates()
     {
         const int hold = ShowroomGrateCycle.HoldTicks;
         yield return ("closed", timing => hold + timing.FallTicks + 30);
-        yield return ("half", timing => (2 * hold) + timing.FallTicks + PortcullisHalfLiftTicks);
+        yield return ("half", timing => (2 * hold) + timing.FallTicks + (int)MathF.Round(timing.LiftTicks * PortcullisHalfLiftShare));
         yield return ("open", _ => 10);
     }
 
-    /// <summary>Ticks into the lift at which the half-lifted portcullis scenes are taken (issue #540).</summary>
-    internal const int PortcullisHalfLiftTicks = 69;
+    // The share of the lift at which the half-lifted portcullis scenes are taken (issue #540).
+    private const float PortcullisHalfLiftShare = 0.55f;
 
     // back: metres south of the door plane (into the room); negative: north, into the closet. A little to the side, so
     // the depth of the frame shows, looking at the middle of the doorway.

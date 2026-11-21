@@ -8,19 +8,44 @@ public class GratePoseTests
 {
     private const float Tolerance = 0.001f;
 
-    // The heights the game draws, tick for tick.
-    private static readonly GratesBalance Timing = Balance.Default.Grates;
+    // The shapes were judged at these lengths (issue #540, fall "b - two jerks"): the tables and shape tests below are
+    // theirs, not the shipped balancing. What must hold for any balancing is tested with Balance.Default further down.
+    private static readonly GratesBalance Judged = new() { FallTicks = 63, LiftTicks = 126 };
 
-    private static float Fall(int ticks) => GratePose.Height(ticks, GrateMotion.Fall, Timing);
+    // The heights the game draws with the shipped balancing, tick for tick.
+    private static readonly GratesBalance Shipped = Balance.Default.Grates;
 
-    private static float Lift(int ticks) => GratePose.Height(ticks, GrateMotion.Lift, Timing);
+    private static float Fall(int ticks) => GratePose.Height(ticks, GrateMotion.Fall, Judged);
+
+    private static float Lift(int ticks) => GratePose.Height(ticks, GrateMotion.Lift, Judged);
 
     [Fact]
-    public void The_shipped_lengths_are_the_judged_ones()
+    public void With_the_shipped_lengths_the_fall_shuts_at_its_shut_tick_and_rests_from_its_last()
     {
-        // The shapes were judged at 63 and 126 ticks (issue #540, fall "b - two jerks"); the table below is theirs.
-        Assert.Equal(63, Timing.FallTicks);
-        Assert.Equal(126, Timing.LiftTicks);
+        var shut = GratePose.ShutTick(Shipped);
+        Assert.InRange(shut, 1, Shipped.FallTicks - 1);
+        Assert.Equal(GratePose.OpenHeight, GratePose.Height(0, GrateMotion.Fall, Shipped));
+        Assert.True(GratePose.Height(shut - 1, GrateMotion.Fall, Shipped) > 0f);
+        for (var t = shut; t <= Shipped.FallTicks + 10; t++)
+        {
+            Assert.InRange(GratePose.Height(t, GrateMotion.Fall, Shipped), 0f, 0.05f + Tolerance);
+        }
+
+        Assert.Equal(0f, GratePose.Height(Shipped.FallTicks, GrateMotion.Fall, Shipped));
+    }
+
+    [Fact]
+    public void With_the_shipped_lengths_the_lift_starts_shut_and_is_fully_open_at_its_last_tick()
+    {
+        Assert.Equal(0f, GratePose.Height(0, GrateMotion.Lift, Shipped));
+        for (var t = 1; t < Shipped.LiftTicks; t++)
+        {
+            var height = GratePose.Height(t, GrateMotion.Lift, Shipped);
+            Assert.True(height < GratePose.OpenHeight, $"tick {t}: already open");
+            Assert.True(height >= GratePose.Height(t - 1, GrateMotion.Lift, Shipped), $"tick {t}: goes down");
+        }
+
+        Assert.Equal(GratePose.OpenHeight, GratePose.Height(Shipped.LiftTicks, GrateMotion.Lift, Shipped));
     }
 
     [Theory]
@@ -101,7 +126,7 @@ public class GratePoseTests
         // The two jerks are the two stretches with a drop of more than 0.04 m per tick; between them it hangs.
         var jerks = 0;
         var inJerk = false;
-        for (var t = 1; t <= Timing.FallTicks; t++)
+        for (var t = 1; t <= Judged.FallTicks; t++)
         {
             var fast = Fall(t - 1) - Fall(t) > 0.04f;
             if (fast && !inJerk)
@@ -118,9 +143,9 @@ public class GratePoseTests
     [Fact]
     public void From_tick_47_the_grate_is_shut_and_bounces_only_a_hand_s_breadth()
     {
-        Assert.Equal(47, GratePose.ShutTick(Timing));
+        Assert.Equal(47, GratePose.ShutTick(Judged));
         Assert.True(Fall(46) > 0.1f);
-        for (var t = GratePose.ShutTick(Timing); t <= Timing.FallTicks + 10; t++)
+        for (var t = GratePose.ShutTick(Judged); t <= Judged.FallTicks + 10; t++)
         {
             Assert.InRange(Fall(t), 0f, 0.05f + Tolerance);
         }
@@ -150,8 +175,8 @@ public class GratePoseTests
     {
         Assert.Equal(GratePose.OpenHeight, Fall(-5));
         Assert.Equal(GratePose.OpenHeight, Fall(0));
-        Assert.Equal(0f, Fall(Timing.FallTicks));
-        Assert.Equal(0f, Fall(Timing.FallTicks + 100));
+        Assert.Equal(0f, Fall(Judged.FallTicks));
+        Assert.Equal(0f, Fall(Judged.FallTicks + 100));
     }
 
     [Theory]
@@ -172,20 +197,20 @@ public class GratePoseTests
             Assert.Equal(0f, Lift(t));
         }
 
-        for (var t = 7; t <= Timing.LiftTicks; t++)
+        for (var t = 7; t <= Judged.LiftTicks; t++)
         {
             Assert.True(Lift(t) > Lift(t - 1), $"tick {t}: {Lift(t)} not above {Lift(t - 1)}");
         }
 
         // After the ramp every tick lifts by the same step.
         var step = Lift(30) - Lift(29);
-        for (var t = 31; t <= Timing.LiftTicks; t++)
+        for (var t = 31; t <= Judged.LiftTicks; t++)
         {
             Assert.Equal(step, Lift(t) - Lift(t - 1), Tolerance);
         }
 
-        Assert.Equal(GratePose.OpenHeight, Lift(Timing.LiftTicks));
-        Assert.Equal(GratePose.OpenHeight, Lift(Timing.LiftTicks + 50));
+        Assert.Equal(GratePose.OpenHeight, Lift(Judged.LiftTicks));
+        Assert.Equal(GratePose.OpenHeight, Lift(Judged.LiftTicks + 50));
         Assert.Equal(0f, Lift(-3));
     }
 
@@ -212,7 +237,7 @@ public class GratePoseTests
     [Fact]
     public void Only_the_two_motions_have_heights()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => GratePose.Height(5, (GrateMotion)7, Timing));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GratePose.Height(5, (GrateMotion)7, Judged));
     }
 
     [Fact]
@@ -221,7 +246,7 @@ public class GratePoseTests
         Assert.False(GratePose.IsDrawn(GratePose.OpenHeight));
         Assert.False(GratePose.IsDrawn(Fall(0)));
         Assert.True(GratePose.IsDrawn(Fall(1)));
-        Assert.True(GratePose.IsDrawn(Lift(Timing.LiftTicks - 1)));
+        Assert.True(GratePose.IsDrawn(Lift(Judged.LiftTicks - 1)));
         Assert.True(GratePose.IsDrawn(0f));
     }
 
@@ -262,7 +287,7 @@ public class GratePoseTests
         Assert.Equal(0f, grate.PositionMin.Y, Tolerance);
         Assert.Equal(-grate.PositionMax.X, grate.PositionMin.X, Tolerance);
         Assert.Equal(-grate.PositionMax.Z, grate.PositionMin.Z, Tolerance);
-        Assert.True(grate.PositionMax.Y > Fall(47) + 3f);
+        Assert.True(grate.PositionMax.Y > 3f);
     }
 
     [Theory]
