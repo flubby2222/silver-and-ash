@@ -35,6 +35,13 @@ public sealed record ExhibitCryptWarden(CryptWardenStance Stance, Vector3 Positi
 public sealed record ExhibitWallPillar(TextureVariant Variant, float CeilingHeight, Vector3 Position, Vector3 Facing);
 
 /// <summary>
+/// A ceiling arch standing in the showroom across a corridor one cell wide with walls of <paramref name="Variant"/>, on
+/// the floor at <paramref name="Position"/> (the middle of the corridor), looking along the corridor
+/// (<paramref name="Facing"/>, issue #537). Only decoration: no body, no collision (<see cref="CeilingArchLook"/>).
+/// </summary>
+public sealed record ExhibitCeilingArch(TextureVariant Variant, Vector3 Position, Vector3 Facing);
+
+/// <summary>
 /// What the showroom (issue #283) puts into a world besides its level, doors, chests and enemies. A world with exhibits
 /// is a showroom (<see cref="GameWorld.IsShowroom"/>): its enemies are exhibits that neither move, attack nor take damage,
 /// and its staircase stands from the start but cannot be climbed. A normal game never has exhibits.
@@ -55,4 +62,7 @@ public sealed record ShowroomExhibits(
 
     /// <summary>Wall pillars against the north walls of the sections (issue #536).</summary>
     public IReadOnlyList<ExhibitWallPillar> WallPillars { get; init; } = [];
+
+    /// <summary>Ceiling arches across the arch corridors of the sections (issue #537).</summary>
+    public IReadOnlyList<ExhibitCeilingArch> CeilingArches { get; init; } = [];
 }
