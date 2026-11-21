@@ -522,27 +522,30 @@ def deckenbogen():
 
 
 def nische():
-    c = panel("WANDNISCHE", "Rundbogen (Katakomben): Weite 1 m, Tiefe 0,5 m, Sohle 0,5 m über dem Boden")
+    c = panel("WANDNISCHE", "gedrückter Spitzbogen (abgenommen in #538): Öffnung 1 m, R 13/16 m, Kämpfer 1,25 m, Scheitel 2 m")
     t = T(330, 640)
     wall_zoned(c, t, -1.5, 1.5)
-    outer = full_arc(0.5, 0.5, 1.5)
-    c.poly([t.p((-0.5, 0.5))] + [t.p(p) for p in outer[1:-1]] + [t.p((0.5, 0.5))], OEFFNUNG)
-    o2, i2 = arch_ring(0.5625, 0.5625, 0.0625, 1.5)
-    fill_ring(c, t, o2, i2, BAU)
-    stone_block(c, t, -0.5625, -0.5, 0.5, 1.5)
-    stone_block(c, t, 0.5, 0.5625, 0.5, 1.5)
-    stone_block(c, t, -0.5625, 0.5625, 0.4375, 0.5)
-    dim_h(c, t, -0.5, 0.5, 2.25, "1,0")
-    dim_v(c, t, 0.9, 0.5, 2.0, "1,5", right=True)
-    c.dashed(t.x(-0.8), t.y(1.5), t.x(0.8), t.y(1.5), MASS, 2, 10, 8)
+    R, spring = 0.8125, 1.25
+    opening = full_arc(0.5, R, spring)
+    c.poly([t.p((-0.5, 0.5))] + [t.p(p) for p in opening] + [t.p((0.5, 0.5))], OEFFNUNG)
+    for hw, fill in ((0.75, BAU), (0.625, BAU_HELL)):
+        o, i = arch_ring(hw, R + hw - 0.5, 0.125, spring)
+        fill_ring(c, t, o, i, fill)
+        stone_block(c, t, -hw, -hw + 0.125, 0.5, spring, fill=fill)
+        stone_block(c, t, hw - 0.125, hw, 0.5, spring, fill=fill)
+    stone_block(c, t, -0.75, 0.75, 0.25, 0.5)
+    dim_h(c, t, -0.5, 0.5, 2.5, "1,0")
+    dim_v(c, t, 0.95, 0.5, 2.0, "1,5", right=True)
+    c.dashed(t.x(-0.9), t.y(spring), t.x(0.9), t.y(spring), MASS, 2, 10, 8)
     tp = T(900, 330)
-    c.rect(tp.x(-1.25), tp.y(0.5), tp.x(1.25), tp.y(0), WAND)
-    c.rect(tp.x(-0.5), tp.y(0.5), tp.x(0.5), tp.y(0), OEFFNUNG)
-    c.path([tp.p((-0.5625, 0)), tp.p((-0.5625, 0.5)), tp.p((0.5625, 0.5)), tp.p((0.5625, 0))], BAU_HELL, 2)
-    c.text(tp.x(0), 100, "GRUNDRISS", TITEL, 2, "m")
-    dim_v(c, tp, 0.9, 0, 0.5, "0,5", right=True)
-    notes(c, 700, 440, ["#Kontakt zur Wand", "Rahmen 1/16 m, bündig mit der Wandebene", "Wandfugen laufen bis an den Rahmen",
-                        "Sohlbank 1/16 m, Sockelhöhe 0,5", "#Dreiecke: etwa 60"], 26)
+    c.rect(tp.x(-1.25), tp.y(0.25), tp.x(1.25), tp.y(-0.125), WAND)
+    c.rect(tp.x(-0.5), tp.y(0.25), tp.x(0.5), tp.y(-0.0625), OEFFNUNG)
+    c.path([tp.p((-0.75, 0)), tp.p((-0.75, 0.25)), tp.p((0.75, 0.25)), tp.p((0.75, 0))], BAU_HELL, 2)
+    c.text(tp.x(0), 100, "GRUNDRISS (RAUM)", TITEL, 2, "m")
+    dim_v(c, tp, 0.95, 0, 0.25, "0,25", right=True)
+    notes(c, 700, 440, ["#Kontakt zur Wand", "Rückseiten 1/8 m in der Wand", "steht vor: Gang 0,125, Raum 0,25",
+                        "Rahmen zwei Bänder je 1/8, Breite 1,5", "Rückplatte: Wandtextur abgedunkelt",
+                        "Sohlbank 0,25 bis 0,5", "#Dreiecke: 312 (gemessen, #538)"], 26)
     return c
 
 

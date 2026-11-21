@@ -311,6 +311,8 @@ public sealed class ShowroomLayout
         labels.AddRange(PillarLabels(sections, pillars));
         var arches = CeilingArches(level, sections);
         labels.AddRange(sections.Select(section => new ShowroomLabel(ArchLabel, Above(section.RoomX - 1, section.ArchCorridorRow, 2.6f))));
+        var niches = WallNiches(level, sections);
+        labels.AddRange(NicheLabels(niches));
 
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
@@ -321,6 +323,7 @@ public sealed class ShowroomLayout
                 CryptWardens = wardens,
                 WallPillars = [.. pillars.Select(pillar => pillar.Pillar)],
                 CeilingArches = arches,
+                WallNiches = niches,
             },
             labels, sections, placed);
     }
@@ -385,6 +388,52 @@ public sealed class ShowroomLayout
 
         return arches;
     }
+
+    /// <summary>The label above the first wall niche of <paramref name="size"/> in every section.</summary>
+    public static string NicheLabel(WallNicheSize size) => size == WallNicheSize.Corridor ? "Niche 3.5 m" : "Niche 6 m";
+
+    /// <summary>
+    /// The columns of the wall niches in <paramref name="part"/> of <paramref name="section"/>, west to east: one every
+    /// <see cref="WallStep"/> cells, keeping a cell of bare wall at each end - away from the part's ends, where the
+    /// passages, the arch corridor's mouth and the other part open the south wall.
+    /// </summary>
+    public static IEnumerable<int> NicheColumns(ShowroomSection section, ShowroomPart part)
+    {
+        ArgumentNullException.ThrowIfNull(section);
+        var start = section.StartOf(part);
+        return Enumerable.Range(0, ((section.Length - 4) / WallStep) + 1).Select(step => start + 2 + (WallStep * step));
+    }
+
+    /// <summary>
+    /// The wall niches (issue #538): on the south wall of every part, in the variant of that part. The north walls carry
+    /// the doors and the wall pillars; a niche must stand neither beside a door nor behind a pillar, so the niches take
+    /// the bare wall opposite. <see cref="WallNicheLook.Place"/> checks each place on the grid and picks the size from the
+    /// clear height.
+    /// </summary>
+    private static List<ExhibitWallNiche> WallNiches(Level level, IReadOnlyList<ShowroomSection> sections)
+    {
+        var niches = new List<ExhibitWallNiche>();
+        foreach (var section in sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                foreach (var x in NicheColumns(section, part))
+                {
+                    var (position, facing, size) = WallNicheLook.Place(level, x, section.SouthRowOf(part), RoomSide.South);
+                    niches.Add(new ExhibitWallNiche(section.Variant, size, position, facing));
+                }
+            }
+        }
+
+        return niches;
+    }
+
+    /// <summary>One label per size and section, in front of and above the westmost niche of that size.</summary>
+    private static IEnumerable<ShowroomLabel> NicheLabels(List<ExhibitWallNiche> niches) =>
+        niches
+            .GroupBy(niche => (niche.Variant, niche.Size))
+            .Select(group => group.OrderBy(niche => niche.Position.X).First())
+            .Select(first => new ShowroomLabel(NicheLabel(first.Size), first.Position + new Vector3(0f, 2.6f, 0f) + (first.Facing * 0.6f)));
 
     /// <summary>One label per part of every section, above the first wall pillar of that part.</summary>
     private static IEnumerable<ShowroomLabel> PillarLabels(

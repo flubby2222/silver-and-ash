@@ -26,6 +26,12 @@ public class ShowroomLayoutTests
         .OrderBy(arch => arch.Position.X)
         .ToList();
 
+    // The wall niches of `size` set on the walls of `section`, west to east.
+    private static List<ExhibitWallNiche> NichesOf(ShowroomSection section, WallNicheSize size) => Layout.Exhibits.WallNiches
+        .Where(niche => niche.Variant == section.Variant && niche.Size == size)
+        .OrderBy(niche => niche.Position.X)
+        .ToList();
+
     // A player's position tick by tick, walking from the dead end of the arch corridor of `section` east (forward) and
     // `sideways` to the right, in a world of the showroom's cells with `exhibits`, until it is two cells into the room.
     // The player starts at the dead end: the same cells, only the start moved there.
@@ -358,6 +364,7 @@ public class ShowroomLayoutTests
         Assert.Equal(Layout.Exhibits.Consumables, again.Exhibits.Consumables);
         Assert.Equal(Layout.Exhibits.WallPillars, again.Exhibits.WallPillars);
         Assert.Equal(Layout.Exhibits.CeilingArches, again.Exhibits.CeilingArches);
+        Assert.Equal(Layout.Exhibits.WallNiches, again.Exhibits.WallNiches);
     }
 
     [Fact]
@@ -506,6 +513,73 @@ public class ShowroomLayoutTests
 
             // The wall stops the player at its radius; a pillar with a body would stop it a pillar's depth earlier.
             Assert.InRange(world.Player.Position.Z, pillar.Position.Z, pillar.Position.Z + BodySizes.Player.Radius + 0.05f);
+        }
+    }
+
+    [Fact]
+    public void Wall_niches_stand_at_every_wall_variant_in_both_sizes()
+    {
+        foreach (var section in Layout.Sections)
+        {
+            foreach (var (part, size) in new[] { (ShowroomPart.Corridor, WallNicheSize.Corridor), (ShowroomPart.Room, WallNicheSize.Room) })
+            {
+                var niches = NichesOf(section, size);
+                Assert.True(niches.Count >= 2, $"Section {section.Variant}, {part}: only {niches.Count} niche(s).");
+                Assert.All(niches, niche => Assert.NotNull(WallNicheLook.FileName(niche.Size, niche.Variant)));
+                Assert.Equal([.. ShowroomLayout.NicheColumns(section, part)], niches.Select(niche => Level.ToGrid(niche.Position.X, niche.Position.Z - 0.01f).X));
+                Assert.Contains(Layout.Labels, label => label.Text == ShowroomLayout.NicheLabel(size)
+                    && Level.ToGrid(label.Position.X, label.Position.Z) == Level.ToGrid(niches[0].Position.X, niches[0].Position.Z - 0.01f));
+            }
+        }
+    }
+
+    [Fact]
+    public void Every_wall_niche_stands_in_the_grid_on_the_bare_south_wall_of_its_part()
+    {
+        var doorCells = Layout.Doors.Select(door => (door.X, door.Z)).ToHashSet();
+        var pieceCells = FloorPieces(Layout).Select(place => (place.X, place.Z)).ToHashSet();
+        foreach (var niche in Layout.Exhibits.WallNiches)
+        {
+            // Placed by the rule: in the middle of a cell's south wall, on its floor, looking north into the cell, the
+            // size taken from the cell's clear height.
+            var section = Layout.Sections.Single(section => section.Variant == niche.Variant);
+            var part = niche.Size == WallNicheSize.Corridor ? ShowroomPart.Corridor : ShowroomPart.Room;
+            var (x, z) = Level.ToGrid(niche.Position.X, niche.Position.Z - 0.01f);
+            Assert.Equal(section.SouthRowOf(part), z);
+            Assert.InRange(x, section.StartOf(part) + 1, section.StartOf(part) + section.Length - 2);
+            Assert.Equal(WallNicheLook.Place(Layout.Level, x, z, RoomSide.South), (niche.Position, niche.Facing, niche.Size));
+            Assert.Equal(-Vector3.UnitZ, niche.Facing);
+            var cell = Layout.Level[x, z];
+            Assert.Equal(ShowroomSection.CeilingOf(part), cell.CeilingHeight - cell.FloorHeight);
+
+            // No door behind it or beside it, and no piece on the floor in front of it or beside it to hide it.
+            foreach (var beside in new[] { x - 1, x, x + 1 })
+            {
+                Assert.DoesNotContain((beside, z + 1), doorCells);
+                Assert.DoesNotContain((beside, z), pieceCells);
+            }
+        }
+
+        var cells = Layout.Exhibits.WallNiches.Select(niche => (niche.Position.X, niche.Position.Z)).ToList();
+        Assert.Equal(cells.Count, cells.Distinct().Count());
+    }
+
+    [Fact]
+    public void A_wall_niche_is_only_decoration_one_walks_right_up_to_the_wall_behind_it()
+    {
+        // No body, no collision: walking south at a niche, tick by tick, ends at the wall, not in front of the niche.
+        foreach (var niche in Layout.Exhibits.WallNiches)
+        {
+            var (x, z) = Level.ToGrid(niche.Position.X, niche.Position.Z - 0.01f);
+            var world = Layout.NewWorldAt(x, z - 1, niche.Position + new Vector3(0f, 1.5f, 0f));
+            for (var tick = 0; tick < 120; tick++)
+            {
+                world.Tick(PlayerInput.None with { Move = new Vector2(0f, 1f) });
+            }
+
+            // The wall stops the player at its radius; a niche with a body would stop it earlier. Nothing here depends on
+            // how far the model stands out, so a model set back into the wall keeps this rule.
+            Assert.InRange(world.Player.Position.Z, niche.Position.Z - BodySizes.Player.Radius - 0.05f, niche.Position.Z);
         }
     }
 
