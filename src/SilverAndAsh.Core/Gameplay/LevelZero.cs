@@ -34,7 +34,8 @@ public sealed class LevelZero
 
     /// <summary>
     /// The level of a run with <paramref name="seed"/>, exactly as <see cref="NewRun"/> uses it: rooms, then enemies,
-    /// then chests, then teleporters, then the Well of Sirius (which keeps clear of the teleporters). The balance
+    /// then chests, then teleporters, then the Well of Sirius (which keeps clear of the teleporters), then the grates of the
+    /// arena doors (issue #558, nothing rolled). The balance
     /// report builds its levels with this, too.
     /// </summary>
     public GeneratedLevel Build(int seed, Balance balance)
@@ -42,7 +43,7 @@ public sealed class LevelZero
         ArgumentNullException.ThrowIfNull(balance);
         var built = LevelGenerator.Generate(_templates, seed, balance.Layout);
         var withChests = ChestPlacement.Place(EnemyPlacement.Populate(built, balance.Difficulty), balance.Chests);
-        return WellPlacement.Place(TeleporterPlacement.Place(withChests), balance.Well);
+        return GratePlacement.Place(WellPlacement.Place(TeleporterPlacement.Place(withChests), balance.Well));
     }
 
     /// <summary>The run after <paramref name="finished"/>: a new seed taken from its seed, the same balancing values.</summary>

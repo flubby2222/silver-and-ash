@@ -301,6 +301,13 @@ public class EmergenceTests
 
                 Assert.True(room.IsCleared, $"{where}: never cleared.");
                 Assert.All(enemies, enemy => Assert.True(IsDead(enemy)));
+
+                // Issue #558: the grates of a combat room rise over their own time - free once they are all the way up.
+                for (var tick = 0; tick < Balance.Grates.LiftTicks; tick++)
+                {
+                    world.Tick(PlayerInput.None);
+                }
+
                 Assert.All(room.DoorIds, id => Assert.False(world.Doors[id].IsBarred));
             }
         }

@@ -322,6 +322,56 @@ public class GratePoseTests
         }
     }
 
+    [Fact]
+    public void A_motion_from_its_own_start_height_starts_at_tick_0_and_one_past_its_end_starts_at_its_last()
+    {
+        Assert.Equal(0, GratePose.StartTick(GratePose.OpenHeight, GrateMotion.Fall, Shipped));
+        Assert.Equal(0, GratePose.StartTick(0f, GrateMotion.Lift, Shipped));
+
+        // Below the floor no fall tick is low enough, above the open height no lift tick high enough: the motion is over.
+        Assert.Equal(Shipped.FallTicks, GratePose.StartTick(-1f, GrateMotion.Fall, Shipped));
+        Assert.Equal(Shipped.LiftTicks, GratePose.StartTick(GratePose.OpenHeight + 1f, GrateMotion.Lift, Shipped));
+    }
+
+    [Fact]
+    public void A_grate_turned_round_on_its_way_goes_on_from_where_it_hangs_without_a_jump()
+    {
+        // Issue #558: a lift that turns into a fall (or the other way) starts at the first tick that is not past the
+        // height the grate hangs at - the tick before is still on the far side of it.
+        for (var t = 0; t <= Shipped.LiftTicks; t++)
+        {
+            var height = GratePose.Height(t, GrateMotion.Lift, Shipped);
+            var start = GratePose.StartTick(height, GrateMotion.Fall, Shipped);
+            Assert.True(GratePose.Height(start, GrateMotion.Fall, Shipped) <= height, $"lift tick {t}: the fall starts higher");
+            Assert.True(start == 0 || GratePose.Height(start - 1, GrateMotion.Fall, Shipped) > height, $"lift tick {t}: the fall starts too low");
+        }
+
+        for (var t = 0; t <= Shipped.FallTicks; t++)
+        {
+            var height = GratePose.Height(t, GrateMotion.Fall, Shipped);
+            var start = GratePose.StartTick(height, GrateMotion.Lift, Shipped);
+            Assert.True(GratePose.Height(start, GrateMotion.Lift, Shipped) >= height, $"fall tick {t}: the lift starts lower");
+            Assert.True(start == 0 || GratePose.Height(start - 1, GrateMotion.Lift, Shipped) < height, $"fall tick {t}: the lift starts too high");
+        }
+    }
+
+    [Fact]
+    public void Each_motion_takes_its_own_ticks_from_the_balancing()
+    {
+        Assert.Equal(Shipped.FallTicks, GratePose.MotionTicks(GrateMotion.Fall, Shipped));
+        Assert.Equal(Shipped.LiftTicks, GratePose.MotionTicks(GrateMotion.Lift, Shipped));
+        Assert.Equal(Judged.FallTicks, GratePose.MotionTicks(GrateMotion.Fall, Judged));
+        Assert.Equal(Judged.LiftTicks, GratePose.MotionTicks(GrateMotion.Lift, Judged));
+    }
+
+    [Fact]
+    public void Start_tick_and_motion_ticks_refuse_a_missing_timing_and_an_unknown_motion()
+    {
+        Assert.Throws<ArgumentNullException>(() => GratePose.StartTick(1f, GrateMotion.Fall, null!));
+        Assert.Throws<ArgumentNullException>(() => GratePose.MotionTicks(GrateMotion.Lift, null!));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GratePose.StartTick(1f, (GrateMotion)99, Shipped));
+        Assert.Throws<ArgumentOutOfRangeException>(() => GratePose.MotionTicks((GrateMotion)99, Shipped));
+    }
     private static int FirstLiftTickAtLeast(float height)
     {
         var t = 0;

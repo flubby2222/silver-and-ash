@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
@@ -11,9 +12,18 @@ namespace SilverAndAsh.Core.Gameplay;
 public sealed class Door : IInteractable
 {
     private readonly int _openingTicks;
+    private readonly GratesBalance _grates;
     private int _openedTicks;
 
-    internal Door(int id, LevelDoor plan, Level level, DoorsBalance? balance = null)
+    // Barred: the arena wants this door shut. Without a grate it blocks at once; with one only while the grate hangs low.
+    private bool _barred;
+
+    // The grate's own clock (issue #558): the motion it is in and the ticks since that began - never the world's clock.
+    // At the start it has risen long ago: fully open.
+    private GrateMotion _motion = GrateMotion.Lift;
+    private int _grateTicks;
+
+    internal Door(int id, LevelDoor plan, Level level, DoorsBalance? balance = null, GratesBalance? grates = null)
     {
         var cell = level[plan.X, plan.Z];
         if (cell.IsSolid)
@@ -31,7 +41,25 @@ public sealed class Door : IInteractable
         BoxMin = new Vector3(plan.X * Level.CellSize, cell.FloorHeight, plan.Z * Level.CellSize);
         BoxMax = new Vector3((plan.X + 1) * Level.CellSize, cell.CeilingHeight, (plan.Z + 1) * Level.CellSize);
         _openingTicks = SimulationClock.SecondsToTicks((balance ?? new DoorsBalance()).OpenTime(plan.Kind));
+        HasGrate = plan.HasGrate;
+        _grates = grates ?? new GratesBalance();
+        _grateTicks = _grates.LiftTicks;
     }
+
+    /// <summary>True if a portcullis hangs in this door (<see cref="LevelDoor.HasGrate"/>).</summary>
+    public bool HasGrate { get; }
+
+    /// <summary>
+    /// The height of the grate's spike tips above the floor in metres (issue #558), from <see cref="GratePose.Height"/>:
+    /// <see cref="GratePose.OpenHeight"/> while it is up. The picture and the passage use this one number. A door
+    /// without a grate is "up" unless barred, then "down".
+    /// </summary>
+    public float GrateHeight => HasGrate
+        ? GratePose.Height(_grateTicks, _motion, _grates)
+        : _barred ? 0f : GratePose.OpenHeight;
+
+    /// <summary>True while the grate is on its way down or down: barred, even if it does not block yet.</summary>
+    public bool IsSealing => _barred;
 
     /// <summary>Number of the door in its world (position in <see cref="GameWorld.Doors"/>).</summary>
     public int Id { get; }
@@ -69,17 +97,21 @@ public sealed class Door : IInteractable
     /// </summary>
     public bool OpenedFromLowSide { get; private set; }
 
-    /// <summary>True while the grate of an arena is down: the door blocks, open or not, and F does nothing.</summary>
-    public bool IsBarred { get; private set; }
+    /// <summary>
+    /// True while the grate of an arena is down: the door blocks, open or not, and F does nothing. A door with a grate
+    /// (issue #558) blocks only while its spike tips hang below <see cref="GratesBalance.BlockHeight"/> - from part way
+    /// down the fall until part way up the lift.
+    /// </summary>
+    public bool IsBarred => HasGrate ? GrateHeight < _grates.BlockHeight : _barred;
 
     /// <summary>True if nothing can pass: closed, or barred.</summary>
     public bool Blocks => !IsOpen || IsBarred;
 
     /// <summary>
     /// Every closed door that is not barred is offered - a locked one too, to say that it needs a key. A cracked wall
-    /// never is: it is a secret, and F does not open it.
+    /// never is: it is a secret, and F does not open it. Nor is a door whose grate is falling: it will be shut anyway.
     /// </summary>
-    public bool CanInteract => !IsOpen && !IsBarred && Kind != DoorKind.Cracked;
+    public bool CanInteract => !IsOpen && !IsBarred && !_barred && Kind != DoorKind.Cracked;
 
     /// <summary>Wooden and boss doors open with F. A locked door opens with F only for a player with a key, and uses it up.</summary>
     public InteractionOffer OfferFor(Player player)
@@ -111,17 +143,67 @@ public sealed class Door : IInteractable
     /// </summary>
     internal void Break() => IsOpen = true;
 
-    /// <summary>One tick of swinging open (nothing while closed or once fully open).</summary>
-    internal void Tick()
+    /// <summary>
+    /// One tick of swinging open (nothing while closed or once fully open) and of the grate's motion (nothing once it
+    /// is down or up). True if <see cref="Blocks"/> changed with it - the grate crossed <see cref="GratesBalance.BlockHeight"/>.
+    /// </summary>
+    internal bool Tick()
     {
+        var blocked = Blocks;
         if (IsOpen && _openedTicks < _openingTicks)
         {
             _openedTicks++;
         }
+
+        if (HasGrate && _grateTicks < GratePose.MotionTicks(_motion, _grates))
+        {
+            _grateTicks++;
+        }
+
+        return Blocks != blocked;
     }
 
-    /// <summary>An arena's grate falls - never at an unbroken cracked wall, which would give the secret away.</summary>
-    internal void Bar() => IsBarred = Kind != DoorKind.Cracked || IsOpen;
+    /// <summary>
+    /// An arena's grate falls - never at an unbroken cracked wall, which would give the secret away. Without a grate
+    /// the door is barred at once. True if a grate started to fall (it was not falling already).
+    /// </summary>
+    internal bool Bar()
+    {
+        if (!HasGrate)
+        {
+            _barred = Kind != DoorKind.Cracked || IsOpen;
+            return false;
+        }
 
-    internal void Lift() => IsBarred = false;
+        if (_barred)
+        {
+            return false;
+        }
+
+        _barred = true;
+        Turn(GrateMotion.Fall);
+        return true;
+    }
+
+    /// <summary>The grate rises (without one the door is free at once). True if a grate started to rise.</summary>
+    internal bool Lift()
+    {
+        var wasBarred = _barred;
+        _barred = false;
+        if (!HasGrate || !wasBarred)
+        {
+            return false;
+        }
+
+        Turn(GrateMotion.Lift);
+        return true;
+    }
+
+    // The new motion starts where the grate hangs now, so it never jumps - also when it turns round on its way.
+    private void Turn(GrateMotion motion)
+    {
+        var height = GrateHeight;
+        _motion = motion;
+        _grateTicks = GratePose.StartTick(height, motion, _grates);
+    }
 }

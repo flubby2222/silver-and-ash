@@ -79,7 +79,7 @@ public sealed class GameWorld
         _levelWithOpenDoors = level;
         _doorPlan = doors ?? [];
         Balance = balance ?? Balance.Default;
-        _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level, Balance.Doors)).ToList();
+        _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level, Balance.Doors, Balance.Grates)).ToList();
         Level = WithClosedDoors();
         LevelAsBuilt = WithUnbrokenWalls();
         Seed = seed;
@@ -838,7 +838,7 @@ public sealed class GameWorld
 
         foreach (var id in room.DoorIds)
         {
-            _doors[id].Bar();
+            ReportGrate(_doors[id], _doors[id].Bar(), falling: true);
         }
 
         room.Seal();
@@ -874,11 +874,7 @@ public sealed class GameWorld
                 continue;
             }
 
-            foreach (var id in room.DoorIds)
-            {
-                _doors[id].Lift();
-            }
-
+            LiftGrates(room);
             room.Clear();
             UpdateLevel();
             _events.Add(new RoomCleared(room.Index));
@@ -887,6 +883,119 @@ public sealed class GameWorld
             RaiseStairsIfBoss(room);
         }
     }
+
+    // The grates of a room rise - one event per grate that starts to move.
+    private void LiftGrates(RoomState room)
+    {
+        foreach (var id in room.DoorIds)
+        {
+            ReportGrate(_doors[id], _doors[id].Lift(), falling: false);
+        }
+    }
+
+    private void ReportGrate(Door door, bool started, bool falling)
+    {
+        if (started)
+        {
+            _events.Add(new GrateStarted(door.Id, falling) { Place = (door.BoxMin + door.BoxMax) / 2f });
+        }
+    }
+
+    // Issue #558: every door runs its own clock. A grate that starts to block pushes every figure in its door cell into
+    // the arena - nobody is hurt or caught in it - and the level changes for everybody.
+    private void TickDoors()
+    {
+        var changed = false;
+        foreach (var door in _doors)
+        {
+            if (door.Tick())
+            {
+                changed = true;
+                if (door.Blocks)
+                {
+                    PushOutOf(door);
+                }
+            }
+        }
+
+        if (changed)
+        {
+            UpdateLevel();
+        }
+    }
+
+    private void PushOutOf(Door door)
+    {
+        foreach (var player in Players.Where(player => Overlaps(door, player.Position, BodySizes.Player.Radius)))
+        {
+            player.ShoveTo(PushedOut(door, player.Position, BodySizes.Player.Radius));
+        }
+
+        foreach (var ghoul in _ghouls.Where(ghoul => Overlaps(door, ghoul.Position, ghoul.Body.Radius)))
+        {
+            ghoul.PlaceAt(PushedOut(door, ghoul.Position, ghoul.Body.Radius));
+        }
+
+        foreach (var bat in _bats.Where(bat => Overlaps(door, bat.Position, bat.Body.Radius)))
+        {
+            bat.PlaceAt(PushedOut(door, bat.Position, bat.Body.Radius));
+        }
+    }
+
+    // Just out of the door cell along the passage, into the sealed room (if both or neither side is sealed: the nearer
+    // side). Across the passage it stays where it was, but inside the doorway's width, so it never ends up in a wall.
+    private Vector3 PushedOut(Door door, Vector3 at, float radius)
+    {
+        const float Gap = 0.01f;
+        var middle = (door.BoxMin + door.BoxMax) / 2f;
+        var alongZ = door.Side is RoomSide.North or RoomSide.South;
+        var towardsB = door.Side is RoomSide.South or RoomSide.East;
+        var sealedA = door.RoomA < _rooms.Count && _rooms[door.RoomA].IsSealed;
+        var sealedB = door.RoomB < _rooms.Count && _rooms[door.RoomB].IsSealed;
+        var high = sealedA != sealedB
+            ? sealedB == towardsB
+            : alongZ ? at.Z >= middle.Z : at.X >= middle.X;
+        if (alongZ)
+        {
+            return at with
+            {
+                X = Math.Clamp(at.X, door.BoxMin.X + radius, door.BoxMax.X - radius),
+                Z = high ? door.BoxMax.Z + radius + Gap : door.BoxMin.Z - radius - Gap,
+            };
+        }
+
+        return at with
+        {
+            X = high ? door.BoxMax.X + radius + Gap : door.BoxMin.X - radius - Gap,
+            Z = Math.Clamp(at.Z, door.BoxMin.Z + radius, door.BoxMax.Z - radius),
+        };
+    }
+
+    // Provisional decision of the lead (issue #558): a grate takes a moment to fall, so a quick player can get out of an
+    // arena before it shuts - and nobody would be left inside to clear it. As long as a player lives but none is in the
+    // room or one of its doorways, its grates rise again and it waits to be entered anew; its enemies stay as they are.
+    private void ReopenAbandonedArenas()
+    {
+        if (Players.All(player => player.IsDead))
+        {
+            return;
+        }
+
+        foreach (var room in _rooms.Where(room => room.IsSealed && room.DoorIds.Any(id => _doors[id] is { HasGrate: true, IsSealing: true })).ToList())
+        {
+            if (Players.Any(player => !player.IsDead && IsIn(room, player)))
+            {
+                continue;
+            }
+
+            LiftGrates(room);
+            room.Reopen();
+            UpdateLevel();
+        }
+    }
+
+    private bool IsIn(RoomState room, Player player) =>
+        room.Cells.Contains(Level.ToGrid(player.Position.X, player.Position.Z)) || TouchesDoorOf(room, player);
 
     // A cleared boss room lets the spiral staircase rise in its middle (decision record 0007). A room is cleared only
     // once, and there is one boss room - so it rises only once. Climbing it (F) wins the run.
@@ -936,22 +1045,15 @@ public sealed class GameWorld
         _ => true,
     };
 
-    private bool TouchesDoorOf(RoomState room, Player player)
-    {
-        foreach (var id in room.DoorIds)
-        {
-            var door = _doors[id];
-            var nearestX = Math.Clamp(player.Position.X, door.BoxMin.X, door.BoxMax.X);
-            var nearestZ = Math.Clamp(player.Position.Z, door.BoxMin.Z, door.BoxMax.Z);
-            var dx = player.Position.X - nearestX;
-            var dz = player.Position.Z - nearestZ;
-            if (dx * dx + dz * dz < BodySizes.Player.Radius * BodySizes.Player.Radius)
-            {
-                return true;
-            }
-        }
+    private bool TouchesDoorOf(RoomState room, Player player) =>
+        room.DoorIds.Any(id => Overlaps(_doors[id], player.Position, BodySizes.Player.Radius));
 
-        return false;
+    // Whether a round body of radius at a place reaches into the door's cell (seen from above).
+    private static bool Overlaps(Door door, Vector3 at, float radius)
+    {
+        var dx = at.X - Math.Clamp(at.X, door.BoxMin.X, door.BoxMax.X);
+        var dz = at.Z - Math.Clamp(at.Z, door.BoxMin.Z, door.BoxMax.Z);
+        return dx * dx + dz * dz < radius * radius;
     }
 
     private static bool IsDead(ITarget enemy) => enemy switch
@@ -1662,13 +1764,10 @@ public sealed class GameWorld
             chest.Tick();
         }
 
-        foreach (var door in _doors)
-        {
-            door.Tick();
-        }
-
+        TickDoors();
         _stairs?.Tick();
         ClearRooms();
+        ReopenAbandonedArenas();
 
         // The clock of the run stops with victory or defeat; this tick still counts.
         var wasOver = IsWon || _lossReported;
