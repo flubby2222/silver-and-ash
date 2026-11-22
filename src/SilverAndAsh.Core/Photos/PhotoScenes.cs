@@ -83,7 +83,7 @@ public static class PhotoScenes
                 Input = _ => PlayerInput.None with { Melee = true },
                 StopWhen = world => world.Player.MeleeCharge is { IsCharging: true, Fraction: >= 1f },
             }),
-        new("blade-swing-half", "A quick blade swing halfway out: the forearm turns towards the shoulder (issue #265).",
+        new("blade-swing-half", "A quick blade swing halfway away: the forearm turns towards the shoulder (issue #265).",
             studio => new PhotoSetup(studio.Arena('G', 10))
             {
                 // Pressed on tick 0, released on tick 1 - the swing starts; two frames later it is halfway out.
@@ -454,6 +454,47 @@ public static class PhotoScenes
                 }
             }
         }
+
+        // The fillings of the deep niches (issue #553) in wall variant A: from the front 2 m away, and askew from close by,
+        // which shows how deep the pocket is and that nothing reaches out of it.
+        foreach (var (name, part, form, filling) in FilledNiches())
+        {
+            yield return new(
+                $"wall-niche-{name}",
+                $"A deep wall niche of the showroom filled with {filling.ToString().ToLowerInvariant()}, from the front 2 m away (issue #553).",
+                studio => new PhotoSetup(BeforeFilledNiche(studio, part, form, filling, away: 2f, aside: 0.3f)));
+            yield return new(
+                $"wall-niche-{name}-askew",
+                $"A deep wall niche of the showroom filled with {filling.ToString().ToLowerInvariant()}, askew from 1.4 m to the side (issue #553).",
+                studio => new PhotoSetup(BeforeFilledNiche(studio, part, form, filling, away: 0.9f, aside: 1.4f)));
+        }
+    }
+
+    private static (string Name, ShowroomPart Part, WallNicheForm Form, WallNicheFilling Filling)[] FilledNiches() =>
+    [
+        ("bottles", ShowroomPart.Corridor, WallNicheForm.Deep, WallNicheFilling.Bottles),
+        ("bottles-shelf", ShowroomPart.Room, WallNicheForm.DeepWithShelf, WallNicheFilling.Bottles),
+        ("candles", ShowroomPart.Corridor, WallNicheForm.DeepWithShelf, WallNicheFilling.Candles),
+        ("skulls", ShowroomPart.Corridor, WallNicheForm.DeepWithShelf, WallNicheFilling.Skulls),
+    ];
+
+    // The first niche of section A's part with that form and filling, from away metres in front and aside metres east of
+    // it, looking at the middle of its pocket at the height of what it holds.
+    private static GameWorld BeforeFilledNiche(PhotoStudio studio, ShowroomPart part, WallNicheForm form, WallNicheFilling filling, float away, float aside)
+    {
+        var layout = ShowroomLayout.Build();
+        var section = layout.Sections[0];
+        var niche = layout.Exhibits.WallNiches
+            .Where(niche => niche.Variant == section.Variant && niche.Form == form && niche.Filling == filling
+                && niche.Size == (part == ShowroomPart.Corridor ? WallNicheSize.Corridor : WallNicheSize.Room))
+            .OrderBy(niche => niche.Position.X)
+            .First();
+        var (x, _) = Level.ToGrid(niche.Position.X, niche.Position.Z);
+        var world = layout.NewWorldAt(x, section.NorthRow, niche.Position, studio.Balance);
+        world.Player.PlaceAt(niche.Position + (niche.Facing * away) + new Vector3(aside, 0f, 0f));
+        var (inside, _) = WallNicheFillingLook.Place(form, filling, niche.Position, niche.Facing);
+        PhotoStudio.Face(world.Player, inside + new Vector3(0f, 0.15f, 0f) + (niche.Facing * (WallNicheLook.PocketDepth / 2f)));
+        return world;
     }
 
     // The second flat niche of the part, or the first deep one of its form.

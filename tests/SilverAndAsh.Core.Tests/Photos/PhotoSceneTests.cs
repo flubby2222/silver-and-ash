@@ -125,6 +125,8 @@ public class PhotoSceneTests
             "wall-niche-deep-c-corridor", "wall-niche-deep-c-room",
             "wall-niche-shelf-a-corridor", "wall-niche-shelf-a-room", "wall-niche-shelf-b-corridor", "wall-niche-shelf-b-room",
             "wall-niche-shelf-c-corridor", "wall-niche-shelf-c-room",
+            "wall-niche-bottles", "wall-niche-bottles-askew", "wall-niche-bottles-shelf", "wall-niche-bottles-shelf-askew",
+            "wall-niche-candles", "wall-niche-candles-askew", "wall-niche-skulls", "wall-niche-skulls-askew",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -616,6 +618,42 @@ public class PhotoSceneTests
         var towards = Vector3.Normalize((niche.Position - world.Player.Position) with { Y = 0f });
         var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
         Assert.True(Vector3.Dot(looking, towards) > 0.99f);
+    }
+
+    [Theory]
+    [InlineData("wall-niche-bottles", WallNicheForm.Deep, WallNicheFilling.Bottles, 2f, 0.3f)]
+    [InlineData("wall-niche-bottles-askew", WallNicheForm.Deep, WallNicheFilling.Bottles, 0.9f, 1.4f)]
+    [InlineData("wall-niche-bottles-shelf", WallNicheForm.DeepWithShelf, WallNicheFilling.Bottles, 2f, 0.3f)]
+    [InlineData("wall-niche-bottles-shelf-askew", WallNicheForm.DeepWithShelf, WallNicheFilling.Bottles, 0.9f, 1.4f)]
+    [InlineData("wall-niche-candles", WallNicheForm.DeepWithShelf, WallNicheFilling.Candles, 2f, 0.3f)]
+    [InlineData("wall-niche-candles-askew", WallNicheForm.DeepWithShelf, WallNicheFilling.Candles, 0.9f, 1.4f)]
+    [InlineData("wall-niche-skulls", WallNicheForm.DeepWithShelf, WallNicheFilling.Skulls, 2f, 0.3f)]
+    [InlineData("wall-niche-skulls-askew", WallNicheForm.DeepWithShelf, WallNicheFilling.Skulls, 0.9f, 1.4f)]
+    public void The_filled_niche_scenes_look_into_the_pocket_of_a_niche_with_that_filling(
+        string name, WallNicheForm form, WallNicheFilling filling, float away, float aside)
+    {
+        // Issue #553: on open floor, away metres in front of the niche and aside metres east, looking into its pocket -
+        // askew the view runs along the wall, so the depth of the pocket shows.
+        var setup = Built(name);
+        setup.Run();
+        var world = setup.World;
+        var niche = world.Showroom!.WallNiches
+            .Where(exhibit => exhibit.Variant == TextureVariant.A && exhibit.Form == form && exhibit.Filling == filling)
+            .MinBy(exhibit => Vector3.Distance(exhibit.Position, world.Player.Position))!;
+
+        Assert.False(world.Level.CellAt(world.Player.Position).IsSolid);
+        var offset = world.Player.Position - niche.Position;
+        Assert.Equal(away, Vector3.Dot(offset, niche.Facing), 0.01f);
+        Assert.Equal(aside, offset.X, 0.01f);
+        var (inside, _) = WallNicheFillingLook.Place(form, filling, niche.Position, niche.Facing);
+        var towards = Vector3.Normalize((inside - world.Player.Position) with { Y = 0f });
+        var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
+        Assert.True(Vector3.Dot(looking, towards) > 0.95f);
+        if (aside > 1f)
+        {
+            // Askew: the view meets the wall at less than 45 degrees.
+            Assert.True(MathF.Abs(Vector3.Dot(looking, niche.Facing)) < MathF.Sqrt(0.5f));
+        }
     }
 
     [Theory]

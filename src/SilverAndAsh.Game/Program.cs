@@ -493,7 +493,9 @@ static void RunGame(
         // three (issue #244); a missing variant falls back to the first.
         using var levelTextures = LevelTextures.Load(
             Path.Combine(AppContext.BaseDirectory, "assets", "textures"), LevelTextureSet.For(LevelLayer.Catacombs), log);
-        using var levelRenderer = new LevelRenderer(gameWorld.LevelAsBuilt, gameWorld.Surfaces, levelShader.Shader, levelTextures);
+        // A deep wall niche without its model leaves no hole in the wall face (issue #553).
+        Level LevelToDraw() => wallNicheView.AsDrawn(gameWorld.LevelAsBuilt, gameWorld.Showroom?.WallNiches ?? [], levelTextures);
+        using var levelRenderer = new LevelRenderer(LevelToDraw(), gameWorld.Surfaces, levelShader.Shader, levelTextures);
         var renderedLevel = gameWorld.LevelAsBuilt;
         var renderedSurfaces = gameWorld.Surfaces;
 
@@ -563,7 +565,7 @@ static void RunGame(
             Raylib.BeginMode3D(camera);
             if (!ReferenceEquals(renderedLevel, gameWorld.LevelAsBuilt) || !ReferenceEquals(renderedSurfaces, gameWorld.Surfaces))
             {
-                levelRenderer.Rebuild(gameWorld.LevelAsBuilt, gameWorld.Surfaces);
+                levelRenderer.Rebuild(LevelToDraw(), gameWorld.Surfaces);
                 renderedLevel = gameWorld.LevelAsBuilt;
                 renderedSurfaces = gameWorld.Surfaces;
             }

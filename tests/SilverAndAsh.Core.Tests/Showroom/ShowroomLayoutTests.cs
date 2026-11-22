@@ -563,6 +563,54 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void Every_deep_niche_carries_the_filling_of_its_table_and_every_filling_is_shown_with_its_label()
+    {
+        foreach (var section in Layout.Sections)
+        {
+            foreach (var (part, size) in new[] { (ShowroomPart.Corridor, WallNicheSize.Corridor), (ShowroomPart.Room, WallNicheSize.Room) })
+            {
+                var deep = Layout.Exhibits.WallNiches
+                    .Where(niche => niche.Variant == section.Variant && niche.Size == size && niche.Form != WallNicheForm.Flat)
+                    .OrderBy(niche => niche.Position.X)
+                    .ToList();
+                Assert.Equal(deep.Select((_, index) => ShowroomLayout.DeepNicheFilling(part, index)), deep.Select(niche => niche.Filling));
+                Assert.All(deep, niche => Assert.True(WallNicheFillingLook.Fits(niche.Form, niche.Filling), $"{niche.Form} takes no {niche.Filling}."));
+
+                // Every filled niche has its label right in front of it.
+                foreach (var niche in deep.Where(niche => niche.Filling != WallNicheFilling.None))
+                {
+                    Assert.Contains(Layout.Labels, label => label.Text == ShowroomLayout.FillingLabel(niche.Filling)
+                        && Level.ToGrid(label.Position.X, label.Position.Z) == Level.ToGrid(niche.Position.X, niche.Position.Z - 0.01f));
+                }
+            }
+        }
+
+        // No flat niche is filled, and every filling stands in the showroom - the bottles with and without a shelf over them.
+        var niches = Layout.Exhibits.WallNiches;
+        Assert.All(niches.Where(niche => niche.Form == WallNicheForm.Flat), niche => Assert.Equal(WallNicheFilling.None, niche.Filling));
+        foreach (var (form, filling) in new[]
+        {
+            (WallNicheForm.Deep, WallNicheFilling.Bottles), (WallNicheForm.DeepWithShelf, WallNicheFilling.Bottles),
+            (WallNicheForm.DeepWithShelf, WallNicheFilling.Candles), (WallNicheForm.DeepWithShelf, WallNicheFilling.Skulls),
+        })
+        {
+            Assert.Contains(niches, niche => niche.Form == form && niche.Filling == filling);
+        }
+
+        // And deep niches stay empty as well, to compare.
+        Assert.Contains(niches, niche => niche.Form == WallNicheForm.Deep && niche.Filling == WallNicheFilling.None);
+        Assert.Contains(niches, niche => niche.Form == WallNicheForm.DeepWithShelf && niche.Filling == WallNicheFilling.None);
+    }
+
+    [Fact]
+    public void An_empty_pocket_has_no_filling_label_and_a_niche_beyond_the_table_stays_empty()
+    {
+        Assert.Null(ShowroomLayout.FillingLabel(WallNicheFilling.None));
+        Assert.Equal("Bottles", ShowroomLayout.FillingLabel(WallNicheFilling.Bottles));
+        Assert.Equal(WallNicheFilling.None, ShowroomLayout.DeepNicheFilling(ShowroomPart.Corridor, 99));
+    }
+
+    [Fact]
     public void Every_deep_niche_and_only_a_deep_niche_leaves_its_hole_in_the_wall()
     {
         var holes = Layout.Exhibits.WallNiches
