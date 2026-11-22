@@ -7,37 +7,46 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The wall niches of the showroom (issue #538, see <see cref="WallNicheLook"/>): one model per size and wall variant,
-/// drawn in the variant the level really draws on the wall behind it. Pure decoration and pure presentation - where a
-/// niche stands and which size it takes decides Core. Without a model of the variant and of variant A the niche is left
-/// out, the wall stays bare.
+/// The wall niches of the showroom (issues #538 and #553, see <see cref="WallNicheLook"/>): one model per form, size and
+/// wall variant, drawn in the variant the level really draws on the wall behind it. Pure decoration and pure presentation -
+/// where a niche stands, which size and form it takes and where the wall face leaves a hole for a deep one decides Core.
+/// Without a model of the variant and of variant A the niche is left out: a flat one leaves the wall bare, a deep one its
+/// hole open.
 /// </summary>
 internal sealed class WallNicheView : IDisposable
 {
-    private readonly Dictionary<(WallNicheSize Size, TextureVariant Variant), TexturedModel> _models;
-    private readonly Matrix4x4[] _turns = new Matrix4x4[3];
-    private readonly Matrix4x4[] _frames = new Matrix4x4[3];
+    private const int MostParts = 8;
 
-    private WallNicheView(Dictionary<(WallNicheSize, TextureVariant), TexturedModel> models)
+    // By file name: both sizes of a deep niche share one file.
+    private readonly Dictionary<string, TexturedModel> _models;
+    private readonly Matrix4x4[] _turns = new Matrix4x4[MostParts];
+    private readonly Matrix4x4[] _frames = new Matrix4x4[MostParts];
+
+    private WallNicheView(Dictionary<string, TexturedModel> models)
     {
         _models = models;
     }
 
     /// <summary>
-    /// Loads the niche of every size and wall variant from <paramref name="directory"/> (<see cref="WallNicheLook.FileName(WallNicheSize, TextureVariant)"/>).
-    /// A missing or broken one: a warning in the log and the fallback for it. Needs the window.
+    /// Loads the niche of every form, size and wall variant from <paramref name="directory"/>
+    /// (<see cref="WallNicheLook.FileName(WallNicheForm, WallNicheSize, TextureVariant)"/>). A missing or broken one: a
+    /// warning in the log and the fallback for it. Needs the window.
     /// </summary>
     public static WallNicheView Load(string directory, FileLog? log)
     {
-        var models = new Dictionary<(WallNicheSize, TextureVariant), TexturedModel>();
-        foreach (var size in Enum.GetValues<WallNicheSize>())
+        var models = new Dictionary<string, TexturedModel>();
+        foreach (var form in Enum.GetValues<WallNicheForm>())
         {
-            foreach (var variant in new[] { TextureVariant.A, TextureVariant.B, TextureVariant.C })
+            foreach (var size in Enum.GetValues<WallNicheSize>())
             {
-                var path = Path.Combine(directory, WallNicheLook.FileName(size, variant));
-                if (TexturedModel.TryLoad(path, WallNicheLook.Parts, log) is { } model)
+                foreach (var variant in new[] { TextureVariant.A, TextureVariant.B, TextureVariant.C })
                 {
-                    models[(size, variant)] = model;
+                    var file = WallNicheLook.FileName(form, size, variant);
+                    if (!models.ContainsKey(file)
+                        && TexturedModel.TryLoad(Path.Combine(directory, file), WallNicheLook.PartsOf(form), log) is { } model)
+                    {
+                        models[file] = model;
+                    }
                 }
             }
         }
@@ -54,19 +63,22 @@ internal sealed class WallNicheView : IDisposable
     {
         foreach (var niche in niches)
         {
-            const float half = WallNicheLook.Height / 2f;
-            if (!view.MaySee(niche.Position + new Vector3(0f, half, 0f), half + WallNicheLook.Width)
-                || Model(niche.Size, textures.Resolve(SurfaceKind.Wall, niche.Variant)) is not { } model)
+            var (width, height) = WallNicheLook.Extent(niche.Form);
+            if (!view.MaySee(niche.Position + new Vector3(0f, height / 2f, 0f), (height / 2f) + width)
+                || Model(niche, textures.Resolve(SurfaceKind.Wall, niche.Variant)) is not { } model)
             {
                 continue;
             }
 
             // Nothing of the niche moves in its file: it is turned to look into the cell and set on the wall's face.
-            _turns.AsSpan().Fill(Matrix4x4.Identity);
-            model.Rig.Pose(_turns, ModelPlacement.Place(niche.Position, niche.Facing), _frames);
-            for (var part = 0; part < _frames.Length; part++)
+            var count = model.Rig.Count;
+            var turns = _turns.AsSpan(0, count);
+            var frames = _frames.AsSpan(0, count);
+            turns.Fill(Matrix4x4.Identity);
+            model.Rig.Pose(turns, ModelPlacement.Place(niche.Position, niche.Facing), frames);
+            for (var part = 0; part < count; part++)
             {
-                model.DrawPart(part, _frames[part]);
+                model.DrawPart(part, frames[part]);
             }
         }
     }
@@ -79,9 +91,11 @@ internal sealed class WallNicheView : IDisposable
         }
     }
 
-    private TexturedModel? Model(WallNicheSize size, TextureVariant wanted)
+    private TexturedModel? Model(ExhibitWallNiche niche, TextureVariant wanted)
     {
-        var pick = WallNicheLook.Pick(wanted, _models.ContainsKey((size, wanted)), _models.ContainsKey((size, TextureVariant.A)));
-        return pick is { } variant ? _models[(size, variant)] : null;
+        var file = WallNicheLook.FileName(niche.Form, niche.Size, wanted);
+        var fallback = WallNicheLook.FileName(niche.Form, niche.Size, TextureVariant.A);
+        var pick = WallNicheLook.Pick(wanted, _models.ContainsKey(file), _models.ContainsKey(fallback));
+        return pick is { } variant ? _models[WallNicheLook.FileName(niche.Form, niche.Size, variant)] : null;
     }
 }

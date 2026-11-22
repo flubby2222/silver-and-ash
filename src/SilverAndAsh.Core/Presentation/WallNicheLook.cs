@@ -13,6 +13,19 @@ public enum WallNicheSize
     Room,
 }
 
+/// <summary>How a wall niche is built (issue #553): set flat on the wall, or with a real pocket set into it.</summary>
+public enum WallNicheForm
+{
+    /// <summary>The flat niche of issue #538: frame and dark plate in front of the wall, one model per size.</summary>
+    Flat,
+
+    /// <summary>A pocket 0.3 m deep in a piece of wall that takes the place of the cell's wall face up to 3 m.</summary>
+    Deep,
+
+    /// <summary>The deep niche with a stone shelf across its pocket.</summary>
+    DeepWithShelf,
+}
+
 /// <summary>
 /// The wall niche (issue #538, docs/design/formenlehre-gotik.md): a pointed niche set flat on a wall - a stepped frame of
 /// stone in front of a dark back plate, with a sill. Pure decoration - no body, no collision, nothing it does to a step or
@@ -58,6 +71,94 @@ public static class WallNicheLook
     /// <summary>The parts in the order of the rig: frame, back plate and sill, fixed.</summary>
     public static IReadOnlyList<RigPart> Parts => AllParts;
 
+    /// <summary>The piece of wall with the pocket of a deep niche (issue #553), in place of the cell's wall face.</summary>
+    public const string WallPiece = "wall";
+
+    /// <summary>The stone shelf across the pocket of a deep niche with a shelf.</summary>
+    public const string Shelf = "shelf";
+
+    /// <summary>How far the pocket of a deep niche reaches into the wall, in metres (the human's verdict on issue #553).</summary>
+    public const float PocketDepth = 0.3f;
+
+    /// <summary>The height of a deep niche's piece of wall - and of the hole it leaves in the wall face - in metres.</summary>
+    public const float DeepHeight = 3f;
+
+    private static readonly RigPart[] DeepParts = [new(Frame, null), new(WallPiece, null), new(Sill, null)];
+    private static readonly RigPart[] ShelfParts = [.. DeepParts, new(Shelf, null)];
+
+    // Form -> file name (null: one per size, see FileName), parts, how deep it reaches into the wall, its width and height
+    // along the wall. A form with depth leaves a hole of its width and height in the wall face. A new form is one more line here.
+    private static readonly (WallNicheForm Form, string? File, RigPart[] Parts, float Depth, float Width, float Height)[] Forms =
+    [
+        (WallNicheForm.Flat, null, AllParts, 0f, Width, Height),
+        (WallNicheForm.Deep, "deep", DeepParts, PocketDepth, Level.CellSize, DeepHeight),
+        (WallNicheForm.DeepWithShelf, "shelf", ShelfParts, PocketDepth, Level.CellSize, DeepHeight),
+    ];
+
+    /// <summary>The parts of a niche of <paramref name="form"/> in the order of its rig.</summary>
+    public static IReadOnlyList<RigPart> PartsOf(WallNicheForm form) => FormOf(form).Parts;
+
+    /// <summary>How far a niche of <paramref name="form"/> reaches into the wall, in metres: 0 for a flat niche.</summary>
+    public static float SetIn(WallNicheForm form) => FormOf(form).Depth;
+
+    /// <summary>
+    /// The width along the wall and the height above the floor a niche of <paramref name="form"/> takes, in metres - what
+    /// the picture has to keep in view.
+    /// </summary>
+    public static (float Width, float Height) Extent(WallNicheForm form)
+    {
+        var entry = FormOf(form);
+        return (entry.Width, entry.Height);
+    }
+
+    /// <summary>
+    /// The file of the niche of <paramref name="form"/> for <paramref name="variant"/>: a flat one per size
+    /// (<see cref="FileName(WallNicheSize, TextureVariant)"/>), a deep one the same for both, e.g. wall_niche_shelf_b.glb.
+    /// </summary>
+    public static string FileName(WallNicheForm form, WallNicheSize size, TextureVariant variant)
+    {
+        var file = FormOf(form).File;
+        if (file is null)
+        {
+            return FileName(size, variant);
+        }
+
+        CheckSizeAndVariant(size, variant);
+        return $"wall_niche_{file}_{variant.ToString().ToLowerInvariant()}.glb";
+    }
+
+    /// <summary>
+    /// The hole a niche of <paramref name="form"/> against the <paramref name="wall"/> side of the cell (<paramref name="x"/>,
+    /// <paramref name="z"/>) leaves in the wall face (<see cref="Level.WithWallCutouts"/>), or null if it leaves none - a
+    /// flat niche stands in front of the wall. A deep niche takes the whole width of the cell's wall from the floor up.
+    /// Its model lays the joints of the wall texture as for a floor at 0 m and a niche in the middle of a cell's wall
+    /// (a whole metre, see tools/models/wall_niche_deep.py): on a raised floor its joints would slip against the wall's.
+    /// </summary>
+    public static WallCutout? Cutout(WallNicheForm form, int x, int z, RoomSide wall)
+    {
+        var entry = FormOf(form);
+        if (entry.Depth <= 0f)
+        {
+            return null;
+        }
+
+        var from = (Level.CellSize - entry.Width) / 2f;
+        return new WallCutout(x, z, wall, from, from + entry.Width, 0f, entry.Height);
+    }
+
+    private static (WallNicheForm Form, string? File, RigPart[] Parts, float Depth, float Width, float Height) FormOf(WallNicheForm form)
+    {
+        foreach (var entry in Forms)
+        {
+            if (entry.Form == form)
+            {
+                return entry;
+            }
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(form), form, null);
+    }
+
     /// <summary>
     /// The size of niche for a cell of <paramref name="clearHeight"/> metres between floor and ceiling, or null if none
     /// is built for it - then no niche stands there.
@@ -96,13 +197,19 @@ public static class WallNicheLook
     /// <summary>The file of the niche of <paramref name="size"/> for <paramref name="variant"/>, e.g. wall_niche_room_b.glb.</summary>
     public static string FileName(WallNicheSize size, TextureVariant variant)
     {
+        CheckSizeAndVariant(size, variant);
+        return $"wall_niche_{size.ToString().ToLowerInvariant()}_{variant.ToString().ToLowerInvariant()}.glb";
+    }
+
+    // Throws for a size without a niche or a variant other than A, B and C.
+    private static void CheckSizeAndVariant(WallNicheSize size, TextureVariant variant)
+    {
         if (variant is not (TextureVariant.A or TextureVariant.B or TextureVariant.C))
         {
             throw new ArgumentOutOfRangeException(nameof(variant), variant, null);
         }
 
         _ = Depth(size);
-        return $"wall_niche_{size.ToString().ToLowerInvariant()}_{variant.ToString().ToLowerInvariant()}.glb";
     }
 
     /// <summary>

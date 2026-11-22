@@ -320,6 +320,10 @@ public sealed class ShowroomLayout
         labels.AddRange(NicheLabels(niches));
         var portcullises = Portcullises(level, sections);
         labels.AddRange(PortcullisLabels(portcullises));
+        var deepNiches = DeepWallNiches(level, sections);
+        niches.AddRange(deepNiches.Select(deep => deep.Niche));
+        labels.AddRange(DeepNicheLabels(deepNiches));
+        level = level.WithWallCutouts(deepNiches.Select(deep => deep.Cutout));
 
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
@@ -482,6 +486,50 @@ public sealed class ShowroomLayout
             .GroupBy(niche => (niche.Variant, niche.Size))
             .Select(group => group.OrderBy(niche => niche.Position.X).First())
             .Select(first => new ShowroomLabel(NicheLabel(first.Size), first.Position + new Vector3(0f, 2.6f, 0f) + (first.Facing * 0.6f)));
+
+    /// <summary>The label above the first deep wall niche of <paramref name="form"/> in every part (issue #553).</summary>
+    public static string DeepNicheLabel(WallNicheForm form) => form == WallNicheForm.DeepWithShelf ? "Deep niche, shelf" : "Deep niche";
+
+    /// <summary>
+    /// The columns of the deep wall niches in <paramref name="part"/> of <paramref name="section"/>, west to east: one in
+    /// every gap between two flat niches (<see cref="NicheColumns"/>), so each stands between bare wall cells.
+    /// </summary>
+    public static IEnumerable<int> DeepNicheColumns(ShowroomSection section, ShowroomPart part) =>
+        NicheColumns(section, part).SkipLast(1).Select(x => x + (WallStep / 2));
+
+    /// <summary>
+    /// The deep wall niches (issue #553): on the south wall of every part between the flat niches, taking turns without
+    /// and with a shelf, each with the hole it leaves in the wall face.
+    /// </summary>
+    private static List<(ExhibitWallNiche Niche, WallCutout Cutout)> DeepWallNiches(Level level, IReadOnlyList<ShowroomSection> sections)
+    {
+        WallNicheForm[] forms = [WallNicheForm.Deep, WallNicheForm.DeepWithShelf];
+        var niches = new List<(ExhibitWallNiche, WallCutout)>();
+        foreach (var section in sections)
+        {
+            foreach (var part in Enum.GetValues<ShowroomPart>())
+            {
+                var z = section.SouthRowOf(part);
+                foreach (var (x, index) in DeepNicheColumns(section, part).Select((x, index) => (x, index)))
+                {
+                    var form = forms[index % forms.Length];
+                    var (position, facing, size) = WallNicheLook.Place(level, x, z, RoomSide.South);
+                    var cutout = WallNicheLook.Cutout(form, x, z, RoomSide.South)!.Value;
+                    niches.Add((new ExhibitWallNiche(section.Variant, size, position, facing) { Form = form }, cutout));
+                }
+            }
+        }
+
+        return niches;
+    }
+
+    /// <summary>One label per form, size and section, in front of and above the westmost deep niche of that form.</summary>
+    private static IEnumerable<ShowroomLabel> DeepNicheLabels(List<(ExhibitWallNiche Niche, WallCutout Cutout)> niches) =>
+        niches
+            .Select(deep => deep.Niche)
+            .GroupBy(niche => (niche.Variant, niche.Size, niche.Form))
+            .Select(group => group.OrderBy(niche => niche.Position.X).First())
+            .Select(first => new ShowroomLabel(DeepNicheLabel(first.Form), first.Position + new Vector3(0f, 2.6f, 0f) + (first.Facing * 0.6f)));
 
     /// <summary>One label per part of every section, above the first wall pillar of that part.</summary>
     private static IEnumerable<ShowroomLabel> PillarLabels(
