@@ -491,7 +491,7 @@ public sealed class Gorm : IEnemy
                 var z = target.Position.Z + (MathF.Sin(angle) * distance);
                 // Outside the level counts as wall (see Level's indexer).
                 var cell = Level.ToGrid(x, z);
-                if (level[cell.X, cell.Z].IsSolid || _arena?.Contains(cell) == false)
+                if (level[cell.X, cell.Z].IsSolid || _arena?.Contains(cell) == false || InAStandingColumn(level, x, z))
                 {
                     continue;
                 }
@@ -503,6 +503,10 @@ public sealed class Gorm : IEnemy
             }
         }
     }
+
+    // A stone never falls into a standing column - the column stands on open floor, but its round is no floor (issue #608).
+    private bool InAStandingColumn(Level level, float x, float z) =>
+        StandingColumns(level).Any(column => Vector2.Distance(column.Centre, new Vector2(x, z)) < Column.Radius);
 
     // Walking: close enough for an attack? Otherwise on towards the target (stopping close in front of them).
     private void Walk(Level level, Player? target, IReadOnlyList<CylinderBody> obstacles, ICollection<GameEvent> events)
