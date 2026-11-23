@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The bot run for testers and reviewers (issue #573): plays generated levels seed by seed without a window and reports
+    every finding (arena doors, death and restart, the way to the boss, the seed probe).
+    A developer tool - it is not part of the game's release. How to run it: see docs/bot-und-gegenprobe.md.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SilverAndAsh.Core\SilverAndAsh.Core.csproj" />
+  </ItemGroup>
+
+</Project>
