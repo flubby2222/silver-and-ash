@@ -162,8 +162,8 @@ perl -0777 -pe '
         return defined $groups->[$n] ? $groups->[$n] : "";
     }
     s/'"$pattern/$replacement/e$flags"'
-' -- "$file" > "$work/mutated" || exit 2
-if cmp -s -- "$work/mutated" "$backup"; then
+' -- "$file" > "$work/changed-file" || exit 2
+if cmp -s -- "$work/changed-file" "$backup"; then
     echo "gegenprobe: the change did not apply (<replace> gives the same text)" >&2
     exit 2
 fi
@@ -210,7 +210,7 @@ fi
 echo "   control run: $total test(s), all green"
 
 changed=1
-cp -- "$work/mutated" "$file"
+cp -- "$work/changed-file" "$file"
 
 run_tests mutated
 status=$?
