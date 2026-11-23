@@ -107,6 +107,8 @@ public static class CharacterCollision
             }
         }
 
+        floor = MathF.Max(floor, PortalStoneUnder(level, position, radius, stepHeight));
+
         // Move with the AVERAGE speed of this tick (start speed and end speed, halved).
         // Moving with only the start or only the end speed would make every jump slightly too high or too low;
         // with constant gravity the average is exact.
@@ -362,6 +364,27 @@ public static class CharacterCollision
     // The ground plans of the portal blocks a body standing at position.Y meets: from a step above its feet to its head.
     private static IEnumerable<(Vector2 Min, Vector2 Max)> PortalStoneInTheWay(Level level, Vector3 position, float height, float stepHeight) =>
         level.Portals.SelectMany(portal => portal.Footprint(position.Y + StepOntoStone(stepHeight), position.Y + height));
+
+    /// <summary>
+    /// The highest top of boss portal stone under the circle that is not above its feet by more than a step - the plinth
+    /// a dead bat or a dropped piece falls onto (issue #627), the same rule as for boxes. Minus infinity if there is none.
+    /// </summary>
+    private static float PortalStoneUnder(Level level, Vector3 position, float radius, float stepHeight)
+    {
+        var top = float.NegativeInfinity;
+        foreach (var portal in level.Portals)
+        {
+            foreach (var (min, max, blockTop) in portal.Tops(position.Y + stepHeight))
+            {
+                if (RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out _) > Epsilon)
+                {
+                    top = MathF.Max(top, blockTop);
+                }
+            }
+        }
+
+        return top;
+    }
 
     /// <summary>
     /// How high a body steps up onto the portal's stone. A walking body climbs a block up to its step height. A flying

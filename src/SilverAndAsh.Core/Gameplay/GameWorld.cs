@@ -1344,6 +1344,11 @@ public sealed class GameWorld
             }
         }
 
+        if (InPortalStone(flat, halfWidth))
+        {
+            return false;
+        }
+
         if (_rooms.FirstOrDefault(room => room.Kind == RoomKind.Boss) is not { } boss)
         {
             return OnFloorOf(null, position, halfWidth, floorHeight);
@@ -1355,6 +1360,11 @@ public sealed class GameWorld
         return MathF.Max(MathF.Abs(position.X - stairs.X), MathF.Abs(position.Z - stairs.Z)) >= reach
             && OnFloorOf(boss, position, halfWidth, floorHeight);
     }
+
+    // True if the square of half-width halfWidth around flat reaches into the stone of a boss door's portal: loot there
+    // would lie in the jamb or on the plinth (issue #627).
+    private bool InPortalStone(Vector2 flat, float halfWidth) =>
+        Level.Portals.Any(portal => portal.Covers(flat, halfWidth));
 
     // True if every corner of the square of half-width radius around position lies on an open cell whose floor is at
     // floorHeight - a cell of the room, or in a level without a boss room (room null) any cell of the level.
