@@ -95,7 +95,10 @@ public sealed class SurfaceVariants
 
         foreach (var door in generated.Doors)
         {
-            roomOfCell.TryAdd((door.X, door.Z), door.RoomA);
+            foreach (var cell in door.Cells)
+            {
+                roomOfCell.TryAdd(cell, door.RoomA);
+            }
         }
 
         return new SurfaceVariants(looks, roomOfCell);

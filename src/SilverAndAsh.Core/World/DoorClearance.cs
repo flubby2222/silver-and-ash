@@ -34,14 +34,17 @@ public static class DoorClearance
         return new RoomDoor(door, inward == Vector2.Zero ? Vector2.Zero : Vector2.Normalize(inward));
     }
 
-    /// <summary>The doors of <paramref name="room"/> among <paramref name="doors"/>, each seen from that room.</summary>
+    /// <summary>
+    /// The doors of <paramref name="room"/> among <paramref name="doors"/>, each seen from that room - one for every cell
+    /// of a door (issue #566: the boss door has two).
+    /// </summary>
     public static IReadOnlyList<RoomDoor> OfRoom(PlacedRoom room, IEnumerable<LevelDoor> doors)
     {
         ArgumentNullException.ThrowIfNull(room);
         ArgumentNullException.ThrowIfNull(doors);
         return doors
             .Where(door => door.RoomA == room.Index || door.RoomB == room.Index)
-            .Select(door => Of((door.X, door.Z), room.FloorCells))
+            .SelectMany(door => door.Cells.Select(cell => Of(cell, room.FloorCells)))
             .ToList();
     }
 

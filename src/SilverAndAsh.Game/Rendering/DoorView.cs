@@ -144,7 +144,9 @@ internal sealed class DoorView : IDisposable
         {
             var size = door.BoxMax - door.BoxMin;
             var centre = (door.BoxMin + door.BoxMax) / 2f;
-            if (!view.MaySee(new Vector3(centre.X, door.BoxMin.Y + (PortalHeight / 2f), centre.Z), BoundingRadius))
+            // A door of several cells (issue #566) reaches farther from its middle.
+            var reach = BoundingRadius + ((MathF.Max(size.X, size.Z) - Level.CellSize) / 2f);
+            if (!view.MaySee(new Vector3(centre.X, door.BoxMin.Y + (PortalHeight / 2f), centre.Z), reach))
             {
                 continue;
             }
@@ -159,12 +161,18 @@ internal sealed class DoorView : IDisposable
             {
                 DrawCrackedWall(door, turn, centre, size.Y, depth, surfaces, textures);
             }
-            else if (_models.TryGetValue(door.Kind, out var model) && Frames(door, surfaces, textures) is ({ } front, { } back))
+            else if (_models.TryGetValue(door.Kind, out var model) && door.Cells.All(cell => Frames(door, cell, surfaces, textures) is ({ }, { })))
             {
-                // The model stands on the floor in the middle of the cell, in its frame.
-                var place = turn * Matrix4x4.CreateTranslation(centre.X, door.BoxMin.Y, centre.Z);
-                DrawModel(model, door, place);
-                DrawFrame(front, back, place);
+                // The model stands on the floor in the middle of each cell, in its frame. The boss door's two cells
+                // (issue #566) each show one until its own wide portal comes (issue #568).
+                foreach (var cell in door.Cells)
+                {
+                    var (front, back) = Frames(door, cell, surfaces, textures);
+                    var place = turn * Matrix4x4.CreateTranslation(
+                        (cell.X + 0.5f) * Level.CellSize, door.BoxMin.Y, (cell.Z + 0.5f) * Level.CellSize);
+                    DrawModel(model, door, place);
+                    DrawFrame(front!, back!, place);
+                }
             }
             else
             {
@@ -212,9 +220,9 @@ internal sealed class DoorView : IDisposable
 
     // The frame model for each face: the variant the level really draws there (a missing B or C falls back to A there,
     // too), else variant A of the frame. Null for a face without any: then the whole door is the placeholder.
-    private (TexturedModel? Front, TexturedModel? Back) Frames(Door door, SurfaceVariants surfaces, LevelTextures textures)
+    private (TexturedModel? Front, TexturedModel? Back) Frames(Door door, (int X, int Z) cell, SurfaceVariants surfaces, LevelTextures textures)
     {
-        var (front, back) = DoorFrameLook.Variants(surfaces, door.X, door.Z, door.Side);
+        var (front, back) = DoorFrameLook.Variants(surfaces, cell.X, cell.Z, door.Side);
         return (Frame(door.Kind, textures.Resolve(SurfaceKind.Wall, front)), Frame(door.Kind, textures.Resolve(SurfaceKind.Wall, back)));
     }
 

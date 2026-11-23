@@ -145,7 +145,7 @@ public class SurfaceVariantsTests
         var level = ManyLevels.Value[5];
         var looks = SurfaceVariants.For(level);
         var roomOf = level.Rooms.SelectMany(room => room.FloorCells.Select(cell => (cell, room.Index)))
-            .Concat(level.Doors.Select(door => ((door.X, door.Z), door.RoomA)))
+            .Concat(level.Doors.SelectMany(door => door.Cells.Select(cell => (cell, door.RoomA))))
             .GroupBy(pair => pair.Item1)
             .ToDictionary(group => group.Key, group => group.First().Item2);
 

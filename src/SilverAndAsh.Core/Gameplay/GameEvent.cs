@@ -227,6 +227,13 @@ public sealed record WaveEmerged(int RoomIndex, int Wave, IReadOnlyList<int> Ene
 /// </summary>
 public sealed record GrateStarted(int DoorId, bool Falling) : GameEvent;
 
+/// <summary>
+/// The boss door <paramref name="DoorId"/> starts to swing (issue #566): shut when <paramref name="Closing"/> (its boss
+/// room sealed), else open (a player opened it, or the boss room was cleared). One event per door, however many cells
+/// it fills; <see cref="GameEvent.Place"/> is the middle of the doorway. No sound yet (issue #569).
+/// </summary>
+public sealed record DoorSwingStarted(int DoorId, bool Closing) : GameEvent;
+
 /// <summary>All enemies of room <paramref name="RoomIndex"/> are dead: its grates rise.</summary>
 public sealed record RoomCleared(int RoomIndex) : GameEvent;
 

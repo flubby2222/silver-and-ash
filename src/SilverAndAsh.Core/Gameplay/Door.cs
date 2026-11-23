@@ -23,14 +23,21 @@ public sealed class Door : IInteractable
     private GrateMotion _motion = GrateMotion.Lift;
     private int _grateTicks;
 
+    // The slam of the boss door (issue #566): null for every other door.
+    private readonly DoorSlam? _slam;
+
     internal Door(int id, LevelDoor plan, Level level, DoorsBalance? balance = null, GratesBalance? grates = null)
     {
-        var cell = level[plan.X, plan.Z];
-        if (cell.IsSolid)
+        Cells = plan.Cells;
+        foreach (var (x, z) in Cells)
         {
-            throw new ArgumentException($"Door {id} at cell {plan.X}/{plan.Z} must lie on a walkable cell of the level.", nameof(plan));
+            if (!level.IsInside(x, z) || level[x, z].IsSolid)
+            {
+                throw new ArgumentException($"Door {id} at cell {x}/{z} must lie on a walkable cell of the level.", nameof(plan));
+            }
         }
 
+        var cell = level[plan.X, plan.Z];
         Id = id;
         X = plan.X;
         Z = plan.Z;
@@ -38,13 +45,27 @@ public sealed class Door : IInteractable
         Side = plan.Side;
         RoomA = plan.RoomA;
         RoomB = plan.RoomB;
-        BoxMin = new Vector3(plan.X * Level.CellSize, cell.FloorHeight, plan.Z * Level.CellSize);
-        BoxMax = new Vector3((plan.X + 1) * Level.CellSize, cell.CeilingHeight, (plan.Z + 1) * Level.CellSize);
-        _openingTicks = SimulationClock.SecondsToTicks((balance ?? new DoorsBalance()).OpenTime(plan.Kind));
+        BoxMin = new Vector3(Cells.Min(c => c.X) * Level.CellSize, cell.FloorHeight, Cells.Min(c => c.Z) * Level.CellSize);
+        BoxMax = new Vector3((Cells.Max(c => c.X) + 1) * Level.CellSize, cell.CeilingHeight, (Cells.Max(c => c.Z) + 1) * Level.CellSize);
+        var doors = balance ?? new DoorsBalance();
+        _openingTicks = SimulationClock.SecondsToTicks(doors.OpenTime(plan.Kind));
+        _slam = DoorSlam.For(plan.Kind, doors);
         HasGrate = plan.HasGrate;
         _grates = grates ?? new GratesBalance();
         _grateTicks = _grates.LiftTicks;
     }
+
+    /// <summary>
+    /// The cells of the door (issue #566): (<see cref="X"/>, <see cref="Z"/>) first. One for an ordinary door, two for
+    /// the boss door. They are one door: while it blocks, every one of them is wall.
+    /// </summary>
+    public IReadOnlyList<(int X, int Z)> Cells { get; }
+
+    /// <summary>
+    /// True if the door swings shut with its own motion when its room seals (issue #566: the boss door), instead of
+    /// being barred at once.
+    /// </summary>
+    public bool SlamsShut => _slam is not null;
 
     /// <summary>True if a portcullis hangs in this door (<see cref="LevelDoor.HasGrate"/>).</summary>
     public bool HasGrate { get; }
@@ -61,10 +82,10 @@ public sealed class Door : IInteractable
     /// <summary>Number of the door in its world (position in <see cref="GameWorld.Doors"/>).</summary>
     public int Id { get; }
 
-    /// <summary>Column of the door's cell.</summary>
+    /// <summary>Column of the door's (first) cell.</summary>
     public int X { get; }
 
-    /// <summary>Row of the door's cell.</summary>
+    /// <summary>Row of the door's (first) cell.</summary>
     public int Z { get; }
 
     public DoorKind Kind { get; }
@@ -85,7 +106,10 @@ public sealed class Door : IInteractable
     /// door is open, over the time of its kind (<see cref="DoorsBalance"/>); a broken cracked wall is at 1 at once.
     /// Only the picture follows it - the way through is free from the tick the door opens (<see cref="Blocks"/>).
     /// </summary>
-    public float OpenFraction => !IsOpen ? 0f : _openingTicks == 0 ? 1f : (float)_openedTicks / _openingTicks;
+    public float OpenFraction => _slam is { IsClosing: true } ? _slam.OpenFraction : SwungOpen;
+
+    // How far the leaves have swung open since the door was opened (or since a boss door began to open again).
+    private float SwungOpen => !IsOpen ? 0f : _openingTicks == 0 ? 1f : (float)_openedTicks / _openingTicks;
 
     /// <summary>
     /// True if the player who opened the door stood on the lower side of it along the passage (smaller Z for a door
@@ -98,9 +122,10 @@ public sealed class Door : IInteractable
     /// True while the grate of an arena is down: the door blocks, open or not, and F does nothing. It blocks from the
     /// tick its arena seals - a falling grate shuts the way at once, its fall is only the picture (decision of the human
     /// on issue #558: nobody escapes an arena). A rising grate (issue #558) blocks until its spike tips hang above
-    /// <see cref="GratesBalance.BlockHeight"/> again.
+    /// <see cref="GratesBalance.BlockHeight"/> again. The boss door (issue #566) has no grate: an open one blocks from the
+    /// hard stop of its slam (<see cref="DoorsBalance.BossShutTick"/>) on.
     /// </summary>
-    public bool IsBarred => _barred || (HasGrate && GrateHeight < _grates.BlockHeight);
+    public bool IsBarred => _barred || (HasGrate && GrateHeight < _grates.BlockHeight) || (_slam?.IsShut ?? false);
 
     /// <summary>True if nothing can pass: closed, or barred.</summary>
     public bool Blocks => !IsOpen || IsBarred;
@@ -158,6 +183,7 @@ public sealed class Door : IInteractable
             _grateTicks++;
         }
 
+        _slam?.Tick();
         return Blocks != blocked;
     }
 
@@ -167,6 +193,11 @@ public sealed class Door : IInteractable
     /// </summary>
     internal bool Bar()
     {
+        if (_slam is not null)
+        {
+            return StartSlam(_slam);
+        }
+
         if (!HasGrate)
         {
             _barred = Kind != DoorKind.Cracked || IsOpen;
@@ -186,6 +217,11 @@ public sealed class Door : IInteractable
     /// <summary>The grate rises (without one the door is free at once). True if a grate started to rise.</summary>
     internal bool Lift()
     {
+        if (_slam is not null)
+        {
+            return OpenAfterSlam(_slam);
+        }
+
         var wasBarred = _barred;
         _barred = false;
         if (!HasGrate || !wasBarred)
@@ -194,6 +230,34 @@ public sealed class Door : IInteractable
         }
 
         Turn(GrateMotion.Lift);
+        return true;
+    }
+
+    // Issue #566: an open boss door swings shut from where its leaves are now; it blocks only from the hard stop on.
+    // A boss door that was never opened has nothing to swing: it is barred at once, as before. True if it began to close.
+    private bool StartSlam(DoorSlam slam)
+    {
+        if (!IsOpen)
+        {
+            _barred = true;
+            return false;
+        }
+
+        return slam.Close(OpenFraction);
+    }
+
+    // Issue #566: the boss door swings open again, evenly over its opening time, from where its leaves are - and the way
+    // is free from this tick on, as for any door that opens (provisional, see the pull request). True if it began to open.
+    private bool OpenAfterSlam(DoorSlam slam)
+    {
+        _barred = false;
+        if (!IsOpen || !slam.IsClosing)
+        {
+            return false;
+        }
+
+        _openedTicks = (int)MathF.Round(OpenFraction * _openingTicks);
+        slam.Stop();
         return true;
     }
 
