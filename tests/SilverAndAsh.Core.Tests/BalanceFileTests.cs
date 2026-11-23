@@ -30,6 +30,17 @@ public class BalanceFileTests
     }
 
     [Fact]
+    public void It_reads_how_many_blows_a_column_bears_and_refuses_none()
+    {
+        // Issue #590: a column that broke under no blow at all would give no cover - at least one.
+        Assert.Equal(5, BalanceFile.Parse("""{ "columns": { "hitsToBreak": 5 } }""").Balance.Columns.HitsToBreak);
+
+        var none = BalanceFile.Parse("""{ "columns": { "hitsToBreak": 0 } }""");
+        Assert.Equal(Balance.Default.Columns.HitsToBreak, none.Balance.Columns.HitsToBreak);
+        Assert.Contains(none.Warnings, w => w.Contains("columns.hitsToBreak"));
+    }
+
+    [Fact]
     public void Missing_values_keep_their_standard_values()
     {
         var result = BalanceFile.Parse("""{ "ghoul": { "speed": 6 } }""");
