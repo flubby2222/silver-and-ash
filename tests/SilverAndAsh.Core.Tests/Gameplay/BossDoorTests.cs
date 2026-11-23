@@ -210,6 +210,9 @@ public class BossDoorTests
         var radius = BodySizes.Player.Radius;
         Enter(world);
 
+        // Since issue #567 a single player no longer gets into the doorway: they are held on the threshold, so this
+        // start does not occur any more and the checks below hold anyway. Issue #584 aims this test at co-op, where a
+        // second player can still stand in the doorway at the hard stop.
         // Back into the doorway while the leaves still swing - the way is not shut yet.
         Run(world, Back, 60, () => world.Player.Position.Z < door.BoxMax.Z - 0.2f);
         Assert.False(door.Blocks);
