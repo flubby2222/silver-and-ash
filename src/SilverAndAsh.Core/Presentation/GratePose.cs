@@ -103,6 +103,39 @@ public static class GratePose
         return (int)MathF.Ceiling(ProbeShutTick * timing.FallTicks / ProbeFallTicks);
     }
 
+    /// <summary>
+    /// Where a <paramref name="motion"/> starts that begins while the grate hangs at <paramref name="height"/> (issue
+    /// #558: a grate turned round on its way): the first tick at which a fall is no higher, or a lift no lower, than
+    /// <paramref name="height"/>. A fall from fully open and a lift from the floor start at tick 0.
+    /// </summary>
+    public static int StartTick(float height, GrateMotion motion, GratesBalance timing)
+    {
+        ArgumentNullException.ThrowIfNull(timing);
+        var length = MotionTicks(motion, timing);
+        for (var tick = 0; tick < length; tick++)
+        {
+            var at = Height(tick, motion, timing);
+            if (motion == GrateMotion.Fall ? at <= height : at >= height)
+            {
+                return tick;
+            }
+        }
+
+        return length;
+    }
+
+    /// <summary>How many ticks <paramref name="motion"/> takes (from <see cref="GratesBalance"/>).</summary>
+    public static int MotionTicks(GrateMotion motion, GratesBalance timing)
+    {
+        ArgumentNullException.ThrowIfNull(timing);
+        return motion switch
+        {
+            GrateMotion.Fall => timing.FallTicks,
+            GrateMotion.Lift => timing.LiftTicks,
+            _ => throw new ArgumentOutOfRangeException(nameof(motion), motion, null),
+        };
+    }
+
     /// <summary>Whether a grate at <paramref name="height"/> is drawn: not when fully open.</summary>
     public static bool IsDrawn(float height) => height < OpenHeight;
 

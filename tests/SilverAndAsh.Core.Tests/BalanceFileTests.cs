@@ -155,6 +155,7 @@ public class BalanceFileTests
     [InlineData("""{ "difficulty": { "batShareFar": 3 } }""", "difficulty.batShareFar")]
     [InlineData("""{ "hearing": { "maxPan": 1.2 } }""", "hearing.maxPan")]
     [InlineData("""{ "difficulty": { "doorConeAngle": 91 } }""", "difficulty.doorConeAngle")]
+    [InlineData("""{ "grates": { "blockHeight": 3.5 } }""", "grates.blockHeight")]
     public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);
@@ -211,6 +212,16 @@ public class BalanceFileTests
 
         Assert.Equal(90f, result.Balance.Difficulty.DoorConeAngle);
         Assert.Equal(Balance.Default.Difficulty.DoorDistance, result.Balance.Difficulty.SideDoorDistance);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void A_grate_that_blocks_up_to_its_open_height_is_allowed()
+    {
+        var open = SilverAndAsh.Core.Presentation.GratePose.OpenHeight.ToString(CultureInfo.InvariantCulture);
+        var result = BalanceFile.Parse($$"""{ "grates": { "blockHeight": {{open}} } }""");
+
+        Assert.Equal(SilverAndAsh.Core.Presentation.GratePose.OpenHeight, result.Balance.Grates.BlockHeight);
         Assert.Empty(result.Warnings);
     }
 

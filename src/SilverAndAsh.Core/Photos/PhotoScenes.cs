@@ -1,6 +1,7 @@
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.Showroom;
 using SilverAndAsh.Core.World;
@@ -60,6 +61,8 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeDoor(1, DoorKind.Normal))),
         new("door-level-seed2-boss", "The boss door of level 0 with seed 2, from 4 to 6 m, closed (issue #245).",
             studio => new PhotoSetup(studio.BeforeDoor(2, DoorKind.Boss))),
+        new("door-level-barred", "An open door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #558).",
+            studio => BarredDoor(studio)),
         new("ghoul-4m", "A ghoul 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('G', 4))),
         new("ghoul-10m", "A ghoul 10 m away in a bare hall.",
@@ -697,6 +700,42 @@ public static class PhotoScenes
             },
             StopWhen = run => run.Doors.Any(door => door.Kind == DoorKind.Cracked && door.IsOpen) && ++afterBreak >= ticks,
         };
+    }
+
+    // The combat room of room-combat, the player inside it 4 to 6 m before one of its doors with a grate (along its
+    // passage, seeing it), looking at it: the room seals on the first tick as in the game, and the picture is taken once
+    // that grate is all the way down (issue #558).
+    private static PhotoSetup BarredDoor(PhotoStudio studio)
+    {
+        var world = studio.InRoom(RoomKind.Combat);
+        var level = world.Level;
+        var room = world.Rooms.Single(room => room.Cells.Contains(Level.ToGrid(world.Player.Position.X, world.Player.Position.Z)));
+        var eye = new Vector3(0f, BodySizes.Player.EyeHeight, 0f);
+        var (door, place) = room.DoorIds
+            .Select(id => world.Doors[id])
+            .Where(door => door.HasGrate)
+            .SelectMany(door => new[] { 2, 3, -2, -3 }.Select(step => (door, cell: door.Side is RoomSide.East or RoomSide.West
+                ? (X: door.X + step, Z: door.Z)
+                : (X: door.X, Z: door.Z + step))))
+            .First(pair => room.Cells.Contains(pair.cell) && !level[pair.cell.X, pair.cell.Z].IsSolid
+                && LineOfSight.IsClear(level, level.CellCenter(pair.cell.X, pair.cell.Z) + eye, FaceOf(pair.door, level.CellCenter(pair.cell.X, pair.cell.Z))));
+        world.Player.PlaceAt(level.CellCenter(place.X, place.Z));
+        PhotoStudio.Face(world.Player, (door.BoxMin + door.BoxMax) / 2f);
+
+        // As the door the player came in by: open, its leaves swung away - so the grate is seen, not the closed leaves.
+        door.Open(world.Player.Position);
+        return new PhotoSetup(world)
+        {
+            Ticks = 600,
+            StopWhen = _ => door.IsBarred && door.GrateHeight <= 0f && door.OpenFraction >= 1f,
+        };
+    }
+
+    // The middle of the door's face towards `from`, just outside its cell - a closed door's cell counts as wall.
+    private static Vector3 FaceOf(Door door, Vector3 from)
+    {
+        var middle = (door.BoxMin + door.BoxMax) / 2f;
+        return middle + (Vector3.Normalize((from - middle) with { Y = 0f }) * ((Level.CellSize / 2f) + 0.05f));
     }
 
     private static Func<GameWorld, bool> Swung(float fraction) => world => world.Doors[0].OpenFraction >= fraction;

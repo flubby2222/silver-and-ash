@@ -54,7 +54,14 @@ public sealed record PlacedRoom(
 /// <param name="RoomB">The room on the outer side.</param>
 /// <param name="Side">The wall of room A the door sits in: room B lies in this direction.</param>
 /// <param name="Kind">What kind of door it is (the door of the boss room is a boss door).</param>
-public sealed record LevelDoor(int X, int Z, int RoomA, int RoomB, RoomSide Side, DoorKind Kind = DoorKind.Normal);
+public sealed record LevelDoor(int X, int Z, int RoomA, int RoomB, RoomSide Side, DoorKind Kind = DoorKind.Normal)
+{
+    /// <summary>
+    /// True if a portcullis hangs in this door (issue #558, set by <see cref="GratePlacement"/>): when its arena seals,
+    /// the door is barred at once, and the grate falls over <see cref="GratesBalance.FallTicks"/> - to be seen and heard.
+    /// </summary>
+    public bool HasGrate { get; init; }
+}
 
 /// <summary>
 /// A chest of a generated level, decided completely when the level is made - place, tier, lock and contents - so the

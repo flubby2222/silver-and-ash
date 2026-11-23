@@ -21,8 +21,8 @@ namespace SilverAndAsh.Game.Rendering;
 /// A kind whose model - or whose frame, in the variant of a face and in variant A - is missing or broken gets the placeholder: a closed door fills its whole doorway cell (exactly what
 /// blocks you), an open one is gone. Wooden doors are brown planks with dark bands; the boss door is almost black with
 /// bone-white skulls and a red glow; a locked door is dark iron with rivets and a brass padlock on both faces; the
-/// cracks are a few dark lines. The grate of an arena shows as iron bars on both faces of the doorway, with or
-/// without a model.
+/// cracks are a few dark lines. A barred door shows iron bars on both faces of the doorway, with or without a model -
+/// unless it has a portcullis (issue #558) and <see cref="PortcullisView"/> draws that.
 /// </para>
 /// </summary>
 internal sealed class DoorView : IDisposable
@@ -134,10 +134,11 @@ internal sealed class DoorView : IDisposable
     /// <summary>
     /// Draws the doors <paramref name="view"/> may see; the others cost nothing (issue #245: all 25 doors of a level
     /// every frame took 5.8 ms). <paramref name="surfaces"/> and <paramref name="textures"/>: the wall variants of the
-    /// level and the ones really loaded - a cracked wall shows on each face the variant the level shows there. Call
-    /// between BeginFigures and EndFigures.
+    /// level and the ones really loaded - a cracked wall shows on each face the variant the level shows there.
+    /// <paramref name="gratesModelled"/>: <see cref="PortcullisView"/> draws the portcullis of a door that has one, so it
+    /// gets no placeholder bars here. Call between BeginFigures and EndFigures.
     /// </summary>
-    public void Draw(IReadOnlyList<Door> doors, float seconds, ViewCone view, SurfaceVariants surfaces, LevelTextures textures)
+    public void Draw(IReadOnlyList<Door> doors, float seconds, ViewCone view, SurfaceVariants surfaces, LevelTextures textures, bool gratesModelled)
     {
         foreach (var door in doors)
         {
@@ -170,11 +171,30 @@ internal sealed class DoorView : IDisposable
                 DrawPlaceholder(door, turn * Matrix4x4.CreateTranslation(centre), width, size.Y, depth, seconds);
             }
 
-            if (door.IsBarred)
+            if (door.IsBarred && !(door.HasGrate && gratesModelled))
             {
                 DrawGrate(turn * Matrix4x4.CreateTranslation(centre), width, size.Y, depth);
             }
         }
+    }
+
+    /// <summary>
+    /// Draws the stone frame of a door of <paramref name="kind"/> on its own - without leaves - in the doorway cell
+    /// (<paramref name="x"/>, <paramref name="z"/>) on <paramref name="side"/>, standing at <paramref name="feet"/>: each
+    /// face in the variant the level draws there. For the portcullises of the showroom (issue #558: the frame code lives
+    /// only here). False if a face has no frame model: then draw nothing there. Call between BeginFigures and EndFigures.
+    /// </summary>
+    public bool DrawFrame(DoorKind kind, int x, int z, RoomSide side, Vector3 feet, SurfaceVariants surfaces, LevelTextures textures)
+    {
+        var (frontWanted, backWanted) = DoorFrameLook.Variants(surfaces, x, z, side);
+        if (Frame(kind, textures.Resolve(SurfaceKind.Wall, frontWanted)) is not { } front
+            || Frame(kind, textures.Resolve(SurfaceKind.Wall, backWanted)) is not { } back)
+        {
+            return false;
+        }
+
+        DrawFrame(front, back, Matrix4x4.CreateRotationY(DoorPose.Yaw(side)) * Matrix4x4.CreateTranslation(feet));
+        return true;
     }
 
     public void Dispose()
