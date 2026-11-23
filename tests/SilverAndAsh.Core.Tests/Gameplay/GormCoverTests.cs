@@ -145,19 +145,7 @@ public class GormCoverTests
         var shadow = start.X - 3f;
         var health = duel.Player.Health;
 
-        // Worn down to its last blow, the wave breaks it on the way out.
-        duel.Run(60 * Second, () => duel.Gorm.State == GormState.WindingUp && duel.Gorm.Attack == GormAttack.Hammer);
-        Assert.True(duel.Gorm.Attack == GormAttack.Hammer, "Gorm never wound up his hammer.");
-        while (duel.Wear.HitsOn(column) < HitsToBreak - 1)
-        {
-            duel.Wear.Strike(column, 0f, []);
-        }
-
-        var before = duel.Events.Count;
-        duel.Run(5 * Second, () => duel.Events.Skip(before).Any(e => e is ColumnBroke));
-        Assert.Contains(duel.Events.Skip(before), e => e is ColumnBroke);
-        Assert.DoesNotContain(duel.Events.Skip(before), e => e is PlayerHit or ShockwaveHit);
-        var origin = duel.Gorm.Shockwave!.Value.Origin;
+        var origin = BreakWithTheHammer(duel, column);
         Assert.False(Behind(column, origin, duel.Player.Position), "The player stood in the shadow already at the break - the test would prove nothing.");
 
         // From the break on he walks sideways into the shadow (+X move goes to -X) and stops there.
@@ -171,6 +159,48 @@ public class GormCoverTests
         Assert.Contains(duel.Events.Skip(hit), e => e is ShockwaveHit);
         Assert.True(duel.Player.Health < health);
         Assert.Equal(GormState.Recovering, duel.Gorm.State);
+    }
+
+    [Fact]
+    public void Who_was_behind_the_column_at_the_break_is_hit_once_he_leaves_its_shadow()
+    {
+        var duel = new Duel(Between);
+        var start = duel.Player.Position.X;
+        var health = duel.Player.Health;
+
+        var origin = BreakWithTheHammer(duel, Between);
+        Assert.True(Behind(Between, origin, duel.Player.Position), "The player was not behind the column at the break - the test would prove nothing.");
+
+        // From the break on he walks sideways out of the shadow (-X move goes to +X) and stops there.
+        var after = duel.Events.Count;
+        duel.Run(
+            5 * Second,
+            () => duel.Gorm.State is GormState.Recovering or GormState.Stuck,
+            () => PlayerInput.None with { Move = new Vector2(duel.Player.Position.X < start + 3f ? -1f : 0f, 0f) });
+
+        Assert.False(Behind(Between, origin, duel.Player.Position), "The player never left the shadow.");
+        Assert.Contains(duel.Events.Skip(after), e => e is ShockwaveHit);
+        Assert.True(duel.Player.Health < health);
+    }
+
+    /// <summary>
+    /// Waits for Gorm's hammer, wears <paramref name="column"/> down to its last blow and runs on until the wave breaks it.
+    /// Nobody is hit up to then. Gives where the wave started.
+    /// </summary>
+    private static Vector3 BreakWithTheHammer(Duel duel, Column column)
+    {
+        duel.Run(60 * Second, () => duel.Gorm.State == GormState.WindingUp && duel.Gorm.Attack == GormAttack.Hammer);
+        Assert.True(duel.Gorm.Attack == GormAttack.Hammer, "Gorm never wound up his hammer.");
+        while (duel.Wear.HitsOn(column) < HitsToBreak - 1)
+        {
+            duel.Wear.Strike(column, 0f, []);
+        }
+
+        var before = duel.Events.Count;
+        duel.Run(5 * Second, () => duel.Events.Skip(before).Any(e => e is ColumnBroke));
+        Assert.Contains(duel.Events.Skip(before), e => e is ColumnBroke);
+        Assert.DoesNotContain(duel.Events.Skip(before), e => e is PlayerHit or ShockwaveHit);
+        return duel.Gorm.Shockwave!.Value.Origin;
     }
 
     /// <summary>The column stands on the flat line from <paramref name="from"/> to <paramref name="to"/>.</summary>
