@@ -491,6 +491,15 @@ public sealed record ColumnsBalance
     /// including the blow that breaks it, the next ones go through and the way is free. The client's ruling: three.
     /// </summary>
     public int HitsToBreak { get; init; } = 3;
+
+    /// <summary>
+    /// Issue #597: the boss room's columns stand on a square grid round its middle (<see cref="World.BossRoomColumns"/>),
+    /// this many to a side (0 = none). Provisional: 2, so four columns where the four wall blocks stood before.
+    /// </summary>
+    public int BossRoomPerSide { get; init; } = 2;
+
+    /// <summary>Issue #597: metres between two neighbouring columns of that grid. Provisional: 16.</summary>
+    public float BossRoomSpacing { get; init; } = 16f;
 }
 
 /// <summary>
