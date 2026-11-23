@@ -95,6 +95,8 @@ Aufbau: `tools/gegenprobe.sh [optionen] <datei> <suchen> <ersetzen> <testfilter>
 - `<testfilter>` ist ein Klassen- oder Testnamen-Teil (wird zu `FullyQualifiedName~<filter>`) oder ein vollständiger Filter für `dotnet test`, wenn er `=`, `~`, `|`, `&` oder `!` enthält.
 - `--project <pfad>` wählt ein anderes Testprojekt (Standard `tests/SilverAndAsh.Core.Tests`), `--name <text>` den Namen in der Ausgabe, `--help` zeigt die Hilfe.
 
+Was man kaputt macht: nicht nur eine Bedingung entfernen (`&& player.IsDead` anhängen, einen Aufruf streichen), sondern auch einen Schwellwert abschwächen, etwa `>= x` zu `>= 0` oder eine Grenze auf einen offensichtlich falschen Wert. Ein Test, der nur „die Regel gibt es“ prüft, bleibt dabei grün; erst wenn er auch beim abgeschwächten Schwellwert rot wird, prüft er die Grenze selbst.
+
 Ablauf und Schutz:
 
 1. Bei **unsauberem Arbeitsordner** startet das Skript nicht – sonst könnte das Zurücksetzen fremde Änderungen treffen. Vorher committen.

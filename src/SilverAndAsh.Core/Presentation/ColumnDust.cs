@@ -89,15 +89,5 @@ public static class ColumnDust
             density * thinning);
     }
 
-    // A number from 0 to 1, the same for the same arguments: an integer hash (no state, nothing random).
-    private static float Unit(int occasion, int puff, int salt)
-    {
-        var hash = unchecked((uint)((occasion * 73856093) ^ (puff * 19349663) ^ (salt * 83492791)) + 0x9E3779B9u);
-        hash ^= hash >> 16;
-        hash *= 0x7FEB352Du;
-        hash ^= hash >> 15;
-        hash *= 0x846CA68Bu;
-        hash ^= hash >> 16;
-        return (hash & 0xFFFFFF) / (float)0x1000000;
-    }
+    private static float Unit(int occasion, int puff, int salt) => StableUnit.Of(occasion, puff, salt);
 }

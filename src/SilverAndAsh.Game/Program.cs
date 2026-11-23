@@ -531,7 +531,7 @@ static void RunGame(
                 batView.OnEvent(gameEvent);
                 projectileView.OnEvent(gameEvent);
                 impactMarks.OnEvent(gameEvent);
-                wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position, gameWorld.Surfaces);
+                wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position, gameWorld.Surfaces, gameWorld.Ticks);
                 columnLooks.OnEvent(gameEvent, gameWorld.Ticks, gameWorld.Gorm?.Position);
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
@@ -639,7 +639,7 @@ static void RunGame(
             pickupView.DrawEquipment(gameWorld.EquipmentDrops, alpha);
 
             impactMarks.Draw();
-            wallBreakView.Draw(doorView, levelShader);
+            wallBreakView.Draw(doorView, levelShader, gameWorld.Ticks);
             columnView.DrawDust(levelShader);
 
             // Last: the weapons in the hands, in front of everything else - not in the test display, where they would

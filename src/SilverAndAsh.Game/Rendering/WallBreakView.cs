@@ -8,7 +8,8 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// The cracked wall breaking (issue #185): stone chunks burst out of it, away from whoever struck, tumble to the floor,
-/// bounce once or twice and sink away; a cloud of dust rises and fades. Pure presentation - Core only reports
+/// bounce once or twice and sink away; a soft cloud of dust drifts out and fades (<see cref="WallBreakDust"/>, drawn like
+/// the column's by <see cref="DustCloudView"/>). Pure presentation - Core only reports
 /// <see cref="WallBroken"/>, and which wall it was. Its own random numbers: nothing here changes the game.
 /// <para>
 /// Each chunk is the stone of the cracked wall's model (issue #246, <see cref="CrackedWallLook.Chunk"/>), stretched to
@@ -19,10 +20,8 @@ namespace SilverAndAsh.Game.Rendering;
 internal sealed class WallBreakView
 {
     private const int ChunkCount = 26;
-    private const int PuffCount = 12;
     private const float ChunkSeconds = 2.6f;
     private const float SinkSeconds = 0.6f;
-    private const float PuffSeconds = 1.8f;
     private const float Gravity = 14f;
 
     // A step of the ramp Stein (EffectColours, issue #609).
@@ -30,7 +29,8 @@ internal sealed class WallBreakView
 
     private readonly Random _random = new();
     private readonly List<Chunk> _chunks = [];
-    private readonly List<Puff> _puffs = [];
+    private readonly List<Cloud> _clouds = [];
+    private readonly List<DustPuff> _puffs = [];
 
     private sealed class Chunk
     {
@@ -46,20 +46,15 @@ internal sealed class WallBreakView
         public float Age;
     }
 
-    private sealed class Puff
-    {
-        public Vector3 Position;
-        public Vector3 Drift;
-        public float Size;
-        public float Age;
-        public float Delay;
-    }
+    // The dust of one broken wall (WallBreakDust): which wall, its box, away from the striker, and the tick it broke.
+    private readonly record struct Cloud(int Wall, Vector3 BoxMin, Vector3 BoxMax, Vector3 Away, long BrokeAt);
 
     /// <summary>
     /// Starts the effect when a wall breaks. <paramref name="striker"/> is where the player stood;
-    /// <paramref name="surfaces"/> the wall variants of the level (the chunks are of the face on the striker's side).
+    /// <paramref name="surfaces"/> the wall variants of the level (the chunks are of the face on the striker's side);
+    /// <paramref name="ticks"/> the tick of the world it broke in (the dust counts from there).
     /// </summary>
-    public void OnEvent(GameEvent gameEvent, IReadOnlyList<Door> doors, Vector3 striker, SurfaceVariants surfaces)
+    public void OnEvent(GameEvent gameEvent, IReadOnlyList<Door> doors, Vector3 striker, SurfaceVariants surfaces, long ticks)
     {
         if (gameEvent is not WallBroken broken || broken.DoorId < 0 || broken.DoorId >= doors.Count)
         {
@@ -95,16 +90,7 @@ internal sealed class WallBreakView
             });
         }
 
-        for (var i = 0; i < PuffCount; i++)
-        {
-            _puffs.Add(new Puff
-            {
-                Position = wall.BoxMin + new Vector3(_random.NextSingle() * size.X, _random.NextSingle() * size.Y * 0.7f, _random.NextSingle() * size.Z),
-                Drift = (away * Range(0.2f, 0.9f)) + (side * Range(-0.4f, 0.4f)) + new Vector3(0f, Range(0.2f, 0.6f), 0f),
-                Size = Range(0.4f, 0.8f),
-                Delay = Range(0f, 0.25f),
-            });
-        }
+        _clouds.Add(new Cloud(broken.DoorId, wall.BoxMin, wall.BoxMax, away, ticks));
     }
 
     public void Update(float frameSeconds)
@@ -126,25 +112,15 @@ internal sealed class WallBreakView
             }
         }
 
-        foreach (var puff in _puffs)
-        {
-            puff.Age += frameSeconds;
-            if (puff.Age > puff.Delay)
-            {
-                puff.Position += puff.Drift * frameSeconds;
-                puff.Drift *= MathF.Max(0f, 1f - (1.2f * frameSeconds));
-            }
-        }
-
         _chunks.RemoveAll(chunk => chunk.Age >= ChunkSeconds);
-        _puffs.RemoveAll(puff => puff.Age >= puff.Delay + PuffSeconds);
     }
 
     /// <summary>
-    /// Draws chunks and dust - the dust see-through with the level <paramref name="shader"/> (issue #609). Call between
-    /// BeginFigures and EndFigures, after the opaque world.
+    /// Draws chunks and dust as they are at <paramref name="ticks"/> ticks of the world - the dust a soft, see-through
+    /// cloud with the level <paramref name="shader"/> (issues #609, #614). Call between BeginFigures and EndFigures, after
+    /// the opaque world.
     /// </summary>
-    public void Draw(DoorView stones, LevelShader shader)
+    public void Draw(DoorView stones, LevelShader shader, long ticks)
     {
         foreach (var chunk in _chunks)
         {
@@ -159,20 +135,14 @@ internal sealed class WallBreakView
             }
         }
 
-        if (!_puffs.Any(puff => puff.Age > puff.Delay))
+        _clouds.RemoveAll(cloud => ticks - cloud.BrokeAt >= WallBreakDust.Ticks);
+        _puffs.Clear();
+        foreach (var cloud in _clouds)
         {
-            return;
+            WallBreakDust.Puffs((int)(ticks - cloud.BrokeAt), cloud.Wall, cloud.BoxMin, cloud.BoxMax, cloud.Away, _puffs);
         }
 
-        using var seeThrough = shader.BeginSeeThrough();
-        foreach (var puff in _puffs.Where(puff => puff.Age > puff.Delay))
-        {
-            // Grows and thins out.
-            var life = (puff.Age - puff.Delay) / PuffSeconds;
-            var size = puff.Size * (1f + (1.6f * life));
-            var alpha = (byte)(150f * (1f - life) * (1f - life));
-            Raylib.DrawCube(puff.Position, size, size, size, Dust with { A = alpha });
-        }
+        DustCloudView.Draw(shader, _puffs, Dust);
     }
 
     // The variant of the face nearer to the striker - the face they hit.

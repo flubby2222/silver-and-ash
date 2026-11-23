@@ -5,4 +5,9 @@
     everything in here has to be testable without a window.
   -->
 
+  <!-- The tests may read what Core keeps to itself (issue #611), e.g. ColumnBreakLook.PiecePivot; nothing else may. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="SilverAndAsh.Core.Tests" />
+  </ItemGroup>
+
 </Project>
