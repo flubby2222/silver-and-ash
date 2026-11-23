@@ -120,6 +120,88 @@ public class BossPortalStoneTests
         Assert.InRange(at.X, MiddleX - inside - 1e-4f, MiddleX + inside + 1e-4f);
     }
 
+    // A bat flies over any floor, but not through stone: hit by a charged club, it flies with the push (Bat.Act) at its
+    // hover height (2.2 m, below the springing) - into the jamb in the doorway, the buttress in the boss room, or on
+    // through the opening.
+    [Fact]
+    public void A_bat_knocked_at_a_jamb_in_the_doorway_stops_at_the_opening()
+    {
+        var world = World();
+        var bat = new Bat(7, new Vector3(MiddleX, BodySizes.Bat.HoverHeight, DoorPlaneZ), balance: Balance.Default);
+
+        var at = KnockBat(world, bat, -Vector3.UnitX);
+
+        Assert.Equal(MiddleX - (BossPortalShape.OpeningHalfWidth - BodySizes.Bat.Radius), at.X, 0.01f);
+        Assert.Equal(DoorPlaneZ, at.Z, 0.001f);
+    }
+
+    [Fact]
+    public void A_bat_knocked_at_a_buttress_stops_in_front_of_it()
+    {
+        // The left buttress stands 1.72-2 m beside the middle (x 4-4.28 m), up to 1.24 m in front of the door plane; the
+        // bat comes at the middle of its face (nearer its edge it would round the stepped corner into the opening).
+        var world = World();
+        var buttress = BossPortalShape.Blocks.Single(block => block.AcrossFrom == 1.72f);
+        var x = MiddleX - ((buttress.AcrossFrom + buttress.AcrossTo) / 2f);
+        var bat = new Bat(7, new Vector3(x, BodySizes.Bat.HoverHeight, 5.5f), balance: Balance.Default);
+
+        var at = KnockBat(world, bat, -Vector3.UnitZ);
+
+        Assert.Equal(DoorPlaneZ + buttress.AlongTo + BodySizes.Bat.Radius, at.Z, 0.01f);
+        Assert.Equal(x, at.X, 0.001f);
+    }
+
+    [Fact]
+    public void A_bat_knocked_through_the_opening_flies_on_through_it()
+    {
+        var world = World();
+        var bat = new Bat(7, new Vector3(MiddleX, BodySizes.Bat.HoverHeight, 5.5f), balance: Balance.Default);
+
+        var at = KnockBat(world, bat, -Vector3.UnitZ);
+
+        Assert.True(at.Z < DoorPlaneZ - 1f, $"the bat is at {at}");
+        Assert.Equal(MiddleX, at.X, 0.001f);
+    }
+
+    // Knocks the bat away with a charged club and lets it fly the push out, tick by tick; it never enters the stone.
+    private static Vector3 KnockBat(GameWorld world, Bat bat, Vector3 direction)
+    {
+        // The door open (the bars lifted, the leaves swung back), so only the stone stands in the way.
+        Run(world, PressF, 1);
+        Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Doors.BossOpenTime) + 1);
+        Assert.False(world.Doors[0].Blocks);
+        var club = Balance.Default.Club;
+        bat.Knockback.Start(direction, club.ChargedKnockback, club.KnockbackTime);
+        var events = new List<GameEvent>();
+        for (var tick = 0; tick < 60 && bat.Knockback.IsActive; tick++)
+        {
+            bat.Act(world.Level, [world.Player], events);
+            Assert.False(BatInStone(world.Level, bat.Position), $"tick {tick}: {bat.Position}");        }
+
+        Assert.False(bat.Knockback.IsActive);
+        Assert.Equal(BodySizes.Bat.HoverHeight, bat.Position.Y, 0.001f);
+        return bat.Position;
+    }
+
+    // Stone the bat's body touches, at any height from its feet to its top (the portal's own test, not the collision's).
+    private static bool BatInStone(Level level, Vector3 at)
+    {
+        var portal = Assert.Single(level.Portals);
+        for (var y = at.Y; y <= at.Y + BodySizes.Bat.Height; y += 0.1f)
+        {
+            for (var angle = 0f; angle < MathF.Tau; angle += MathF.Tau / 16f)
+            {
+                var edge = at + new Vector3(MathF.Cos(angle) * BodySizes.Bat.Radius * 0.99f, y - at.Y, MathF.Sin(angle) * BodySizes.Bat.Radius * 0.99f);
+                if (portal.Contains(edge))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     [Fact]
     public void A_shot_at_a_jamb_ends_on_its_face()
     {

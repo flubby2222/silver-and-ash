@@ -361,7 +361,14 @@ public static class CharacterCollision
 
     // The ground plans of the portal blocks a body standing at position.Y meets: from a step above its feet to its head.
     private static IEnumerable<(Vector2 Min, Vector2 Max)> PortalStoneInTheWay(Level level, Vector3 position, float height, float stepHeight) =>
-        level.Portals.SelectMany(portal => portal.Footprint(position.Y + stepHeight, position.Y + height));
+        level.Portals.SelectMany(portal => portal.Footprint(position.Y + StepOntoStone(stepHeight), position.Y + height));
+
+    /// <summary>
+    /// How high a body steps up onto the portal's stone. A walking body climbs a block up to its step height. A flying
+    /// body (unbounded step: it passes any floor height, see <c>Bat</c>) does not climb stone - it flies over the
+    /// floors, but meets every block from its feet up, so a bat in the passage still bumps into the jambs.
+    /// </summary>
+    private static float StepOntoStone(float stepHeight) => float.IsPositiveInfinity(stepHeight) ? 0f : stepHeight;
 
     /// <summary>
     /// Pushes the character out of solid boxes on the ground plane - like walls, with sliding. A box whose top is
