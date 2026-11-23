@@ -565,6 +565,53 @@ public class GrateTests
         Assert.True(fresh.Doors[DoorA].IsBarred);
     }
 
+    // What the rooms, doors and grates of a world look like right now - to compare one entry with another.
+    private static string Snapshot(GameWorld world) =>
+        string.Join(" | ", world.Rooms.Select(room => $"room {room.Index}: entered={room.IsEntered} sealed={room.IsSealed} cleared={room.IsCleared}")
+            .Concat(world.Doors.Select(door => $"door {door.Id}: open={door.IsOpen} barred={door.IsBarred} h={door.GrateHeight}")));
+
+    // Enters the first of the two arenas and records the rooms, doors and grates in every tick of the fall.
+    private static (List<string> Fall, List<GameEvent> Events) EnterTheFirstArena(GameWorld world)
+    {
+        var events = Enter(world);
+        var fall = new List<string> { Snapshot(world) };
+        for (var tick = 0; tick < Grates.FallTicks; tick++)
+        {
+            world.Tick(PlayerInput.None);
+            events.AddRange(world.Events);
+            fall.Add(Snapshot(world));
+        }
+
+        return (fall, events);
+    }
+
+    // Issue #578 (tester finding on PR #575): an arena next to a second arena - the layout of all 38 reports of the door
+    // bot. A player dies in the sealed first arena, the level starts again, they walk in the same way: the arena seals
+    // again, and rooms, doors and grates stand in every tick of the fall as they did the first time.
+    [Fact]
+    public void An_arena_next_to_another_seals_again_the_same_way_after_death_and_restart()
+    {
+        var world = TwoArenas(fromTheCorridor: false);
+        var (first, firstEvents) = EnterTheFirstArena(world);
+        Assert.True(world.Doors[SharedDoor].IsBarred);
+        Assert.False(world.Rooms[2].IsEntered);
+
+        world.Player.TakeDamage(world.Player.MaxHealth, []);
+        Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.RestartDelay) + 1);
+        Assert.True(world.ShouldRestart);
+
+        var fresh = world.Restarted();
+        Assert.All(fresh.Rooms, room => Assert.False(room.IsEntered || room.IsSealed || room.IsCleared));
+        Assert.All(fresh.Doors, door => Assert.False(door.IsBarred || door.IsOpen));
+        Assert.All(fresh.Doors, door => Assert.Equal(GratePose.OpenHeight, door.GrateHeight));
+
+        var (again, againEvents) = EnterTheFirstArena(fresh);
+        Assert.True(fresh.Rooms[1].IsSealed);
+        Assert.Equal(first, again);
+        Assert.Equal(firstEvents.OfType<GrateStarted>(), againEvents.OfType<GrateStarted>());
+        Assert.Single(againEvents, e => e is RoomSealed);
+    }
+
     [Fact]
     public void A_grate_turned_round_on_its_way_moves_on_from_where_it_hangs()
     {
