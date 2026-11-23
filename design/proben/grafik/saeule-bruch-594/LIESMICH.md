@@ -26,3 +26,9 @@ Flat Shading, Textur aus Palette, Requisiten-Budget 100 bis 400 Dreiecke, geschl
 - Augenhöhe: Aufgabe nannte 1,8 m, Code und Art Bible 1,6 m; Blatt nutzt 1,6 m.
 - Z1 und Z2 sind im Spiellicht auf 10 m unterscheidbar, aber nicht stark; der Keil von Z1 ist bewusst kleiner.
 - Die Animation ist ein Entwurf (starre Teile), keine Endfassung.
+
+## Runde 2 (Dateien mit -r2, Runde 1 bleibt stehen)
+- Z1 jetzt kleiner Ausbruch (etwa ein Drittel), Säule gerade, 2 Schuttstücke; Z2 großer Keil über die halbe Schaftdicke, Oberteil 5,5 Grad geneigt, abgeplatzte Ecke am Kapitell, 6 Schuttstücke. Bruchflächen mit je 2 bis 3 Facetten (Zusatzebenen `FACETS` im Skript).
+- Dreiecke: Z0 284, Z1 392, Z2 398, Z3 156 (alle geschlossen). Modelle in `modelle-r2/`.
+- Animation startet aus der neuen Z2-Form; Ablauf und Ticks unverändert (Landungen 21, 22, 32, 38, 46; Tausch auf Z3 bei Tick 51).
+- Entscheidung der Leitung: Stumpf gibt keine Deckung, die Deckung endet mit dem dritten Treffer sofort.

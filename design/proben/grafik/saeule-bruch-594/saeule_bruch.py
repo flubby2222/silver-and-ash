@@ -179,6 +179,8 @@ def clip(faces, nrm, d, field="bruch"):
             j = (i + 1) % len(pts)
             if sd[i] <= 0:
                 res.append(pts[i])
+                if abs(sd[i]) < 1e-9:
+                    cut.append(pts[i])
             if (sd[i] < 0 < sd[j]) or (sd[j] < 0 < sd[i]):
                 t = sd[i] / (sd[i] - sd[j])
                 q = pts[i] + (pts[j] - pts[i]) * t
@@ -316,15 +318,58 @@ def uv_faces(f):
 K_SLOPE = 0.8
 
 
-def notch_pieces(Y1, Y2, rw, wr=R - 0.005, top_cap=None):
+def _dir(deg):
+    a = math.atan2(CDIR.z, CDIR.x) + math.radians(deg)
+    return V(math.cos(a), 0.0, math.sin(a))
+
+
+# Runde 2: Bruchflaechen unregelmaessig. Je Zustand eine Liste (Winkel zur Trefferrichtung, Steigung, Versatz) fuer die
+# Zusatzebenen des Unterteils (unten) und des Oberteils (oben); die Hauptebene bekommt einen kleinen Versatz.
+FACETS = {
+    1: dict(k=0.55, unten=[(32, 0.75, 0.0), (-26, 0.6, 0.0)], oben=[(-34, 0.65, 0.0), (22, 0.65, 0.0)], main_off=0.03),
+    2: dict(k=0.8, unten=[(34, 0.95, 0.0)], oben=[(-32, 0.9, 0.0)], main_off=0.05),
+}
+
+
+def lower_planes(state, Y1):
+    fc = FACETS[state]
+    k = fc["k"]
+    planes = [(V(k * CDIR.x, 1.0, k * CDIR.z), Y1 - fc["main_off"])]
+    for deg, kf, off in fc["unten"]:
+        d = _dir(deg)
+        planes.append((V(kf * d.x, 1.0, kf * d.z), Y1 - off))
+    return planes
+
+
+def upper_planes(state, Y2):
+    fc = FACETS[state]
+    k = fc["k"]
+    planes = [(V(k * CDIR.x, -1.0, k * CDIR.z), -Y2 - fc["main_off"])]
+    for deg, kf, off in fc["oben"]:
+        d = _dir(deg)
+        planes.append((V(kf * d.x, -1.0, kf * d.z), -Y2 - off))
+    return planes
+
+
+def clip_all(faces, planes):
+    for n, d in planes:
+        faces = clip(faces, n, d)
+    return faces
+
+
+def chip_plane(deg=160, d=9.55):
+    """Abgeplatzte Ecke am Kapitell: kleine Ebene mit grossem y-Anteil, trifft nur den oberen Rand."""
+    dd = _dir(deg)
+    return (V(dd.x, 1.6, dd.z), d)
+
+
+def notch_pieces(state, Y1, Y2, rw, wr=R - 0.005):
     """Keil: unteres Teil L (Oberseite faellt nach aussen), Taille W (nur bis rw), oberes Teil U (Unterseite steigt nach
-    aussen). L und U sind ganze Zwoelfecke; die Bruchflaechen entstehen durch das Beschneiden."""
-    k = K_SLOPE
-    nl = V(k * CDIR.x, 1.0, k * CDIR.z)
-    nu = V(k * CDIR.x, -1.0, k * CDIR.z)
-    L = clip(prism(0.78, Y1 + 0.55), nl, Y1)
-    W = clip(prism(Y1 - k * rw - 0.07, Y2 + k * rw + 0.07, wr), CDIR, rw)
-    U = clip(prism(Y2 - 0.55, CB + 0.06), nu, -Y2)
+    aussen). L und U sind ganze Zwoelfecke; die Bruchflaechen entstehen durch das Beschneiden (mehrere Facetten)."""
+    k = FACETS[state]["k"]
+    L = clip_all(prism(0.78, Y1 + 0.55), lower_planes(state, Y1))
+    W = clip(prism(Y1 - k * rw - 0.3, Y2 + k * rw + 0.3, wr), CDIR, rw)
+    U = clip_all(prism(Y2 - 0.55, CB + 0.06), upper_planes(state, Y2))
     return L, W, U
 
 
@@ -359,8 +404,9 @@ def stump_z3():
     return f
 
 
-Z1_Y = (1.55, 2.15, 0.10)
-Z2_Y = (1.45, 2.55, -0.12)
+Z1_Y = (1.75, 2.05, 0.18)        # kleiner Ausbruch, Saeule steht gerade
+Z2_Y = (1.40, 2.60, -0.12)      # grosser Keil bis ueber die halbe Schaftdicke
+Z2_LEAN = (-5.5, 0.05)
 
 
 def build_state(state, split_upper=False):
@@ -372,33 +418,28 @@ def build_state(state, split_upper=False):
         return pieces
     if state in (1, 2):
         Y1, Y2, rw = Z1_Y if state == 1 else Z2_Y
-        L, W, U = notch_pieces(Y1, Y2, rw)
+        L, W, U = notch_pieces(state, Y1, Y2, rw)
         if split_upper:
             pieces["stumpf"] = xf_faces(base_stump(), Matrix.Identity(3), V(0, 0, 0), V(0, 0, 0))
             pieces["L"] = xf_faces(L, Matrix.Identity(3), V(0, 0, 0), V(0, 0, 0))
         else:       # Sockel und Unterteil in einem Stueck (spart die Doppelflaechen)
-            kk = K_SLOPE
-            nl = V(kk * CDIR.x, 1.0, kk * CDIR.z)
-            low = clip(loft_solid([(0.0, R + S), (0.4375, R + S), (0.5, R), (Y1 + 0.55, R)]), nl, Y1)
+            low = clip_all(loft_solid([(0.0, R + S), (0.4375, R + S), (0.5, R), (Y1 + 0.55, R)]), lower_planes(state, Y1))
             pieces["unten"] = xf_faces(low, Matrix.Identity(3), V(0, 0, 0), V(0, 0, 0))
         pieces["W"] = xf_faces(W, Matrix.Identity(3), V(0, 0, 0), V(0, 0, 0))
-        ang, dx = (0.0, 0.0) if state == 1 else (-3.0, 0.03)
+        ang, dx = (0.0, 0.0) if state == 1 else Z2_LEAN
         pivot = (Y1 + Y2) / 2
+        chip = [chip_plane()] if state == 2 else []
         if split_upper:
-            k = K_SLOPE
-            nu = V(k * CDIR.x, -1.0, k * CDIR.z)
             ysplit = 3.8
-            U1 = clip(prism(Y2 - 0.55, ysplit + 0.05), nu, -Y2)
+            U1 = clip_all(prism(Y2 - 0.55, ysplit + 0.05), upper_planes(state, Y2))
             U2 = prism(ysplit - 0.05, CB + 0.06)
             pieces["U1"] = lean(U1, ang, pivot, dx)
             pieces["U2"] = lean(U2, ang, pivot, dx)
-            pieces["K"] = lean(capital(), ang, pivot, dx)
+            pieces["K"] = lean(clip_all(capital(), chip), ang, pivot, dx)
         else:       # Oberteil und Kapitell in einem Stueck
-            kk = K_SLOPE
-            nu = V(kk * CDIR.x, -1.0, kk * CDIR.z)
             cap = [(CB, R), (CB + S, R + S), (CB + 2 * S, R + S), (CB + 2 * S, R), (CB + 3 * S, R), (CB + 4 * S, R + S),
                    (CB + 5 * S, R), (CB + 6 * S, R + S), (CB + 8 * S, R + S)]
-            up = clip(loft_solid([(Y2 - 0.55, R)] + cap), nu, -Y2)
+            up = clip_all(loft_solid([(Y2 - 0.55, R)] + cap), upper_planes(state, Y2) + chip)
             pieces["oben"] = lean(up, ang, pivot, dx)
         for i, (cx, cz, size, yaw, seed) in enumerate(RUBBLE[state]):
             pieces["s%d" % i] = rubble(cx, cz, size, yaw, seed, kind=("prism", "pyramid")[i % 2])
@@ -410,9 +451,10 @@ def build_state(state, split_upper=False):
 
 
 RUBBLE = {
-    1: [(0.66, 0.30, (0.13, 0.09, 0.11), 25, 1), (0.95, 0.12, (0.09, 0.07, 0.08), 70, 2), (0.58, 0.72, (0.08, 0.06, 0.07), 10, 3)],
+    1: [(0.62, 0.26, (0.1, 0.07, 0.09), 25, 1), (0.8, 0.1, (0.07, 0.05, 0.06), 70, 2)],
     2: [(0.72, 0.28, (0.2, 0.13, 0.15), 25, 11), (1.05, 0.55, (0.12, 0.09, 0.1), 60, 12), (0.5, 0.8, (0.1, 0.08, 0.1), 5, 13),
-        (1.0, -0.12, (0.09, 0.07, 0.1), 80, 14), (-0.62, 0.52, (0.1, 0.07, 0.09), 40, 15)],
+        (1.0, -0.12, (0.09, 0.07, 0.1), 80, 14), (-0.62, 0.52, (0.1, 0.07, 0.09), 40, 15),
+        (1.3, 0.3, (0.13, 0.09, 0.11), 30, 16), (0.9, 0.95, (0.1, 0.07, 0.09), 65, 17)],
     3: [(0.78, 0.10, (0.19, 0.11, 0.15), 25, 21), (0.52, 0.66, (0.13, 0.09, 0.12), 70, 22), (1.02, -0.30, (0.16, 0.10, 0.2), -15, 23),
         (0.15, 0.88, (0.15, 0.1, 0.13), 40, 24), (-0.66, 0.60, (0.12, 0.08, 0.1), 10, 25), (-0.88, -0.2, (0.18, 0.11, 0.12), 55, 26),
         (-0.1, -0.84, (0.14, 0.09, 0.16), -30, 27), (0.7, -0.74, (0.11, 0.08, 0.1), 80, 28), (1.2, 0.46, (0.09, 0.06, 0.08), 0, 29)],
@@ -471,7 +513,7 @@ def tex_of(state):
 
 
 def export_models():
-    d = os.path.join(OUT, "modelle")
+    d = os.path.join(OUT, "modelle-r2")
     os.makedirs(d, exist_ok=True)
     report = []
     for state in range(4):
@@ -793,9 +835,9 @@ def animation():
     strip = B.hcat([im for t, im in frames if t in pick])
     for i, t in enumerate(pick):
         B.text(strip, "Tick %d" % t, 6 + i * (frames[0][1].shape[1] + 6), 4, 20)
-    B.png(strip, os.path.join(OUT, "bruch-posen.png"))
+    B.png(strip, os.path.join(OUT, "bruch-posen-r2.png"))
     hold = [frames[-1]] * 5
-    write_gif(frames + hold, swap, os.path.join(OUT, "bruch-animation.gif"), 5)
+    write_gif(frames + hold, swap, os.path.join(OUT, "bruch-animation-r2.gif"), 5)
     return landed, swap
 
 
@@ -804,13 +846,13 @@ def main():
         export_models()
     if MODE in ("alles", "ansichten"):
         for s in range(4):
-            B.png(four_views(s), os.path.join(OUT, "ansichten-z%d.png" % s))
-        B.png(four_views(3, close=True), os.path.join(OUT, "ansichten-z3-nah.png"))
+            B.png(four_views(s), os.path.join(OUT, "ansichten-z%d-r2.png" % s))
+        B.png(four_views(3, close=True), os.path.join(OUT, "ansichten-z3-nah-r2.png"))
         for d in (6, 10):
-            B.png(eye_row(float(d), "spiel"), os.path.join(OUT, "spiel-%dm.png" % d))
-        B.png(eye_row(10.0, "hell"), os.path.join(OUT, "klar-10m.png"))
+            B.png(eye_row(float(d), "spiel"), os.path.join(OUT, "spiel-%dm-r2.png" % d))
+        B.png(eye_row(10.0, "hell"), os.path.join(OUT, "klar-10m-r2.png"))
     if MODE in ("alles", "blatt"):
-        B.png(sheet(), os.path.join(OUT, "blatt-zustaende.png"))
+        B.png(sheet(), os.path.join(OUT, "blatt-zustaende-r2.png"))
     if MODE in ("alles", "anim"):
         print("ANIMATION", animation())
 
