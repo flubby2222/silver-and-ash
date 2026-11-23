@@ -274,16 +274,43 @@ public sealed class Bat : IEnemy
                 break;
 
             case BatState.Rising:
-                var height = CircleHeight(level);
-                Position = Position with { Y = MathF.Min(height, Position.Y + _bat.ClimbSpeed * SimulationClock.SecondsPerTick) };
-                if (Position.Y >= height)
-                {
-                    State = BatState.Circling;
-                    _diveTicksLeft = _diveTicks;
-                }
-
+                Rise(level);
                 break;
         }
+    }
+
+    /// <summary>
+    /// One tick of rising after a dive, up to its circling height. Stone of a boss portal overhead (the impost) ends the
+    /// climb early: it circles on from where it is and climbs once it is clear of the stone (issue #627).
+    /// </summary>
+    private void Rise(Level level)
+    {
+        var height = CircleHeight(level);
+        var climbed = ClimbClearOfStone(level, MathF.Min(height, Position.Y + _bat.ClimbSpeed * SimulationClock.SecondsPerTick));
+        if (Position.Y >= height || !climbed)
+        {
+            State = BatState.Circling;
+            _diveTicksLeft = _diveTicks;
+        }
+    }
+
+    /// <summary>
+    /// Climbs or sinks to <paramref name="height"/> (the bottom of its body) - unless its body would reach into stone
+    /// there: the walls only stop it on the ground plane at its present height (<see cref="CharacterCollision.Move"/>),
+    /// so a bat beside a boss portal would rise into the impost that juts out above it (issue #627). Then it keeps its
+    /// height for this tick. False if it was held.
+    /// </summary>
+    private bool ClimbClearOfStone(Level level, float height)
+    {
+        var there = Position with { Y = height };
+        if (height != Position.Y
+            && CharacterCollision.Overlaps(level, there, BodySizes.Bat.Radius, BodySizes.Bat.Height, FlyingStepHeight))
+        {
+            return false;
+        }
+
+        Position = there;
+        return true;
     }
 
     /// <summary>
@@ -444,7 +471,8 @@ public sealed class Bat : IEnemy
         _bobTick++;
         var height = CircleHeight(level);
         var maxClimb = _bat.ClimbSpeed * SimulationClock.SecondsPerTick;
-        Position = position with { Y = Position.Y + Math.Clamp(height - Position.Y, -maxClimb, maxClimb) };
+        Position = position;
+        ClimbClearOfStone(level, Position.Y + Math.Clamp(height - Position.Y, -maxClimb, maxClimb));
     }
 
     /// <summary>A random time until it turns round next, between <see cref="BatBalance.TurnRoundMin"/> and <see cref="BatBalance.TurnRoundMax"/>.</summary>
