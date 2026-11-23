@@ -25,7 +25,8 @@ internal sealed class WallBreakView
     private const float PuffSeconds = 1.8f;
     private const float Gravity = 14f;
 
-    private static readonly Color Dust = new(170, 156, 146, 255);
+    // A step of the ramp Stein (EffectColours, issue #609).
+    private static readonly Color Dust = new(EffectColours.WallBreakDust.R, EffectColours.WallBreakDust.G, EffectColours.WallBreakDust.B, (byte)255);
 
     private readonly Random _random = new();
     private readonly List<Chunk> _chunks = [];
@@ -139,8 +140,11 @@ internal sealed class WallBreakView
         _puffs.RemoveAll(puff => puff.Age >= puff.Delay + PuffSeconds);
     }
 
-    /// <summary>Draws chunks and dust. Call between BeginMode3D and EndMode3D, after the opaque world.</summary>
-    public void Draw(DoorView stones)
+    /// <summary>
+    /// Draws chunks and dust - the dust see-through with the level <paramref name="shader"/> (issue #609). Call between
+    /// BeginFigures and EndFigures, after the opaque world.
+    /// </summary>
+    public void Draw(DoorView stones, LevelShader shader)
     {
         foreach (var chunk in _chunks)
         {
@@ -155,6 +159,12 @@ internal sealed class WallBreakView
             }
         }
 
+        if (!_puffs.Any(puff => puff.Age > puff.Delay))
+        {
+            return;
+        }
+
+        shader.BeginSeeThrough();
         foreach (var puff in _puffs.Where(puff => puff.Age > puff.Delay))
         {
             // Grows and thins out.
@@ -163,6 +173,8 @@ internal sealed class WallBreakView
             var alpha = (byte)(150f * (1f - life) * (1f - life));
             Raylib.DrawCube(puff.Position, size, size, size, Dust with { A = alpha });
         }
+
+        shader.EndSeeThrough();
     }
 
     // The variant of the face nearer to the striker - the face they hit.

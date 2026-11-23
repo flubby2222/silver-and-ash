@@ -26,11 +26,12 @@ internal sealed class ColumnView : IDisposable
     // Fallen pieces lie up to about 3.5 m from the foot; a little more, so nothing pops at the edge of the view.
     private const float BoundingRadius = 4.5f;
 
-    private static readonly Color Stone = new(112, 106, 98, 255);
-    private static readonly Color Edge = new(58, 54, 50, 255);
+    // Steps of the ramp Stein (EffectColours, issue #609).
+    private static readonly Color Stone = Opaque(EffectColours.ColumnStandIn);
+    private static readonly Color Edge = Opaque(EffectColours.ColumnStandInEdge);
 
     // The dust of the stone, from the palette (ColumnDust.Colour).
-    private static readonly Color Dust = new(ColumnDust.Colour.R, ColumnDust.Colour.G, ColumnDust.Colour.B, (byte)255);
+    private static readonly Color Dust = Opaque(ColumnDust.Colour);
 
     private readonly Dictionary<ColumnStage, TexturedModel> _models;
     private readonly Matrix4x4[] _fallTurns = new Matrix4x4[ColumnBreakLook.Parts(ColumnStage.Falling).Count];
@@ -86,53 +87,34 @@ internal sealed class ColumnView : IDisposable
     }
 
     /// <summary>
-    /// Draws the dust gathered by the last <see cref="Draw"/>, seen from <paramref name="camera"/>: soft, see-through
-    /// balls that do not hide one another, in the lantern's light and the fog like the stone around them. Call between
-    /// BeginMode3D and EndMode3D, after everything solid, without the level shader (it would make the dust solid).
+    /// Draws the dust gathered by the last <see cref="Draw"/>: soft, see-through balls that do not hide one another, lit,
+    /// fogged and in the picture variant by the level <paramref name="shader"/> like the stone around them (issue #609).
+    /// Call between BeginFigures and EndFigures, after everything solid.
     /// </summary>
-    public void DrawDust(Vector3 camera)
+    public void DrawDust(LevelShader shader)
     {
         if (_puffs.Count == 0)
         {
             return;
         }
 
-        // The puffs blend into each other instead of cutting holes: they test the depth, but do not write it.
-        Rlgl.DrawRenderBatchActive();
-        Rlgl.DisableDepthMask();
+        shader.BeginSeeThrough();
         foreach (var puff in _puffs)
         {
-            // Lit and fogged as the level shader does it for a surface at that distance (Lighting).
-            var distance = Vector3.Distance(camera, puff.Position);
-            var light = Lighting.LanternBrightness(distance, LookSettings.FogEnd, LookSettings.LanternMinimum);
-            var fog = Lighting.FogAmount(distance, LookSettings.FogStart, LookSettings.FogEnd);
-            var color = Lit(light, fog);
-
             // Three faint shells, each smaller one adding a little: dense in the middle, fading out to the edge.
             foreach (var (scale, alpha) in Shells)
             {
-                var a = (byte)Math.Clamp(alpha * puff.Opacity * (1f - fog), 0f, 255f);
-                Raylib.DrawSphereEx(puff.Position, puff.Radius * scale, 6, 10, color with { A = a });
+                var a = (byte)Math.Clamp(alpha * puff.Opacity, 0f, 255f);
+                Raylib.DrawSphereEx(puff.Position, puff.Radius * scale, 6, 10, Dust with { A = a });
             }
         }
 
-        Rlgl.DrawRenderBatchActive();
-        Rlgl.EnableDepthMask();
+        shader.EndSeeThrough();
     }
 
     // The shells of one puff: size (of its radius) and opacity (0..255 at full density). Strong enough that the cloud of
     // the landing pieces is plainly seen from 6 m (provisional until the play test, issue #601).
     private static readonly (float Scale, float Alpha)[] Shells = [(1f, 40f), (0.72f, 55f), (0.45f, 70f)];
-
-    // The dust's colour under the lantern, blended toward the fog colour.
-    private static Color Lit(float light, float fog)
-    {
-        static byte Channel(byte dust, byte fogColor, float light, float fog) =>
-            (byte)Math.Clamp(((dust * light) * (1f - fog)) + (fogColor * fog), 0f, 255f);
-
-        var f = LookSettings.FogColor;
-        return new Color(Channel(Dust.R, f.R, light, fog), Channel(Dust.G, f.G, light, fog), Channel(Dust.B, f.B, light, fog), (byte)255);
-    }
 
     public void Dispose()
     {
@@ -175,6 +157,8 @@ internal sealed class ColumnView : IDisposable
         model.Rig.Pose(_turn, figure, _frame);
         model.Draw(_frame);
     }
+
+    private static Color Opaque((byte R, byte G, byte B) colour) => new(colour.R, colour.G, colour.B, (byte)255);
 
     private static void DrawStandIn(Vector3 foot, float height)
     {

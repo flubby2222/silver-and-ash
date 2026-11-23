@@ -18,6 +18,7 @@ uniform float fogStart;        // metres: fog begins
 uniform float fogEnd;          // metres: only fog left; also the range of the lantern
 uniform float lanternMinimum;  // brightness far away (0..1)
 uniform float glow;            // a part that shines by itself (issue #480): the lantern never makes it darker than this (0: none)
+uniform int seeThrough;        // 1: keep the alpha of the colour - see-through effects such as dust (issue #609); 0: solid
 
 // Picture variants (issue #234, decision record 0010). Variant 1 - the game as it is - has both switched off.
 uniform int quantize;          // 1: rasterise the colour to 5 bits per channel with the dot pattern
@@ -48,6 +49,9 @@ void main()
     // vertex colour. Without texture and flash this is exactly the vertex colour, so variant 1 stays bit for bit the same.
     vec3 surface = mix(texture(texture0, fragTexCoord).rgb, flash.rgb, flash.a) * fragColor.rgb;
 
+    // Solid unless asked otherwise: a colour with alpha below 1 would let the picture's black show through.
+    float alpha = seeThrough == 1 ? fragColor.a * colDiffuse.a : 1.0;
+
     // Variant 1 (the game as it is): exactly the old way, line by line. The graphics driver rounds a rearranged
     // calculation differently by 1/255 here and there - this way the pictures stay bit for bit the same.
     if (quantize == 0 && patternFade == 0)
@@ -55,7 +59,7 @@ void main()
         float lantern = max(1.0 - (1.0 - lanternMinimum) * clamp(distanceToCamera / fogEnd, 0.0, 1.0), glow);
         float fog = smoothstep(fogStart, fogEnd, distanceToCamera);
         vec3 lit = surface * colDiffuse.rgb * lantern;
-        finalColor = vec4(mix(lit, fogColor, fog), 1.0);
+        finalColor = vec4(mix(lit, fogColor, fog), alpha);
         return;
     }
 
@@ -82,5 +86,5 @@ void main()
         color = clamp(floor(clamp(color, 0.0, 1.0) * 31.0 + t), 0.0, 31.0) / 31.0;
     }
 
-    finalColor = vec4(color, 1.0);
+    finalColor = vec4(color, alpha);
 }

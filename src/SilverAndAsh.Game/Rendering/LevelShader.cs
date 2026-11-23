@@ -14,6 +14,7 @@ internal sealed class LevelShader : IDisposable
     private readonly int _viewPositionLocation;
     private readonly int _flashLocation;
     private readonly int _glowLocation;
+    private readonly int _seeThroughLocation;
 
     public LevelShader(string shaderDirectory)
     {
@@ -32,7 +33,9 @@ internal sealed class LevelShader : IDisposable
         _viewPositionLocation = Raylib.GetShaderLocation(Shader, "viewPos");
         _flashLocation = Raylib.GetShaderLocation(Shader, "flash");
         _glowLocation = Raylib.GetShaderLocation(Shader, "glow");
+        _seeThroughLocation = Raylib.GetShaderLocation(Shader, "seeThrough");
         SetFloat("glow", 0f);
+        SetInt("seeThrough", 0);
 
         // These values do not change while playing - set them once.
         SetFloat("fogStart", LookSettings.FogStart);
@@ -99,6 +102,30 @@ internal sealed class LevelShader : IDisposable
         // As with the flash: triangles collected before must not get the new value.
         Rlgl.DrawRenderBatchActive();
         Raylib.SetShaderValue(Shader, _glowLocation, Math.Clamp(amount, 0f, 1f), ShaderUniformDataType.Float);
+    }
+
+    /// <summary>
+    /// Draws what comes next see-through (issue #609), still lit, fogged and in the picture variant like everything else:
+    /// the shader keeps the alpha of the colour, the colour is blended over what lies behind, the picture's alpha stays
+    /// (<see cref="KeepPictureAlpha"/>), and nothing writes the depth, so soft things do not cut holes into one another.
+    /// Call between BeginFigures and EndFigures, after everything solid; end with <see cref="EndSeeThrough"/>.
+    /// </summary>
+    public void BeginSeeThrough()
+    {
+        // As with the flash: triangles collected before must stay solid.
+        Rlgl.DrawRenderBatchActive();
+        Raylib.SetShaderValue(Shader, _seeThroughLocation, 1, ShaderUniformDataType.Int);
+        KeepPictureAlpha.Begin();
+        Rlgl.DisableDepthMask();
+    }
+
+    /// <summary>Back to solid drawing.</summary>
+    public void EndSeeThrough()
+    {
+        Rlgl.DrawRenderBatchActive();
+        Rlgl.EnableDepthMask();
+        KeepPictureAlpha.End();
+        Raylib.SetShaderValue(Shader, _seeThroughLocation, 0, ShaderUniformDataType.Int);
     }
 
     /// <summary>Ends drawing figures.</summary>
