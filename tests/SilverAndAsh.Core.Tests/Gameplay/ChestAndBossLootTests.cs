@@ -506,6 +506,51 @@ public class ChestAndBossLootTests
     }
 
     /// <summary>
+    /// Issue #608, review of PR #613: a column Gorm has broken no longer stands - his loot does not turn away from it.
+    /// A player hides behind the column in front of him until his blows break it; he dies right then, and his vial lies
+    /// where it falls without a column, though that is where the broken one stood.
+    /// </summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void A_broken_column_does_not_push_gorm_s_loot_aside(int seed)
+    {
+        var tough = NoOtherLoot with { Player = NoOtherLoot.Player with { MaxHealth = 100_000 } };
+        var plain = BossWorld(seed, tough);
+        var column = ColumnAt(plain.Gorm!.Position, plain.Gorm.Facing, 0, 0f);
+        var world = BossWorld(seed, tough, columns: [column]);
+        var gorm = world.Gorm!;
+        var behind = new Vector2(column.X, column.Z) + (Vector2.Normalize(new Vector2(gorm.Facing.X, gorm.Facing.Z)) * 1.2f);
+
+        Run(world, PressF, 1);
+        WalkTo(world, world.Level.CellCenter(3, 2));
+        WalkTo(world, new Vector3(behind.X, 0f, behind.Y));
+        var broke = false;
+        for (var tick = 0; tick < 120 * Second && !broke; tick++)
+        {
+            world.Tick(PlayerInput.None);
+            broke = world.Events.Contains(new ColumnBroke(column));
+        }
+
+        Assert.True(broke, "Gorm never broke the column.");
+        Assert.Empty(world.Level.Columns);
+        var (at, facing) = (gorm.Position, gorm.Facing);
+        var falls = at + (facing * 1.2f);
+        var flat = new Vector2(falls.X, falls.Z);
+        var nearest = Vector2.Clamp(column.Centre, flat - new Vector2(BodySizes.Pickup.Radius), flat + new Vector2(BodySizes.Pickup.Radius));
+        Assert.True(
+            Vector2.Distance(nearest, column.Centre) < Column.Radius + GameWorld.ColumnClearance,
+            $"The vial would not have touched the column at {column.Centre} anyway (it falls at {falls}).");
+
+        KillGorm(world);
+        Run(world, PlayerInput.None, Second);
+
+        var vial = Assert.Single(world.Pickups);
+        Assert.Equal(falls.X, vial.Position.X, 0.001f);
+        Assert.Equal(falls.Z, vial.Position.Z, 0.001f);
+    }
+
+    /// <summary>
     /// Issue #608, review of PR #613: in a level without a boss room (a hand-made one with 'T'), the cell in front of
     /// Gorm is a wall or a raised platform - where his vial would fall. It turns round him onto open floor at his own
     /// height, the piece behind him lies there too, and a hurt player who walks up takes the vial.
