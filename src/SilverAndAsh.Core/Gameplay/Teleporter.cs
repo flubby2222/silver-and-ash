@@ -27,6 +27,9 @@ public sealed class Teleporter
     /// <summary>The middle of its cell, on the floor - where a player arrives.</summary>
     public Vector3 Position { get; }
 
+    /// <summary>Where its show side looks, on the ground plane (Y = 0); zero if it is not turned (see <see cref="TeleporterPlan.Facing"/>).</summary>
+    public Vector3 Facing => new(Plan.Facing.X, 0f, Plan.Facing.Y);
+
     /// <summary>True once a player has stepped onto it. It stays unlocked for the rest of the run.</summary>
     public bool IsUnlocked { get; private set; }
 

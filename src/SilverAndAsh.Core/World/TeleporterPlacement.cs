@@ -1,9 +1,17 @@
+using System.Numerics;
+
 namespace SilverAndAsh.Core.World;
 
 /// <summary>
 /// Puts teleporters at the special places of a generated level (issue #436): one in the start room, near its middle,
-/// and one in the room in front of the boss door, near that door. Worked out from the layout alone - no random number,
+/// and one in the room in front of the boss door. Worked out from the layout alone - no random number,
 /// so the rooms, enemies and chests of every seed stay exactly as they were.
+/// <para>
+/// The room in front of the boss door is the antechamber (issue #565). There the teleporter stands in the corner across
+/// from the boss door - the allowed cell farthest from it - turned towards the middle of the room. This place is a
+/// provisional decision of the lead (vorläufige Entscheidung der Leitung). In front of any other room it stands at the
+/// allowed cell nearest to the boss door, as before.
+/// </para>
 /// <para>
 /// A teleporter stands on a floor cell of its room, never on a chest place, never on the player's start and at least
 /// two cells from every door of the room (and from the start) - so nobody unlocks it by walking through a doorway.
@@ -26,8 +34,7 @@ public static class TeleporterPlacement
 
         if (BossGate(generated) is { } gate && gate.Room.Index != start?.Index)
         {
-            var (x, z) = Choose(generated, gate.Room, gate.Door);
-            plans.Add(new TeleporterPlan(x, z, gate.Room.Index, TeleporterSite.BossGate));
+            plans.Add(BossGateTeleporter(generated, gate.Room, gate.Door));
         }
 
         return generated with { Teleporters = plans };
@@ -54,8 +61,29 @@ public static class TeleporterPlacement
         return null;
     }
 
-    /// <summary>The allowed floor cell of <paramref name="room"/> nearest to <paramref name="near"/> (ties: smaller Z, then X).</summary>
-    private static (int X, int Z) Choose(GeneratedLevel generated, PlacedRoom room, (int X, int Z) near)
+    /// <summary>
+    /// The teleporter at the boss door: in the antechamber in the corner across from the door, looking at the room's middle
+    /// (provisional decision of the lead, issue #565); in any other room near the door, not turned.
+    /// </summary>
+    private static TeleporterPlan BossGateTeleporter(GeneratedLevel generated, PlacedRoom room, (int X, int Z) door)
+    {
+        if (room.Kind != RoomKind.Antechamber)
+        {
+            var (nearX, nearZ) = Choose(generated, room, door);
+            return new TeleporterPlan(nearX, nearZ, room.Index, TeleporterSite.BossGate);
+        }
+
+        var (x, z) = Choose(generated, room, door, farthest: true);
+        var middle = new Vector2(
+            (float)room.FloorCells.Average(cell => cell.X), (float)room.FloorCells.Average(cell => cell.Z));
+        return new TeleporterPlan(x, z, room.Index, TeleporterSite.BossGate) { Facing = Vector2.Normalize(middle - new Vector2(x, z)) };
+    }
+
+    /// <summary>
+    /// The allowed floor cell of <paramref name="room"/> nearest to <paramref name="near"/> - or, with
+    /// <paramref name="farthest"/>, farthest from it (ties: smaller Z, then X).
+    /// </summary>
+    private static (int X, int Z) Choose(GeneratedLevel generated, PlacedRoom room, (int X, int Z) near, bool farthest = false)
     {
         var keepAway = generated.Doors
             .Where(door => door.RoomA == room.Index || door.RoomB == room.Index)
@@ -68,7 +96,7 @@ public static class TeleporterPlacement
             .ToList();
         var candidates = allowed.Count > 0 ? allowed : room.FloorCells.ToList();
         return candidates
-            .OrderBy(cell => ((cell.X - near.X) * (cell.X - near.X)) + ((cell.Z - near.Z) * (cell.Z - near.Z)))
+            .OrderBy(cell => (farthest ? -1 : 1) * (((cell.X - near.X) * (cell.X - near.X)) + ((cell.Z - near.Z) * (cell.Z - near.Z))))
             .ThenBy(cell => cell.Z)
             .ThenBy(cell => cell.X)
             .First();

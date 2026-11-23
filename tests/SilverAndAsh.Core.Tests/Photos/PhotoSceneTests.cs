@@ -107,7 +107,7 @@ public class PhotoSceneTests
             "showroom-a-corridor", "showroom-a-room", "showroom-b-corridor", "showroom-b-room", "showroom-c-corridor",
             "showroom-c-room", "stairs-4m", "stairs-10m", "well-ready", "well-spent",
             "teleporter-locked-3m", "teleporter-unlocked-3m", "teleporter-locked-10m", "teleporter-unlocked-10m",
-            "teleporter-hint", "menu-travel", "menu-travel-sealed",
+            "teleporter-hint", "menu-travel", "menu-travel-sealed", "room-antechamber",
             "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
             "menu-title", "menu-pause", "menu-settings", "menu-quit",
             "ghoul-shotbody-front", "ghoul-shotbody-side",

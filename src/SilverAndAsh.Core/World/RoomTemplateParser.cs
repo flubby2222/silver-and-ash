@@ -30,9 +30,12 @@ public static class RoomTemplateParser
         foreach (var folder in Directory.GetDirectories(directory).Order(StringComparer.Ordinal))
         {
             var folderName = Path.GetFileName(folder);
-            if (!Enum.TryParse<RoomKind>(folderName, ignoreCase: true, out var kind) || !Enum.IsDefined(kind))
+            // The antechamber's layout is built in (issue #565): a folder for it would be ignored, so it is refused.
+            if (!Enum.TryParse<RoomKind>(folderName, ignoreCase: true, out var kind) || !Enum.IsDefined(kind) || kind == RoomKind.Antechamber)
             {
-                var kinds = string.Join(", ", Enum.GetNames<RoomKind>().Select(name => name.ToLowerInvariant()));
+                var kinds = string.Join(", ", Enum.GetValues<RoomKind>()
+                    .Where(known => known != RoomKind.Antechamber)
+                    .Select(known => known.ToString().ToLowerInvariant()));
                 throw new LevelFormatException(folderName, 0, $"Unknown kind of room. Folders may be: {kinds}.");
             }
 

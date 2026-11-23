@@ -23,6 +23,12 @@ public enum RoomKind
 
     /// <summary>A hidden dead end next to a combat room, behind a cracked wall; holds one chest.</summary>
     Secret,
+
+    /// <summary>
+    /// The quiet room right in front of the boss room (issue #565): no enemies, no chests, never an arena. Its layout is
+    /// built in (<see cref="World.Antechamber"/>), so there is no folder for it under assets/rooms/.
+    /// </summary>
+    Antechamber,
 }
 
 /// <summary>Rules that depend on the kind of room.</summary>
