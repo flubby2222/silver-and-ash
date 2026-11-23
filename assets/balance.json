@@ -281,7 +281,9 @@
   // at least the widest figure's diameter plus this play. Provisional.
   "columns": {
     "play": 0.2,                        // m on top of the widest figure's diameter
-    "hitsToBreak": 3                    // blows of Gorm (chain swing or shock wave) a column takes, then it breaks (#590)
+    "hitsToBreak": 3,                   // blows of Gorm (chain swing or shock wave) a column takes, then it breaks (#590)
+    "bossRoomPerSide": 2,               // boss room (#597): columns on a square grid round its middle, this many a side (0 = none) ...
+    "bossRoomSpacing": 16               // ... this many m apart. Provisional: four, where the four wall blocks stood
   },
 
   // Directional sound (issue #491): what a player hears of a sound with a place (an enemy, a door, a chest, another

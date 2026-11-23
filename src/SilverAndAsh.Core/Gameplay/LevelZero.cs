@@ -33,15 +33,15 @@ public sealed class LevelZero
     }
 
     /// <summary>
-    /// The level of a run with <paramref name="seed"/>, exactly as <see cref="NewRun"/> uses it: rooms, then enemies,
-    /// then chests, then teleporters, then the Well of Sirius (which keeps clear of the teleporters), then the grates of the
+    /// The level of a run with <paramref name="seed"/>, exactly as <see cref="NewRun"/> uses it: rooms, then the boss
+    /// room's columns (issue #597, nothing rolled), then enemies, then chests, then teleporters, then the Well of Sirius (which keeps clear of the teleporters), then the grates of the
     /// arena doors (issue #558, nothing rolled). The balance
     /// report builds its levels with this, too.
     /// </summary>
     public GeneratedLevel Build(int seed, Balance balance)
     {
         ArgumentNullException.ThrowIfNull(balance);
-        var built = LevelGenerator.Generate(_templates, seed, balance.Layout);
+        var built = BossRoomColumns.Place(LevelGenerator.Generate(_templates, seed, balance.Layout), balance.Columns);
         var withChests = ChestPlacement.Place(EnemyPlacement.Populate(built, balance.Difficulty), balance.Chests);
         return GratePlacement.Place(WellPlacement.Place(TeleporterPlacement.Place(withChests), balance.Well));
     }
