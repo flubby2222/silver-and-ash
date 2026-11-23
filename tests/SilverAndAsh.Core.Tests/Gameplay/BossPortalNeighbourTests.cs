@@ -184,6 +184,48 @@ public class BossPortalNeighbourTests
     }
 
     [Fact]
+    public void Gorm_walking_along_the_wall_past_the_portal_stays_out_of_its_plinths_and_buttresses()
+    {
+        // The player walks into the boss room (it seals) and waits 1.1 m in front of its wall, 6 m to the left of the
+        // portal's middle; Gorm starts as far to the right. His way straight to the player runs along the wall: his body
+        // (0.9 m) reaches past the plinths (0.125 m out of the wall, 0.5 m high) to the buttresses (0.24 m out of it, up
+        // to 5.3 m) on the boss room's side. He only walks here: no attack reaches the player, else he would stand and
+        // strike from afar.
+        var walker = Tough with { Gorm = Tough.Gorm with { NearRange = 0f, FarRange = 0f } };
+        var world = World(1, withBat: false, walker);
+        var gorm = world.Gorm!;
+        world.Player.PlaceAt(new Vector3(MiddleX, 0f, 6f));
+        world.Tick(PressF);
+        for (var tick = 0; tick < 5 * Second && !world.Rooms[1].IsSealed; tick++)
+        {
+            world.Tick(Forward);
+        }
+
+        Assert.True(world.Rooms[1].IsSealed, "The boss room never sealed - the test would prove nothing.");
+        var wall = DoorPlaneZ + BossPortalShape.HalfDepth;
+        world.Player.PlaceAt(new Vector3(MiddleX - 6f, 0f, wall + 1.1f));
+        ((IEnemy)gorm).PlaceAt(new Vector3(MiddleX + 6f, 0f, wall + 1.1f));
+        var touched = 0;
+
+        for (var tick = 0; tick < 10 * Second; tick++)
+        {
+            world.Tick(PlayerInput.None);
+
+            Assert.False(
+                BossPortalStoneTests.InStone(world.Level, gorm.Position, BodySizes.Gorm.Radius, BodySizes.Gorm.Height),
+                $"tick {tick}: {gorm.State} at {gorm.Position}");
+            if (BossPortalStoneTests.InStone(world.Level, gorm.Position, BodySizes.Gorm.Radius + 0.05f, BodySizes.Gorm.Height))
+            {
+                touched++;
+            }
+        }
+
+        // He really brushed along the stone and got past it - the test would prove nothing otherwise.
+        Assert.True(touched > 0, "Gorm never came within 5 cm of the stone");
+        Assert.True(gorm.Position.X < MiddleX - BossPortalShape.HalfWidth, $"Gorm never got past the portal: {gorm.Position}");
+    }
+
+    [Fact]
     public void Gorms_vial_does_not_lie_in_the_plinth_when_he_falls_beside_it()
     {
         // He falls 1.5 m in front of the wall of the boss room, 1.5 m beside the middle, looking along -Z: the vial would
