@@ -11,6 +11,15 @@ namespace SilverAndAsh.Game.Rendering;
 /// </summary>
 internal static class WeaponDepthPass
 {
+    /// <summary>
+    /// Sets the world's near and far planes from <see cref="WeaponDepth.WorldNearPlane"/> and
+    /// <see cref="WeaponDepth.WorldFarPlane"/> (raylib's defaults), so the projection the game draws with is the one
+    /// the tests reckon with. Once, after InitWindow. Through decimal, so 0.05f comes as raylib's 0.05 and not as
+    /// 0.0500000007 - that would shift the depth and change single pixels of the picture.
+    /// </summary>
+    public static void SetWorldClipPlanes() =>
+        Rlgl.SetClipPlanes((double)(decimal)WeaponDepth.WorldNearPlane, (double)(decimal)WeaponDepth.WorldFarPlane);
+
     /// <summary>Switches to the weapons' depth; returns the world's projection for <see cref="End"/>.</summary>
     public static Matrix4x4 Begin()
     {

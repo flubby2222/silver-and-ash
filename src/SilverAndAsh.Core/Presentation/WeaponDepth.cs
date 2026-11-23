@@ -17,11 +17,17 @@ namespace SilverAndAsh.Core.Presentation;
 /// </summary>
 public static class WeaponDepth
 {
-    /// <summary>The near plane of the world's projection (metres): raylib's default for BeginMode3D (rlGetCullDistanceNear).</summary>
+    /// <summary>
+    /// The near plane of the world's projection (metres). The game sets it at start (rlSetClipPlanes); it equals raylib's
+    /// default (rlGetCullDistanceNear).
+    /// </summary>
     public const float WorldNearPlane = 0.05f;
 
-    /// <summary>The far plane of the world's projection (metres): raylib's default for BeginMode3D (rlGetCullDistanceFar).</summary>
-    public const float WorldFarPlane = 1000f;
+    /// <summary>
+    /// The far plane of the world's projection (metres). The game sets it at start (rlSetClipPlanes); it equals raylib's
+    /// default (rlGetCullDistanceFar, 4000 in Raylib-cs 8.1).
+    /// </summary>
+    public const float WorldFarPlane = 4000f;
 
     /// <summary>
     /// The depth row (A, B) for the weapons from the world's (<paramref name="worldA"/>, <paramref name="worldB"/>):

@@ -792,6 +792,13 @@ public static class PhotoScenes
 
     // An arena with the player turned round to the wall behind them (3 m away, the figure out of sight), looking a little
     // down and to the side at it, so the bullet ends in the wall in the middle of the picture.
+    private static GameWorld TurnedToBackWall(GameWorld world)
+    {
+        var eye = world.Player.EyePosition;
+        PhotoStudio.Face(world.Player, new Vector3(eye.X + 0.5f, eye.Y - 0.4f, Level.CellSize));
+        return world;
+    }
+
     // A crate weapon chosen (slot), then straight on into the back wall until the player stands at it - its radius away.
     private static PhotoSetup AtWall(PhotoStudio studio, int slot) =>
         new(AllWeapons(TurnedToBackWall(studio.Arena('D', 2))))
@@ -799,13 +806,6 @@ public static class PhotoScenes
             Ticks = 120,
             Input = tick => PlayerInput.None with { Move = new Vector2(0f, 1f), SelectSlot = tick == 0 ? slot : null },
         };
-
-    private static GameWorld TurnedToBackWall(GameWorld world)
-    {
-        var eye = world.Player.EyePosition;
-        PhotoStudio.Face(world.Player, new Vector3(eye.X + 0.5f, eye.Y - 0.4f, Level.CellSize));
-        return world;
-    }
 
     // The cracked wall 2 m before the player inside its secret room (no enemy gets in there to disturb the picture),
     // struck with a fully charged blade - held until charged, then let go - and `ticks` more ticks after it broke.
