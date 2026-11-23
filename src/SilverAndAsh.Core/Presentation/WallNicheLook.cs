@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Presentation;
@@ -144,6 +145,50 @@ public static class WallNicheLook
 
         var from = (Level.CellSize - entry.Width) / 2f;
         return new WallCutout(x, z, wall, from, from + entry.Width, 0f, entry.Height);
+    }
+
+    /// <summary>
+    /// The hole <paramref name="niche"/> leaves in the wall face (<see cref="Cutout"/>) - in the cell in front of it, on
+    /// the side of the wall behind it - or null for a flat niche.
+    /// </summary>
+    public static WallCutout? HoleOf(ExhibitWallNiche niche)
+    {
+        ArgumentNullException.ThrowIfNull(niche);
+        var inFront = niche.Position + (niche.Facing * (Level.CellSize / 2f));
+        var (x, z) = Level.ToGrid(inFront.X, inFront.Z);
+        return Cutout(niche.Form, x, z, SideOf(niche.Facing));
+    }
+
+    /// <summary>
+    /// <paramref name="level"/> as the picture draws it (issue #553): without the holes of the deep niches of
+    /// <paramref name="niches"/> that are not <paramref name="drawn"/> - a deep niche without its model leaves the wall face
+    /// closed instead of an open hole into the wall. The same level if every deep niche is drawn.
+    /// </summary>
+    public static Level WithoutHolesOfUndrawn(Level level, IEnumerable<ExhibitWallNiche> niches, Func<ExhibitWallNiche, bool> drawn)
+    {
+        ArgumentNullException.ThrowIfNull(level);
+        ArgumentNullException.ThrowIfNull(niches);
+        ArgumentNullException.ThrowIfNull(drawn);
+        var closed = niches
+            .Where(niche => !drawn(niche))
+            .Select(HoleOf)
+            .OfType<WallCutout>()
+            .ToHashSet();
+        return closed.Count == 0 ? level : level.WithWallCutouts(level.WallCutouts.Where(hole => !closed.Contains(hole)));
+    }
+
+    // The side of its cell whose wall a niche looking along facing stands against (the opposite of Axes).
+    private static RoomSide SideOf(Vector3 facing)
+    {
+        foreach (var side in (ReadOnlySpan<RoomSide>)[RoomSide.North, RoomSide.South, RoomSide.West, RoomSide.East])
+        {
+            if (Vector3.Distance(Axes(side).Facing, facing) < HeightTolerance)
+            {
+                return side;
+            }
+        }
+
+        throw new ArgumentException($"A niche looks along one of the four sides, not along {facing}.", nameof(facing));
     }
 
     private static (WallNicheForm Form, string? File, RigPart[] Parts, float Depth, float Width, float Height) FormOf(WallNicheForm form)

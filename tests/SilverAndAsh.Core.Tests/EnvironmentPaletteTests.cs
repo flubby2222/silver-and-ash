@@ -47,6 +47,12 @@ public class EnvironmentPaletteTests
     /// </summary>
     private static readonly (byte R, byte G, byte B)[] GrateIronRow = [(32, 32, 33), (62, 62, 63), (104, 104, 106), (148, 148, 151)];
 
+    /// <summary>
+    /// The fillings of the deep wall niches (issue #553): bottles, candles, skulls - small things of glass, wax, bone and
+    /// dust. Only colours of the main palette, ground and accent rows (tools/models/wall_niche_filling.py), no door colour.
+    /// </summary>
+    private static readonly string[] NicheFillingModels = ["wall_niche_bottles", "wall_niche_candles", "wall_niche_skulls"];
+
     /// <summary>Not environment (figures, weapons, chests, enemies, effects): they keep their own colours.</summary>
     private static readonly string[] NotEnvironmentModels =
     [
@@ -105,6 +111,33 @@ public class EnvironmentPaletteTests
     public static TheoryData<string> DoorLeaves() => [.. DoorLeafModels];
 
     public static TheoryData<string> Stairs() => [.. StairsModels];
+
+    public static TheoryData<string> NicheFillings() => [.. NicheFillingModels];
+
+    [Theory]
+    [MemberData(nameof(NicheFillings))]
+    public void A_niche_filling_has_only_colours_of_the_main_palette(string name)
+    {
+        var allowed = MainPaletteColors(RepositoryFiles.Find(PalettePath));
+        var foreign = ForeignColors(RepositoryFiles.Find($"assets/models/{name}.png"), allowed);
+
+        Assert.True(foreign.Count == 0, $"{name}.png has {foreign.Count} colours outside the main palette, e.g. {Show(foreign.FirstOrDefault())}.");
+    }
+
+    [Fact]
+    public void A_door_colour_in_a_niche_filling_makes_the_check_fail()
+    {
+        // Counter-proof: one pixel of the bottles painted with a colour of the door atlases that the main palette has not.
+        var allowed = MainPaletteColors(RepositoryFiles.Find(PalettePath));
+        var (_, _, rgba) = TestPng.Read(RepositoryFiles.Find("assets/models/wall_niche_bottles.png"));
+        Assert.Empty(ForeignColors(rgba, allowed));
+
+        var door = DoorRows.Values.SelectMany(row => row).First(color => !allowed.Contains(color));
+        var changed = (byte[])rgba.Clone();
+        (changed[0], changed[1], changed[2]) = door;
+
+        Assert.Equal([door], ForeignColors(changed, allowed));
+    }
 
     [Theory]
     [MemberData(nameof(StoneOnly))]
@@ -313,7 +346,7 @@ public class EnvironmentPaletteTests
 
     private static IEnumerable<string> AllGroups() =>
         StoneModels.Concat(StoneAndWerksteinModels).Concat(DoorLeafModels).Concat(StairsModels).Concat(GrateModels)
-            .Concat(NotEnvironmentModels);
+            .Concat(NicheFillingModels).Concat(NotEnvironmentModels);
 
     private static List<string> Unplaced(IEnumerable<string> names)
     {
@@ -347,6 +380,13 @@ public class EnvironmentPaletteTests
     }
 
     private static HashSet<(byte R, byte G, byte B)> StoneColors(string palettePath) => RowColors(palettePath, "grund", "Stein");
+
+    // Every colour of every ground and accent row.
+    private static HashSet<(byte R, byte G, byte B)> MainPaletteColors(string palettePath)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(palettePath));
+        return [.. new[] { "grund", "akzent" }.SelectMany(group => document.RootElement.GetProperty(group).EnumerateArray()).SelectMany(Colors)];
+    }
 
     private static HashSet<(byte R, byte G, byte B)> RowColors(string palettePath, string group, string name)
     {
