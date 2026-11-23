@@ -15,6 +15,11 @@ public static class Raycast
     public const float StepLength = 0.1f;
 
     /// <summary>
+    /// The step near the stone of a boss portal, in metres: a ray steps over no more of its stone than this (issue #628).
+    /// </summary>
+    public const float PortalStepLength = 0.01f;
+
+    /// <summary>
     /// Distance along the ray from <paramref name="origin"/> in <paramref name="direction"/> to where it enters the
     /// box between <paramref name="min"/> and <paramref name="max"/> (edges along the axes), or null if it misses.
     /// 0 if the ray starts inside. Uses the "slab" method: the ray is inside the box where it is inside all three
@@ -68,7 +73,7 @@ public static class Raycast
         var free = 0f;
         while (free < maxDistance)
         {
-            var next = MathF.Min(free + StepLength, maxDistance);
+            var next = MathF.Min(free + StepAt(level, origin + direction * free), maxDistance);
             if (LineOfSight.IsInsideGeometry(level, origin + direction * next))
             {
                 // 2. ... then halve the gap between the last free and the first blocked point again and again
@@ -96,6 +101,12 @@ public static class Raycast
 
         return null;
     }
+
+    // The next step from a free point: near the stone of a boss portal the short one - its corners and the thin edges of
+    // its arches are thinner than StepLength, a ray would step over them (issue #628). A step of StepLength from a point
+    // further off cannot reach the stone.
+    private static float StepAt(Level level, Vector3 point) =>
+        level.Portals.Any(portal => portal.IsNear(point, StepLength)) ? PortalStepLength : StepLength;
 
     /// <summary>
     /// Which surface was crossed between a free point and a blocked point right next to it: a wall or the side of a
