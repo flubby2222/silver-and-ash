@@ -11,6 +11,7 @@ Die eigenen Wörter des Projekts, je einmal festgelegt. Wer in Issues, Pull Requ
 | **Arbeits-Sitzung** | Eine Sitzung, die genau ein Issue umsetzt: Code, Grafikdesigner, Audiodesigner oder Animationsdesigner. Rollen: [.claude/agents/](../.claude/agents/). |
 | **Reviewer** | Frische Sitzung, die einen Pull Request liest und den Commit-Status `review` setzt. Schreibt keinen Code. |
 | **Tester** | Frische Sitzung, die einen Pull Request gegen die Abnahmekriterien prüft und den Commit-Status `tester` setzt. Schreibt keinen Spielcode. |
+| **Skill** | Eine Arbeitsanleitung in [.claude/skills/](../.claude/skills/), die eine Sitzung per `/name` lädt. `/to-spec` macht aus einem Vorhaben eine Spezifikation als Issue, `/to-tickets` zerlegt sie in Arbeits-Issues. |
 | **Frische Sitzung** | Eine Sitzung ohne Vorwissen aus der Arbeit, die sie prüft. Nur so ist die Prüfung unabhängig. |
 
 ## Ablauf
