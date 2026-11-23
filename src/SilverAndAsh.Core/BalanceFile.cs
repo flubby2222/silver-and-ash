@@ -54,7 +54,7 @@ public static class BalanceFile
         "layout.corridorChance", "layout.maxLoops", "gorm.pauseTime", "gorm.stoneCount", "gorm.stoneDamage", "gorm.equipmentVampiricChance", "gorm.extraSilver", "layout.treasureRooms", "layout.lockedTreasureRooms", "layout.secretRooms",
         "difficulty.budgetNear", "difficulty.budgetFar", "difficulty.budgetBoss",
         "difficulty.ghoulWeightNear", "difficulty.ghoulWeightFar", "difficulty.batWeightNear", "difficulty.batWeightFar",
-        "difficulty.spacing",
+        "difficulty.spacing", "columns.bossRoomPerSide",
     };
 
     /// <summary>

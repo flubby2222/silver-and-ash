@@ -41,6 +41,22 @@ public class BalanceFileTests
     }
 
     [Fact]
+    public void It_reads_the_boss_rooms_column_grid_allows_none_but_refuses_a_spacing_of_nothing()
+    {
+        // Issue #597: no columns in the boss room is a choice; columns all on one spot are not.
+        var grid = BalanceFile.Parse("""{ "columns": { "bossRoomPerSide": 3, "bossRoomSpacing": 10 } }""").Balance.Columns;
+        Assert.Equal((3, 10f), (grid.BossRoomPerSide, grid.BossRoomSpacing));
+
+        var none = BalanceFile.Parse("""{ "columns": { "bossRoomPerSide": 0 } }""");
+        Assert.Equal(0, none.Balance.Columns.BossRoomPerSide);
+        Assert.Empty(none.Warnings);
+
+        var nothing = BalanceFile.Parse("""{ "columns": { "bossRoomSpacing": 0 } }""");
+        Assert.Equal(Balance.Default.Columns.BossRoomSpacing, nothing.Balance.Columns.BossRoomSpacing);
+        Assert.Contains(nothing.Warnings, w => w.Contains("columns.bossRoomSpacing"));
+    }
+
+    [Fact]
     public void Missing_values_keep_their_standard_values()
     {
         var result = BalanceFile.Parse("""{ "ghoul": { "speed": 6 } }""");

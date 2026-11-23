@@ -79,8 +79,8 @@ public static class ColumnPlacement
             : ColumnFit.Fits;
     }
 
-    // From the column's circle to the nearest point of the cell's square, in metres (negative if they overlap).
-    private static float GapToCell(Column column, (int X, int Z) cell)
+    /// <summary>From the column's circle to the nearest point of the cell's square, in metres (negative if they overlap).</summary>
+    public static float GapToCell(Column column, (int X, int Z) cell)
     {
         var min = new Vector2(cell.X, cell.Z) * Level.CellSize;
         var nearest = Vector2.Clamp(column.Centre, min, min + new Vector2(Level.CellSize));
