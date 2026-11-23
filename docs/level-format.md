@@ -110,6 +110,8 @@ Ab v0.8 werden Ebenen aus **Raum-Vorlagen** zusammengesetzt (siehe [Entscheidung
 | `corridor` | Gang | 3,5 m | schmal, gern mit Knick |
 | `boss` | Bossraum | 6 m | **genau ein** Türplatz (gilt später für alle Räume mit nur einem Eingang) |
 
+Den **Vorraum** (`RoomKind.Antechamber`, Issue #565) gibt es nicht als Ordner: Seine Form ist fest eingebaut ([`Antechamber.cs`](../src/SilverAndAsh.Core/World/Antechamber.cs)), ein Ordner `antechamber` wird abgelehnt.
+
 Zusätzlich zu den Zeichen oben gibt es:
 
 | Zeichen | Bedeutung |
@@ -159,7 +161,7 @@ Der [`LevelGenerator`](../src/SilverAndAsh.Core/World/LevelGenerator.cs) setzt a
 1. **Startraum** hinlegen (zufällige Vorlage, gedreht/gespiegelt). Er bekommt **genau eine Tür**: Sobald der erste Raum an ihm hängt, bleiben seine übrigen Türplätze Wand. So liegt der Ausgang je Seed in einer anderen Richtung, und durch den Startraum führt keine Schleife.
 2. **Kampfräume** an freie Türplätze anhängen, bis die Zahl aus `balance.json` (`layout.combatRoomsMin` … `combatRoomsMax`) erreicht ist. Mit der Chance `layout.corridorChance` liegt ein **Gang** dazwischen, sonst teilen sich die Räume eine Wand mit Tür. Bei `0` gibt es gar keine Gänge.
 3. **Schleifen** (höchstens `layout.maxLoops`): Der Generator sucht gezielt Stellen, an denen ein neuer Raum – oder ein Raum plus Gang, oder nur ein Gang – zwei freie Türplätze verbindet. So gibt es einen zweiten Weg herum. Zwei Räume, die schon verbunden sind (Tür oder Gang), werden nicht ein zweites Mal verbunden.
-4. **Bossraum** hinter einem der Räume, die am weitesten vom Start liegen. Er ist damit **immer der entfernteste Raum** und hat **genau einen Eingang**.
+4. **Vorraum und Bossraum** hinter einem der Räume, die am weitesten vom Start liegen (Issue #565). Der **Vorraum** ist immer gleich: 4 × 5 Zellen (8 × 10 m), 6 m hoch, ohne Gegner, ohne Truhe, ohne Brunnen, nie eine Arena. Sein **Eingang** sitzt mittig an einer langen Seite (5 Zellen), die **Bosstür** an der anstoßenden kurzen Seite (4 Zellen) auf dem mittleren Feld, das näher am Eingang liegt – der Weg zum Boss knickt also einmal. Der Vorraum wird gedreht und gespiegelt, bis er passt; dafür wird keine Zufallszahl gezogen. Direkt dahinter (nie über einen Gang) liegt der **Bossraum**. Er ist damit **immer der entfernteste Raum** und hat **genau einen Eingang**. Passt hinter keinen der entferntesten Räume ein Vorraum samt Bossraum, scheitert der Versuch und der Generator beginnt neu (siehe unten); klappt das 50-mal nicht, bricht er mit `InvalidOperationException` ab.
 5. **Secret Rooms** (`layout.secretRooms`, Standard 1): direkt an einem **Kampfraum**, nie über einen Gang, näher am Start als der Boss. Ihr Zugang ist keine Tür, sondern eine **rissige Wand** (`DoorKind.Cracked`).
 6. **Schatzräume** zuletzt: `layout.treasureRooms` mit normaler Tür und `layout.lockedTreasureRooms` hinter einer **verschlossenen Tür** (Standard je 1). Sie sind **Sackgassen**, hängen **nie am Startraum** und liegen immer **näher am Start als der Boss**. Hinter einem Schloss liegt so nie etwas Wichtiges: Der Boss ist immer ohne Schlüssel erreichbar.
 
@@ -170,6 +172,8 @@ Regeln, die immer gelten (und über viele Seeds getestet werden):
 - **Alles ist erreichbar.**
 - Ein **Gang** führt immer von einem Raum zu einem anderen, nie ins Leere und nie direkt in einen weiteren Gang.
 - Räume mit **nur einem Eingang** (Boss, Schatz und Secret, später Händler, Altar) bekommen nie eine zweite Tür.
+- Der **Vorraum** hat genau zwei Türen (Eingang und Bosstür) und bekommt keine Schleife.
+- Der **Boss-Tor-Teleporter** steht im Vorraum in der Ecke gegenüber der Bosstür (das erlaubte Feld, das am weitesten von ihr weg ist) und ist zur Raummitte gedreht. Das ist eine **vorläufige Entscheidung der Leitung** (Issue #565).
 - Ungenutzte Türplätze bleiben Wand. Türen sind 3,5 m hoch, auch in hohen Räumen.
 - Bleibt der Generator stecken (kein Raum passt mehr), versucht er es mit den nächsten Zufallszahlen **desselben** Seeds noch einmal – das Ergebnis bleibt also gleich.
 

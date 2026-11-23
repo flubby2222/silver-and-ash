@@ -3,7 +3,7 @@ namespace SilverAndAsh.Core.World;
 /// <summary>
 /// Puts the Well of Sirius (issue #438) into a generated level: at most one, with the chance
 /// <see cref="WellBalance.LevelChance"/>. It stands in the middle of a floor cell of a quiet room - not a combat or boss
-/// room, so enemies never have to come out next to it - whose eight neighbours are floor of the same room too (no wall,
+/// room, so enemies never have to come out next to it, and not the antechamber - whose eight neighbours are floor of the same room too (no wall,
 /// no door), with no chest, no teleporter and not the player's start in that block. Rolled with its own random numbers
 /// from the seed, after the chests and teleporters: it never shifts rooms, enemies, chests or teleporters, and the same
 /// seed always gives the same well.
@@ -59,7 +59,8 @@ public static class WellPlacement
     }
 
     // Combat and boss rooms are where enemies come out and fight; a well stands elsewhere.
-    private static bool IsQuiet(PlacedRoom room) => room.Kind is not (RoomKind.Combat or RoomKind.Boss);
+    // The antechamber is left out (issue #565): it stays an empty room with only the boss-gate teleporter in it.
+    private static bool IsQuiet(PlacedRoom room) => room.Kind is not (RoomKind.Combat or RoomKind.Boss or RoomKind.Antechamber);
 
     // The cell and its eight neighbours.
     private static IEnumerable<(int X, int Z)> Block(int x, int z)

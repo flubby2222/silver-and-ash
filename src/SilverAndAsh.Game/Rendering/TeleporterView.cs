@@ -57,7 +57,8 @@ internal sealed class TeleporterView : IDisposable
 
     private void Draw(Teleporter teleporter, LevelShader shader)
     {
-        var place = Matrix4x4.CreateTranslation(teleporter.Position);
+        // Turned to its facing (issue #565); zero leaves it as in the file.
+        var place = ModelPlacement.Place(teleporter.Position, teleporter.Facing);
         var unlocked = teleporter.IsUnlocked;
         if ((unlocked ? _unlocked : _locked) is not { } model)
         {

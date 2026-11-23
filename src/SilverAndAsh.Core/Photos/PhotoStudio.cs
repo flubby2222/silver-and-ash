@@ -65,6 +65,35 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
+    /// Level 0 with the player in the doorway of the antechamber (issue #565), looking at the middle of the room: the boss
+    /// door on one side, the boss-gate teleporter (found, so its crystal shines) in the far corner.
+    /// </summary>
+    public GameWorld AtAntechamberEntrance()
+    {
+        var (generated, room) = FirstRoom(RoomKind.Antechamber);
+        var level = generated.Level;
+        var entrance = generated.Doors.Single(door => door.Kind != DoorKind.Boss && (door.RoomA == room.Index || door.RoomB == room.Index));
+        var middle = new Vector3(
+            ((float)room.FloorCells.Average(cell => cell.X) + 0.5f) * Level.CellSize,
+            level[room.FloorCells[0].X, room.FloorCells[0].Z].FloorHeight + LookHeight,
+            ((float)room.FloorCells.Average(cell => cell.Z) + 0.5f) * Level.CellSize);
+
+        var world = new GameWorld(level, generated.Seed, Balance, generated.Doors, generated.Rooms, generated.Chests, generated.Well, generated.Teleporters)
+        {
+            LevelName = LevelZero.Name,
+            Surfaces = SurfaceVariants.For(generated),
+        };
+        foreach (var teleporter in world.Teleporters)
+        {
+            teleporter.Unlock();
+        }
+
+        world.Player.PlaceAt(level.CellCenter(entrance.X, entrance.Z));
+        Face(world.Player, middle);
+        return world;
+    }
+
+    /// <summary>
     /// Level 0 with the player in the boss room, on the floor cell nearest to <paramref name="metres"/> from Gorm that
     /// sees him, looking at him.
     /// </summary>
@@ -263,15 +292,15 @@ public sealed class PhotoStudio
 
     /// <summary>
     /// Level 0 with every room on the map and every teleporter found, the player on the one in the start hall (issue
-    /// #480: the destination choice). <paramref name="sealBossGate"/>: the first seed whose boss-gate teleporter stands in
-    /// a combat room, that room sealed with its enemies alive, as if another player fought there (co-op) - so the picture
-    /// shows a sealed destination.
+    /// #480: the destination choice). <paramref name="sealBossGate"/>: the boss-gate teleporter stands in a combat room,
+    /// that room sealed with its enemies alive, as if another player fought there (co-op) - so the picture shows a sealed
+    /// destination (see <see cref="WithBossGateInCombatRoom"/>).
     /// </summary>
     public GameWorld AtStartTeleporter(bool sealBossGate)
     {
         var world = sealBossGate
-            ? Enumerable.Range(Seed, SeedsToTry).Select(seed => _levelZero.NewRun(seed, Balance)).FirstOrDefault(BossGateInCombatRoom)
-                ?? throw new InvalidOperationException("No seed puts the boss-gate teleporter into a combat room.")
+            ? Enumerable.Range(Seed, SeedsToTry).Select(WithBossGateInCombatRoom).FirstOrDefault(world => world is not null && BossGateInCombatRoom(world))
+                ?? throw new InvalidOperationException("No seed has a combat room with enemies in front of the antechamber.")
             : StartRun();
         foreach (var room in world.Rooms)
         {
@@ -294,6 +323,40 @@ public sealed class PhotoStudio
     }
 
     private static bool BossGateInCombatRoom(GameWorld world) => BossGateRoom(world) is { Kind: RoomKind.Combat, WaveCount: > 0 };
+
+    /// <summary>
+    /// The run of <paramref name="seed"/> with its boss-gate teleporter in the combat room in front of the antechamber, at
+    /// that room's floor cell nearest to the antechamber's door that keeps two cells from every door - or null if a
+    /// corridor lies in front of the antechamber. Since issue #565 the teleporter stands in the antechamber, which never
+    /// seals; a sealed destination needs a teleporter in an arena, so the scene sets it where it stood before #565.
+    /// </summary>
+    private GameWorld? WithBossGateInCombatRoom(int seed)
+    {
+        var generated = _levelZero.Build(seed, Balance);
+        var antechamber = generated.Rooms.Single(room => room.Kind == RoomKind.Antechamber);
+        var entrance = generated.Doors.Single(door => door.Kind != DoorKind.Boss && (door.RoomA == antechamber.Index || door.RoomB == antechamber.Index));
+        var before = generated.Rooms[entrance.RoomA == antechamber.Index ? entrance.RoomB : entrance.RoomA];
+        if (before.Kind != RoomKind.Combat)
+        {
+            return null;
+        }
+
+        var doors = generated.Doors.Where(door => door.RoomA == before.Index || door.RoomB == before.Index).ToList();
+        var (x, z) = before.FloorCells
+            .Where(cell => doors.All(door => Math.Max(Math.Abs(cell.X - door.X), Math.Abs(cell.Z - door.Z)) >= 2))
+            .OrderBy(cell => ((cell.X - entrance.X) * (cell.X - entrance.X)) + ((cell.Z - entrance.Z) * (cell.Z - entrance.Z)))
+            .ThenBy(cell => cell.Z)
+            .ThenBy(cell => cell.X)
+            .First();
+        var teleporters = generated.Teleporters!
+            .Select(plan => plan.Site == TeleporterSite.BossGate ? new TeleporterPlan(x, z, before.Index, TeleporterSite.BossGate) : plan)
+            .ToList();
+        return new GameWorld(generated.Level, seed, Balance, generated.Doors, generated.Rooms, generated.Chests, generated.Well, teleporters)
+        {
+            LevelName = LevelZero.Name,
+            Surfaces = SurfaceVariants.For(generated),
+        };
+    }
 
     private static RoomState? BossGateRoom(GameWorld world) =>
         world.Teleporters.FirstOrDefault(teleporter => teleporter.Plan.Site == TeleporterSite.BossGate) is { } gate

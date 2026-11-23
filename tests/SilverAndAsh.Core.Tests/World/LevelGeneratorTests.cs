@@ -381,13 +381,18 @@ public class LevelGeneratorTests
     [Fact]
     public void With_corridors_always_every_room_is_reached_through_a_corridor()
     {
-        // Except the secret room: it always lies directly behind a combat room's wall (its cracked wall).
+        // Except the secret room: it always lies directly behind a combat room's wall (its cracked wall). And except the
+        // boss room: it always lies directly behind the antechamber (issue #565), which is reached through a corridor.
         var layout = Layout with { CorridorChance = 1f, MaxLoops = 0 };
 
         var generated = LevelGenerator.Generate(Rooms, 11, layout);
 
-        Assert.All(generated.Doors.Where(door => door.Kind != DoorKind.Cracked), door =>
+        Assert.All(generated.Doors.Where(door => door.Kind is not (DoorKind.Cracked or DoorKind.Boss)), door =>
             Assert.Contains(RoomKind.Corridor, new[] { generated.Rooms[door.RoomA].Kind, generated.Rooms[door.RoomB].Kind }));
+        var bossDoor = Assert.Single(generated.Doors, door => door.Kind == DoorKind.Boss);
+        Assert.Equal(
+            [RoomKind.Boss, RoomKind.Antechamber],
+            new[] { generated.Rooms[bossDoor.RoomA].Kind, generated.Rooms[bossDoor.RoomB].Kind }.OrderBy(kind => kind != RoomKind.Boss));
     }
 
     [Fact]
