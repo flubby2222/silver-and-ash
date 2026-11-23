@@ -1,0 +1,15 @@
+Effekt;Rolle;Reihe;Stufe (ab 0);R;G;B
+Marked;Zeichen/Umriss hell;Haut/Knochen;7;216;210;192
+Marked;Zeichen mittel;Haut/Knochen;6;195;192;164
+Marked;Zeichen Rand;Stein;0;16;11;20
+Holy Fire;Flammenfuss (weissgold);Messing/Gold;7;238;228;160
+Holy Fire;Flammenmitte;Messing/Gold;6;227;202;111
+Holy Fire;Flammenspitze;Messing/Gold;4;188;135;45
+Grave Chill;Reif hell;Stoff;7;168;181;199
+Grave Chill;Kaelte (Tönung, Boden);Stoff;6;126;145;178
+Grave Chill;Bodenreif dunkel;Stoff;5;86;107;154
+Stun;Funke Mitte;Eisen;7;198;205;210
+Stun;Funke Arme;Eisen;6;163;175;187
+Leech;Faden/Tropfen;Stoff;5;86;107;154
+Leech;Tropfen hell;Stoff;6;126;145;178
+Leech;Tönung dunkel;Stoff;4;60;75;116
