@@ -40,6 +40,11 @@ public sealed class GameWorld
     private int _nextEquipmentDropId;
     private int _nextProjectileId;
     private readonly Level _levelWithOpenDoors;
+
+    // Issue #590: what Gorm's blows did to the columns, and the level with open doors without the broken ones - the
+    // base of Level and LevelAsBuilt. A restart starts again from _levelWithOpenDoors, all columns standing.
+    private readonly ColumnWear _columnWear;
+    private Level _levelWithStandingColumns;
     private readonly IReadOnlyList<LevelDoor> _doorPlan;
     private readonly List<Door> _doors;
     private readonly IReadOnlyList<PlacedRoom> _roomPlan;
@@ -77,8 +82,10 @@ public sealed class GameWorld
     {
         ArgumentNullException.ThrowIfNull(level);
         _levelWithOpenDoors = level;
+        _levelWithStandingColumns = level;
         _doorPlan = doors ?? [];
         Balance = balance ?? Balance.Default;
+        _columnWear = new ColumnWear(Balance.Columns.HitsToBreak);
         _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level, Balance.Doors, Balance.Grates)).ToList();
         Level = WithClosedDoors();
         LevelAsBuilt = WithUnbrokenWalls();
@@ -793,14 +800,31 @@ public sealed class GameWorld
         : Level.WithCells(_safeCells.Select(cell => (cell.X, cell.Z, Cell.Wall)));
 
     private Level WithUnbrokenWalls() => _doors.Any(IsUnbrokenWall)
-        ? _levelWithOpenDoors.WithCells(_doors.Where(IsUnbrokenWall).SelectMany(WallCells))
-        : _levelWithOpenDoors;
+        ? _levelWithStandingColumns.WithCells(_doors.Where(IsUnbrokenWall).SelectMany(WallCells))
+        : _levelWithStandingColumns;
 
     private static bool IsUnbrokenWall(Door door) => door.Kind == DoorKind.Cracked && !door.IsOpen;
 
     private Level WithClosedDoors() => _doors.Count == 0
-        ? _levelWithOpenDoors
-        : _levelWithOpenDoors.WithCells(_doors.Where(door => door.Blocks).SelectMany(WallCells));
+        ? _levelWithStandingColumns
+        : _levelWithStandingColumns.WithCells(_doors.Where(door => door.Blocks).SelectMany(WallCells));
+
+    /// <summary>
+    /// Issue #590: once a column has broken under Gorm's blows, it leaves the level everybody plays in - it no longer
+    /// blocks the way, sight or shots, and is no longer drawn (a new <see cref="LevelAsBuilt"/>).
+    /// </summary>
+    private void RemoveBrokenColumns()
+    {
+        if (!_levelWithStandingColumns.Columns.Any(_columnWear.IsBroken))
+        {
+            return;
+        }
+
+        _levelWithStandingColumns = _levelWithOpenDoors.WithColumns(
+            _levelWithOpenDoors.Columns.Where(column => !_columnWear.IsBroken(column)));
+        UpdateLevel();
+        LevelAsBuilt = WithUnbrokenWalls();
+    }
 
     // Every cell of a door that blocks is wall (issue #566: the boss door has two).
     private static IEnumerable<(int X, int Z, Cell Cell)> WallCells(Door door) => door.Cells.Select(cell => (cell.X, cell.Z, Cell.Wall));
@@ -1760,7 +1784,8 @@ public sealed class GameWorld
                 .Concat(StandingChests.Select(chest => chest.RoundBody))
                 .Concat(WellBodies)
                 .ToList();
-            _gorm.Act(_enemyLevel, Players, obstacles, _events, EnemyPaths());
+            _gorm.Act(_enemyLevel, Players, obstacles, _events, EnemyPaths(), _columnWear);
+            RemoveBrokenColumns();
         }
 
         var batEventsFrom = _events.Count;

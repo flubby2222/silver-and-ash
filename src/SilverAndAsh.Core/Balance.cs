@@ -485,6 +485,12 @@ public sealed record ColumnsBalance
     /// between a column and a wall, door or other column must be at least both together. Provisional.
     /// </summary>
     public float Play { get; init; } = 0.2f;
+
+    /// <summary>
+    /// Blows of Gorm (chain swing or shock wave, issue #590) a column takes before it breaks: it gives cover up to and
+    /// including the blow that breaks it, the next ones go through and the way is free. The client's ruling: three.
+    /// </summary>
+    public int HitsToBreak { get; init; } = 3;
 }
 
 /// <summary>
