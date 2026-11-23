@@ -19,6 +19,17 @@ public class BalanceFileTests
     }
 
     [Fact]
+    public void It_reads_the_play_round_a_column_and_refuses_a_negative_one()
+    {
+        // Issue #539.
+        Assert.Equal(0.5f, BalanceFile.Parse("""{ "columns": { "play": 0.5 } }""").Balance.Columns.Play);
+
+        var negative = BalanceFile.Parse("""{ "columns": { "play": -0.5 } }""");
+        Assert.Equal(Balance.Default.Columns.Play, negative.Balance.Columns.Play);
+        Assert.Contains(negative.Warnings, w => w.Contains("columns.play"));
+    }
+
+    [Fact]
     public void Missing_values_keep_their_standard_values()
     {
         var result = BalanceFile.Parse("""{ "ghoul": { "speed": 6 } }""");

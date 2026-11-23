@@ -463,12 +463,13 @@ public sealed class Bat : ITarget
             _waypoints.RemoveAt(0);
         }
 
+        ColumnDetour.SkipUnreachable(_waypoints, level, BodySizes.Bat.Radius);
         if (_waypoints.Count == 0)
         {
             return Vector3.Zero;
         }
 
-        var toNext = (_waypoints[0] - Position) with { Y = 0f };
+        var toNext = (ColumnDetour.Around(level, Position, _waypoints[0], BodySizes.Bat.Radius) - Position) with { Y = 0f };
         return Vector3.Normalize(toNext) * _bat.FlySpeed;
     }
 

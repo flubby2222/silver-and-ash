@@ -274,6 +274,12 @@
     "collisionRadius": 0.95             // m: the circle nobody walks through
   },
 
+  // Free-standing columns (#539): the gap to a wall, door or other column is 0 (never: nothing leans on a column) or
+  // at least the widest figure's diameter plus this play. Provisional.
+  "columns": {
+    "play": 0.2                         // m on top of the widest figure's diameter
+  },
+
   // Directional sound (issue #491): what a player hears of a sound with a place (an enemy, a door, a chest, another
   // player's steps). Provisional until the listening test.
   "hearing": {

@@ -313,6 +313,7 @@ public static class PhotoScenes
         .. CeilingArchScenes(),
         .. WallNicheScenes(),
         .. PortcullisScenes(),
+        .. ColumnScenes(),
         new("equipment-rifle", "The rifle (Forged) lying in the showroom, 0.8 m away: \"[F] Take Rifle (Forged)\" in steel blue (issue #317).",
             studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle }))),
         .. EquipmentTierScenes(),
@@ -540,6 +541,33 @@ public static class PhotoScenes
         yield return ("closed", timing => hold + timing.FallTicks + 30);
         yield return ("half", timing => (2 * hold) + timing.FallTicks + (int)MathF.Round(timing.LiftTicks * PortcullisHalfLiftShare));
         yield return ("open", _ => 10);
+    }
+
+    // The free-standing columns of the showroom's hall (issue #539), still drawn as a stand-in: the one under the corridor
+    // ceiling and the one under the room's, each from 4 m in front and a little to the side, looking at its upper half
+    // where it meets the ceiling.
+    private static IEnumerable<PhotoScene> ColumnScenes()
+    {
+        foreach (var (part, index) in new[] { (ShowroomPart.Corridor, 0), (ShowroomPart.Room, 1) })
+        {
+            var height = ShowroomSection.CeilingOf(part).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            yield return new(
+                $"column-{part.ToString().ToLowerInvariant()}",
+                $"The free-standing column of the showroom under the {height} m ceiling, from 4 m in front (issue #539).",
+                studio => new PhotoSetup(BeforeColumn(studio, index)));
+        }
+    }
+
+    private static GameWorld BeforeColumn(PhotoStudio studio, int index)
+    {
+        var layout = ShowroomLayout.Build();
+        var column = layout.Level.Columns.OrderBy(column => column.X).ElementAt(index);
+        var (x, z) = Level.ToGrid(column.X, column.Z);
+        var ceiling = layout.Level[x, z].CeilingHeight;
+        var world = layout.NewWorldAt(x, z, new Vector3(column.X, ceiling * 0.6f, column.Z), studio.Balance);
+        world.Player.PlaceAt(new Vector3(column.X + 1f, 0f, column.Z - 4f));
+        PhotoStudio.Face(world.Player, new Vector3(column.X, ceiling * 0.6f, column.Z));
+        return world;
     }
 
     // The share of the lift at which the half-lifted portcullis scenes are taken (issue #540).

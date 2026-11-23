@@ -28,11 +28,11 @@ public static class LineOfSight
         return true;
     }
 
-    /// <summary>True if <paramref name="point"/> is inside a wall, below the floor or above the ceiling.</summary>
+    /// <summary>True if <paramref name="point"/> is inside a wall or a column, below the floor or above the ceiling.</summary>
     public static bool IsInsideGeometry(Level level, Vector3 point)
     {
         ArgumentNullException.ThrowIfNull(level);
         var cell = level.CellAt(point);
-        return cell.IsSolid || point.Y < cell.FloorHeight || point.Y > cell.CeilingHeight;
+        return cell.IsSolid || point.Y < cell.FloorHeight || point.Y > cell.CeilingHeight || level.ColumnAt(point) is not null;
     }
 }

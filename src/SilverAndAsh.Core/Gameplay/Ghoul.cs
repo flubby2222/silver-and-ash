@@ -329,6 +329,7 @@ public sealed class Ghoul : ITarget
                 _waypoints.RemoveAt(0);
             }
 
+            ColumnDetour.SkipUnreachable(_waypoints, level, BodySizes.Ghoul.Radius);
             if (_waypoints.Count > 0)
             {
                 next = _waypoints[0];
@@ -341,7 +342,7 @@ public sealed class Ghoul : ITarget
             return;
         }
 
-        FaceTowards(point);
+        FaceTowards(ColumnDetour.Around(level, Position, point, BodySizes.Ghoul.Radius));
         Move(level, Facing * _ghoul.Speed, obstacles);
     }
 

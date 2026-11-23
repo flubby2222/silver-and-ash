@@ -143,7 +143,11 @@ public sealed class Level
             cells[x, z] = cell;
         }
 
-        return new Level(cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells) { WallCutouts = WallCutouts };
+        return new Level(cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells)
+        {
+            WallCutouts = WallCutouts,
+            Columns = Columns,
+        };
     }
 
     /// <summary>
@@ -172,7 +176,57 @@ public sealed class Level
             throw new ArgumentException("A wall side can have at most one hole.", nameof(cutouts));
         }
 
-        return new Level(_cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells) { WallCutouts = list };
+        return new Level(_cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells)
+        {
+            WallCutouts = list,
+            Columns = Columns,
+        };
+    }
+
+    /// <summary>
+    /// The free-standing columns (issue #539). Unlike <see cref="WallCutouts"/> they are solid: walking
+    /// (<see cref="Physics.CharacterCollision"/>), sight and shots (<see cref="Physics.LineOfSight.IsInsideGeometry"/>)
+    /// stop at them. The cells they stand on stay open - way-finding goes round them (<see cref="Physics.ColumnDetour"/>).
+    /// </summary>
+    public IReadOnlyList<Column> Columns { get; private init; } = [];
+
+    /// <summary>
+    /// A copy of this level with <paramref name="columns"/> as its columns (cells, start, figures and holes stay). Only
+    /// checks that each stands on an open cell; whether it leaves enough room is <see cref="ColumnPlacement"/>'s rule.
+    /// </summary>
+    /// <exception cref="ArgumentException">If a column's middle is not a finite point on an open cell of the level.</exception>
+    public Level WithColumns(IEnumerable<Column> columns)
+    {
+        ArgumentNullException.ThrowIfNull(columns);
+        var list = columns.ToList();
+        foreach (var column in list)
+        {
+            var (x, z) = ToGrid(column.X, column.Z);
+            if (!float.IsFinite(column.X) || !float.IsFinite(column.Z) || !IsInside(x, z) || this[x, z].IsSolid)
+            {
+                throw new ArgumentException($"The column at {column.X}/{column.Z} m does not stand on an open cell.", nameof(columns));
+            }
+        }
+
+        return new Level(_cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells)
+        {
+            WallCutouts = WallCutouts,
+            Columns = list,
+        };
+    }
+
+    /// <summary>The column whose circle holds <paramref name="point"/> (any height), or null.</summary>
+    public Column? ColumnAt(Vector3 point)
+    {
+        foreach (var column in Columns)
+        {
+            if (column.Contains(point))
+            {
+                return column;
+            }
+        }
+
+        return null;
     }
 
     private void CheckCutout(WallCutout cutout)
@@ -198,7 +252,7 @@ public sealed class Level
     /// </summary>
     public Level WithEnemies(
         IEnumerable<(int X, int Z)> ghoulCells, IEnumerable<(int X, int Z)> batCells, IEnumerable<(int X, int Z)>? bossCells = null) =>
-        new(_cells, PlayerStartX, PlayerStartZ, _dummyCells, ghoulCells, batCells, bossCells) { WallCutouts = WallCutouts };
+        new(_cells, PlayerStartX, PlayerStartZ, _dummyCells, ghoulCells, batCells, bossCells) { WallCutouts = WallCutouts, Columns = Columns };
 
     /// <summary>True if (x, z) is a grid position inside the level.</summary>
     public bool IsInside(int x, int z) => x >= 0 && x < Width && z >= 0 && z < Depth;

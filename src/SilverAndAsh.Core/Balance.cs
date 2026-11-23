@@ -115,6 +115,9 @@ public sealed record Balance
     /// <summary>The Well of Sirius (issue #438): how often a level has one and how wide it stands.</summary>
     public WellBalance Well { get; init; } = new();
 
+    /// <summary>Free-standing columns (issue #539): how much room they must leave to walls, doors and each other.</summary>
+    public ColumnsBalance Columns { get; init; } = new();
+
     /// <summary>Teleporters at special places (issue #436): how near a player must come.</summary>
     public TeleportersBalance Teleporters { get; init; } = new();
 
@@ -469,6 +472,19 @@ public sealed record WellBalance
 
     /// <summary>Radius in metres of the circle nobody walks through.</summary>
     public float CollisionRadius { get; init; } = 0.95f;
+}
+
+/// <summary>
+/// Free-standing columns (issue #539, <see cref="World.ColumnPlacement"/>): a column touches nothing, and the gap it
+/// leaves to a wall, a door or another column must let the widest figure through.
+/// </summary>
+public sealed record ColumnsBalance
+{
+    /// <summary>
+    /// Play in metres on top of the widest figure's diameter (<see cref="BodySizes.WidestFigureDiameter"/>): the gap
+    /// between a column and a wall, door or other column must be at least both together. Provisional.
+    /// </summary>
+    public float Play { get; init; } = 0.2f;
 }
 
 /// <summary>
