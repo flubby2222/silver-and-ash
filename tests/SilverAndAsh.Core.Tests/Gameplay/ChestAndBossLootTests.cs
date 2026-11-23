@@ -506,6 +506,57 @@ public class ChestAndBossLootTests
     }
 
     /// <summary>
+    /// Issue #608, review of PR #613: in a level without a boss room (a hand-made one with 'T'), the cell in front of
+    /// Gorm is a wall or a raised platform - where his vial would fall. It turns round him onto open floor at his own
+    /// height, the piece behind him lies there too, and a hurt player who walks up takes the vial.
+    /// </summary>
+    [Theory]
+    [InlineData('#', 1)]
+    [InlineData('2', 2)]
+    public void Without_a_boss_room_gorm_s_loot_lies_on_open_floor_at_his_height(char inFront, int seed)
+    {
+        string[] rows = ["...P...", ".......", ".......", "..." + inFront + "...", "...T...", ".......", "......."];
+        var world = new GameWorld(LevelParser.Parse(string.Join('\n', rows)), seed, NoOtherLoot);
+        var at = world.Gorm!.Position;
+        Assert.Empty(world.Rooms);
+        var blocked = Level.ToGrid(at.X + (world.Gorm.Facing.X * 1.2f), at.Z + (world.Gorm.Facing.Z * 1.2f));
+        Assert.Equal((3, 3), blocked);
+        world.Player.TakeDamage(Balance.Default.BloodVial.Heal, []);
+
+        KillGorm(world);
+        Run(world, PlayerInput.None, Second);
+
+        var drop = Assert.Single(world.EquipmentDrops);
+        var vial = Assert.Single(world.Pickups);
+        foreach (var (name, position, halfWidth) in new[]
+        {
+            ("piece", drop.Position, EquipmentDrop.BoxRadius),
+            ("vial", vial.Position, BodySizes.Pickup.Radius),
+        })
+        {
+            foreach (var (dx, dz) in new[] { (-1f, -1f), (-1f, 1f), (1f, -1f), (1f, 1f) })
+            {
+                var (x, z) = Level.ToGrid(position.X + (dx * halfWidth), position.Z + (dz * halfWidth));
+                Assert.True(world.Level.IsInside(x, z), $"The {name} at {position} reaches out of the level.");
+                Assert.False(world.Level[x, z].IsSolid, $"The {name} at {position} reaches into the wall at ({x}, {z}).");
+                Assert.Equal(at.Y, world.Level[x, z].FloorHeight, 0.01f);
+            }
+
+            Assert.Equal(at.Y, position.Y, 0.01f);
+        }
+
+        // Round the cell in front of him along the west side, then across to the vial.
+        var taken = new List<GameEvent>();
+        var west = world.Level.CellCenter(1, 1);
+        foreach (var waypoint in new[] { west, west with { Z = vial.Position.Z }, vial.Position })
+        {
+            taken.AddRange(WalkCounting(world, waypoint));
+        }
+
+        Assert.Contains(taken, e => e is PickupTaken { PickupId: var id } && id == vial.Id);
+    }
+
+    /// <summary>
     /// Gorm's tier roll and his draw come from the loot pool's own generator - exactly what a fresh pool of the same
     /// seed rolls and draws. And whichever tier he rolls, or whether the pool is empty: the ghouls that die after him
     /// leave the same silver, keys (the world's loot generator) and drops (its combat generator).
