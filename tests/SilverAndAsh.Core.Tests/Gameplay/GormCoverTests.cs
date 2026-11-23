@@ -189,8 +189,18 @@ public class GormCoverTests
     /// </summary>
     private static Vector3 BreakWithTheHammer(Duel duel, Column column)
     {
-        duel.Run(60 * Second, () => duel.Gorm.State == GormState.WindingUp && duel.Gorm.Attack == GormAttack.Hammer);
-        Assert.True(duel.Gorm.Attack == GormAttack.Hammer, "Gorm never wound up his hammer.");
+        BreakWith(duel, column, GormAttack.Hammer);
+        return duel.Gorm.Shockwave!.Value.Origin;
+    }
+
+    /// <summary>
+    /// Waits for Gorm's <paramref name="attack"/>, wears <paramref name="column"/> down to its last blow and runs on until
+    /// that attack breaks it. Nobody is hit up to then.
+    /// </summary>
+    private static void BreakWith(Duel duel, Column column, GormAttack attack)
+    {
+        duel.Run(60 * Second, () => duel.Gorm.State == GormState.WindingUp && duel.Gorm.Attack == attack);
+        Assert.True(duel.Gorm.Attack == attack, $"Gorm never wound up his {attack}.");
         while (duel.Wear.HitsOn(column) < HitsToBreak - 1)
         {
             duel.Wear.Strike(column, 0f, []);
@@ -200,7 +210,6 @@ public class GormCoverTests
         duel.Run(5 * Second, () => duel.Events.Skip(before).Any(e => e is ColumnBroke));
         Assert.Contains(duel.Events.Skip(before), e => e is ColumnBroke);
         Assert.DoesNotContain(duel.Events.Skip(before), e => e is PlayerHit or ShockwaveHit);
-        return duel.Gorm.Shockwave!.Value.Origin;
     }
 
     /// <summary>The column stands on the flat line from <paramref name="from"/> to <paramref name="to"/>.</summary>
@@ -270,6 +279,104 @@ public class GormCoverTests
         duel.Through(GormAttack.Hammer);
 
         Assert.DoesNotContain(duel.Events, e => e is ColumnHit);
+    }
+
+    // ---- The edges of the rule (issue #602) ----------------------------------------------------------------------------
+
+    /// <summary>Where Gorm stands in a <see cref="Duel"/>: 6 m in front of the player; he looks along -Z, his right is +X.</summary>
+    private static readonly Vector2 GormStart = Column.AtCell(7, 3).Centre + new Vector2(0f, 6f);
+
+    /// <summary>The column whose middle lies <paramref name="distance"/> from Gorm at <paramref name="bearing"/> (radians, to his right).</summary>
+    private static Column SeenFromGorm(float bearing, float distance) =>
+        new(GormStart.X + (distance * MathF.Sin(bearing)), GormStart.Y - (distance * MathF.Cos(bearing)));
+
+    /// <summary>Gorm stood where the geometry of a test assumes, looking along -Z - else the test would prove nothing.</summary>
+    private static void AssertGormStoodStill(Duel duel)
+    {
+        Assert.True(Vector2.Distance(GormStart, new Vector2(duel.Gorm.Position.X, duel.Gorm.Position.Z)) < 0.001f, $"Gorm moved to {duel.Gorm.Position}.");
+        Assert.True(Vector3.Distance(-Vector3.UnitZ, duel.Gorm.Facing) < 0.001f, $"Gorm turned to {duel.Gorm.Facing}.");
+    }
+
+    [Theory]
+    [InlineData("arc", 0.9f, true)]
+    [InlineData("arc", 1.1f, false)]
+    [InlineData("reach", 0.9f, true)]
+    [InlineData("reach", 1.1f, false)]
+    public void The_chain_swing_strikes_a_column_at_the_edge_of_its_arc_and_reach_as_far_as_the_column_is_wide(string edge, float outside, bool struck)
+    {
+        var gorm = Balance.Default.Gorm;
+        var halfArc = gorm.SwingArc * MathF.PI / 360f;
+
+        // "arc": 3 m from him, just behind the start of the swing at his left - its middle outside the arc by `outside`
+        // times the angle half the column fills. "reach": half way to his left, its near side `outside` radii beyond
+        // the reach minus one radius (0.9: 0.1 radius inside the reach, 1.1: 0.1 radius beyond it).
+        const float Near = 3f;
+        var column = edge == "arc"
+            ? SeenFromGorm(-halfArc - (outside * MathF.Asin(Column.Radius / Near)), Near)
+            : SeenFromGorm(-halfArc / 2f, gorm.SwingReach + (outside * Column.Radius));
+        var duel = new Duel(column);
+
+        var swing = duel.Through(GormAttack.Swing);
+
+        AssertGormStoodStill(duel);
+        Assert.Equal(struck, swing.OfType<ColumnHit>().Any(hit => hit.Column == column));
+    }
+
+    [Theory]
+    [InlineData(0.9f, true)]
+    [InlineData(1.1f, false)]
+    public void The_shock_wave_strikes_a_column_once_it_reaches_the_near_side_not_the_middle(float outside, bool struck)
+    {
+        // To his left (-X), the middle `outside` radii beyond where the wave stops: 0.9 - its near side 0.1 radius inside,
+        // 1.1 - 0.1 radius outside.
+        var column = SeenFromGorm(-MathF.PI / 2f, Balance.Default.Gorm.ShockwaveRadius + (outside * Column.Radius));
+        var duel = new Duel(column);
+
+        var hammer = duel.Through(GormAttack.Hammer);
+
+        AssertGormStoodStill(duel);
+        Assert.Contains(hammer, e => e is GormSlammed);
+        Assert.Equal(struck, hammer.OfType<ColumnHit>().Any(hit => hit.Column == column));
+    }
+
+    [Theory]
+    [InlineData(GormAttack.Hammer, GormAttack.Swing)]
+    [InlineData(GormAttack.Swing, GormAttack.Hammer)]
+    public void The_shelter_kept_at_the_break_ends_with_that_attack_the_next_one_hits_who_stays_put(GormAttack breaking, GormAttack next)
+    {
+        var duel = new Duel(Between);
+        var health = duel.Player.Health;
+
+        BreakWith(duel, Between, breaking);
+        duel.Run(5 * Second, () => duel.Gorm.State is GormState.Recovering or GormState.Stuck);
+        Assert.Equal(health, duel.Player.Health);
+
+        // He stays where he stood - in the shadow of the broken column, on the same line to Gorm - for the next attack.
+        var events = duel.Through(next);
+
+        AssertGormStoodStill(duel);
+        Assert.True(Behind(Between, duel.Gorm.Position, duel.Player.Position), "The player left the shadow - the test would prove nothing.");
+        Assert.Contains(events, e => e is PlayerHit);
+        Assert.True(duel.Player.Health < health, $"The {next} after the break did not hit.");
+    }
+
+    [Fact]
+    public void Provisional_a_column_behind_one_the_shock_wave_just_broke_takes_a_blow_from_the_same_wave()
+    {
+        // PROVISIONAL (issue #602): the human has not judged this yet. The cover of a column ends with its break, so the
+        // column behind it is no longer covered and the same wave strikes it. The player behind both stays covered.
+        // Gorm - Between - Behind - the player, all in a line.
+        var behind = Column.AtCell(7, 4);
+        var duel = new Duel(Between, behind);
+        var health = duel.Player.Health;
+
+        BreakWithTheHammer(duel, Between);
+        Assert.DoesNotContain(duel.Events, e => e is ColumnHit hit && hit.Column == behind);
+        var afterBreak = duel.Events.Count;
+        duel.Run(5 * Second, () => duel.Gorm.State is GormState.Recovering or GormState.Stuck);
+
+        Assert.Equal([new ColumnHit(behind, 1, HitsToBreak)], duel.Events.Skip(afterBreak).OfType<ColumnHit>());
+        Assert.Equal(health, duel.Player.Health);
     }
 
     // ---- In the world: the broken column leaves the level ------------------------------------------------------------
