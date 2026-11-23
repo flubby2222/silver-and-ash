@@ -98,6 +98,11 @@ public sealed class Gorm : IEnemy
     private Vector3 _hookDirection;
     private float _swingAngle;
     private readonly HashSet<Player> _sweptPlayers = new(ReferenceEqualityComparer.Instance);
+
+    // Issue #590: the columns the current swing or shock wave has struck - they cover for the rest of that attack, even
+    // the one it broke. And the wear of the world's columns (null: columns cover, but never break).
+    private readonly List<Column> _struckColumns = [];
+    private ColumnWear? _wear;
     private float _hookTravelled;
 
     // Issue #437: ticks of the locked aim before the throw, of chasing until the chase throw, and of its warning.
@@ -302,13 +307,15 @@ public sealed class Gorm : IEnemy
     /// <summary>
     /// One tick of behaviour: walk, choose and carry out an attack, rest. <paramref name="obstacles"/> are the bodies
     /// he cannot walk through. <paramref name="paths"/> is the level he finds his way in, if that differs (chest cells
-    /// are wall there, so he plans a way round them).
+    /// are wall there, so he plans a way round them). <paramref name="columns"/> counts the blows his swing and shock
+    /// wave deal the columns of the level (issue #590); without it the columns cover but never break.
     /// </summary>
     public void Act(
         Level level, IReadOnlyList<Player> players, IReadOnlyList<CylinderBody> obstacles, ICollection<GameEvent> events,
-        Level? paths = null)
+        Level? paths = null, ColumnWear? columns = null)
     {
         _paths = paths;
+        _wear = columns;
         ArgumentNullException.ThrowIfNull(level);
         ArgumentNullException.ThrowIfNull(players);
         ArgumentNullException.ThrowIfNull(obstacles);
@@ -343,7 +350,7 @@ public sealed class Gorm : IEnemy
 
             case GormState.Swinging:
                 Stand(level, obstacles);
-                SweepChain(players, events);
+                SweepChain(level, players, events);
                 break;
 
             case GormState.Stuck:
@@ -569,12 +576,14 @@ public sealed class Gorm : IEnemy
     }
 
     // One tick of the swing: the chain moves on from where it was. Every living player it passes over (within reach,
-    // at chest height) is hit - once per swing. Behind him the chain never comes.
-    private void SweepChain(IReadOnlyList<Player> players, ICollection<GameEvent> events)
+    // at chest height) is hit - once per swing - unless a column stands between him and them (issue #590). Behind him
+    // the chain never comes.
+    private void SweepChain(Level level, IReadOnlyList<Player> players, ICollection<GameEvent> events)
     {
         var from = _swingAngle;
         _stateTicksLeft--;
         _swingAngle = -SwingHalfArc + (2f * SwingHalfArc * StateProgress);
+        StrikeColumns(level, column => SwingPasses(column, from), Position.Y + ((_gorm.SwingLow + _gorm.SwingHigh) / 2f), events);
 
         var low = Position.Y + _gorm.SwingLow;
         var high = Position.Y + _gorm.SwingHigh;
@@ -582,7 +591,8 @@ public sealed class Gorm : IEnemy
         {
             var offset = (player.Position - Position) with { Y = 0f };
             var bearing = MathF.Atan2(Vector3.Dot(offset, Right), Vector3.Dot(offset, Facing));
-            if (bearing < from || bearing > _swingAngle || offset.Length() > _gorm.SwingReach)
+            if (bearing < from || bearing > _swingAngle || offset.Length() > _gorm.SwingReach
+                || IsCovered(level, Position, player.Position))
             {
                 continue;
             }
@@ -610,6 +620,7 @@ public sealed class Gorm : IEnemy
                 Shockwave = (Position, 0f);
                 _reachedByWave.Clear();
                 _waveHit = false;
+                _struckColumns.Clear();
                 State = GormState.Slamming;
                 events.Add(new GormSlammed(Id) { Place = Position });
                 if (IsInPhase2 && target is not null)
@@ -623,6 +634,7 @@ public sealed class Gorm : IEnemy
                 // The chain starts at his left and sweeps over the front to his right (see SweepChain).
                 _swingAngle = -SwingHalfArc;
                 _sweptPlayers.Clear();
+                _struckColumns.Clear();
                 Begin(GormState.Swinging, Quicker(_gorm.SwingTime));
                 events.Add(new GormSwingStarted(Id) { Place = Position });
                 break;
@@ -639,12 +651,14 @@ public sealed class Gorm : IEnemy
         }
     }
 
-    // The shock wave runs outwards; every living player it reaches who is not high enough in the air is hit once.
+    // The shock wave runs outwards; every living player it reaches who is not high enough in the air is hit once -
+    // unless a column stands between its start and them (issue #590).
     private void RunShockwave(Level level, IReadOnlyList<Player> players, ICollection<GameEvent> events)
     {
         var (origin, radius) = Shockwave!.Value;
         radius = MathF.Min(_gorm.ShockwaveRadius, radius + (_gorm.ShockwaveSpeed * SimulationClock.SecondsPerTick));
         Shockwave = (origin, radius);
+        StrikeColumns(level, column => FlatDistance(origin, column) - Column.Radius <= radius, origin.Y, events);
 
         foreach (var player in players.Where(player => !player.IsDead && !_reachedByWave.Contains(player.Id)))
         {
@@ -654,6 +668,11 @@ public sealed class Gorm : IEnemy
             }
 
             _reachedByWave.Add(player.Id);
+            if (IsCovered(level, origin, player.Position))
+            {
+                continue;
+            }
+
             var aboveFloor = player.Position.Y - level.CellAt(player.Position).FloorHeight;
             if (aboveFloor < _gorm.ShockwaveHeight)
             {
@@ -678,6 +697,60 @@ public sealed class Gorm : IEnemy
         // Nobody hit: the club is stuck.
         Begin(GormState.Stuck, _gorm.StuckTime);
         events.Add(new ClubStuck(Id));
+    }
+
+    // Issue #590: every standing column that this tick's part of the attack reaches (`reaches`) and that no other
+    // column covers takes one blow - once per attack. It covers for the rest of the attack, even if the blow broke it.
+    private void StrikeColumns(Level level, Func<Column, bool> reaches, float height, ICollection<GameEvent> events)
+    {
+        foreach (var column in StandingColumns(level).Where(column => !_struckColumns.Contains(column) && reaches(column)).ToList())
+        {
+            if (IsCovered(level, Position, new Vector3(column.X, 0f, column.Z), except: column))
+            {
+                continue;
+            }
+
+            _struckColumns.Add(column);
+            _wear?.Strike(column, height, events);
+        }
+    }
+
+    // Issue #590: the columns of the level that have not broken.
+    private IEnumerable<Column> StandingColumns(Level level) =>
+        level.Columns.Where(column => _wear is null || !_wear.IsBroken(column));
+
+    // Issue #590: true if a standing column - or one this attack has struck - stands on the flat line from `from` to
+    // the middle of `to`. Only free-standing columns cover; walls are as before.
+    private bool IsCovered(Level level, Vector3 from, Vector3 to, Column? except = null)
+    {
+        var start = new Vector2(from.X, from.Z);
+        var end = new Vector2(to.X, to.Z);
+        return StandingColumns(level).Concat(_struckColumns)
+            .Any(column => column != except && DistanceToSegment(column.Centre, start, end) < Column.Radius);
+    }
+
+    // Issue #590: the chain passed over part of `column` this tick - it lies within reach, and the angles it fills seen
+    // from him overlap the arc the chain swept since `from`.
+    private bool SwingPasses(Column column, float from)
+    {
+        var offset = new Vector3(column.X - Position.X, 0f, column.Z - Position.Z);
+        var distance = offset.Length();
+        if (distance - Column.Radius > _gorm.SwingReach || distance < 0.001f)
+        {
+            return false;
+        }
+
+        var bearing = MathF.Atan2(Vector3.Dot(offset, Right), Vector3.Dot(offset, Facing));
+        var halfWidth = MathF.Asin(MathF.Min(1f, Column.Radius / distance));
+        return bearing + halfWidth >= from && bearing - halfWidth <= _swingAngle;
+    }
+
+    private static float DistanceToSegment(Vector2 point, Vector2 start, Vector2 end)
+    {
+        var line = end - start;
+        var lengthSquared = line.LengthSquared();
+        var along = lengthSquared < 1e-8f ? 0f : Math.Clamp(Vector2.Dot(point - start, line) / lengthSquared, 0f, 1f);
+        return Vector2.Distance(point, start + (line * along));
     }
 
     // The hook flies straight on until it touches a player (damage, pull), a wall or pillar, or has flown its range.
@@ -788,4 +861,6 @@ public sealed class Gorm : IEnemy
     }
 
     private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
+
+    private static float FlatDistance(Vector3 a, Column column) => Vector2.Distance(new Vector2(a.X, a.Z), column.Centre);
 }

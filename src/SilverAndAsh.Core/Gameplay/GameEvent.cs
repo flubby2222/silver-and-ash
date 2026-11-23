@@ -259,6 +259,19 @@ public sealed record GormSwingStarted(int GormId) : GameEvent;
 public sealed record GormSwung(int GormId, bool Hit) : GameEvent;
 
 /// <summary>
+/// A blow of Gorm (chain swing or shock wave) struck <paramref name="Column"/> (issue #590): it has now taken
+/// <paramref name="Hits"/> of the <paramref name="HitsToBreak"/> it can bear. Comes once per attack and column, also
+/// for the blow that breaks it (then <see cref="ColumnBroke"/> follows).
+/// </summary>
+public sealed record ColumnHit(Column Column, int Hits, int HitsToBreak) : GameEvent;
+
+/// <summary>
+/// <paramref name="Column"/> broke under its last blow (issue #590): from the next attack on it gives no cover and the
+/// way through its place is free.
+/// </summary>
+public sealed record ColumnBroke(Column Column) : GameEvent;
+
+/// <summary>
 /// Gorm's aim locked onto <paramref name="Aim"/> (issue #437): he stands rigid until the throw - stopping or dodging now
 /// escapes. Silent for now (the clack comes later with a listening test); drawn as dust at his foot.
 /// </summary>
