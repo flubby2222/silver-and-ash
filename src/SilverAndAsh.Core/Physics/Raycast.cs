@@ -99,10 +99,16 @@ public static class Raycast
 
     /// <summary>
     /// Which surface was crossed between a free point and a blocked point right next to it: a wall or the side of a
-    /// platform if the ray went into another cell, otherwise the floor or the ceiling of the same cell.
+    /// platform if the ray went into another cell, otherwise the floor or the ceiling of the same cell. A column's side
+    /// points away from its middle.
     /// </summary>
     private static Vector3 SurfaceNormal(Level level, Vector3 free, Vector3 blocked, Vector3 direction)
     {
+        if (ColumnSideNormal(level, free, blocked) is { } side)
+        {
+            return side;
+        }
+
         var (freeX, freeZ) = Level.ToGrid(free.X, free.Z);
         var (blockedX, blockedZ) = Level.ToGrid(blocked.X, blocked.Z);
         if (freeX != blockedX)
@@ -116,6 +122,25 @@ public static class Raycast
         }
 
         return blocked.Y < level[blockedX, blockedZ].FloorHeight ? Vector3.UnitY : -Vector3.UnitY;
+    }
+
+    // The outward direction of a column's side, if the ray went into a column and nothing else: only the column holds
+    // the blocked point, and it lies between the cell's floor and ceiling.
+    private static Vector3? ColumnSideNormal(Level level, Vector3 free, Vector3 blocked)
+    {
+        if (level.ColumnAt(blocked) is not { } column)
+        {
+            return null;
+        }
+
+        var cell = level.CellAt(blocked);
+        if (cell.IsSolid || blocked.Y < cell.FloorHeight || blocked.Y > cell.CeilingHeight)
+        {
+            return null;
+        }
+
+        var outward = new Vector2(free.X, free.Z) - column.Centre;
+        return outward.LengthSquared() > 1e-12f ? Vector3.Normalize(new Vector3(outward.X, 0f, outward.Y)) : null;
     }
 
     /// <summary>

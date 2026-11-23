@@ -535,7 +535,7 @@ public sealed class Gorm : ITarget
             return;
         }
 
-        FaceTowards(point);
+        FaceTowards(ColumnDetour.Around(level, Position, point, BodySizes.Gorm.Radius));
         var before = Position;
         Move(level, Facing * (IsInPhase2 ? _gorm.Speed * _gorm.Phase2SpeedUp : _gorm.Speed), obstacles);
         CountSteps(before, events);
@@ -753,6 +753,7 @@ public sealed class Gorm : ITarget
             _waypoints.RemoveAt(0);
         }
 
+        ColumnDetour.SkipUnreachable(_waypoints, level, BodySizes.Gorm.Radius);
         return _waypoints.Count > 0 ? _waypoints[0] : null;
     }
 

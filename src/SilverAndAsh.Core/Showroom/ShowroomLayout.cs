@@ -61,7 +61,8 @@ public sealed record ShowroomSection(int Index, TextureVariant Variant, int Corr
 /// closet behind - where doors stand in the game too: every door cell of a generated level has the corridor ceiling,
 /// the boss gate's as well. Every other piece stands once, in a row through the middle of the room parts (taking turns
 /// between the sections), where there is room for its height. Wall pillars stand against the north wall of every part
-/// (issue #536); ceiling arches span a corridor one cell wide south of every corridor part (issue #537). Built
+/// (issue #536); ceiling arches span a corridor one cell wide south of every corridor part (issue #537). South of the
+/// passage along the bottom of the band lies a hall with a free-standing column under each ceiling height (issue #539). Built
 /// from <see cref="ShowroomPieces.All"/> with a fixed rule - the same list always gives the same showroom.
 /// </summary>
 public sealed class ShowroomLayout
@@ -154,7 +155,7 @@ public sealed class ShowroomLayout
         var east = BandX + (2 * length) - 1;
         var bottom = Variants.Length * SectionRows;
         var width = east + PassageWidth + 2;
-        var depth = bottom + PassageWidth + 1;
+        var depth = bottom + PassageWidth + HallRows + 1;
 
         var cells = new Cell[width, depth];
         for (var x = 0; x < width; x++)
@@ -209,6 +210,11 @@ public sealed class ShowroomLayout
         Carve(east + 1, a.NorthRow, east + PassageWidth, b.SouthRow, corridor, null);
         Carve(BandX - PassageWidth, b.NorthRow, BandX - 1, c.SouthRow, corridor, null);
         Carve(east + 1, c.NorthRow, east + PassageWidth, bottom + PassageWidth - 1, corridor, null);
+        foreach (var part in Enum.GetValues<ShowroomPart>())
+        {
+            var (x0, z0, x1, z1) = HallOf(part, bottom);
+            Carve(x0, z0, x1, z1, ShowroomSection.CeilingOf(part), null);
+        }
 
         var doors = new List<LevelDoor>();
         var placed = new List<PlacedPiece>();
@@ -325,6 +331,8 @@ public sealed class ShowroomLayout
         labels.AddRange(DeepNicheLabels(deepNiches));
         labels.AddRange(FillingLabels(deepNiches));
         level = level.WithWallCutouts(deepNiches.Select(deep => deep.Cutout));
+        level = level.WithColumns(Enum.GetValues<ShowroomPart>().Select(part => ColumnOf(part, bottom)));
+        labels.AddRange(Enum.GetValues<ShowroomPart>().Select(part => ColumnLabelOf(part, bottom)));
 
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
@@ -339,6 +347,38 @@ public sealed class ShowroomLayout
                 Portcullises = portcullises,
             },
             labels, sections, placed);
+    }
+
+    // The column hall (issue #539): south of the passage along the bottom of the band and open to it along its whole
+    // length, HallRows deep. Its west half has the corridor ceiling, its east half the room's, HallLength cells each.
+    private const int HallRows = 5;
+    private const int HallLength = 5;
+    private const int HallX = BandX + 2;
+
+    /// <summary>The label in front of the column of <paramref name="part"/>'s height (issue #539).</summary>
+    public static string ColumnLabel(ShowroomPart part) => part == ShowroomPart.Corridor ? "Column 3.5 m" : "Column 6 m";
+
+    // The rectangle of the hall's half under the ceiling of `part`; `bottom` is the first row of the south passage.
+    private static (int X0, int Z0, int X1, int Z1) HallOf(ShowroomPart part, int bottom)
+    {
+        var x0 = HallX + (part == ShowroomPart.Corridor ? 0 : HallLength);
+        var z0 = bottom + PassageWidth;
+        return (x0, z0, x0 + HallLength - 1, z0 + HallRows - 1);
+    }
+
+    // The free-standing column of the hall's half under the ceiling of `part`: in the middle of its middle cell, so it
+    // leaves every figure room on all sides (ColumnPlacement).
+    private static Column ColumnOf(ShowroomPart part, int bottom)
+    {
+        var (x0, z0, x1, z1) = HallOf(part, bottom);
+        return Column.AtCell((x0 + x1) / 2, (z0 + z1) / 2);
+    }
+
+    // On the side of the passage, where one comes from, below the corridor ceiling.
+    private static ShowroomLabel ColumnLabelOf(ShowroomPart part, int bottom)
+    {
+        var column = ColumnOf(part, bottom);
+        return new ShowroomLabel(ColumnLabel(part), new Vector3(column.X, 2.6f, column.Z - Column.Radius - 0.6f));
     }
 
     /// <summary>

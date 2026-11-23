@@ -121,6 +121,7 @@ public class PhotoSceneTests
             "portcullis-closed-room", "portcullis-closed-closet", "portcullis-closed-far",
             "portcullis-half-room", "portcullis-half-closet", "portcullis-half-far",
             "portcullis-open-room", "portcullis-open-closet", "portcullis-open-far",
+            "column-corridor", "column-room",
             "wall-niche-deep-a-corridor", "wall-niche-deep-a-room", "wall-niche-deep-b-corridor", "wall-niche-deep-b-room",
             "wall-niche-deep-c-corridor", "wall-niche-deep-c-room",
             "wall-niche-shelf-a-corridor", "wall-niche-shelf-a-room", "wall-niche-shelf-b-corridor", "wall-niche-shelf-b-room",
@@ -544,6 +545,24 @@ public class PhotoSceneTests
         Assert.Equal(ceiling, world.Level.CellAt(world.Player.Position).CeilingHeight);
         Assert.False(world.Level.CellAt(world.Player.Position).IsSolid);
         var towards = Vector3.Normalize((pillar.Position - world.Player.Position) with { Y = 0f });
+        var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
+        Assert.True(Vector3.Dot(looking, towards) > 0.99f);
+    }
+
+    [Theory]
+    [InlineData("column-corridor", 3.5f)]
+    [InlineData("column-room", 6f)]
+    public void The_column_scenes_look_at_the_column_under_their_ceiling(string name, float ceiling)
+    {
+        // Issue #539: the player stands on open floor in front of the column, beside nothing else, and looks at it.
+        var setup = Built(name);
+        setup.Run();
+        var world = setup.World;
+        var column = world.Level.Columns.MinBy(column => Vector2.Distance(column.Centre, new Vector2(world.Player.Position.X, world.Player.Position.Z)));
+
+        Assert.Equal(ceiling, world.Level.CellAt(new Vector3(column.X, 0f, column.Z)).CeilingHeight);
+        Assert.False(CharacterCollision.Overlaps(world.Level, world.Player.Position, BodySizes.Player.Radius));
+        var towards = Vector3.Normalize(new Vector3(column.X, 0f, column.Z) - (world.Player.Position with { Y = 0f }));
         var looking = Vector3.Normalize(world.Player.View.Forward with { Y = 0f });
         Assert.True(Vector3.Dot(looking, towards) > 0.99f);
     }

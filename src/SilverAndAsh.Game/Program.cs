@@ -587,6 +587,7 @@ static void RunGame(
             portcullisView.Draw(
                 gameWorld.Showroom?.Portcullises ?? [], ShowroomGrateCycle.Height(gameWorld.Ticks, gameWorld.Balance.Grates),
                 viewCone, gameWorld.Surfaces, levelTextures, doorView);
+            ColumnView.Draw(gameWorld.LevelAsBuilt, viewCone);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);

@@ -75,6 +75,7 @@ public static class CharacterCollision
             // Bodies and boxes first, walls last: walls always win, so nobody is ever pushed into a wall.
             (position, velocity) = ResolveBodyOverlaps(position, velocity, radius, height, bodies);
             (position, velocity) = ResolveBoxOverlaps(position, velocity, radius, height, stepHeight, boxes);
+            (position, velocity) = ResolveColumnOverlaps(level, position, velocity, radius);
             (position, velocity) = ResolveOverlaps(level, position, velocity, radius, height, stepHeight);
         }
 
@@ -161,11 +162,20 @@ public static class CharacterCollision
         return (floor, ceiling);
     }
 
-    /// <summary>True if a circle at <paramref name="position"/> overlaps any blocking cell.</summary>
+    /// <summary>True if a circle at <paramref name="position"/> overlaps any blocking cell or column.</summary>
     public static bool Overlaps(
         Level level, Vector3 position, float radius,
         float height = BodySizes.Player.Height, float stepHeight = BodySizes.Player.StepHeight)
     {
+        ArgumentNullException.ThrowIfNull(level);
+        foreach (var column in level.Columns)
+        {
+            if (Column.Radius + radius - Vector2.Distance(new Vector2(position.X, position.Z), column.Centre) > Epsilon)
+            {
+                return true;
+            }
+        }
+
         foreach (var (x, z) in CellsAround(position, radius))
         {
             if (BlocksMovement(level[x, z], position.Y, height, stepHeight)
@@ -253,6 +263,36 @@ public static class CharacterCollision
             }
 
             // Exactly on the centre (should not happen): leave in any fixed direction.
+            var normal = distance > Epsilon ? offset / distance : Vector2.UnitX;
+            position += new Vector3(normal.X, 0f, normal.Y) * penetration;
+
+            var into = (velocity.X * normal.X) + (velocity.Z * normal.Y);
+            if (into < 0f)
+            {
+                velocity -= new Vector3(normal.X, 0f, normal.Y) * into;
+            }
+        }
+
+        return (position, velocity);
+    }
+
+    /// <summary>
+    /// Pushes the character out of the level's columns (issue #539) and removes the "into the column" part of the
+    /// velocity - sliding round it. A column reaches from floor to ceiling, so it stops every character at every height.
+    /// </summary>
+    private static (Vector3 Position, Vector3 Velocity) ResolveColumnOverlaps(Level level, Vector3 position, Vector3 velocity, float radius)
+    {
+        foreach (var column in level.Columns)
+        {
+            var offset = new Vector2(position.X, position.Z) - column.Centre;
+            var distance = offset.Length();
+            var penetration = radius + Column.Radius - distance;
+            if (penetration <= 0f)
+            {
+                continue;
+            }
+
+            // Exactly on the middle (should not happen): leave in any fixed direction.
             var normal = distance > Epsilon ? offset / distance : Vector2.UnitX;
             position += new Vector3(normal.X, 0f, normal.Y) * penetration;
 

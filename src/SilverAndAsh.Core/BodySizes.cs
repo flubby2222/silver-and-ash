@@ -6,6 +6,13 @@ namespace SilverAndAsh.Core;
 /// </summary>
 public static class BodySizes
 {
+    /// <summary>
+    /// Diameter in metres of the widest figure that walks or flies through a level (now Gorm) - what a gap must let
+    /// through (issue #539, <see cref="World.ColumnPlacement"/>). A new figure belongs in this list.
+    /// </summary>
+    public static float WidestFigureDiameter => 2f * MathF.Max(
+        MathF.Max(MathF.Max(Player.Radius, Dummy.Radius), MathF.Max(Gorm.Radius, Ghoul.Radius)), Bat.Radius);
+
     /// <summary>The player character.</summary>
     public static class Player
     {
