@@ -150,6 +150,55 @@ public class BossRoomColumnsTests
         Assert.Equal(7, placed.Level.Columns.Count);
     }
 
+    /// <summary>
+    /// Issue #608: the gap counts, not only overlapping. A grid point that does not touch Gorm's cell (or the stairs'
+    /// cell) but comes closer to it than <see cref="ColumnPlacement.RequiredGap"/> stays empty - although the placement
+    /// rule would allow a column there, beside the columns placed before it.
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void A_grid_point_closer_to_gorms_place_or_the_stairs_than_the_gap_stays_empty(int which)
+    {
+        var found = 0;
+        for (var seed = 0; seed < 5; seed++)
+        {
+            var generated = LevelGenerator.Generate(Templates, seed, Balance.Default.Layout);
+            var boss = Boss(generated);
+            var keptClear = BossRoomColumns.KeptClear(boss);
+            var (cell, other) = (keptClear[which], keptClear[1 - which]);
+            var floor = boss.FloorCells.ToHashSet();
+            var doorCells = generated.Doors.SelectMany(door => door.Cells).ToList();
+            for (var perSide = 2; perSide <= 6; perSide++)
+            {
+                for (var spacing = 2f; spacing <= 16f; spacing += 2f)
+                {
+                    var grid = Standard with { BossRoomPerSide = perSide, BossRoomSpacing = spacing };
+                    var required = ColumnPlacement.RequiredGap(grid);
+                    var points = BossRoomColumns.Grid(boss, grid).ToList();
+                    var placed = BossRoomColumns.Place(generated, grid).Level.Columns;
+                    for (var index = 0; index < points.Count; index++)
+                    {
+                        var point = points[index];
+                        var gap = ColumnPlacement.GapToCell(point, cell);
+                        var before = generated.Level.WithColumns(placed.Where(column => points.IndexOf(column) < index));
+                        if (gap < 0f || gap >= required || ColumnPlacement.GapToCell(point, other) < required
+                            || !floor.Contains(Level.ToGrid(point.X, point.Z))
+                            || ColumnPlacement.Check(before, point, doorCells, grid) != ColumnFit.Fits)
+                        {
+                            continue;
+                        }
+
+                        found++;
+                        Assert.DoesNotContain(point, placed);
+                    }
+                }
+            }
+        }
+
+        Assert.True(found > 0, "No grid point came near the cell without touching it - the test would prove nothing.");
+    }
+
     [Fact]
     public void The_same_seed_gives_the_same_columns()
     {
