@@ -247,7 +247,7 @@ public sealed class Ghoul : IEnemy
                 Stand(level, obstacles);
                 if (--_stateTicksLeft == 0)
                 {
-                    var hit = InHitReach(target) && InFront(target);
+                    var hit = Strikes(level, target);
                     if (hit)
                     {
                         target.TakeDamage(_ghoul.AttackDamage, events);
@@ -289,6 +289,13 @@ public sealed class Ghoul : IEnemy
 
     /// <summary>Close enough to be hit by the blow - a bit farther than where it starts.</summary>
     private bool InHitReach(Player player) => IsWithin(player, _ghoul.HitReach);
+
+    /// <summary>
+    /// The blow lands on <paramref name="player"/>: in hit reach, in front - and nothing (wall, column, closed door) in
+    /// between (issue #574: no blow round a corner the player stepped behind during the wind-up).
+    /// </summary>
+    private bool Strikes(Level level, Player player) =>
+        InHitReach(player) && InFront(player) && CanSee(level, player);
 
     private bool IsWithin(Player player, float reach) =>
         FlatDistance(Position, player.Position) <= reach
