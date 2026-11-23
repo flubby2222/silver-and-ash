@@ -1052,7 +1052,7 @@ public sealed class GameWorld
     private float PushedAcross(Door door, float across, float radius)
     {
         var (x, z) = door.Cells[0];
-        foreach (var portal in Level.Portals.Where(portal => portal.Frames(x, z)))
+        if (Level.Portals.Where(portal => portal.Frames(x, z)).Cast<BossPortal?>().FirstOrDefault() is { } portal)
         {
             return portal.PushedAcross(across, radius);
         }

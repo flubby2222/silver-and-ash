@@ -52,6 +52,72 @@ public class BossPortalTests
         Assert.Equal(0f, hit.Value.Normal.Z, 0.0001f);
     }
 
+    [Theory]
+    [InlineData(1.5f, 3.3f, 1f)]    // through the outermost run's arch onto the face of the second run (0.85 m deep)
+    [InlineData(1.3f, 3.5f, 1f)]    // through two runs onto the face of the third (0.6 m)
+    [InlineData(1f, 4f, 1f)]        // through three runs onto the face of the innermost (0.35 m)
+    [InlineData(-1.3f, 3.5f, 1f)]   // the other side of the passage
+    [InlineData(1.3f, 3.5f, -1f)]   // from behind the door
+    public void A_ray_along_the_passage_above_the_springing_hits_the_face_of_a_run_with_the_normal_back_along_the_passage(
+        float across, float up, float face)
+    {
+        // Above the springing the runs step inwards like the stairs of a pulpit: a ray along the passage into the doorway
+        // goes through the arch of the wider runs and hits the upright face of a narrower one - no underside of an arch
+        // (issue #628).
+        var level = OpenLevel().WithPortals([Portal]);
+        var origin = new Vector3(Portal.X + across, up, Portal.Z + (face * 2f));
+        Assert.False(LineOfSight.IsInsideGeometry(level, origin));
+
+        var hit = Raycast.AgainstLevel(level, origin, new Vector3(0f, 0f, -face), 5f);
+
+        Assert.NotNull(hit);
+        Assert.True(Portal.Contains(hit.Value.Point - new Vector3(0f, 0f, face * 0.01f)), $"{hit.Value.Point} is not before the stone.");
+        Assert.Equal(new Vector3(0f, 0f, face), hit.Value.Normal);
+    }
+
+    [Fact]
+    public void A_ray_at_the_portal_never_passes_through_its_stone()
+    {
+        // Rays from all over the floor at points of the portal (seeded, the same every run): along each, up to its hit,
+        // no stretch of 2 cm or more lies in the stone - also not where it only grazes a thin corner of a block or an
+        // arch (issue #628).
+        var level = OpenLevel().WithPortals([Portal]);
+        var random = new Random(628);
+        const float Sample = 0.002f;
+        var longest = 0f;
+        var worst = "";
+        for (var ray = 0; ray < 4000; ray++)
+        {
+            var origin = new Vector3(Between(0.2f, 11.8f), Between(0.2f, 5.8f), Between(0.2f, 7.8f));
+            var target = new Vector3(
+                Portal.X + Between(-BossPortalShape.HalfWidth, BossPortalShape.HalfWidth),
+                Between(0f, BossPortalShape.Height),
+                Portal.Z + Between(-1.3f, 1.3f));
+            if (LineOfSight.IsInsideGeometry(level, origin) || Vector3.Distance(origin, target) < 0.5f)
+            {
+                continue;
+            }
+
+            var direction = Vector3.Normalize(target - origin);
+            var reach = Vector3.Distance(origin, target) + 3f;
+            var end = Raycast.AgainstLevel(level, origin, direction, reach)?.Distance ?? reach;
+            var inStone = 0f;
+            for (var t = 0f; t < end; t += Sample)
+            {
+                inStone = Portal.Contains(origin + (direction * t)) ? inStone + Sample : 0f;
+                if (inStone > longest)
+                {
+                    longest = inStone;
+                    worst = $"from {origin} towards {target}";
+                }
+            }
+        }
+
+        Assert.True(longest < 0.02f, $"{longest:0.000} m through the stone {worst}.");
+
+        float Between(float min, float max) => min + ((float)random.NextDouble() * (max - min));
+    }
+
     [Fact]
     public void Sight_ends_in_the_stone_and_passes_through_the_opening()
     {
