@@ -65,6 +65,53 @@ public class BossPortalNeighbourTests
         Assert.True(highest >= Balance.Default.Bat.CircleHeightMin, $"highest at the wall below the impost: {highest}");
     }
 
+    [Theory]
+    [InlineData(2)]
+    [InlineData(6)]
+    [InlineData(9)]
+    [InlineData(12)]
+    public void A_bat_rising_below_the_impost_stops_under_it_and_circles_on(int seed)
+    {
+        // The player stands on the left plinth at the wall, 1.3 m beside the middle - right below the impost (x 8.28-9 m,
+        // 0.125 m out of the wall at 3.075-3.2 m). Whenever the bat screeches, he steps back off the plinth and jumps
+        // back onto it, so the bat dives past him and rises again at the wall, below the impost: there it must stop
+        // climbing before its body reaches the stone - and circle on from there instead of hanging in the air rising.
+        var world = World(seed, withBat: true);
+        var bat = Assert.Single(world.Bats);
+        var wall = DoorPlaneZ - BossPortalShape.HalfDepth;
+        var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
+        var onThePlinth = new Vector3(MiddleX - 1.3f, plinth.Top, wall - BodySizes.Player.Radius - 0.01f);
+        world.Player.PlaceAt(onThePlinth);
+        bat.PlaceAt(new Vector3(onThePlinth.X, BodySizes.Bat.HoverHeight, wall - 3f));
+        var back = new PlayerInput(new Vector2(0f, -1f), Vector2.Zero, false);
+        var jumpBack = new PlayerInput(new Vector2(0f, 1f), Vector2.Zero, true);
+        int dodge = 0, held = 0, rising = 0, longestRise = 0;
+        var before = (bat.State, bat.Position.Y);
+
+        for (var tick = 0; tick < 30 * Second; tick++)
+        {
+            world.Tick(dodge > 20 ? back : dodge > 0 ? jumpBack : PlayerInput.None);
+            dodge = world.Events.OfType<BatScreeched>().Any() ? 40 : Math.Max(0, dodge - 1);
+
+            Assert.False(
+                BossPortalStoneTests.InStone(world.Level, bat.Position, BodySizes.Bat.Radius, BodySizes.Bat.Height),
+                $"tick {tick}: {bat.State} at {bat.Position}");
+            if (before.State == BatState.Rising && bat.State == BatState.Circling && bat.Position.Y < before.Y + 1e-4f)
+            {
+                held++;
+            }
+
+            rising = bat.State == BatState.Rising ? rising + 1 : 0;
+            longestRise = Math.Max(longestRise, rising);
+            before = (bat.State, bat.Position.Y);
+        }
+
+        // It really was stopped below the impost at least once - the test would prove nothing otherwise - and never rose
+        // longer than a second at a time.
+        Assert.True(held >= 1, "the bat was never stopped below the impost");
+        Assert.True(longestRise < Second, $"the bat rose {longestRise} ticks at a time");
+    }
+
     [Fact]
     public void A_bat_that_dies_above_the_plinth_comes_to_lie_on_it()
     {
@@ -134,6 +181,48 @@ public class BossPortalNeighbourTests
                 Assert.False(portal.Contains(stone.At with { Y = y }), $"a stone falls into the stone at {stone.At} (height {y})");
             }
         }
+    }
+
+    [Fact]
+    public void Gorm_walking_along_the_wall_past_the_portal_stays_out_of_its_plinths_and_buttresses()
+    {
+        // The player walks into the boss room (it seals) and waits 1.1 m in front of its wall, 6 m to the left of the
+        // portal's middle; Gorm starts as far to the right. His way straight to the player runs along the wall: his body
+        // (0.9 m) reaches past the plinths (0.125 m out of the wall, 0.5 m high) to the buttresses (0.24 m out of it, up
+        // to 5.3 m) on the boss room's side. He only walks here: no attack reaches the player, else he would stand and
+        // strike from afar.
+        var walker = Tough with { Gorm = Tough.Gorm with { NearRange = 0f, FarRange = 0f } };
+        var world = World(1, withBat: false, walker);
+        var gorm = world.Gorm!;
+        world.Player.PlaceAt(new Vector3(MiddleX, 0f, 6f));
+        world.Tick(PressF);
+        for (var tick = 0; tick < 5 * Second && !world.Rooms[1].IsSealed; tick++)
+        {
+            world.Tick(Forward);
+        }
+
+        Assert.True(world.Rooms[1].IsSealed, "The boss room never sealed - the test would prove nothing.");
+        var wall = DoorPlaneZ + BossPortalShape.HalfDepth;
+        world.Player.PlaceAt(new Vector3(MiddleX - 6f, 0f, wall + 1.1f));
+        ((IEnemy)gorm).PlaceAt(new Vector3(MiddleX + 6f, 0f, wall + 1.1f));
+        var touched = 0;
+
+        for (var tick = 0; tick < 10 * Second; tick++)
+        {
+            world.Tick(PlayerInput.None);
+
+            Assert.False(
+                BossPortalStoneTests.InStone(world.Level, gorm.Position, BodySizes.Gorm.Radius, BodySizes.Gorm.Height),
+                $"tick {tick}: {gorm.State} at {gorm.Position}");
+            if (BossPortalStoneTests.InStone(world.Level, gorm.Position, BodySizes.Gorm.Radius + 0.05f, BodySizes.Gorm.Height))
+            {
+                touched++;
+            }
+        }
+
+        // He really brushed along the stone and got past it - the test would prove nothing otherwise.
+        Assert.True(touched > 0, "Gorm never came within 5 cm of the stone");
+        Assert.True(gorm.Position.X < MiddleX - BossPortalShape.HalfWidth, $"Gorm never got past the portal: {gorm.Position}");
     }
 
     [Fact]

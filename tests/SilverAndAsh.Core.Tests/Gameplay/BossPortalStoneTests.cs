@@ -60,6 +60,42 @@ public class BossPortalStoneTests
     }
 
     [Fact]
+    public void A_player_who_jumps_onto_the_plinth_lands_on_it_and_stands_there()
+    {
+        // Too high to step onto (0.5 m against a step of 0.4 m) - but a jump carries him up, and its top holds him. He
+        // jumps in front of the opening, 0.3 m beside the middle, drifting slowly (a tenth of full input) towards the left
+        // plinth, so he comes over it only on the way down: straight above it his head would reach the impost (3.075 m)
+        // at the top of the jump.
+        var world = World();
+        Run(world, PressF, 1);
+        var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
+        var start = new Vector3(MiddleX - 0.3f, 0f, DoorPlaneZ - plinth.AlongTo + 0.075f - Radius);
+        world.Player.PlaceAt(start);
+        Assert.False(InStone(world.Level, start, Radius, BodySizes.Player.Height));
+
+        var drift = new PlayerInput(new Vector2(0.1f, 0f), Vector2.Zero, false);
+        Run(world, drift with { Jump = true }, 1);
+        for (var tick = 0; tick < 2 * SimulationClock.TicksPerSecond && !world.Player.IsGrounded; tick++)
+        {
+            world.Tick(drift);
+
+            var at = world.Player.Position;
+            Assert.False(InStone(world.Level, at + new Vector3(0f, 0.01f, 0f), Radius, BodySizes.Player.Height - 0.01f), $"tick {tick}: {at}");
+        }
+
+        Assert.True(world.Player.IsGrounded, $"never landed: {world.Player.Position}");
+        Run(world, PlayerInput.None, 2 * SimulationClock.TicksPerSecond);
+
+        var standing = world.Player.Position;
+        Assert.Equal(plinth.Top, standing.Y, 0.001f);
+        Assert.True(world.Player.IsGrounded);
+        Assert.InRange(MiddleX - standing.X, plinth.AcrossFrom - Radius + 0.01f, plinth.AcrossTo + Radius);
+        Assert.False(InStone(world.Level, standing + new Vector3(0f, 0.01f, 0f), Radius, BodySizes.Player.Height - 0.01f));
+        Run(world, PlayerInput.None, SimulationClock.TicksPerSecond);
+        Assert.Equal(standing, world.Player.Position);
+    }
+
+    [Fact]
     public void A_player_who_strafes_at_a_jamb_in_the_doorway_stops_at_the_opening()
     {
         var world = World();
