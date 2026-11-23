@@ -92,7 +92,7 @@ Aus **Windows PowerShell 5.1** über die Bash von Git for Windows (einfache Anf�
 Aufbau: `tools/gegenprobe.sh [optionen] <datei> <suchen> <ersetzen> <testfilter>`
 
 - `<suchen>` wird wörtlich gesucht und muss **genau einmal** vorkommen (`--all`: jede Stelle; `--regex`: Perl-Ausdruck). Die Quelldateien haben CRLF-Zeilenenden: Ein Suchtext über mehrere Zeilen findet wörtlich nichts (das Skript bricht dann mit „not found“ ab); dafür `--regex` nehmen und die Zeilen mit `\r?\n` verbinden.
-- `<ersetzen>` wird wörtlich eingesetzt. Mit `--regex` setzen `$1`, `$2` … oder `${1}` die Gruppen (Klammern) aus `<suchen>` ein; `\$` schreibt ein einfaches `$`, `\\` einen einfachen Backslash (Issue #604). Verweist `<ersetzen>` auf eine Gruppe, die es nicht gibt, bricht das Skript vor dem Kontrolllauf mit Exit-Code `2` ab. Beispiel – dieselbe Probe wie oben, der Anfang der Zeile bleibt per `${1}` stehen:
+- `<ersetzen>` wird wörtlich eingesetzt. Mit `--regex` setzen `$1`, `$2` … oder `${1}` die Gruppen (Klammern) aus `<suchen>` ein; `$0` den ganzen Treffer, eine nicht getroffene Gruppe gibt leeren Text; `\$` schreibt ein einfaches `$`, `\\` einen einfachen Backslash, jeder andere Backslash bleibt stehen (`"\n"` bleibt `"\n"`) (Issue #604). Verweist `<ersetzen>` auf eine Gruppe, die es nicht gibt, bricht das Skript vor dem Kontrolllauf mit Exit-Code `2` ab. Beispiel – dieselbe Probe wie oben, der Anfang der Zeile bleibt per `${1}` stehen:
 
   ```
   tools/gegenprobe.sh --regex src/SilverAndAsh.Core/Gameplay/GameWorld.cs \
@@ -100,6 +100,8 @@ Aufbau: `tools/gegenprobe.sh [optionen] <datei> <suchen> <ersetzen> <testfilter>
   ```
 
   Aus PowerShell 5.1 `<ersetzen>` in einfache Anführungszeichen setzen, sonst ersetzt PowerShell `$1` selbst. Klassen wie `[(]` und `[.]` statt `\(` und `\.` sind dort sicherer, weil Backslashes beim Weiterreichen an `bash.exe` verloren gehen können.
+
+  Den Ersetzungsschritt erledigt `tools/gegenprobe-replace.pl`. Der Selbsttest `tools/gegenprobe.tests.sh` (Git Bash, ohne dotnet, wenige Sekunden) prüft ihn an kleinen Dateien: wörtlicher Modus, `$1`, `${1}`, `$0`, `\n`, `\$`, `\\`, nicht getroffene und fehlende Gruppe, `--all`, CRLF. Nach jeder Änderung an einem der beiden Skripte laufen lassen; Exit-Code `0` heißt alles bestanden.
 - `<testfilter>` ist ein Klassen- oder Testnamen-Teil (wird zu `FullyQualifiedName~<filter>`) oder ein vollständiger Filter für `dotnet test`, wenn er `=`, `~`, `|`, `&` oder `!` enthält.
 - `--project <pfad>` wählt ein anderes Testprojekt (Standard `tests/SilverAndAsh.Core.Tests`), `--name <text>` den Namen in der Ausgabe, `--help` zeigt die Hilfe.
 
@@ -107,7 +109,7 @@ Was man kaputt macht: nicht nur eine Bedingung entfernen (`&& player.IsDead` anh
 
 Ablauf und Schutz:
 
-1. **Nur ein Lauf je Arbeitsordner** (Issue #604): Läuft im selben Arbeitsordner schon eine Gegenprobe, bricht ein zweiter Lauf sofort mit Exit-Code `2` und der Meldung „another gegenprobe is already running in this working folder“ ab – sonst hielte er die gerade kaputte Datei für das Original. Proben also nacheinander starten; verschiedene Worktrees stören sich nicht. Die Sperre ist der Ordner `gegenprobe.lock` im Git-Ordner des Arbeitsordners (bei einem Worktree `.git/worktrees/<name>/`), `git status` zeigt sie nicht. Das Skript entfernt sie am Ende, auch bei Strg+C. Bleibt sie nach einem harten Abbruch liegen, erkennt der nächste Lauf am fehlenden Prozess, dass sie veraltet ist, und übernimmt sie.
+1. **Nur ein Lauf je Arbeitsordner** (Issue #604): Läuft im selben Arbeitsordner schon eine Gegenprobe, bricht ein zweiter Lauf sofort mit Exit-Code `2` und der Meldung „another gegenprobe is already running in this working folder“ ab – sonst hielte er die gerade kaputte Datei für das Original. Proben also nacheinander starten; verschiedene Worktrees stören sich nicht. Die Sperre ist der Ordner `gegenprobe.lock` im Git-Ordner des Arbeitsordners (bei einem Worktree `.git/worktrees/<name>/`), `git status` zeigt sie nicht. Das Skript entfernt sie am Ende, auch bei Strg+C. Bleibt sie nach einem harten Abbruch liegen, erkennt der nächste Lauf am fehlenden Prozess, dass sie veraltet ist, und übernimmt sie. Hat inzwischen ein anderes Programm dieselbe Prozessnummer bekommen, greift die Sperre weiter: Läuft sicher keine Gegenprobe, den Ordner aus der Meldung löschen (`rm -rf '<pfad>'`), dann neu starten.
 2. Bei **unsauberem Arbeitsordner** startet das Skript nicht – sonst könnte das Zurücksetzen fremde Änderungen treffen. Vorher committen.
 3. **Kontrolllauf** ohne Änderung: Die gefilterten Tests müssen existieren und grün sein.
 4. Die Stelle wird ersetzt, die Tests laufen noch einmal; rote Tests werden mit Namen aufgezählt.

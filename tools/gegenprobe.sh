@@ -9,7 +9,7 @@
 #   <file>         file to change, relative to the repository root (e.g. src/SilverAndAsh.Core/Gameplay/GameWorld.cs)
 #   <search>       text to find - taken literally (no regex) unless --regex is given
 #   <replace>      text to put in its place - literal; with --regex, $1, $2 ... or ${1} insert the groups of
-#                  <search> (\$ writes a plain $, \\ a plain \)
+#                  <search> (\$ writes a plain $, \\ a plain \, every other backslash stays as it is)
 #   <test filter>  a class or test name part (becomes FullyQualifiedName~<filter>),
 #                  or a full dotnet test filter expression if it contains = ~ | & or !
 #
@@ -68,6 +68,7 @@ case "$filter" in
     *) filter="FullyQualifiedName~$filter" ;;
 esac
 
+tools="$(cd "$(dirname "$0")" && pwd)" || exit 2
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "gegenprobe: not inside a git repository" >&2; exit 2; }
 cd "$root" || exit 2
 
@@ -101,9 +102,12 @@ lock="$(git rev-parse --absolute-git-dir)/gegenprobe.lock"
 if ! mkdir -- "$lock" 2>/dev/null; then
     other="$(cat -- "$lock/pid" 2>/dev/null)"
     if [ -n "$other" ] && ! kill -0 "$other" 2>/dev/null; then
-        # The run that left the lock is gone (killed hard, machine restarted): take the lock over.
-        echo "gegenprobe: removing the stale lock of run $other, which is no longer running" >&2
-        rm -rf -- "$lock"
+        # The run that left the lock is gone (killed hard, machine restarted): take the lock over. Read the number
+        # once more right before deleting: if another run has just taken the stale lock over, it is its lock now.
+        if [ "$(cat -- "$lock/pid" 2>/dev/null)" = "$other" ]; then
+            echo "gegenprobe: removing the stale lock of run $other, which is no longer running" >&2
+            rm -rf -- "$lock"
+        fi
         if ! mkdir -- "$lock" 2>/dev/null; then
             echo "gegenprobe: another run took the lock just now - wait until it has finished" >&2
             exit 2
@@ -111,7 +115,8 @@ if ! mkdir -- "$lock" 2>/dev/null; then
     else
         echo "gegenprobe: another gegenprobe is already running in this working folder (process ${other:-unknown})." >&2
         echo "   Wait until it has finished and start the probes one after the other." >&2
-        echo "   Lock: $lock" >&2
+        echo "   If no gegenprobe is running at all (its process number was given to another program), delete" >&2
+        echo "   the lock folder: rm -rf '$lock'" >&2
         exit 2
     fi
 fi
@@ -129,8 +134,11 @@ if ! git ls-files --error-unmatch -- "$file" >/dev/null 2>&1; then
     exit 2
 fi
 
-if [ "$regex" = 1 ]; then pattern='$ENV{GEGENPROBE_SEARCH}'; else pattern='\Q$ENV{GEGENPROBE_SEARCH}\E'; fi
-hits="$(perl -0777 -ne "\$c = 0; \$c++ while /$pattern/g; print \$c" -- "$file")"
+# The replacement step (count, change) is tools/gegenprobe-replace.pl; tools/gegenprobe.tests.sh checks it.
+modes=()
+[ "$regex" = 1 ] && modes+=(--regex)
+[ "$all" = 1 ] && modes+=(--all)
+hits="$(perl "$tools/gegenprobe-replace.pl" "${modes[@]}" --count "$file")" || exit 2
 if [ "$hits" = 0 ]; then
     echo "gegenprobe: '$GEGENPROBE_SEARCH' not found in $file - nothing to change" >&2
     exit 2
@@ -145,24 +153,8 @@ backup="$work/original"
 cp -- "$file" "$backup"
 
 # The changed file is made before the control run, so a wrong <replace> (a group <search> does not have) stops at
-# once. With --regex, fill() puts the groups into <replace> ($1, ${1}; \$ and \\ for plain characters); without
-# --regex the replacement stays literal.
-if [ "$all" = 1 ]; then flags=g; else flags=; fi
-if [ "$regex" = 1 ]; then replacement='fill($&, @{^CAPTURE})'; else replacement='$ENV{GEGENPROBE_REPLACE}'; fi
-perl -0777 -pe '
-    sub fill {
-        my @groups = @_;
-        my $text = $ENV{GEGENPROBE_REPLACE};
-        $text =~ s{\\(.)|\$\{(\d+)\}|\$(\d+)}{defined $1 ? $1 : group(\@groups, defined $2 ? $2 : $3)}gse;
-        return $text;
-    }
-    sub group {
-        my ($groups, $n) = @_;
-        die "gegenprobe: <replace> uses \$$n, but <search> has only " . $#$groups . " group(s)\n" if $n > $#$groups;
-        return defined $groups->[$n] ? $groups->[$n] : "";
-    }
-    s/'"$pattern/$replacement/e$flags"'
-' -- "$file" > "$work/changed-file" || exit 2
+# once.
+perl "$tools/gegenprobe-replace.pl" "${modes[@]}" "$file" > "$work/changed-file" || exit 2
 if cmp -s -- "$work/changed-file" "$backup"; then
     echo "gegenprobe: the change did not apply (<replace> gives the same text)" >&2
     exit 2
