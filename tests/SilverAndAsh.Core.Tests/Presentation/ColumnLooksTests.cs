@@ -85,6 +85,91 @@ public class ColumnLooksTests
         Assert.Equal([column], restarted.LevelAsBuilt.Columns);
         Assert.Equal(ColumnLook.Intact, fresh.Of(column, restarted.Ticks));
         Assert.Empty(fresh.Broken);
+
+        // The old one would still show it broken - Program must make a new one on every restart (RestartViewsTests).
+        Assert.NotEqual(ColumnStage.Intact, looks.Of(column, restarted.Ticks).Stage);
+    }
+
+    [Fact]
+    public void Two_columns_struck_by_the_same_attacks_break_shortly_one_after_the_other_and_each_shows_its_own_stage_and_fall()
+    {
+        // Issue #611: two columns of the hall between Gorm and the player, at different distances from Gorm - his shock
+        // wave and his chain reach the nearer one first, so its last blow and its break come a few ticks earlier.
+        Column[] columns = [Column.AtCell(2, 7), Column.AtCell(4, 4)];
+        var world = GormWorld(LevelParser.Parse(GormMap).WithColumns(columns));
+        var looks = new ColumnLooks();
+        Enter(world, looks);
+
+        var attack = 0;
+        var hits = columns.ToDictionary(column => column, _ => 0);
+        var lastBlowIn = new Dictionary<Column, int>();
+        var firstStriker = new Dictionary<Column, Vector3>();
+        var brokeAt = new Dictionary<Column, long>();
+        for (var tick = 0; tick < 180 * Second && brokeAt.Count < columns.Length; tick++)
+        {
+            world.Tick(PlayerInput.None);
+            Read(world, looks);
+            foreach (var gameEvent in world.Events)
+            {
+                switch (gameEvent)
+                {
+                    case GormSlammed or GormSwingStarted:
+                        attack++;
+                        break;
+                    case ColumnHit hit:
+                        hits[hit.Column] = hit.Hits;
+                        lastBlowIn[hit.Column] = attack;
+                        firstStriker.TryAdd(hit.Column, world.Gorm!.Position);
+                        break;
+                    case ColumnBroke broke:
+                        brokeAt[broke.Column] = world.Ticks;
+                        break;
+                }
+            }
+
+            AssertOwnLooks(columns, looks, world.Ticks, hits, brokeAt);
+        }
+
+        Assert.True(brokeAt.Count == columns.Length, $"Not both columns broke: blows {string.Join(", ", hits.Values)}.");
+        Assert.Equal(lastBlowIn[columns[0]], lastBlowIn[columns[1]]);
+        Assert.True(brokeAt[columns[0]] < brokeAt[columns[1]], $"The nearer column broke at {brokeAt[columns[0]]}, the farther at {brokeAt[columns[1]]}.");
+        Assert.Equal(columns, looks.Broken);
+
+        // Each turned towards where Gorm stood at its own first blow - two columns, two sides.
+        foreach (var column in columns)
+        {
+            Assert.Equal(ColumnBreakLook.YawToward(column.Centre, firstStriker[column]), looks.Of(column, world.Ticks).Yaw);
+        }
+
+        Assert.NotEqual(looks.Of(columns[0], world.Ticks).Yaw, looks.Of(columns[1], world.Ticks).Yaw);
+
+        // Both falls, tick by tick, until the later one lies too: each counts from its own break.
+        while (world.Ticks - brokeAt[columns[1]] < ColumnBreakLook.SwapTick + 5)
+        {
+            world.Tick(PlayerInput.None);
+            Read(world, looks);
+            AssertOwnLooks(columns, looks, world.Ticks, hits, brokeAt);
+        }
+    }
+
+    // Every column shows what it has taken itself: its blows before its break, its own fall after it.
+    private static void AssertOwnLooks(Column[] columns, ColumnLooks looks, long now, Dictionary<Column, int> hits, Dictionary<Column, long> brokeAt)
+    {
+        foreach (var column in columns)
+        {
+            var look = looks.Of(column, now);
+            if (brokeAt.TryGetValue(column, out var broke))
+            {
+                var since = (int)(now - broke);
+                Assert.Equal(since < ColumnBreakLook.SwapTick ? ColumnStage.Falling : ColumnStage.Broken, look.Stage);
+                Assert.Equal(since, look.TicksSinceBreak);
+            }
+            else
+            {
+                Assert.Equal(ColumnBreakLook.StageOf(hits[column], HitsToBreak), look.Stage);
+                Assert.Null(look.TicksSinceBreak);
+            }
+        }
     }
 
     [Fact]

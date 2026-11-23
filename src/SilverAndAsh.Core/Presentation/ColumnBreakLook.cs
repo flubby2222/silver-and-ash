@@ -161,7 +161,7 @@ public static class ColumnBreakLook
     }
 
     /// <summary>The point piece <paramref name="piece"/> (order of <see cref="FallPieces"/>) turns about, in file space - as the file has it.</summary>
-    public static Vector3 PiecePivot(int piece)
+    internal static Vector3 PiecePivot(int piece)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(piece);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(piece, ColumnFallTable.Parts.Count);
