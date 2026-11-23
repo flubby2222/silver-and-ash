@@ -96,6 +96,76 @@ public class BossPortalStoneTests
     }
 
     [Fact]
+    public void A_player_who_jumps_on_the_plinth_below_the_impost_bumps_his_head_and_stays_on_his_line()
+    {
+        // Issue #635: he stands on the left plinth at the wall, 1.3 m beside the middle - right below the impost (1-1.72 m
+        // beside the middle, 0.125 m out of the wall at 3.075-3.2 m), clear of the buttress beside it. His jump would
+        // carry his head (2.3 m on the plinth) up to 3.6 m. The impost is a ceiling: his head stops at its bottom, he
+        // loses his upward speed there and comes down on the plinth again - he is not pushed away from the wall.
+        var world = World();
+        var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
+        var impost = BossPortalShape.Blocks.Single(block => block.Top == BossPortalShape.Spring);
+        var onThePlinth = new Vector3(MiddleX - 1.3f, plinth.Top, DoorPlaneZ - BossPortalShape.HalfDepth - Radius - 0.01f);
+        world.Player.PlaceAt(onThePlinth);
+        Run(world, PlayerInput.None, 10);
+        Assert.True(world.Player.IsGrounded);
+        Assert.Equal(onThePlinth, world.Player.Position);
+
+        world.Tick(PlayerInput.None with { Jump = true });
+        var highest = 0f;
+        var bumped = 0;
+        for (var tick = 0; tick < 2 * SimulationClock.TicksPerSecond && !world.Player.IsGrounded; tick++)
+        {
+            var before = world.Player.Velocity.Y;
+            world.Tick(PlayerInput.None);
+
+            var at = world.Player.Position;
+            Assert.Equal(onThePlinth.X, at.X, 0.0001f);
+            Assert.Equal(onThePlinth.Z, at.Z, 0.0001f);
+            Assert.True(at.Y + BodySizes.Player.Height <= impost.Bottom + 0.0001f, $"tick {tick}: his head at {at.Y + BodySizes.Player.Height}");
+            Assert.False(InStone(world.Level, at + new Vector3(0f, 0.01f, 0f), Radius, BodySizes.Player.Height - 0.02f), $"tick {tick}: {at}");
+            if (before > 0f && world.Player.Velocity.Y <= 0f && at.Y + BodySizes.Player.Height > impost.Bottom - 0.001f)
+            {
+                bumped++;
+            }
+
+            highest = MathF.Max(highest, at.Y);
+        }
+
+        // His head really reached the impost and stopped rising there - the test would prove nothing otherwise.
+        Assert.Equal(1, bumped);
+        Assert.Equal(impost.Bottom - BodySizes.Player.Height, highest, 0.0001f);
+        Assert.True(world.Player.IsGrounded, $"never landed: {world.Player.Position}");
+        Assert.Equal(onThePlinth, world.Player.Position);
+    }
+
+    [Fact]
+    public void A_player_who_jumps_beside_the_impost_rises_to_the_full_height_of_his_jump()
+    {
+        // Fehlerzweig of issue #635: the same jump in front of the plinth, a metre out from the wall - nothing over his
+        // head. The impost is a ceiling only above it: here he rises higher than its bottom.
+        var world = World();
+        var impost = BossPortalShape.Blocks.Single(block => block.Top == BossPortalShape.Spring);
+        var inFront = new Vector3(MiddleX - 1.3f, 0f, DoorPlaneZ - BossPortalShape.HalfDepth - Radius - 1f);
+        world.Player.PlaceAt(inFront);
+        Run(world, PlayerInput.None, 10);
+
+        world.Tick(PlayerInput.None with { Jump = true });
+        var highest = 0f;
+        for (var tick = 0; tick < 2 * SimulationClock.TicksPerSecond && !world.Player.IsGrounded; tick++)
+        {
+            world.Tick(PlayerInput.None);
+            highest = MathF.Max(highest, world.Player.Position.Y);
+        }
+
+        // From the floor his head rises above the impost's bottom (3.075 m) - beside it, not below it.
+        Assert.True(highest + BodySizes.Player.Height > impost.Bottom, $"his head rose only to {highest + BodySizes.Player.Height}");
+        Assert.True(world.Player.IsGrounded);
+        Assert.Equal(inFront.X, world.Player.Position.X, 0.0001f);
+        Assert.Equal(inFront.Z, world.Player.Position.Z, 0.0001f);
+    }
+
+    [Fact]
     public void A_player_who_strafes_at_a_jamb_in_the_doorway_stops_at_the_opening()
     {
         var world = World();

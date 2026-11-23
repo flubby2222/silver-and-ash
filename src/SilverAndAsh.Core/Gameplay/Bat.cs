@@ -298,13 +298,14 @@ public sealed class Bat : IEnemy
     /// Climbs or sinks to <paramref name="height"/> (the bottom of its body) - unless its body would reach into stone
     /// there: the walls only stop it on the ground plane at its present height (<see cref="CharacterCollision.Move"/>),
     /// so a bat beside a boss portal would rise into the impost that juts out above it (issue #627). Then it keeps its
-    /// height for this tick. False if it was held.
+    /// height for this tick. False if it was held. A column or a wall it is pressed against does not hold it: they
+    /// stand in its way at every height alike (issue #635).
     /// </summary>
     private bool ClimbClearOfStone(Level level, float height)
     {
         var there = Position with { Y = height };
         if (height != Position.Y
-            && CharacterCollision.Overlaps(level, there, BodySizes.Bat.Radius, BodySizes.Bat.Height, FlyingStepHeight))
+            && CharacterCollision.BlockedAtHeight(level, there, BodySizes.Bat.Radius, BodySizes.Bat.Height, FlyingStepHeight))
         {
             return false;
         }

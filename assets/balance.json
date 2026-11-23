@@ -127,6 +127,7 @@
     "silverMax": 150,
     "equipmentVampiricChance": 0.2,     // he always leaves a piece of equipment: Vampiric in 20 % of cases, else Royal ...
     "extraSilver": 100,                 // ... or this much silver if the loot pool has nothing of that tier or above
+    "vialDistance": 1.2,                // m in front of him his blood vial falls (turned round him where something is in the way)
     "stairsRiseTime": 3,                // s the spiral staircase takes to rise after his death
     "nearRange": 8,                     // m: this close he uses hammer or chain swing (50/50) ...
     "farRange": 30,                     // ... up to this far he throws his chain. Never the same attack twice in a row

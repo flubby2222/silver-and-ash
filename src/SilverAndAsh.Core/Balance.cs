@@ -804,6 +804,12 @@ public sealed record GormBalance
     /// <summary>Silver he leaves instead of the equipment when the loot pool has nothing of that tier or above (the worth of a Vampire's Chest).</summary>
     public int ExtraSilver { get; init; } = 100;
 
+    /// <summary>
+    /// How far in front of him (metres) his blood vial falls when he dies. Where stone, a column, a wall or the staircase
+    /// is in the way there, it turns round him at this distance (issue #608, #635).
+    /// </summary>
+    public float VialDistance { get; init; } = 1.2f;
+
     /// <summary>Seconds the spiral staircase takes to rise after his death.</summary>
     public float StairsRiseTime { get; init; } = 3f;
 
