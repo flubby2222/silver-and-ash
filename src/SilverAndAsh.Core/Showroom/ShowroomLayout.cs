@@ -333,6 +333,8 @@ public sealed class ShowroomLayout
         level = level.WithWallCutouts(deepNiches.Select(deep => deep.Cutout));
         level = level.WithColumns(Enum.GetValues<ShowroomPart>().Select(part => ColumnOf(part, bottom)));
         labels.AddRange(Enum.GetValues<ShowroomPart>().Select(part => ColumnLabelOf(part, bottom)));
+        var columnStages = BreakingColumns(bottom);
+        labels.AddRange(columnStages.Select(BreakingColumnLabel));
 
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
         return new ShowroomLayout(
@@ -345,6 +347,7 @@ public sealed class ShowroomLayout
                 CeilingArches = arches,
                 WallNiches = niches,
                 Portcullises = portcullises,
+                Columns = columnStages,
             },
             labels, sections, placed);
     }
@@ -380,6 +383,41 @@ public sealed class ShowroomLayout
         var column = ColumnOf(part, bottom);
         return new ShowroomLabel(ColumnLabel(part), new Vector3(column.X, 2.6f, column.Z - Column.Radius - 0.6f));
     }
+
+    /// <summary>The label in front of a breaking column of the hall in <paramref name="stage"/> (issue #601).</summary>
+    public static string BreakingColumnLabel(ColumnStage stage) => stage switch
+    {
+        ColumnStage.Intact => "Intact",
+        ColumnStage.Hit1 => "1 blow",
+        ColumnStage.Hit2 => "2 blows",
+        ColumnStage.Broken => "Broken",
+        _ => "Breaking",
+    };
+
+    // The breaking column (issue #601) in the hall's room half: its four stages along the back row, the side of the blows
+    // towards the passage one comes from, and one breaking in a loop in the front row, falling east into the free cells.
+    // Only pictures (ExhibitColumn): the level's column in the middle stays the only real one.
+    private static List<ExhibitColumn> BreakingColumns(int bottom)
+    {
+        var (x0, z0, _, z1) = HallOf(ShowroomPart.Room, bottom);
+        ColumnStage[] stages = [ColumnStage.Intact, ColumnStage.Hit1, ColumnStage.Hit2, ColumnStage.Broken];
+        int[] cells = [x0, x0 + 1, x0 + 3, x0 + 4];
+        var columns = new List<ExhibitColumn>();
+        for (var i = 0; i < stages.Length; i++)
+        {
+            var spot = Column.AtCell(cells[i], z1);
+            var passage = new Vector3(spot.X, 0f, spot.Z - 10f);
+            columns.Add(new ExhibitColumn(stages[i], new Vector3(spot.X, 0f, spot.Z), ColumnBreakLook.YawToward(spot.Centre, passage)));
+        }
+
+        var looping = Column.AtCell(x0 + 2, z0);
+        columns.Add(new ExhibitColumn(ColumnStage.Falling, new Vector3(looping.X, 0f, looping.Z), ColumnBreakLook.YawToward(looping.Centre, new Vector3(looping.X + 10f, 0f, looping.Z))));
+        return columns;
+    }
+
+    // On the side of the passage, low enough to stay under the hall's ceiling.
+    private static ShowroomLabel BreakingColumnLabel(ExhibitColumn column) =>
+        new(BreakingColumnLabel(column.Stage), column.Position + new Vector3(0f, 2.6f, -Column.Radius - 0.6f));
 
     /// <summary>
     /// The door cell of the portcullis of <paramref name="section"/> (issue #540): in the north wall of the room part,

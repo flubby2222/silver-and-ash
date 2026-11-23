@@ -71,6 +71,14 @@ public sealed record ExhibitWallNiche(TextureVariant Variant, WallNicheSize Size
 public sealed record ExhibitPortcullis(TextureVariant Variant, int X, int Z, RoomSide Side, Vector3 Position);
 
 /// <summary>
+/// A breaking column standing in the showroom's hall in <paramref name="Stage"/>, on the floor at
+/// <paramref name="Position"/>, turned by <paramref name="Yaw"/> (issue #601, <see cref="ColumnBreakLook"/>). With
+/// <see cref="ColumnStage.Falling"/> it breaks and stands again in a loop (<see cref="SilverAndAsh.Core.Showroom.ShowroomColumnCycle"/>).
+/// Only a picture: no body, no collision, no cover - the level's own columns are the real ones.
+/// </summary>
+public sealed record ExhibitColumn(ColumnStage Stage, Vector3 Position, float Yaw);
+
+/// <summary>
 /// What the showroom (issue #283) puts into a world besides its level, doors, chests and enemies. A world with exhibits
 /// is a showroom (<see cref="GameWorld.IsShowroom"/>): its enemies are exhibits that neither move, attack nor take damage,
 /// and its staircase stands from the start but cannot be climbed. A normal game never has exhibits.
@@ -100,4 +108,7 @@ public sealed record ShowroomExhibits(
 
     /// <summary>Portcullises in the north walls of the room parts, one per section (issue #540).</summary>
     public IReadOnlyList<ExhibitPortcullis> Portcullises { get; init; } = [];
+
+    /// <summary>The stages of the breaking column in the hall's room half, and one breaking in a loop (issue #601).</summary>
+    public IReadOnlyList<ExhibitColumn> Columns { get; init; } = [];
 }

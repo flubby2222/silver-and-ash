@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.Showroom;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Photos;
@@ -111,6 +112,8 @@ public static class MotionScenes
             {
                 Ticks = SimulationClock.SecondsToTicks(studio.Balance.Gorm.StairsRiseTime) + 40,
             }),
+        new("column-breaking", "The breaking column of the showroom from 6 m: it stands at Z2, breaks, falls apart in its dust and lies as Z3 (issue #601).",
+            BeforeBreakingColumn, FrameEvery: 3),
     ];
 
     /// <summary>The clip called <paramref name="name"/>, or null.</summary>
@@ -135,6 +138,22 @@ public static class MotionScenes
                 PhotoStudio.Face(world.Player, gorm.Position + new Vector3(0f, 1.5f, 0f));
                 return new PhotoSetup(world) { Ticks = 120 };
             });
+
+    // The showroom's breaking column (issue #601) from 6 m, from inside the hall north of the line it falls along (the
+    // passage in the south has a lower ceiling that would cut off its top), past the hall's middle column; in full
+    // height, without hands or titles. From a few ticks before the break of its loop (ShowroomColumnCycle; a scene's
+    // world starts at tick 0) until its dust has settled.
+    private static PhotoSetup BeforeBreakingColumn(PhotoStudio studio)
+    {
+        var layout = ShowroomLayout.Build();
+        var column = layout.Exhibits.Columns.First(column => column.Stage == ColumnStage.Falling);
+        var target = column.Position + new Vector3(2f, 2.6f, 0f);
+        var (x, z) = Level.ToGrid(column.Position.X, column.Position.Z);
+        var world = layout.NewWorldAt(x, z, target, studio.Balance);
+        world.Player.PlaceAt(column.Position + new Vector3(2.5f, 0f, 5.5f));
+        PhotoStudio.Face(world.Player, target);
+        return new PhotoSetup(world) { Ticks = ShowroomColumnCycle.StandTicks - 6 + ColumnDust.Ticks, ShowsOnlyTheWorld = true };
+    }
 
     // The door of `kind` opened by the player (F, as in the game, before the first tick - see PhotoStudio.DoorHall):
     // its whole swing and a little rest after it.

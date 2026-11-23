@@ -316,6 +316,7 @@ static void RunGame(
         var pickupView = new PickupView();
         var impactMarks = new ImpactMarks();
         var wallBreakView = new WallBreakView();
+        var columnLooks = new ColumnLooks();
         // Weapons: the designer's models once they are loaded (after the shader, below), boxes until then.
         Func<IWeaponView> newWeaponView = () => new WeaponView();
         IWeaponView weaponView = newWeaponView();
@@ -327,6 +328,9 @@ static void RunGame(
 
         // Test display of a photo scene (issue #433): what a shot can hit, as wires over the figures.
         var shotBodiesShown = false;
+
+        // A close look of a photo scene (issue #601): no hands, no level name, no showroom labels over the world.
+        var onlyTheWorldShown = false;
 
         // Title screen first; during a run Esc opens the menu (the world stands still - alone).
         var onTitle = true;
@@ -382,11 +386,25 @@ static void RunGame(
             pickupView = new PickupView();
             impactMarks = new ImpactMarks();
             wallBreakView = new WallBreakView();
+            columnLooks = new ColumnLooks();
             weaponView = newWeaponView();
             damageFeedback = new DamageFeedback();
             screenEffects = new ScreenEffects(player.Id);
             equipmentCard = new EquipmentCard();
             hud?.Reset();
+        }
+
+        // A photo or clip scene starts like a run, with what its screen shows besides the world.
+        void StartScene(PhotoSetup setup)
+        {
+            StartFresh(setup.World);
+            shotBodiesShown = setup.ShowsShotBodies;
+            onlyTheWorldShown = setup.ShowsOnlyTheWorld;
+            showroomLabelsShown = !onlyTheWorldShown;
+            if (onlyTheWorldShown)
+            {
+                levelNameSeconds = 0f;
+            }
         }
 
         // Choosing a level-up bonus: is the window open (X), and which boon is waiting for the next tick?
@@ -482,6 +500,9 @@ static void RunGame(
         // The portcullises (issues #540, #558): in the doors of the arenas, and in the showroom falling and lifting in a loop.
         using var portcullisView = PortcullisView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
+        // The free-standing columns and their stages of breaking (issue #601); a stage without its model keeps the stand-in.
+        using var columnView = ColumnView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
         newWeaponView = () => new WeaponView(weaponModels, levelShader);
@@ -511,6 +532,7 @@ static void RunGame(
                 projectileView.OnEvent(gameEvent);
                 impactMarks.OnEvent(gameEvent);
                 wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position, gameWorld.Surfaces);
+                columnLooks.OnEvent(gameEvent, gameWorld.Ticks, gameWorld.Gorm?.Position);
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
                 screenEffects.OnEvent(gameEvent);
@@ -587,7 +609,7 @@ static void RunGame(
             portcullisView.Draw(
                 gameWorld.Showroom?.Portcullises ?? [], ShowroomGrateCycle.Height(gameWorld.Ticks, gameWorld.Balance.Grates),
                 viewCone, gameWorld.Surfaces, levelTextures, doorView);
-            ColumnView.Draw(gameWorld.LevelAsBuilt, viewCone);
+            columnView.Draw(gameWorld.LevelAsBuilt, columnLooks, gameWorld.Showroom?.Columns ?? [], gameWorld.Ticks, viewCone);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
@@ -619,9 +641,15 @@ static void RunGame(
             impactMarks.Draw();
             wallBreakView.Draw(doorView);
 
+            // The column's dust is see-through: the level shader would make it solid (alpha 1), so it is drawn without
+            // it - ColumnView lights and fogs it itself (issue #601).
+            levelShader.EndFigures();
+            columnView.DrawDust(eye);
+            levelShader.BeginFigures();
+
             // Last: the weapons in the hands, in front of everything else - not in the test display, where they would
             // hide the figure (issue #433).
-            if (!shotBodiesShown)
+            if (!shotBodiesShown && !onlyTheWorldShown)
             {
                 weaponView.Draw(camera.Position, camera.Target - camera.Position);
             }
@@ -771,8 +799,7 @@ static void RunGame(
 
                 var suffix = photos.Compare ? $"-look{look.Number}" : string.Empty;
                 var setup = scene.Build(studio);
-                StartFresh(setup.World);
-                shotBodiesShown = setup.ShowsShotBodies;
+                StartScene(setup);
                 if (setup.IsModelProbe)
                 {
                     // The single target of the model probe: the loaded model, as in the game.
@@ -868,8 +895,7 @@ static void RunGame(
             foreach (var clip in photos.Clips)
             {
                 var setup = clip.Build(studio);
-                StartFresh(setup.World);
-                shotBodiesShown = setup.ShowsShotBodies;
+                StartScene(setup);
                 var clipFolder = Path.Combine(photos.Folder, clip.Name);
                 Directory.CreateDirectory(clipFolder);
                 foreach (var old in Directory.EnumerateFiles(clipFolder, "frame-*.png"))

@@ -322,6 +322,7 @@ public static class PhotoScenes
         .. WallNicheScenes(),
         .. PortcullisScenes(),
         .. ColumnScenes(),
+        .. BreakingColumnScenes(),
         new("equipment-rifle", "The rifle (Forged) lying in the showroom, 0.8 m away: \"[F] Take Rifle (Forged)\" in steel blue (issue #317).",
             studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle }))),
         .. EquipmentTierScenes(),
@@ -564,6 +565,36 @@ public static class PhotoScenes
                 $"The free-standing column of the showroom under the {height} m ceiling, from 4 m in front (issue #539).",
                 studio => new PhotoSetup(BeforeColumn(studio, index)));
         }
+    }
+
+    // The stages of the breaking column (issue #601) in the showroom's hall, each from 6 m and from 10 m in front of the
+    // side of the blows, a little to the side, looking at the height of the break (at the stump for the broken one).
+    private static IEnumerable<PhotoScene> BreakingColumnScenes()
+    {
+        foreach (var stage in new[] { ColumnStage.Intact, ColumnStage.Hit1, ColumnStage.Hit2, ColumnStage.Broken })
+        {
+            foreach (var metres in new[] { 6, 10 })
+            {
+                yield return new(
+                    $"column-{stage.ToString().ToLowerInvariant()}-{metres}m",
+                    $"The breaking column of the showroom: {ShowroomLayout.BreakingColumnLabel(stage)}, from {metres} m (issue #601).",
+                    studio => new PhotoSetup(BeforeBreakingColumn(studio, stage, metres)));
+            }
+        }
+    }
+
+    private static GameWorld BeforeBreakingColumn(PhotoStudio studio, ColumnStage stage, float metres)
+    {
+        var layout = ShowroomLayout.Build();
+        var column = layout.Exhibits.Columns.First(column => column.Stage == stage);
+        var target = column.Position + new Vector3(0f, stage == ColumnStage.Broken ? 0.6f : 2.2f, 0f);
+        var (x, z) = Level.ToGrid(column.Position.X, column.Position.Z);
+        var world = layout.NewWorldAt(x, z, target, studio.Balance);
+        // Half a metre aside, towards the middle of the row: the outer ones stand next to the hall's wall.
+        var middle = layout.Exhibits.Columns.Where(other => other.Stage != ColumnStage.Falling).Average(other => other.Position.X);
+        world.Player.PlaceAt(column.Position + new Vector3(0.5f * MathF.Sign(middle - column.Position.X), 0f, -metres));
+        PhotoStudio.Face(world.Player, target);
+        return world;
     }
 
     private static GameWorld BeforeColumn(PhotoStudio studio, int index)

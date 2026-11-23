@@ -122,6 +122,8 @@ public class PhotoSceneTests
             "portcullis-half-room", "portcullis-half-closet", "portcullis-half-far",
             "portcullis-open-room", "portcullis-open-closet", "portcullis-open-far",
             "column-corridor", "column-room",
+            "column-intact-6m", "column-intact-10m", "column-hit1-6m", "column-hit1-10m",
+            "column-hit2-6m", "column-hit2-10m", "column-broken-6m", "column-broken-10m",
             "wall-niche-deep-a-corridor", "wall-niche-deep-a-room", "wall-niche-deep-b-corridor", "wall-niche-deep-b-room",
             "wall-niche-deep-c-corridor", "wall-niche-deep-c-room",
             "wall-niche-shelf-a-corridor", "wall-niche-shelf-a-room", "wall-niche-shelf-b-corridor", "wall-niche-shelf-b-room",
