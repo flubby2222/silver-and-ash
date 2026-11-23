@@ -60,3 +60,9 @@ Entwurf a. Er liest sich im Nebel am besten, fügt sich mit Spitzbogen und Fiale
 - Vorraum 4 x 5 Zellen (8 x 10 m, 6 m hoch): Tuer mittig an der 8-m-Seite, das 4-m-Portal belegt die zwei mittleren Zellen, die 2-m-Oeffnung liegt ueber der Zellgrenze. Eingang (Gang 2 x 4 m, 3,5 m hoch) mittig an der 10-m-Seite, also im rechten Winkel zur Tuer. Teleporter bei x = -1, z = 7,5 (vom Tuermittelpunkt aus), Platz fuer Spaeteres.
 - Blaetter: blatt-bossraum-tuer-549-r2.png, vorraum-549-r2.png; Einzelbilder in ansichten/r2_*.
 - Offen: Eingang und Tuer liegen an angrenzenden Waenden; gegenueber ginge nur bei gleich langen Seiten (4 x 4 oder 5 x 5).
+
+## Runde 3 (nur Entwurf a)
+
+- Drei gleiche Beschlaege je Fluegel bei y = 1,1 / 1,95 / 2,8 m (Abstand 0,85 m), keiner im Bogen. Trittblech wie r2 (0,05 bis 0,42 m); die hoehere Fassung aus Runde 1 (0,08 bis 0,95 m) liegt zum Vergleich auf dem Blatt.
+- Teleporter im Vorraum um 158 Grad gedreht: die Schauseite (zwischen den Hoernern) zeigt zur Raummitte (0 | 5); Standort (-1 | 7,5) unveraendert.
+- Blaetter: blatt-bossraum-tuer-549-r3.png, vorraum-549-r3.png.

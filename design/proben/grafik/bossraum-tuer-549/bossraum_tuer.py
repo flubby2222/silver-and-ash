@@ -475,14 +475,15 @@ def leaves_a():
             for y in STRAP_Y:
                 strap(part, side * hwL, side, y, 0.8, 0.075, z0, z1)
             xa, xb = sorted((side * 0.12, side * (hwL - 0.12)))
-            ext(part, [(xa, 0.05), (xb, 0.05), (xb, 0.42), (xa, 0.42)], z0, z1, "plate")
+            ext(part, [(xa, PLATE[0]), (xb, PLATE[0]), (xb, PLATE[1]), (xa, PLATE[1])], z0, z1, "plate")
             xa, xb = sorted((side * 0.0, side * 0.08))
             ext(part, [(xa, 0.5), (xb, 0.5), (xb, 4.3), (xa, 4.3)], z0, z1, "iron")
         out.append(part)
     return out
 
 
-STRAP_Y = (0.8, 1.5, 2.2, 2.9)      # gleicher Abstand 0,7 m; das oberste Band liegt unter dem Bogenansatz (3,2 m)
+STRAP_Y = (1.1, 1.95, 2.8)          # Runde 3: drei gleiche Baender, Abstand 0,85 m; das oberste liegt unter dem Bogenansatz (3,2 m)
+PLATE = (0.05, 0.42)                # Trittblech (Fassung r2); Fassung r1 war (0.08, 0.95)
 
 
 def leaves_c():
@@ -664,7 +665,7 @@ def player(x, z=1.6):
             ((x + 0.22, 0.9, z - 0.08), (x + 0.34, 1.5, z + 0.08)), ((x - 0.13, 1.5, z - 0.13), (x + 0.13, 1.8, z + 0.13))]
 
 
-def import_glb(coll, path, offset, scale=1.0, prefix="imp"):
+def import_glb(coll, path, offset, scale=1.0, prefix="imp", rot=0.0):
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
     objs = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
@@ -678,7 +679,7 @@ def import_glb(coll, path, offset, scale=1.0, prefix="imp"):
                         img = n.image
         mw = o.matrix_world.copy()
         o.parent = None
-        o.matrix_world = Matrix.Translation(G(V(*offset))) @ Matrix.Scale(scale, 4) @ mw
+        o.matrix_world = Matrix.Translation(G(V(*offset))) @ Matrix.Rotation(math.radians(rot), 4, "Z") @ Matrix.Scale(scale, 4) @ mw
         o.data.materials.clear()
         o.data.materials.append(pass_material(prefix + "_" + o.name, img))
         for c in list(o.users_collection):
@@ -985,7 +986,7 @@ def scene_a(side, swing):
     return b
 
 
-def step_r2blatt():
+def step_r2blatt(tag="r2"):
     panels = []
     for side, swing, label, sub in ((1, 0, "a  vorn, zu", "von der Vorraum-Seite"), (-1, 0, "a  hinten, zu", "aus dem Bossraum"),
                                     (1, 90, "a  vorn, offen", "Fluegel schwingen in den Bossraum"),
@@ -1010,12 +1011,24 @@ def step_r2blatt():
     text(img, "a  Groesse", 10, 8, 24)
     text(img, "Spieler 1,8 m, Gorm 3,2 m", 10, 616, 14, (190, 185, 200))
     panels.append(img)
-    png(hcat(panels), os.path.join(HERE, "blatt-bossraum-tuer-549-r2.png"))
+    if tag == "r3":
+        global PLATE
+        keep, cmp_ = PLATE, []
+        for pl, lab in (((0.08, 0.95), "Platte r1 (0,87 m hoch)"), ((0.05, 0.42), "Platte r2 (0,37 m hoch), bleibt")):
+            PLATE = pl
+            im = shoot(scene_a(1, 0), (-0.6, 1.0, 3.2), (-0.6, 0.9, 0.0), 62, (400, 320), "spiel")
+            text(im, lab, 10, 8, 18)
+            cmp_.append(im)
+        PLATE = keep
+        panels.append(vcat(cmp_))
+    png(hcat(panels), os.path.join(HERE, f"blatt-bossraum-tuer-549-{tag}.png"))
     for n, im in zip(("vorn_zu", "hinten_zu", "vorn_offen", "hinten_offen"), panels):
-        png(im, os.path.join(ANSICHTEN, f"r2_a_{n}.png"))
+        png(im, os.path.join(ANSICHTEN, f"{tag}_a_{n}.png"))
 
 
 TELE_POS = (-1.0, 0.0, 7.5)
+# Schauseite des Teleporters = +z des Modells; Blender-Drehung so, dass sie zur Raummitte (0 | 5) zeigt
+TELE_ROT = math.degrees(math.atan2(-(5.0 - TELE_POS[2]), 0.0 - TELE_POS[0])) + 90.0
 
 
 def room2(coll, cut=False, ceiling=True, swing=0.0):
@@ -1034,7 +1047,7 @@ def room2(coll, cut=False, ceiling=True, swing=0.0):
     o += add_floor(coll, -4, 4, 0, 10, 0.0, "floor")
     if ceiling:
         o += add_floor(coll, -4, 4, 0, 10, TOP, "ceiling")
-    o += import_glb(coll, TELEPORTER, TELE_POS, prefix="tele")
+    o += import_glb(coll, TELEPORTER, TELE_POS, prefix="tele", rot=TELE_ROT)
     return o
 
 
@@ -1079,9 +1092,9 @@ def plan2(size=(640, 640), scale=40):
     return img
 
 
-def step_r2vorraum():
+def step_r2vorraum(tag="r2"):
     ent = shoot(lambda c: room2(c), (4.4, 1.6, 5.0), (-3.0, 1.8, 2.4), 70, (854, 480), "spiel")
-    png(ent, os.path.join(ANSICHTEN, "r2_vorraum_vom_eingang.png"))
+    png(ent, os.path.join(ANSICHTEN, f"{tag}_vorraum_vom_eingang.png"))
     tur = shoot(lambda c: room2(c), (3.2, 1.6, 9.5), (0.0, 2.6, 0.0), 70, (640, 480), "spiel")
     top = shoot(lambda c: room2(c, cut=True, ceiling=False), (13.0, 13.0, 14.0), (-0.5, 1.0, 4.0), 48, (640, 480), "hell")
     row1 = hcat([titled(ent, "Blick vom Eingang (Spielaufloesung, 70 Grad, Augen 1,6 m)", 18),
@@ -1091,11 +1104,11 @@ def step_r2vorraum():
 
     def padw(a):
         return a if a.shape[1] == w else np.concatenate([a, np.tile(PAPER, (a.shape[0], w - a.shape[1], 1))], 1)
-    png(vcat([padw(row1), padw(row2)]), os.path.join(HERE, "vorraum-549-r2.png"))
+    png(vcat([padw(row1), padw(row2)]), os.path.join(HERE, f"vorraum-549-{tag}.png"))
 
 
 if __name__ == "__main__":
     steps = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     steps = steps or ["modelle", "ansichten", "blaetter", "vorraum"]
     for s in steps:
-        {"modelle": step_modelle, "ansichten": step_ansichten, "blaetter": step_blaetter, "vorraum": step_vorraum, "r2blatt": step_r2blatt, "r2vorraum": step_r2vorraum}[s]()
+        {"modelle": step_modelle, "ansichten": step_ansichten, "blaetter": step_blaetter, "vorraum": step_vorraum, "r2blatt": step_r2blatt, "r2vorraum": step_r2vorraum, "r3blatt": lambda: step_r2blatt("r3"), "r3vorraum": lambda: step_r2vorraum("r3")}[s]()
