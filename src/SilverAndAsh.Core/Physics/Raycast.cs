@@ -109,6 +109,11 @@ public static class Raycast
             return side;
         }
 
+        if (PortalSideNormal(level, free, blocked) is { } stone)
+        {
+            return stone;
+        }
+
         var (freeX, freeZ) = Level.ToGrid(free.X, free.Z);
         var (blockedX, blockedZ) = Level.ToGrid(blocked.X, blocked.Z);
         if (freeX != blockedX)
@@ -141,6 +146,19 @@ public static class Raycast
 
         var outward = new Vector2(free.X, free.Z) - column.Centre;
         return outward.LengthSquared() > 1e-12f ? Vector3.Normalize(new Vector3(outward.X, 0f, outward.Y)) : null;
+    }
+
+    // The outward direction of the stone of a boss portal (issue #598), if the ray went into it and nothing else: a face
+    // of a jamb or block, or the underside of an arch.
+    private static Vector3? PortalSideNormal(Level level, Vector3 free, Vector3 blocked)
+    {
+        if (level.PortalAt(blocked) is not { } portal)
+        {
+            return null;
+        }
+
+        var cell = level.CellAt(blocked);
+        return cell.IsSolid || blocked.Y < cell.FloorHeight || blocked.Y > cell.CeilingHeight ? null : portal.SideNormal(free, blocked);
     }
 
     /// <summary>
