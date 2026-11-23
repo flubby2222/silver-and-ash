@@ -505,8 +505,7 @@ public sealed class GameWorld
     private bool StandsOn(Player player, Teleporter teleporter) =>
         teleporter.Reaches(player.Position, Balance.Teleporters.Radius, Balance.Teleporters.Height);
 
-    private bool IsInSealedRoom(Player player) =>
-        _roomOfCell.TryGetValue(Level.ToGrid(player.Position.X, player.Position.Z), out var room) && room.IsSealed;
+    private bool IsInSealedRoom(Player player) => SealedRoomOf(player) is not null;
 
     // Issue #480, trap 3: in co-op another player's fight may have sealed the room a teleporter stands in.
     private bool IsInSealedRoom(Teleporter teleporter) =>
@@ -947,17 +946,44 @@ public sealed class GameWorld
         }
     }
 
-    // A door that shuts pushes every enemy in its cell into the arena - nobody is hurt or caught in it. No player can
-    // stand there: a player enters a room only with the whole body out of its doorways. Every kind of enemy, through
-    // the one list of them (issue #572).
+    // The sealed room a player stands in (by the cell under their feet), or null.
+    private RoomState? SealedRoomOf(Player player) =>
+        _roomOfCell.TryGetValue(Level.ToGrid(player.Position.X, player.Position.Z), out var room) && room.IsSealed ? room : null;
+
+    // Issue #567, decision of the human: whoever is in the boss room when it seals is in - no way back until the fight
+    // is won, also not in the ticks before the hard stop of the slam, while the leaves still swing and the door does
+    // not block yet (it blocks only from the stop on, issue #566 - for sight, shots and enemies that stays so). A
+    // player who stood in a sealed room at the start of the tick and now reaches into one of its doorways that does
+    // not block yet is held back on the threshold, as by a wall - walking, jumping or dashing alike. Only a player who
+    // was inside is held: one who comes from outside (later in co-op, ADR 0003) is not. Nothing moves a body as far
+    // as through a whole door cell (2 m) in one tick - a dash covers well under half a metre - so touching the doorway
+    // is caught before passing it. Grated doors block from the sealing tick on, so for them this never does anything.
+    private void KeepInSealedRoom(Player player, RoomState? room)
+    {
+        if (room is null)
+        {
+            return;
+        }
+
+        var radius = BodySizes.Player.Radius;
+        foreach (var door in room.DoorIds.Select(id => _doors[id]).Where(door => !door.Blocks && Overlaps(door, player.Position, radius)))
+        {
+            player.HoldAt(OnThreshold(room, door, player.Position, radius));
+        }
+    }
+
+    // A door that shuts pushes every enemy in its cell into the arena - nobody is hurt or caught in it. A player who
+    // seals the room is out of its doorways (a player enters a room only with the whole body out of them) and is kept
+    // out of them until the fight ends (issue #567, KeepInSealedRoom). Every kind of enemy, through the one list of
+    // them (issue #572).
     //
     // PROVISIONAL (decision of the lead, issue #572; the human judges it at the play test): this pulls in strangers,
     // too - an enemy from the corridor or the start room that followed a player into the doorway ends up in the arena.
     // It does not count for the arena (not in room.Enemies), so it does not hold up the clearing; but it fights in there.
     // The other way (pushed back to where it came from) would leave it waiting outside the grate.
     //
-    // Issue #566: the boss door shuts only at the hard stop of its slam, so by then a player may have stepped back into its
-    // doorway - every player there is pushed into the boss room the same way.
+    // Issue #566: the boss door shuts only at the hard stop of its slam. A player who was inside cannot step back into its
+    // doorway (issue #567); every other player there by then is pushed into the boss room the same way (co-op, #584).
     private void PushOutOf(Door door, RoomState arena)
     {
         foreach (var enemy in Enemies.Where(enemy => Overlaps(door, enemy.Body.Position, enemy.Body.Radius)))
@@ -975,25 +1001,26 @@ public sealed class GameWorld
     // the doorway's width, so it never ends up in a wall.
     private static Vector3 PushedInto(RoomState arena, Door door, Vector3 at, float radius)
     {
+        var threshold = OnThreshold(arena, door, at, radius);
+        return PassesAlongZ(door)
+            ? threshold with { X = Math.Clamp(at.X, door.BoxMin.X + radius, door.BoxMax.X - radius) }
+            : threshold with { Z = Math.Clamp(at.Z, door.BoxMin.Z + radius, door.BoxMax.Z - radius) };
+    }
+
+    // Just out of the door cell along the passage, on the arena's side; across the passage it stays where it was - as a
+    // wall stops a body, which slides along it (issue #567: past the edge of the doorway the threshold goes on as wall).
+    private static Vector3 OnThreshold(RoomState arena, Door door, Vector3 at, float radius)
+    {
         const float Gap = 0.01f;
-        var alongZ = door.Side is RoomSide.North or RoomSide.South;
         var towardsB = door.Side is RoomSide.South or RoomSide.East;
         var high = (door.RoomB == arena.Index) == towardsB;
-        if (alongZ)
-        {
-            return at with
-            {
-                X = Math.Clamp(at.X, door.BoxMin.X + radius, door.BoxMax.X - radius),
-                Z = high ? door.BoxMax.Z + radius + Gap : door.BoxMin.Z - radius - Gap,
-            };
-        }
-
-        return at with
-        {
-            X = high ? door.BoxMax.X + radius + Gap : door.BoxMin.X - radius - Gap,
-            Z = Math.Clamp(at.Z, door.BoxMin.Z + radius, door.BoxMax.Z - radius),
-        };
+        return PassesAlongZ(door)
+            ? at with { Z = high ? door.BoxMax.Z + radius + Gap : door.BoxMin.Z - radius - Gap }
+            : at with { X = high ? door.BoxMax.X + radius + Gap : door.BoxMin.X - radius - Gap };
     }
+
+    // True if the passage through the door runs along Z (a door in a north or south wall).
+    private static bool PassesAlongZ(Door door) => door.Side is RoomSide.North or RoomSide.South;
 
     // A cleared boss room lets the spiral staircase rise in its middle (decision record 0007). A room is cleared only
     // once, and there is one boss room - so it rises only once. Climbing it (F) wins the run.
@@ -1675,8 +1702,10 @@ public sealed class GameWorld
             choosing.Choose(boon, _events);
         }
 
+        var sealedIn = SealedRoomOf(Player);
         Player.Tick(input);
         _events.AddRange(Player.Events);
+        KeepInSealedRoom(Player, sealedIn);
 
         // A weapon dropped from the inventory lies where the player stood.
         foreach (var dropped in Player.Events.OfType<WeaponDropped>())

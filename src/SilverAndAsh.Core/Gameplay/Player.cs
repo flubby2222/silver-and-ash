@@ -104,6 +104,24 @@ public sealed partial class Player
     }
 
     /// <summary>
+    /// A rule of the world holds the player back as a wall would (issue #567: the doorway of a sealed room): the feet go
+    /// to <paramref name="feet"/> on the ground plane, the height stays, and the speed against the push is gone - across
+    /// it, and up and down (a jump goes on), the player keeps moving. The picture slides there from the last tick.
+    /// </summary>
+    internal void HoldAt(Vector3 feet)
+    {
+        var push = new Vector3(feet.X - Position.X, 0f, feet.Z - Position.Z);
+        Position = Position with { X = feet.X, Z = feet.Z };
+
+        // Only speed into the push is taken away; with no push (already in place) nothing points against it.
+        var against = Vector3.Dot(Velocity, push);
+        if (against < 0f)
+        {
+            Velocity -= push * (against / push.LengthSquared());
+        }
+    }
+
+    /// <summary>
     /// A teleporter carries the player: at rest with their feet on <paramref name="feet"/> - a chain pull, a dash and
     /// a dodge end, so nothing carries the player on afterwards (issue #436).
     /// The previous position moves along, so the picture jumps instead of sliding through the walls.
