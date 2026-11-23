@@ -73,7 +73,14 @@ public class SoundPackTests
 
         // Issue #375: a skill point (level up) - the strike with choir from the listening test of #372.
         { new LevelUp(0, 2), SoundKind.SkillPoint, ["skillpunkt.wav"] },
+
+        // Issue #605: the breaking column - the blow before the last one, and the break.
+        { new ColumnHit(Pillar, HitsToBreak - 1, HitsToBreak), SoundKind.ColumnHit2, ["saeule-treffer-stufe2.wav"] },
+        { new ColumnBroke(Pillar), SoundKind.ColumnBroke, ["saeule-bruch.wav"] },
     };
+
+    private static readonly Column Pillar = Column.AtCell(3, 6);
+    private static readonly int HitsToBreak = Balance.Default.Columns.HitsToBreak;
 
     [Fact]
     public void Several_skill_points_in_one_tick_play_the_sound_once_and_the_next_tick_again()
@@ -209,6 +216,11 @@ public class SoundPackTests
 
         // Issue #375: and the skill point.
         Assert.Empty(new SoundCues(1).For([new LevelUp(0, 2)], SoundPack.Old));
+
+        // Issue #605: and the breaking column.
+        Assert.Empty(new SoundCues(1).For(
+            [new ColumnHit(Pillar, 1, HitsToBreak), new ColumnHit(Pillar, HitsToBreak - 1, HitsToBreak), new ColumnBroke(Pillar)],
+            SoundPack.Old));
     }
 
     [Fact]

@@ -107,6 +107,12 @@ public sealed class SoundPack
         // Issue #375: not from the pack, but the strike with choir from the listening test of issue #372
         // (tools/audio/skillpunkt.py). Several level ups in one tick play it once, like every other set.
         [SoundKind.SkillPoint] = ["skillpunkt.wav"],
+
+        // Issue #605: the breaking column, from round 4 of its listening test (tools/audio/saeulenklang.py). Stage 2 is
+        // on purpose the brighter take, stage 1 and the break the duller one - the human's choice, not to be evened out.
+        [SoundKind.ColumnHit1] = ["saeule-treffer-stufe1.wav"],
+        [SoundKind.ColumnHit2] = ["saeule-treffer-stufe2.wav"],
+        [SoundKind.ColumnBroke] = ["saeule-bruch.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>
