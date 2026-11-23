@@ -25,7 +25,7 @@ public enum GhoulState
 /// (or is hit), then crawls after them along the shortest way (<see cref="Pathfinder"/>), draws back and strikes.
 /// At 0 health it dies - its body lies on the ground for a moment, then it is gone.
 /// </summary>
-public sealed class Ghoul : ITarget
+public sealed class Ghoul : IEnemy
 {
     private readonly GhoulBalance _ghoul;
     private readonly float _gravity;
@@ -112,8 +112,13 @@ public sealed class Ghoul : ITarget
     /// <summary>Where it is drawn: its position, sunk into the floor while it is hidden or rising.</summary>
     public Vector3 ShownPosition => Position + Emergence.Offset;
 
-    /// <summary>Moves it while it is still hidden (issue #445: it comes out elsewhere, away from the players).</summary>
+    /// <summary>
+    /// Moves it while it is still hidden (issue #445: it comes out elsewhere, away from the players) or out of a doorway
+    /// that shuts (issue #558).
+    /// </summary>
     internal void PlaceAt(Vector3 position) => Position = position;
+
+    void IEnemy.PlaceAt(Vector3 position) => PlaceAt(position);
 
     public bool IsHittable => !IsDead && Emergence.IsPresent;
 

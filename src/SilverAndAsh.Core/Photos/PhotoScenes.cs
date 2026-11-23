@@ -64,7 +64,9 @@ public static class PhotoScenes
         new("door-level-seed2-boss", "The boss door of level 0 with seed 2, from 4 to 6 m, closed (issue #245).",
             studio => new PhotoSetup(studio.BeforeDoor(2, DoorKind.Boss))),
         new("door-level-barred", "An open door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #558).",
-            studio => BarredDoor(studio)),
+            studio => BarredDoor(studio, open: true)),
+        new("door-level-barred-shut", "A closed door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #572).",
+            studio => BarredDoor(studio, open: false)),
         new("ghoul-4m", "A ghoul 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('G', 4))),
         new("ghoul-10m", "A ghoul 10 m away in a bare hall.",
@@ -734,8 +736,8 @@ public static class PhotoScenes
 
     // The combat room of room-combat, the player inside it 4 to 6 m before one of its doors with a grate (along its
     // passage, seeing it), looking at it: the room seals on the first tick as in the game, and the picture is taken once
-    // that grate is all the way down (issue #558).
-    private static PhotoSetup BarredDoor(PhotoStudio studio)
+    // that grate is all the way down (issue #558). `open`: the door open as the one the player came by, or closed (#572).
+    private static PhotoSetup BarredDoor(PhotoStudio studio, bool open)
     {
         var world = studio.InRoom(RoomKind.Combat);
         var level = world.Level;
@@ -753,11 +755,15 @@ public static class PhotoScenes
         PhotoStudio.Face(world.Player, (door.BoxMin + door.BoxMax) / 2f);
 
         // As the door the player came in by: open, its leaves swung away - so the grate is seen, not the closed leaves.
-        door.Open(world.Player.Position);
+        if (open)
+        {
+            door.Open(world.Player.Position);
+        }
+
         return new PhotoSetup(world)
         {
             Ticks = 600,
-            StopWhen = _ => door.IsBarred && door.GrateHeight <= 0f && door.OpenFraction >= 1f,
+            StopWhen = _ => door.IsBarred && door.GrateHeight <= 0f && (!open || door.OpenFraction >= 1f),
         };
     }
 
