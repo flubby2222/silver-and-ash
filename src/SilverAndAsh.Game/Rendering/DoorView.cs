@@ -22,7 +22,13 @@ namespace SilverAndAsh.Game.Rendering;
 /// blocks you), an open one is gone. Wooden doors are brown planks with dark bands; the boss door is almost black with
 /// bone-white skulls and a red glow; a locked door is dark iron with rivets and a brass padlock on both faces; the
 /// cracks are a few dark lines. A barred door shows iron bars on both faces of the doorway, with or without a model -
-/// unless it has a portcullis (issue #558) and <see cref="PortcullisView"/> draws that.
+/// unless it has a portcullis (issue #558) and <see cref="PortcullisView"/> draws that, and never the boss door, whose
+/// leaves bar it (<see cref="GratePose.DrawsPlaceholderBars"/>).
+/// </para>
+/// <para>
+/// The boss door is the boss portal (issue #568): one 6 m high pointed arch with two 1 m leaves across both cells of the
+/// door, drawn once in their middle (<see cref="DoorFrameLook.CellsWide"/>). A boss door of one cell has no room for it
+/// and gets the placeholder.
 /// </para>
 /// </summary>
 internal sealed class DoorView : IDisposable
@@ -41,11 +47,12 @@ internal sealed class DoorView : IDisposable
     // Room for the parts of the largest model (the cracked wall: two plates, two heaps of debris, a chunk).
     private const int MostParts = 5;
 
-    // Every door model, open leaves and arena grate included, lies within x +-1 m and z +-1.125 m of the cell's middle
-    // (the plates of the frame stand 1/8 m out of the wall) and 0..3.5 m above its floor: its farthest corner is 2.31 m
-    // from the middle at half height. A little more, for safety.
-    private const float PortalHeight = 3.5f;
-    private const float BoundingRadius = 2.5f;
+    // Every door model, open leaves and arena grate included, lies within its doorway's width, from its floor to its
+    // ceiling, and at most 0.3 m in front of the wall on either face (the plates of the door frames 1/8 m, the buttresses
+    // of the boss portal, issue #568, 0.3 m). Its farthest corner from the middle of the box at half height: 2.31 m for a
+    // door of one cell, 3.83 m for the boss portal. A little more, for safety.
+    private const float OutOfWall = 0.3f;
+    private const float Safety = 0.2f;
 
     private static readonly int PanelFront = Index(CrackedWallLook.PanelFront);
     private static readonly int PanelBack = Index(CrackedWallLook.PanelBack);
@@ -144,42 +151,41 @@ internal sealed class DoorView : IDisposable
         {
             var size = door.BoxMax - door.BoxMin;
             var centre = (door.BoxMin + door.BoxMax) / 2f;
-            // A door of several cells (issue #566) reaches farther from its middle.
-            var reach = BoundingRadius + ((MathF.Max(size.X, size.Z) - Level.CellSize) / 2f);
-            if (!view.MaySee(new Vector3(centre.X, door.BoxMin.Y + (PortalHeight / 2f), centre.Z), reach))
+
+            // Facing: the passage runs along Z for north/south doors, along X for east/west ones.
+            var alongX = door.Side is RoomSide.East or RoomSide.West;
+            var width = alongX ? size.Z : size.X;
+            var depth = alongX ? size.X : size.Z;
+
+            // A door of several cells (issue #566) and a high one (the boss portal, #568) reach farther from their middle.
+            var reach = new Vector3(width / 2f, size.Y / 2f, (depth / 2f) + OutOfWall).Length() + Safety;
+            if (!view.MaySee(centre, reach))
             {
                 continue;
             }
 
-            // Facing: the passage runs along Z for north/south doors, along X for east/west ones.
-            var alongX = door.Side is RoomSide.East or RoomSide.West;
             var turn = Matrix4x4.CreateRotationY(DoorPose.Yaw(door.Side));
-            var width = alongX ? size.Z : size.X;
-            var depth = alongX ? size.X : size.Z;
 
             if (door.Kind == DoorKind.Cracked)
             {
                 DrawCrackedWall(door, turn, centre, size.Y, depth, surfaces, textures);
             }
-            else if (_models.TryGetValue(door.Kind, out var model) && door.Cells.All(cell => Frames(door, cell, surfaces, textures) is ({ }, { })))
+            else if (_models.TryGetValue(door.Kind, out var model)
+                && DoorFrameLook.Fits(door.Kind, door.Cells.Count)
+                && Frames(door, surfaces, textures) is ({ } front, { } back))
             {
-                // The model stands on the floor in the middle of each cell, in its frame. The boss door's two cells
-                // (issue #566) each show one until its own wide portal comes (issue #568).
-                foreach (var cell in door.Cells)
-                {
-                    var (front, back) = Frames(door, cell, surfaces, textures);
-                    var place = turn * Matrix4x4.CreateTranslation(
-                        (cell.X + 0.5f) * Level.CellSize, door.BoxMin.Y, (cell.Z + 0.5f) * Level.CellSize);
-                    DrawModel(model, door, place);
-                    DrawFrame(front!, back!, place);
-                }
+                // The model stands once on the floor in the middle of the doorway, in its frame - the boss portal
+                // (issue #568) across both cells of the boss door.
+                var place = turn * Matrix4x4.CreateTranslation(centre.X, door.BoxMin.Y, centre.Z);
+                DrawModel(model, door, place);
+                DrawFrame(front, back, place);
             }
             else
             {
                 DrawPlaceholder(door, turn * Matrix4x4.CreateTranslation(centre), width, size.Y, depth, seconds);
             }
 
-            if (door.IsBarred && !(door.HasGrate && gratesModelled))
+            if (GratePose.DrawsPlaceholderBars(door.Kind, door.IsBarred, door.HasGrate, gratesModelled))
             {
                 DrawGrate(turn * Matrix4x4.CreateTranslation(centre), width, size.Y, depth);
             }
@@ -219,10 +225,11 @@ internal sealed class DoorView : IDisposable
     }
 
     // The frame model for each face: the variant the level really draws there (a missing B or C falls back to A there,
-    // too), else variant A of the frame. Null for a face without any: then the whole door is the placeholder.
-    private (TexturedModel? Front, TexturedModel? Back) Frames(Door door, (int X, int Z) cell, SurfaceVariants surfaces, LevelTextures textures)
+    // too), else variant A of the frame. Null for a face without any: then the whole door is the placeholder. The boss
+    // portal takes the variants of the walls at its first cell - both its cells face the same two rooms.
+    private (TexturedModel? Front, TexturedModel? Back) Frames(Door door, SurfaceVariants surfaces, LevelTextures textures)
     {
-        var (front, back) = DoorFrameLook.Variants(surfaces, cell.X, cell.Z, door.Side);
+        var (front, back) = DoorFrameLook.Variants(surfaces, door.X, door.Z, door.Side);
         return (Frame(door.Kind, textures.Resolve(SurfaceKind.Wall, front)), Frame(door.Kind, textures.Resolve(SurfaceKind.Wall, back)));
     }
 

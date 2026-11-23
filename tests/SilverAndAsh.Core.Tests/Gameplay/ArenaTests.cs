@@ -85,6 +85,31 @@ public class ArenaTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_sealed_door_without_a_portcullis_keeps_its_placeholder_bars_until_the_room_is_cleared(bool gratesModelled)
+    {
+        // Issue #568 takes the placeholder bars from the boss door only: these wooden doors have no grate model, so the
+        // picture shows them barred - the open one the player came in by and the closed one alike.
+        var world = World();
+        bool Bars(int door) => SilverAndAsh.Core.Presentation.GratePose.DrawsPlaceholderBars(
+            world.Doors[door].Kind, world.Doors[door].IsBarred, world.Doors[door].HasGrate, gratesModelled);
+        Assert.False(Bars(DoorA));
+        Assert.False(Bars(DoorB));
+
+        Enter(world);
+        Assert.True(world.Doors[DoorA].IsOpen);
+        Assert.False(world.Doors[DoorB].IsOpen);
+        Assert.True(Bars(DoorA));
+        Assert.True(Bars(DoorB));
+
+        KillEverything(world);
+        Run(world, PlayerInput.None, 1);
+        Assert.False(Bars(DoorA));
+        Assert.False(Bars(DoorB));
+    }
+
     [Fact]
     public void Enemies_in_rooms_sleep_until_the_room_is_entered()
     {

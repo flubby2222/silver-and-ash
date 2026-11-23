@@ -383,6 +383,23 @@ public class GratePoseTests
         return t;
     }
 
+    [Theory]
+    [InlineData(DoorKind.Normal, true, false, false, true)]
+    [InlineData(DoorKind.Normal, true, false, true, true)]
+    [InlineData(DoorKind.Locked, true, false, true, true)]
+    [InlineData(DoorKind.Cracked, true, false, true, true)]
+    [InlineData(DoorKind.Normal, true, true, false, true)]
+    [InlineData(DoorKind.Normal, true, true, true, false)]
+    [InlineData(DoorKind.Normal, false, false, false, false)]
+    [InlineData(DoorKind.Boss, true, false, false, false)]
+    [InlineData(DoorKind.Boss, true, false, true, false)]
+    [InlineData(DoorKind.Boss, false, false, false, false)]
+    public void Placeholder_bars_stand_in_a_barred_doorway_without_a_drawn_portcullis_but_never_at_the_boss_door(
+        DoorKind kind, bool isBarred, bool hasGrate, bool gratesModelled, bool expected)
+    {
+        Assert.Equal(expected, GratePose.DrawsPlaceholderBars(kind, isBarred, hasGrate, gratesModelled));
+    }
+
     private static Dictionary<string, GlbPart> ReadParts(string file)
     {
         var path = RepositoryFiles.Find($"assets/models/{file}");

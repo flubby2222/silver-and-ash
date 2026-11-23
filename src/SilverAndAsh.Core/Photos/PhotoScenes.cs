@@ -63,6 +63,7 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeDoor(1, DoorKind.Normal))),
         new("door-level-seed2-boss", "The boss door of level 0 with seed 2, from 4 to 6 m, closed (issue #245).",
             studio => new PhotoSetup(studio.BeforeDoor(2, DoorKind.Boss))),
+        .. BossPortalScenes(),
         new("door-level-barred", "An open door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #558).",
             studio => BarredDoor(studio, open: true)),
         new("door-level-barred-shut", "A closed door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #572).",
@@ -685,6 +686,37 @@ public static class PhotoScenes
             new($"{file}-10m", $"A {name} 10 m away in a bare hall, closed: can its kind still be told apart (issue #245)?",
                 studio => new PhotoSetup(studio.DoorHall(kind, cells: 5))),
         ];
+    }
+
+    // The boss portal in the level (issue #568): from 6 m on both sides, closed and open, slammed shut from inside the boss
+    // room, and beside Gorm for its size. The antechamber from its entrance is room-antechamber.
+    private static PhotoScene[] BossPortalScenes() =>
+    [
+        new("boss-portal-front-6m", "The boss portal from the antechamber, 6 m away, closed (issue #568).",
+            studio => new PhotoSetup(studio.BeforeBossPortal(6f))),
+        new("boss-portal-front-6m-open", "The boss portal from the antechamber, 6 m away, opened with F and swung all the way into the boss room (issue #568).",
+            studio => new PhotoSetup(studio.BeforeBossPortal(6f, open: true))),
+        new("boss-portal-back-6m", "The boss portal from inside the boss room, 6 m away, closed - barred at once as the room seals (issue #568).",
+            studio => new PhotoSetup(studio.BeforeBossPortal(6f, fromBossRoom: true))),
+        new("boss-portal-back-6m-open", "The boss portal from inside the boss room, 6 m away, open, in the tick the room seals and the slam begins (issue #568).",
+            studio => new PhotoSetup(studio.BeforeBossPortal(6f, fromBossRoom: true, open: true))),
+        new("boss-portal-barred", "The boss portal from inside the boss room, 6 m away, slammed shut and barred: no placeholder bars (issue #568).",
+            studio => SlammedPortal(studio)),
+        new("boss-portal-gorm", "The open boss portal from the antechamber, 8 m away, Gorm asleep 2 m behind it: the size (issue #568).",
+            studio => new PhotoSetup(studio.BeforeBossPortal(8f, open: true, gormInDoorway: true))),
+    ];
+
+    // The open portal from inside the boss room: the room seals on the first tick, the leaves slam shut; the picture is
+    // taken in the tick they hit the stop and the door is barred - before Gorm's hook can pull the player away.
+    private static PhotoSetup SlammedPortal(PhotoStudio studio)
+    {
+        var world = studio.BeforeBossPortal(6f, fromBossRoom: true, open: true);
+        var door = world.Doors.Single(door => door.Kind == DoorKind.Boss);
+        return new PhotoSetup(world)
+        {
+            Ticks = world.Balance.Doors.BossCloseTicks,
+            StopWhen = _ => door.IsBarred && door.OpenFraction == 0f,
+        };
     }
 
     // The cracked wall in the level, its plates in the stone of the walls around (issue #246): does it sit in the wall

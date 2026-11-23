@@ -116,6 +116,36 @@ public class BossDoorTests
         Assert.False(door.Blocks);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void The_slammed_boss_door_never_shows_placeholder_bars(bool gratesModelled)
+    {
+        // Issue #568: no portcullis at the boss room and no coded bars in front of the portal - the leaves bar it. Tick
+        // by tick through the slam and past its hard stop, and on the back door nobody opened (barred at once).
+        var world = World();
+        var door = world.Doors[BossDoor];
+        var back = world.Doors[BackDoor];
+        Enter(world);
+        var barredTicks = 0;
+        for (var tick = 1; tick <= Doors.BossCloseTicks + 10; tick++)
+        {
+            foreach (var shown in new[] { door, back })
+            {
+                Assert.False(
+                    SilverAndAsh.Core.Presentation.GratePose.DrawsPlaceholderBars(shown.Kind, shown.IsBarred, shown.HasGrate, gratesModelled),
+                    $"tick {tick}: door {shown.Id} shows bars");
+            }
+
+            barredTicks += door.IsBarred ? 1 : 0;
+            world.Tick(PlayerInput.None);
+        }
+
+        // The doors really were barred all that while: the slammed one from its hard stop on, the other one throughout.
+        Assert.Equal(Doors.BossCloseTicks + 10 - Doors.BossShutTick + 1, barredTicks);
+        Assert.True(back.IsBarred);
+    }
+
     [Fact]
     public void A_boss_door_nobody_opened_is_barred_at_once_and_only_unbarred_when_the_room_is_cleared()
     {

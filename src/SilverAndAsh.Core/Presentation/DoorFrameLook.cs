@@ -8,6 +8,10 @@ namespace SilverAndAsh.Core.Presentation;
 /// arch field and the reveals continue the wall around them - plus the same tile as brighter dressed stone for the arch
 /// rings and the plates at the springing and the foot.
 /// <para>
+/// The boss portal (issue #568, tools/models/boss_portal.py) spans both cells of the boss door and is as high as the
+/// rooms it joins (<see cref="CellsWide"/>, <see cref="Height"/>); its origin lies in the middle of the two cells.
+/// </para>
+/// <para>
 /// The frame sits in the door's file space (origin on the floor in the middle of the cell, turned by
 /// <see cref="DoorPose.Yaw"/>) and never moves. Like a cracked wall (<see cref="CrackedWallLook"/>) its two faces look
 /// into different rooms, so each face is drawn from the file of its own variant: <see cref="Front"/> (the stone on the
@@ -26,6 +30,25 @@ public static class DoorFrameLook
 
     /// <summary>Whether a door of <paramref name="kind"/> stands in a stone frame: every kind but the cracked wall.</summary>
     public static bool HasFrame(DoorKind kind) => kind is DoorKind.Normal or DoorKind.Locked or DoorKind.Boss;
+
+    /// <summary>
+    /// How many cells side by side the model and frame of <paramref name="kind"/> fill: two for the boss portal (issue
+    /// #568, as wide as the boss door of issue #566), one for every other kind.
+    /// </summary>
+    public static int CellsWide(DoorKind kind) => kind == DoorKind.Boss ? 2 : 1;
+
+    /// <summary>
+    /// Whether the model of <paramref name="kind"/> fits a door of <paramref name="cells"/> cells: only a door exactly as
+    /// wide as the model. It stands once, on the floor in the middle of all its cells. A boss door of one cell (the
+    /// showroom, a hand-made level) would let the 4 m wide portal stick into the walls beside it - it gets the placeholder.
+    /// </summary>
+    public static bool Fits(DoorKind kind, int cells) => cells == CellsWide(kind);
+
+    /// <summary>
+    /// The height of the frame of <paramref name="kind"/>: the ceiling of its doorway cells
+    /// (<see cref="LevelGenerator.DoorCell"/>) - 3.5 m, the boss portal 6 m.
+    /// </summary>
+    public static float Height(DoorKind kind) => LevelGenerator.DoorCell(kind).CeilingHeight;
 
     /// <summary>The file of the frame of <paramref name="kind"/> for <paramref name="variant"/>, e.g. door_frame_boss_b.glb.</summary>
     public static string FileName(DoorKind kind, TextureVariant variant)

@@ -63,6 +63,15 @@ public static class GratePose
     private static readonly RigPart[] GrateParts = [new(Grate, null)];
     private static readonly RigPart[] GuideParts = [new(Guide, null)];
 
+    /// <summary>
+    /// Whether a door of <paramref name="kind"/> shows the coded placeholder bars on both faces of its doorway: only while
+    /// it is barred, and not if its portcullis model is drawn instead (<paramref name="hasGrate"/> and
+    /// <paramref name="gratesModelled"/>). The boss door never: its two heavy leaves slam shut and bar it themselves
+    /// (issue #568) - there is no portcullis at the boss room.
+    /// </summary>
+    public static bool DrawsPlaceholderBars(DoorKind kind, bool isBarred, bool hasGrate, bool gratesModelled) =>
+        isBarred && kind != DoorKind.Boss && !(hasGrate && gratesModelled);
+
     /// <summary>The parts of the grate model: the grate alone, fixed (it moves as a whole).</summary>
     public static IReadOnlyList<RigPart> Parts => GrateParts;
 
