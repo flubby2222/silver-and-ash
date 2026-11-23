@@ -132,6 +132,7 @@ public class PhotoSceneTests
             "wall-niche-candles", "wall-niche-candles-askew", "wall-niche-skulls", "wall-niche-skulls-askew",
             "boss-portal-front-6m", "boss-portal-front-6m-open", "boss-portal-back-6m", "boss-portal-back-6m-open",
             "boss-portal-barred", "boss-portal-gorm",
+            "bullet-impact-wall",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -272,6 +273,26 @@ public class PhotoSceneTests
         Assert.Equal(chosen, weapon.Kind);
         Assert.Equal(meleeInUse, readout.IsMeleeInUse);
         Assert.Equal(name == "hud-reload" ? 0 : weapon.MagazineSize, weapon.Rounds);
+    }
+
+    [Fact]
+    public void The_impact_scene_ends_its_shot_in_the_wall_close_by_while_the_spark_still_shows()
+    {
+        // Issue #609: the picture of the spark. The bullet must end in the wall behind the player, not in the dummy.
+        var setup = Built("bullet-impact-wall");
+        var impacts = new List<(BulletImpact Impact, int Tick)>();
+        var tick = 0;
+
+        setup.Run(() =>
+        {
+            impacts.AddRange(setup.World.Events.OfType<BulletImpact>().Select(impact => (impact, tick)));
+            tick++;
+        });
+
+        var (hit, at) = Assert.Single(impacts);
+        Assert.Equal(1f, hit.Normal.Z, 3);
+        Assert.InRange(Vector3.Distance(hit.Point, setup.World.Player.EyePosition), 2f, 4f);
+        Assert.True((setup.Ticks - at) / (float)SimulationClock.TicksPerSecond < 0.08f, "The spark (0.08 s) has to be still there.");
     }
 
     [Fact]
