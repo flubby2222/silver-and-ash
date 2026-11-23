@@ -89,6 +89,38 @@ public class BossPortalStoneTests
     }
 
     [Fact]
+    public void A_player_in_the_outer_reveal_at_the_hard_stop_is_pushed_into_the_opening_and_not_into_the_plinth()
+    {
+        // In co-op a second player can still stand in the doorway when the leaves stop. The outer reveal - 0.65 m into
+        // the boss room, 0.8 m beside the middle - is free of stone; clamped to the door box (2 m to either side)
+        // instead of the opening, the push would set the player into the plinth.
+        var world = World();
+        var door = world.Doors[0];
+        Run(world, PressF, 1);
+        for (var tick = 0; tick < 300 && !world.Rooms[1].IsSealed; tick++)
+        {
+            world.Tick(IntoTheOpening(world));
+        }
+
+        Assert.True(world.Rooms[1].IsSealed);
+        Assert.False(door.Blocks);
+        var inTheReveal = new Vector3(MiddleX - 0.8f, 0f, DoorPlaneZ + 0.65f);
+        Assert.False(CharacterCollision.Overlaps(world.Level, inTheReveal, Radius));
+        world.Player.PlaceAt(inTheReveal);
+
+        for (var tick = 0; tick < 200 && !door.Blocks; tick++)
+        {
+            world.Tick(PlayerInput.None);
+        }
+
+        var at = world.Player.Position;
+        Assert.True(door.Blocks);
+        Assert.False(CharacterCollision.Overlaps(world.Level, at, Radius), $"the player is at {at}");
+        var inside = BossPortalShape.OpeningHalfWidth - Radius;
+        Assert.InRange(at.X, MiddleX - inside - 1e-4f, MiddleX + inside + 1e-4f);
+    }
+
+    [Fact]
     public void A_shot_at_a_jamb_ends_on_its_face()
     {
         var world = World();

@@ -331,6 +331,11 @@ public class BossDoorTests
         Assert.True(InTheDoorway(before), $"{symbol}: z = {before.Z} at the end of the tick before the stop");
         Assert.InRange(after.Z, door.BoxMax.Z + radius, door.BoxMax.Z + radius + 0.02f);
         Assert.InRange(after.X, door.BoxMin.X + radius, door.BoxMax.X - radius);
+        // Checked with the follower's own body: a ghoul walks (step 0.4 m), a bat flies over any floor (like Bat.Move).
+        var (height, step) = follower is Ghoul
+            ? (BodySizes.Ghoul.Height, BodySizes.Player.StepHeight)
+            : (BodySizes.Bat.Height, float.PositiveInfinity);
+        Assert.False(CharacterCollision.Overlaps(world.Level, after, radius, height, step), $"{symbol}: {after} is in the portal's stone");
         Assert.True(InCells(world.Rooms[1], after), $"{symbol}: {after}");
         Assert.Equal(health, follower is Ghoul g ? g.Health : ((Bat)follower).Health);
     }
