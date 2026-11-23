@@ -32,16 +32,19 @@ public class BossPortalNeighbourTests
     [InlineData(6)]
     public void A_bat_circling_beside_the_portal_never_flies_into_its_stone(int seed)
     {
-        // The player stands so that the bat's circle reaches 0.3 m into the wall of the start room right below the left
-        // impost (x 8.28-9 m, jutting 0.125 m out of the wall at 3.075-3.2 m): the wall pushes it along the wall while
-        // it rises and sinks between 2 and 2.8 m (its body 0.4 m higher), dives, bites and rises again.
+        // The player stands 1.5 m in front of the start room's wall, 0.7 m beside the middle of the portal: the bat's
+        // circle (4-6 m) runs into the wall, which pushes it along the wall and past the left impost (x 8.28-9 m,
+        // jutting 0.125 m out of the wall at 3.075-3.2 m) while it rises and sinks between 2 and 2.8 m (its body 0.4 m
+        // higher), dives, bites and rises again.
         var world = World(seed, withBat: true);
         var bat = Assert.Single(world.Bats);
-        var underTheImpost = MiddleX - 1.3f;
         var atTheWall = DoorPlaneZ - BossPortalShape.HalfDepth - BodySizes.Bat.Radius;
-        world.Player.PlaceAt(new Vector3(underTheImpost, 0f, atTheWall - bat.CircleRadius + 0.3f));
-        bat.PlaceAt(new Vector3(underTheImpost, BodySizes.Bat.HoverHeight, atTheWall));
+        var aside = MiddleX - 0.7f;
+        world.Player.PlaceAt(new Vector3(aside, 0f, atTheWall - 1.5f));
+        bat.PlaceAt(new Vector3(aside, BodySizes.Bat.HoverHeight, atTheWall));
         var portal = Assert.Single(world.Level.Portals);
+        var impost = BossPortalShape.Blocks.Single(block => block.Top == BossPortalShape.Spring);
+        var underTheImpost = MiddleX - ((impost.AcrossFrom + impost.AcrossTo) / 2f);
         var highest = 0f;
 
         for (var tick = 0; tick < 600; tick++)
@@ -52,7 +55,7 @@ public class BossPortalNeighbourTests
             Assert.False(
                 BossPortalStoneTests.InStone(world.Level, bat.Position, BodySizes.Bat.Radius, BodySizes.Bat.Height),
                 $"tick {tick}: {bat.Position}");
-            if (MathF.Abs(bat.Position.X - underTheImpost) < 0.7f && bat.Position.Z > atTheWall - 0.2f)
+            if (MathF.Abs(bat.Position.X - underTheImpost) < 0.5f && bat.Position.Z > atTheWall - 0.2f)
             {
                 highest = MathF.Max(highest, bat.Position.Y);
             }
