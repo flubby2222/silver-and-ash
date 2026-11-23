@@ -316,6 +316,7 @@ static void RunGame(
         var pickupView = new PickupView();
         var impactMarks = new ImpactMarks();
         var wallBreakView = new WallBreakView();
+        var columnLooks = new ColumnLooks();
         // Weapons: the designer's models once they are loaded (after the shader, below), boxes until then.
         Func<IWeaponView> newWeaponView = () => new WeaponView();
         IWeaponView weaponView = newWeaponView();
@@ -382,6 +383,7 @@ static void RunGame(
             pickupView = new PickupView();
             impactMarks = new ImpactMarks();
             wallBreakView = new WallBreakView();
+            columnLooks = new ColumnLooks();
             weaponView = newWeaponView();
             damageFeedback = new DamageFeedback();
             screenEffects = new ScreenEffects(player.Id);
@@ -482,6 +484,9 @@ static void RunGame(
         // The portcullises (issues #540, #558): in the doors of the arenas, and in the showroom falling and lifting in a loop.
         using var portcullisView = PortcullisView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
+        // The free-standing columns and their stages of breaking (issue #601); a stage without its model keeps the stand-in.
+        using var columnView = ColumnView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
+
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
         newWeaponView = () => new WeaponView(weaponModels, levelShader);
@@ -511,6 +516,7 @@ static void RunGame(
                 projectileView.OnEvent(gameEvent);
                 impactMarks.OnEvent(gameEvent);
                 wallBreakView.OnEvent(gameEvent, gameWorld.Doors, player.Position, gameWorld.Surfaces);
+                columnLooks.OnEvent(gameEvent, gameWorld.Ticks, gameWorld.Gorm?.Position);
                 weaponView.OnEvent(gameEvent);
                 damageFeedback.OnEvent(gameEvent);
                 screenEffects.OnEvent(gameEvent);
@@ -587,7 +593,7 @@ static void RunGame(
             portcullisView.Draw(
                 gameWorld.Showroom?.Portcullises ?? [], ShowroomGrateCycle.Height(gameWorld.Ticks, gameWorld.Balance.Grates),
                 viewCone, gameWorld.Surfaces, levelTextures, doorView);
-            ColumnView.Draw(gameWorld.LevelAsBuilt, viewCone);
+            columnView.Draw(gameWorld.LevelAsBuilt, columnLooks, gameWorld.Showroom?.Columns ?? [], gameWorld.Ticks, viewCone);
             foreach (var dummy in gameWorld.Dummies)
             {
                 dummyView.Draw(dummy);
@@ -618,6 +624,12 @@ static void RunGame(
 
             impactMarks.Draw();
             wallBreakView.Draw(doorView);
+
+            // The column's dust is see-through: the level shader would make it solid (alpha 1), so it is drawn without
+            // it - ColumnView lights and fogs it itself (issue #601).
+            levelShader.EndFigures();
+            columnView.DrawDust(eye);
+            levelShader.BeginFigures();
 
             // Last: the weapons in the hands, in front of everything else - not in the test display, where they would
             // hide the figure (issue #433).

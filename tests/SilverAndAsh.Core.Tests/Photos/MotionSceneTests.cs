@@ -58,7 +58,7 @@ public class MotionSceneTests
     {
         string[] wanted = ["blade-charge", "blade-quick", "pistol-shot", "pistol-reload", "door-normal-opening", "door-boss-opening",
             "pistol-shot-in-swing", "pistol-reload-in-swing", "pistol-reload-cancelled", "rifle-reload-to-pistol",
-            "gorm-slam", "gorm-slam-far", "gorm-slam-far-b", "gorm-slam-far-c", "stairs-rising"];
+            "gorm-slam", "gorm-slam-far", "gorm-slam-far-b", "gorm-slam-far-c", "stairs-rising", "column-breaking"];
 
         Assert.Equal(wanted.Order(), MotionScenes.All.Select(scene => scene.Name).Order());
     }

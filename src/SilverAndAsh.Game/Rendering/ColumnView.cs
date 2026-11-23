@@ -1,37 +1,183 @@
 using System.Numerics;
 using Raylib_cs;
+using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Logging;
+using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.Showroom;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The free-standing columns of a level (issue #539, <see cref="Level.Columns"/>), for now as a stand-in: a plain
-/// twelve-sided stone shaft from the floor to the ceiling of its cell, its corners on the circle that blocks walking
-/// and shots, with darker edges. The model follows in a later step.
+/// The free-standing columns of a level (issue #539, <see cref="Level.Columns"/>) with their stages of breaking
+/// (issue #601, <see cref="ColumnBreakLook"/>): intact, after one blow, after the next, falling apart and lying broken,
+/// with a soft cloud of dust while they fall (<see cref="ColumnDust"/>). Which stage and since when tells
+/// <see cref="ColumnLooks"/> from Core's events; nothing here decides anything. A stage without its model falls back to
+/// the old stand-in: a plain twelve-sided stone shaft from the floor to the ceiling (standing), or a low stump (broken).
 /// </summary>
-internal static class ColumnView
+internal sealed class ColumnView : IDisposable
 {
     // Twelve sides, as the accepted probe.
     private const int Sides = 12;
 
+    // The stump of the stand-in, as high as the broken model's (0.82 m).
+    private const float StumpHeight = 0.82f;
+
+    // Fallen pieces lie up to about 3.5 m from the foot; a little more, so nothing pops at the edge of the view.
+    private const float BoundingRadius = 4.5f;
+
     private static readonly Color Stone = new(112, 106, 98, 255);
     private static readonly Color Edge = new(58, 54, 50, 255);
 
-    /// <summary>Draws every column of <paramref name="level"/> that <paramref name="view"/> may see. Call in 3D mode.</summary>
-    public static void Draw(Level level, ViewCone view)
-    {
-        foreach (var column in level.Columns)
-        {
-            var cell = level.CellAt(new Vector3(column.X, 0f, column.Z));
-            var height = cell.CeilingHeight - cell.FloorHeight;
-            var foot = new Vector3(column.X, cell.FloorHeight, column.Z);
-            if (!view.MaySee(foot + new Vector3(0f, height / 2f, 0f), MathF.Max(Column.Radius, height / 2f)))
-            {
-                continue;
-            }
+    // The dust of the stone, as that of a breaking wall (WallBreakView): warm grey, never red.
+    private static readonly Color Dust = new(170, 156, 146, 255);
 
-            Raylib.DrawCylinder(foot, Column.Radius, Column.Radius, height, Sides, Stone);
-            Raylib.DrawCylinderWires(foot, Column.Radius, Column.Radius, height, Sides, Edge);
+    private readonly Dictionary<ColumnStage, TexturedModel> _models;
+    private readonly Matrix4x4[] _fallTurns = new Matrix4x4[ColumnBreakLook.Parts(ColumnStage.Falling).Count];
+    private readonly Matrix4x4[] _fallFrames = new Matrix4x4[ColumnBreakLook.Parts(ColumnStage.Falling).Count];
+    private readonly Matrix4x4[] _turn = [Matrix4x4.Identity];
+    private readonly Matrix4x4[] _frame = new Matrix4x4[1];
+    private readonly List<DustPuff> _puffs = [];
+
+    private ColumnView(Dictionary<ColumnStage, TexturedModel> models)
+    {
+        _models = models;
+    }
+
+    /// <summary>
+    /// Loads the model of every stage from <paramref name="directory"/> (<see cref="ColumnBreakLook.FileName"/>). A
+    /// missing or broken one: a warning in the log and the stand-in for that stage. Needs the window.
+    /// </summary>
+    public static ColumnView Load(string directory, FileLog? log)
+    {
+        var models = new Dictionary<ColumnStage, TexturedModel>();
+        foreach (var stage in Enum.GetValues<ColumnStage>())
+        {
+            var path = Path.Combine(directory, ColumnBreakLook.FileName(stage));
+            if (TexturedModel.TryLoad(path, ColumnBreakLook.Parts(stage), log) is { } model)
+            {
+                models[stage] = model;
+            }
         }
+
+        return new ColumnView(models);
+    }
+
+    /// <summary>
+    /// Draws the columns of <paramref name="level"/> - the standing ones and those of <paramref name="looks"/> that broke -
+    /// as they look at <paramref name="ticks"/> ticks of the world, and the showroom's <paramref name="exhibits"/>. Gathers
+    /// their dust for <see cref="DrawDust"/>. Call between BeginFigures and EndFigures.
+    /// </summary>
+    public void Draw(Level level, ColumnLooks looks, IReadOnlyList<ExhibitColumn> exhibits, long ticks, ViewCone view)
+    {
+        _puffs.Clear();
+        foreach (var column in level.Columns.Concat(looks.Broken).Distinct())
+        {
+            DrawOne(level, new Vector3(column.X, 0f, column.Z), looks.Of(column, ticks), view);
+        }
+
+        foreach (var exhibit in exhibits)
+        {
+            var look = exhibit.Stage == ColumnStage.Falling
+                ? ShowroomColumnCycle.Look(ticks, exhibit.Yaw)
+                : new ColumnLook(exhibit.Stage, exhibit.Yaw);
+            DrawOne(level, exhibit.Position, look, view);
+        }
+    }
+
+    /// <summary>
+    /// Draws the dust gathered by the last <see cref="Draw"/>, seen from <paramref name="camera"/>: soft, see-through
+    /// balls that do not hide one another, in the lantern's light and the fog like the stone around them. Call between
+    /// BeginMode3D and EndMode3D, after everything solid, without the level shader (it would make the dust solid).
+    /// </summary>
+    public void DrawDust(Vector3 camera)
+    {
+        if (_puffs.Count == 0)
+        {
+            return;
+        }
+
+        // The puffs blend into each other instead of cutting holes: they test the depth, but do not write it.
+        Rlgl.DrawRenderBatchActive();
+        Rlgl.DisableDepthMask();
+        foreach (var puff in _puffs)
+        {
+            // Lit and fogged as the level shader does it for a surface at that distance (Lighting).
+            var distance = Vector3.Distance(camera, puff.Position);
+            var light = Lighting.LanternBrightness(distance, LookSettings.FogEnd, LookSettings.LanternMinimum);
+            var fog = Lighting.FogAmount(distance, LookSettings.FogStart, LookSettings.FogEnd);
+            var color = Lit(light, fog);
+
+            // Three faint shells, each smaller one adding a little: dense in the middle, fading out to the edge.
+            foreach (var (scale, alpha) in Shells)
+            {
+                var a = (byte)Math.Clamp(alpha * puff.Opacity * (1f - fog), 0f, 255f);
+                Raylib.DrawSphereEx(puff.Position, puff.Radius * scale, 6, 10, color with { A = a });
+            }
+        }
+
+        Rlgl.DrawRenderBatchActive();
+        Rlgl.EnableDepthMask();
+    }
+
+    // The shells of one puff: size (of its radius) and opacity (0..255 at full density).
+    private static readonly (float Scale, float Alpha)[] Shells = [(1f, 18f), (0.72f, 24f), (0.45f, 30f)];
+
+    // The dust's colour under the lantern, blended toward the fog colour.
+    private static Color Lit(float light, float fog)
+    {
+        static byte Channel(byte dust, byte fogColor, float light, float fog) =>
+            (byte)Math.Clamp(((dust * light) * (1f - fog)) + (fogColor * fog), 0f, 255f);
+
+        var f = LookSettings.FogColor;
+        return new Color(Channel(Dust.R, f.R, light, fog), Channel(Dust.G, f.G, light, fog), Channel(Dust.B, f.B, light, fog), (byte)255);
+    }
+
+    public void Dispose()
+    {
+        foreach (var model in _models.Values)
+        {
+            model.Dispose();
+        }
+    }
+
+    private void DrawOne(Level level, Vector3 at, ColumnLook look, ViewCone view)
+    {
+        var cell = level.CellAt(at);
+        var height = cell.CeilingHeight - cell.FloorHeight;
+        var foot = new Vector3(at.X, cell.FloorHeight, at.Z);
+        var figure = ColumnBreakLook.Figure(foot, height, look.Yaw);
+        if (look.TicksSinceBreak is { } since && since < ColumnDust.Ticks)
+        {
+            ColumnDust.Puffs(since, figure, _puffs);
+        }
+
+        if (!view.MaySee(foot + new Vector3(0f, height / 2f, 0f), MathF.Max(BoundingRadius, height / 2f)))
+        {
+            return;
+        }
+
+        if (!_models.TryGetValue(look.Stage, out var model))
+        {
+            DrawStandIn(foot, look.Stage is ColumnStage.Falling or ColumnStage.Broken ? MathF.Min(StumpHeight, height) : height);
+            return;
+        }
+
+        if (look.Stage == ColumnStage.Falling)
+        {
+            ColumnBreakLook.FallTurns(look.TicksSinceBreak ?? 0, _fallTurns);
+            model.Rig.Pose(_fallTurns, figure, _fallFrames);
+            model.Draw(_fallFrames);
+            return;
+        }
+
+        model.Rig.Pose(_turn, figure, _frame);
+        model.Draw(_frame);
+    }
+
+    private static void DrawStandIn(Vector3 foot, float height)
+    {
+        Raylib.DrawCylinder(foot, Column.Radius, Column.Radius, height, Sides, Stone);
+        Raylib.DrawCylinderWires(foot, Column.Radius, Column.Radius, height, Sides, Edge);
     }
 }

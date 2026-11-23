@@ -28,6 +28,7 @@ public class EnvironmentPaletteTests
         "portcullis_guide_a", "portcullis_guide_b", "portcullis_guide_c",
         "wall_niche_deep_a", "wall_niche_deep_b", "wall_niche_deep_c",
         "wall_niche_shelf_a", "wall_niche_shelf_b", "wall_niche_shelf_c",
+        "column_intact", "column_hit1", "column_hit2", "column_falling", "column_broken",
     ];
 
     private static readonly string[] StoneAndWerksteinModels = ["door_frame_boss_a", "door_frame_boss_b", "door_frame_boss_c"];
