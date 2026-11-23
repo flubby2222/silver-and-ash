@@ -111,9 +111,12 @@ internal static class BossRun
         }
 
         report.Count("boss room sealed on entering");
+        // The boss door swings shut and blocks at the latest from the hard stop of its slam on (issue #566).
+        var shut = play.TicksUntil(Play.BossDoorShutTicks(world), PlayerInput.None, () => bossDoor.Blocks);
         play.Ticks(60, PlayerInput.None);
         report.Check(!play.Events.OfType<BossFightStarted>().Any(), $"{ctx}: no BossFightStarted event");
         report.Check(!world.IsBossFightOn, $"{ctx}: boss fight not on");
+        report.Check(!shut, $"{ctx}: boss door does not block {Play.BossDoorShutTicks(world)} ticks after the boss room sealed");
         report.Check(!bossDoor.Blocks, $"{ctx}: boss door does not block during the fight");
         var back = world.Level.CellCenter(atBossDoor.X, atBossDoor.Z);
         for (var i = 0; i < 240; i++)

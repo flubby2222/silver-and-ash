@@ -156,7 +156,7 @@ internal static class ArenaDoors
         {
             play.Tick(Play.Forward with { Dash = dash && i % 20 == 0, Jump = dash && i % 7 == 0 });
             var cell = Play.Cell(play.World.Player.Position);
-            if (!outsideWhileSealed && room.IsSealed && !room.Cells.Contains(cell) && !play.World.Doors.Any(d => d.X == cell.X && d.Z == cell.Z))
+            if (!outsideWhileSealed && room.IsSealed && !room.Cells.Contains(cell) && !play.World.Doors.Any(d => d.Cells.Contains(cell)))
             {
                 outsideWhileSealed = true;
                 report.Finding($"{play.Context}: room sealed but player outside in cell {cell} at tick {i}");
@@ -272,7 +272,7 @@ internal static class ArenaDoors
             return room.IsCleared;
         });
 
-    /// <summary>The boss room seals without a grate: its door blocks at once and no grate starts.</summary>
+    /// <summary>The boss room seals without a grate: no grate starts, its door blocks by the shut tick, nobody gets out.</summary>
     private static void BossDoor(LevelZero zero, int seed, int doorId, Report report)
     {
         var world = zero.NewRun(seed, Play.Balance);
@@ -294,13 +294,30 @@ internal static class ArenaDoors
             return;
         }
 
-        foreach (var id in boss.DoorIds.Where(id => world.Doors[id].Kind != DoorKind.Cracked && !world.Doors[id].Blocks))
+        // The boss door has no grate: it swings shut and blocks from the hard stop of its slam on (issue #566), so at the
+        // latest after DoorsBalance.BossShutTick. Meanwhile the player turns round and runs for the antechamber.
+        var doors = boss.DoorIds.Select(id => world.Doors[id]).Where(door => door.Kind != DoorKind.Cracked).ToList();
+        var antechamber = Play.OtherRoom(world, door, boss);
+        var limit = Play.BossDoorShutTicks(world);
+        int? blockedAt = null;
+        var gotOut = false;
+        for (var tick = 0; tick <= limit + 30; tick++)
         {
-            report.Finding($"{play.Context}: door {id} does not block at once after sealing");
+            if (blockedAt is null && doors.All(d => d.Blocks))
+            {
+                blockedAt = tick;
+            }
+
+            gotOut |= antechamber.Cells.Contains(Play.Cell(world.Player.Position));
+            play.Face(outside);
+            play.Tick(Play.Forward with { Dash = tick % 20 == 0 });
         }
 
+        report.Check(blockedAt is null || blockedAt > limit, $"{play.Context}: boss door does not block {limit} ticks after sealing (blocked at {blockedAt?.ToString() ?? "never"})");
+        report.Check(gotOut, $"{play.Context}: player got back into the antechamber after the boss room sealed");
         report.Check(play.Events.OfType<GrateStarted>().Any(), $"{play.Context}: a grate started at the boss room");
-        report.Count("boss door: sealed at once");
+        report.Count(blockedAt == 0 ? "boss door: blocks at once" : "boss door: blocks by the shut tick");
+        report.Count(gotOut ? "boss door: player got out" : "boss door: player kept inside");
     }
 }
 

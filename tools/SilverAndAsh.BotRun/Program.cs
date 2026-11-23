@@ -1,5 +1,6 @@
 using System.Globalization;
 using SilverAndAsh.BotRun;
+using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.World;
 
@@ -58,6 +59,14 @@ if (repo is null || !Directory.Exists(Path.Combine(repo, "assets", "rooms")))
     return 2;
 }
 
+// The balancing as the game ships it (assets/balance.json), so a balancing round is played with its new values.
+var loaded = BalanceFile.Load(Path.Combine(repo, "assets", "balance.json"));
+foreach (var warning in loaded.Warnings)
+{
+    Console.Error.WriteLine($"balance.json: {warning}");
+}
+
+Play.Use(loaded.Balance);
 var zero = new LevelZero(RoomTemplateParser.LoadAll(Path.Combine(repo, "assets", "rooms")));
 var report = new Report();
 foreach (var current in mode == "all" ? modes : [mode])

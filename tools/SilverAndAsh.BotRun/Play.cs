@@ -20,8 +20,15 @@ internal sealed class Play(GameWorld world, Report report, string context)
 
     public static PlayerInput Interact { get; } = PlayerInput.None with { Interact = true };
 
-    /// <summary>The balancing values of the game, with a player who cannot die by accident (the bot kills him on purpose).</summary>
-    public static Balance Balance { get; } = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 1_000_000 } };
+    /// <summary>
+    /// The balancing values of the run (<see cref="Use"/>, from assets/balance.json), with a player who cannot die by
+    /// accident (the bot kills him on purpose). Set once at the start, before the first world is built.
+    /// </summary>
+    public static Balance Balance { get; private set; } = Immortal(Balance.Default);
+
+    public static void Use(Balance balance) => Balance = Immortal(balance);
+
+    private static Balance Immortal(Balance balance) => balance with { Player = balance.Player with { MaxHealth = 1_000_000 } };
 
     public GameWorld World => world;
 
@@ -32,19 +39,28 @@ internal sealed class Play(GameWorld world, Report report, string context)
 
     public static (int X, int Z) Cell(Vector3 position) => Level.ToGrid(position.X, position.Z);
 
-    /// <summary>The cell next to <paramref name="door"/> that belongs to <paramref name="room"/>, if any.</summary>
+    /// <summary>A cell next to <paramref name="door"/> (any of its cells) that belongs to <paramref name="room"/>, if any.</summary>
     public static (int X, int Z)? NeighbourIn(Door door, RoomState room)
     {
-        foreach (var (dx, dz) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
+        foreach (var (x, z) in door.Cells)
         {
-            if (room.Cells.Contains((door.X + dx, door.Z + dz)))
+            foreach (var (dx, dz) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
             {
-                return (door.X + dx, door.Z + dz);
+                if (room.Cells.Contains((x + dx, z + dz)))
+                {
+                    return (x + dx, z + dz);
+                }
             }
         }
 
         return null;
     }
+
+    /// <summary>
+    /// Ticks after the boss room seals by which its door must block: the hard stop of the slam
+    /// (<see cref="DoorsBalance.BossShutTick"/>, issue #566), plus two ticks for the order inside one tick.
+    /// </summary>
+    public static int BossDoorShutTicks(GameWorld world) => world.Balance.Doors.BossShutTick + 2;
 
     public static RoomState OtherRoom(GameWorld world, Door door, RoomState room) => world.Rooms[door.RoomA == room.Index ? door.RoomB : door.RoomA];
 
