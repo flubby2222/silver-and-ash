@@ -1,9 +1,8 @@
-"""Tueren (Issue #245, Rahmen #303): Normal, Locked, Boss und die Risswand.
+"""Tueren (Issue #245, Rahmen #303): Normal, Locked und die Risswand. Das Bosstor baut seit Issue #568 boss_portal.py.
 
 Erzeuger fuer das Spiel. Fluegel und Beschlag: Uebergabe aus den Probestuecken tueren und tueren2 (Branch
 claude/design-probe-ghul-45a8c4, Commit 412096d). Rahmen nach der Formenlehre (#281): Uebergabe aus dem Probestueck
-tuerrahmen (derselbe Branch, Commit 39886aa, design/proben/grafik/tuerrahmen/rahmen.py); fuer das Bosstor die Fassung
-"blau" (heller Werkstein), die der Mensch am 2026-11-17 am Bild gewaehlt hat. Erzeugt nur Modelle und Texturen nach
+tuerrahmen (derselbe Branch, Commit 39886aa, design/proben/grafik/tuerrahmen/rahmen.py). Erzeugt nur Modelle und Texturen nach
 assets/models/, keine Probebilder, dazu die Liste der gelesenen Wand-Texturen (tools/models/door_frame_sources.sha256).
 
 Aufruf (aus dem Repository-Wurzelverzeichnis), danach python tools/models/checksums.py:
@@ -14,8 +13,8 @@ auf dem Boden, Tuerflaeche in der x/y-Ebene, Dicke in z. Durchgang = Zelle des S
 
 Je Tuerart zwei Sorten Dateien:
   door_<art>.glb               nur bewegliche Teile (leaf_a, leaf_b bzw. leaf, lock), kein Stein; jeder Fluegel traegt seinen
-                               Teil von Kopffeld und beim Boss der leuchtenden Scheibe (Issue #429; bis dahin
-                               stand das in einem festen Knoten "portal"). Eigener Atlas 128 x 128, 32 Farben.
+                               Teil vom Kopffeld (Issue #429; bis dahin stand das in einem festen Knoten "portal").
+                               Eigener Atlas 128 x 128, 32 Farben.
   door_frame_<art>_<v>.glb     der Steinrahmen fuer die Wandvariante v (a, b, c): Knoten "portal_front" (Stein der +z-Seite)
                                und "portal_back" (Stein der -z-Seite), beide fest. Atlas 128 x 64: links die echte
                                Wand-Textur der Variante (assets/textures/catacomb_wall*.png, bitgleich, nur gelesen), rechts
@@ -80,7 +79,6 @@ WALL_FILES = {"a": "catacomb_wall.png", "b": "catacomb_wall_b.png", "c": "cataco
 PAL = {
     "normal": {"wood": (96, 80, 66), "iron": (112, 116, 130)},
     "locked": {"wood": (54, 56, 66), "iron": (104, 108, 122)},
-    "boss": {"wood": (40, 34, 42), "iron": (112, 108, 126)},
 }
 BRASS = np.array((158, 126, 66), float)
 DARK = np.array((16, 12, 16), float)
@@ -142,7 +140,7 @@ def painters(kind):
 
     def edge(U, V_):
         h, w = U.shape
-        base = wood * 0.7 if kind in ("normal", "boss") else iron * 0.6
+        base = wood * 0.7 if kind == "normal" else iron * 0.6
         col = np.broadcast_to(base, (h, w, 3)).copy()
         return col * (0.8 + 0.4 * vnoise(h, w, 4, 4, 700 + seed))[..., None]
 
@@ -184,28 +182,22 @@ def load_tile(name):
     return np.round(a[::-1]).astype(int)
 
 
-def werk_tile(tile, kind, stein, werkstein):
+def werk_tile(tile, stein):
     """Dieselbe Kachel als Werkstein: gleiche Fugen und Verhaeltnisse, nur heller. Jede Farbe auf die naechste Stein-Stufe,
-    dann so weit hinauf, dass die hellste Farbe der Kachel auf die hellste Stufe faellt (mindestens 4 Stufen). Normal und
-    Verschlossen bleiben in der Stein-Reihe (oberste Stufen), das Bosstor nimmt die Stufen aus der Reihe Werkstein
-    (Fassung "blau")."""
+    dann so weit hinauf, dass die hellste Farbe der Kachel auf die hellste Stufe faellt (mindestens 4 Stufen); Normal und
+    Verschlossen bleiben in der Stein-Reihe (oberste Stufen). Das Bosstor (Reihe Werkstein) baut boss_portal.py."""
     flat = tile.reshape(-1, 3)
     colours = sorted({tuple(int(c) for c in p) for p in flat})
     idx = {c: int(((stein - np.array(c)) ** 2).sum(1).argmin()) for c in colours}
     top = len(stein) - 1
     shift = max(4, top - max(idx.values()))
-    lifted = {c: min(i + shift, top) for c, i in idx.items()}
-    if kind == "boss":
-        first = len(stein) - len(werkstein)
-        out = {c: werkstein[max(i - first, 0)] for c, i in lifted.items()}
-    else:
-        out = {c: stein[i] for c, i in lifted.items()}
+    out = {c: stein[min(i + shift, top)] for c, i in idx.items()}
     return np.array([out[tuple(int(c) for c in p)] for p in flat]).reshape(tile.shape)
 
 
-def frame_atlas(variant, kind, stein, werkstein):
+def frame_atlas(variant, stein):
     tile = load_tile(WALL_FILES[variant])
-    werk = werk_tile(tile, kind, stein, werkstein)
+    werk = werk_tile(tile, stein)
     w, h = FRAME_SIZE
     atlas = np.zeros((h, w, 3))
     for name, t in (("stone", tile), ("werk", werk)):
@@ -287,7 +279,7 @@ def leaf_rect(name, side, x_j, thick, top, kind, inner=0.005, fittings_top=None)
     part.box((lo, 0, -t), (hi, top, t), lambda n: "planks" if abs(n.z) > 0.9 else "edge")
     for z0, z1 in faces(thick, 0.025):
         for y in (0.45, 1.0, (top if fittings_top is None else fittings_top) - 0.25):
-            strap(part, px, side, y, 0.8 if kind != "boss" else 0.5, 0.075, z0, z1)
+            strap(part, px, side, y, 0.8, 0.075, z0, z1)
         if kind == "normal":
             rx = px - side * 0.7
             ring_pull(part, rx, 1.15, z0, 0.1, 0.03, z1 - z0)
@@ -474,7 +466,6 @@ LEAF_TOP_N = 1.94               # Normal: Bezug fuer das oberste Beschlagband (b
 SPRING_N = 2.0                  # Normal und Verschlossen: Bogenansatz, Lauf R = 1,5625 (Scheitel 3,458), Oeffnung 1,75 m
 POST_N = 0.105                  # Pfosten an der Scharnierseite (Normal): Dicke 0,14 / 2 + Beschlag 0,03 + Luft
 POST_L = 0.135                  # Locked: Dicke 0,14 / 2 + Platten und Baender 0,06 + Luft
-SPRING_B = 1.875                # Boss: drei Laeufe, innerster Lauf bei x = 0,625; Fluegel drehen bei +-0,49
 
 
 def frame_nodes():
@@ -495,18 +486,6 @@ def frame_normal(kind):
     return [front, back]
 
 
-def frame_boss():
-    """Drei konzentrische Laeufe (Laeufe 1,00 / 0,875 / 0,75 / 0,625; Tiefen 0,9375 / 0,625 / 0,3125), senkrechte Leibungen."""
-    front, back = frame_nodes()
-    stufenportal((front, back), 1.0, 1.75, SPRING_B, [0.9375, 0.625, 0.3125], 0.1, 0.625, True)
-    for sx in (1, -1):
-        lo, hi = sorted((sx * 0.49, sx * 0.625))
-        inner = "+x" if sx < 0 else "-x"
-        box_faces(front, (lo, 0, 0), (hi, SPRING_B, 0.14), "stone", ["+z", inner])
-        box_faces(back, (lo, 0, -0.14), (hi, SPRING_B, 0), "stone", ["-z", inner])
-    return [front, back]
-
-
 def head_normal(part, kind, sides):
     """Kopffeld (Holz oder Eisenplatten) im Bogen des Laufs: die Haelften `sides` an den Fluegel `part` (Issue #429: bis #303
     stand das Kopffeld fest im Knoten "portal" und blieb beim Oeffnen stehen). Der Fluegel reicht bis an den Bogenansatz;
@@ -519,19 +498,6 @@ def head_normal(part, kind, sides):
             for z0, z1 in faces(0.14, 0.025):
                 strap(part, s * (hw - 0.01), s, 2.5, 0.9, 0.065, z0, z1)
 
-
-def head_boss(part, side):
-    """Kopffeld im innersten Lauf mit leuchtender Scheibe: die Haelfte `side` an den Fluegel. Kein Eisenband mehr auf der
-    Fuge zum Fluegel (Issue #543, wie bei Normal und Verschlossen)."""
-    xc, hw = 1.0 - 1.75, 0.625
-    r = 1.75 - 0.375
-    apex = SPRING_B + math.sqrt(r * r - xc * xc)
-    head_panel(part, hw, SPRING_B, apex, -0.1, 0.1, "planks", (side,))
-    cy = 2.375
-    disc = [(0.21 * math.cos(2 * math.pi * k / 10), cy + 0.21 * math.sin(2 * math.pi * k / 10)) for k in range(10)]
-    for f in (-1, 1):
-        z0, z1 = sorted((f * 0.095, f * 0.14))
-        extrude(part, half_poly(disc, side), z0, z1, "glass")
 
 
 def locked_leaf():
@@ -582,15 +548,11 @@ def parts_for(kind):
         leaf = locked_leaf()
         head_normal(leaf, "locked", (1, -1))
         return [leaf, lock_node()]
-    a = leaf_rect("leaf_a", +1, 0.625, 0.2, SPRING_B, "boss")
-    b = leaf_rect("leaf_b", -1, 0.625, 0.2, SPRING_B, "boss")
-    head_boss(a, 1)
-    head_boss(b, -1)
-    return [a, b]
+    raise ValueError(f"door.py baut keine Tuer der Art {kind}")
 
 
 def frame_for(kind):
-    return frame_boss() if kind == "boss" else frame_normal(kind)
+    return frame_normal(kind)
 
 
 # --- Risswand (aus Runde 1 unveraendert: eigener Atlas, alles dunkel) -------------------------------------------------
@@ -673,8 +635,8 @@ def build(kind, rects, painters_, parts):
     write(f"door_{kind}", tex, parts)
 
 
-def build_frame(kind, variant, stein, werkstein):
-    tex = frame_atlas(variant, kind, stein, werkstein)
+def build_frame(kind, variant, stein):
+    tex = frame_atlas(variant, stein)
     assert colours_of(tex) <= 32, f"door_frame_{kind}_{variant}: {colours_of(tex)} Farben (hoechstens 32)"
     write(f"door_frame_{kind}_{variant}", tex, frame_for(kind))
 
@@ -693,11 +655,11 @@ def write_sources():
 
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
-    stein, werkstein = palette_rows()
+    stein, _ = palette_rows()
     for kind in PAL:
         build(kind, RECTS, painters(kind), parts_for(kind))
         for variant in WALL_FILES:
-            build_frame(kind, variant, stein, werkstein)
+            build_frame(kind, variant, stein)
     build("cracked", CRACKED_RECTS, cracked_painters(), [cracked_node()])
     write_sources()
 

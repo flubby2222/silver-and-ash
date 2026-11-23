@@ -415,8 +415,44 @@ public class LevelGeneratorTests
 
         Assert.All(generated.Rooms, room => Assert.All(room.FloorCells, cell =>
             Assert.Equal(RoomTemplate.CeilingFor(room.Kind), generated.Level[cell.X, cell.Z].CeilingHeight)));
-        Assert.All(generated.Doors, door =>
-            Assert.Equal(Cell.DefaultCeilingHeight, generated.Level[door.X, door.Z].CeilingHeight));
+        // Issue #568: every door but the boss portal (its own test below).
+        var ordinary = generated.Doors.Where(door => door.Kind != DoorKind.Boss).ToList();
+        Assert.NotEmpty(ordinary);
+        Assert.All(ordinary, door => Assert.All(door.Cells, cell =>
+            Assert.Equal(Cell.DefaultCeilingHeight, generated.Level[cell.X, cell.Z].CeilingHeight)));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(5)]
+    public void Both_cells_of_the_boss_door_are_as_high_as_the_rooms_it_joins(int seed)
+    {
+        // Issue #568: the boss portal is 6 m high; under the low doorway ceiling the level's wall would hide its arch.
+        var generated = LevelGenerator.Generate(Rooms, seed, Layout);
+        var boss = generated.Doors.Single(door => door.Kind == DoorKind.Boss);
+
+        Assert.Equal(2, boss.Cells.Count);
+        foreach (var (x, z) in boss.Cells)
+        {
+            var cell = generated.Level[x, z];
+            Assert.False(cell.IsSolid);
+            Assert.Equal(Cell.DefaultFloorHeight, cell.FloorHeight);
+            Assert.Equal(RoomTemplate.RoomCeilingHeight, cell.CeilingHeight);
+            Assert.Equal(RoomTemplate.CeilingFor(generated.Rooms[boss.RoomA].Kind), cell.CeilingHeight);
+            Assert.Equal(RoomTemplate.CeilingFor(generated.Rooms[boss.RoomB].Kind), cell.CeilingHeight);
+        }
+    }
+
+    [Theory]
+    [InlineData(DoorKind.Normal, Cell.DefaultCeilingHeight)]
+    [InlineData(DoorKind.Locked, Cell.DefaultCeilingHeight)]
+    [InlineData(DoorKind.Cracked, Cell.DefaultCeilingHeight)]
+    [InlineData(DoorKind.Boss, RoomTemplate.RoomCeilingHeight)]
+    public void A_doorway_cell_is_walkable_floor_with_the_ceiling_of_its_kind(DoorKind kind, float ceiling)
+    {
+        Assert.Equal(new Cell(false, Cell.DefaultFloorHeight, ceiling), LevelGenerator.DoorCell(kind));
     }
 
     [Theory]

@@ -11,6 +11,15 @@ public class DoorFrameLookTests
 
     private static readonly DoorKind[] FramedKinds = [DoorKind.Normal, DoorKind.Locked, DoorKind.Boss];
 
+    // How far the stone of each frame stands out of the wall in front of the doorway: the plates of the door frames, the
+    // buttresses of the boss portal (issue #568).
+    private static readonly Dictionary<DoorKind, float> OutOfWall = new()
+    {
+        [DoorKind.Normal] = 0.125f,
+        [DoorKind.Locked] = 0.125f,
+        [DoorKind.Boss] = 0.3f,
+    };
+
     private static readonly IReadOnlyList<RoomTemplate> Rooms = RoomTemplateParser.LoadAll(RepositoryFiles.Find("assets/rooms"));
 
     private static readonly Lazy<GeneratedLevel[]> ManyLevels = new(() => Enumerable.Range(0, 150)
@@ -63,23 +72,62 @@ public class DoorFrameLookTests
 
         Assert.Equal(DoorFrameLook.Parts.Select(part => part.Name).Order(), parts.Keys.Order());
 
-        // Both faces fill the cell's width and height: from the floor to the ceiling, flush with the wall at +-1 m, the
-        // plates at most 1/8 m in front of it. The front face lies on the file's +z side, the back face on its -z side.
+        // Both faces fill the doorway's width and height: from the floor to the ceiling of its cells, across all its cells
+        // (the boss portal two, issue #568), the wall at +-1 m, the stone standing out of it by at most OutOfWall - the
+        // plates 1/8 m, the buttresses of the boss portal 0.3 m. The front face lies on the file's +z side, the back face
+        // on its -z side.
         var front = parts[DoorFrameLook.Front];
         var back = parts[DoorFrameLook.Back];
+        var halfWidth = DoorFrameLook.CellsWide(kind) * Level.CellSize / 2f;
         foreach (var face in new[] { front, back })
         {
             Assert.Equal(Vector3.Zero, face.Pivot);
-            Assert.Equal(-1f, face.PositionMin.X, Tolerance);
-            Assert.Equal(1f, face.PositionMax.X, Tolerance);
+            Assert.Equal(-halfWidth, face.PositionMin.X, Tolerance);
+            Assert.Equal(halfWidth, face.PositionMax.X, Tolerance);
             Assert.Equal(0f, face.PositionMin.Y, Tolerance);
-            Assert.Equal(3.5f, face.PositionMax.Y, Tolerance);
+            Assert.Equal(DoorFrameLook.Height(kind), face.PositionMax.Y, Tolerance);
         }
 
+        var reach = (Level.CellSize / 2f) + OutOfWall[kind];
         Assert.InRange(front.PositionMin.Z, -Tolerance, 0.2f);
-        Assert.Equal(1.125f, front.PositionMax.Z, Tolerance);
-        Assert.Equal(-1.125f, back.PositionMin.Z, Tolerance);
+        Assert.Equal(reach, front.PositionMax.Z, Tolerance);
+        Assert.Equal(-reach, back.PositionMin.Z, Tolerance);
         Assert.InRange(back.PositionMax.Z, -0.2f, Tolerance);
+    }
+
+    [Fact]
+    public void The_boss_portal_spans_both_cells_of_the_boss_door_and_reaches_the_ceiling_of_its_rooms()
+    {
+        Assert.Equal(2, DoorFrameLook.CellsWide(DoorKind.Boss));
+        Assert.Equal(1, DoorFrameLook.CellsWide(DoorKind.Normal));
+        Assert.Equal(1, DoorFrameLook.CellsWide(DoorKind.Locked));
+        Assert.Equal(RoomTemplate.RoomCeilingHeight, DoorFrameLook.Height(DoorKind.Boss));
+        Assert.Equal(Cell.DefaultCeilingHeight, DoorFrameLook.Height(DoorKind.Normal));
+
+        // Every framed door the generator builds has exactly as many cells as its model is wide, and is as high.
+        var boss = 0;
+        foreach (var generated in ManyLevels.Value)
+        {
+            foreach (var door in generated.Doors.Where(door => DoorFrameLook.HasFrame(door.Kind)))
+            {
+                Assert.True(DoorFrameLook.Fits(door.Kind, door.Cells.Count), $"Seed {generated.Seed}: the {door.Kind} door has {door.Cells.Count} cells.");
+                Assert.All(door.Cells, cell => Assert.Equal(DoorFrameLook.Height(door.Kind), generated.Level[cell.X, cell.Z].CeilingHeight));
+                boss += door.Kind == DoorKind.Boss ? 1 : 0;
+            }
+        }
+
+        Assert.Equal(ManyLevels.Value.Length, boss);
+    }
+
+    [Theory]
+    [InlineData(DoorKind.Boss, 2, true)]
+    [InlineData(DoorKind.Boss, 1, false)]
+    [InlineData(DoorKind.Normal, 1, true)]
+    [InlineData(DoorKind.Normal, 2, false)]
+    [InlineData(DoorKind.Locked, 1, true)]
+    public void A_door_model_stands_only_in_a_doorway_exactly_as_wide_as_it(DoorKind kind, int cells, bool expected)
+    {
+        Assert.Equal(expected, DoorFrameLook.Fits(kind, cells));
     }
 
     [Fact]
@@ -169,6 +217,23 @@ public class DoorFrameLookTests
                 current.Contains(line),
                 $"The door frames were built on '{line}', which is no longer in assets/textures. " +
                 "Run tools/models/door.py again (see assets/HERKUNFT.md).");
+        }
+    }
+
+    [Fact]
+    public void The_boss_portal_was_built_on_the_wall_textures_in_the_game()
+    {
+        // tools/models/boss_portal.py builds the portal on the wall textures, like door.py the other frames (issue #568).
+        var built = Lines(RepositoryFiles.Find("tools/models/boss_portal_sources.sha256"));
+        var current = Lines(RepositoryFiles.Find("assets/textures/textures.sha256"));
+
+        Assert.Equal(3, built.Count);
+        foreach (var line in built)
+        {
+            Assert.True(
+                current.Contains(line),
+                $"The boss portal was built on '{line}', which is no longer in assets/textures. " +
+                "Run tools/models/boss_portal.py again (see assets/HERKUNFT.md).");
         }
     }
 
