@@ -18,6 +18,10 @@ public class BossPortalStoneTests
     private const string Map =
         "#.P..#\n##..##\n#....#\n#....#\n#....#\n#....#\n#....#\n#....#\n#....#\n#...G#\n######";
 
+    // The same with a bat in the start room (cell (4, 0)), awake: the world flies it (issue #627).
+    private const string BatMap =
+        "#.P.B#\n##..##\n#....#\n#....#\n#....#\n#....#\n#....#\n#....#\n#....#\n#...G#\n######";
+
     private const float MiddleX = 6f;
     private const float DoorPlaneZ = 3f;
     private const float Radius = BodySizes.Player.Radius;
@@ -126,10 +130,9 @@ public class BossPortalStoneTests
     [Fact]
     public void A_bat_knocked_at_a_jamb_in_the_doorway_stops_at_the_opening()
     {
-        var world = World();
-        var bat = new Bat(7, new Vector3(MiddleX, BodySizes.Bat.HoverHeight, DoorPlaneZ), balance: Balance.Default);
+        var world = World(BatMap);
 
-        var at = KnockBat(world, bat, -Vector3.UnitX);
+        var at = KnockBat(world, new Vector3(MiddleX, BodySizes.Bat.HoverHeight, DoorPlaneZ), -Vector3.UnitX);
 
         Assert.Equal(MiddleX - (BossPortalShape.OpeningHalfWidth - BodySizes.Bat.Radius), at.X, 0.01f);
         Assert.Equal(DoorPlaneZ, at.Z, 0.001f);
@@ -140,12 +143,11 @@ public class BossPortalStoneTests
     {
         // The left buttress stands 1.72-2 m beside the middle (x 4-4.28 m), up to 1.24 m in front of the door plane; the
         // bat comes at the middle of its face (nearer its edge it would round the stepped corner into the opening).
-        var world = World();
+        var world = World(BatMap);
         var buttress = BossPortalShape.Blocks.Single(block => block.AcrossFrom == 1.72f);
         var x = MiddleX - ((buttress.AcrossFrom + buttress.AcrossTo) / 2f);
-        var bat = new Bat(7, new Vector3(x, BodySizes.Bat.HoverHeight, 5.5f), balance: Balance.Default);
 
-        var at = KnockBat(world, bat, -Vector3.UnitZ);
+        var at = KnockBat(world, new Vector3(x, BodySizes.Bat.HoverHeight, 5.5f), -Vector3.UnitZ);
 
         Assert.Equal(DoorPlaneZ + buttress.AlongTo + BodySizes.Bat.Radius, at.Z, 0.01f);
         Assert.Equal(x, at.X, 0.001f);
@@ -154,29 +156,31 @@ public class BossPortalStoneTests
     [Fact]
     public void A_bat_knocked_through_the_opening_flies_on_through_it()
     {
-        var world = World();
-        var bat = new Bat(7, new Vector3(MiddleX, BodySizes.Bat.HoverHeight, 5.5f), balance: Balance.Default);
+        var world = World(BatMap);
 
-        var at = KnockBat(world, bat, -Vector3.UnitZ);
+        var at = KnockBat(world, new Vector3(MiddleX, BodySizes.Bat.HoverHeight, 5.5f), -Vector3.UnitZ);
 
         Assert.True(at.Z < DoorPlaneZ - 1f, $"the bat is at {at}");
         Assert.Equal(MiddleX, at.X, 0.001f);
     }
 
-    // Knocks the bat away with a charged club and lets it fly the push out, tick by tick; it never enters the stone.
-    private static Vector3 KnockBat(GameWorld world, Bat bat, Vector3 direction)
+    // Knocks the world's bat away with a charged club from where it is placed and lets the world fly the push out, tick
+    // by tick (GameWorld.Tick, issue #627); it never enters the stone.
+    private static Vector3 KnockBat(GameWorld world, Vector3 from, Vector3 direction)
     {
         // The door open (the bars lifted, the leaves swung back), so only the stone stands in the way.
         Run(world, PressF, 1);
         Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Doors.BossOpenTime) + 1);
         Assert.False(world.Doors[0].Blocks);
+        var bat = Assert.Single(world.Bats);
+        bat.PlaceAt(from);
         var club = Balance.Default.Club;
         bat.Knockback.Start(direction, club.ChargedKnockback, club.KnockbackTime);
-        var events = new List<GameEvent>();
         for (var tick = 0; tick < 60 && bat.Knockback.IsActive; tick++)
         {
-            bat.Act(world.Level, [world.Player], events);
-            Assert.False(InStone(world.Level, bat.Position, BodySizes.Bat.Radius, BodySizes.Bat.Height), $"tick {tick}: {bat.Position}");        }
+            world.Tick(PlayerInput.None);
+            Assert.False(InStone(world.Level, bat.Position, BodySizes.Bat.Radius, BodySizes.Bat.Height), $"tick {tick}: {bat.Position}");
+        }
 
         Assert.False(bat.Knockback.IsActive);
         Assert.Equal(BodySizes.Bat.HoverHeight, bat.Position.Y, 0.001f);
@@ -233,7 +237,7 @@ public class BossPortalStoneTests
         Assert.Equal(-Vector3.UnitZ, impact.Normal);
     }
 
-    private static GameWorld World()
+    private static GameWorld World(string map = Map)
     {
         PlacedRoom[] rooms =
         [
@@ -241,7 +245,7 @@ public class BossPortalStoneTests
             new(1, RoomKind.Boss, "boss", 0, 2, 6, 8, 1, Rows(2, 9), [(4, 9)], []),
         ];
         LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South, DoorKind.Boss) { MoreCells = [(3, 1)] }];
-        return new GameWorld(LevelParser.Parse(Map), 1, Balance.Default, doors, rooms);
+        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
 
         static List<(int X, int Z)> Rows(int from, int to) =>
             Enumerable.Range(from, to - from + 1).SelectMany(z => new[] { (1, z), (2, z), (3, z), (4, z) }).ToList();

@@ -202,6 +202,48 @@ public readonly record struct BossPortal(float X, float Z, float Floor, bool Pas
     }
 
     /// <summary>
+    /// The rectangles on the ground plane (as in <see cref="Footprint"/>) of the blocks whose top lies at most at
+    /// <paramref name="height"/>, with that top (world height): what a falling body can come to lie on (issue #627).
+    /// </summary>
+    public IEnumerable<(Vector2 Min, Vector2 Max, float Top)> Tops(float height)
+    {
+        foreach (var block in BossPortalShape.Blocks)
+        {
+            if (Floor + block.Top > height)
+            {
+                continue;
+            }
+
+            for (var side = 1f; side >= -1f; side -= 2f)
+            {
+                for (var face = 1f; face >= -1f; face -= 2f)
+                {
+                    var (min, max) = Rectangle(block, side, face);
+                    yield return (min, max, Floor + block.Top);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// True if the square of half-width <paramref name="halfWidth"/> around <paramref name="point"/> (on the ground plane)
+    /// overlaps the ground plan of any block, at any height: no piece of loot lies there and no stone falls there - it
+    /// would lie in the stone or fall through it (issue #627).
+    /// </summary>
+    public bool Covers(Vector2 point, float halfWidth)
+    {
+        foreach (var (min, max) in Footprint(float.NegativeInfinity, float.PositiveInfinity))
+        {
+            if (point.X + halfWidth > min.X && point.X - halfWidth < max.X && point.Y + halfWidth > min.Y && point.Y - halfWidth < max.Y)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// True if <paramref name="point"/> (any height) lies on the ground plan of a block that stands on the floor or
     /// reaches down below the springing - where nobody walks: the jambs, plinths and buttresses.
     /// </summary>
