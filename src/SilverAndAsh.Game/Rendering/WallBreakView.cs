@@ -25,7 +25,8 @@ internal sealed class WallBreakView
     private const float PuffSeconds = 1.8f;
     private const float Gravity = 14f;
 
-    private static readonly Color Dust = new(170, 156, 146, 255);
+    // A step of the ramp Stein (EffectColours, issue #609).
+    private static readonly Color Dust = PaletteColour.Opaque(EffectColours.WallBreakDust);
 
     private readonly Random _random = new();
     private readonly List<Chunk> _chunks = [];
@@ -139,8 +140,11 @@ internal sealed class WallBreakView
         _puffs.RemoveAll(puff => puff.Age >= puff.Delay + PuffSeconds);
     }
 
-    /// <summary>Draws chunks and dust. Call between BeginMode3D and EndMode3D, after the opaque world.</summary>
-    public void Draw(DoorView stones)
+    /// <summary>
+    /// Draws chunks and dust - the dust see-through with the level <paramref name="shader"/> (issue #609). Call between
+    /// BeginFigures and EndFigures, after the opaque world.
+    /// </summary>
+    public void Draw(DoorView stones, LevelShader shader)
     {
         foreach (var chunk in _chunks)
         {
@@ -155,6 +159,12 @@ internal sealed class WallBreakView
             }
         }
 
+        if (!_puffs.Any(puff => puff.Age > puff.Delay))
+        {
+            return;
+        }
+
+        using var seeThrough = shader.BeginSeeThrough();
         foreach (var puff in _puffs.Where(puff => puff.Age > puff.Delay))
         {
             // Grows and thins out.

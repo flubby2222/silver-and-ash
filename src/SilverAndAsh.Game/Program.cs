@@ -639,13 +639,8 @@ static void RunGame(
             pickupView.DrawEquipment(gameWorld.EquipmentDrops, alpha);
 
             impactMarks.Draw();
-            wallBreakView.Draw(doorView);
-
-            // The column's dust is see-through: the level shader would make it solid (alpha 1), so it is drawn without
-            // it - ColumnView lights and fogs it itself (issue #601).
-            levelShader.EndFigures();
-            columnView.DrawDust(eye);
-            levelShader.BeginFigures();
+            wallBreakView.Draw(doorView, levelShader);
+            columnView.DrawDust(levelShader);
 
             // Last: the weapons in the hands, in front of everything else - not in the test display, where they would
             // hide the figure (issue #433).
