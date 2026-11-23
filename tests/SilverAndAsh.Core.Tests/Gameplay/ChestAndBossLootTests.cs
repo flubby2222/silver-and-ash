@@ -74,10 +74,16 @@ public class ChestAndBossLootTests
     /// <paramref name="gormRow"/>, column 3. The staircase rises in cell (3, 6). <paramref name="below"/> adds rows
     /// after the hall, outside every room.
     /// </summary>
-    private static string BossMap(int gormRow = 10, string below = "") =>
-        "##.P.##\n###.###\n" + string.Join("\n", Enumerable.Range(2, 10).Select(z => z == gormRow ? "#..T..#" : "#.....#")) + below;
+    private static string BossMap(int gormRow = 10, string below = "", int gormColumn = 3) =>
+        Row(2, 4, 3, 'P') + "\n###.###\n"
+        + string.Join("\n", Enumerable.Range(2, 10).Select(z => z == gormRow ? Row(1, 5, gormColumn, 'T') : Row(1, 5, -1, ' '))) + below;
 
-    private static GameWorld BossWorld(int seed, Balance? balance = null, int gormRow = 10, string below = "", Column[]? columns = null)
+    // A map row of 7 cells, open from first to last, with mark in cell at.
+    private static string Row(int first, int last, int at, char mark) =>
+        new([.. Enumerable.Range(0, 7).Select(x => x == at ? mark : x >= first && x <= last ? '.' : '#')]);
+
+    private static GameWorld BossWorld(
+        int seed, Balance? balance = null, int gormRow = 10, string below = "", Column[]? columns = null, int gormColumn = 3)
     {
         var hall = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
         PlacedRoom[] rooms =
@@ -86,7 +92,7 @@ public class ChestAndBossLootTests
             new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, hall, [], []),
         ];
         LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
-        var level = LevelParser.Parse(BossMap(gormRow, below)).WithColumns(columns ?? []);
+        var level = LevelParser.Parse(BossMap(gormRow, below, gormColumn)).WithColumns(columns ?? []);
         return new GameWorld(level, seed, balance ?? NoOtherLoot, doors, rooms);
     }
 
@@ -321,17 +327,17 @@ public class ChestAndBossLootTests
     /// </summary>
     [Theory]
     [MemberData(nameof(ColumnsAtGorm))]
-    public void Gorm_s_loot_never_lies_in_a_column_he_died_against_and_every_piece_can_be_taken(int seed, int degrees, int gormRow, float farther)
+    public void Gorm_s_loot_never_lies_in_a_column_he_died_against_and_every_piece_can_be_taken(int seed, int degrees, int gormRow, float farther, int gormColumn)
     {
         // Balance.Default without other drops (NoOtherLoot): a key for the cleared hall would be one more pile.
-        var plain = BossWorld(seed, NoOtherLoot, gormRow);
+        var plain = BossWorld(seed, NoOtherLoot, gormRow, gormColumn: gormColumn);
         var (at, facing) = (plain.Gorm!.Position, plain.Gorm.Facing);
         var turn = degrees * MathF.PI / 180f;
         var towards = new Vector2(
             (facing.X * MathF.Cos(turn)) - (facing.Z * MathF.Sin(turn)), (facing.X * MathF.Sin(turn)) + (facing.Z * MathF.Cos(turn)));
         var apartFromHim = BodySizes.Gorm.Radius + Column.Radius + 0.02f + farther;
         var column = new Column(at.X + (towards.X * apartFromHim), at.Z + (towards.Y * apartFromHim));
-        var world = BossWorld(seed, NoOtherLoot, gormRow, columns: [column]);
+        var world = BossWorld(seed, NoOtherLoot, gormRow, columns: [column], gormColumn: gormColumn);
         Assert.Equal((at, facing), (world.Gorm!.Position, world.Gorm.Facing));
         world.Player.TakeDamage(Balance.Default.BloodVial.Heal, []);
 
@@ -369,12 +375,12 @@ public class ChestAndBossLootTests
         Run(world, PressF, 1);
         WalkTo(world, world.Level.CellCenter(3, 2));
         var taken = new List<GameEvent>();
-        VisitFrom(world, drop.Position, at);
+        taken.AddRange(VisitFrom(world, drop.Position, at, column));
         LookAt(world.Player, drop.Position + new Vector3(0f, EquipmentDrop.BoxHeight / 2f, 0f));
         Assert.Same(drop, world.InteractionTarget(world.Player));
         taken.AddRange(Run(world, PressF, 1));
-        taken.AddRange(VisitFrom(world, vial.Position, at, onto: true));
-        taken.AddRange(VisitFrom(world, silver.Position, at, onto: true));
+        taken.AddRange(VisitFrom(world, vial.Position, at, column, onto: true));
+        taken.AddRange(VisitFrom(world, silver.Position, at, column, onto: true));
 
         Assert.Contains(taken, e => e is EquipmentTaken { DropId: var id } && id == drop.Id);
         Assert.Contains(taken, e => e is PickupTaken { PickupId: var id } && id == vial.Id);
@@ -388,38 +394,53 @@ public class ChestAndBossLootTests
     /// Seeds, the column's direction from Gorm's facing (degrees), his row and how much farther than edge to edge the
     /// column stands (metres): every side of him, nearer the stairs, and a column the vial would not quite touch.
     /// </summary>
-    public static TheoryData<int, int, int, float> ColumnsAtGorm()
+    public static TheoryData<int, int, int, float, int> ColumnsAtGorm()
     {
-        var data = new TheoryData<int, int, int, float>();
+        var data = new TheoryData<int, int, int, float, int>();
         foreach (var degrees in new[] { 0, 45, 90, 135, 180, 225, 270, 315 })
         {
-            data.Add(degrees / 45 % 3, degrees, 10, 0f);
+            data.Add(degrees / 45 % 3, degrees, 10, 0f, 3);
         }
 
-        data.Add(7, 0, 8, 0f);
-        data.Add(8, 180, 8, 0f);
-        data.Add(9, 90, 8, 0f);
+        data.Add(7, 0, 8, 0f, 3);
+        data.Add(8, 180, 8, 0f, 3);
+        data.Add(9, 90, 8, 0f, 3);
 
         // Row 7: in front of him, the vial would fall into the staircase's box (the stairs rise in row 6).
-        data.Add(10, 90, 7, 0f);
-        data.Add(11, 270, 7, 0f);
+        data.Add(10, 90, 7, 0f, 3);
+        data.Add(11, 270, 7, 0f, 3);
 
         // In front of him, 5 cm beyond where the vial's box would end: less than ColumnClearance.
-        data.Add(12, 0, 10, BodySizes.Pickup.Radius + 1.2f - BodySizes.Gorm.Radius - 0.02f + 0.05f);
+        data.Add(12, 0, 10, BodySizes.Pickup.Radius + 1.2f - BodySizes.Gorm.Radius - 0.02f + 0.05f, 3);
+
+        // Gorm right at the west or east wall, the column in front: turning towards the wall, the vial would reach into it.
+        data.Add(13, 0, 10, 0f, 1);
+        data.Add(14, 0, 10, 0f, 5);
         return data;
     }
 
     /// <summary>
-    /// Walks into the hall along its west or east cell row (whichever is nearer), then to a spot 1.2 m out from
-    /// <paramref name="spot"/>, seen from <paramref name="gorm"/> - and, with <paramref name="onto"/>, onto the spot.
+    /// Walks into the hall along its west or east cell row (whichever is nearer, unless the column stands in it), then
+    /// to a spot 1.2 m out from <paramref name="spot"/>, seen from <paramref name="gorm"/> - and, with
+    /// <paramref name="onto"/>, onto the spot.
     /// </summary>
-    private static List<GameEvent> VisitFrom(GameWorld world, Vector3 spot, Vector3 gorm, bool onto = false)
+    private static List<GameEvent> VisitFrom(GameWorld world, Vector3 spot, Vector3 gorm, Column column, bool onto = false)
     {
         // Right where he fell (the silver), "out" is towards where the player stands.
         var outwards = (spot - gorm) with { Y = 0f };
         outwards = Vector3.Normalize(outwards.LengthSquared() < 1e-4f ? (world.Player.Position - gorm) with { Y = 0f } : outwards);
         var near = spot + (outwards * 1.2f);
-        var lane = world.Level.CellCenter(near.X < gorm.X ? 1 : 5, 2);
+
+        // Not into the west or east wall of the hall (cells 1 to 5).
+        var (west, east) = (world.Level.CellCenter(1, 2).X - 0.5f, world.Level.CellCenter(5, 2).X + 0.5f);
+        near.X = Math.Clamp(near.X, west, east);
+        var side = near.X < gorm.X ? 1 : 5;
+        if (MathF.Abs(world.Level.CellCenter(side, 2).X - column.X) < 1.5f)
+        {
+            side = 6 - side;
+        }
+
+        var lane = world.Level.CellCenter(side, 2);
         var events = new List<GameEvent>();
         foreach (var waypoint in new[] { lane with { Z = world.Player.Position.Z }, lane with { Z = near.Z }, near })
         {
