@@ -505,8 +505,7 @@ public sealed class GameWorld
     private bool StandsOn(Player player, Teleporter teleporter) =>
         teleporter.Reaches(player.Position, Balance.Teleporters.Radius, Balance.Teleporters.Height);
 
-    private bool IsInSealedRoom(Player player) =>
-        _roomOfCell.TryGetValue(Level.ToGrid(player.Position.X, player.Position.Z), out var room) && room.IsSealed;
+    private bool IsInSealedRoom(Player player) => SealedRoomOf(player) is not null;
 
     // Issue #480, trap 3: in co-op another player's fight may have sealed the room a teleporter stands in.
     private bool IsInSealedRoom(Teleporter teleporter) =>
@@ -947,17 +946,44 @@ public sealed class GameWorld
         }
     }
 
-    // A door that shuts pushes every enemy in its cell into the arena - nobody is hurt or caught in it. No player can
-    // stand there: a player enters a room only with the whole body out of its doorways. Every kind of enemy, through
-    // the one list of them (issue #572).
+    // The sealed room a player stands in (by the cell under their feet), or null.
+    private RoomState? SealedRoomOf(Player player) =>
+        _roomOfCell.TryGetValue(Level.ToGrid(player.Position.X, player.Position.Z), out var room) && room.IsSealed ? room : null;
+
+    // Issue #567, decision of the human: whoever is in the boss room when it seals is in - no way back until the fight
+    // is won, also not in the ticks before the hard stop of the slam, while the leaves still swing and the door does
+    // not block yet (it blocks only from the stop on, issue #566 - for sight, shots and enemies that stays so). A
+    // player who stood in a sealed room at the start of the tick and now reaches into one of its doorways that does
+    // not block yet is held back on the threshold, as by a wall - walking, jumping or dashing alike. Only a player who
+    // was inside is held: one who comes from outside (later in co-op, ADR 0003) is not. Nothing moves a body as far
+    // as through a whole door cell (2 m) in one tick - a dash covers well under half a metre - so touching the doorway
+    // is caught before passing it. Grated doors block from the sealing tick on, so for them this never does anything.
+    private void KeepInSealedRoom(Player player, RoomState? room)
+    {
+        if (room is null)
+        {
+            return;
+        }
+
+        var radius = BodySizes.Player.Radius;
+        foreach (var door in room.DoorIds.Select(id => _doors[id]).Where(door => !door.Blocks && Overlaps(door, player.Position, radius)))
+        {
+            player.HoldAt(PushedInto(room, door, player.Position, radius));
+        }
+    }
+
+    // A door that shuts pushes every enemy in its cell into the arena - nobody is hurt or caught in it. A player who
+    // seals the room is out of its doorways (a player enters a room only with the whole body out of them) and is kept
+    // out of them until the fight ends (issue #567, KeepInSealedRoom). Every kind of enemy, through the one list of
+    // them (issue #572).
     //
     // PROVISIONAL (decision of the lead, issue #572; the human judges it at the play test): this pulls in strangers,
     // too - an enemy from the corridor or the start room that followed a player into the doorway ends up in the arena.
     // It does not count for the arena (not in room.Enemies), so it does not hold up the clearing; but it fights in there.
     // The other way (pushed back to where it came from) would leave it waiting outside the grate.
     //
-    // Issue #566: the boss door shuts only at the hard stop of its slam, so by then a player may have stepped back into its
-    // doorway - every player there is pushed into the boss room the same way.
+    // Issue #566: the boss door shuts only at the hard stop of its slam. A player who was inside cannot step back into its
+    // doorway (issue #567); every other player there by then is pushed into the boss room the same way (co-op, #584).
     private void PushOutOf(Door door, RoomState arena)
     {
         foreach (var enemy in Enemies.Where(enemy => Overlaps(door, enemy.Body.Position, enemy.Body.Radius)))
@@ -1675,8 +1701,10 @@ public sealed class GameWorld
             choosing.Choose(boon, _events);
         }
 
+        var sealedIn = SealedRoomOf(Player);
         Player.Tick(input);
         _events.AddRange(Player.Events);
+        KeepInSealedRoom(Player, sealedIn);
 
         // A weapon dropped from the inventory lies where the player stood.
         foreach (var dropped in Player.Events.OfType<WeaponDropped>())
