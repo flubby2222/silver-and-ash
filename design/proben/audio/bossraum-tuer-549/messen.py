@@ -77,7 +77,8 @@ def kennzahlen(x):
         if acc >= 0.95 * tot:
             roll = f
             break
-    return schwerpunkt, ueber(1000.0), ueber(3000.0), roll
+    mitte = 10 * math.log10(sum(v for f, v in zip(fr, p) if 200.0 <= f < 800.0) / tot + 1e-20)
+    return schwerpunkt, ueber(1000.0), ueber(3000.0), roll, mitte
 
 
 def einsatz(x, ab, bis, block=32):
@@ -107,20 +108,20 @@ def main():
     ordner = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent
     if len(sys.argv) > 2:
         ANSCHLAG_TICK = int(sys.argv[2])
-    dateien = sorted(ordner.glob("tor-*.wav"))
+    dateien = sorted(ordner.glob("*tor-*.wav"))
     z = []
     z.append("# Messwerte grosses Tor der Bossraum-Tuer (#549)\n")
     z.append("Gemessen, nicht gehoert. Erzeugt von `messen.py`. Zeitbasis: Bewegungsentwurf (60 Ticks/s, 1 Tick = 735 Samples = 16,67 ms).\n")
     z.append("## Pegel und Spektrum\n")
-    z.append("| Datei | Dauer s | Spitze dBFS | Mittel (RMS) dBFS | Schwerpunkt Hz | 95 % der Energie unter Hz | Energie > 1 kHz dB | Energie > 3 kHz dB | Letzte 50 ms dBFS |")
-    z.append("|---|---|---|---|---|---|---|---|---|")
+    z.append("| Datei | Dauer s | Spitze dBFS | Mittel (RMS) dBFS | Schwerpunkt Hz | 95 % der Energie unter Hz | Energie 200-800 Hz dB | Energie > 1 kHz dB | Energie > 3 kHz dB | Letzte 50 ms dBFS |")
+    z.append("|---|---|---|---|---|---|---|---|---|---|")
     kurven = {}
     ereignis = []
     for f in dateien:
         x = lade(f)
-        sp, e1, e3, roll = kennzahlen(x)
+        sp, e1, e3, roll, mitte = kennzahlen(x)
         spitze = db(max(abs(s) for s in x))
-        z.append(f"| {f.name} | {len(x) / SR:.2f} | {spitze:.1f} | {rms_db(x):.1f} | {sp:.0f} | {roll:.0f} | {e1:.1f} | {e3:.1f} | {rms_db(x[-int(0.05 * SR):]):.1f} |")
+        z.append(f"| {f.name} | {len(x) / SR:.2f} | {spitze:.1f} | {rms_db(x):.1f} | {sp:.0f} | {roll:.0f} | {mitte:.1f} | {e1:.1f} | {e3:.1f} | {rms_db(x[-int(0.05 * SR):]):.1f} |")
         kurven[f.name] = kurve100(x)
         imax = max(range(len(x)), key=lambda i: abs(x[i]))
         k = kurven[f.name]

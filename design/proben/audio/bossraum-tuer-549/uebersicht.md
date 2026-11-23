@@ -88,3 +88,36 @@ Alle drei liegen innerhalb von 3 ms (unter einem Viertel Tick) auf dem Anschlag;
 2. **Öffnen: Welche Variante?** Empfehlung: 1 „kurzes Knarren“ (Alternativen: 2 langes Knarren, 3 mit Steinschleifen).
 
 Wählt der Mensch eine andere Bewegung, wird nur neu gerechnet: `python bauen.py --anschlag <Tick> --oeffnen <Ticks> --anlauf <Ticks> --auslauf <Ticks>`, danach `python messen.py . <Anschlag-Tick>`.
+
+## Runde 2 (Urteil des Menschen zu Runde 1)
+
+Urteil: Schliessen "Grollen beim oeffnen. Grollen, dann schlag beim schliessen." Oeffnen "Neu machen. Soll sich wie ein schleifen auf geroell anhoeren."
+
+**Gelernte Regel (fuer die Audio-Bible):** Holzknarren passt nicht zum Steinportal. Die Tor-Bewegung klingt nach Stein: Oeffnen ist koerniges, schweres Schleifen auf Schutt mit tiefem Grollen darunter; Schliessen ist Grollen waehrend des Laufs, erst am Anschlag der Schlag (nicht umgekehrt).
+
+Erzeuger: `bauen_r2.py` (nutzt Bausteine aus `bauen.py`; `python bauen_r2.py --anschlag 78 --oeffnen 132 --anlauf 30 --auslauf 40`). Messen: `python messen.py` (neu: Spalte Energie 200-800 Hz). Zeiten und Pegel unveraendert (Schliessen Spitze -2,5 dBFS, Oeffnen Mittel -24 dBFS, Spitze <= -3 dBFS).
+
+Schliessen (Grollen + tiefes Beben + Koerner 200-700 Hz bis zum Anschlag, 25 ms Absenkung davor, dann Schlag mit zwei kleinen Rueckprallern):
+1. `r2-tor-schliessen-1-grollen-kurzer-schlag.wav`: mittleres Grollen, kurzer Nachklang (0,45 s Hall).
+2. `r2-tor-schliessen-2-starkes-grollen-langer-nachklang.wav`: staerkeres Grollen, langer Nachklang (2,6 s Hall) mit Bodengrollen.
+3. `r2-tor-schliessen-3-grollen-mit-schutt-rieseln.wav`: wie 1, danach rieselt feiner Schutt (Koerner 250-800 Hz, abklingend).
+
+Oeffnen (Koerner-Schleifen + Rauschbett + Grollen, kein Holz):
+1. `r2-tor-oeffnen-1-geroell-fein.wav`: dichte feine Koerner (5-14 ms), wenig Grollen.
+2. `r2-tor-oeffnen-2-geroell-grob.wav`: wenige grosse Brocken (18-50 ms) mit kollernden Stoessen, tiefer.
+3. `r2-tor-oeffnen-3-geroell-mit-starkem-grollen.wav`: mittlere Koernung, starkes Grollen, langer Nachklang (2 s Hall).
+
+Messwerte (Auszug, volle Tabelle in `messwerte.md`):
+
+| Datei | Spitze | Mittel | Schwerpunkt Hz | 200-800 Hz dB | > 1 kHz dB | > 3 kHz dB |
+|---|---|---|---|---|---|---|
+| schliessen-1 | -2,5 | -20,8 | 79 | -12,1 | -36,4 | -74,7 |
+| schliessen-2 | -2,5 | -20,7 | 99 | -10,0 | -32,8 | -71,2 |
+| schliessen-3 | -2,5 | -22,6 | 81 | -11,4 | -33,2 | -71,4 |
+| oeffnen-1 | -8,8 | -24,0 | 345 | -3,5 | -13,1 | -53,5 |
+| oeffnen-2 | -8,8 | -24,0 | 184 | -7,5 | -18,3 | -56,9 |
+| oeffnen-3 | -7,7 | -24,0 | 153 | -7,2 | -22,6 | -62,2 |
+
+Der Anteil 200-800 Hz liegt in Runde 1 bei etwa -13 dB (Schliessen) und -5 bis -8 dB (Oeffnen); jetzt -10 bis -12 dB beziehungsweise -3,5 bis -7,5 dB. Alle Dateien enden auf digitaler Stille, zwei Laeufe sind bitgleich. Der Anschlag sitzt bei Variante 1 und 3 bei 1,301 s (Soll 1,300 s). Bei Variante 2 findet die Messung wegen des starken Grollens und des Halls keinen eindeutigen Einsatz (staerkster Anstieg bei +47 ms, lautestes Sample bei 1,335 s); der Schlag ist im Skript bei Tick 78 gesetzt. Oeffnen-1 ist am hellsten (Schwerpunkt 345 Hz, -13 dB ueber 1 kHz); falls es zu scharf ist, ist das der Regler.
+
+Empfehlung (nach Bau und Messung, nicht nach Gehoer): Schliessen 1 (klarer Schlag, kurzer Nachklang, passt zur Regel "kurzer Schwanz"); Oeffnen 2 (groebste Koernung, am deutlichsten Schutt, wenig Anteil ueber 1 kHz). Fragen: Schliessen: 1, 2 oder 3? Oeffnen: 1 fein, 2 grob oder 3 mit starkem Grollen?
