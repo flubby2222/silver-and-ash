@@ -2,6 +2,7 @@
 """Misst die WAV-Dateien der Saeulen-Probe mit ffmpeg und schreibt messwerte.md."""
 import math
 import re
+import sys
 import struct
 import subprocess
 import wave
@@ -80,4 +81,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # Pflicht-Ordner: nie stillschweigend die Dateien einer anderen Runde neu messen und ueberschreiben
+    if len(sys.argv) != 2:
+        sys.exit("Aufruf: python messen.py <Ordner mit saeule-*.wav>")
+    HERE = Path(sys.argv[1]).resolve()
     main()
