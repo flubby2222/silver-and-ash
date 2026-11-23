@@ -70,10 +70,12 @@ public static class WeaponPose
     public const float Reach = 0.30f;
 
     /// <summary>
-    /// Nothing nearer to the eyes than this is drawn (metres): raylib's near plane. What lies closer is cut off - the
-    /// sleeve running back past the eyes to the elbow, but never the cuff or the weapon in view.
+    /// Nothing of the weapons and sleeves nearer to the eyes than this is drawn (metres): the near plane of their own
+    /// depth (<see cref="WeaponDepth"/>). What lies closer is cut off - the sleeve running back past the eyes to the
+    /// elbow, but never the cuff or the weapon in view (tested). The world keeps raylib's near plane of 5 cm; with that
+    /// one the cuffs were cut open in the lower left of the picture (issue #624).
     /// </summary>
-    public const float NearPlane = 0.05f;
+    public const float NearPlane = 0.005f;
 
     /// <summary>
     /// The models are drawn this much smaller and that much nearer to the eyes, in camera space before the camera
@@ -303,11 +305,17 @@ public static class WeaponPose
     /// meets its target in line with the blow -, fully wound up (<paramref name="windUp"/> 1)
     /// <see cref="ClubBendWindUpDegrees"/>; in between along the same values as <see cref="Blade"/>. The swing scales the
     /// whole bend, wind-up included: after a charged swing the wind-up only eases off (<see cref="WindUpStep"/>) while the
-    /// swing is already at its height, and there the club must still be straight.
+    /// swing is already at its height, and there the club must still be straight. The overshoot past the height
+    /// (<see cref="SwingOvershoot"/>) keeps it straight as well: bent back by a degree or two, it showed more of its
+    /// handle's end at the lower edge of the picture than the straight club, close to the eyes, where the weapons' near
+    /// plane no longer cuts it away (issue #624).
     /// </summary>
-    public static (float Pitch, float Outward) ClubBendDegrees(float swing, float windUp) =>
-        ((1f - swing) * (ClubBendRestDegrees + ((ClubBendWindUpDegrees - ClubBendRestDegrees) * windUp)),
-         (1f - swing) * (ClubBendRestOutwardDegrees + ((ClubBendWindUpOutwardDegrees - ClubBendRestOutwardDegrees) * windUp)));
+    public static (float Pitch, float Outward) ClubBendDegrees(float swing, float windUp)
+    {
+        var left = 1f - MathF.Min(swing, 1f);
+        return (left * (ClubBendRestDegrees + ((ClubBendWindUpDegrees - ClubBendRestDegrees) * windUp)),
+            left * (ClubBendRestOutwardDegrees + ((ClubBendWindUpOutwardDegrees - ClubBendRestOutwardDegrees) * windUp)));
+    }
 
     /// <summary>How long a melee swing takes (seconds), from its start until <c>swing</c> reaches 1.</summary>
     public const float SwingSeconds = 0.28f;
