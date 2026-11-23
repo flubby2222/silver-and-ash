@@ -321,7 +321,7 @@ public class ChestAndBossLootTests
     /// </summary>
     [Theory]
     [MemberData(nameof(ColumnsAtGorm))]
-    public void Gorm_s_loot_never_lies_in_a_column_he_died_against_and_every_piece_can_be_taken(int seed, int degrees, int gormRow)
+    public void Gorm_s_loot_never_lies_in_a_column_he_died_against_and_every_piece_can_be_taken(int seed, int degrees, int gormRow, float farther)
     {
         // Balance.Default without other drops (NoOtherLoot): a key for the cleared hall would be one more pile.
         var plain = BossWorld(seed, NoOtherLoot, gormRow);
@@ -329,8 +329,8 @@ public class ChestAndBossLootTests
         var turn = degrees * MathF.PI / 180f;
         var towards = new Vector2(
             (facing.X * MathF.Cos(turn)) - (facing.Z * MathF.Sin(turn)), (facing.X * MathF.Sin(turn)) + (facing.Z * MathF.Cos(turn)));
-        var edgeToEdge = BodySizes.Gorm.Radius + Column.Radius + 0.02f;
-        var column = new Column(at.X + (towards.X * edgeToEdge), at.Z + (towards.Y * edgeToEdge));
+        var apartFromHim = BodySizes.Gorm.Radius + Column.Radius + 0.02f + farther;
+        var column = new Column(at.X + (towards.X * apartFromHim), at.Z + (towards.Y * apartFromHim));
         var world = BossWorld(seed, NoOtherLoot, gormRow, columns: [column]);
         Assert.Equal((at, facing), (world.Gorm!.Position, world.Gorm.Facing));
         world.Player.TakeDamage(Balance.Default.BloodVial.Heal, []);
@@ -384,22 +384,28 @@ public class ChestAndBossLootTests
         Assert.Empty(world.Loot);
     }
 
-    /// <summary>Seeds, the column's direction from Gorm's facing (degrees) and his row: every side of him, and nearer the stairs.</summary>
-    public static TheoryData<int, int, int> ColumnsAtGorm()
+    /// <summary>
+    /// Seeds, the column's direction from Gorm's facing (degrees), his row and how much farther than edge to edge the
+    /// column stands (metres): every side of him, nearer the stairs, and a column the vial would not quite touch.
+    /// </summary>
+    public static TheoryData<int, int, int, float> ColumnsAtGorm()
     {
-        var data = new TheoryData<int, int, int>();
+        var data = new TheoryData<int, int, int, float>();
         foreach (var degrees in new[] { 0, 45, 90, 135, 180, 225, 270, 315 })
         {
-            data.Add(degrees / 45 % 3, degrees, 10);
+            data.Add(degrees / 45 % 3, degrees, 10, 0f);
         }
 
-        data.Add(7, 0, 8);
-        data.Add(8, 180, 8);
-        data.Add(9, 90, 8);
+        data.Add(7, 0, 8, 0f);
+        data.Add(8, 180, 8, 0f);
+        data.Add(9, 90, 8, 0f);
 
         // Row 7: in front of him, the vial would fall into the staircase's box (the stairs rise in row 6).
-        data.Add(10, 90, 7);
-        data.Add(11, 270, 7);
+        data.Add(10, 90, 7, 0f);
+        data.Add(11, 270, 7, 0f);
+
+        // In front of him, 5 cm beyond where the vial's box would end: less than ColumnClearance.
+        data.Add(12, 0, 10, BodySizes.Pickup.Radius + 1.2f - BodySizes.Gorm.Radius - 0.02f + 0.05f);
         return data;
     }
 
