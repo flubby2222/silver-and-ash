@@ -416,6 +416,11 @@ public class ChestAndBossLootTests
         // Gorm right at the west or east wall, the column in front: turning towards the wall, the vial would reach into it.
         data.Add(13, 0, 10, 0f, 1);
         data.Add(14, 0, 10, 0f, 5);
+
+        // Gorm in a corner by the door wall, the column to his side away from the walls: in front of him, the vial would
+        // fall into the wall.
+        data.Add(15, 90, 2, 0f, 1);
+        data.Add(16, 270, 2, 0f, 5);
         return data;
     }
 
@@ -431,9 +436,10 @@ public class ChestAndBossLootTests
         outwards = Vector3.Normalize(outwards.LengthSquared() < 1e-4f ? (world.Player.Position - gorm) with { Y = 0f } : outwards);
         var near = spot + (outwards * 1.2f);
 
-        // Not into the west or east wall of the hall (cells 1 to 5).
-        var (west, east) = (world.Level.CellCenter(1, 2).X - 0.5f, world.Level.CellCenter(5, 2).X + 0.5f);
-        near.X = Math.Clamp(near.X, west, east);
+        // Not into a wall of the hall (cells 1 to 5, rows 2 to 11).
+        var (northWest, southEast) = (world.Level.CellCenter(1, 2), world.Level.CellCenter(5, 11));
+        near.X = Math.Clamp(near.X, northWest.X - 0.5f, southEast.X + 0.5f);
+        near.Z = Math.Clamp(near.Z, northWest.Z - 0.5f, southEast.Z + 0.5f);
         var side = near.X < gorm.X ? 1 : 5;
         if (MathF.Abs(world.Level.CellCenter(side, 2).X - column.X) < 1.5f)
         {
