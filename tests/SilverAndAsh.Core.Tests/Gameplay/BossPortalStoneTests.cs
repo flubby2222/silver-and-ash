@@ -176,22 +176,25 @@ public class BossPortalStoneTests
         for (var tick = 0; tick < 60 && bat.Knockback.IsActive; tick++)
         {
             bat.Act(world.Level, [world.Player], events);
-            Assert.False(BatInStone(world.Level, bat.Position), $"tick {tick}: {bat.Position}");        }
+            Assert.False(InStone(world.Level, bat.Position, BodySizes.Bat.Radius, BodySizes.Bat.Height), $"tick {tick}: {bat.Position}");        }
 
         Assert.False(bat.Knockback.IsActive);
         Assert.Equal(BodySizes.Bat.HoverHeight, bat.Position.Y, 0.001f);
         return bat.Position;
     }
 
-    // Stone the bat's body touches, at any height from its feet to its top (the portal's own test, not the collision's).
-    private static bool BatInStone(Level level, Vector3 at)
+    /// <summary>
+    /// True if a body (feet at <paramref name="at"/>) touches the portal's stone anywhere from its feet to its top - the
+    /// portal's own geometry, independent of the collision's step rule, so it holds for walking and flying bodies alike.
+    /// </summary>
+    internal static bool InStone(Level level, Vector3 at, float radius, float height)
     {
         var portal = Assert.Single(level.Portals);
-        for (var y = at.Y; y <= at.Y + BodySizes.Bat.Height; y += 0.1f)
+        for (var y = at.Y; y <= at.Y + height; y += 0.1f)
         {
             for (var angle = 0f; angle < MathF.Tau; angle += MathF.Tau / 16f)
             {
-                var edge = at + new Vector3(MathF.Cos(angle) * BodySizes.Bat.Radius * 0.99f, y - at.Y, MathF.Sin(angle) * BodySizes.Bat.Radius * 0.99f);
+                var edge = at + new Vector3(MathF.Cos(angle) * radius * 0.99f, y - at.Y, MathF.Sin(angle) * radius * 0.99f);
                 if (portal.Contains(edge))
                 {
                     return true;
