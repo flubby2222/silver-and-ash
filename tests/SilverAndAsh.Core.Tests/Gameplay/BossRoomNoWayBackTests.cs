@@ -33,9 +33,19 @@ public class BossRoomNoWayBackTests
 
         public static readonly Vector2 Sideways = new(1f, 0f);
 
-        public PlayerInput Forward => new(In, Vector2.Zero, false);
-
         public PlayerInput Back => new(-In, Vector2.Zero, false);
+
+        // Issue #598: the stone jambs of the portal leave a passage only as wide as its opening (2 m at the door plane);
+        // the player starts at a cell middle a metre beside its middle. Forward and towards the middle of the opening,
+        // as a player aims for a door - in the player's own view (Move.X goes to the view's right).
+        public PlayerInput IntoTheOpening(GameWorld world)
+        {
+            var door = world.Doors[BossDoor];
+            var aside = Math.Clamp((Across((door.BoxMin + door.BoxMax) / 2f) - Across(world.Player.Position)) * 2f, -1f, 1f);
+            var direction = PassesAlongZ ? new Vector3(aside, 0f, 1f) : new Vector3(1f, 0f, aside);
+            var view = world.Player.View;
+            return new PlayerInput(new Vector2(Vector3.Dot(direction, view.FlatRight), Vector3.Dot(direction, view.FlatForward)), Vector2.Zero, false);
+        }
 
         // Through the doorway, along the passage (grows into the boss room).
         public float Along(Vector3 at) => PassesAlongZ ? at.Z : at.X;
@@ -98,7 +108,7 @@ public class BossRoomNoWayBackTests
 
     private static float FaceToBossRoom(Layout layout, Door door) => layout.PassesAlongZ ? door.BoxMax.Z : door.BoxMax.X;
 
-    // Opens the boss door and walks in, tick by tick, until the boss room seals (at most 3 s). Returns the events of
+    // Opens the boss door and walks in through the opening, tick by tick, until the boss room seals (at most 3 s). Returns the events of
     // the sealing tick.
     private static List<GameEvent> WalkIn(Layout layout, GameWorld world)
     {
@@ -106,7 +116,7 @@ public class BossRoomNoWayBackTests
         var events = new List<GameEvent>();
         for (var i = 0; i < 180 && !world.Rooms[BossRoom].IsSealed; i++)
         {
-            world.Tick(layout.Forward);
+            world.Tick(layout.IntoTheOpening(world));
             events = [.. world.Events];
         }
 
@@ -153,8 +163,12 @@ public class BossRoomNoWayBackTests
             Assert.True(layout.Along(at) - Radius >= face - 1e-4f, $"{way}, tick {tick}: the body reaches into the doorway at {at}");
             Assert.True(InCells(world, BossRoom, at), $"{way}, tick {tick}: the player is at {at}");
 
-            // Held as by a wall: no speed left that points into the doorway.
-            var isHeld = !blocked && MathF.Abs(layout.Along(at) - threshold) < 1e-3f;
+            // Held as by a wall: no speed left that points into the doorway. Held is only who stands on the threshold in
+            // front of the doorway: past its edge a player walks free (since issue #598 around the plinth and the buttress
+            // of the portal, and on along the wall at about the threshold's depth).
+            var (low, high) = layout.PassesAlongZ ? (door.BoxMin.X, door.BoxMax.X) : (door.BoxMin.Z, door.BoxMax.Z);
+            var inFront = layout.Across(at) + Radius > low && layout.Across(at) - Radius < high;
+            var isHeld = !blocked && inFront && MathF.Abs(layout.Along(at) - threshold) < 1e-3f;
             Assert.True(!isHeld || layout.Along(speed) >= -1e-3f, $"{way}, tick {tick}: speed {speed} on the threshold");
             if (isHeld)
             {
