@@ -27,7 +27,7 @@ Mehrere dieser Regeln erzwingen Hooks in [.claude/hooks/](.claude/hooks/). Block
 - **Höchstens zwei Code-Sitzungen gleichzeitig.** Designer mit Probestücken außerhalb des Spiels zählen nicht mit.
 - **Pull Requests einzeln durchbringen, in fester Reihenfolge:** Review und Test für den nächsten PR beginnen erst, wenn der davor gemergt und der nächste auf dem neuesten `main` ist. Sind zwei PRs offen, startet keine weitere Code-Sitzung.
 - **Warum:** Jeder Merge macht die anderen offenen PRs veraltet; ihre Freigaben müssen dann neu erteilt werden, ohne dass etwas Neues geprüft wird (am 2026-11-17 dreimal bei PR #306).
-- **Nach jedem Merge:** `git pull`, `tools/pr-nachziehen.ps1`, Board nachziehen.
+- **Nach jedem Merge:** `git pull`, `tools/pr-nachziehen.ps1`, Board nachziehen. Der Hook `nach-merge.ps1` meldet sich danach; die Leitung vergibt dann ohne Rückfrage das nächste passende Issue, soweit die Grenzen oben es erlauben.
 
 ## Die Leitung unterbricht den Menschen nur, wenn
 
