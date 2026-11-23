@@ -20,8 +20,9 @@ public class SleeveNearPlaneTests
     [InlineData("club_hand.glb")]
     public void No_part_of_a_melee_sleeve_comes_nearer_than_the_near_plane_within_the_picture(string file)
     {
+        // The swing as WeaponView passes it on: SwingCurve in steps of 1 %, with its overshoot past 1 and its dip below 0.
         var pivot = ForearmPivot(file);
-        foreach (var swing in Fractions(20))
+        foreach (var swing in Fractions(100).Select(WeaponPose.SwingCurve).Concat(Fractions(20)))
         {
             foreach (var windUp in Fractions(4))
             {
@@ -46,7 +47,7 @@ public class SleeveNearPlaneTests
         {
             foreach (var reload in Fractions(100))
             {
-                foreach (var weight in (float[])[0.5f, 1f])
+                foreach (var weight in Fractions(10))
                 {
                     AssertBeyondTheNearPlane(
                         "pistol_hand.glb",

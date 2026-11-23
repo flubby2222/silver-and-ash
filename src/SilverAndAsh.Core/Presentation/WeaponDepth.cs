@@ -11,11 +11,18 @@ namespace SilverAndAsh.Core.Presentation;
 /// must stay in front of every wall: <see cref="Row"/> maps the weapon near plane to -1 and lets the depth rise towards
 /// the world's depth at <see cref="WeaponPose.Reach"/> without ever reaching it. Every point of a weapon lies in front
 /// of every point of the world beyond the reach - the player keeps 35 cm from every wall, the weapons stay within 30 cm
-/// (tested); within the weapons the order of depth is kept.
+/// (tested in WeaponDepthTests); within the weapons the order of depth is kept. A fixed object of the world nearer than
+/// the reach (about 0.09 to 0.30 m) may still hide parts of a weapon in front of it.
 /// </para>
 /// </summary>
 public static class WeaponDepth
 {
+    /// <summary>The near plane of the world's projection (metres): raylib's default for BeginMode3D (rlGetCullDistanceNear).</summary>
+    public const float WorldNearPlane = 0.05f;
+
+    /// <summary>The far plane of the world's projection (metres): raylib's default for BeginMode3D (rlGetCullDistanceFar).</summary>
+    public const float WorldFarPlane = 1000f;
+
     /// <summary>
     /// The depth row (A, B) for the weapons from the world's (<paramref name="worldA"/>, <paramref name="worldB"/>):
     /// d = A - B / z, -1 at <see cref="WeaponPose.NearPlane"/>, below the world's depth at <see cref="WeaponPose.Reach"/>
