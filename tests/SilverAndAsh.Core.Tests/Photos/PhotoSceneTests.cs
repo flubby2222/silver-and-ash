@@ -827,6 +827,16 @@ public class PhotoSceneTests
                 Assert.Equal(high, world.Level[x, z].CeilingHeight);
             }
         }
+
+        // The door cells themselves: while the door bars them the world shows a wall there, but the door's box reads the
+        // hall's own ceiling - and once open, the level shows it, with no step from 3.5 to 6 m inside the arch.
+        Assert.Equal(high, door.BoxMax.Y);
+        var opened = Studio().DoorHall(DoorKind.Boss, sideways, open: true);
+        Assert.All(opened.Doors[0].Cells, cell =>
+        {
+            Assert.False(opened.Level[cell.X, cell.Z].IsSolid);
+            Assert.Equal(high, opened.Level[cell.X, cell.Z].CeilingHeight);
+        });
     }
 
     [Theory]
