@@ -1,6 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
@@ -16,8 +17,9 @@ internal sealed class ImpactMarks
     private const float Size = 0.12f;
     private const float Thickness = 0.01f;
 
-    private static readonly Color Spark = new(255, 236, 190, 255);
-    private static readonly Color Mark = new(36, 30, 36, 255);
+    // Steps of the palette (EffectColours, issue #609).
+    private static readonly Color Spark = PaletteColour.Opaque(EffectColours.ImpactSpark);
+    private static readonly Color Mark = PaletteColour.Opaque(EffectColours.ImpactMark);
 
     private readonly List<(BulletImpact Impact, float Age)> _marks = [];
 

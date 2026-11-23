@@ -84,6 +84,12 @@ public static class PhotoScenes
                 Ticks = 2,
                 Input = tick => PlayerInput.None with { Shoot = tick == 0 },
             }),
+        new("bullet-impact-wall", "A pistol shot into the wall 3 m away, 2 ticks later: the spark of the impact still shows (issue #609).",
+            studio => new PhotoSetup(TurnedToBackWall(studio.Arena('D', 2)))
+            {
+                Ticks = 2,
+                Input = tick => PlayerInput.None with { Shoot = tick == 0 },
+            }),
         new("blade-charged", "The silver blade fully charged, drawn back and trembling (issue #249).",
             studio => new PhotoSetup(studio.Arena('G', 10))
             {
@@ -777,6 +783,15 @@ public static class PhotoScenes
         new("cracked-wall-break-after", "The same wall 100 ticks after the blow: the dust gone, the stone chunks on the floor (issue #246).",
             studio => Broken(studio, 100)),
     ];
+
+    // An arena with the player turned round to the wall behind them (3 m away, the figure out of sight), looking a little
+    // down and to the side at it, so the bullet ends in the wall in the middle of the picture.
+    private static GameWorld TurnedToBackWall(GameWorld world)
+    {
+        var eye = world.Player.EyePosition;
+        PhotoStudio.Face(world.Player, new Vector3(eye.X + 0.5f, eye.Y - 0.4f, Level.CellSize));
+        return world;
+    }
 
     // The cracked wall 2 m before the player inside its secret room (no enemy gets in there to disturb the picture),
     // struck with a fully charged blade - held until charged, then let go - and `ticks` more ticks after it broke.
