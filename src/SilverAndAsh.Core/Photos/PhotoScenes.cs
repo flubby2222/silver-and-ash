@@ -218,6 +218,10 @@ public static class PhotoScenes
                 Ticks = 30,
                 Input = tick => PlayerInput.None with { SelectSlot = tick == 0 ? 2 : null },
             }),
+        new("rifle-at-wall", "The rifle chosen (2), walked up to a wall until it stops the player: the weapon in front of the wall (issue #624).",
+            studio => AtWall(studio, 1)),
+        new("blunderbuss-at-wall", "The blunderbuss chosen (3), walked up to a wall until it stops the player: the weapon in front of the wall (issue #624).",
+            studio => AtWall(studio, 2)),
         new("hud-melee", "Like hud-weapons, the club held charging: the large rounds number gives way (issue #388).",
             studio => new PhotoSetup(AllWeapons(studio.StartRun()))
             {
@@ -794,6 +798,14 @@ public static class PhotoScenes
         PhotoStudio.Face(world.Player, new Vector3(eye.X + 0.5f, eye.Y - 0.4f, Level.CellSize));
         return world;
     }
+
+    // A crate weapon chosen (slot), then straight on into the back wall until the player stands at it - its radius away.
+    private static PhotoSetup AtWall(PhotoStudio studio, int slot) =>
+        new(AllWeapons(TurnedToBackWall(studio.Arena('D', 2))))
+        {
+            Ticks = 120,
+            Input = tick => PlayerInput.None with { Move = new Vector2(0f, 1f), SelectSlot = tick == 0 ? slot : null },
+        };
 
     // The cracked wall 2 m before the player inside its secret room (no enemy gets in there to disturb the picture),
     // struck with a fully charged blade - held until charged, then let go - and `ticks` more ticks after it broke.
