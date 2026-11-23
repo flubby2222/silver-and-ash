@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Core.Audio;
 
@@ -153,6 +154,24 @@ public enum SoundKind
     /// short dark choir, chosen by the human in the listening test of issue #372.
     /// </summary>
     SkillPoint,
+
+    /// <summary>
+    /// A free-standing column takes a blow and still has more than one left (Z1, issue #605): a heavy, dull crack with
+    /// a short trickle of rubble, chosen by the human in round 4 of the listening test.
+    /// </summary>
+    ColumnHit1,
+
+    /// <summary>
+    /// A column takes the blow before its last one (Z2, issue #605): longer rubble with gaps - deliberately the brighter
+    /// take of the listening test, so the last warning before the break stands out.
+    /// </summary>
+    ColumnHit2,
+
+    /// <summary>
+    /// A column breaks (issue #605): grinding, the upper part landing at 0.70 s, then rubble. Plays instead of the blow
+    /// that broke it.
+    /// </summary>
+    ColumnBroke,
 }
 
 /// <summary>
@@ -300,7 +319,8 @@ public static class SoundBoard
     /// the end of the consecration (issue #291); a bat's wing beat, warnings, spit, bite, missed dive, hit and death
     /// (issue #297); Gorm's steps, a warning of its own for each of his three attacks, the hammer's impact, the chain,
     /// the throw and the hook's hit, a hit on his body or head, his roar and his death (issue #298); taking equipment,
-    /// a Vampiric piece with a sound of its own (issue #317); a skill point from a level up (issue #375).
+    /// a Vampiric piece with a sound of its own (issue #317); a skill point from a level up (issue #375); the events
+    /// of <see cref="KindsByEventType"/> - a blow on a column by its stage and the column's break (issue #605).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -352,8 +372,33 @@ public static class SoundBoard
         EquipmentTaken { Tier: ItemTier.Vampiric } => SoundKind.VampiricEquipmentTaken,
         EquipmentTaken => SoundKind.EquipmentTaken,
         LevelUp => SoundKind.SkillPoint,
-        _ => null,
+        _ => KindsByEventType.TryGetValue(gameEvent.GetType(), out var kindOf) ? kindOf(gameEvent) : null,
     };
+
+    /// <summary>
+    /// The sounds of events that came after the big switch in <see cref="KindFor"/>, one entry per event type (issue
+    /// #605): a new event gets a line here instead of another arm there.
+    /// </summary>
+    private static readonly ImmutableDictionary<Type, Func<GameEvent, SoundKind?>> KindsByEventType =
+        new Dictionary<Type, Func<GameEvent, SoundKind?>>
+        {
+            [typeof(ColumnHit)] = gameEvent => ColumnHitKind((ColumnHit)gameEvent),
+            [typeof(ColumnBroke)] = _ => SoundKind.ColumnBroke,
+        }.ToImmutableDictionary();
+
+    /// <summary>
+    /// The sound of a blow on a column (issue #605), by the stage it leaves the column in (<see cref="ColumnBreakLook.StageOf"/>,
+    /// the same stages the models show): Z1 or Z2. The blow that breaks it plays nothing - <see cref="ColumnBroke"/> of
+    /// the same tick plays the break instead.
+    /// </summary>
+    private static SoundKind? ColumnHitKind(ColumnHit hit) =>
+        hit.Hits >= hit.HitsToBreak ? null
+        : ColumnBreakLook.StageOf(hit.Hits, hit.HitsToBreak) switch
+        {
+            ColumnStage.Hit1 => SoundKind.ColumnHit1,
+            ColumnStage.Hit2 => SoundKind.ColumnHit2,
+            _ => null,
+        };
 }
 
 /// <summary>
