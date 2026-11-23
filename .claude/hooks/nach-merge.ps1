@@ -23,7 +23,7 @@ $text = "Merge follow-up (hook nach-merge): open pull requests: $open"
 if ($list) { $text += " ($list)" }
 $text += ". Now hand out the next issue without asking the human: " +
     "1) update the board; " +
-    "2) if two pull requests are open or two code sessions are running, start no further code session, " +
+    "2) if three pull requests are open or three code sessions are running, start no further code session, " +
     "but bring the next open pull request through review and test; " +
     "3) otherwise pick the next fitting issue from the board (check issue comments and probe branches first) " +
     "and start a work session for it; designers with probe pieces do not count towards the limit. " +
