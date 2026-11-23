@@ -25,7 +25,6 @@ public class BossDoorTests
 
     private static readonly DoorsBalance Doors = Balance.Default.Doors;
     private static readonly int OpenTicks = SimulationClock.SecondsToTicks(Doors.BossOpenTime);
-    private static readonly PlayerInput Forward = new(new Vector2(0f, 1f), Vector2.Zero, false);
     private static readonly PlayerInput Back = new(new Vector2(0f, -1f), Vector2.Zero, false);
     private static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
 
@@ -60,12 +59,37 @@ public class BossDoorTests
         return events;
     }
 
-    // Opens the boss door and walks in until the boss room seals (at most 3 s). The sealing tick is tick 1 of the slam:
-    // the doors move after the players.
+    // Issue #598: the stone jambs of the portal leave a passage only as wide as its opening (2 m at the door plane); the
+    // player starts at a cell middle a metre beside its middle. Forward (+Z) and towards the middle of the opening, as a
+    // player aims for a door - in the player's own view (Move.X goes to the view's right).
+    private static PlayerInput IntoTheOpening(GameWorld world)
+    {
+        var door = world.Doors[BossDoor];
+        var aside = Math.Clamp(((door.BoxMin.X + door.BoxMax.X) / 2f - world.Player.Position.X) * 2f, -1f, 1f);
+        var direction = new Vector3(aside, 0f, 1f);
+        var view = world.Player.View;
+        return new PlayerInput(new Vector2(Vector3.Dot(direction, view.FlatRight), Vector3.Dot(direction, view.FlatForward)), Vector2.Zero, false);
+    }
+
+    // As Run, with the input of each tick worked out from the world as it stands.
+    private static List<GameEvent> Run(GameWorld world, Func<GameWorld, PlayerInput> input, int ticks, Func<bool>? until = null)
+    {
+        var events = new List<GameEvent>();
+        for (var i = 0; i < ticks && until?.Invoke() != true; i++)
+        {
+            world.Tick(input(world));
+            events.AddRange(world.Events);
+        }
+
+        return events;
+    }
+
+    // Opens the boss door and walks in through the opening until the boss room seals (at most 3 s). The sealing tick is
+    // tick 1 of the slam: the doors move after the players.
     private static List<GameEvent> Enter(GameWorld world)
     {
         var events = Run(world, PressF, 1);
-        events.AddRange(Run(world, Forward, 180, () => world.Rooms[1].IsSealed));
+        events.AddRange(Run(world, IntoTheOpening, 180, () => world.Rooms[1].IsSealed));
         Assert.True(world.Rooms[1].IsSealed);
         return events;
     }
@@ -181,7 +205,7 @@ public class BossDoorTests
         for (var i = 0; i < 180 && !world.Rooms[1].IsSealed; i++)
         {
             from = door.OpenFraction;
-            world.Tick(Forward);
+            world.Tick(IntoTheOpening(world));
         }
 
         Assert.True(world.Rooms[1].IsSealed);
@@ -219,7 +243,7 @@ public class BossDoorTests
         Assert.Equal(new DoorSwingStarted(BossDoor, false) { Place = place }, opening);
         Assert.Contains(opened, e => e is DoorOpened { DoorId: BossDoor });
 
-        var walked = Run(world, Forward, 180, () => world.Rooms[1].IsSealed);
+        var walked = Run(world, IntoTheOpening, 180, () => world.Rooms[1].IsSealed);
         walked.AddRange(Run(world, PlayerInput.None, Doors.BossCloseTicks + 10));
         var closing = Assert.Single(walked, e => e is DoorSwingStarted);
         Assert.Equal(new DoorSwingStarted(BossDoor, true) { Place = place }, closing);
@@ -287,10 +311,10 @@ public class BossDoorTests
 
         // The player waits in the doorway until the follower is close behind, then steps in: the boss room seals.
         Run(world, PressF, 1);
-        Run(world, Forward, 120, () => world.Player.Position.Z > door.BoxMax.Z - 0.3f);
+        Run(world, IntoTheOpening, 120, () => world.Player.Position.Z > door.BoxMax.Z - 0.3f);
         Assert.False(world.Rooms[1].IsEntered);
         Run(world, PlayerInput.None, 600, () => follower.Body.Position.Z > door.BoxMin.Z - 1.5f);
-        Run(world, Forward, 60, () => world.Rooms[1].IsSealed);
+        Run(world, IntoTheOpening, 60, () => world.Rooms[1].IsSealed);
         Assert.True(world.Rooms[1].IsSealed);
         var health = follower is Ghoul ghoul ? ghoul.Health : ((Bat)follower).Health;
 

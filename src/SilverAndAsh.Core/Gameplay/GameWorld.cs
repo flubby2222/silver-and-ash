@@ -81,9 +81,9 @@ public sealed class GameWorld
         IReadOnlyList<TeleporterPlan>? teleporters = null)
     {
         ArgumentNullException.ThrowIfNull(level);
-        _levelWithOpenDoors = level;
-        _levelWithStandingColumns = level;
         _doorPlan = doors ?? [];
+        _levelWithOpenDoors = WithBossPortals(level, _doorPlan);
+        _levelWithStandingColumns = _levelWithOpenDoors;
         Balance = balance ?? Balance.Default;
         _columnWear = new ColumnWear(Balance.Columns.HitsToBreak);
         _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level, Balance.Doors, Balance.Grates)).ToList();
@@ -960,6 +960,23 @@ public sealed class GameWorld
         }
     }
 
+    // Issue #598: the stone portal of every boss door its model fits (DoorFrameLook.Fits - the same rule that decides
+    // whether the portal is drawn, so stone that blocks is always stone that is seen). Its middle is the middle of the
+    // door's cells, as for the drawing. A boss door of one cell (the showroom, a hand-made level) gets the placeholder
+    // and no stone. A level that has these portals already (a restart passes the level on) stays the same level.
+    private static Level WithBossPortals(Level level, IReadOnlyList<LevelDoor> doors)
+    {
+        var portals = doors
+            .Where(door => door.Kind == DoorKind.Boss && DoorFrameLook.Fits(door.Kind, door.Cells.Count))
+            .Select(door =>
+            {
+                var middle = door.Cells.Aggregate(Vector3.Zero, (sum, cell) => sum + level.CellCenter(cell.X, cell.Z)) / door.Cells.Count;
+                return new BossPortal(middle.X, middle.Z, middle.Y, door.Side is RoomSide.North or RoomSide.South);
+            })
+            .ToList();
+        return portals.SequenceEqual(level.Portals) ? level : level.WithPortals(portals);
+    }
+
     // A door that has just begun to block (the boss door at the hard stop of its slam, issue #566) pushes everybody in
     // its doorway into the sealed room behind it - nobody is caught in it.
     private void ShutBehind(Door door)
@@ -1023,12 +1040,26 @@ public sealed class GameWorld
 
     // Just out of the door cell along the passage, into the arena. Across the passage it stays where it was, but inside
     // the doorway's width, so it never ends up in a wall.
-    private static Vector3 PushedInto(RoomState arena, Door door, Vector3 at, float radius)
+    private Vector3 PushedInto(RoomState arena, Door door, Vector3 at, float radius)
     {
         var threshold = OnThreshold(arena, door, at, radius);
+        var across = PushedAcross(door, PassesAlongZ(door) ? at.X : at.Z, radius);
+        return PassesAlongZ(door) ? threshold with { X = across } : threshold with { Z = across };
+    }
+
+    // Across the passage a pushed body stays inside the doorway's width - or, where a boss portal frames the doorway
+    // (issue #598), inside its opening, clear of the plinths and buttresses beside it (BossPortal.PushedAcross).
+    private float PushedAcross(Door door, float across, float radius)
+    {
+        var (x, z) = door.Cells[0];
+        foreach (var portal in Level.Portals.Where(portal => portal.Frames(x, z)))
+        {
+            return portal.PushedAcross(across, radius);
+        }
+
         return PassesAlongZ(door)
-            ? threshold with { X = Math.Clamp(at.X, door.BoxMin.X + radius, door.BoxMax.X - radius) }
-            : threshold with { Z = Math.Clamp(at.Z, door.BoxMin.Z + radius, door.BoxMax.Z - radius) };
+            ? Math.Clamp(across, door.BoxMin.X + radius, door.BoxMax.X - radius)
+            : Math.Clamp(across, door.BoxMin.Z + radius, door.BoxMax.Z - radius);
     }
 
     // Just out of the door cell along the passage, on the arena's side; across the passage it stays where it was - as a

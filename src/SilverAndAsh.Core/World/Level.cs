@@ -147,6 +147,7 @@ public sealed class Level
         {
             WallCutouts = WallCutouts,
             Columns = Columns,
+            Portals = Portals,
         };
     }
 
@@ -180,6 +181,7 @@ public sealed class Level
         {
             WallCutouts = list,
             Columns = Columns,
+            Portals = Portals,
         };
     }
 
@@ -212,6 +214,7 @@ public sealed class Level
         {
             WallCutouts = WallCutouts,
             Columns = list,
+            Portals = Portals,
         };
     }
 
@@ -227,6 +230,67 @@ public sealed class Level
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The stone portals of the boss doors (issue #598). Like <see cref="Columns"/> they are solid: walking, sight and
+    /// shots stop at their stone; the door cells they frame stay open, and way-finding leads through the middle of their
+    /// opening (<see cref="Pathfinder"/>).
+    /// </summary>
+    public IReadOnlyList<BossPortal> Portals { get; private init; } = [];
+
+    /// <summary>A copy of this level with <paramref name="portals"/> as its boss portals (cells, start, figures, holes and columns stay).</summary>
+    /// <exception cref="ArgumentException">If a portal's middle is not a finite point inside the level.</exception>
+    public Level WithPortals(IEnumerable<BossPortal> portals)
+    {
+        ArgumentNullException.ThrowIfNull(portals);
+        var list = portals.ToList();
+        foreach (var portal in list)
+        {
+            var (x, z) = ToGrid(portal.X, portal.Z);
+            if (!float.IsFinite(portal.X) || !float.IsFinite(portal.Z) || !float.IsFinite(portal.Floor) || !IsInside(x, z))
+            {
+                throw new ArgumentException($"The portal at {portal.X}/{portal.Z} m does not lie inside the level.", nameof(portals));
+            }
+        }
+
+        return new Level(_cells, PlayerStartX, PlayerStartZ, _dummyCells, _ghoulCells, _batCells, _bossCells)
+        {
+            WallCutouts = WallCutouts,
+            Columns = Columns,
+            Portals = list,
+        };
+    }
+
+    /// <summary>The portal whose stone holds <paramref name="point"/>, or null.</summary>
+    public BossPortal? PortalAt(Vector3 point)
+    {
+        foreach (var portal in Portals)
+        {
+            if (portal.Contains(point))
+            {
+                return portal;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Where a way through cell (<paramref name="x"/>, <paramref name="z"/>) goes: its middle, but in a doorway framed by
+    /// a boss portal the middle of the portal's opening (<see cref="BossPortal.PassagePoint"/>).
+    /// </summary>
+    public Vector3 WayPoint(int x, int z)
+    {
+        foreach (var portal in Portals)
+        {
+            if (portal.Frames(x, z))
+            {
+                return portal.PassagePoint(x, z) with { Y = this[x, z].FloorHeight };
+            }
+        }
+
+        return CellCenter(x, z);
     }
 
     private void CheckCutout(WallCutout cutout)
@@ -252,7 +316,7 @@ public sealed class Level
     /// </summary>
     public Level WithEnemies(
         IEnumerable<(int X, int Z)> ghoulCells, IEnumerable<(int X, int Z)> batCells, IEnumerable<(int X, int Z)>? bossCells = null) =>
-        new(_cells, PlayerStartX, PlayerStartZ, _dummyCells, ghoulCells, batCells, bossCells) { WallCutouts = WallCutouts, Columns = Columns };
+        new(_cells, PlayerStartX, PlayerStartZ, _dummyCells, ghoulCells, batCells, bossCells) { WallCutouts = WallCutouts, Columns = Columns, Portals = Portals };
 
     /// <summary>True if (x, z) is a grid position inside the level.</summary>
     public bool IsInside(int x, int z) => x >= 0 && x < Width && z >= 0 && z < Depth;
