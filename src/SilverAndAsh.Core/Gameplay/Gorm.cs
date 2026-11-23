@@ -60,7 +60,7 @@ public readonly record struct FallingStone(Vector3 At, float Progress);
 /// the throw - stop or dodge then; after a long chase without an attack he stops and throws anyway, warned by the
 /// swinging hook (issue #437).
 /// </summary>
-public sealed class Gorm : ITarget
+public sealed class Gorm : IEnemy
 {
     /// <summary>The name shown above his health bar.</summary>
     public const string Name = "GORM, THE CHAINED";
@@ -154,6 +154,9 @@ public sealed class Gorm : ITarget
 
     /// <summary>Centre of his feet in world coordinates.</summary>
     public Vector3 Position { get; private set; }
+
+    /// <summary>Moves him out of a doorway that shuts (issue #558), like every other enemy.</summary>
+    void IEnemy.PlaceAt(Vector3 position) => Position = position;
 
     /// <summary>His movement in metres per second.</summary>
     public Vector3 Velocity { get; private set; }

@@ -347,7 +347,7 @@ public class GrateTests
 
     // A bigger start room (rows 0-2) with an awake enemy two rows behind the player; door A in row 3, the arena in rows
     // 4-7, door B in row 8, the corridor in rows 9-10.
-    private static GameWorld WithAFollower(char enemy)
+    private static GameWorld WithAFollower(char enemy, Balance? balance = null)
     {
         PlacedRoom[] rooms =
         [
@@ -361,7 +361,7 @@ public class GrateTests
             new(2, 8, 1, 2, RoomSide.South) { HasGrate = true },
         ];
         var map = $"#.{enemy}.#\n#...#\n#.P.#\n##.##\n#...#\n#...#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
-        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+        return new GameWorld(LevelParser.Parse(map), 1, balance ?? Balance.Default, doors, rooms);
     }
 
     // The player waits in the doorway (not in the arena yet) until the follower is in it, too, then steps in. Returns
@@ -422,6 +422,117 @@ public class GrateTests
         Assert.True(InCells(world.Rooms[1], follower.Position));
         Assert.Equal(Balance.Default.Bat.MaxHealth, follower.Health);
         Assert.True(door.IsBarred);
+    }
+
+    // Issue #572: every kind of enemy, by its symbol in the map - the test below checks that none is missing here.
+    private static readonly Dictionary<char, Type> EnemyKinds = new()
+    {
+        ['G'] = typeof(Ghoul),
+        ['B'] = typeof(Bat),
+        ['T'] = typeof(Gorm),
+    };
+
+    private static int HealthOf(ITarget enemy) => enemy switch
+    {
+        Ghoul ghoul => ghoul.Health,
+        Bat bat => bat.Health,
+        Gorm gorm => gorm.Health,
+        _ => throw new ArgumentException($"no health for {enemy.GetType().Name}", nameof(enemy)),
+    };
+
+    [Fact]
+    public void The_test_of_every_kind_of_enemy_in_a_doorway_knows_every_kind_there_is()
+    {
+        // Every class that can be hit, except the training dummy (it never moves and belongs to no room).
+        var kinds = typeof(ITarget).Assembly.GetTypes()
+            .Where(type => type.IsClass && !type.IsAbstract && typeof(ITarget).IsAssignableFrom(type) && type != typeof(TrainingDummy))
+            .OrderBy(type => type.Name);
+
+        Assert.Equal(kinds, EnemyKinds.Values.OrderBy(type => type.Name));
+    }
+
+    // Issue #572: PushOutOf goes through the one list of all enemies, so a new kind is pushed as well. Each kind follows
+    // the player from the start room into doorway A, awake, and the room seals while it is in there.
+    [Theory]
+    [InlineData('G')]
+    [InlineData('B')]
+    [InlineData('T')]
+    public void Every_kind_of_enemy_in_the_doorway_is_pushed_into_the_arena_unhurt_as_the_room_seals(char symbol)
+    {
+        // Gorm lives in the boss room and attacks from metres away, so with the shipped values he never walks into a
+        // doorway. Here his attacks are off and he walks up to the player - only to bring him there; the push itself
+        // has no value of its own.
+        var gormWalksUp = Balance.Default with { Gorm = Balance.Default.Gorm with { NearRange = 0f, FarRange = 0f, StopDistance = 0f } };
+        var world = WithAFollower(symbol, symbol == 'T' ? gormWalksUp : null);
+        var follower = world.Targets.Single(target => target.GetType() == EnemyKinds[symbol] && target.Body.Position.Z < Level.CellSize * 3);
+        var radius = follower.Body.Radius;
+        var door = world.Doors[DoorA];
+        var health = HealthOf(follower);
+
+        var before = StepInWith(world, () => follower.Body.Position, radius);
+        var after = follower.Body.Position;
+
+        // In the door cell at the end of the tick before; wholly out of it on the arena's side in the sealing tick, across
+        // the passage still inside the doorway's width. (It acts in the same tick after the push: a ghoul or a bat moves
+        // on a little, Gorm - wide as he is - is shoved off the player he lands next to.)
+        Assert.True(before.Z + radius > door.BoxMin.Z && before.Z - radius < door.BoxMax.Z, $"{symbol}: z = {before.Z}");
+        Assert.True(after.Z - radius > door.BoxMax.Z - 1e-3f, $"{symbol}: z = {after.Z}");
+        Assert.InRange(after.X, door.BoxMin.X + radius - 0.1f, door.BoxMax.X - radius + 0.1f);
+        Assert.True(InCells(world.Rooms[1], after), $"{symbol}: {after}");
+        Assert.Equal(health, HealthOf(follower));
+        Assert.True(door.IsBarred);
+    }
+
+    // Issue #572: across the passage, PushOutOf keeps the enemy inside the width of the doorway. That counts when one
+    // reaches into the door cell from the side - from beside the opening, not through it. Gorm, wide as he is, stands
+    // next to the player in the start room, beside the opening; the player walks into the arena and he follows. He
+    // reaches over the corner into the door cell as the room seals, and must come out in front of the opening, not off
+    // to the side (there, a narrower arena would have its wall).
+    [Theory]
+    [InlineData("#TP.#")]
+    [InlineData("#.PT#")]
+    public void An_enemy_reaching_into_the_doorway_from_beside_it_is_pushed_into_the_arena_in_line_with_the_doorway(string startRow)
+    {
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 5, 3, 0, Rows(0, 2), [], []),
+            new(1, RoomKind.Combat, "arena", 0, 4, 5, 4, 1, Rows(4, 7), [(2, 6)], []),
+            new(2, RoomKind.Corridor, "corridor", 0, 9, 5, 2, 2, Rows(9, 10), [], []),
+        ];
+        LevelDoor[] doors =
+        [
+            new(2, 3, 0, 1, RoomSide.South) { HasGrate = true },
+            new(2, 8, 1, 2, RoomSide.South) { HasGrate = true },
+        ];
+        var map = $"#...#\n#...#\n{startRow}\n##.##\n#...#\n#...#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
+        // As above: only so that Gorm walks up to the player instead of attacking from afar.
+        var gormWalksUp = Balance.Default with { Gorm = Balance.Default.Gorm with { NearRange = 0f, FarRange = 0f, StopDistance = 0f } };
+        var world = new GameWorld(LevelParser.Parse(map), 1, gormWalksUp, doors, rooms);
+        var gorm = world.Targets.OfType<Gorm>().Single();
+        var radius = gorm.Body.Radius;
+        var door = world.Doors[DoorA];
+        var middle = (door.BoxMin.X + door.BoxMax.X) / 2f;
+
+        Run(world, PressF, 1);
+        var before = gorm.Body.Position;
+        for (var tick = 0; tick < 120 && !world.Rooms[1].IsSealed; tick++)
+        {
+            before = gorm.Body.Position;
+            world.Tick(Forward);
+        }
+
+        var after = gorm.Body.Position;
+        Assert.True(world.Rooms[1].IsSealed);
+        // The tick before: still in the start room, reaching over the corner into the door cell, too far to the side to fit
+        // through the opening.
+        Assert.True(before.Z < door.BoxMin.Z && before.Z + radius > door.BoxMin.Z, $"z = {before.Z}");
+        Assert.True(Math.Abs(before.X - middle) > (door.BoxMax.X - door.BoxMin.X) / 2f - radius, $"x = {before.X}");
+        // The sealing tick: in the arena, closer to the line of the doorway than before (he is shoved off the player he
+        // lands next to in the same tick, so not exactly on it).
+        Assert.True(after.Z - radius > door.BoxMax.Z - 1e-3f, $"z = {after.Z}");
+        Assert.True(InCells(world.Rooms[1], after), $"{after}");
+        Assert.True(Math.Abs(after.X - middle) < Math.Abs(before.X - middle), $"x before {before.X}, after {after.X}");
+        Assert.Equal(Balance.Default.Gorm.MaxHealth, gorm.Health);
     }
 
     [Fact]
