@@ -968,7 +968,7 @@ public sealed class GameWorld
         var radius = BodySizes.Player.Radius;
         foreach (var door in room.DoorIds.Select(id => _doors[id]).Where(door => !door.Blocks && Overlaps(door, player.Position, radius)))
         {
-            player.HoldAt(PushedInto(room, door, player.Position, radius));
+            player.HoldAt(OnThreshold(room, door, player.Position, radius));
         }
     }
 
@@ -1001,25 +1001,26 @@ public sealed class GameWorld
     // the doorway's width, so it never ends up in a wall.
     private static Vector3 PushedInto(RoomState arena, Door door, Vector3 at, float radius)
     {
+        var threshold = OnThreshold(arena, door, at, radius);
+        return PassesAlongZ(door)
+            ? threshold with { X = Math.Clamp(at.X, door.BoxMin.X + radius, door.BoxMax.X - radius) }
+            : threshold with { Z = Math.Clamp(at.Z, door.BoxMin.Z + radius, door.BoxMax.Z - radius) };
+    }
+
+    // Just out of the door cell along the passage, on the arena's side; across the passage it stays where it was - as a
+    // wall stops a body, which slides along it (issue #567: past the edge of the doorway the threshold goes on as wall).
+    private static Vector3 OnThreshold(RoomState arena, Door door, Vector3 at, float radius)
+    {
         const float Gap = 0.01f;
-        var alongZ = door.Side is RoomSide.North or RoomSide.South;
         var towardsB = door.Side is RoomSide.South or RoomSide.East;
         var high = (door.RoomB == arena.Index) == towardsB;
-        if (alongZ)
-        {
-            return at with
-            {
-                X = Math.Clamp(at.X, door.BoxMin.X + radius, door.BoxMax.X - radius),
-                Z = high ? door.BoxMax.Z + radius + Gap : door.BoxMin.Z - radius - Gap,
-            };
-        }
-
-        return at with
-        {
-            X = high ? door.BoxMax.X + radius + Gap : door.BoxMin.X - radius - Gap,
-            Z = Math.Clamp(at.Z, door.BoxMin.Z + radius, door.BoxMax.Z - radius),
-        };
+        return PassesAlongZ(door)
+            ? at with { Z = high ? door.BoxMax.Z + radius + Gap : door.BoxMin.Z - radius - Gap }
+            : at with { X = high ? door.BoxMax.X + radius + Gap : door.BoxMin.X - radius - Gap };
     }
+
+    // True if the passage through the door runs along Z (a door in a north or south wall).
+    private static bool PassesAlongZ(Door door) => door.Side is RoomSide.North or RoomSide.South;
 
     // A cleared boss room lets the spiral staircase rise in its middle (decision record 0007). A room is cleared only
     // once, and there is one boss room - so it rises only once. Climbing it (F) wins the run.
