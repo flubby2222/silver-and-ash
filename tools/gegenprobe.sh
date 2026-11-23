@@ -8,7 +8,8 @@
 #
 #   <file>         file to change, relative to the repository root (e.g. src/SilverAndAsh.Core/Gameplay/GameWorld.cs)
 #   <search>       text to find - taken literally (no regex) unless --regex is given
-#   <replace>      text to put in its place (always literal)
+#   <replace>      text to put in its place - literal; with --regex, $1, $2 ... or ${1} insert the groups of
+#                  <search> (\$ writes a plain $, \\ a plain \, every other backslash stays as it is)
 #   <test filter>  a class or test name part (becomes FullyQualifiedName~<filter>),
 #                  or a full dotnet test filter expression if it contains = ~ | & or !
 #
@@ -18,12 +19,20 @@
 #   --project PATH   test project (default: tests/SilverAndAsh.Core.Tests)
 #   --name NAME      name of this probe in the output (default: the search text)
 #
-# Exit code: 0 = caught (at least one test red), 1 = survived (all green), 2 = could not run (unclean working
-# folder, text not found, control run red ...), 3 = the change does not compile (no statement about the tests).
+# Only one run per working folder at a time (issue #604): a second run started while the first one has the file
+# changed would take the broken file for the original. It stops at once with exit code 2 and names the running one.
+#
+# Exit code: 0 = caught (at least one test red), 1 = survived (all green), 2 = could not run (another run in this
+# working folder, unclean working folder, text not found, control run red ...), 3 = the change does not compile
+# (no statement about the tests).
 #
 # Example (issue #578): the restart must reset the doors.
 #   tools/gegenprobe.sh src/SilverAndAsh.Core/Gameplay/GameWorld.cs \
 #     'GameWorld Restarted() => new(_levelWithOpenDoors,' 'GameWorld Restarted() => new(Level,' GrateTests
+#
+# The same with --regex and a group (issue #604): ${1} puts back what the brackets in <search> matched.
+#   tools/gegenprobe.sh --regex src/SilverAndAsh.Core/Gameplay/GameWorld.cs \
+#     '(GameWorld Restarted[(][)] => new[(])_levelWithOpenDoors,' '${1}Level,' GrateTests
 
 set -u
 
@@ -37,7 +46,7 @@ while [ $# -gt 0 ]; do
         --regex) regex=1; shift ;;
         --project) project="${2:?--project needs a path}"; shift 2 ;;
         --name) name="${2:?--name needs a text}"; shift 2 ;;
-        -h|--help) sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         --) shift; break ;;
         -*) echo "gegenprobe: unknown option $1 (see --help)" >&2; exit 2 ;;
         *) break ;;
@@ -59,8 +68,60 @@ case "$filter" in
     *) filter="FullyQualifiedName~$filter" ;;
 esac
 
+tools="$(cd "$(dirname "$0")" && pwd)" || exit 2
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "gegenprobe: not inside a git repository" >&2; exit 2; }
 cd "$root" || exit 2
+
+work=""
+changed=0
+locked=0
+
+restore() {
+    if [ "$changed" = 1 ]; then
+        cp -- "$backup" "$file"
+        changed=0
+    fi
+    if [ -n "$work" ]; then
+        rm -rf -- "$work"
+        if [ -n "$(git status --porcelain)" ]; then
+            echo "gegenprobe: WARNING - the working folder is not clean after restoring:" >&2
+            git status --short >&2
+        fi
+    fi
+    if [ "$locked" = 1 ]; then
+        rm -rf -- "$lock"
+        locked=0
+    fi
+}
+trap restore EXIT
+trap 'echo "gegenprobe: interrupted - restoring $file" >&2; exit 130' INT TERM HUP
+
+# One run per working folder (issue #604). mkdir is atomic: of two runs started together exactly one gets the lock.
+# It lives in the git folder of this working folder (each worktree has its own), so git status never shows it.
+lock="$(git rev-parse --absolute-git-dir)/gegenprobe.lock"
+if ! mkdir -- "$lock" 2>/dev/null; then
+    other="$(cat -- "$lock/pid" 2>/dev/null)"
+    if [ -n "$other" ] && ! kill -0 "$other" 2>/dev/null; then
+        # The run that left the lock is gone (killed hard, machine restarted): take the lock over. Read the number
+        # once more right before deleting: if another run has just taken the stale lock over, it is its lock now.
+        if [ "$(cat -- "$lock/pid" 2>/dev/null)" = "$other" ]; then
+            echo "gegenprobe: removing the stale lock of run $other, which is no longer running" >&2
+            rm -rf -- "$lock"
+        fi
+        if ! mkdir -- "$lock" 2>/dev/null; then
+            echo "gegenprobe: another run took the lock just now - wait until it has finished" >&2
+            exit 2
+        fi
+    else
+        echo "gegenprobe: another gegenprobe is already running in this working folder (process ${other:-unknown})." >&2
+        echo "   Wait until it has finished and start the probes one after the other." >&2
+        echo "   If no gegenprobe is running at all (its process number was given to another program), delete" >&2
+        echo "   the lock folder: rm -rf '$lock'" >&2
+        exit 2
+    fi
+fi
+locked=1
+echo $$ > "$lock/pid"
 
 if [ -n "$(git status --porcelain)" ]; then
     echo "gegenprobe: the working folder is not clean - commit or set your changes aside first:" >&2
@@ -73,8 +134,11 @@ if ! git ls-files --error-unmatch -- "$file" >/dev/null 2>&1; then
     exit 2
 fi
 
-if [ "$regex" = 1 ]; then pattern='$ENV{GEGENPROBE_SEARCH}'; else pattern='\Q$ENV{GEGENPROBE_SEARCH}\E'; fi
-hits="$(perl -0777 -ne "\$c = 0; \$c++ while /$pattern/g; print \$c" -- "$file")"
+# The replacement step (count, change) is tools/gegenprobe-replace.pl; tools/gegenprobe.tests.sh checks it.
+modes=()
+[ "$regex" = 1 ] && modes+=(--regex)
+[ "$all" = 1 ] && modes+=(--all)
+hits="$(perl "$tools/gegenprobe-replace.pl" "${modes[@]}" --count "$file")" || exit 2
 if [ "$hits" = 0 ]; then
     echo "gegenprobe: '$GEGENPROBE_SEARCH' not found in $file - nothing to change" >&2
     exit 2
@@ -87,21 +151,14 @@ fi
 work="$(mktemp -d)"
 backup="$work/original"
 cp -- "$file" "$backup"
-changed=0
 
-restore() {
-    if [ "$changed" = 1 ]; then
-        cp -- "$backup" "$file"
-        changed=0
-    fi
-    rm -rf -- "$work"
-    if [ -n "$(git status --porcelain)" ]; then
-        echo "gegenprobe: WARNING - the working folder is not clean after restoring:" >&2
-        git status --short >&2
-    fi
-}
-trap restore EXIT
-trap 'echo "gegenprobe: interrupted - restoring $file" >&2; exit 130' INT TERM HUP
+# The changed file is made before the control run, so a wrong <replace> (a group <search> does not have) stops at
+# once.
+perl "$tools/gegenprobe-replace.pl" "${modes[@]}" "$file" > "$work/changed-file" || exit 2
+if cmp -s -- "$work/changed-file" "$backup"; then
+    echo "gegenprobe: the change did not apply (<replace> gives the same text)" >&2
+    exit 2
+fi
 
 # Runs the filtered tests; sets total, failed, red (names) and returns 3 if nothing could be run (build error).
 run_tests() {
@@ -145,12 +202,7 @@ fi
 echo "   control run: $total test(s), all green"
 
 changed=1
-if [ "$all" = 1 ]; then flags=g; else flags=; fi
-perl -0777 -pi -e "s/$pattern/\$ENV{GEGENPROBE_REPLACE}/$flags" -- "$file"
-if cmp -s -- "$file" "$backup"; then
-    echo "gegenprobe: the change did not apply" >&2
-    exit 2
-fi
+cp -- "$work/changed-file" "$file"
 
 run_tests mutated
 status=$?
