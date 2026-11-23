@@ -87,7 +87,7 @@ public static class TeleporterPlacement
     {
         var keepAway = generated.Doors
             .Where(door => door.RoomA == room.Index || door.RoomB == room.Index)
-            .Select(door => (door.X, door.Z))
+            .SelectMany(door => door.Cells)
             .Append((generated.Level.PlayerStartX, generated.Level.PlayerStartZ))
             .ToList();
         var chestPlaces = (room.ChestSlots ?? []).ToHashSet();

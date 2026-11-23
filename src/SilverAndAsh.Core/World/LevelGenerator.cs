@@ -208,10 +208,15 @@ public static class LevelGenerator
             }
 
             // Door cells are floor with the low standard ceiling (a 3.5 m high doorway).
-            var doors = _doors.Select(door => door with { X = door.X - minX, Z = door.Z - minZ }).ToList();
-            foreach (var door in doors)
+            var doors = _doors.Select(door => door with
             {
-                cells[door.X, door.Z] = Cell.Floor;
+                X = door.X - minX,
+                Z = door.Z - minZ,
+                MoreCells = door.MoreCells.Select(cell => (cell.X - minX, cell.Z - minZ)).ToList(),
+            }).ToList();
+            foreach (var (x, z) in doors.SelectMany(door => door.Cells))
+            {
+                cells[x, z] = Cell.Floor;
             }
 
             var (startX, startZ) = _rooms[0].Variant.Template.PlayerStart
@@ -332,7 +337,28 @@ public static class LevelGenerator
             var antechamber = Place(fit.Antechamber, entrance);
             var bossDoor = _open.Single(open => open.Room == antechamber);
             Place(fit.Bosses[random.Next(fit.Bosses.Count)], bossDoor);
+            WidenBossDoor(fit.Antechamber);
             return true;
+        }
+
+        // Issue #566: the boss door fills the two middle cells of the antechamber's short side - its slot (the middle cell
+        // nearer the entrance) and the one beside it. It is the door just added, between antechamber and boss room. Every
+        // boss room has floor beyond the second cell, too: a room template needs floor beside the floor behind each door
+        // slot (RoomTemplateParser - "a door may not sit flush with a side wall").
+        private void WidenBossDoor(Placement antechamber)
+        {
+            var door = _doors[^1];
+            var slot = antechamber.Slots.Single(slot => (slot.X, slot.Z) == (door.X, door.Z));
+            _doors[^1] = door with { MoreCells = [SecondBossDoorCell(antechamber, slot)] };
+        }
+
+        // The other middle cell of the side the boss door slot lies on: one step along that wall towards its middle.
+        private static (int X, int Z) SecondBossDoorCell(Placement antechamber, DoorSlot slot)
+        {
+            var floor = antechamber.Variant.Floor.Select(cell => (X: cell.X + antechamber.OffsetX, Z: cell.Z + antechamber.OffsetZ)).ToList();
+            return slot.Side is RoomSide.North or RoomSide.South
+                ? (slot.X + Math.Sign(floor.Average(cell => cell.X) - slot.X), slot.Z)
+                : (slot.X, slot.Z + Math.Sign(floor.Average(cell => cell.Z) - slot.Z));
         }
 
         // Like Collides, but between two rooms not placed yet: floor of one on a cell the other claims.

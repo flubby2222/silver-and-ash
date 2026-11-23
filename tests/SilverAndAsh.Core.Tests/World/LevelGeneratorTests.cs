@@ -105,7 +105,7 @@ public class LevelGeneratorTests
     {
         Assert.All(ManyLevels.Value, generated =>
         {
-            var doorCells = generated.Doors.Select(door => (door.X, door.Z)).ToHashSet();
+            var doorCells = generated.Doors.SelectMany(door => door.Cells).ToHashSet();
             var roomOf = generated.Rooms.SelectMany(room => room.FloorCells.Select(cell => (cell, room.Index)))
                 .ToDictionary(pair => pair.cell, pair => pair.Index);
 

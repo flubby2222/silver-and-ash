@@ -135,7 +135,7 @@ public sealed class GameWorld
         // Treasure and secret rooms are safe: their floor and doorways are wall for enemies (see EnemyLevel).
         var safeRooms = _roomPlan.Where(room => room.Kind.IsHoard()).Select(room => room.Index).ToHashSet();
         _safeCells.AddRange(_roomPlan.Where(room => safeRooms.Contains(room.Index)).SelectMany(room => room.FloorCells));
-        _safeCells.AddRange(_doorPlan.Where(door => safeRooms.Contains(door.RoomA) || safeRooms.Contains(door.RoomB)).Select(door => (door.X, door.Z)));
+        _safeCells.AddRange(_doorPlan.Where(door => safeRooms.Contains(door.RoomA) || safeRooms.Contains(door.RoomB)).SelectMany(door => door.Cells));
         _enemyLevel = WithSafeRoomsWalled();
         _rooms = _roomPlan.Select(room => new RoomState(room, _doorPlan
                 .Select((door, index) => (door, index))
@@ -228,7 +228,7 @@ public sealed class GameWorld
     {
         var difficulty = Balance.Difficulty;
         var players = Players.Select(player => new Vector2(player.Position.X, player.Position.Z)).ToList();
-        var doors = room.DoorIds.Select(id => DoorClearance.Of((_doors[id].X, _doors[id].Z), room.Cells)).ToList();
+        var doors = room.DoorIds.SelectMany(id => _doors[id].Cells).Select(cell => DoorClearance.Of(cell, room.Cells)).ToList();
 
         // Metres from the middle of a cell to the nearest player.
         static float Nearest(List<Vector2> places, (int X, int Z) cell) =>
@@ -767,6 +767,7 @@ public sealed class GameWorld
         door.Open(player.Position);
         UpdateLevel();
         _events.Add(new DoorOpened(door.Id) { Place = (door.BoxMin + door.BoxMax) / 2f });
+        ReportMotion(door, door.SlamsShut, closing: false);
     }
 
     // After doors changed: a new level in which exactly the blocking doors are walls, for everybody.
@@ -793,14 +794,17 @@ public sealed class GameWorld
         : Level.WithCells(_safeCells.Select(cell => (cell.X, cell.Z, Cell.Wall)));
 
     private Level WithUnbrokenWalls() => _doors.Any(IsUnbrokenWall)
-        ? _levelWithOpenDoors.WithCells(_doors.Where(IsUnbrokenWall).Select(door => (door.X, door.Z, Cell.Wall)))
+        ? _levelWithOpenDoors.WithCells(_doors.Where(IsUnbrokenWall).SelectMany(WallCells))
         : _levelWithOpenDoors;
 
     private static bool IsUnbrokenWall(Door door) => door.Kind == DoorKind.Cracked && !door.IsOpen;
 
     private Level WithClosedDoors() => _doors.Count == 0
         ? _levelWithOpenDoors
-        : _levelWithOpenDoors.WithCells(_doors.Where(door => door.Blocks).Select(door => (door.X, door.Z, Cell.Wall)));
+        : _levelWithOpenDoors.WithCells(_doors.Where(door => door.Blocks).SelectMany(WallCells));
+
+    // Every cell of a door that blocks is wall (issue #566: the boss door has two).
+    private static IEnumerable<(int X, int Z, Cell Cell)> WallCells(Door door) => door.Cells.Select(cell => (cell.X, cell.Z, Cell.Wall));
 
     // A player who stands in a room with the whole body enters it. A combat or boss room with living enemies
     // becomes an arena: grates fall at all its doors and the enemies wake up.
@@ -837,10 +841,11 @@ public sealed class GameWorld
         }
 
         // Issue #558, decision of the human: the doors shut in this tick - the grates only start to fall, but nobody gets
-        // out any more. An enemy in a doorway (one that followed the player) is pushed into the arena.
+        // out any more. An enemy in a doorway (one that followed the player) is pushed into the arena. An open boss door
+        // only starts to swing shut here and blocks from its hard stop on (issue #566, see TickDoors).
         foreach (var id in room.DoorIds)
         {
-            ReportGrate(_doors[id], _doors[id].Bar(), falling: true);
+            ReportMotion(_doors[id], _doors[id].Bar(), closing: true);
             PushOutOf(_doors[id], room);
         }
 
@@ -895,31 +900,50 @@ public sealed class GameWorld
     {
         foreach (var id in room.DoorIds)
         {
-            ReportGrate(_doors[id], _doors[id].Lift(), falling: false);
+            ReportMotion(_doors[id], _doors[id].Lift(), closing: false);
         }
     }
 
-    private void ReportGrate(Door door, bool started, bool falling)
+    // One event per door whose grate or boss door (issue #566) started to move.
+    private void ReportMotion(Door door, bool started, bool closing)
     {
         if (started)
         {
-            _events.Add(new GrateStarted(door.Id, falling) { Place = (door.BoxMin + door.BoxMax) / 2f });
+            _events.Add(MotionStarted(door, closing) with { Place = (door.BoxMin + door.BoxMax) / 2f });
         }
     }
 
+    private static GameEvent MotionStarted(Door door, bool closing) => door.SlamsShut
+        ? new DoorSwingStarted(door.Id, closing)
+        : new GrateStarted(door.Id, closing);
+
     // Issue #558: every door runs its own clock. A rising grate frees the way once it hangs high enough - then the
-    // level changes for everybody.
+    // level changes for everybody. A boss door that reaches the hard stop of its slam (issue #566) shuts the way.
     private void TickDoors()
     {
         var changed = false;
         foreach (var door in _doors)
         {
-            changed |= door.Tick();
+            if (door.Tick())
+            {
+                changed = true;
+                ShutBehind(door);
+            }
         }
 
         if (changed)
         {
             UpdateLevel();
+        }
+    }
+
+    // A door that has just begun to block (the boss door at the hard stop of its slam, issue #566) pushes everybody in
+    // its doorway into the sealed room behind it - nobody is caught in it.
+    private void ShutBehind(Door door)
+    {
+        if (door.Blocks && _rooms.FirstOrDefault(room => room.IsSealed && room.DoorIds.Contains(door.Id)) is { } arena)
+        {
+            PushOutOf(door, arena);
         }
     }
 
@@ -931,11 +955,19 @@ public sealed class GameWorld
     // too - an enemy from the corridor or the start room that followed a player into the doorway ends up in the arena.
     // It does not count for the arena (not in room.Enemies), so it does not hold up the clearing; but it fights in there.
     // The other way (pushed back to where it came from) would leave it waiting outside the grate.
+    //
+    // Issue #566: the boss door shuts only at the hard stop of its slam, so by then a player may have stepped back into its
+    // doorway - every player there is pushed into the boss room the same way.
     private void PushOutOf(Door door, RoomState arena)
     {
         foreach (var enemy in Enemies.Where(enemy => Overlaps(door, enemy.Body.Position, enemy.Body.Radius)))
         {
             enemy.PlaceAt(PushedInto(arena, door, enemy.Body.Position, enemy.Body.Radius));
+        }
+
+        foreach (var player in Players.Where(player => Overlaps(door, player.Position, BodySizes.Player.Radius)))
+        {
+            player.PlaceAt(PushedInto(arena, door, player.Position, BodySizes.Player.Radius));
         }
     }
 

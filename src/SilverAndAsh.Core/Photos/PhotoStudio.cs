@@ -443,7 +443,7 @@ public sealed class PhotoStudio
         var place = new[] { 2, 3, -2, -3 }
             .Select(step => alongX ? (X: plan.X + step, Z: plan.Z) : (X: plan.X, Z: plan.Z + step))
             .Where(cell => cell.X >= 0 && cell.Z >= 0 && cell.X < level.Width && cell.Z < level.Depth && !level[cell.X, cell.Z].IsSolid)
-            .Where(cell => !generated.Doors.Any(door => door.X == cell.X && door.Z == cell.Z))
+            .Where(cell => !generated.Doors.Any(door => door.Cells.Contains((cell.X, cell.Z))))
             .Where(cell => LineOfSight.IsClear(level, level.CellCenter(cell.X, cell.Z) + eye, target))
             .Select(cell => ((int X, int Z)?)cell)
             .FirstOrDefault()
@@ -510,7 +510,7 @@ public sealed class PhotoStudio
         var (outX, outZ) = (face.X - plan.X, face.Z - plan.Z);
         var cell = (X: plan.X + (outX * cells) + (outZ * along), Z: plan.Z + (outZ * cells) + (outX * along));
         if (cell.X < 0 || cell.Z < 0 || cell.X >= level.Width || cell.Z >= level.Depth || level[cell.X, cell.Z].IsSolid
-            || generated.Doors.Any(door => door.X == cell.X && door.Z == cell.Z))
+            || generated.Doors.Any(door => door.Cells.Contains((cell.X, cell.Z))))
         {
             return null;
         }

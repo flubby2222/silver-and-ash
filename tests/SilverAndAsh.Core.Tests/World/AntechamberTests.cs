@@ -228,6 +228,47 @@ public class AntechamberTests
         Assert.Single(generated.Rooms, room => room.Kind == RoomKind.Antechamber);
     }
 
+    [Fact]
+    public void The_boss_door_takes_both_middle_cells_of_the_short_side_with_floor_on_both_sides()
+    {
+        // Issue #566: the door cell the antechamber had (X, Z) and the other middle cell beside it - one door over two cells.
+        Assert.All(Levels.Value, level =>
+        {
+            var room = TheAntechamber(level);
+            var boss = Assert.Single(level.Rooms, r => r.Kind == RoomKind.Boss);
+            var bossDoor = Assert.Single(level.Doors, door => door.Kind == DoorKind.Boss);
+            Assert.Equal(2, bossDoor.Cells.Count);
+            Assert.Equal((bossDoor.X, bossDoor.Z), bossDoor.Cells[0]);
+
+            var (_, firstOffset, onWestOrEast) = PlaceOnSide(room, bossDoor);
+            var (sideLength, secondOffset, secondOnWestOrEast) = PlaceOnSide(room, bossDoor with { X = bossDoor.Cells[1].X, Z = bossDoor.Cells[1].Z });
+            Assert.Equal(Antechamber.Width, sideLength);
+            Assert.Equal(onWestOrEast, secondOnWestOrEast);
+            Assert.Equal([1, 2], new[] { firstOffset, secondOffset }.Order());
+
+            // Walkable, with the antechamber's floor on one side and the boss room's on the other.
+            var (stepX, stepZ) = onWestOrEast ? (1, 0) : (0, 1);
+            Assert.All(bossDoor.Cells, cell =>
+            {
+                Assert.False(level.Level[cell.X, cell.Z].IsSolid, $"seed {level.Seed}: door cell {cell} is solid");
+                var sides = new[] { (cell.X - stepX, cell.Z - stepZ), (cell.X + stepX, cell.Z + stepZ) };
+                Assert.Contains(sides, room.FloorCells.Contains);
+                Assert.Contains(sides, boss.FloorCells.Contains);
+            });
+        });
+    }
+
+    [Fact]
+    public void A_boss_room_with_wall_behind_the_second_door_cell_cannot_be_made()
+    {
+        // Issue #566: the second cell of the boss door lies beside the slot, so the boss room needs floor beside the floor
+        // behind its slot. The template rule already demands it - a boss room one cell wide is refused, never placed. The
+        // counterpart, three cells wide, builds a level (With_a_small_boss_room_the_same_rooms_build_a_level_with_an_antechamber).
+        var error = Assert.Throws<LevelFormatException>(() => RoomTemplateParser.Parse("#+#\n#.#\n###", RoomKind.Boss, "boss"));
+
+        Assert.Contains("flush with a side wall", error.Message, StringComparison.Ordinal);
+    }
+
     // 41 cells of floor from west to east, the door in the middle of the long side.
     private static readonly string WideBoss = $"{new string('#', 21)}+{new string('#', 21)}\n#{new string('.', 41)}#\n{new string('#', 43)}";
 

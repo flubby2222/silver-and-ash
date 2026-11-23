@@ -61,6 +61,16 @@ public sealed record LevelDoor(int X, int Z, int RoomA, int RoomB, RoomSide Side
     /// the door is barred at once, and the grate falls over <see cref="GratesBalance.FallTicks"/> - to be seen and heard.
     /// </summary>
     public bool HasGrate { get; init; }
+
+    /// <summary>
+    /// Further door cells beside (<see cref="X"/>, <see cref="Z"/>) in the same wall (issue #566): the boss door fills the
+    /// two middle cells of the antechamber's short side. All cells of a door are one door - they bar, open and close
+    /// together. None for an ordinary one-cell door.
+    /// </summary>
+    public IReadOnlyList<(int X, int Z)> MoreCells { get; init; } = [];
+
+    /// <summary>All cells of the door: (<see cref="X"/>, <see cref="Z"/>) first, then <see cref="MoreCells"/>.</summary>
+    public IReadOnlyList<(int X, int Z)> Cells => [(X, Z), .. MoreCells];
 }
 
 /// <summary>
