@@ -116,13 +116,17 @@ public class BossRoomColumnsTests
     [Fact]
     public void A_grid_point_at_the_wall_stays_empty()
     {
-        // So wide apart that the columns would stand against the walls of the 14 x 14 cell hall.
+        // So wide apart that each column stands on the floor of the 14 x 14 cell hall, but only 1.5 m from its walls.
         var generated = LevelGenerator.Generate(Templates, 3, Balance.Default.Layout);
-        var grid = Standard with { BossRoomSpacing = 28f };
+        var grid = Standard with { BossRoomSpacing = 24f };
+        var points = BossRoomColumns.Grid(Boss(generated), grid).ToList();
+        var floor = Boss(generated).FloorCells.ToHashSet();
 
         var placed = BossRoomColumns.Place(generated, grid);
 
-        Assert.Equal(4, BossRoomColumns.Grid(Boss(generated), grid).Count());
+        Assert.Equal(4, points.Count);
+        Assert.All(points, point => Assert.Contains(Level.ToGrid(point.X, point.Z), floor));
+        Assert.All(points, point => Assert.Equal(ColumnFit.TooCloseToWall, ColumnPlacement.Check(generated.Level, point, [], grid)));
         Assert.Empty(placed.Level.Columns);
     }
 
