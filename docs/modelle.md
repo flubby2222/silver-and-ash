@@ -57,6 +57,8 @@ python tools/models/checksums.py
 
 Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_model_file`) wird rot, wenn Liste und Dateien nicht zusammenpassen.
 
+Das Skript schreibt bei jedem Lauf alle drei Listen (Modelle, Texturen, Geräusche). `python tools/models/checksums.py --help` zeigt nur die Hilfe, eine unbekannte Option (etwa `--check`) bricht mit Exit-Code `2` ab; in beiden Fällen bleibt jede Datei unverändert (Issue #604). Eine reine Prüfung ohne Schreiben gibt es nicht – das übernehmen die Tests.
+
 ## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus, Gorm, Tür, Treppe)
 
 1. `.glb`, `.png` und Skript an ihren Platz, Zeile in `assets/HERKUNFT.md`, `python tools/models/checksums.py`.

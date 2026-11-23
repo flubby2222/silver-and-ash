@@ -9,8 +9,11 @@ kopierte Datei erreicht Raylib so nie. Tests prüfen, dass die Listen zu den ein
 
 Aufruf nach jedem Neu-Erzeugen eines Modells, einer Textur oder eines Geräuschs (aus dem Repository-Wurzelverzeichnis, normales Python 3):
     python tools/models/checksums.py
+
+--help zeigt nur diese Hilfe; eine unbekannte Option bricht ab. In beiden Fällen schreibt das Skript keine Datei (Issue #604).
 """
 
+import argparse
 import hashlib
 import os
 
@@ -21,16 +24,24 @@ LISTS = [
     ("audio", "audio.sha256", (".wav", ".ogg"), "a sound"),
 ]
 
-for folder, list_name, endings, what in LISTS:
-    directory = os.path.join(ASSETS, folder)
-    lines = []
-    for name in sorted(os.listdir(directory)):
-        if name.endswith(endings):
-            data = open(os.path.join(directory, name), "rb").read()
-            lines.append(f"{hashlib.sha256(data).hexdigest()} {len(data)} {name}")
 
-    with open(os.path.join(directory, list_name), "w", encoding="ascii", newline="\n") as f:
-        f.write(f"# sha256 size name - written by tools/models/checksums.py, checked by the game before loading {what}\n")
-        f.write("\n".join(lines) + "\n")
-    print(f"{folder}/{list_name}:")
-    print("\n".join(lines))
+def write_lists():
+    for folder, list_name, endings, what in LISTS:
+        directory = os.path.join(ASSETS, folder)
+        lines = []
+        for name in sorted(os.listdir(directory)):
+            if name.endswith(endings):
+                data = open(os.path.join(directory, name), "rb").read()
+                lines.append(f"{hashlib.sha256(data).hexdigest()} {len(data)} {name}")
+
+        with open(os.path.join(directory, list_name), "w", encoding="ascii", newline="\n") as f:
+            f.write(f"# sha256 size name - written by tools/models/checksums.py, checked by the game before loading {what}\n")
+            f.write("\n".join(lines) + "\n")
+        print(f"{folder}/{list_name}:")
+        print("\n".join(lines))
+
+
+if __name__ == "__main__":
+    # Read the command line first: --help and wrong options end here, before any list is written.
+    argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter).parse_args()
+    write_lists()
