@@ -14,6 +14,10 @@ import szene_ghul as S
 
 ORDER5 = ["marked", "holy_fire", "grave_chill", "stun", "leech"]
 _cache = {}
+# Beginn des Gangs hinter der Kamera (Blender-Achse von psx.build_room; der Gang reicht dahinter bis z = +|ROOM_BACK| im
+# Spiel). Runde 1 benutzt -4.0 (Kamera bei 8 m und mehr steht davor, Blick wie durch eine Tuer); Runde 2 setzt -16.0,
+# damit die Kamera im Gang steht wie im Spiel.
+ROOM_BACK = -4.0
 
 
 def anchors_for(x):
@@ -28,7 +32,7 @@ def scene(kind, cam_z):
     key = (kind, cam_z)
     if key in _cache:
         return _cache[key]
-    S.start(room_half=4.0, back=-4.0)
+    S.start(room_half=4.0, back=ROOM_BACK)
     xs = [0.0] if kind == "one" else [2.2, 1.1, 0.0, -1.1, -2.2]
     for x in xs:
         S.add_ghoul(x, 0.0)

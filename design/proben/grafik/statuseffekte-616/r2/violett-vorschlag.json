@@ -1,0 +1,14 @@
+{
+  "name": "Violett",
+  "hinweis": "Vorschlag fuer eine neue Akzentreihe (Runde 2, #616). Aufbau wie Stoff/Eisen: acht Stufen, dunkel nach hell, Stufe 0 ist fast schwarz, Stufe 7 ein blasser Schimmer. Farbton 270 bis 285 Grad: klar entfernt von Stoff (Blau, etwa 225 Grad) und von Blutrot (etwa 350 Grad, die Angriffs-Ankuendigung). Nicht in hauptpalette.json eingetragen; das macht spaeter der Einbau.",
+  "farben": [
+    [22, 12, 34],
+    [38, 20, 58],
+    [58, 30, 88],
+    [82, 44, 120],
+    [112, 62, 156],
+    [150, 92, 190],
+    [190, 140, 220],
+    [226, 200, 240]
+  ]
+}
