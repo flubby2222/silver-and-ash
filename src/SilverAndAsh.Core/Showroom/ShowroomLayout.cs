@@ -323,6 +323,7 @@ public sealed class ShowroomLayout
         var deepNiches = DeepWallNiches(level, sections);
         niches.AddRange(deepNiches.Select(deep => deep.Niche));
         labels.AddRange(DeepNicheLabels(deepNiches));
+        labels.AddRange(FillingLabels(deepNiches));
         level = level.WithWallCutouts(deepNiches.Select(deep => deep.Cutout));
 
         var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
@@ -513,15 +514,67 @@ public sealed class ShowroomLayout
                 foreach (var (x, index) in DeepNicheColumns(section, part).Select((x, index) => (x, index)))
                 {
                     var form = forms[index % forms.Length];
+                    var filling = DeepNicheFilling(part, index);
+                    if (!WallNicheFillingLook.Fits(form, filling))
+                    {
+                        throw new InvalidOperationException($"Deep niche {index} of the {part} takes no {filling}.");
+                    }
+
                     var (position, facing, size) = WallNicheLook.Place(level, x, z, RoomSide.South);
                     var cutout = WallNicheLook.Cutout(form, x, z, RoomSide.South)!.Value;
-                    niches.Add((new ExhibitWallNiche(section.Variant, size, position, facing) { Form = form }, cutout));
+                    niches.Add((new ExhibitWallNiche(section.Variant, size, position, facing) { Form = form, Filling = filling }, cutout));
                 }
             }
         }
 
         return niches;
     }
+
+    // Part -> what stands in each of its deep niches, west to east (issue #553). The niches take turns without and with a
+    // shelf, so the second and fourth have one: candles and skulls need it, bottles lie on the sill of either. Each part
+    // keeps empty niches; the room shows the bottles under a shelf and an empty shelf. A new filling is one more entry here.
+    private static readonly (ShowroomPart Part, WallNicheFilling[] Fillings)[] DeepNicheFillings =
+    [
+        (ShowroomPart.Corridor,
+            [WallNicheFilling.None, WallNicheFilling.Candles, WallNicheFilling.Bottles, WallNicheFilling.Skulls, WallNicheFilling.None]),
+        (ShowroomPart.Room,
+            [WallNicheFilling.None, WallNicheFilling.Bottles, WallNicheFilling.Bottles, WallNicheFilling.None, WallNicheFilling.None]),
+    ];
+
+    /// <summary>
+    /// What stands in the deep niche <paramref name="index"/> (west to east, <see cref="DeepNicheColumns"/>) of
+    /// <paramref name="part"/>: nothing beyond the table.
+    /// </summary>
+    public static WallNicheFilling DeepNicheFilling(ShowroomPart part, int index)
+    {
+        foreach (var (each, fillings) in DeepNicheFillings)
+        {
+            if (each == part)
+            {
+                return index >= 0 && index < fillings.Length ? fillings[index] : WallNicheFilling.None;
+            }
+        }
+
+        return WallNicheFilling.None;
+    }
+
+    /// <summary>The label in front of every deep niche with <paramref name="filling"/> (issue #553), or null for an empty one.</summary>
+    public static string? FillingLabel(WallNicheFilling filling) => filling switch
+    {
+        WallNicheFilling.None => null,
+        _ => filling.ToString(),
+    };
+
+    // Low in front of the sill, below what the niche holds, so it hides neither the filling nor the label above the niche.
+    private const float FillingLabelHeight = 0.25f;
+
+    // One label in front of every deep niche with a filling.
+    private static IEnumerable<ShowroomLabel> FillingLabels(List<(ExhibitWallNiche Niche, WallCutout Cutout)> niches) =>
+        niches
+            .Select(deep => deep.Niche)
+            .Where(niche => FillingLabel(niche.Filling) is not null)
+            .Select(niche => new ShowroomLabel(
+                FillingLabel(niche.Filling)!, niche.Position + new Vector3(0f, FillingLabelHeight, 0f) + (niche.Facing * 0.6f)));
 
     /// <summary>One label per form, size and section, in front of and above the westmost deep niche of that form.</summary>
     private static IEnumerable<ShowroomLabel> DeepNicheLabels(List<(ExhibitWallNiche Niche, WallCutout Cutout)> niches) =>

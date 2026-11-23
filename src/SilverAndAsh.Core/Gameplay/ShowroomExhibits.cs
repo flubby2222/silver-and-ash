@@ -54,6 +54,12 @@ public sealed record ExhibitWallNiche(TextureVariant Variant, WallNicheSize Size
     /// hole, <see cref="WallNicheLook.Cutout"/>).
     /// </summary>
     public WallNicheForm Form { get; init; } = WallNicheForm.Flat;
+
+    /// <summary>
+    /// What stands in the pocket of a deep niche (issue #553, <see cref="WallNicheFillingLook"/>): nothing by default.
+    /// Only decoration as well.
+    /// </summary>
+    public WallNicheFilling Filling { get; init; } = WallNicheFilling.None;
 }
 
 /// <summary>
