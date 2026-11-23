@@ -780,6 +780,8 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeCrackedWall(2, fromSecretRoom: true))),
         new("cracked-wall-break", "A cracked wall 2 m away, broken from inside its secret room: the stone chunks in flight, 8 ticks after the blow (issue #246).",
             studio => Broken(studio, 8)),
+        new("cracked-wall-break-dust", "The same wall 24 ticks after the blow: the cloud of dust at its densest, the stone chunks still in flight (issue #614).",
+            studio => Broken(studio, 24)),
         new("cracked-wall-break-after", "The same wall 100 ticks after the blow: the dust gone, the stone chunks on the floor (issue #246).",
             studio => Broken(studio, 100)),
     ];
