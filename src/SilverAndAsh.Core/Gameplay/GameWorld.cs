@@ -1225,7 +1225,7 @@ public sealed class GameWorld
             _events.Add(new SilverDropped(pile.Id, silver, _gorm.Position));
         }
 
-        var vialPlace = _gorm.Position + (_gorm.Facing * 1.2f);
+        var vialPlace = FreePlace(_gorm.Position + (_gorm.Facing * 1.2f), BodySizes.Pickup.Radius, _gorm.Position);
         var vial = new Pickup(_nextPickupId++, ConsumableKind.BloodVial, vialPlace);
         _pickups.Add(vial);
         _events.Add(new PickupDropped(vial.Id, vial.Kind, vialPlace));
@@ -1233,7 +1233,8 @@ public sealed class GameWorld
         // Behind him and closer than his own radius: his body kept that spot clear of walls, so the piece never lies in
         // one. The tier and the draw come from the loot pool's own generator; the tier is already rolled, so no bonus.
         var tier = LootPool.Roll(Balance.Gorm.EquipmentVampiricChance) ? ItemTier.Vampiric : ItemTier.Royal;
-        var equipmentPlace = OutsideTheStairs(_gorm.Position - (_gorm.Facing * GormEquipmentDistance), _gorm.Position, -_gorm.Facing);
+        var behindHim = OutsideTheStairs(_gorm.Position - (_gorm.Facing * GormEquipmentDistance), _gorm.Position, -_gorm.Facing);
+        var equipmentPlace = FreePlace(behindHim, EquipmentDrop.BoxRadius, _gorm.Position);
         DropEquipment(LootPool.Draw(tier, mayRise: false), Balance.Gorm.ExtraSilver, equipmentPlace);
     }
 
@@ -1288,14 +1289,82 @@ public sealed class GameWorld
         return place;
     }
 
-    // True if every corner of the square of half-width radius around position lies on a cell of the room whose floor
-    // is at floorHeight.
-    private bool OnFloorOf(RoomState room, Vector3 position, float radius, float floorHeight)
+    /// <summary>
+    /// The gap (metres) between a piece of Gorm's loot and a standing column (issue #608): a piece never touches one, so
+    /// a player walking round the column reaches it and F finds it.
+    /// </summary>
+    public const float ColumnClearance = 0.1f;
+
+    // A piece of Gorm's loot (a square of half-width halfWidth) must lie where it can be taken: on open floor at his
+    // height, clear of every standing column and of the staircase (issue #608). Where it would not, it turns round him
+    // at the same distance - the nearest directions first - to the first place that is free. His own body kept the
+    // ground under him clear, so turning stays close to where he fell. If no direction is free, the piece stays where
+    // it would have lain, even in a column (in generated boss rooms this never happened: review of PR #613).
+    private Vector3 FreePlace(Vector3 place, float halfWidth, Vector3 gormPosition)
+    {
+        if (IsFreeFor(place, halfWidth, gormPosition.Y))
+        {
+            return place;
+        }
+
+        var offset = new Vector2(place.X - gormPosition.X, place.Z - gormPosition.Z);
+        var distance = offset.Length();
+        if (distance < 1e-4f)
+        {
+            return place;
+        }
+
+        var start = MathF.Atan2(offset.X, offset.Y);
+        for (var step = 1; step < 16; step++)
+        {
+            // +22.5°, -22.5°, +45°, ... - the nearest directions to where it should have lain first.
+            var angle = start + ((step + 1) / 2 * (step % 2 == 1 ? 1 : -1) * MathF.PI / 8f);
+            var candidate = new Vector3(
+                gormPosition.X + (MathF.Sin(angle) * distance), place.Y, gormPosition.Z + (MathF.Cos(angle) * distance));
+            if (IsFreeFor(candidate, halfWidth, gormPosition.Y))
+            {
+                return candidate;
+            }
+        }
+
+        return place;
+    }
+
+    // True if a square of half-width halfWidth around position lies on open floor at floorHeight (in the boss room, if
+    // there is one), keeps ColumnClearance from every standing column and does not reach the staircase's box.
+    private bool IsFreeFor(Vector3 position, float halfWidth, float floorHeight)
+    {
+        var flat = new Vector2(position.X, position.Z);
+        foreach (var column in Level.Columns)
+        {
+            var nearest = Vector2.Clamp(column.Centre, flat - new Vector2(halfWidth), flat + new Vector2(halfWidth));
+            if (Vector2.Distance(nearest, column.Centre) < Column.Radius + ColumnClearance)
+            {
+                return false;
+            }
+        }
+
+        if (_rooms.FirstOrDefault(room => room.Kind == RoomKind.Boss) is not { } boss)
+        {
+            return OnFloorOf(null, position, halfWidth, floorHeight);
+        }
+
+        var (stairsX, stairsZ) = Stairs.CellIn(boss.Cells);
+        var stairs = Level.CellCenter(stairsX, stairsZ);
+        var reach = Stairs.Radius + halfWidth + StairsClearance;
+        return MathF.Max(MathF.Abs(position.X - stairs.X), MathF.Abs(position.Z - stairs.Z)) >= reach
+            && OnFloorOf(boss, position, halfWidth, floorHeight);
+    }
+
+    // True if every corner of the square of half-width radius around position lies on an open cell whose floor is at
+    // floorHeight - a cell of the room, or in a level without a boss room (room null) any cell of the level.
+    private bool OnFloorOf(RoomState? room, Vector3 position, float radius, float floorHeight)
     {
         foreach (var (dx, dz) in new[] { (-1f, -1f), (-1f, 1f), (1f, -1f), (1f, 1f) })
         {
             var cell = Level.ToGrid(position.X + (dx * radius), position.Z + (dz * radius));
-            if (!room.Cells.Contains(cell) || Level[cell.X, cell.Z].IsSolid
+            var inside = room?.Cells.Contains(cell) ?? Level.IsInside(cell.X, cell.Z);
+            if (!inside || Level[cell.X, cell.Z].IsSolid
                 || MathF.Abs(Level[cell.X, cell.Z].FloorHeight - floorHeight) > 0.01f)
             {
                 return false;

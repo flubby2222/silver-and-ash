@@ -17,7 +17,7 @@ public class GormCoverTests
     private static readonly int HitsToBreak = Balance.Default.Columns.HitsToBreak;
 
     /// <summary>A player who survives a lot - to watch many attacks in a row.</summary>
-    private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
+    internal static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
 
     /// <summary>In line between the player (cell 7/3) and Gorm (6 m further along +Z, close enough for hammer and swing).</summary>
     private static readonly Column Between = Column.AtCell(7, 5);
@@ -275,7 +275,7 @@ public class GormCoverTests
     // ---- In the world: the broken column leaves the level ------------------------------------------------------------
 
     // As in ColumnEnemyTests: room 0 (start) in row 0, door in row 1, the boss room (5 wide) in rows 2-11, Gorm ('T') in row 10.
-    private const string GormMap = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
+    internal const string GormMap = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
 
     [Fact]
     public void In_the_world_a_broken_column_no_longer_blocks_the_way_nor_is_built_and_a_restart_brings_it_back()
@@ -307,7 +307,7 @@ public class GormCoverTests
         Assert.Equal([column], world.Restarted().Level.Columns);
     }
 
-    private static GameWorld GormWorld(Level level)
+    internal static GameWorld GormWorld(Level level)
     {
         var rows = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
         PlacedRoom[] rooms =
@@ -319,7 +319,7 @@ public class GormCoverTests
         return new GameWorld(level, 1, Tough, doors, rooms);
     }
 
-    private static void Enter(GameWorld world)
+    internal static void Enter(GameWorld world)
     {
         world.Tick(PlayerInput.None with { Interact = true });
         for (var tick = 0; tick < 3 * Second && !world.Rooms[1].IsSealed; tick++)
