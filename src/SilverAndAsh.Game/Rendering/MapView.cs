@@ -99,10 +99,15 @@ internal static class MapView
                 : door.Kind == DoorKind.Boss ? DoorBoss
                 : door.Kind == DoorKind.Locked ? DoorLocked
                 : DoorClosed;
-            var corner = ToScreen(door.X, door.Z);
             var inset = size * 0.15f;
-            Raylib.DrawRectangleV(corner + new Vector2(inset, inset), new Vector2(size - 2 * inset, size - 2 * inset), color);
+            foreach (var cell in door.Cells)
+            {
+                // Every cell of a wider door (the boss door, issue #566) gets its square.
+                var cellCorner = ToScreen(cell.X, cell.Z);
+                Raylib.DrawRectangleV(cellCorner + new Vector2(inset, inset), new Vector2(size - 2 * inset, size - 2 * inset), color);
+            }
 
+            var corner = ToScreen(door.X, door.Z);
             var middle = corner + new Vector2(size / 2f, size / 2f);
             var icon = MathF.Max(size * 0.7f, 10f);
             if (door.Kind == DoorKind.Boss)

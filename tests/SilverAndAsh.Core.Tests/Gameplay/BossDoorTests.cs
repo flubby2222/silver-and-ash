@@ -1,0 +1,297 @@
+using System.Numerics;
+using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Physics;
+using SilverAndAsh.Core.World;
+
+namespace SilverAndAsh.Core.Tests.Gameplay;
+
+/// <summary>
+/// The boss door over two cells with its own motion (issue #566): it swings shut over
+/// <see cref="DoorsBalance.BossCloseTicks"/> ticks when the boss room seals and blocks - both cells together - from the hard
+/// stop at <see cref="DoorsBalance.BossShutTick"/> on. Whoever stands in its doorway then is pushed into the boss room.
+/// Once the boss room is cleared it opens again, evenly over <see cref="DoorsBalance.BossOpenTime"/>. Every start of a
+/// motion is one <see cref="DoorSwingStarted"/>.
+/// </summary>
+public class BossDoorTests
+{
+    // Room 0 (start) in row 0, the boss door in cells (2, 1) and (3, 1), room 1 (boss room, one ghoul far in) in rows
+    // 2-9, a second boss door of one cell at (3, 10) that nobody opens, room 2 (corridor) in row 11.
+    private const string Map =
+        "#.P..#\n##..##\n#....#\n#....#\n#....#\n#....#\n#....#\n#....#\n#....#\n#...G#\n###.##\n#....#";
+
+    private const int BossDoor = 0;
+    private const int BackDoor = 1;
+
+    private static readonly DoorsBalance Doors = Balance.Default.Doors;
+    private static readonly int OpenTicks = SimulationClock.SecondsToTicks(Doors.BossOpenTime);
+    private static readonly PlayerInput Forward = new(new Vector2(0f, 1f), Vector2.Zero, false);
+    private static readonly PlayerInput Back = new(new Vector2(0f, -1f), Vector2.Zero, false);
+    private static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
+
+    private static List<(int X, int Z)> Rows(int from, int to) =>
+        Enumerable.Range(from, to - from + 1).SelectMany(z => new[] { (1, z), (2, z), (3, z), (4, z) }).ToList();
+
+    private static GameWorld World(string map = Map, IReadOnlyList<(int X, int Z)>? moreCells = null)
+    {
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 6, 1, 0, Rows(0, 0), [], []),
+            new(1, RoomKind.Boss, "boss", 0, 2, 6, 8, 1, Rows(2, 9), [(4, 9)], []),
+            new(2, RoomKind.Corridor, "corridor", 0, 11, 6, 1, 2, Rows(11, 11), [], []),
+        ];
+        LevelDoor[] doors =
+        [
+            new(2, 1, 0, 1, RoomSide.South, DoorKind.Boss) { MoreCells = moreCells ?? [(3, 1)] },
+            new(3, 10, 1, 2, RoomSide.South, DoorKind.Boss),
+        ];
+        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+    }
+
+    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
+    {
+        var events = new List<GameEvent>();
+        for (var i = 0; i < ticks && until?.Invoke() != true; i++)
+        {
+            world.Tick(input);
+            events.AddRange(world.Events);
+        }
+
+        return events;
+    }
+
+    // Opens the boss door and walks in until the boss room seals (at most 3 s). The sealing tick is tick 1 of the slam:
+    // the doors move after the players.
+    private static List<GameEvent> Enter(GameWorld world)
+    {
+        var events = Run(world, PressF, 1);
+        events.AddRange(Run(world, Forward, 180, () => world.Rooms[1].IsSealed));
+        Assert.True(world.Rooms[1].IsSealed);
+        return events;
+    }
+
+    private static void KillEverything(GameWorld world)
+    {
+        foreach (var target in world.Targets.ToList())
+        {
+            target.TakeDamage(10_000, []);
+        }
+    }
+
+    private static bool BothCellsSolid(GameWorld world, out bool second)
+    {
+        var door = world.Doors[BossDoor];
+        second = world.Level[door.Cells[1].X, door.Cells[1].Z].IsSolid;
+        return world.Level[door.Cells[0].X, door.Cells[0].Z].IsSolid;
+    }
+
+    private static bool InCells(RoomState room, Vector3 at) => room.Cells.Contains(Level.ToGrid(at.X, at.Z));
+
+    [Fact]
+    public void Both_cells_of_the_boss_door_block_from_the_hard_stop_and_free_together_when_the_boss_room_is_cleared()
+    {
+        var world = World();
+        var door = world.Doors[BossDoor];
+        Assert.Equal([(2, 1), (3, 1)], door.Cells);
+        Enter(world);
+
+        // Tick by tick through the whole slam: both cells free before the hard stop, both wall from it on.
+        for (var tick = 1; tick <= Doors.BossCloseTicks + 10; tick++)
+        {
+            var shut = tick >= Doors.BossShutTick;
+            var first = BothCellsSolid(world, out var second);
+            Assert.True(shut == first, $"tick {tick}: first cell solid = {first}");
+            Assert.True(shut == second, $"tick {tick}: second cell solid = {second}");
+            Assert.Equal(shut, door.Blocks);
+            Assert.Equal(shut, door.IsBarred);
+            world.Tick(PlayerInput.None);
+        }
+
+        // The boss is dead: in that very tick both cells are free again, together.
+        KillEverything(world);
+        var events = Run(world, PlayerInput.None, 1);
+        Assert.Contains(new RoomCleared(1), events);
+        Assert.False(BothCellsSolid(world, out var secondAfter));
+        Assert.False(secondAfter);
+        Assert.False(door.Blocks);
+    }
+
+    [Fact]
+    public void A_boss_door_nobody_opened_is_barred_at_once_and_only_unbarred_when_the_room_is_cleared()
+    {
+        // Error branch of the slam: a closed boss door has no leaves to swing - it shuts in the sealing tick, as before.
+        var world = World();
+        var back = world.Doors[BackDoor];
+        Assert.Equal([(3, 10)], back.Cells);
+
+        var events = Enter(world);
+
+        Assert.True(back.IsBarred);
+        Assert.True(world.Level[3, 10].IsSolid);
+        Assert.Equal(0f, back.OpenFraction);
+        Assert.DoesNotContain(events, e => e is DoorSwingStarted { DoorId: BackDoor } or GrateStarted);
+
+        KillEverything(world);
+        var cleared = Run(world, PlayerInput.None, 1);
+        Assert.False(back.IsBarred);
+        Assert.False(back.IsOpen);
+        Assert.True(back.CanInteract);
+        Assert.DoesNotContain(cleared, e => e is DoorSwingStarted { DoorId: BackDoor });
+    }
+
+    [Fact]
+    public void The_boss_door_swings_shut_to_the_hard_stop_and_opens_again_evenly_over_its_opening_time()
+    {
+        var world = World();
+        var door = world.Doors[BossDoor];
+
+        // Walk in, remembering how far the leaves stood open at the end of the tick before the room sealed.
+        Run(world, PressF, 1);
+        var from = door.OpenFraction;
+        for (var i = 0; i < 180 && !world.Rooms[1].IsSealed; i++)
+        {
+            from = door.OpenFraction;
+            world.Tick(Forward);
+        }
+
+        Assert.True(world.Rooms[1].IsSealed);
+        Assert.InRange(from, 0.01f, 1f);
+
+        // From there evenly down to closed at the hard stop, and closed for the rest of the slam.
+        for (var tick = 1; tick <= Doors.BossCloseTicks; tick++)
+        {
+            var expected = from * MathF.Max(0f, 1f - ((float)tick / Doors.BossShutTick));
+            Assert.True(MathF.Abs(expected - door.OpenFraction) < 1e-4f, $"tick {tick}: {door.OpenFraction}, expected {expected}");
+            world.Tick(PlayerInput.None);
+        }
+
+        Assert.Equal(0f, door.OpenFraction);
+
+        // Cleared: from closed evenly to fully open over the opening time - one step a tick.
+        KillEverything(world);
+        world.Tick(PlayerInput.None);
+        for (var tick = 0; tick <= OpenTicks + 10; tick++)
+        {
+            var expected = Math.Min(tick, OpenTicks) / (float)OpenTicks;
+            Assert.True(MathF.Abs(expected - door.OpenFraction) < 1e-4f, $"tick {tick}: {door.OpenFraction}, expected {expected}");
+            world.Tick(PlayerInput.None);
+        }
+    }
+
+    [Fact]
+    public void Every_start_of_a_boss_door_motion_is_one_door_event_and_no_grate_event()
+    {
+        var world = World();
+        var place = (world.Doors[BossDoor].BoxMin + world.Doors[BossDoor].BoxMax) / 2f;
+
+        var opened = Run(world, PressF, 1);
+        var opening = Assert.Single(opened, e => e is DoorSwingStarted);
+        Assert.Equal(new DoorSwingStarted(BossDoor, false) { Place = place }, opening);
+        Assert.Contains(opened, e => e is DoorOpened { DoorId: BossDoor });
+
+        var walked = Run(world, Forward, 180, () => world.Rooms[1].IsSealed);
+        walked.AddRange(Run(world, PlayerInput.None, Doors.BossCloseTicks + 10));
+        var closing = Assert.Single(walked, e => e is DoorSwingStarted);
+        Assert.Equal(new DoorSwingStarted(BossDoor, true) { Place = place }, closing);
+
+        KillEverything(world);
+        var cleared = Run(world, PlayerInput.None, OpenTicks + 10);
+        var reopening = Assert.Single(cleared, e => e is DoorSwingStarted);
+        Assert.Equal(new DoorSwingStarted(BossDoor, false) { Place = place }, reopening);
+
+        Assert.DoesNotContain(opened.Concat(walked).Concat(cleared), e => e is GrateStarted);
+    }
+
+    [Fact]
+    public void A_player_who_steps_back_into_the_doorway_is_pushed_into_the_boss_room_at_the_hard_stop()
+    {
+        var world = World();
+        var door = world.Doors[BossDoor];
+        var radius = BodySizes.Player.Radius;
+        Enter(world);
+
+        // Back into the doorway while the leaves still swing - the way is not shut yet.
+        Run(world, Back, 60, () => world.Player.Position.Z < door.BoxMax.Z - 0.2f);
+        Assert.False(door.Blocks);
+        var x = world.Player.Position.X;
+        var health = world.Player.Health;
+
+        Run(world, PlayerInput.None, Doors.BossCloseTicks, () => door.Blocks);
+
+        // At the stop: just out of the door cells on the boss room's side, not caught and not hurt.
+        Assert.True(door.Blocks);
+        Assert.InRange(world.Player.Position.Z, door.BoxMax.Z + radius, door.BoxMax.Z + radius + 0.02f);
+        Assert.Equal(x, world.Player.Position.X);
+        Assert.True(InCells(world.Rooms[1], world.Player.Position), $"the player is at {world.Player.Position}");
+        Assert.Equal(health, world.Player.Health);
+    }
+
+    // A bigger start room (rows 0-2) with an awake enemy two rows behind the player; the boss door in cells (2, 3) and
+    // (3, 3), the boss room in rows 4-13 with its ghoul far in.
+    private static GameWorld WithAFollower(char enemy)
+    {
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 6, 3, 0, Rows(0, 2), [], []),
+            new(1, RoomKind.Boss, "boss", 0, 4, 6, 10, 1, Rows(4, 13), [(4, 13)], []),
+        ];
+        LevelDoor[] doors = [new(2, 3, 0, 1, RoomSide.South, DoorKind.Boss) { MoreCells = [(3, 3)] }];
+        var middle = string.Concat(Enumerable.Repeat("#....#\n", 9));
+        var map = $"#.{enemy}..#\n#....#\n#.P..#\n##..##\n{middle}#...G#";
+        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+    }
+
+    [Theory]
+    [InlineData('G')]
+    [InlineData('B')]
+    public void An_enemy_that_follows_a_player_into_the_doorway_is_pushed_into_the_boss_room_unhurt_at_the_hard_stop(char symbol)
+    {
+        var world = WithAFollower(symbol);
+        var follower = world.Targets.Single(target => target is Ghoul or Bat && target.Body.Position.Z < Level.CellSize * 3);
+        var radius = follower.Body.Radius;
+        var door = world.Doors[0];
+        bool InTheDoorway(Vector3 at) => at.Z + radius > door.BoxMin.Z && at.Z - radius < door.BoxMax.Z;
+
+        // The player waits in the doorway until the follower is close behind, then steps in: the boss room seals.
+        Run(world, PressF, 1);
+        Run(world, Forward, 120, () => world.Player.Position.Z > door.BoxMax.Z - 0.3f);
+        Assert.False(world.Rooms[1].IsEntered);
+        Run(world, PlayerInput.None, 600, () => follower.Body.Position.Z > door.BoxMin.Z - 1.5f);
+        Run(world, Forward, 60, () => world.Rooms[1].IsSealed);
+        Assert.True(world.Rooms[1].IsSealed);
+        var health = follower is Ghoul ghoul ? ghoul.Health : ((Bat)follower).Health;
+
+        // It comes on through the swinging leaves; at the hard stop it is in the doorway - and pushed through.
+        var before = follower.Body.Position;
+        for (var tick = 0; tick < Doors.BossCloseTicks && !door.Blocks; tick++)
+        {
+            before = follower.Body.Position;
+            world.Tick(PlayerInput.None);
+        }
+
+        var after = follower.Body.Position;
+        Assert.True(door.Blocks);
+        Assert.True(InTheDoorway(before), $"{symbol}: z = {before.Z} at the end of the tick before the stop");
+        Assert.InRange(after.Z, door.BoxMax.Z + radius, door.BoxMax.Z + radius + 0.02f);
+        Assert.InRange(after.X, door.BoxMin.X + radius, door.BoxMax.X - radius);
+        Assert.True(InCells(world.Rooms[1], after), $"{symbol}: {after}");
+        Assert.Equal(health, follower is Ghoul g ? g.Health : ((Bat)follower).Health);
+    }
+
+    [Fact]
+    public void A_door_cell_on_a_wall_is_refused()
+    {
+        // Error branch: the second cell of the boss door would lie in the wall beside the doorway.
+        var error = Assert.Throws<ArgumentException>(() => World(moreCells: [(4, 1)]));
+
+        Assert.Contains("4/1", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_door_cell_outside_the_level_is_refused()
+    {
+        var error = Assert.Throws<ArgumentException>(() => World(moreCells: [(2, -1)]));
+
+        Assert.Contains("2/-1", error.Message, StringComparison.Ordinal);
+    }
+}

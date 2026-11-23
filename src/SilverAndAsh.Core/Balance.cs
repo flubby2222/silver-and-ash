@@ -521,8 +521,20 @@ public sealed record DoorsBalance
     /// <summary>Locked door (one heavy leaf).</summary>
     public float LockedOpenTime { get; init; } = 1.3f;
 
-    /// <summary>Boss door (two heavy iron leaves).</summary>
+    /// <summary>Boss door (two heavy iron leaves): 132 ticks, evenly (issue #566).</summary>
     public float BossOpenTime { get; init; } = 2.2f;
+
+    /// <summary>
+    /// Ticks (60 a second) the boss door takes to swing shut when its boss room seals (issue #566): a run-up, the hard
+    /// stop at <see cref="BossShutTick"/>, then the rest of the slam.
+    /// </summary>
+    public int BossCloseTicks { get; init; } = 100;
+
+    /// <summary>
+    /// The tick of the closing boss door's hard stop (issue #566): the leaves meet, and from this tick on the door blocks.
+    /// Before it, the way is still free.
+    /// </summary>
+    public int BossShutTick { get; init; } = 78;
 
     /// <summary>The time for <paramref name="kind"/>; 0 for a cracked wall.</summary>
     public float OpenTime(World.DoorKind kind) => kind switch
