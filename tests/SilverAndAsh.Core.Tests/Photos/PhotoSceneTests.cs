@@ -103,7 +103,7 @@ public class PhotoSceneTests
             "door-level-seed2-boss", "door-level-barred", "door-level-barred-shut", "door-normal-10m", "door-locked-10m", "door-boss-10m",
             "cracked-wall-2m", "cracked-wall-4m", "cracked-wall-10m", "cracked-wall-flat", "cracked-wall-a-4m",
             "cracked-wall-b-4m", "cracked-wall-c-4m", "cracked-wall-sideways-4m", "cracked-wall-secret-4m", "cracked-wall-break",
-            "cracked-wall-break-after",
+            "cracked-wall-break-dust", "cracked-wall-break-after",
             "showroom-a-corridor", "showroom-a-room", "showroom-b-corridor", "showroom-b-room", "showroom-c-corridor",
             "showroom-c-room", "stairs-4m", "stairs-10m", "well-ready", "well-spent",
             "teleporter-locked-3m", "teleporter-unlocked-3m", "teleporter-locked-10m", "teleporter-unlocked-10m",

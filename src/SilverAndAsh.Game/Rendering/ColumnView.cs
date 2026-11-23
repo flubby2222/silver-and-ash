@@ -91,28 +91,7 @@ internal sealed class ColumnView : IDisposable
     /// fogged and in the picture variant by the level <paramref name="shader"/> like the stone around them (issue #609).
     /// Call between BeginFigures and EndFigures, after everything solid.
     /// </summary>
-    public void DrawDust(LevelShader shader)
-    {
-        if (_puffs.Count == 0)
-        {
-            return;
-        }
-
-        using var seeThrough = shader.BeginSeeThrough();
-        foreach (var puff in _puffs)
-        {
-            // Three faint shells, each smaller one adding a little: dense in the middle, fading out to the edge.
-            foreach (var (scale, alpha) in Shells)
-            {
-                var a = (byte)Math.Clamp(alpha * puff.Opacity, 0f, 255f);
-                Raylib.DrawSphereEx(puff.Position, puff.Radius * scale, 6, 10, Dust with { A = a });
-            }
-        }
-    }
-
-    // The shells of one puff: size (of its radius) and opacity (0..255 at full density). Strong enough that the cloud of
-    // the landing pieces is plainly seen from 6 m (provisional until the play test, issue #601).
-    private static readonly (float Scale, float Alpha)[] Shells = [(1f, 40f), (0.72f, 55f), (0.45f, 70f)];
+    public void DrawDust(LevelShader shader) => DustCloudView.Draw(shader, _puffs, Dust);
 
     public void Dispose()
     {
