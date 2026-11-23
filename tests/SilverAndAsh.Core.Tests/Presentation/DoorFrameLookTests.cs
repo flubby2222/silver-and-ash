@@ -178,6 +178,32 @@ public class DoorFrameLookTests
         Assert.True(sideways > 0, "No door in an East/West passage.");
     }
 
+    [Fact]
+    public void Every_cell_of_a_boss_door_shows_the_variants_of_its_first_cell()
+    {
+        // Issue #603: DoorView draws the boss portal once, from the wall variants at the door's first cell. That is only
+        // right if its second cell faces the same walls - no seam where the left and the right half would differ.
+        var bossDoors = 0;
+        var differentFaces = 0;
+        foreach (var generated in ManyLevels.Value)
+        {
+            var surfaces = SurfaceVariants.For(generated);
+            foreach (var door in generated.Doors.Where(door => door.Kind == DoorKind.Boss))
+            {
+                var first = DoorFrameLook.Variants(surfaces, door.X, door.Z, door.Side);
+                Assert.All(door.Cells, cell => Assert.True(
+                    DoorFrameLook.Variants(surfaces, cell.X, cell.Z, door.Side) == first,
+                    $"Seed {generated.Seed}: the boss door cell ({cell.X}, {cell.Z}) shows {DoorFrameLook.Variants(surfaces, cell.X, cell.Z, door.Side)}, its first cell {first}."));
+                bossDoors++;
+                differentFaces += first.Front != first.Back ? 1 : 0;
+            }
+        }
+
+        // The seeds really cover what the test is about: every level has its boss door, some with two variants.
+        Assert.Equal(ManyLevels.Value.Length, bossDoors);
+        Assert.True(differentFaces > 0, "No boss door with two different variants.");
+    }
+
     [Theory]
     [InlineData(TextureVariant.B, true, true, TextureVariant.B)]
     [InlineData(TextureVariant.B, true, false, TextureVariant.B)]

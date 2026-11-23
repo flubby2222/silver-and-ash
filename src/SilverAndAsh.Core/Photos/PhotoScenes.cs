@@ -748,7 +748,8 @@ public static class PhotoScenes
     ];
 
     // The open portal from inside the boss room: the room seals on the first tick, the leaves slam shut; the picture is
-    // taken in the tick they hit the stop and the door is barred - before Gorm's hook can pull the player away.
+    // taken in the tick they hit the stop and the door is barred - before Gorm's hook can pull the player away. Barred
+    // means shut: the slam bars the door only at the hard stop (DoorSlam.IsShut), where the leaves stand closed.
     private static PhotoSetup SlammedPortal(PhotoStudio studio)
     {
         var world = studio.BeforeBossPortal(6f, fromBossRoom: true, open: true);
@@ -756,7 +757,7 @@ public static class PhotoScenes
         return new PhotoSetup(world)
         {
             Ticks = world.Balance.Doors.BossCloseTicks,
-            StopWhen = _ => door.IsBarred && door.OpenFraction == 0f,
+            StopWhen = _ => door.IsBarred,
         };
     }
 
