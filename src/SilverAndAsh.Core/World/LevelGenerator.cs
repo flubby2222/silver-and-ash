@@ -6,7 +6,8 @@ namespace SilverAndAsh.Core.World;
 /// joined to free door slots - directly through a shared wall or through a corridor - until the number from
 /// <see cref="LayoutBalance"/> is reached; while loops are wanted, places are sought where a new room (or a room
 /// and a corridor) joins two free door slots, so there is a second way round. Then the boss room, behind one of the
-/// rooms farthest from the start, so it is always the farthest room and has one entrance. Last the treasure rooms
+/// rooms farthest from the start, so it is always the farthest room and has one entrance - always behind the built-in
+/// <see cref="Antechamber"/> (issue #565), which takes the place the boss room had before. Last the treasure rooms
 /// (<see cref="LayoutBalance.TreasureRooms"/>, <see cref="LayoutBalance.LockedTreasureRooms"/>): dead ends, never at the
 /// start room, never as far as the boss; a locked one gets a <see cref="DoorKind.Locked"/> door - so nothing important
 /// ever lies behind a lock. Before them the secret rooms (<see cref="LayoutBalance.SecretRooms"/>): each sits
@@ -45,6 +46,9 @@ public static class LevelGenerator
 
         var catalog = templates.GroupBy(template => template.Kind)
             .ToDictionary(group => group.Key, group => group.SelectMany(Variant.AllOf).ToList());
+
+        // The antechamber is built in: its eight ways to lie, always in the same order.
+        catalog[RoomKind.Antechamber] = Variant.AllOf(Antechamber.Template).ToList();
         var random = new Random(seed);
 
         for (var attempt = 0; attempt < MaxTries; attempt++)
@@ -239,7 +243,8 @@ public static class LevelGenerator
             return false;
         }
 
-        // The boss must end up farther from the start than every other room.
+        // The boss must end up farther from the start than every other room. The antechamber in front of it takes the
+        // place the boss room would have had (same slots, same random numbers), so it is farther than every other room, too.
         private bool TryJoinBoss()
         {
             var distances = Distances();
@@ -254,7 +259,7 @@ public static class LevelGenerator
 
                 foreach (var useCorridor in corridorFirst ? new[] { true, false } : [false, true])
                 {
-                    if ((useCorridor ? throughCorridor : direct) && TryJoin(RoomKind.Boss, slot, useCorridor))
+                    if ((useCorridor ? throughCorridor : direct) && TryJoinBossBehindAntechamber(slot, useCorridor))
                     {
                         return true;
                     }
@@ -262,6 +267,81 @@ public static class LevelGenerator
             }
 
             return false;
+        }
+
+        // The antechamber joins 'slot' (directly or through a corridor) with its entrance, the boss room joins the
+        // antechamber's other door slot. If there is no room for both, nothing is placed.
+        private bool TryJoinBossBehindAntechamber(OpenSlot slot, bool useCorridor)
+        {
+            if (!useCorridor)
+            {
+                return AntechamberAndBosses(slot.X, slot.Z, slot.Side, corridor: null) is { } direct
+                    && PlaceAntechamberAndBoss(direct, slot);
+            }
+
+            if (!UsesCorridors)
+            {
+                return false;
+            }
+
+            var corridors = Fitting(RoomKind.Corridor, slot.X, slot.Z, slot.Side)
+                .OrderBy(_ => random.Next()).Take(CorridorsPerSlot);
+            foreach (var corridor in corridors)
+            {
+                foreach (var exit in corridor.Slots.Where(exit => (exit.X, exit.Z) != (slot.X, slot.Z)))
+                {
+                    if (AntechamberAndBosses(exit.X, exit.Z, exit.Side, corridor) is { } fit)
+                    {
+                        var corridorIndex = Place(corridor, slot);
+                        return PlaceAntechamberAndBoss(fit, new OpenSlot(corridorIndex, exit.X, exit.Z, exit.Side));
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        // The first antechamber (in the fixed order of its variants - no random number) that fits with its entrance on
+        // the door cell (x, z) and leaves room for a boss room at its other door slot, with every boss room that fits
+        // there. 'corridor' is about to be placed in front of it: the boss room must not run into it either.
+        private (Placement Antechamber, List<Placement> Bosses)? AntechamberAndBosses(int x, int z, RoomSide side, Placement? corridor)
+        {
+            foreach (var antechamber in Fitting(RoomKind.Antechamber, x, z, side))
+            {
+                var template = antechamber.Variant.Template;
+                if (!Antechamber.IsEntrance(template, antechamber.Slots.Single(door => (door.X, door.Z) == (x, z))))
+                {
+                    continue;
+                }
+
+                var bossDoor = antechamber.Slots.Single(door => !Antechamber.IsEntrance(template, door));
+                var bosses = Fitting(RoomKind.Boss, bossDoor.X, bossDoor.Z, bossDoor.Side)
+                    .Where(boss => corridor is null || !Overlaps(boss, corridor))
+                    .ToList();
+                if (bosses.Count > 0)
+                {
+                    return (antechamber, bosses);
+                }
+            }
+
+            return null;
+        }
+
+        private bool PlaceAntechamberAndBoss((Placement Antechamber, List<Placement> Bosses) fit, OpenSlot entrance)
+        {
+            var antechamber = Place(fit.Antechamber, entrance);
+            var bossDoor = _open.Single(open => open.Room == antechamber);
+            Place(fit.Bosses[random.Next(fit.Bosses.Count)], bossDoor);
+            return true;
+        }
+
+        // Like Collides, but between two rooms not placed yet: floor of one on a cell the other claims.
+        private static bool Overlaps(Placement a, Placement b)
+        {
+            var claimedByB = b.Variant.Claimed.Select(cell => (cell.X + b.OffsetX, cell.Z + b.OffsetZ)).ToHashSet();
+            return a.Variant.Claimed
+                .Select(cell => (X: cell.X + a.OffsetX, Z: cell.Z + a.OffsetZ))
+                .Any(cell => claimedByB.Contains(cell) && (a.IsFloorAt(cell.X, cell.Z) || b.IsFloorAt(cell.X, cell.Z)));
         }
 
         // A secret room lies directly at a combat room (never through a corridor), nearer to the start than the boss;

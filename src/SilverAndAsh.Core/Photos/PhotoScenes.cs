@@ -27,6 +27,8 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.InRoom(RoomKind.Treasure))),
         new("room-secret", "A secret room (behind a cracked wall) from its far corner.",
             studio => new PhotoSetup(studio.InRoom(RoomKind.Secret))),
+        new("room-antechamber", "The antechamber from its entrance: the boss door to one side, the boss-gate teleporter in the far corner (issue #565).",
+            studio => new PhotoSetup(studio.AtAntechamberEntrance())),
         new("room-boss", "The boss room from 12 m, Gorm waiting.",
             studio => new PhotoSetup(studio.BeforeGorm(12f))),
         new("chests-4m", "The chests of all four tiers side by side 4 m away, closed and locked, and an open one.",

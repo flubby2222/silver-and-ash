@@ -5,7 +5,8 @@ namespace SilverAndAsh.Core.Presentation;
 /// <summary>
 /// The teleporter "horn crystal" (issues #436, #480): two models from tools/models/teleporter.py with the same shape,
 /// assets/models/teleporter_locked.glb (dark crystal) and teleporter_unlocked.glb (bright crystal). Neither part moves in
-/// its file; the teleporter stands with its origin on the floor in the middle of its cell, never turned. The crystal of an
+/// its file; the teleporter stands with its origin on the floor in the middle of its cell, turned only if its plan says so
+/// (the boss-gate teleporter in the antechamber looks into the room, issue #565). The crystal of an
 /// unlocked teleporter shines by itself: no shading by direction, no lantern fall-off (<see cref="Glows"/>).
 /// </summary>
 public static class TeleporterLook

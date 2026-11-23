@@ -35,6 +35,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 |---|---|
 | `start-room` | Ebene 0, wie ein Durchlauf beginnt: Startraum, Ebenen-Name, Standardwaffen |
 | `room-combat`, `room-corridor`, `room-treasure`, `room-secret` | je einen Raum dieser Art aus seiner entferntesten Ecke, Blick zur Raummitte |
+| `room-antechamber` | den Vorraum vom Eingang aus: seitlich die Bosstür, in der fernen Ecke der Boss-Tor-Teleporter (Issue #565) |
 | `room-boss` | den Bossraum aus 12 m, Gorm im Blick |
 | `ghoul-4m`, `ghoul-10m`, `bat-4m`, `bat-10m` | einen Ghul bzw. eine Fledermaus in einer leeren Halle aus 4 m bzw. 10 m |
 | `ghoul-windup` | einen Ghul beim Ausholen (Hälfte der Ausholzeit) |
@@ -80,7 +81,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `teleporter-locked-3m`, `teleporter-unlocked-3m`, `teleporter-locked-10m`, `teleporter-unlocked-10m` | ein Teleporter gesperrt bzw. freigeschaltet in einer leeren Halle aus 3 m bzw. 10 m, Blick auf den Kristall (Issue #480) |
 | `teleporter-hint` | Ebene 0, alle Teleporter freigeschaltet, man steht auf dem im Startraum: „[T] Travel“ unter dem Fadenkreuz |
 | `menu-travel` | wie `teleporter-hint`, dazu die offene Zielwahl (T): Karte, gewähltes Ziel und Knopf „Travel“ |
-| `menu-travel-sealed` | die Zielwahl im ersten Seed, dessen Boss-Tor-Teleporter in einem Kampfraum steht; der Raum ist versiegelt, seine Gegner leben (wie im Koop, wenn ein anderer Spieler dort kämpft): das Ziel steht als „Room sealed“ da |
+| `menu-travel-sealed` | die Zielwahl mit einem Boss-Tor-Teleporter in einem versiegelten Kampfraum, dessen Gegner leben (wie im Koop, wenn ein anderer Spieler dort kämpft): das Ziel steht als „Room sealed“ da. Seit dem Vorraum (Issue #565) steht dieser Teleporter in echten Ebenen nie in einem Kampfraum; die Szene setzt ihn dafür in den Kampfraum vor dem Vorraum (erster Seed ohne Gang davor) |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |
 | `stairs-4m`, `stairs-10m` | die Wendeltreppe im Bossraum der Ebene 0 nach Gorms Tod (Issue #300): Gorm stirbt vor dem ersten Tick, die Treppe steigt wie im Spiel auf; das Bild entsteht, sobald sie steht und ihre Lampe leuchtet, aus 4 m bzw. 10 m vom Fuß, mit Blick auf ihre halbe Höhe |
 | `equipment-rifle` | das Gewehr (Forged) im Musterraum aus 0,8 m: „[F] Take Rifle (Forged)“ in Stahlblau (Issue #317) |

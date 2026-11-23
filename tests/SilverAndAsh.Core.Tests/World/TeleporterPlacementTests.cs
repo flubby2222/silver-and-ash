@@ -76,10 +76,54 @@ public class TeleporterPlacementTests
     }
 
     [Fact]
-    public void The_boss_gate_teleporter_is_the_allowed_cell_nearest_to_the_boss_door()
+    public void In_the_antechamber_the_boss_gate_teleporter_is_the_allowed_cell_farthest_from_the_boss_door()
+    {
+        // Issue #565, provisional decision of the lead: the corner across from the boss door.
+        Assert.All(Levels.Value, level =>
+        {
+            var (room, door) = BossGate(level);
+            Assert.Equal(RoomKind.Antechamber, room.Kind);
+            var gate = level.Teleporters!.Single(teleporter => teleporter.Site == TeleporterSite.BossGate);
+            var distance = Distance((gate.X, gate.Z), (door.X, door.Z));
+            var start = (level.Level.PlayerStartX, level.Level.PlayerStartZ);
+            var doors = level.Doors.Where(d => d.RoomA == room.Index || d.RoomB == room.Index).Select(d => (d.X, d.Z)).Append(start).ToList();
+            var farther = room.FloorCells.Where(cell =>
+                Distance(cell, (door.X, door.Z)) > distance
+                && !(room.ChestSlots ?? []).Contains(cell)
+                && doors.All(other => Steps(cell, other) >= 2));
+            Assert.Empty(farther);
+            Assert.Contains((gate.X, gate.Z), room.FloorCells);
+        });
+
+        static int Distance((int X, int Z) a, (int X, int Z) b) => ((a.X - b.X) * (a.X - b.X)) + ((a.Z - b.Z) * (a.Z - b.Z));
+    }
+
+    [Fact]
+    public void In_the_antechamber_the_boss_gate_teleporter_looks_at_the_middle_of_the_room()
     {
         Assert.All(Levels.Value, level =>
         {
+            var (room, _) = BossGate(level);
+            var gate = level.Teleporters!.Single(teleporter => teleporter.Site == TeleporterSite.BossGate);
+            var middle = new System.Numerics.Vector2(
+                (float)room.FloorCells.Average(cell => cell.X), (float)room.FloorCells.Average(cell => cell.Z));
+            var towards = System.Numerics.Vector2.Normalize(middle - new System.Numerics.Vector2(gate.X, gate.Z));
+
+            Assert.Equal(1f, gate.Facing.Length(), 3);
+            Assert.True(System.Numerics.Vector2.Dot(gate.Facing, towards) > 0.999f, $"seed {level.Seed}: facing {gate.Facing}, middle lies {towards}");
+        });
+    }
+
+    [Fact]
+    public void In_front_of_any_other_room_the_boss_gate_teleporter_is_the_allowed_cell_nearest_to_the_boss_door()
+    {
+        // The rule from before issue #565, still kept for a boss door that leads out of another kind of room. Generated
+        // levels always have the antechamber there, so the test calls the antechamber a combat room.
+        Assert.All(Levels.Value, built =>
+        {
+            var antechamber = BossGate(built).Room;
+            var rooms = built.Rooms.Select(r => r.Index == antechamber.Index ? r with { Kind = RoomKind.Combat } : r).ToList();
+            var level = TeleporterPlacement.Place(built with { Rooms = rooms, Teleporters = null });
             var (room, door) = BossGate(level);
             var gate = level.Teleporters!.Single(teleporter => teleporter.Site == TeleporterSite.BossGate);
             var distance = Distance((gate.X, gate.Z), (door.X, door.Z));
