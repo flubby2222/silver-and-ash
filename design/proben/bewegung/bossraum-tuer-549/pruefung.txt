@@ -1,0 +1,66 @@
+Bossraum-Tuer #549: Zeitverlaeufe und Pruefungen (erzeugt von bossraum_tuer_bewegung.py)
+
+Sperr-Schwelle: lichte Weite 0.80 m (Spieler 0.70 m + 0.10 m Luft)
+  Entwurf a (zweifluegel): frei ab 63 Grad (Weite 0.82 m; bei 62 Grad 0.80 m), offen 90 Grad (Weite 1.70 m)
+  Entwurf c (zweifluegel): frei ab 62 Grad (Weite 0.81 m; bei 61 Grad 0.79 m), offen 90 Grad (Weite 1.72 m)
+  Entwurf b (einfluegel): frei ab 45 Grad (Weite 0.83 m; bei 44 Grad 0.80 m), offen 78 Grad (Weite 1.67 m)
+
+Verlauf; Fluegelart; Sperre wechselt bei Tick; Anschlag bei Tick; Ruhe ab Tick; groesster Schritt Grad je Tick
+  gleichmaessig-schliessen   zweifluegel  44  120  120  0.95
+  gleichmaessig-schliessen   einfluegel   56  120  120  0.82
+  anschlag-schliessen        zweifluegel  46   78  100  2.52
+  anschlag-schliessen        einfluegel   53   78  100  2.18
+  zwei-etappen-schliessen    zweifluegel  16   80   96  2.75
+  zwei-etappen-schliessen    einfluegel   21   80   96  2.25
+  gleichmaessig-oeffnen      zweifluegel  83  132  132  0.93
+  gleichmaessig-oeffnen      einfluegel   71  132  132  0.80
+  anschlag-oeffnen           zweifluegel  71   84  109  2.13
+  anschlag-oeffnen           einfluegel   64   84  109  1.85
+  zwei-etappen-oeffnen       zweifluegel  90  124  124  1.38
+  zwei-etappen-oeffnen       einfluegel   82  124  124  1.24
+
+Durchstiche: groesste Eintauchtiefe des Fluegels in den Stein je Winkel (m), Modell wie abgegeben
+  Entwurf a: erster Durchstich ausserhalb von Falz/Leibung (> 1 cm) bei 7.7 Grad
+     5 Grad: Bogen 0.003, Leibung 0.003
+    10 Grad: Bogen 0.016, Leibung 0.016
+    15 Grad: Bogen 0.032, Leibung 0.029
+    20 Grad: Bogen 0.054, Leibung 0.042
+    30 Grad: Bogen 0.099, Leibung 0.066
+    45 Grad: Bogen 0.169, Falz 0.099, Leibung 0.087
+    60 Grad: Bogen 0.241, Falz 0.125, Leibung 0.100
+    75 Grad: Bogen 0.322, Falz 0.142, Leibung 0.121
+    78 Grad: Bogen 0.347, Falz 0.145, Leibung 0.127
+    80 Grad: Bogen 0.358, Falz 0.146, Leibung 0.129
+    85 Grad: Bogen 0.385, Falz 0.149, Leibung 0.140
+    90 Grad: Bogen 0.424, Falz 0.150, Leibung 0.150
+    mit glatter Nische (Halbbreite 1.20, Hoehe 5.30) ueber 0..90 Grad: Falz 0.150
+  Entwurf c: erster Durchstich ausserhalb von Falz/Leibung (> 1 cm) bei 8.3 Grad
+     5 Grad: Bogen 0.002, Leibung 0.002
+    10 Grad: Bogen 0.014, Leibung 0.014
+    15 Grad: Bogen 0.027, Leibung 0.027
+    20 Grad: Bogen 0.045, Leibung 0.038
+    30 Grad: Bogen 0.095, Leibung 0.061
+    45 Grad: Bogen 0.183, Falz 0.092, Leibung 0.069
+    60 Grad: Bogen 0.276, Falz 0.116, Leibung 0.091
+    75 Grad: Bogen 0.379, Falz 0.133, Leibung 0.111
+    78 Grad: Bogen 0.401, Falz 0.135, Leibung 0.114
+    80 Grad: Bogen 0.416, Falz 0.136, Leibung 0.119
+    85 Grad: Bogen 0.461, Falz 0.139, Leibung 0.130
+    90 Grad: Bogen 0.498, Falz 0.140, Leibung 0.140
+    mit glatter Nische (Halbbreite 1.20, Hoehe 5.30) ueber 0..90 Grad: Falz 0.140
+  Entwurf b: erster Durchstich ausserhalb von Falz/Leibung (> 1 cm) bei keinem Grad
+     5 Grad: Leibung 0.006
+    10 Grad: Leibung 0.022
+    15 Grad: Leibung 0.038
+    20 Grad: Leibung 0.054
+    30 Grad: Leibung 0.084
+    45 Grad: Leibung 0.124
+    60 Grad: Falz 0.155, Leibung 0.139
+    75 Grad: Falz 0.176, Leibung 0.159
+    78 Grad: Falz 0.179, Leibung 0.158
+    80 Grad: Falz 0.180, Konsole 0.009, Leibung 0.163, Sockel 0.009
+    85 Grad: Falz 0.183, Konsole 0.080, Leibung 0.175, Sockel 0.097
+    90 Grad: Falz 0.185, Konsole 0.080, Leibung 0.185, Sockel 0.125
+    mit glatter Nische (Halbbreite 1.20, Hoehe 5.30) ueber 0..90 Grad: Falz 0.185
+
+Grenzen geprueft: alle Verlaeufe bleiben in 0..offen, ohne Sprung, Anfang und Ende stimmen.
