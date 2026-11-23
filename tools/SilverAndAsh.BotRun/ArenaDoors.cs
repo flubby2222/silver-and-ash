@@ -23,7 +23,7 @@ internal static class ArenaDoors
             report.Check(boss && door.HasGrate, $"seed {seed}: boss door {door.Id} has a grate");
             if (boss && door.Kind != DoorKind.Cracked)
             {
-                BossDoor(zero, seed, door.Id, report);
+                report.Try($"seed {seed} boss door {door.Id}", () => BossDoor(zero, seed, door.Id, report));
                 continue;
             }
 
@@ -39,15 +39,16 @@ internal static class ArenaDoors
                 continue;
             }
 
-            Clear(zero, seed, door.Id, report);
+            var where = $"seed {seed} door {door.Id}";
+            report.Try($"{where} clear", () => Clear(zero, seed, door.Id, report));
             foreach (var (delay, dash) in new[] { (0, false), (0, true), (6, true), (14, false) })
             {
-                Escape(zero, seed, door.Id, delay, dash, report);
+                report.Try($"{where} escape", () => Escape(zero, seed, door.Id, delay, dash, report));
             }
 
             if (probe.Rooms[door.RoomA].Kind == RoomKind.Combat && probe.Rooms[door.RoomB].Kind == RoomKind.Combat)
             {
-                Chain(zero, seed, door.Id, report);
+                report.Try($"{where} chain", () => Chain(zero, seed, door.Id, report));
             }
         }
     }

@@ -38,6 +38,20 @@ internal sealed class Report
         return bad;
     }
 
+    /// <summary>Runs one scenario; an exception from the game is a finding and the next scenario still runs.</summary>
+    public void Try(string context, Action scenario)
+    {
+        try
+        {
+            scenario();
+        }
+        catch (Exception e) when (e is not MissingCoreMember)
+        {
+            var cause = e is System.Reflection.TargetInvocationException { InnerException: { } inner } ? inner : e;
+            Finding($"{context}: threw {cause.GetType().Name}: {cause.Message}");
+        }
+    }
+
     public void Print(string mode, int from, int to)
     {
         Console.WriteLine();

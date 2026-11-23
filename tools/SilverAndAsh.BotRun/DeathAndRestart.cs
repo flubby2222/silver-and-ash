@@ -18,10 +18,10 @@ internal static class DeathAndRestart
         var probe = zero.NewRun(seed, Play.Balance);
         foreach (var door in probe.Doors.Where(door => door.Kind != DoorKind.Cracked && Arena.Find(probe, door) is not null))
         {
-            InArena(zero, seed, door.Id, report);
+            report.Try($"seed {seed} door {door.Id} death", () => InArena(zero, seed, door.Id, report));
         }
 
-        InBossFight(zero, seed, report);
+        report.Try($"seed {seed} boss death", () => InBossFight(zero, seed, report));
     }
 
     private static GameWorld? DieAndRestart(Play play, Report report)
