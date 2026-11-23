@@ -94,6 +94,65 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
+    /// Level 0 with the player <paramref name="metres"/> straight out from the middle of the boss portal (issue #568) -
+    /// in the antechamber, or with <paramref name="fromBossRoom"/> in the boss room - looking at the portal's middle at
+    /// <see cref="PortalLookHeight"/>. <paramref name="open"/>: opened before, as in the game - from the antechamber with F,
+    /// then the leaves swing all the way into the boss room. In the boss room the room seals on the first tick of the scene
+    /// as in the game: a closed portal is barred at once, an open one begins to slam shut. <paramref name="gormInDoorway"/>:
+    /// Gorm stands asleep 2 m behind the portal in the boss room (for the size).
+    /// </summary>
+    public GameWorld BeforeBossPortal(float metres, bool fromBossRoom = false, bool open = false, bool gormInDoorway = false)
+    {
+        var (generated, antechamber) = FirstRoom(RoomKind.Antechamber);
+        var level = generated.Level;
+        var world = new GameWorld(level, generated.Seed, Balance, generated.Doors, generated.Rooms, generated.Chests, generated.Well, generated.Teleporters)
+        {
+            LevelName = LevelZero.Name,
+            Surfaces = SurfaceVariants.For(generated),
+        };
+        var door = world.Doors.Single(door => door.Kind == DoorKind.Boss);
+        var middle = ((door.BoxMin + door.BoxMax) / 2f) with { Y = door.BoxMin.Y };
+
+        // Out of the portal towards the antechamber: along the passage, to the side of the antechamber's floor.
+        var along = door.Side is RoomSide.North or RoomSide.South ? Vector3.UnitZ : Vector3.UnitX;
+        var roomMiddle = new Vector3(
+            ((float)antechamber.FloorCells.Average(cell => cell.X) + 0.5f) * Level.CellSize,
+            0f,
+            ((float)antechamber.FloorCells.Average(cell => cell.Z) + 0.5f) * Level.CellSize);
+        var towardsAntechamber = Vector3.Dot(roomMiddle - middle, along) > 0f ? along : -along;
+
+        var look = middle + new Vector3(0f, PortalLookHeight, 0f);
+        if (open)
+        {
+            world.Player.PlaceAt(middle + (towardsAntechamber * Level.CellSize));
+            Face(world.Player, look);
+            world.Tick(PlayerInput.None with { Interact = true });
+            for (var tick = 0; tick < SimulationClock.SecondsToTicks(Balance.Doors.BossOpenTime) && door.OpenFraction < 1f; tick++)
+            {
+                world.Tick(PlayerInput.None);
+            }
+
+            if (door.OpenFraction < 1f)
+            {
+                throw new InvalidOperationException("The boss portal did not swing open on F.");
+            }
+        }
+
+        if (gormInDoorway)
+        {
+            var gorm = world.Gorm ?? throw new InvalidOperationException("Level 0 has no Gorm.");
+            ((IEnemy)gorm).PlaceAt(middle - (towardsAntechamber * Level.CellSize));
+        }
+
+        world.Player.PlaceAt(middle + ((fromBossRoom ? -towardsAntechamber : towardsAntechamber) * metres));
+        Face(world.Player, look);
+        return world;
+    }
+
+    /// <summary>The height above the floor the boss portal scenes look at: between the leaves' top fitting and the arch.</summary>
+    public const float PortalLookHeight = 2.4f;
+
+    /// <summary>
     /// Level 0 with the player in the boss room, on the floor cell nearest to <paramref name="metres"/> from Gorm that
     /// sees him, looking at him.
     /// </summary>
@@ -379,6 +438,8 @@ public sealed class PhotoStudio
         ArgumentOutOfRangeException.ThrowIfLessThan(cells, 2);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(cells, DoorRow - 1);
         var playerRow = DoorRow - cells;
+        // The doorway is as wide as the door's model (the boss portal, issue #568: two cells, east of the middle).
+        var doorColumns = Enumerable.Range(Middle, DoorFrameLook.CellsWide(kind)).ToList();
         var text = new StringBuilder();
         for (var row = 0; row < Depth; row++)
         {
@@ -386,7 +447,7 @@ public sealed class PhotoStudio
             {
                 // Built along Z; sideways the map is mirrored on its diagonal afterwards (rows become columns).
                 var outer = row == 0 || column == 0 || row == Depth - 1 || column == Width - 1;
-                var wall = outer || (row == DoorRow && column != Middle);
+                var wall = outer || (row == DoorRow && !doorColumns.Contains(column));
                 text.Append(wall ? '#' : row == playerRow && column == Middle ? 'P' : '.');
             }
 
@@ -394,9 +455,20 @@ public sealed class PhotoStudio
         }
 
         var map = sideways ? Transposed(text.ToString()) : text.ToString();
-        var (x, z) = sideways ? (DoorRow, Middle) : (Middle, DoorRow);
-        LevelDoor[] doors = [new(x, z, 0, 1, sideways ? RoomSide.East : RoomSide.South, kind)];
-        var world = new GameWorld(LevelParser.Parse(map), Seed, Balance, doors);
+        var doorCells = doorColumns.Select(column => sideways ? (X: DoorRow, Z: column) : (X: column, Z: DoorRow)).ToList();
+        LevelDoor[] doors =
+        [
+            new(doorCells[0].X, doorCells[0].Z, 0, 1, sideways ? RoomSide.East : RoomSide.South, kind) { MoreCells = doorCells.Skip(1).ToList() },
+        ];
+
+        // The hall is as high as the door's frame (6 m for the boss portal), so no ceiling cuts into it.
+        var parsed = LevelParser.Parse(map);
+        var high = DoorFrameLook.Height(kind);
+        var level = parsed.WithCells(Enumerable.Range(0, parsed.Width)
+            .SelectMany(cx => Enumerable.Range(0, parsed.Depth).Select(cz => (X: cx, Z: cz)))
+            .Where(cell => !parsed[cell.X, cell.Z].IsSolid && parsed[cell.X, cell.Z].CeilingHeight < high)
+            .Select(cell => (cell.X, cell.Z, parsed[cell.X, cell.Z] with { CeilingHeight = high })));
+        var world = new GameWorld(level, Seed, Balance, doors);
         var door = world.Doors[0];
         var doorMiddle = (door.BoxMin + door.BoxMax) / 2f;
         if (open)

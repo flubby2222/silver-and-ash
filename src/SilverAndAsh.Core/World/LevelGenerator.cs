@@ -27,6 +27,14 @@ public static class LevelGenerator
     private const int MaxCorridorSpan = 12;
 
     /// <summary>
+    /// The cell of a doorway of <paramref name="kind"/>: floor with the low standard ceiling (a 3.5 m high doorway) -
+    /// only the boss portal (issue #568) is as high as the antechamber and the boss room it joins
+    /// (<see cref="RoomTemplate.RoomCeilingHeight"/>), so nothing of the level hides its arch.
+    /// </summary>
+    public static Cell DoorCell(DoorKind kind) =>
+        kind == DoorKind.Boss ? Cell.Floor with { CeilingHeight = RoomTemplate.RoomCeilingHeight } : Cell.Floor;
+
+    /// <summary>
     /// Builds a level from <paramref name="templates"/> (needs at least one start, combat and boss room).
     /// </summary>
     /// <exception cref="ArgumentException">If a needed kind of room is missing.</exception>
@@ -207,16 +215,18 @@ public static class LevelGenerator
                     template.BossSlots.Select(ToLevelCell).ToList()));
             }
 
-            // Door cells are floor with the low standard ceiling (a 3.5 m high doorway).
             var doors = _doors.Select(door => door with
             {
                 X = door.X - minX,
                 Z = door.Z - minZ,
                 MoreCells = door.MoreCells.Select(cell => (cell.X - minX, cell.Z - minZ)).ToList(),
             }).ToList();
-            foreach (var (x, z) in doors.SelectMany(door => door.Cells))
+            foreach (var door in doors)
             {
-                cells[x, z] = Cell.Floor;
+                foreach (var (x, z) in door.Cells)
+                {
+                    cells[x, z] = DoorCell(door.Kind);
+                }
             }
 
             var (startX, startZ) = _rooms[0].Variant.Template.PlayerStart

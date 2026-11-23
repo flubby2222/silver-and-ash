@@ -130,6 +130,8 @@ public class PhotoSceneTests
             "wall-niche-shelf-c-corridor", "wall-niche-shelf-c-room",
             "wall-niche-bottles", "wall-niche-bottles-askew", "wall-niche-bottles-shelf", "wall-niche-bottles-shelf-askew",
             "wall-niche-candles", "wall-niche-candles-askew", "wall-niche-skulls", "wall-niche-skulls-askew",
+            "boss-portal-front-6m", "boss-portal-front-6m-open", "boss-portal-back-6m", "boss-portal-back-6m-open",
+            "boss-portal-barred", "boss-portal-gorm",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -804,6 +806,66 @@ public class PhotoSceneTests
         Assert.Equal(openFraction, door.OpenFraction);
         Assert.True(world.Level[door.X, door.Z].IsSolid);
         Assert.InRange(Vector2.Distance(Flat((door.BoxMin + door.BoxMax) / 2f), Flat(player.Position)), 4f - 0.5f, 6f + 0.5f);
+    }
+
+    [Theory]
+    [InlineData("boss-portal-front-6m", 6f, RoomKind.Antechamber, false, false)]
+    [InlineData("boss-portal-front-6m-open", 6f, RoomKind.Antechamber, true, false)]
+    [InlineData("boss-portal-back-6m", 6f, RoomKind.Boss, false, true)]
+    [InlineData("boss-portal-back-6m-open", 6f, RoomKind.Boss, true, false)]
+    [InlineData("boss-portal-barred", 6f, RoomKind.Boss, true, true)]
+    [InlineData("boss-portal-gorm", 8f, RoomKind.Antechamber, true, false)]
+    public void The_boss_portal_scenes_look_at_the_portal_from_their_room_and_distance(
+        string name, float metres, RoomKind side, bool open, bool barred)
+    {
+        // Issue #568: straight out from the middle of the two door cells, looking at the portal.
+        var setup = Built(name);
+        setup.Run();
+
+        var world = setup.World;
+        var player = world.Player;
+        var door = world.Doors.Single(door => door.Kind == DoorKind.Boss);
+        var middle = (door.BoxMin + door.BoxMax) / 2f;
+        var room = world.Rooms.Single(room => room.Cells.Contains(Level.ToGrid(player.Position.X, player.Position.Z)));
+        Assert.Equal(2, door.Cells.Count);
+        Assert.Equal(side, room.Kind);
+        Assert.Equal(metres, Vector2.Distance(Flat(middle), Flat(player.Position)), 0.01f);
+        Assert.NotNull(Raycast.AgainstBox(player.EyePosition, player.View.Forward, door.BoxMin, door.BoxMax));
+        Assert.Equal(open, door.IsOpen);
+        Assert.Equal(barred, door.IsBarred);
+        Assert.False(GratePose.DrawsPlaceholderBars(door.Kind, door.IsBarred, door.HasGrate, gratesModelled: false));
+        if (open && side == RoomKind.Antechamber)
+        {
+            Assert.Equal(1f, door.OpenFraction);
+        }
+    }
+
+    [Fact]
+    public void The_barred_portal_scene_waits_until_the_slam_is_over()
+    {
+        var setup = Built("boss-portal-barred");
+        var ticks = setup.Run();
+        var door = setup.World.Doors.Single(door => door.Kind == DoorKind.Boss);
+
+        Assert.Equal(setup.World.Balance.Doors.BossShutTick, ticks);
+        Assert.True(door.SlamsShut);
+        Assert.Empty(setup.World.Events.OfType<PlayerHit>());
+        Assert.Equal(0f, door.OpenFraction);
+        Assert.All(door.Cells, cell => Assert.True(setup.World.Level[cell.X, cell.Z].IsSolid));
+    }
+
+    [Fact]
+    public void The_gorm_portal_scene_has_gorm_asleep_just_behind_the_open_portal()
+    {
+        var setup = Built("boss-portal-gorm");
+        setup.Run();
+        var world = setup.World;
+        var door = world.Doors.Single(door => door.Kind == DoorKind.Boss);
+        var gorm = world.Gorm!;
+
+        Assert.Equal(Level.CellSize, Vector2.Distance(Flat((door.BoxMin + door.BoxMax) / 2f), Flat(gorm.Position)), 0.01f);
+        Assert.Equal(RoomKind.Boss, world.Rooms.Single(room => room.Cells.Contains(Level.ToGrid(gorm.Position.X, gorm.Position.Z))).Kind);
+        Assert.True(world.IsAsleep(gorm));
     }
 
     [Fact]
