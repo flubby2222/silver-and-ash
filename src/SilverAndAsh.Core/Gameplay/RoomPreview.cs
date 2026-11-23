@@ -80,7 +80,7 @@ public sealed class RoomPreview
 
     /// <summary>
     /// The level of this preview for <paramref name="seed"/>: the room (number 0) with its enemies - unless
-    /// <see cref="WithEnemies"/> is false - and chests, placed as on level 0. The doorway is part of no room.
+    /// <see cref="WithEnemies"/> is false - chests and, in a boss room, columns (<see cref="BossRoomColumns"/>), placed as on level 0. The doorway is part of no room.
     /// </summary>
     public GeneratedLevel Build(int seed, Balance balance)
     {
@@ -112,7 +112,7 @@ public sealed class RoomPreview
             0, Template.Kind, Template.Name, Ring, Ring, Template.Width, Template.Depth, DistanceFromStart: 0, floor,
             Moved(Template.GhoulSlots), Moved(Template.BatSlots), Moved(Template.ChestSlots), Moved(Template.BossSlots));
         var level = new Level(cells, Entrance.X, Entrance.Z);
-        var generated = new GeneratedLevel(seed, level, [room], []);
+        var generated = BossRoomColumns.Place(new GeneratedLevel(seed, level, [room], []), balance.Columns);
         var populated = WithEnemies ? EnemyPlacement.Populate(generated, balance.Difficulty) : generated;
         return ChestPlacement.Place(populated, balance.Chests);
     }
