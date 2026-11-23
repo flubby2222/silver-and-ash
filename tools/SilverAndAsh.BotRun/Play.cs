@@ -4,13 +4,15 @@ using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Photos;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.BotRun;
 
 /// <summary>
 /// One world played by the bot, tick by tick, exactly as the game does it (<see cref="GameWorld.Tick"/> with an input).
-/// After every tick it checks what must always hold: nobody stands inside a blocking door or a solid cell.
+/// After every tick it checks what must always hold: nobody stands inside a blocking door, a solid cell or the stone of
+/// a boss portal.
 /// </summary>
 internal sealed class Play(GameWorld world, Report report, string context)
 {
@@ -64,12 +66,16 @@ internal sealed class Play(GameWorld world, Report report, string context)
 
     public static RoomState OtherRoom(GameWorld world, Door door, RoomState room) => world.Rooms[door.RoomA == room.Index ? door.RoomB : door.RoomA];
 
-    /// <summary>Kills every living ghoul and bat that stands in <paramref name="room"/> (all of them if null).</summary>
-    public static void KillEnemies(GameWorld world, RoomState? room)
+    /// <summary>
+    /// Kills every living ghoul and bat that stands in <paramref name="room"/> (all of them if null), except
+    /// <paramref name="spare"/>.
+    /// </summary>
+    public static void KillEnemies(GameWorld world, RoomState? room, ITarget? spare = null)
     {
         foreach (var target in world.Targets.ToList())
         {
-            if (target is Ghoul { IsDead: false } or Bat { IsDead: false } && (room is null || room.Cells.Contains(Cell(target.Body.Position))))
+            if (target is Ghoul { IsDead: false } or Bat { IsDead: false } && target != spare
+                && (room is null || room.Cells.Contains(Cell(target.Body.Position))))
             {
                 target.TakeDamage(1_000_000, []);
             }
@@ -107,6 +113,9 @@ internal sealed class Play(GameWorld world, Report report, string context)
 
     public void PlaceAt(Vector3 feet) => CoreInternals.PlaceAt(world.Player, feet);
 
+    /// <summary>Puts an enemy (ghoul, bat or Gorm) at <paramref name="position"/> at once.</summary>
+    public static void PlaceEnemyAt(ITarget enemy, Vector3 position) => CoreInternals.PlaceEnemyAt(enemy, position);
+
     public void GiveKeys() => CoreInternals.AddKeys(world.Player, 5);
 
     /// <summary>Turns the player towards the middle of <paramref name="cell"/>, at eye height.</summary>
@@ -132,6 +141,42 @@ internal sealed class Play(GameWorld world, Report report, string context)
     }
 
     public static float Distance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
+
+    /// <summary>
+    /// True if a body (a standing cylinder: feet, radius, height) reaches into the stone of a boss portal, by
+    /// <see cref="BossPortal.Contains"/>: its axis and 24 points round its rim, every 0.1 m from the feet to the top. The
+    /// rim is taken 5 mm inside (the same for every body, also for big Gorm), so a body that only touches the stone, as
+    /// the collision leaves it, is no finding.
+    /// </summary>
+    public static bool InPortalStone(Level level, CylinderBody body)
+    {
+        const int RimPoints = 24;
+        const float Touch = 0.005f;
+        foreach (var portal in level.Portals.Where(portal => Distance(body.Position, new Vector3(portal.X, 0f, portal.Z)) < body.Radius + 3f))
+        {
+            var heights = Math.Max(2, (int)MathF.Ceiling(body.Height / 0.1f) + 1);
+            for (var h = 0; h < heights; h++)
+            {
+                var y = body.Position.Y + 0.01f + ((body.Height - 0.02f) * h / (heights - 1));
+                if (portal.Contains(body.Position with { Y = y }))
+                {
+                    return true;
+                }
+
+                var rim = MathF.Max(0f, body.Radius - Touch);
+                for (var i = 0; i < RimPoints; i++)
+                {
+                    var angle = MathF.Tau * i / RimPoints;
+                    if (portal.Contains(new Vector3(body.Position.X + (rim * MathF.Cos(angle)), y, body.Position.Z + (rim * MathF.Sin(angle)))))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     private static bool Overlaps(Door door, Vector3 at, float radius)
     {
@@ -159,6 +204,11 @@ internal sealed class Play(GameWorld world, Report report, string context)
             {
                 Once($"bat hangs in blocking door {door.Id}");
             }
+
+            if (world.Gorm is { IsDead: false } gorm && Overlaps(door, gorm.Position, 0.3f))
+            {
+                Once($"Gorm stands in blocking door {door.Id}");
+            }
         }
 
         var (x, z) = Cell(player.Position);
@@ -166,13 +216,44 @@ internal sealed class Play(GameWorld world, Report report, string context)
         {
             Once($"player stands in solid cell {x},{z}");
         }
+
+        CheckPortalStone();
     }
 
-    private void Once(string what)
+    // Issues #598, #627, #629: no body ends up in the stone of a boss portal - walking (player, ghoul, Gorm) or flying
+    // (a bat, also its corpse while it falls and lies there).
+    private void CheckPortalStone()
+    {
+        if (world.Level.Portals.Count == 0)
+        {
+            return;
+        }
+
+        var bodies = new List<(string What, CylinderBody Body)>();
+        if (!world.Player.IsDead)
+        {
+            bodies.Add(("player", world.Player.Body));
+        }
+
+        bodies.AddRange(world.Ghouls.Where(ghoul => !ghoul.IsDead).Select(ghoul => ("ghoul", ghoul.Body)));
+        bodies.AddRange(world.Bats.Where(bat => !bat.IsGone).Select(bat => (bat.IsDead ? "dead bat" : "bat", bat.Body)));
+        if (world.Gorm is { IsDead: false } gorm)
+        {
+            bodies.Add(("Gorm", gorm.Body));
+        }
+
+        foreach (var (what, body) in bodies.Where(body => InPortalStone(world.Level, body.Body)))
+        {
+            Once($"{what} in the stone of the boss portal", $" at {body.Position}");
+        }
+    }
+
+    // One finding per kind of fault and world; the detail (where) is that of the first time.
+    private void Once(string what, string detail = "")
     {
         if (_reported.Add(what))
         {
-            report.Finding($"{context}: {what}");
+            report.Finding($"{context}: {what}{detail}");
         }
     }
 }
@@ -182,8 +263,9 @@ internal sealed class MissingCoreMember(string member)
     : Exception($"{member} is not in SilverAndAsh.Core any more - update tools/SilverAndAsh.BotRun/Play.cs (CoreInternals).");
 
 /// <summary>
-/// The two internal members of the core the bot needs (placing the player, giving him keys). The bot reaches them by
-/// reflection instead of opening the core (no InternalsVisibleTo for a tool); a renamed member stops the run at once.
+/// The internal members of the core the bot needs (placing the player, giving him keys, placing an enemy). The bot
+/// reaches them by reflection instead of opening the core (no InternalsVisibleTo for a tool); a renamed member stops the
+/// run at once.
 /// </summary>
 internal static class CoreInternals
 {
@@ -193,9 +275,16 @@ internal static class CoreInternals
 
     private static readonly MethodInfo? Keys = typeof(Player).GetMethod("AddKeys", Any, [typeof(int)]);
 
+    // The one list of every kind of enemy (issue #572): one internal interface for ghoul, bat and Gorm.
+    private static readonly MethodInfo? PlaceEnemy = typeof(Player).Assembly
+        .GetType("SilverAndAsh.Core.Gameplay.IEnemy")?.GetMethod("PlaceAt", [typeof(Vector3)]);
+
     public static void PlaceAt(Player player, Vector3 feet) =>
         (Place ?? throw new MissingCoreMember("Player.PlaceAt(Vector3)")).Invoke(player, [feet]);
 
     public static void AddKeys(Player player, int amount) =>
         (Keys ?? throw new MissingCoreMember("Player.AddKeys(int)")).Invoke(player, [amount]);
+
+    public static void PlaceEnemyAt(ITarget enemy, Vector3 position) =>
+        (PlaceEnemy ?? throw new MissingCoreMember("IEnemy.PlaceAt(Vector3)")).Invoke(enemy, [position]);
 }

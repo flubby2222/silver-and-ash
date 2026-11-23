@@ -52,6 +52,39 @@ internal sealed class Report
         }
     }
 
+    /// <summary>
+    /// A tally of the places a mode plays round the middle of something (e.g. a portal) and the ones it skips. Skipped
+    /// places are counted as "<paramref name="skipped"/> (skipped)"; <see cref="Places.Verify"/> makes it a finding if fewer
+    /// than <paramref name="minPerSide"/> places were played on either side of the middle - a mode that skips every place
+    /// must fail loudly, not end with "0 finding(s)" (PR #641).
+    /// </summary>
+    public Places Tally(string context, string skipped, int minPerSide = 1) => new(this, context, skipped, minPerSide);
+
+    public sealed class Places(Report report, string context, string skipped, int minPerSide)
+    {
+        private int _below;
+        private int _above;
+
+        /// <summary>A place <paramref name="across"/> metres beside the middle was played (the middle itself counts for neither side).</summary>
+        public void Played(float across)
+        {
+            if (across < -0.01f)
+            {
+                _below++;
+            }
+            else if (across > 0.01f)
+            {
+                _above++;
+            }
+        }
+
+        public void Skipped() => report.Count($"{skipped} (skipped)");
+
+        public void Verify() => report.Check(
+            _below < minPerSide || _above < minPerSide,
+            $"{context}: fewer than {minPerSide} place(s) played on a side of the middle ({_below} and {_above}), the rest skipped as \"{skipped}\" - the mode checks (almost) nothing");
+    }
+
     public void Print(string mode, int from, int to)
     {
         Console.WriteLine();
