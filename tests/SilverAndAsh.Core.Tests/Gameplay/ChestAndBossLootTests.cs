@@ -327,17 +327,31 @@ public class ChestAndBossLootTests
     /// </summary>
     [Theory]
     [MemberData(nameof(ColumnsAtGorm))]
-    public void Gorm_s_loot_never_lies_in_a_column_he_died_against_and_every_piece_can_be_taken(int seed, int degrees, int gormRow, float farther, int gormColumn)
+    public void Gorm_s_loot_never_lies_in_a_column_he_died_against_and_every_piece_can_be_taken(int seed, int degrees, int gormRow, float farther, int gormColumn) =>
+        DieAmongColumnsAndTakeEverything(seed, gormRow, gormColumn, (degrees, farther));
+
+    /// <summary>
+    /// Issue #608, review of PR #613: two columns edge to edge with Gorm - one in front of him, one 45° to a side. The
+    /// first one blocks where the vial would fall and both turns by 22.5°; the next turn, to the second column's side,
+    /// would put the vial into the second column. It turns on to the other side, and every piece can be taken. Each
+    /// standing column is checked, not just the one in front.
+    /// </summary>
+    [Theory]
+    [InlineData(1, 45)]
+    [InlineData(2, 315)]
+    public void Turning_away_from_one_column_gorm_s_loot_never_lands_in_the_next(int seed, int secondDegrees) =>
+        DieAmongColumnsAndTakeEverything(seed, 10, 3, (0, 0f), (secondDegrees, 0f));
+
+    // Gorm stands in the hall at gormColumn/gormRow; each column stands in the direction Degrees from his facing,
+    // edge to edge with him plus Farther metres. He dies, and a hurt player walks in and takes every piece.
+    private static void DieAmongColumnsAndTakeEverything(int seed, int gormRow, int gormColumn, params (int Degrees, float Farther)[] columnsAt)
     {
         // Balance.Default without other drops (NoOtherLoot): a key for the cleared hall would be one more pile.
         var plain = BossWorld(seed, NoOtherLoot, gormRow, gormColumn: gormColumn);
         var (at, facing) = (plain.Gorm!.Position, plain.Gorm.Facing);
-        var turn = degrees * MathF.PI / 180f;
-        var towards = new Vector2(
-            (facing.X * MathF.Cos(turn)) - (facing.Z * MathF.Sin(turn)), (facing.X * MathF.Sin(turn)) + (facing.Z * MathF.Cos(turn)));
-        var apartFromHim = BodySizes.Gorm.Radius + Column.Radius + 0.02f + farther;
-        var column = new Column(at.X + (towards.X * apartFromHim), at.Z + (towards.Y * apartFromHim));
-        var world = BossWorld(seed, NoOtherLoot, gormRow, columns: [column], gormColumn: gormColumn);
+        Column[] columns = [.. columnsAt.Select(c => ColumnAt(at, facing, c.Degrees, c.Farther))];
+        var column = columns[0];
+        var world = BossWorld(seed, NoOtherLoot, gormRow, columns: columns, gormColumn: gormColumn);
         Assert.Equal((at, facing), (world.Gorm!.Position, world.Gorm.Facing));
         world.Player.TakeDamage(Balance.Default.BloodVial.Heal, []);
 
@@ -356,10 +370,14 @@ public class ChestAndBossLootTests
         })
         {
             var flat = new Vector2(position.X, position.Z);
-            var nearest = Vector2.Clamp(column.Centre, flat - new Vector2(halfWidth), flat + new Vector2(halfWidth));
-            Assert.True(
-                Vector2.Distance(nearest, column.Centre) >= Column.Radius + GameWorld.ColumnClearance - 0.001f,
-                $"The {name} at {position} lies in the column at {column.Centre}, or closer to it than {GameWorld.ColumnClearance} m.");
+            Assert.Equal(columns.Length, world.Level.Columns.Count);
+            foreach (var standing in world.Level.Columns)
+            {
+                var nearest = Vector2.Clamp(standing.Centre, flat - new Vector2(halfWidth), flat + new Vector2(halfWidth));
+                Assert.True(
+                    Vector2.Distance(nearest, standing.Centre) >= Column.Radius + GameWorld.ColumnClearance - 0.001f,
+                    $"The {name} at {position} lies in the column at {standing.Centre}, or closer to it than {GameWorld.ColumnClearance} m.");
+            }
             var apart = MathF.Max(MathF.Abs(position.X - stairs.X), MathF.Abs(position.Z - stairs.Z));
             Assert.True(apart >= Stairs.Radius + halfWidth, $"The {name} at {position} reaches into the staircase's box.");
             foreach (var (dx, dz) in new[] { (-1f, -1f), (-1f, 1f), (1f, -1f), (1f, 1f) })
@@ -388,6 +406,16 @@ public class ChestAndBossLootTests
         Assert.Empty(world.EquipmentDrops);
         Assert.Empty(world.Pickups);
         Assert.Empty(world.Loot);
+    }
+
+    // A column in the direction degrees from facing, edge to edge with Gorm at at plus farther metres.
+    private static Column ColumnAt(Vector3 at, Vector3 facing, int degrees, float farther)
+    {
+        var turn = degrees * MathF.PI / 180f;
+        var towards = new Vector2(
+            (facing.X * MathF.Cos(turn)) - (facing.Z * MathF.Sin(turn)), (facing.X * MathF.Sin(turn)) + (facing.Z * MathF.Cos(turn)));
+        var apartFromHim = BodySizes.Gorm.Radius + Column.Radius + 0.02f + farther;
+        return new Column(at.X + (towards.X * apartFromHim), at.Z + (towards.Y * apartFromHim));
     }
 
     /// <summary>

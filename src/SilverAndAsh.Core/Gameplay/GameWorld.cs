@@ -1267,7 +1267,8 @@ public sealed class GameWorld
     // A piece of Gorm's loot (a square of half-width halfWidth) must lie where it can be taken: on open floor at his
     // height, clear of every standing column and of the staircase (issue #608). Where it would not, it turns round him
     // at the same distance - the nearest directions first - to the first place that is free. His own body kept the
-    // ground under him clear, so turning stays close to where he fell. If no direction is free, it stays.
+    // ground under him clear, so turning stays close to where he fell. If no direction is free, the piece stays where
+    // it would have lain, even in a column (in generated boss rooms this never happened: review of PR #613).
     private Vector3 FreePlace(Vector3 place, float halfWidth, Vector3 gormPosition)
     {
         if (IsFreeFor(place, halfWidth, gormPosition.Y))
@@ -1314,7 +1315,7 @@ public sealed class GameWorld
 
         if (_rooms.FirstOrDefault(room => room.Kind == RoomKind.Boss) is not { } boss)
         {
-            return OnOpenFloor(position, halfWidth, floorHeight);
+            return OnFloorOf(null, position, halfWidth, floorHeight);
         }
 
         var (stairsX, stairsZ) = Stairs.CellIn(boss.Cells);
@@ -1325,29 +1326,14 @@ public sealed class GameWorld
     }
 
     // True if every corner of the square of half-width radius around position lies on an open cell whose floor is at
-    // floorHeight - for a level without a boss room.
-    private bool OnOpenFloor(Vector3 position, float radius, float floorHeight)
-    {
-        foreach (var (dx, dz) in new[] { (-1f, -1f), (-1f, 1f), (1f, -1f), (1f, 1f) })
-        {
-            var (x, z) = Level.ToGrid(position.X + (dx * radius), position.Z + (dz * radius));
-            if (!Level.IsInside(x, z) || Level[x, z].IsSolid || MathF.Abs(Level[x, z].FloorHeight - floorHeight) > 0.01f)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    // True if every corner of the square of half-width radius around position lies on a cell of the room whose floor
-    // is at floorHeight.
-    private bool OnFloorOf(RoomState room, Vector3 position, float radius, float floorHeight)
+    // floorHeight - a cell of the room, or in a level without a boss room (room null) any cell of the level.
+    private bool OnFloorOf(RoomState? room, Vector3 position, float radius, float floorHeight)
     {
         foreach (var (dx, dz) in new[] { (-1f, -1f), (-1f, 1f), (1f, -1f), (1f, 1f) })
         {
             var cell = Level.ToGrid(position.X + (dx * radius), position.Z + (dz * radius));
-            if (!room.Cells.Contains(cell) || Level[cell.X, cell.Z].IsSolid
+            var inside = room?.Cells.Contains(cell) ?? Level.IsInside(cell.X, cell.Z);
+            if (!inside || Level[cell.X, cell.Z].IsSolid
                 || MathF.Abs(Level[cell.X, cell.Z].FloorHeight - floorHeight) > 0.01f)
             {
                 return false;
