@@ -27,11 +27,11 @@ internal sealed class ColumnView : IDisposable
     private const float BoundingRadius = 4.5f;
 
     // Steps of the ramp Stein (EffectColours, issue #609).
-    private static readonly Color Stone = Opaque(EffectColours.ColumnStandIn);
-    private static readonly Color Edge = Opaque(EffectColours.ColumnStandInEdge);
+    private static readonly Color Stone = PaletteColour.Opaque(EffectColours.ColumnStandIn);
+    private static readonly Color Edge = PaletteColour.Opaque(EffectColours.ColumnStandInEdge);
 
     // The dust of the stone, from the palette (ColumnDust.Colour).
-    private static readonly Color Dust = Opaque(ColumnDust.Colour);
+    private static readonly Color Dust = PaletteColour.Opaque(ColumnDust.Colour);
 
     private readonly Dictionary<ColumnStage, TexturedModel> _models;
     private readonly Matrix4x4[] _fallTurns = new Matrix4x4[ColumnBreakLook.Parts(ColumnStage.Falling).Count];
@@ -98,7 +98,7 @@ internal sealed class ColumnView : IDisposable
             return;
         }
 
-        shader.BeginSeeThrough();
+        using var seeThrough = shader.BeginSeeThrough();
         foreach (var puff in _puffs)
         {
             // Three faint shells, each smaller one adding a little: dense in the middle, fading out to the edge.
@@ -108,8 +108,6 @@ internal sealed class ColumnView : IDisposable
                 Raylib.DrawSphereEx(puff.Position, puff.Radius * scale, 6, 10, Dust with { A = a });
             }
         }
-
-        shader.EndSeeThrough();
     }
 
     // The shells of one puff: size (of its radius) and opacity (0..255 at full density). Strong enough that the cloud of
@@ -157,8 +155,6 @@ internal sealed class ColumnView : IDisposable
         model.Rig.Pose(_turn, figure, _frame);
         model.Draw(_frame);
     }
-
-    private static Color Opaque((byte R, byte G, byte B) colour) => new(colour.R, colour.G, colour.B, (byte)255);
 
     private static void DrawStandIn(Vector3 foot, float height)
     {

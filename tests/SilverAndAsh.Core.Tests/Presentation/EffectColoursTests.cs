@@ -4,8 +4,9 @@ using SilverAndAsh.Core.Presentation;
 namespace SilverAndAsh.Core.Tests.Presentation;
 
 /// <summary>
-/// Issue #609: the colours of the environment's effects (dust of the column and of the cracked wall) and of the column's
-/// stand-in are steps of the ramp "Stein" of the main palette, not colours of their own.
+/// Issue #609: the colours of the environment's effects (dust of the column and of the cracked wall, spark and mark of a
+/// bullet impact) and of the column's stand-in are steps of a ramp of the main palette, not colours of their own - and
+/// never of the ramp Blutrot.
 /// </summary>
 public class EffectColoursTests
 {
@@ -13,32 +14,40 @@ public class EffectColoursTests
 
     [Theory]
     [MemberData(nameof(Names))]
-    public void An_effect_colour_is_a_step_of_the_stone_ramp(string name)
+    public void An_effect_colour_is_a_step_of_its_ramp(string name)
     {
-        var colour = EffectColours.All.Single(entry => entry.Name == name).Colour;
+        var (_, ramp, colour) = EffectColours.All.Single(entry => entry.Name == name);
 
-        Assert.True(StoneRamp().Contains(colour), $"The {name} ({colour.R}, {colour.G}, {colour.B}) is no step of the ramp Stein.");
+        Assert.True(Ramp(ramp).Contains(colour), $"The {name} ({colour.R}, {colour.G}, {colour.B}) is no step of the ramp {ramp}.");
     }
 
     [Fact]
-    public void Every_effect_colour_is_listed_once()
+    public void Every_effect_colour_is_listed_once_and_none_is_red()
     {
-        Assert.Contains(("wall break dust", EffectColours.WallBreakDust), EffectColours.All);
-        Assert.Contains(("column stand-in", EffectColours.ColumnStandIn), EffectColours.All);
-        Assert.Contains(("column stand-in edge", EffectColours.ColumnStandInEdge), EffectColours.All);
-        Assert.Contains(("column dust", ColumnDust.Colour), EffectColours.All);
+        Assert.Contains(("wall break dust", EffectColours.Stone, EffectColours.WallBreakDust), EffectColours.All);
+        Assert.Contains(("column stand-in", EffectColours.Stone, EffectColours.ColumnStandIn), EffectColours.All);
+        Assert.Contains(("column stand-in edge", EffectColours.Stone, EffectColours.ColumnStandInEdge), EffectColours.All);
+        Assert.Contains(("column dust", EffectColours.Stone, ColumnDust.Colour), EffectColours.All);
+        Assert.Contains(("impact spark", EffectColours.Brass, EffectColours.ImpactSpark), EffectColours.All);
+        Assert.Contains(("impact mark", EffectColours.Stone, EffectColours.ImpactMark), EffectColours.All);
         Assert.Equal(EffectColours.All.Count, EffectColours.All.Select(entry => entry.Name).Distinct().Count());
+
+        var red = Ramp("Blutrot");
+        Assert.All(EffectColours.All, entry => Assert.DoesNotContain(entry.Colour, red));
     }
 
     [Fact]
-    public void The_colours_before_issue_609_are_not_in_the_stone_ramp()
+    public void The_colours_before_issue_609_are_in_no_ramp()
     {
-        // Counter-proof: the wall's dust and the stand-in had colours of their own; the check has to find them.
-        var ramp = StoneRamp();
+        // Counter-proof: the wall's dust, the stand-in and the impact had colours of their own; the check has to find them.
+        var stone = Ramp(EffectColours.Stone);
+        var brass = Ramp(EffectColours.Brass);
 
-        Assert.DoesNotContain(((byte)170, (byte)156, (byte)146), ramp);
-        Assert.DoesNotContain(((byte)112, (byte)106, (byte)98), ramp);
-        Assert.DoesNotContain(((byte)58, (byte)54, (byte)50), ramp);
+        Assert.DoesNotContain(((byte)170, (byte)156, (byte)146), stone);
+        Assert.DoesNotContain(((byte)112, (byte)106, (byte)98), stone);
+        Assert.DoesNotContain(((byte)58, (byte)54, (byte)50), stone);
+        Assert.DoesNotContain(((byte)255, (byte)236, (byte)190), brass);
+        Assert.DoesNotContain(((byte)36, (byte)30, (byte)36), stone);
     }
 
     [Fact]
@@ -54,16 +63,18 @@ public class EffectColoursTests
         Assert.Contains("finalColor=vec4(color,alpha);", compact, StringComparison.Ordinal);
     }
 
-    private static HashSet<(byte R, byte G, byte B)> StoneRamp()
+    // The steps of the ramp called name, from the ground or the accent ramps of the main palette.
+    private static HashSet<(byte R, byte G, byte B)> Ramp(string name)
     {
         using var json = JsonDocument.Parse(File.ReadAllText(RepositoryFiles.Find("assets/palette/hauptpalette.json")));
         var ramp = json.RootElement.GetProperty("grund").EnumerateArray()
-            .Single(entry => entry.GetProperty("name").GetString() == "Stein")
+            .Concat(json.RootElement.GetProperty("akzent").EnumerateArray())
+            .Single(entry => entry.GetProperty("name").GetString() == name)
             .GetProperty("farben").EnumerateArray()
             .Select(colour => colour.EnumerateArray().Select(channel => (byte)channel.GetInt32()).ToArray())
             .Select(channels => (channels[0], channels[1], channels[2]))
             .ToHashSet();
-        Assert.Equal(15, ramp.Count);
+        Assert.True(name == EffectColours.Stone ? ramp.Count == 15 : ramp.Count >= 4, $"The ramp {name} has {ramp.Count} steps.");
         return ramp;
     }
 }
