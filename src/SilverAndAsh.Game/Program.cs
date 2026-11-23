@@ -329,6 +329,9 @@ static void RunGame(
         // Test display of a photo scene (issue #433): what a shot can hit, as wires over the figures.
         var shotBodiesShown = false;
 
+        // A close look of a photo scene (issue #601): no hands, no level name, no showroom labels over the world.
+        var onlyTheWorldShown = false;
+
         // Title screen first; during a run Esc opens the menu (the world stands still - alone).
         var onTitle = true;
         var menuOpen = false;
@@ -389,6 +392,19 @@ static void RunGame(
             screenEffects = new ScreenEffects(player.Id);
             equipmentCard = new EquipmentCard();
             hud?.Reset();
+        }
+
+        // A photo or clip scene starts like a run, with what its screen shows besides the world.
+        void StartScene(PhotoSetup setup)
+        {
+            StartFresh(setup.World);
+            shotBodiesShown = setup.ShowsShotBodies;
+            onlyTheWorldShown = setup.ShowsOnlyTheWorld;
+            showroomLabelsShown = !onlyTheWorldShown;
+            if (onlyTheWorldShown)
+            {
+                levelNameSeconds = 0f;
+            }
         }
 
         // Choosing a level-up bonus: is the window open (X), and which boon is waiting for the next tick?
@@ -633,7 +649,7 @@ static void RunGame(
 
             // Last: the weapons in the hands, in front of everything else - not in the test display, where they would
             // hide the figure (issue #433).
-            if (!shotBodiesShown)
+            if (!shotBodiesShown && !onlyTheWorldShown)
             {
                 weaponView.Draw(camera.Position, camera.Target - camera.Position);
             }
@@ -783,8 +799,7 @@ static void RunGame(
 
                 var suffix = photos.Compare ? $"-look{look.Number}" : string.Empty;
                 var setup = scene.Build(studio);
-                StartFresh(setup.World);
-                shotBodiesShown = setup.ShowsShotBodies;
+                StartScene(setup);
                 if (setup.IsModelProbe)
                 {
                     // The single target of the model probe: the loaded model, as in the game.
@@ -880,8 +895,7 @@ static void RunGame(
             foreach (var clip in photos.Clips)
             {
                 var setup = clip.Build(studio);
-                StartFresh(setup.World);
-                shotBodiesShown = setup.ShowsShotBodies;
+                StartScene(setup);
                 var clipFolder = Path.Combine(photos.Folder, clip.Name);
                 Directory.CreateDirectory(clipFolder);
                 foreach (var old in Directory.EnumerateFiles(clipFolder, "frame-*.png"))

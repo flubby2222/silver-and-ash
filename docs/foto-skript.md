@@ -194,7 +194,7 @@ powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\Silve
 | `gorm-slam` | Gorms Hammerschlag aus der Nähe: der Spieler steht 8 m vor ihm, hinter ihm stehend, Blick auf Gorm; die Welle aus aufbrechendem Stein läuft auf ihn zu und trifft ihn, sobald der rote Riss seine Füße erreicht (#299) |
 | `gorm-slam-far` | derselbe Schlag aus 14 m, außerhalb der Reichweite (12 m): die ganze Welle von vorn, bis sie vor dem Spieler ausläuft, Boden Variante A |
 | `gorm-slam-far-b`, `gorm-slam-far-c` | dasselbe auf Boden Variante B bzw. C (C, das Kopfsteinpflaster, liegt im Spiel nie im Bossraum) |
-| `column-breaking` | die zerbrechende Säule im Musterraum aus 6 m, alle drei Ticks ein Bild: der Bruch, der Fall der Stücke (81 Ticks) mit der Staubwolke und der liegende Stumpf (Issue #601) |
+| `column-breaking` | die zerbrechende Säule im Musterraum aus 6 m, von der Hallenseite in voller Höhe, ohne Waffen in der Hand, Raumtitel und Schilder (`PhotoSetup.ShowsOnlyTheWorld`), alle drei Ticks ein Bild: der Bruch, der Fall der Stücke (81 Ticks) mit der Staubwolke und der liegende Stumpf (Issue #601) |
 
 **Eine Bewegungs-Szene ergänzen:** ein Eintrag in `MotionScenes.All` ([`MotionScenes.cs`](../src/SilverAndAsh.Core/Photos/MotionScenes.cs)) – dieselben Bausteine wie bei den Fotos, nur mit `Input` je Tick und genug `Ticks` für den ganzen Ablauf, zum Beispiel:
 

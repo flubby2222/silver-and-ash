@@ -1,7 +1,9 @@
 using System.Globalization;
+using System.Numerics;
 using System.Text.RegularExpressions;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Photos;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Photos;
@@ -195,5 +197,33 @@ public class MotionSceneTests
         Assert.True(fractions[0] < 0.05f, $"The door starts {fractions[0]} open.");
         Assert.Equal(1f, fractions[^1]);
         Assert.Equal(fractions.Order(), fractions);
+    }
+
+    // Issue #601: the breaking column seen from about 6 m with nothing over it - no hands, title or labels, and no
+    // ceiling between the eye and its top (from the passage south of the hall its lower ceiling cut the column off).
+    [Fact]
+    public void The_column_clip_sees_the_whole_column_from_6_m_with_nothing_over_it()
+    {
+        var world = Scene("column-breaking").Build(Studio()).World;
+        var column = world.Showroom!.Columns.Single(column => column.Stage == ColumnStage.Falling);
+        var eye = world.Player.EyePosition;
+        var top = column.Position + new Vector3(0f, RoomTemplate.RoomCeilingHeight - 0.1f, 0f);
+
+        var distance = Vector2.Distance(new Vector2(eye.X, eye.Z), new Vector2(column.Position.X, column.Position.Z));
+        Assert.InRange(distance, 5.5f, 6.5f);
+        for (var step = 0; step <= 100; step++)
+        {
+            var point = Vector3.Lerp(eye, top, step / 100f);
+            var (x, z) = Level.ToGrid(point.X, point.Z);
+            Assert.True(world.Level[x, z].CeilingHeight >= point.Y, $"The ceiling of cell {x},{z} hides the column's top at {point}.");
+        }
+    }
+
+    [Fact]
+    public void Only_the_column_clip_hides_hands_title_and_labels()
+    {
+        var hiding = MotionScenes.All.Where(scene => scene.Build(Studio()).ShowsOnlyTheWorld).Select(scene => scene.Name);
+
+        Assert.Equal(["column-breaking"], hiding);
     }
 }

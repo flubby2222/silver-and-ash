@@ -120,8 +120,9 @@ internal sealed class ColumnView : IDisposable
         Rlgl.EnableDepthMask();
     }
 
-    // The shells of one puff: size (of its radius) and opacity (0..255 at full density).
-    private static readonly (float Scale, float Alpha)[] Shells = [(1f, 18f), (0.72f, 24f), (0.45f, 30f)];
+    // The shells of one puff: size (of its radius) and opacity (0..255 at full density). Strong enough that the cloud of
+    // the landing pieces is plainly seen from 6 m (provisional until the play test, issue #601).
+    private static readonly (float Scale, float Alpha)[] Shells = [(1f, 40f), (0.72f, 55f), (0.45f, 70f)];
 
     // The dust's colour under the lantern, blended toward the fog colour.
     private static Color Lit(float light, float fog)

@@ -139,18 +139,20 @@ public static class MotionScenes
                 return new PhotoSetup(world) { Ticks = 120 };
             });
 
-    // The showroom's breaking column (issue #601) from 6 m, south of the line it falls along: from a few ticks before
-    // the break of its loop (ShowroomColumnCycle; a scene's world starts at tick 0) until its dust has settled.
+    // The showroom's breaking column (issue #601) from 6 m, from inside the hall north of the line it falls along (the
+    // passage in the south has a lower ceiling that would cut off its top), past the hall's middle column; in full
+    // height, without hands or titles. From a few ticks before the break of its loop (ShowroomColumnCycle; a scene's
+    // world starts at tick 0) until its dust has settled.
     private static PhotoSetup BeforeBreakingColumn(PhotoStudio studio)
     {
         var layout = ShowroomLayout.Build();
         var column = layout.Exhibits.Columns.First(column => column.Stage == ColumnStage.Falling);
-        var target = column.Position + new Vector3(1.5f, 1.5f, 0f);
+        var target = column.Position + new Vector3(2f, 2.6f, 0f);
         var (x, z) = Level.ToGrid(column.Position.X, column.Position.Z);
         var world = layout.NewWorldAt(x, z, target, studio.Balance);
-        world.Player.PlaceAt(column.Position + new Vector3(1.5f, 0f, -6f));
+        world.Player.PlaceAt(column.Position + new Vector3(2.5f, 0f, 5.5f));
         PhotoStudio.Face(world.Player, target);
-        return new PhotoSetup(world) { Ticks = ShowroomColumnCycle.StandTicks - 6 + ColumnDust.Ticks };
+        return new PhotoSetup(world) { Ticks = ShowroomColumnCycle.StandTicks - 6 + ColumnDust.Ticks, ShowsOnlyTheWorld = true };
     }
 
     // The door of `kind` opened by the player (F, as in the game, before the first tick - see PhotoStudio.DoorHall):
