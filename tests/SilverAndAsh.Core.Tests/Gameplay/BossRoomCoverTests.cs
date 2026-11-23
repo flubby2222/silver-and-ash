@@ -199,10 +199,14 @@ public class BossRoomCoverTests
         {
             world.Tick(PlayerInput.None);
             reached = world.Events.Any(e => e is GhoulWindUp);
+
+            // Every tick, not only at the end (issue #608): on the way round it never steps into the column.
+            Assert.False(
+                CharacterCollision.Overlaps(world.Level, ghoul.Position, BodySizes.Ghoul.Radius),
+                $"Tick {tick}: the ghoul at {ghoul.Position} is inside the column at {setup.Column.Centre}.");
         }
 
         Assert.True(reached, $"Stuck at {ghoul.Position}, the column at {setup.Column.Centre}.");
-        Assert.False(CharacterCollision.Overlaps(world.Level, ghoul.Position, BodySizes.Ghoul.Radius));
     }
 
     private static float Flat(Vector3 a, Vector3 b) => Vector2.Distance(new Vector2(a.X, a.Z), new Vector2(b.X, b.Z));

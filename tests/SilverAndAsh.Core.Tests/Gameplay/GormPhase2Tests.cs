@@ -346,6 +346,33 @@ public class GormPhase2Tests
         });
     }
 
+    /// <summary>
+    /// Issue #608: a column stands on open floor, but no stone falls into it. Eight columns ring the player, so without
+    /// the rule about one stone in eight would land in one.
+    /// </summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Stones_never_fall_into_a_column(int seed)
+    {
+        Column[] columns =
+        [
+            Column.AtCell(6, 2), Column.AtCell(7, 2), Column.AtCell(8, 2), Column.AtCell(6, 3),
+            Column.AtCell(8, 3), Column.AtCell(6, 4), Column.AtCell(8, 4), Column.AtCell(7, 1),
+        ];
+        var balance = Tough with { Gorm = Tough.Gorm with { StoneCount = 200 } };
+        var duel = new Duel(3f, balance, Hall().WithColumns(columns), seed);
+        duel.IntoPhase2();
+
+        duel.UntilSlam();
+
+        var spots = duel.StoneSpots();
+        Assert.Equal(200, spots.Count);
+        Assert.All(spots, spot => Assert.All(columns, column => Assert.True(
+            Vector2.Distance(column.Centre, new Vector2(spot.X, spot.Z)) >= Column.Radius, $"A stone fell into the column at {column.Centre}: {spot}.")));
+    }
+
     [Fact]
     public void Stones_fall_only_inside_his_room()
     {
