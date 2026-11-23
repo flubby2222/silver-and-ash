@@ -99,9 +99,11 @@ public sealed class Gorm : IEnemy
     private float _swingAngle;
     private readonly HashSet<Player> _sweptPlayers = new(ReferenceEqualityComparer.Instance);
 
-    // Issue #590: the columns the current swing or shock wave has struck - they cover for the rest of that attack, even
-    // the one it broke. And the wear of the world's columns (null: columns cover, but never break).
+    // Issue #590: the columns the current swing or shock wave has struck (each takes one blow per attack), the players a
+    // column sheltered at the moment this attack broke it (only they keep that cover, to the end of the attack), and
+    // the wear of the world's columns (null: columns cover, but never break).
     private readonly List<Column> _struckColumns = [];
+    private readonly List<(int PlayerId, Column Column)> _shelteredAtBreak = [];
     private ColumnWear? _wear;
     private float _hookTravelled;
 
@@ -583,7 +585,7 @@ public sealed class Gorm : IEnemy
         var from = _swingAngle;
         _stateTicksLeft--;
         _swingAngle = -SwingHalfArc + (2f * SwingHalfArc * StateProgress);
-        StrikeColumns(level, column => SwingPasses(column, from), Position.Y + ((_gorm.SwingLow + _gorm.SwingHigh) / 2f), events);
+        StrikeColumns(level, column => SwingPasses(column, from), Position with { Y = Position.Y + ((_gorm.SwingLow + _gorm.SwingHigh) / 2f) }, players, events);
 
         var low = Position.Y + _gorm.SwingLow;
         var high = Position.Y + _gorm.SwingHigh;
@@ -592,7 +594,7 @@ public sealed class Gorm : IEnemy
             var offset = (player.Position - Position) with { Y = 0f };
             var bearing = MathF.Atan2(Vector3.Dot(offset, Right), Vector3.Dot(offset, Facing));
             if (bearing < from || bearing > _swingAngle || offset.Length() > _gorm.SwingReach
-                || IsCovered(level, Position, player.Position))
+                || IsCovered(level, Position, player))
             {
                 continue;
             }
@@ -621,6 +623,7 @@ public sealed class Gorm : IEnemy
                 _reachedByWave.Clear();
                 _waveHit = false;
                 _struckColumns.Clear();
+                _shelteredAtBreak.Clear();
                 State = GormState.Slamming;
                 events.Add(new GormSlammed(Id) { Place = Position });
                 if (IsInPhase2 && target is not null)
@@ -635,6 +638,7 @@ public sealed class Gorm : IEnemy
                 _swingAngle = -SwingHalfArc;
                 _sweptPlayers.Clear();
                 _struckColumns.Clear();
+                _shelteredAtBreak.Clear();
                 Begin(GormState.Swinging, Quicker(_gorm.SwingTime));
                 events.Add(new GormSwingStarted(Id) { Place = Position });
                 break;
@@ -658,7 +662,7 @@ public sealed class Gorm : IEnemy
         var (origin, radius) = Shockwave!.Value;
         radius = MathF.Min(_gorm.ShockwaveRadius, radius + (_gorm.ShockwaveSpeed * SimulationClock.SecondsPerTick));
         Shockwave = (origin, radius);
-        StrikeColumns(level, column => FlatDistance(origin, column) - Column.Radius <= radius, origin.Y, events);
+        StrikeColumns(level, column => FlatDistance(origin, column) - Column.Radius <= radius, origin, players, events);
 
         foreach (var player in players.Where(player => !player.IsDead && !_reachedByWave.Contains(player.Id)))
         {
@@ -668,7 +672,7 @@ public sealed class Gorm : IEnemy
             }
 
             _reachedByWave.Add(player.Id);
-            if (IsCovered(level, origin, player.Position))
+            if (IsCovered(level, origin, player))
             {
                 continue;
             }
@@ -700,8 +704,8 @@ public sealed class Gorm : IEnemy
     }
 
     // Issue #590: every standing column that this tick's part of the attack reaches (`reaches`) and that no other
-    // column covers takes one blow - once per attack. It covers for the rest of the attack, even if the blow broke it.
-    private void StrikeColumns(Level level, Func<Column, bool> reaches, float height, ICollection<GameEvent> events)
+    // column covers takes one blow - once per attack. `source` is where the attack comes from, at the height it strikes.
+    private void StrikeColumns(Level level, Func<Column, bool> reaches, Vector3 source, IReadOnlyList<Player> players, ICollection<GameEvent> events)
     {
         foreach (var column in StandingColumns(level).Where(column => !_struckColumns.Contains(column) && reaches(column)).ToList())
         {
@@ -711,7 +715,21 @@ public sealed class Gorm : IEnemy
             }
 
             _struckColumns.Add(column);
-            _wear?.Strike(column, height, events);
+            _wear?.Strike(column, source.Y, events);
+            if (_wear?.IsBroken(column) == true)
+            {
+                KeepShelteredAtBreak(column, source, players);
+            }
+        }
+    }
+
+    // Issue #590: the blow that breaks a column is still caught - but only for the players standing behind it right
+    // now. The cover ends with the break: whoever steps into its shadow afterwards is hit.
+    private void KeepShelteredAtBreak(Column column, Vector3 source, IReadOnlyList<Player> players)
+    {
+        foreach (var player in players.Where(player => !player.IsDead && Shades(column, source, player.Position)))
+        {
+            _shelteredAtBreak.Add((player.Id, column));
         }
     }
 
@@ -719,15 +737,20 @@ public sealed class Gorm : IEnemy
     private IEnumerable<Column> StandingColumns(Level level) =>
         level.Columns.Where(column => _wear is null || !_wear.IsBroken(column));
 
-    // Issue #590: true if a standing column - or one this attack has struck - stands on the flat line from `from` to
-    // the middle of `to`. Only free-standing columns cover; walls are as before.
-    private bool IsCovered(Level level, Vector3 from, Vector3 to, Column? except = null)
-    {
-        var start = new Vector2(from.X, from.Z);
-        var end = new Vector2(to.X, to.Z);
-        return StandingColumns(level).Concat(_struckColumns)
-            .Any(column => column != except && DistanceToSegment(column.Centre, start, end) < Column.Radius);
-    }
+    // Issue #590: true if a standing column stands on the flat line from `from` to the middle of `to`. Only
+    // free-standing columns cover; walls are as before.
+    private bool IsCovered(Level level, Vector3 from, Vector3 to, Column? except = null) =>
+        StandingColumns(level).Any(column => column != except && Shades(column, from, to));
+
+    // Issue #590: a player is covered by a standing column - or still by one this attack broke, if it sheltered him at
+    // the moment it broke and he is still behind it.
+    private bool IsCovered(Level level, Vector3 from, Player player) =>
+        IsCovered(level, from, player.Position)
+        || _shelteredAtBreak.Any(shelter => shelter.PlayerId == player.Id && Shades(shelter.Column, from, player.Position));
+
+    // Issue #590: `column` stands on the flat line from `from` to `to`.
+    private static bool Shades(Column column, Vector3 from, Vector3 to) =>
+        DistanceToSegment(column.Centre, new Vector2(from.X, from.Z), new Vector2(to.X, to.Z)) < Column.Radius;
 
     // Issue #590: the chain passed over part of `column` this tick - it lies within reach, and the angles it fills seen
     // from him overlap the arc the chain swept since `from`.

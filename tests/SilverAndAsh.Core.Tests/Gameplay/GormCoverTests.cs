@@ -52,11 +52,11 @@ public class GormCoverTests
 
         public List<GameEvent> Events { get; } = [];
 
-        public void Run(int ticks, Func<bool> until)
+        public void Run(int ticks, Func<bool> until, Func<PlayerInput>? input = null)
         {
             for (var tick = 0; tick < ticks && !until(); tick++)
             {
-                Player.Tick(PlayerInput.None);
+                Player.Tick(input?.Invoke() ?? PlayerInput.None);
                 Events.AddRange(Player.Events);
                 var events = new List<GameEvent>();
                 Gorm.Act(Level, [Player], [Player.Body], events, columns: Wear);
@@ -114,6 +114,72 @@ public class GormCoverTests
 
         Assert.Contains(events, e => e is PlayerHit);
         Assert.Equal([new ColumnHit(Aside, duel.Wear.HitsOn(Aside), HitsToBreak)], events.OfType<ColumnHit>());
+    }
+
+    [Theory]
+    [InlineData(GormAttack.Swing, 0.9f, true)]
+    [InlineData(GormAttack.Swing, 1.1f, false)]
+    [InlineData(GormAttack.Hammer, 0.9f, true)]
+    [InlineData(GormAttack.Hammer, 1.1f, false)]
+    public void A_column_covers_as_wide_as_it_is(GormAttack attack, float offsetInRadii, bool covers)
+    {
+        // The column moved sideways off the line between them: its edge still on the line, or just off it.
+        var duel = new Duel(new Column(Between.X + (offsetInRadii * Column.Radius), Between.Z));
+        var health = duel.Player.Health;
+
+        var events = duel.Through(attack);
+
+        Assert.Single(events.OfType<ColumnHit>());
+        Assert.Equal(!covers, events.Any(e => e is PlayerHit));
+        Assert.Equal(covers, duel.Player.Health == health);
+    }
+
+    [Fact]
+    public void The_cover_ends_with_the_break_whoever_steps_behind_the_broken_column_is_hit()
+    {
+        // The player 6 m in front of Gorm, the column 2 m in front of him and 1 m to the side: its shadow falls 3 m beside
+        // the player. He stands well off it until the column breaks, then steps into it.
+        var start = Column.AtCell(7, 3).Centre;
+        var column = new Column(start.X - 1f, start.Y + 4f);
+        var duel = new Duel(column);
+        var shadow = start.X - 3f;
+        var health = duel.Player.Health;
+
+        // Worn down to its last blow, the wave breaks it on the way out.
+        duel.Run(60 * Second, () => duel.Gorm.State == GormState.WindingUp && duel.Gorm.Attack == GormAttack.Hammer);
+        Assert.True(duel.Gorm.Attack == GormAttack.Hammer, "Gorm never wound up his hammer.");
+        while (duel.Wear.HitsOn(column) < HitsToBreak - 1)
+        {
+            duel.Wear.Strike(column, 0f, []);
+        }
+
+        var before = duel.Events.Count;
+        duel.Run(5 * Second, () => duel.Events.Skip(before).Any(e => e is ColumnBroke));
+        Assert.Contains(duel.Events.Skip(before), e => e is ColumnBroke);
+        Assert.DoesNotContain(duel.Events.Skip(before), e => e is PlayerHit or ShockwaveHit);
+        var origin = duel.Gorm.Shockwave!.Value.Origin;
+        Assert.False(Behind(column, origin, duel.Player.Position), "The player stood in the shadow already at the break - the test would prove nothing.");
+
+        // From the break on he walks sideways into the shadow (+X move goes to -X) and stops there.
+        var hit = duel.Events.Count;
+        duel.Run(
+            5 * Second,
+            () => duel.Gorm.State is GormState.Recovering or GormState.Stuck,
+            () => PlayerInput.None with { Move = new Vector2(duel.Player.Position.X > shadow ? 1f : 0f, 0f) });
+
+        Assert.True(Behind(column, origin, duel.Player.Position), "The player never got behind the broken column.");
+        Assert.Contains(duel.Events.Skip(hit), e => e is ShockwaveHit);
+        Assert.True(duel.Player.Health < health);
+        Assert.Equal(GormState.Recovering, duel.Gorm.State);
+    }
+
+    /// <summary>The column stands on the flat line from <paramref name="from"/> to <paramref name="to"/>.</summary>
+    private static bool Behind(Column column, Vector3 from, Vector3 to)
+    {
+        var start = new Vector2(from.X, from.Z);
+        var line = new Vector2(to.X, to.Z) - start;
+        var along = Math.Clamp(Vector2.Dot(column.Centre - start, line) / line.LengthSquared(), 0f, 1f);
+        return Vector2.Distance(column.Centre, start + (line * along)) < Column.Radius;
     }
 
     [Fact]
