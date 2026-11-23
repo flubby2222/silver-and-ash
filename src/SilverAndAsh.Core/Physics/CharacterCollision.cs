@@ -76,6 +76,7 @@ public static class CharacterCollision
             (position, velocity) = ResolveBodyOverlaps(position, velocity, radius, height, bodies);
             (position, velocity) = ResolveBoxOverlaps(position, velocity, radius, height, stepHeight, boxes);
             (position, velocity) = ResolveColumnOverlaps(level, position, velocity, radius);
+            (position, velocity) = ResolvePortalOverlaps(level, position, velocity, radius, height, stepHeight);
             (position, velocity) = ResolveOverlaps(level, position, velocity, radius, height, stepHeight);
         }
 
@@ -171,6 +172,14 @@ public static class CharacterCollision
         foreach (var column in level.Columns)
         {
             if (Column.Radius + radius - Vector2.Distance(new Vector2(position.X, position.Z), column.Centre) > Epsilon)
+            {
+                return true;
+            }
+        }
+
+        foreach (var (min, max) in PortalStoneInTheWay(level, position, height, stepHeight))
+        {
+            if (RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out _) > Epsilon)
             {
                 return true;
             }
@@ -305,6 +314,61 @@ public static class CharacterCollision
 
         return (position, velocity);
     }
+
+    /// <summary>
+    /// Pushes the character out of the stone of the boss portals (issue #598) - the jambs beside the opening, the plinths
+    /// and buttresses in front of the walls - like walls, with sliding. A block whose top is at most a step above the feet
+    /// does not stop it, nor does one above its head (the same rule as for boxes).
+    /// </summary>
+    private static (Vector3 Position, Vector3 Velocity) ResolvePortalOverlaps(
+        Level level, Vector3 position, Vector3 velocity, float radius, float height, float stepHeight)
+    {
+        if (level.Portals.Count == 0)
+        {
+            return (position, velocity);
+        }
+
+        // The jambs are stepped: in an inner corner the circle touches two blocks, so more than one pass.
+        for (var iteration = 0; iteration < ResolveIterations; iteration++)
+        {
+            var pushedOut = false;
+            foreach (var (min, max) in PortalStoneInTheWay(level, position, height, stepHeight))
+            {
+                var depth = RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out var normal);
+                if (depth <= 0f)
+                {
+                    continue;
+                }
+
+                position += new Vector3(normal.X, 0f, normal.Y) * depth;
+                var into = (velocity.X * normal.X) + (velocity.Z * normal.Y);
+                if (into < 0f)
+                {
+                    velocity -= new Vector3(normal.X, 0f, normal.Y) * into;
+                }
+
+                pushedOut = true;
+            }
+
+            if (!pushedOut)
+            {
+                break;
+            }
+        }
+
+        return (position, velocity);
+    }
+
+    // The ground plans of the portal blocks a body standing at position.Y meets: from a step above its feet to its head.
+    private static IEnumerable<(Vector2 Min, Vector2 Max)> PortalStoneInTheWay(Level level, Vector3 position, float height, float stepHeight) =>
+        level.Portals.SelectMany(portal => portal.Footprint(position.Y + StepOntoStone(stepHeight), position.Y + height));
+
+    /// <summary>
+    /// How high a body steps up onto the portal's stone. A walking body climbs a block up to its step height. A flying
+    /// body (unbounded step: it passes any floor height, see <c>Bat</c>) does not climb stone - it flies over the
+    /// floors, but meets every block from its feet up, so a bat in the passage still bumps into the jambs.
+    /// </summary>
+    private static float StepOntoStone(float stepHeight) => float.IsPositiveInfinity(stepHeight) ? 0f : stepHeight;
 
     /// <summary>
     /// Pushes the character out of solid boxes on the ground plane - like walls, with sliding. A box whose top is

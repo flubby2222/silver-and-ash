@@ -56,7 +56,8 @@ public static class Pathfinder
     /// <summary>
     /// Turns a cell path into the points to walk to: instead of stepping from cell centre to cell centre, it goes
     /// straight to the farthest point of the path that can be reached in a straight line by a body of
-    /// <paramref name="radius"/>. Returns the world positions to walk to (the start itself is not included).
+    /// <paramref name="radius"/>. Returns the world positions to walk to (the start itself is not included). A cell's
+    /// point is its middle - in the doorway of a boss portal the middle of the opening (<see cref="Level.WayPoint"/>).
     /// </summary>
     public static IReadOnlyList<Vector3> Smooth(
         Level level, IReadOnlyList<(int X, int Z)> path, float radius, float stepHeight = BodySizes.Player.StepHeight)
@@ -70,7 +71,7 @@ public static class Pathfinder
 
         if (path.Count == 1)
         {
-            return [level.CellCenter(path[0].X, path[0].Z)];
+            return [level.WayPoint(path[0].X, path[0].Z)];
         }
 
         // "String pulling": from where we are, look for the farthest cell of the path we can walk to in a straight line.
@@ -78,18 +79,18 @@ public static class Pathfinder
         var from = 0;
         while (from < path.Count - 1)
         {
-            var origin = level.CellCenter(path[from].X, path[from].Z);
+            var origin = level.WayPoint(path[from].X, path[from].Z);
             var to = from + 1;
             for (var candidate = path.Count - 1; candidate > from + 1; candidate--)
             {
-                if (CanWalkStraight(level, origin, level.CellCenter(path[candidate].X, path[candidate].Z), radius, stepHeight))
+                if (CanWalkStraight(level, origin, level.WayPoint(path[candidate].X, path[candidate].Z), radius, stepHeight))
                 {
                     to = candidate;
                     break;
                 }
             }
 
-            points.Add(level.CellCenter(path[to].X, path[to].Z));
+            points.Add(level.WayPoint(path[to].X, path[to].Z));
             from = to;
         }
 
@@ -98,7 +99,8 @@ public static class Pathfinder
 
     /// <summary>
     /// True if a body of <paramref name="radius"/> can walk in a straight line from <paramref name="from"/> to
-    /// <paramref name="to"/>: no wall in the way and never a floor rising more than <paramref name="stepHeight"/>.
+    /// <paramref name="to"/>: no wall and no stone of a boss portal in the way and never a floor rising more than
+    /// <paramref name="stepHeight"/>.
     /// </summary>
     public static bool CanWalkStraight(
         Level level, Vector3 from, Vector3 to, float radius, float stepHeight = BodySizes.Player.StepHeight)
@@ -121,7 +123,7 @@ public static class Pathfinder
             foreach (var corner in corners)
             {
                 var cell = level.CellAt(point + corner);
-                if (cell.IsSolid || cell.FloorHeight - floor > stepHeight)
+                if (cell.IsSolid || cell.FloorHeight - floor > stepHeight || IsPortalStone(level, point + corner))
                 {
                     return false;
                 }
@@ -131,6 +133,20 @@ public static class Pathfinder
         }
 
         return true;
+    }
+
+    // The ground plan of a boss portal's jambs, plinths and buttresses (issue #598): nobody walks there.
+    private static bool IsPortalStone(Level level, Vector3 point)
+    {
+        foreach (var portal in level.Portals)
+        {
+            if (portal.StandsOn(new Vector2(point.X, point.Z)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsWalkable(Level level, (int X, int Z) cell) =>
