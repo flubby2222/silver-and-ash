@@ -479,7 +479,7 @@ static void RunGame(
         // The wall niches (issue #538) - for now only in the showroom; without their models the walls stay bare.
         using var wallNicheView = WallNicheView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
-        // The portcullis (issue #540) - for now only in the showroom, falling and lifting in a loop.
+        // The portcullises (issues #540, #558): in the doors of the arenas, and in the showroom falling and lifting in a loop.
         using var portcullisView = PortcullisView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
         // Pistol and silver blade with their hands (issue #249); a weapon without its two files keeps the boxes.
@@ -573,7 +573,8 @@ static void RunGame(
             levelRenderer.Draw();
             levelShader.BeginFigures();
             var viewCone = new ViewCone(eye, forward, LookSettings.FieldOfViewDegrees, (float)picture.Width / picture.Height);
-            doorView.Draw(gameWorld.Doors, seconds, viewCone, gameWorld.Surfaces, levelTextures);
+            doorView.Draw(gameWorld.Doors, seconds, viewCone, gameWorld.Surfaces, levelTextures, portcullisView.HasGrate);
+            portcullisView.Draw(gameWorld.Doors, viewCone, gameWorld.Surfaces, levelTextures);
             chestView.Draw(gameWorld.Chests, seconds);
             stairsView.Draw(gameWorld.Stairs, seconds, viewCone, gameWorld.Surfaces, levelTextures);
             wellView.Draw(gameWorld.Well, seconds, viewCone);
@@ -585,7 +586,7 @@ static void RunGame(
             wallNicheView.Draw(gameWorld.Showroom?.WallNiches ?? [], viewCone, levelTextures);
             portcullisView.Draw(
                 gameWorld.Showroom?.Portcullises ?? [], ShowroomGrateCycle.Height(gameWorld.Ticks, gameWorld.Balance.Grates),
-                viewCone, gameWorld.Surfaces, levelTextures);
+                viewCone, gameWorld.Surfaces, levelTextures, doorView);
             ColumnView.Draw(gameWorld.LevelAsBuilt, viewCone);
             foreach (var dummy in gameWorld.Dummies)
             {

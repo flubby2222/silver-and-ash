@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Tests.Physics;
 using SilverAndAsh.Core.World;
 
@@ -104,6 +105,30 @@ public class ColumnPlacementTests
 
         Assert.Equal(ColumnFit.Fits, ColumnPlacement.Check(Hall, new Column(limit + Hair, 9f), door));
         Assert.Equal(ColumnFit.TooCloseToDoor, ColumnPlacement.Check(Hall, new Column(limit - Hair, 9f), door));
+    }
+
+    [Fact]
+    public void No_column_fits_in_or_right_before_a_door_with_a_portcullis()
+    {
+        // As the game builds its levels (LevelZero.Build), portcullises placed by GratePlacement (issue #558).
+        var templates = RoomTemplateParser.LoadAll(RepositoryFiles.Find("assets/rooms"));
+        var checkedCells = 0;
+        foreach (var seed in Enumerable.Range(0, 10))
+        {
+            var generated = new LevelZero(templates).Build(seed, Balance.Default);
+            var doorCells = generated.Doors.Select(door => (door.X, door.Z)).ToList();
+            foreach (var door in generated.Doors.Where(door => door.HasGrate))
+            {
+                (int X, int Z)[] cells = [(door.X, door.Z), (door.X + 1, door.Z), (door.X - 1, door.Z), (door.X, door.Z + 1), (door.X, door.Z - 1)];
+                foreach (var cell in cells.Where(cell => !generated.Level[cell.X, cell.Z].IsSolid))
+                {
+                    Assert.NotEqual(ColumnFit.Fits, ColumnPlacement.Check(generated.Level, Column.AtCell(cell.X, cell.Z), doorCells, Balance.Default.Columns));
+                    checkedCells++;
+                }
+            }
+        }
+
+        Assert.True(checkedCells > 0, "no door with a portcullis was checked");
     }
 
     [Fact]

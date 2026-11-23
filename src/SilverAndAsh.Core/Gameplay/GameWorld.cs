@@ -79,7 +79,7 @@ public sealed class GameWorld
         _levelWithOpenDoors = level;
         _doorPlan = doors ?? [];
         Balance = balance ?? Balance.Default;
-        _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level, Balance.Doors)).ToList();
+        _doors = _doorPlan.Select((plan, index) => new Door(index, plan, level, Balance.Doors, Balance.Grates)).ToList();
         Level = WithClosedDoors();
         LevelAsBuilt = WithUnbrokenWalls();
         Seed = seed;
@@ -836,12 +836,16 @@ public sealed class GameWorld
             return;
         }
 
+        // Issue #558, decision of the human: the doors shut in this tick - the grates only start to fall, but nobody gets
+        // out any more. An enemy in a doorway (one that followed the player) is pushed into the arena.
         foreach (var id in room.DoorIds)
         {
-            _doors[id].Bar();
+            ReportGrate(_doors[id], _doors[id].Bar(), falling: true);
+            PushOutOf(_doors[id], room);
         }
 
         room.Seal();
+
         UpdateLevel();
         _events.Add(new RoomSealed(room.Index));
         if (room.ReleaseNextWave() is { } wave)
@@ -874,11 +878,7 @@ public sealed class GameWorld
                 continue;
             }
 
-            foreach (var id in room.DoorIds)
-            {
-                _doors[id].Lift();
-            }
-
+            LiftGrates(room);
             room.Clear();
             UpdateLevel();
             _events.Add(new RoomCleared(room.Index));
@@ -886,6 +886,79 @@ public sealed class GameWorld
             RaiseChestsIn(room);
             RaiseStairsIfBoss(room);
         }
+    }
+
+    // The grates of a room rise - one event per grate that starts to move. (A door shared with a second sealed room
+    // cannot occur: it shuts at once, so no player gets through to seal the other room while this one is sealed.)
+    private void LiftGrates(RoomState room)
+    {
+        foreach (var id in room.DoorIds)
+        {
+            ReportGrate(_doors[id], _doors[id].Lift(), falling: false);
+        }
+    }
+
+    private void ReportGrate(Door door, bool started, bool falling)
+    {
+        if (started)
+        {
+            _events.Add(new GrateStarted(door.Id, falling) { Place = (door.BoxMin + door.BoxMax) / 2f });
+        }
+    }
+
+    // Issue #558: every door runs its own clock. A rising grate frees the way once it hangs high enough - then the
+    // level changes for everybody.
+    private void TickDoors()
+    {
+        var changed = false;
+        foreach (var door in _doors)
+        {
+            changed |= door.Tick();
+        }
+
+        if (changed)
+        {
+            UpdateLevel();
+        }
+    }
+
+    // A door that shuts pushes every enemy in its cell into the arena - nobody is hurt or caught in it. No player can
+    // stand there: a player enters a room only with the whole body out of its doorways.
+    private void PushOutOf(Door door, RoomState arena)
+    {
+        foreach (var ghoul in _ghouls.Where(ghoul => Overlaps(door, ghoul.Position, ghoul.Body.Radius)))
+        {
+            ghoul.PlaceAt(PushedInto(arena, door, ghoul.Position, ghoul.Body.Radius));
+        }
+
+        foreach (var bat in _bats.Where(bat => Overlaps(door, bat.Position, bat.Body.Radius)))
+        {
+            bat.PlaceAt(PushedInto(arena, door, bat.Position, bat.Body.Radius));
+        }
+    }
+
+    // Just out of the door cell along the passage, into the arena. Across the passage it stays where it was, but inside
+    // the doorway's width, so it never ends up in a wall.
+    private static Vector3 PushedInto(RoomState arena, Door door, Vector3 at, float radius)
+    {
+        const float Gap = 0.01f;
+        var alongZ = door.Side is RoomSide.North or RoomSide.South;
+        var towardsB = door.Side is RoomSide.South or RoomSide.East;
+        var high = (door.RoomB == arena.Index) == towardsB;
+        if (alongZ)
+        {
+            return at with
+            {
+                X = Math.Clamp(at.X, door.BoxMin.X + radius, door.BoxMax.X - radius),
+                Z = high ? door.BoxMax.Z + radius + Gap : door.BoxMin.Z - radius - Gap,
+            };
+        }
+
+        return at with
+        {
+            X = high ? door.BoxMax.X + radius + Gap : door.BoxMin.X - radius - Gap,
+            Z = Math.Clamp(at.Z, door.BoxMin.Z + radius, door.BoxMax.Z - radius),
+        };
     }
 
     // A cleared boss room lets the spiral staircase rise in its middle (decision record 0007). A room is cleared only
@@ -936,22 +1009,15 @@ public sealed class GameWorld
         _ => true,
     };
 
-    private bool TouchesDoorOf(RoomState room, Player player)
-    {
-        foreach (var id in room.DoorIds)
-        {
-            var door = _doors[id];
-            var nearestX = Math.Clamp(player.Position.X, door.BoxMin.X, door.BoxMax.X);
-            var nearestZ = Math.Clamp(player.Position.Z, door.BoxMin.Z, door.BoxMax.Z);
-            var dx = player.Position.X - nearestX;
-            var dz = player.Position.Z - nearestZ;
-            if (dx * dx + dz * dz < BodySizes.Player.Radius * BodySizes.Player.Radius)
-            {
-                return true;
-            }
-        }
+    private bool TouchesDoorOf(RoomState room, Player player) =>
+        room.DoorIds.Any(id => Overlaps(_doors[id], player.Position, BodySizes.Player.Radius));
 
-        return false;
+    // Whether a round body of radius at a place reaches into the door's cell (seen from above).
+    private static bool Overlaps(Door door, Vector3 at, float radius)
+    {
+        var dx = at.X - Math.Clamp(at.X, door.BoxMin.X, door.BoxMax.X);
+        var dz = at.Z - Math.Clamp(at.Z, door.BoxMin.Z, door.BoxMax.Z);
+        return dx * dx + dz * dz < radius * radius;
     }
 
     private static bool IsDead(ITarget enemy) => enemy switch
@@ -1662,11 +1728,7 @@ public sealed class GameWorld
             chest.Tick();
         }
 
-        foreach (var door in _doors)
-        {
-            door.Tick();
-        }
-
+        TickDoors();
         _stairs?.Tick();
         ClearRooms();
 

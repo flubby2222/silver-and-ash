@@ -100,7 +100,7 @@ public class PhotoSceneTests
             "gorm-hammer-windup", "gorm-shockwave",
             "door-normal", "door-normal-half", "door-normal-open", "door-locked", "door-locked-half", "door-locked-open",
             "door-boss", "door-boss-half", "door-boss-open", "door-cracked", "door-sideways-half", "door-level-seed1",
-            "door-level-seed2-boss", "door-normal-10m", "door-locked-10m", "door-boss-10m",
+            "door-level-seed2-boss", "door-level-barred", "door-normal-10m", "door-locked-10m", "door-boss-10m",
             "cracked-wall-2m", "cracked-wall-4m", "cracked-wall-10m", "cracked-wall-flat", "cracked-wall-a-4m",
             "cracked-wall-b-4m", "cracked-wall-c-4m", "cracked-wall-sideways-4m", "cracked-wall-secret-4m", "cracked-wall-break",
             "cracked-wall-break-after",
@@ -772,6 +772,32 @@ public class PhotoSceneTests
         Assert.Equal(6f, sideways ? middle.X - world.Player.Position.X : middle.Z - world.Player.Position.Z, 0.001f);
         var towards = Vector3.Normalize(middle - world.Player.EyePosition);
         Assert.Equal(1f, Vector3.Dot(world.Player.View.Forward, towards), 0.001f);
+    }
+
+    [Fact]
+    public void The_barred_door_scene_looks_from_inside_the_sealed_combat_room_at_a_door_with_its_grate_down()
+    {
+        // Issue #558: the room sealed the regular way on entry; the scene stops once the grate in view is on the floor.
+        var setup = Built("door-level-barred");
+
+        var ticks = setup.Run();
+
+        var world = setup.World;
+        var player = world.Player;
+        var door = world.Doors
+            .Where(door => Raycast.AgainstBox(player.EyePosition, player.View.Forward, door.BoxMin, door.BoxMax) is not null)
+            .MinBy(door => Vector3.Distance((door.BoxMin + door.BoxMax) / 2f, player.EyePosition))!;
+        var room = world.Rooms.Single(room => room.Cells.Contains(Level.ToGrid(player.Position.X, player.Position.Z)));
+        Assert.True(ticks < setup.Ticks, "The grate should be down long before the scene gives up.");
+        Assert.Equal(RoomKind.Combat, room.Kind);
+        Assert.True(room.IsSealed);
+        Assert.Contains(door.Id, room.DoorIds);
+        Assert.True(door.HasGrate);
+        Assert.True(door.IsBarred);
+        Assert.Equal(0f, door.GrateHeight);
+        Assert.True(GratePose.IsDrawn(door.GrateHeight));
+        Assert.True(world.Level[door.X, door.Z].IsSolid);
+        Assert.InRange(Vector2.Distance(Flat((door.BoxMin + door.BoxMax) / 2f), Flat(player.Position)), 4f - 0.5f, 6f + 0.5f);
     }
 
     [Fact]
