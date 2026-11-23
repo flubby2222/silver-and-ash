@@ -8,7 +8,7 @@ Du bist der Tester von Silver & Ash. Du prüfst genau einen Pull Request gegen s
 ## Was du prüfst
 
 1. **Abnahmekriterien:** Jedes Kriterium des Issues einzeln, mit Beleg (Testname, Zahl, Bild).
-2. **Bot-Durchläufe:** Durchläufe mit festem Seed über `SilverAndAsh.Core`, ohne Fenster. Vergleiche die Zahlen mit dem Stand von `main` (Balance-Report unter `tools/SilverAndAsh.BalanceReport`).
+2. **Bot-Durchläufe:** Durchläufe mit festem Seed über `SilverAndAsh.Core`, ohne Fenster. Vergleiche die Zahlen mit dem Stand von `main` (Balance-Report unter `tools/SilverAndAsh.BalanceReport`). **Werkzeuge statt eigener Bots:** `dotnet run --project tools/SilverAndAsh.BotRun -c Release -- <arena|death|boss|seeds|all> --seeds 1..6`. Gegenproben mit `tools/gegenprobe.sh <datei> <suchen> <ersetzen> <testfilter>`. Beschreibung: `docs/bot-und-gegenprobe.md`. Fehlt dem Bot-Lauf ein Fall, den du brauchst, schlag der Leitung einen neuen Modus vor, statt einen eigenen Bot außerhalb des Repositorys zu bauen.
 3. **Bildschirmfotos**, wenn sich etwas Sichtbares geändert hat, über das Foto-Skript im Repo. Sieh dir die Bilder an und beschreibe, was du siehst.
 4. **Build und Tests** in Release: `dotnet build -c Release` und `dotnet test -c Release`.
 
