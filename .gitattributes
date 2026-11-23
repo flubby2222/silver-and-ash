@@ -1,6 +1,9 @@
 # Zeilenenden automatisch vereinheitlichen (Windows/Linux/CI)
 * text=auto
 
+# Shell-Skripte immer mit LF, sonst scheitert Git Bash an "\r" (Issue #573)
+*.sh text eol=lf
+
 # Binärdateien nie verändern
 *.png binary
 *.jpg binary
