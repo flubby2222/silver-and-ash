@@ -100,6 +100,31 @@ public class RoomPreviewTests
         Assert.NotNull(world.Gorm);
     }
 
+    /// <summary>Issue #608: <c>--room</c> shows the boss room as a run does - with its columns, with or without enemies.</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_boss_room_gets_its_columns_as_in_a_run(bool withEnemies)
+    {
+        var preview = new RoomPreview(Load("boss/great-hall.txt"), withEnemies);
+        var bare = preview.Build(Seed, Balance.Default with { Columns = Balance.Default.Columns with { BossRoomPerSide = 0 } });
+
+        var world = preview.NewWorld(Seed, Balance.Default);
+
+        Assert.Empty(bare.Level.Columns);
+        var expected = BossRoomColumns.Place(bare, Balance.Default.Columns).Level.Columns;
+        Assert.NotEmpty(expected);
+        Assert.Equal(expected, world.Level.Columns);
+    }
+
+    [Fact]
+    public void A_combat_room_gets_no_columns()
+    {
+        var world = new RoomPreview(Load("combat/l-hall.txt")).NewWorld(Seed, Balance.Default);
+
+        Assert.Empty(world.Level.Columns);
+    }
+
     [Theory]
     [InlineData("combat/l-hall.txt")]
     [InlineData("boss/great-hall.txt")]
