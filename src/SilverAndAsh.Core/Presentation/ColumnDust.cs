@@ -16,6 +16,12 @@ public static class ColumnDust
     /// <summary>How long one cloud lasts, in ticks (0.9 s).</summary>
     public const int LifeTicks = 54;
 
+    /// <summary>
+    /// The colour of the dust before light and fog: the brightest step of the ramp "Stein" in
+    /// assets/palette/hauptpalette.json - the dust of the stone it comes from, never red.
+    /// </summary>
+    public static (byte R, byte G, byte B) Colour { get; } = (151, 127, 137);
+
     /// <summary>Ticks until a cloud is at its densest.</summary>
     public const int SwellTicks = 7;
 

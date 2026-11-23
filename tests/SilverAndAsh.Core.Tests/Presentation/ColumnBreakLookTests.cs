@@ -184,6 +184,21 @@ public class ColumnBreakLookTests
 
     // ---- Dust --------------------------------------------------------------------------------------------------------
 
+    // The review of PR #607: the dust is the stone's - a step of the ramp "Stein" of the main palette, not a colour of its own.
+    [Fact]
+    public void The_dust_is_a_step_of_the_stone_ramp()
+    {
+        using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(RepositoryFiles.Find("assets/palette/hauptpalette.json")));
+        var stone = json.RootElement.GetProperty("grund").EnumerateArray()
+            .Single(entry => entry.GetProperty("name").GetString() == "Stein")
+            .GetProperty("farben").EnumerateArray()
+            .Select(colour => colour.EnumerateArray().Select(channel => (byte)Math.Round(channel.GetDouble())).ToArray())
+            .Select(channels => (channels[0], channels[1], channels[2]))
+            .ToList();
+
+        Assert.Contains(ColumnDust.Colour, stone);
+    }
+
     [Fact]
     public void The_dust_starts_with_the_break_and_is_gone_after_its_ticks()
     {

@@ -29,8 +29,8 @@ internal sealed class ColumnView : IDisposable
     private static readonly Color Stone = new(112, 106, 98, 255);
     private static readonly Color Edge = new(58, 54, 50, 255);
 
-    // The dust of the stone, as that of a breaking wall (WallBreakView): warm grey, never red.
-    private static readonly Color Dust = new(170, 156, 146, 255);
+    // The dust of the stone, from the palette (ColumnDust.Colour).
+    private static readonly Color Dust = new(ColumnDust.Colour.R, ColumnDust.Colour.G, ColumnDust.Colour.B, (byte)255);
 
     private readonly Dictionary<ColumnStage, TexturedModel> _models;
     private readonly Matrix4x4[] _fallTurns = new Matrix4x4[ColumnBreakLook.Parts(ColumnStage.Falling).Count];
