@@ -384,7 +384,7 @@ public class ChestAndBossLootTests
         Assert.Empty(world.Loot);
     }
 
-    /// <summary>Seeds, the column's direction from Gorm's facing (degrees) and his row: every side of him, twice.</summary>
+    /// <summary>Seeds, the column's direction from Gorm's facing (degrees) and his row: every side of him, and nearer the stairs.</summary>
     public static TheoryData<int, int, int> ColumnsAtGorm()
     {
         var data = new TheoryData<int, int, int>();
@@ -396,6 +396,10 @@ public class ChestAndBossLootTests
         data.Add(7, 0, 8);
         data.Add(8, 180, 8);
         data.Add(9, 90, 8);
+
+        // Row 7: in front of him, the vial would fall into the staircase's box (the stairs rise in row 6).
+        data.Add(10, 90, 7);
+        data.Add(11, 270, 7);
         return data;
     }
 
