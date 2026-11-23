@@ -73,6 +73,26 @@ class ChecksumsTests(unittest.TestCase):
                           "audio/audio.sha256: entry for audio/hit.wav, but the file is gone"],
                          checksums.check_lists(self.assets))
 
+    def assert_only_form_differs(self, changed):
+        """Same entries as the written list, but other text: --check must still fail and name only the form."""
+        before = self.raw("models/models.sha256")
+        self.assertNotEqual(before, changed)
+        self.put("models/models.sha256", changed)
+        self.assertEqual(["models/models.sha256: not in the form this script writes"],
+                         checksums.check_lists(self.assets))
+        self.assertEqual(1, self.quiet(checksums.run_check, self.assets))
+        self.assertEqual(changed, self.raw("models/models.sha256"))
+
+    def test_check_reports_a_changed_header(self):
+        self.assert_only_form_differs(self.raw("models/models.sha256").replace(b"# sha256", b"#  sha256", 1))
+
+    def test_check_reports_entries_in_another_order(self):
+        header, first, second, end = self.raw("models/models.sha256").split(b"\n")
+        self.assert_only_form_differs(b"\n".join([header, second, first, end]))
+
+    def test_check_reports_an_extra_blank_line(self):
+        self.assert_only_form_differs(self.raw("models/models.sha256") + b"\n")
+
     def test_a_crlf_checkout_counts_as_current_and_is_not_rewritten(self):
         path = os.path.join(self.assets, "models", "models.sha256")
         crlf = self.raw("models/models.sha256").replace(b"\n", b"\r\n")
