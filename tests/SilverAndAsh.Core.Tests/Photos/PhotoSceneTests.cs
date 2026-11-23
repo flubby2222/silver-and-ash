@@ -803,6 +803,43 @@ public class PhotoSceneTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void The_boss_door_hall_has_a_door_over_two_columns_under_a_ceiling_as_high_as_the_portal(bool sideways)
+    {
+        // Issue #603 (review of PR #596): the door-boss scenes show the portal only if the hall's boss door is as wide as
+        // its model (else the placeholder) and the hall is as high as its frame (else the ceiling cuts into the arch).
+        var world = Studio().DoorHall(DoorKind.Boss, sideways);
+        var door = Assert.Single(world.Doors);
+        var high = DoorFrameLook.Height(DoorKind.Boss);
+
+        Assert.Equal(DoorKind.Boss, door.Kind);
+        Assert.Equal(2, door.Cells.Count);
+        Assert.True(DoorFrameLook.Fits(door.Kind, door.Cells.Count), "The portal model stands in the hall, not the placeholder.");
+        Assert.Equal(sideways ? 0 : 1, door.Cells.Max(cell => cell.X) - door.Cells.Min(cell => cell.X));
+        Assert.Equal(sideways ? 1 : 0, door.Cells.Max(cell => cell.Z) - door.Cells.Min(cell => cell.Z));
+        foreach (var cell in door.Cells)
+        {
+            var (front, back) = CrackedWallLook.FaceCells(cell.X, cell.Z, door.Side);
+            foreach (var (x, z) in new[] { front, back })
+            {
+                Assert.False(world.Level[x, z].IsSolid, $"Cell ({x}, {z}) before or behind the door is walkable.");
+                Assert.Equal(high, world.Level[x, z].CeilingHeight);
+            }
+        }
+
+        // The door cells themselves: while the door bars them the world shows a wall there, but the door's box reads the
+        // hall's own ceiling - and once open, the level shows it, with no step from 3.5 to 6 m inside the arch.
+        Assert.Equal(high, door.BoxMax.Y);
+        var opened = Studio().DoorHall(DoorKind.Boss, sideways, open: true);
+        Assert.All(opened.Doors[0].Cells, cell =>
+        {
+            Assert.False(opened.Level[cell.X, cell.Z].IsSolid);
+            Assert.Equal(high, opened.Level[cell.X, cell.Z].CeilingHeight);
+        });
+    }
+
+    [Theory]
     [InlineData("door-level-barred", 1f)]
     [InlineData("door-level-barred-shut", 0f)]
     public void The_barred_door_scene_looks_from_inside_the_sealed_combat_room_at_a_door_with_its_grate_down(string name, float openFraction)

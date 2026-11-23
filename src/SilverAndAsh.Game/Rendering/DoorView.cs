@@ -226,7 +226,8 @@ internal sealed class DoorView : IDisposable
 
     // The frame model for each face: the variant the level really draws there (a missing B or C falls back to A there,
     // too), else variant A of the frame. Null for a face without any: then the whole door is the placeholder. The boss
-    // portal takes the variants of the walls at its first cell - both its cells face the same two rooms.
+    // portal is drawn once, so it takes the variants of the walls at its first cell: both its cells face the same two
+    // rooms, and the variants follow the room (issue #603, DoorFrameLookTests: every cell shows those of the first).
     private (TexturedModel? Front, TexturedModel? Back) Frames(Door door, SurfaceVariants surfaces, LevelTextures textures)
     {
         var (front, back) = DoorFrameLook.Variants(surfaces, door.X, door.Z, door.Side);
