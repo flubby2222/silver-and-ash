@@ -462,27 +462,27 @@ def band(part, p0, p1, wd, z0, z1, field="iron"):
 
 
 def leaves_a():
+    """Runde 2: vier gleiche Beschlagbaender im gleichen Abstand (unter dem Bogenansatz), feine Trittbleche am Fuss."""
     spring, apex, hwL, thick = 3.2, 5.18, 0.99, 0.24
     out = []
     for side, name in ((1, "leaf_a"), (-1, "leaf_b")):
         part = Part(name, (side * 1.0, 0, 0), LEAF_UV)
         arc, cx, R = arc_leaf(hwL, spring, apex)
-        poly = [(0.0, 0.0), (hwL, 0.0)] + arc
-        poly = [(side * x, y) for x, y in poly]
+        poly = [(side * x, y) for x, y in [(0.0, 0.0), (hwL, 0.0)] + arc]
         t = thick / 2
         ext(part, poly, -t, t, "planks")
         for z0, z1 in faces2(thick, 0.03):
-            for y in (0.55, 1.5, 2.45, 3.05, 3.95, 4.6):
-                length = min(0.92, halfw_at(y, spring, cx, R) - 0.1)
-                if length > 0.3:
-                    strap(part, side * (hwL - 0.0), side, y, length, 0.09, z0, z1)
+            for y in STRAP_Y:
+                strap(part, side * hwL, side, y, 0.8, 0.075, z0, z1)
             xa, xb = sorted((side * 0.12, side * (hwL - 0.12)))
-            ext(part, [(xa, 0.08), (xb, 0.08), (xb, 0.95), (xa, 0.95)], z0, z1 - 0.01 if z1 > 0 else z1, "plate") if z1 > 0 \
-                else ext(part, [(xa, 0.08), (xb, 0.08), (xb, 0.95), (xa, 0.95)], z0 + 0.01, z1, "plate")
-            xa, xb = sorted((side * 0.0, side * 0.1))
-            ext(part, [(xa, 0.3), (xb, 0.3), (xb, 4.5), (xa, 4.5)], z0, z1, "iron")
+            ext(part, [(xa, 0.05), (xb, 0.05), (xb, 0.42), (xa, 0.42)], z0, z1, "plate")
+            xa, xb = sorted((side * 0.0, side * 0.08))
+            ext(part, [(xa, 0.5), (xb, 0.5), (xb, 4.3), (xa, 4.3)], z0, z1, "iron")
         out.append(part)
     return out
+
+
+STRAP_Y = (0.8, 1.5, 2.2, 2.9)      # gleicher Abstand 0,7 m; das oberste Band liegt unter dem Bogenansatz (3,2 m)
 
 
 def leaves_c():
@@ -609,14 +609,14 @@ def new_scene():
     return coll
 
 
-def place(part, coll, mat, offset=(0, 0, 0)):
+def place(part, coll, mat, offset=(0, 0, 0), rot=0.0):
     heal(part)
     o = part.build(coll, mat, smooth=False)
-    o.matrix_world = Matrix.Translation(G(part.pivot + V(*offset)))
+    o.matrix_world = Matrix.Translation(G(part.pivot + V(*offset))) @ Matrix.Rotation(math.radians(rot), 4, "Z")
     return o
 
 
-def add_design(coll, key, dz=-1.0, with_leaves=True, only=None):
+def add_design(coll, key, dz=-1.0, with_leaves=True, only=None, swing=0.0):
     A = atlas_images()
     portal, leaves = build_design(key)
     objs = []
@@ -627,7 +627,8 @@ def add_design(coll, key, dz=-1.0, with_leaves=True, only=None):
             objs.append(place(p, coll, mf, (0, 0, dz)))
     if with_leaves:
         for p in leaves:
-            objs.append(place(p, coll, ml, (0, 0, dz)))
+            sgn = 1.0 if p.pivot.x > 0 else -1.0      # Fluegel schwingen zur -z-Seite (Bossraum)
+            objs.append(place(p, coll, ml, (0, 0, dz), rot=-sgn * swing))
     return objs
 
 
@@ -970,8 +971,131 @@ def step_vorraum():
     png(sheet, os.path.join(HERE, "vorraum-549.png"))
 
 
+# --- Runde 2: nur Entwurf a ---------------------------------------------------------------------------------------------
+
+def scene_a(side, swing):
+    """side +1: Blick von der Vorraum-Seite (+z), -1: aus dem Bossraum (-z). Waende buendig mit den Wandebenen."""
+    def b(coll):
+        if side > 0:
+            o = add_wall(coll, -9, -POST) + add_wall(coll, POST, 9) + add_design(coll, "a", dz=-1.0, swing=swing)
+            return o + add_floor(coll, -9, 9, -10, 10)
+        o = add_wall(coll, -9, -POST, z=-1.0, facing=-1) + add_wall(coll, POST, 9, z=-1.0, facing=-1)
+        o += add_design(coll, "a", dz=0.0, only="portal_back", swing=swing)
+        return o + add_floor(coll, -9, 9, -16, 4)
+    return b
+
+
+def step_r2blatt():
+    panels = []
+    for side, swing, label, sub in ((1, 0, "a  vorn, zu", "von der Vorraum-Seite"), (-1, 0, "a  hinten, zu", "aus dem Bossraum"),
+                                    (1, 90, "a  vorn, offen", "Fluegel schwingen in den Bossraum"),
+                                    (-1, 90, "a  hinten, offen", "aus dem Bossraum, Fluegel zeigen zu dir")):
+        loc = (0.0, 1.6, 6.0) if side > 0 else (0.0, 1.6, -7.0)
+        tgt = (0.0, 2.9, 0.0) if side > 0 else (0.0, 2.9, -1.0)
+        img = shoot(scene_a(side, swing), loc, tgt, 62, (400, 640), "spiel")
+        text(img, label, 10, 8, 24)
+        text(img, sub, 10, 40, 14, (190, 185, 200))
+        panels.append(img)
+
+    def b(coll):
+        objs = add_wall(coll, -6, -POST) + add_wall(coll, POST, 6) + add_design(coll, "a", dz=-1.0) + add_floor(coll)
+        objs += add_boxes(coll, player(-1.45, 1.2))
+        objs += import_glb(coll, os.path.join(MODELS, "gorm.glb"), (1.1, 0.0, 1.4), prefix="gorm")
+        return objs
+    img = shoot(b, (0, 3.0, 8), (0, 3.0, 0), 0, (460, 640), "hell", ortho=6.8)
+    for m in (2, 4, 6):
+        y = int(640 / 2 + (3.0 - m) * 640 / 6.8)
+        img[y:y + 1, 410:460] = np.array((200, 200, 80))
+        text(img, f"{m} m", 366, y - 22, 14, (200, 200, 80))
+    text(img, "a  Groesse", 10, 8, 24)
+    text(img, "Spieler 1,8 m, Gorm 3,2 m", 10, 616, 14, (190, 185, 200))
+    panels.append(img)
+    png(hcat(panels), os.path.join(HERE, "blatt-bossraum-tuer-549-r2.png"))
+    for n, im in zip(("vorn_zu", "hinten_zu", "vorn_offen", "hinten_offen"), panels):
+        png(im, os.path.join(ANSICHTEN, f"r2_a_{n}.png"))
+
+
+TELE_POS = (-1.0, 0.0, 7.5)
+
+
+def room2(coll, cut=False, ceiling=True, swing=0.0):
+    """Vorraum 4 x 5 Zellen: x -4..4 (8 m, 4 Zellen), z 0..10 (10 m, 5 Zellen), 6 m hoch.
+    Stirnwand z = 0 (8 m) mit Portal ueber den zwei mittleren Zellen; Eingang mittig in der Wand x = 4 (10 m): Gang z 4..6, 4 m lang."""
+    o = add_wall(coll, -4, -POST) + add_wall(coll, POST, 4) + add_design(coll, "a", dz=-1.0, swing=swing)
+    o += quad(coll, [(-4, 0, 0), (-4, 0, 10), (-4, TOP, 10), (-4, TOP, 0)], (1, 0, 0), "wl")
+    if not cut:
+        o += quad(coll, [(-4, 0, 10), (4, 0, 10), (4, TOP, 10), (-4, TOP, 10)], (0, 0, -1), "ws")
+        o += quad(coll, [(4, 0, 0), (4, 0, 4), (4, TOP, 4), (4, TOP, 0)], (-1, 0, 0), "we1")
+        o += quad(coll, [(4, 0, 6), (4, 0, 10), (4, TOP, 10), (4, TOP, 6)], (-1, 0, 0), "we2")
+        o += quad(coll, [(4, 3.5, 4), (4, 3.5, 6), (4, TOP, 6), (4, TOP, 4)], (-1, 0, 0), "we3")
+        for z in (4, 6):
+            o += quad(coll, [(4, 0, z), (8, 0, z), (8, 3.5, z), (4, 3.5, z)], (0, 0, 1 if z == 4 else -1), "g%d" % z)
+        o += add_floor(coll, 4, 8, 4, 6, 0.0, "floor") + add_floor(coll, 4, 8, 4, 6, 3.5, "ceiling")
+    o += add_floor(coll, -4, 4, 0, 10, 0.0, "floor")
+    if ceiling:
+        o += add_floor(coll, -4, 4, 0, 10, TOP, "ceiling")
+    o += import_glb(coll, TELEPORTER, TELE_POS, prefix="tele")
+    return o
+
+
+def plan2(size=(640, 640), scale=40):
+    img = np.tile(PAPER, (size[1], size[0], 1))
+    ox, oy = 200.0, 120.0       # x = 0 liegt bei ox, z = 0 bei oy
+
+    def X(x):
+        return ox + x * scale
+
+    def Z(z):
+        return oy + z * scale
+    rect(img, X(-4), Z(0), X(4), Z(10), (150, 146, 162), fill=True)
+    rect(img, X(4), Z(4), X(8), Z(6), (110, 106, 122), fill=True)
+    rect(img, X(-2), Z(-0.5), X(2), Z(0.0), (190, 160, 90), fill=True)                 # Portal ueber den zwei mittleren Zellen
+    rect(img, X(-1), Z(-0.5), X(1), Z(0.0), (60, 50, 30), fill=True)                   # Oeffnung 2 m
+    for gx in range(-4, 5, 2):
+        img[int(Z(0)):int(Z(10)), int(X(gx))] = np.array((96, 92, 108))
+    for gz in range(0, 11, 2):
+        img[int(Z(gz)), int(X(-4)):int(X(4))] = np.array((96, 92, 108))
+    rect(img, X(-4), Z(0), X(4), Z(10), (235, 230, 240), w=4)
+    rect(img, X(4), Z(4), X(8), Z(6), (235, 230, 240), w=3)
+    rect(img, X(4) - 3, Z(4) + 2, X(4) + 4, Z(6) - 1, (110, 106, 122), fill=True)
+    tx, tz = TELE_POS[0], TELE_POS[2]
+    for a in range(0, 360, 5):
+        xx, zz = int(X(tx + 0.88 * math.cos(math.radians(a)))), int(Z(tz + 0.88 * math.sin(math.radians(a))))
+        img[zz - 1:zz + 2, xx - 1:xx + 2] = np.array((150, 200, 230))
+    rect(img, X(tx - 0.25), Z(tz - 0.25), X(tx + 0.25), Z(tz + 0.25), (150, 200, 230), fill=True)
+    for xx in range(int(X(7.6)), int(X(4.8)), -2):                                      # Pfeil: Eingang -> Raum
+        img[int(Z(5)), xx] = np.array((235, 230, 240))
+    for k in range(7):
+        img[int(Z(5)) - k:int(Z(5)) + k + 1, int(X(4.8)) + k] = np.array((235, 230, 240))
+    text(img, "Grundriss Vorraum, 4 x 5 Zellen", 12, 8, 24)
+    text(img, "Raster: 1 Zelle = 2 m", 12, 40, 15, (190, 185, 200))
+    text(img, "Bossraum-Tuer: Portal 4 m = die zwei mittleren Zellen", int(X(-4)), int(Z(-0.5)) - 40, 14, (190, 160, 90))
+    text(img, "Mitte der 4er-Seite = Zellgrenze (x = 0)", int(X(-4)), int(Z(-0.5)) - 22, 14, (190, 160, 90))
+    text(img, "Eingang", int(X(5.0)), int(Z(4)) - 22, 14)
+    text(img, "Gang 2 m x 4 m, 3,5 m hoch", int(X(4.2)), int(Z(6)) + 8, 14)
+    text(img, "Teleporter", int(X(tx + 1.0)), int(Z(tz)) - 8, 14, (150, 200, 230))
+    text(img, "8 m (4 Zellen)", int(X(-1.3)), int(Z(10)) + 8, 15)
+    text(img, "10 m (5 Zellen)", int(X(-4)) - 4, int(Z(10)) + 30, 15)
+    return img
+
+
+def step_r2vorraum():
+    ent = shoot(lambda c: room2(c), (4.4, 1.6, 5.0), (-3.0, 1.8, 2.4), 70, (854, 480), "spiel")
+    png(ent, os.path.join(ANSICHTEN, "r2_vorraum_vom_eingang.png"))
+    tur = shoot(lambda c: room2(c), (3.2, 1.6, 9.5), (0.0, 2.6, 0.0), 70, (640, 480), "spiel")
+    top = shoot(lambda c: room2(c, cut=True, ceiling=False), (13.0, 13.0, 14.0), (-0.5, 1.0, 4.0), 48, (640, 480), "hell")
+    row1 = hcat([titled(ent, "Blick vom Eingang (Spielaufloesung, 70 Grad, Augen 1,6 m)", 18),
+                 titled(top, "von schraeg oben, Waende zur Ansicht offen", 16)])
+    row2 = hcat([plan2(), titled(tur, "Blick zur Tuer von der Suedwand", 16)])
+    w = max(row1.shape[1], row2.shape[1])
+
+    def padw(a):
+        return a if a.shape[1] == w else np.concatenate([a, np.tile(PAPER, (a.shape[0], w - a.shape[1], 1))], 1)
+    png(vcat([padw(row1), padw(row2)]), os.path.join(HERE, "vorraum-549-r2.png"))
+
+
 if __name__ == "__main__":
     steps = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     steps = steps or ["modelle", "ansichten", "blaetter", "vorraum"]
     for s in steps:
-        {"modelle": step_modelle, "ansichten": step_ansichten, "blaetter": step_blaetter, "vorraum": step_vorraum}[s]()
+        {"modelle": step_modelle, "ansichten": step_ansichten, "blaetter": step_blaetter, "vorraum": step_vorraum, "r2blatt": step_r2blatt, "r2vorraum": step_r2vorraum}[s]()

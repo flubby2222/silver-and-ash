@@ -51,3 +51,12 @@ Entwurf a. Er liest sich im Nebel am besten, fügt sich mit Spitzbogen und Fiale
 - Wandvariante des Bossraums ist im Code nicht festgelegt; gezeigt wurde Variante a.
 - Der Gang-Ausschnitt in `vorraum-549.png` zeigt die Tür aus der Distanz von 10 m; ob die Tür dort nahe genug steht, hängt von der Raumgröße ab.
 - Die Teleporter-Form ist ein Platzhalter nach #436.
+
+## Runde 2 (nur Entwurf a)
+
+- Beschlaege: vier gleiche Baender (0,8 m lang, gleiche Form), Abstand 0,7 m (y = 0,8 / 1,5 / 2,2 / 2,9 m); das oberste Band im Bogen entfaellt. Trittbleche 0,37 m hoch statt 0,9 m.
+- Bogen: Vorder- und Rueckseite identisch. Fluegel schwingen 90 Grad in den Bossraum und liegen in der Laibung; sie durchdringen den Bogen nicht.
+- Dreiecke Entwurf a: Portal 1428, Fluegel 784 (vorher 864), gesamt 2212. Fluegel geschlossen laut check_closed.py.
+- Vorraum 4 x 5 Zellen (8 x 10 m, 6 m hoch): Tuer mittig an der 8-m-Seite, das 4-m-Portal belegt die zwei mittleren Zellen, die 2-m-Oeffnung liegt ueber der Zellgrenze. Eingang (Gang 2 x 4 m, 3,5 m hoch) mittig an der 10-m-Seite, also im rechten Winkel zur Tuer. Teleporter bei x = -1, z = 7,5 (vom Tuermittelpunkt aus), Platz fuer Spaeteres.
+- Blaetter: blatt-bossraum-tuer-549-r2.png, vorraum-549-r2.png; Einzelbilder in ansichten/r2_*.
+- Offen: Eingang und Tuer liegen an angrenzenden Waenden; gegenueber ginge nur bei gleich langen Seiten (4 x 4 oder 5 x 5).
