@@ -25,12 +25,14 @@ Aufbau: `<modus> [--seeds VON..BIS] [--repo ORDNER]`. Ohne `--seeds` laufen die 
 | `arena` | Für jede Tür eines Kampfraums: hineingehen, das Gitter muss fallen und der Raum versiegeln; vier Fluchtversuche (sofort, sofort mit Sprint, nach 6 Ticks mit Sprint, nach 14 Ticks) müssen drinnen enden; Raum leeren, die Gitter gehen einmal hoch, hinausgehen. Zwei Kampfräume nebeneinander nacheinander. Die Bosstür hat kein Gitter: Sie schwingt zu und muss spätestens ab `doors.bossShutTick` (Balancing) sperren; der Spieler läuft sofort zurück und darf nicht in den Vorraum kommen (#566, #567). | etwa 2 min |
 | `death` | Tod in jeder versiegelten Arena und im Bosskampf, danach Neustart: keine Tür verriegelt, kein Raum versiegelt, die Arena versiegelt beim Betreten wieder (#560, #578); nach dem Bosskampf ist der Vorraum frisch und ein zweiter Lauf erreicht den Boss wieder. | etwa 30 s |
 | `boss` | Der ganze Weg: Vorraum, Boss-Tor-Teleporter freischalten und hin- und herreisen, Bosstür mit F öffnen, Bossraum versiegelt, die Bosstür sperrt spätestens ab `doors.bossShutTick`, Gorm besiegen, Treppe hinauf, gewonnen. | etwa 5 s |
-| `slam` | Die Bosstür schlägt zu, während ein Körper in ihrem Durchgang steht (#629): nacheinander ein Spieler, ein Ghul, eine Fledermaus und Gorm, jeweils an jeder Stelle quer zum Durchgang alle 5 cm. Die Tiefe längs des Durchgangs ist die erste freie Stelle; wo der Körper nirgends frei steht, zählt der Bot die Stelle als übersprungen. Der Körper wird jeden Tick neu an seinen Platz gestellt, bis die Tür sperrt; danach darf er nicht im Stein des Portals stecken. | etwa 45 s |
+| `slam` | Die Bosstür schlägt zu, während ein Körper in ihrem Durchgang steht (#629): nacheinander ein Spieler, ein Ghul, eine Fledermaus und Gorm, jeweils an jeder Stelle quer zum Durchgang alle 5 cm. Die Tiefe längs des Durchgangs ist die erste freie Stelle; wo der Körper nirgends frei steht, zählt der Bot die Stelle als übersprungen. Der Körper wird jeden Tick neu an seinen Platz gestellt, bis die Tür sperrt; danach darf er nicht im Stein des Portals stecken. Ein Körper, der im Tick des Zuschlagens mit Schwung in den Durchgang läuft, ist damit nicht abgedeckt. | etwa 25 s |
 | `bat` | Eine wache Fledermaus am Bossportal (#627, #629): an jeder freien Stelle eines Rasters vor und hinter dem Portal in acht Richtungen weggeschlagen; um einen Spieler herum geflogen, der an vier Stellen im Portal steht; tot auf einen Sockel des Portals fallen gelassen, bis sie verschwunden ist. | etwa 25 s |
 | `seeds` | Baut jede Ebene zweimal und vergleicht sie (gleicher Seed muss gleiche Ebene geben) und zählt, wie viele Versuche der Generator brauchte. | etwa 3 s; 1 000 Seeds etwa 100 s |
-| `all` | alle sechs nacheinander | etwa 3 min |
+| `all` | alle sechs nacheinander | etwa 3–4 min |
 
-Nebenbei prüft der Bot nach **jedem Tick**, dass weder ein Spieler noch ein Gegner (Ghul, Fledermaus, Gorm) in einer geschlossenen Tür oder im Stein eines Bossportals steckt und kein Spieler in einer festen Zelle. Für den Stein prüft er bei jedem Körper die Achse und 24 Punkte knapp innerhalb seines Rands, alle 10 cm von den Füßen bis zum Kopf (`BossPortal.Contains`); ein Körper, der den Stein nur berührt, ist kein Befund. Auch eine tote Fledermaus zählt, solange sie noch fällt oder liegt.
+Nebenbei prüft der Bot nach **jedem Tick**, dass weder ein Spieler noch ein Gegner (Ghul, Fledermaus, Gorm) in einer geschlossenen Tür oder im Stein eines Bossportals steckt und kein Spieler in einer festen Zelle. Für den Stein prüft er bei jedem Körper die Achse und 24 Punkte 5 mm innerhalb seines Rands (für jeden Körper gleich, auch für Gorm), alle 10 cm von den Füßen bis zum Kopf (`BossPortal.Contains`); ein Körper, der den Stein nur berührt, ist kein Befund. Auch eine tote Fledermaus zählt, solange sie noch fällt oder liegt.
+
+**Übersprungene Plätze:** `slam` und `bat` lassen Plätze aus, an denen der Körper nicht frei stehen kann, und zählen sie als „… (skipped)“. Jeder solche Zähler hat einen Gegenzähler der gespielten Plätze (`Report.Tally`): Wird je Seed und Körperart (bei `bat` je Teil) auf einer Seite der Portalmitte kein einziger Platz gespielt, ist das ein Befund („fewer than 1 place(s) played on a side of the middle“). So endet ein Modus, der nach einer Änderung am Portal nichts mehr prüft, nicht still mit „0 finding(s)“.
 
 **Ein neuer Modus ist eine Zeile** in der Tabelle `modes` oben in `Program.cs` (Name, eine Zeile Hilfe, was er je Seed spielt), kein weiterer Zweig. Hilfe, Aufruf-Prüfung und `all` lesen dieselbe Tabelle.
 
@@ -66,6 +68,8 @@ git worktree remove ../vergleich-main
 ```
 
 `main.txt` und `pr.txt` nicht ins Repository legen. Solange `main` das Werkzeug noch nicht hat, geht das erst nach dem Merge von #573.
+
+Ein Agent, der selbst schon in einem Worktree arbeitet, legt keinen zweiten an. Er holt den Stand von `main` für einzelne Dateien mit `git checkout origin/main -- <pfad>`, lässt den Modus laufen und holt seinen eigenen Stand mit `git checkout HEAD -- <pfad>` zurück.
 
 ### Warum Reflection
 
@@ -133,20 +137,29 @@ Ausgabe, gekürzt:
 
 ### Mehrere Gegenproben aus einer Liste
 
-Sollen viele Stellen geprüft werden, gehören sie in eine Listendatei statt in einzelne Aufrufe von Hand. Eine Zeile je Probe, die vier Felder durch Tabulatoren getrennt (Datei, Suchen, Ersetzen, Testfilter); Zeilen mit `#` am Anfang sind Kommentare. Die Proben laufen **nacheinander** (die Sperre erlaubt nur einen Lauf je Arbeitsordner), am Ende steht je Probe eine Zeile mit dem Exit-Code. In Git Bash:
+Sollen viele Stellen geprüft werden, gehören sie in eine Listendatei statt in einzelne Aufrufe von Hand. Eine Zeile je Probe, die vier Felder durch Tabulatoren getrennt (Datei, Suchen, Ersetzen, Testfilter); Zeilen mit `#` am Anfang sind Kommentare. Die Proben laufen **nacheinander** (die Sperre erlaubt nur einen Lauf je Arbeitsordner), am Ende steht je Probe eine Zeile mit dem Exit-Code.
+
+**Liste und Ergebnis liegen außerhalb des Repositorys**, hier in `~/gegenproben`. Eine neue Datei im Repository macht den Arbeitsordner unsauber, und jede weitere Probe bricht dann mit Exit-Code `2` ab („the working folder is not clean“). In Git Bash, aus dem Repository-Ordner:
 
 ```
-# proben.tsv (nicht ins Repository legen), z. B.:
-# src/SilverAndAsh.Core/Gameplay/GameWorld.cs<TAB>GameWorld Restarted() => new(_levelWithOpenDoors,<TAB>GameWorld Restarted() => new(Level,<TAB>GrateTests
+ordner=~/gegenproben
+mkdir -p "$ordner"
+printf '%s\t%s\t%s\t%s\n' \
+  src/SilverAndAsh.Core/Gameplay/GameWorld.cs \
+  'GameWorld Restarted() => new(_levelWithOpenDoors,' 'GameWorld Restarted() => new(Level,' GrateTests \
+  > "$ordner/proben.tsv"
+rm -f "$ordner/ergebnis.txt"
 while IFS=$'\t' read -r datei suchen ersetzen filter; do
   case "$datei" in ''|'#'*) continue ;; esac
   tools/gegenprobe.sh "$datei" "$suchen" "$ersetzen" "$filter" < /dev/null
-  echo "$? $datei | $suchen" >> ergebnis.txt
-done < proben.tsv
-cat ergebnis.txt
+  echo "$? $datei | $suchen" >> "$ordner/ergebnis.txt"
+done < "$ordner/proben.tsv"
+cat "$ordner/ergebnis.txt"
 ```
 
-`< /dev/null` hält die Testläufe davon ab, die restlichen Zeilen der Liste zu lesen. Für `--regex` oder `--all` ein fünftes Feld mit den Optionen anhängen und ungequotet vor `"$datei"` einsetzen. Exit-Code `1` in `ergebnis.txt` heißt überlebt – siehe nächster Abschnitt.
+Weitere Proben hängt man mit einem weiteren `printf … >> "$ordner/proben.tsv"` an oder schreibt sie mit einem Editor hinein (Tabulatoren, keine Leerzeichen). `< /dev/null` hält die Testläufe davon ab, die restlichen Zeilen der Liste zu lesen. Für `--regex` oder `--all` ein fünftes Feld mit den Optionen anhängen und ungequotet vor `"$datei"` einsetzen. Exit-Code `1` in `ergebnis.txt` heißt überlebt – siehe nächster Abschnitt.
+
+Auch Wegwerf-Testdateien (ein Test nur für eine Probe) erst anlegen, **nachdem** alle Gegenproben gelaufen sind – sonst ist der Arbeitsordner unsauber und jede Probe endet mit Exit-Code `2`.
 
 ### Überlebt? Erst breit wiederholen
 
@@ -154,8 +167,19 @@ Eine überlebende Gegenprobe ist erst dann eine **Lücke**, wenn sie auch mit ei
 
 ### Pflichtfall bei Kollisionsregeln
 
-Ändert ein PR eine Kollisionsregel (was einen Körper aufhält, hinauf- oder hinunterlässt), braucht er einen Test **für jede Körperart mit ihrer echten Stufenhöhe**: gehende Körper (Spieler, Ghul, Gorm) mit der Stufenhöhe aus `CharacterCollision` (0,4 m), fliegende (Fledermaus) mit `FlyingStepHeight` (unendlich). Ein Test nur mit dem Spieler reicht nicht: In PR #623 hing es an `CharacterCollision.StepOntoStone`, ob eine Fledermaus mit ihrer unendlichen Stufenhöhe auf den Stein des Portals steigt; ein Test nur mit der Stufenhöhe des Spielers sieht diesen Zweig nie. Die Höhe nicht als Zahl in den Test schreiben, sondern dort holen, wo das Spiel sie hernimmt.
+Ändert ein PR eine Kollisionsregel (was einen Körper aufhält, hinauf- oder hinunterlässt), braucht er einen Test **für jede Körperart mit ihrer echten Stufenhöhe**: gehende Körper (Spieler, Ghul, Gorm) mit `BodySizes.Player.StepHeight` (0,4 m; `CharacterCollision` nimmt sie als Vorgabe), fliegende (Fledermaus) mit unendlicher Stufenhöhe. Ein Test nur mit dem Spieler reicht nicht: In PR #623 hing es an `CharacterCollision.StepOntoStone`, ob eine Fledermaus mit ihrer unendlichen Stufenhöhe auf den Stein des Portals steigt; ein Test nur mit der Stufenhöhe des Spielers sieht diesen Zweig nie. Die Stufenhöhe der Gehenden nicht als Zahl in den Test schreiben, sondern aus `BodySizes.Player.StepHeight` holen. Die der Fledermaus (`Bat.FlyingStepHeight`) ist im Core `private`; bis sie öffentlich ist (Folge-Issue), schreiben Tests und Bot `float.PositiveInfinity` hin.
 
 ### Den Bot gegenprüfen
 
-Den Bot kann man genauso gegenprüfen: eine Spielregel im Core kaputt machen, den passenden Modus laufen lassen, er muss `FINDING`-Zeilen und Exit-Code `1` liefern. Danach die Datei mit `git restore <datei>` zurücksetzen. Überlebt die Probe, zuerst das Raster prüfen: Ein Fehler, der nur an einer schmalen Stelle auftritt (etwa am Rand eines Bogens, #629), fängt der Bot nur, wenn sein Raster bis dorthin reicht. `slam` geht deshalb quer zum Durchgang alle 5 cm und nimmt die erste freie Tiefe, statt feste Punkte abzulaufen.
+Den Bot kann man genauso gegenprüfen: eine Spielregel im Core kaputt machen, den passenden Modus laufen lassen, er muss `FINDING`-Zeilen und Exit-Code `1` liefern. Danach die Datei mit `git restore <datei>` zurücksetzen.
+
+**Nach jeder Änderung neu bauen**, bevor man mit `--no-build` startet – auch nach dem Zurücksetzen und nach einem fehlgeschlagenen Build (etwa einer Probe, die nicht kompiliert). Sonst läuft die alte DLL und meldet fälschlich Exit-Code `0`.
+
+Belegte Proben für `slam` (#629), jeweils `slam --seeds 1`:
+
+| Änderung in `src/SilverAndAsh.Core/Gameplay/GameWorld.cs` | Ergebnis |
+|---|---|
+| In `PushedAcross`: `return portal.PushedAcross(across, radius);` → `_ = portal;` (das Portal wird nicht beachtet) | Exit `1`, 2 Befunde „player in the stone of the boss portal“ |
+| In `PushOutOf`, Zweig der Gegner: `enemy.PlaceAt(PushedInto(…, enemy.Body.Radius));` → `enemy.PlaceAt(PushedInto(…, enemy.Body.Radius) + new Vector3(0.6f, 0f, 0.6f));` | Exit `1`, „in the stone of the boss portal“: Gorm 7, Ghul 13, Fledermaus 15; dazu Ghule und Fledermäuse in der sperrenden Tür |
+
+Überlebt die Probe, zuerst das Raster prüfen: Ein Fehler, der nur an einer schmalen Stelle auftritt (etwa am Rand eines Bogens, #629), fängt der Bot nur, wenn sein Raster bis dorthin reicht. `slam` geht deshalb quer zum Durchgang alle 5 cm und nimmt die erste freie Tiefe, statt feste Punkte abzulaufen.
