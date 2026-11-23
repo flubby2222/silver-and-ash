@@ -10,7 +10,7 @@
 1. **Ein Skillpunkt alle 3 Stufen.** Ein voller Lauf durch die Katakomben (Ebene 0) bringt heute **2 oder 3 Punkte**, wer Räume auslässt **2**.
 2. **Punkte zahlen alles:** 1. Punkt = aktiver Skill, 2. Punkt = sein Statuseffekt, jeder weitere = eine Ausbaustufe. **Fünf Punkte** bauen einen Skill ganz aus; mehr haben keine Verwendung.
 3. **Ein aktiver Skill je Lauf** (Taste **Q**). Der erste Altarbesuch bietet **drei zufällige** von fünf Skills, der zweite **drei zufällige** von fünf Statuseffekten.
-4. **Fünf Statuseffekte:** Leech, Stun, Holy Fire (Weihfeuer), Grave Chill (Grabeskälte), Marked (Gezeichnet). Startwerte halb so stark wie zuerst vorgeschlagen.
+4. **Fünf Statuseffekte:** Leech, Stun, Cleansing Flame (Weihfeuer), Grave Chill (Grabeskälte), Marked (Gezeichnet). Startwerte halb so stark wie zuerst vorgeschlagen.
 5. **Waffen:** **30 %** der gefundenen Waffen tragen einen Effekt. Er löst je Treffer mit **10 bis 25 %** aus, je nach Seltenheit.
 6. **Ausbau** ab dem dritten Punkt in **fester Reihenfolge je Skill** (I, II, III).
 7. **Synergie:** Tragen Waffe und Skill denselben Effekt, hält er **1,5-mal so lange** (Leech: 1,5-mal so stark).
@@ -86,14 +86,14 @@ Startwerte = etwa die Hälfte des ersten Vorschlags (5 %, 1 s, 4 s, 40 %/4 s, 25
 |---|---|---|---|---|---|---|
 | **Leech** (Lifedrain) | Anteil des Schadens als Leben für den Angreifer | 2,5 % je Treffer | 3,75 % | voll | fahles Violett, dünner Faden zum Spieler | keiner (sofort) |
 | **Stun** | Gegner betäubt: kein Gehen, kein Angriff; ein ausholender Ghul bricht ab | 0,5 s | 0,75 s | **Taumeln 0,2 s**, bricht keine Ankündigung ab, danach **5 s immun** | Silbergrau, kreisende Funken über dem Kopf | ja |
-| **Holy Fire** (Weihfeuer) | Schaden über Zeit, alle 0,5 s | 2 s, 5 Schaden/s | 3 s | voll | weißgold, kleine Flammen am Körper | ja |
+| **Cleansing Flame** (Weihfeuer) | Schaden über Zeit, alle 0,5 s | 2 s, 5 Schaden/s | 3 s | voll | weißgold, kleine Flammen am Körper | ja |
 | **Grave Chill** (Grabeskälte) | langsamer (nur Bewegung, Ankündigungen bleiben gleich lang) | 20 % für 2 s | 3 s | voll | blassblau, Reif und kalter Hauch | ja |
 | **Marked** (Gezeichnet) | Gegner nimmt mehr Schaden, von allen Spielern | 12,5 % für 3 s | 4,5 s | voll | Aschweiß, ein Zeichen auf der Brust | ja |
 
 - **Auffrischen:** Neue Dauer = die längere von Rest und neuer Dauer; die Stärke bleibt. Verschiedene Effekte liegen nebeneinander.
 - **Timer, wörtlich gewünscht** („Überm Kopf ein kleiner Timer“): Restzeit je Effekt als kleine Zahl in seiner Farbe, Spielschrift englisch, also „0.4s“. Mehrere Effekte stehen untereinander, höchstens drei.
 - **Rot bleibt frei** für die Angriffs-Ankündigung (Ghul-Augen, Art-Bible). Farben kommen aus der Hauptpalette; Weihfeuer aus der Reihe Messing/Gold, aber klar weg vom Gold der Stufe *Royal*.
-- **Kills durch Holy Fire** zählen für den Spieler, der es ausgelöst hat.
+- **Kills durch Cleansing Flame** zählen für den Spieler, der es ausgelöst hat.
 
 ## 5. Waffen mit Statuseffekt
 
@@ -113,7 +113,7 @@ Startwerte = etwa die Hälfte des ersten Vorschlags (5 %, 1 s, 4 s, 40 %/4 s, 25
 
 - **Core ohne Raylib:** Effekte, Skills und Altar liegen ganz in `SilverAndAsh.Core`.
 - **Effekte als Zustand am Gegner:** eine kleine Klasse (etwa `StatusEffects`) je Gegner mit Restzeit in Ticks je Art, Quelle (Spieler-Id) und Synergie-Merker; `GameWorld.Tick` zählt sie herunter, als eigene Methode, nicht als weiterer Zweig in `Tick`.
-- **Wirkung über vorhandene Wege:** Marked als Schadensregel nach `IDamageRule` (`src/SilverAndAsh.Core/Gameplay/Damage.cs`; `Hit` braucht dazu den Zustand des Ziels); Holy Fire als Schaden durch `GameWorld.Damage`; Grave Chill als Tempo-Faktor und Stun als Pause in `Ghoul.cs`, `Bat.cs`, `Gorm.cs`; Leech über `Player.Heal` mit gesammelten Bruchteilen (Leben ist ganzzahlig).
+- **Wirkung über vorhandene Wege:** Marked als Schadensregel nach `IDamageRule` (`src/SilverAndAsh.Core/Gameplay/Damage.cs`; `Hit` braucht dazu den Zustand des Ziels); Cleansing Flame als Schaden durch `GameWorld.Damage`; Grave Chill als Tempo-Faktor und Stun als Pause in `Ghoul.cs`, `Bat.cs`, `Gorm.cs`; Leech über `Player.Heal` mit gesammelten Bruchteilen (Leben ist ganzzahlig).
 - **Ereignisse für Klang und Anzeige:** `StatusApplied`, `StatusEnded`, `SkillUsed`, `SkillPointGained`, `AltarChoice` in `GameEvent.cs`; Klänge als Tabelleneinträge in `SoundCues.cs`; die Anzeige liest einen Zustand aus Core (Muster `HudReadout`).
 - **Online-Coop offen:** Q und die Altar-Wahl sind Eingaben im Tick; Punkte, Skill und Angebote je Spieler; Effekte merken ihren Auslöser; Zufall nur mit Seed im Spielzustand; kein veränderlicher `static`-Zustand.
 
@@ -184,7 +184,7 @@ Je Zeile ein Issue und ein kleiner PR, Code-PRs nacheinander. Jedes Issue ist f�
 | 3 | Statuseffekte: Grundgerüst und Marked | Gegner tragen Effekte mit Restzeit in Ticks und Quelle; Marked erhöht den Schaden über eine `IDamageRule`; Ereignisse `StatusApplied`/`StatusEnded`. | – | M |
 | 4 | Waffen mit Effekt | 30 % der gefundenen Waffen tragen einen Effekt aus der Liste der gebauten (anfangs nur Marked), Chance je Treffer nach Seltenheit, Anzeige in Inventar und Fundmeldung. | 3 | M |
 | 5 | Anzeige am Gegner | Platzhalter-Schimmer in der Effektfarbe und Timer über dem Kopf, gelesen aus einem Zustand in `Core`. | 3 | M |
-| 6 | Holy Fire | Schaden über Zeit durch `GameWorld.Damage`, der Kill zählt für den Auslöser; Eintrag in der Waffenliste. | 4 | S |
+| 6 | Cleansing Flame | Schaden über Zeit durch `GameWorld.Damage`, der Kill zählt für den Auslöser; Eintrag in der Waffenliste. | 4 | S |
 | 7 | Grave Chill | Ghul, Fledermaus und Gorm gehen langsamer, Ankündigungen bleiben gleich lang; Eintrag in der Waffenliste. | 4 | S |
 | 8 | Stun | Gegner stehen still, ein ausholender Ghul bricht ab; Gorm taumelt nur kurz und ist danach immun. | 4 | M |
 | 9 | Leech | Anteil des Schadens heilt den Angreifer, Bruchteile gesammelt, nie über das Maximum. | 4 | S |

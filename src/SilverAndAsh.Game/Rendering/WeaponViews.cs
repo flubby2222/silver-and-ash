@@ -195,8 +195,11 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         // The models: the same movements, then shrunk towards the eye (out of the walls, the picture unchanged).
         var modelMotion = soft * Matrix4x4.CreateScale(WeaponPose.ShrinkTowardsEye) * camera;
 
+        // With a depth of their own: their near plane is far closer to the eyes than the world's (issue #624).
+        var world = WeaponDepthPass.Begin();
         DrawBlade(motion, modelMotion);
         DrawPistol(motion, modelMotion);
+        WeaponDepthPass.End(world);
     }
 
     private void DrawBlade(Matrix4x4 motion, Matrix4x4 modelMotion)
