@@ -145,12 +145,13 @@ internal sealed class Play(GameWorld world, Report report, string context)
     /// <summary>
     /// True if a body (a standing cylinder: feet, radius, height) reaches into the stone of a boss portal, by
     /// <see cref="BossPortal.Contains"/>: its axis and 24 points round its rim, every 0.1 m from the feet to the top. The
-    /// rim is taken a little inside (98 %), so a body that only touches the stone, as the collision leaves it, is no
-    /// finding.
+    /// rim is taken 5 mm inside (the same for every body, also for big Gorm), so a body that only touches the stone, as
+    /// the collision leaves it, is no finding.
     /// </summary>
     public static bool InPortalStone(Level level, CylinderBody body)
     {
         const int RimPoints = 24;
+        const float Touch = 0.005f;
         foreach (var portal in level.Portals.Where(portal => Distance(body.Position, new Vector3(portal.X, 0f, portal.Z)) < body.Radius + 3f))
         {
             var heights = Math.Max(2, (int)MathF.Ceiling(body.Height / 0.1f) + 1);
@@ -162,7 +163,7 @@ internal sealed class Play(GameWorld world, Report report, string context)
                     return true;
                 }
 
-                var rim = body.Radius * 0.98f;
+                var rim = MathF.Max(0f, body.Radius - Touch);
                 for (var i = 0; i < RimPoints; i++)
                 {
                     var angle = MathF.Tau * i / RimPoints;

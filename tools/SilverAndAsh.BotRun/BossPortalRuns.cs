@@ -80,7 +80,8 @@ internal sealed record PortalSite(Door Door, BossPortal Portal, RoomState Boss, 
 /// </summary>
 internal static class DoorSlam
 {
-    // Walking bodies step as the player does (CharacterCollision's default); a bat flies over any floor (Bat.FlyingStepHeight).
+    // Walking bodies step as the player does (BodySizes.Player.StepHeight); a bat flies over any floor (Bat.FlyingStepHeight,
+    // private in the core: written here as infinity).
     private static readonly Body[] Bodies =
     [
         new("player", BodySizes.Player.Radius, BodySizes.Player.Height, BodySizes.Player.StepHeight, false, _ => null),
@@ -106,6 +107,7 @@ internal static class DoorSlam
         // few and narrow - the stepped jambs (PR #623: 0.8 m beside the middle, only 0.65 m deep in the outer reveal).
         foreach (var body in Bodies)
         {
+            var places = report.Tally($"{ctx} {body.Name}", $"{body.Name}: no free place at this distance from the middle");
             foreach (var across in PortalSite.Steps(-1.95f, 1.95f, 0.05f))
             {
                 var free = PortalSite.Steps(-0.95f, 0.95f, 0.05f)
@@ -113,17 +115,19 @@ internal static class DoorSlam
                     .FirstOrDefault(along => body.IsFree(probe.World.Level, body.Place(probe.World.Level, site.At(across, along!.Value))));
                 if (free is not { } along)
                 {
-                    report.Count($"{body.Name}: no free place at this distance from the middle (skipped)");
+                    places.Skipped();
                     continue;
                 }
 
                 var where = $"{ctx} {body.Name} {PortalSite.Where(across, along)}";
-                report.Try(where, () => Slam(start, where, body, across, along, report));
+                report.Try(where, () => Slam(start, where, body, across, along, report, places));
             }
+
+            places.Verify();
         }
     }
 
-    private static void Slam(GameWorld start, string where, Body body, float across, float along, Report report)
+    private static void Slam(GameWorld start, string where, Body body, float across, float along, Report report, Report.Places places)
     {
         var world = start.Restarted();
         var play = new Play(world, report, where);
@@ -170,6 +174,7 @@ internal static class DoorSlam
 
         play.Ticks(30, PlayerInput.None);
         report.Count($"{body.Name}: in the doorway at the slam");
+        places.Played(across);
     }
 
     private sealed record Body(string Name, float Radius, float Height, float StepHeight, bool Flies, Func<GameWorld, ITarget?> Enemy)
@@ -250,6 +255,7 @@ internal static class PortalBat
     private static void Knocks(Play play, Bat bat, PortalSite site, Report report)
     {
         var club = play.World.Balance.Club;
+        var places = report.Tally(play.Context, "knocks: places in stone or wall");
         foreach (var across in PortalSite.Steps(-2.6f, 2.6f, 0.4f))
         {
             foreach (var along in PortalSite.Steps(-2f, 2f, 0.5f))
@@ -257,9 +263,11 @@ internal static class PortalBat
                 var at = Bat.HoverPosition(play.World.Level, site.At(across, along));
                 if (!IsFree(play.World.Level, at))
                 {
-                    report.Count("knocks: places in stone or wall (skipped)");
+                    places.Skipped();
                     continue;
                 }
+
+                places.Played(across);
 
                 for (var i = 0; i < 8; i++)
                 {
@@ -272,6 +280,8 @@ internal static class PortalBat
                 }
             }
         }
+
+        places.Verify();
     }
 
     // The bat flies round a player who stands in front of the portal, beside it, or in its doorway (never in the boss
@@ -296,6 +306,8 @@ internal static class PortalBat
     // fresh world (a sleeping bat falls as well, Bat.Tick).
     private static void Corpses(GameWorld start, string ctx, Report report)
     {
+        // Only 4 places per seed lie free over a plinth: none left on one side is already a finding.
+        var places = report.Tally($"{ctx} corpse", "corpses: places not over a plinth or in stone");
         foreach (var side in new[] { -1f, 1f })
         {
             foreach (var face in new[] { -1f, 1f })
@@ -304,14 +316,16 @@ internal static class PortalBat
                 {
                     foreach (var along in PortalSite.Steps(1.15f, 1.45f, 0.15f))
                     {
-                        report.Try($"{ctx} corpse", () => Corpse(start, ctx, report, side * across, face * along));
+                        report.Try($"{ctx} corpse", () => Corpse(start, ctx, report, side * across, face * along, places));
                     }
                 }
             }
         }
+
+        places.Verify();
     }
 
-    private static void Corpse(GameWorld start, string ctx, Report report, float across, float along)
+    private static void Corpse(GameWorld start, string ctx, Report report, float across, float along, Report.Places places)
     {
         var world = start.Restarted();
         var where = $"{ctx} corpse {PortalSite.Where(across, along)}";
@@ -325,7 +339,7 @@ internal static class PortalBat
         var overPlinth = Play.InPortalStone(world.Level, new CylinderBody(site.At(across, along, 0.2f), BodySizes.Bat.Radius, 0.1f));
         if (!overPlinth || !IsFree(world.Level, at))
         {
-            report.Count("corpses: places not over a plinth or in stone (skipped)");
+            places.Skipped();
             return;
         }
 
@@ -334,6 +348,7 @@ internal static class PortalBat
         play.Ticks(120, PlayerInput.None);
         report.Count(bat.Position.Y >= site.Portal.Floor + 0.45f ? "corpses: lying on a plinth" : "corpses: lying on the floor");
         report.Check(!play.TicksUntil(1200, PlayerInput.None, () => bat.IsGone), $"{where}: corpse not gone after 22 s, at {bat.Position}");
+        places.Played(across);
     }
 
     private static bool IsFree(Level level, Vector3 at) =>
