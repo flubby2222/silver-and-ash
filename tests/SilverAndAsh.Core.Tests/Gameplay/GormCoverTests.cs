@@ -19,6 +19,40 @@ public class GormCoverTests
     /// <summary>A player who survives a lot - to watch many attacks in a row.</summary>
     internal static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
 
+    /// <summary>
+    /// Issue #634: the tests with a chain swing run with every value of <see cref="ColumnsBalance.HitsToBreak"/> they
+    /// may meet - the one of <see cref="Balance.Default"/>, and 1 (a column that breaks at its first blow).
+    /// </summary>
+    private static readonly int[] HitsToBreakCases = new[] { HitsToBreak, 1 }.Distinct().ToArray();
+
+    /// <summary><see cref="Tough"/>, its columns breaking after <paramref name="hitsToBreak"/> blows.</summary>
+    private static Balance Breaking(int hitsToBreak) => Tough with { Columns = Tough.Columns with { HitsToBreak = hitsToBreak } };
+
+    public static TheoryData<int> EachHitsToBreak()
+    {
+        var data = new TheoryData<int>();
+        foreach (var hits in HitsToBreakCases)
+        {
+            data.Add(hits);
+        }
+
+        return data;
+    }
+
+    public static TheoryData<GormAttack, int> EachAttackAndHitsToBreak()
+    {
+        var data = new TheoryData<GormAttack, int>();
+        foreach (var attack in new[] { GormAttack.Swing, GormAttack.Hammer })
+        {
+            foreach (var hits in HitsToBreakCases)
+            {
+                data.Add(attack, hits);
+            }
+        }
+
+        return data;
+    }
+
     /// <summary>In line between the player (cell 7/3) and Gorm (6 m further along +Z, close enough for hammer and swing).</summary>
     private static readonly Column Between = Column.AtCell(7, 5);
 
@@ -36,10 +70,16 @@ public class GormCoverTests
     private sealed class Duel
     {
         public Duel(params Column[] columns)
+            : this(Tough, 1, columns)
+        {
+        }
+
+        public Duel(Balance balance, int seed, params Column[] columns)
         {
             Level = Hall(columns);
-            Player = new Player(Level, balance: Tough);
-            Gorm = new Gorm(9, Player.Position + new Vector3(0f, 0f, 6f), -Vector3.UnitZ, Tough, new Random(1));
+            Player = new Player(Level, balance: balance);
+            Gorm = new Gorm(9, Player.Position + new Vector3(0f, 0f, 6f), -Vector3.UnitZ, balance, new Random(seed));
+            Wear = new ColumnWear(balance.Columns.HitsToBreak);
         }
 
         public Level Level { get; }
@@ -48,7 +88,29 @@ public class GormCoverTests
 
         public Gorm Gorm { get; }
 
-        public ColumnWear Wear { get; } = new(HitsToBreak);
+        public ColumnWear Wear { get; }
+
+        /// <summary>
+        /// Issue #634: a duel whose columns break after <paramref name="hitsToBreak"/> blows and in which Gorm's first
+        /// attack is <paramref name="attack"/> - no attack of the other kind strikes the columns before it. Takes the
+        /// first seed from 1 on for which the duel, run up to his first wind-up, shows that attack. Stands at that wind-up.
+        /// </summary>
+        public static Duel OpeningWith(GormAttack attack, int hitsToBreak, params Column[] columns)
+        {
+            for (var seed = 1; seed <= 20; seed++)
+            {
+                var duel = new Duel(Breaking(hitsToBreak), seed, columns);
+                duel.Run(60 * Second, () => duel.Gorm.State == GormState.WindingUp);
+                if (duel.Gorm.State == GormState.WindingUp && duel.Gorm.Attack == attack)
+                {
+                    Assert.DoesNotContain(duel.Events, e => e is ColumnHit);
+                    return duel;
+                }
+            }
+
+            Assert.Fail($"No seed from 1 to 20 opens the duel with his {attack}.");
+            return null!;
+        }
 
         public List<GameEvent> Events { get; } = [];
 
@@ -78,17 +140,18 @@ public class GormCoverTests
         }
     }
 
-    [Fact]
-    public void A_column_between_covers_against_the_chain_swing_and_takes_the_blow()
+    [Theory]
+    [MemberData(nameof(EachHitsToBreak))]
+    public void A_column_between_covers_against_the_chain_swing_and_takes_the_blow(int hitsToBreak)
     {
-        var duel = new Duel(Between);
+        var duel = Duel.OpeningWith(GormAttack.Swing, hitsToBreak, Between);
         var health = duel.Player.Health;
 
         var swing = duel.Through(GormAttack.Swing);
 
         Assert.Equal(health, duel.Player.Health);
         Assert.Contains(new GormSwung(9, false), swing);
-        Assert.Equal([new ColumnHit(Between, duel.Wear.HitsOn(Between), HitsToBreak)], swing.OfType<ColumnHit>());
+        Assert.Equal([new ColumnHit(Between, duel.Wear.HitsOn(Between), hitsToBreak)], swing.OfType<ColumnHit>());
     }
 
     [Fact]
@@ -105,26 +168,37 @@ public class GormCoverTests
     }
 
     [Theory]
-    [InlineData(GormAttack.Swing)]
-    [InlineData(GormAttack.Hammer)]
-    public void A_column_off_the_line_does_not_cover_though_the_blow_strikes_it(GormAttack attack)
+    [MemberData(nameof(EachAttackAndHitsToBreak))]
+    public void A_column_off_the_line_does_not_cover_though_the_blow_strikes_it(GormAttack attack, int hitsToBreak)
     {
-        var duel = new Duel(Aside);
+        var duel = Duel.OpeningWith(attack, hitsToBreak, Aside);
         var events = duel.Through(attack);
 
         Assert.Contains(events, e => e is PlayerHit);
-        Assert.Equal([new ColumnHit(Aside, duel.Wear.HitsOn(Aside), HitsToBreak)], events.OfType<ColumnHit>());
+        Assert.Equal([new ColumnHit(Aside, duel.Wear.HitsOn(Aside), hitsToBreak)], events.OfType<ColumnHit>());
+    }
+
+    public static TheoryData<GormAttack, float, bool, int> CoverWidths()
+    {
+        var data = new TheoryData<GormAttack, float, bool, int>();
+        foreach (var attack in new[] { GormAttack.Swing, GormAttack.Hammer })
+        {
+            foreach (var hits in HitsToBreakCases)
+            {
+                data.Add(attack, 0.9f, true, hits);
+                data.Add(attack, 1.1f, false, hits);
+            }
+        }
+
+        return data;
     }
 
     [Theory]
-    [InlineData(GormAttack.Swing, 0.9f, true)]
-    [InlineData(GormAttack.Swing, 1.1f, false)]
-    [InlineData(GormAttack.Hammer, 0.9f, true)]
-    [InlineData(GormAttack.Hammer, 1.1f, false)]
-    public void A_column_covers_as_wide_as_it_is(GormAttack attack, float offsetInRadii, bool covers)
+    [MemberData(nameof(CoverWidths))]
+    public void A_column_covers_as_wide_as_it_is(GormAttack attack, float offsetInRadii, bool covers, int hitsToBreak)
     {
         // The column moved sideways off the line between them: its edge still on the line, or just off it.
-        var duel = new Duel(new Column(Between.X + (offsetInRadii * Column.Radius), Between.Z));
+        var duel = Duel.OpeningWith(attack, hitsToBreak, new Column(Between.X + (offsetInRadii * Column.Radius), Between.Z));
         var health = duel.Player.Health;
 
         var events = duel.Through(attack);
@@ -201,7 +275,7 @@ public class GormCoverTests
     {
         duel.Run(60 * Second, () => duel.Gorm.State == GormState.WindingUp && duel.Gorm.Attack == attack);
         Assert.True(duel.Gorm.Attack == attack, $"Gorm never wound up his {attack}.");
-        while (duel.Wear.HitsOn(column) < HitsToBreak - 1)
+        while (duel.Wear.HitsOn(column) < duel.Wear.HitsToBreak - 1)
         {
             duel.Wear.Strike(column, 0f, []);
         }
@@ -297,24 +371,45 @@ public class GormCoverTests
         Assert.True(Vector3.Distance(-Vector3.UnitZ, duel.Gorm.Facing) < 0.001f, $"Gorm turned to {duel.Gorm.Facing}.");
     }
 
+    public static TheoryData<string, float, bool, int> SwingEdges()
+    {
+        var data = new TheoryData<string, float, bool, int>();
+        foreach (var edge in new[] { "arc", "arc-end", "reach" })
+        {
+            foreach (var hits in HitsToBreakCases)
+            {
+                data.Add(edge, 0.9f, true, hits);
+                data.Add(edge, 1.1f, false, hits);
+            }
+        }
+
+        return data;
+    }
+
     [Theory]
-    [InlineData("arc", 0.9f, true)]
-    [InlineData("arc", 1.1f, false)]
-    [InlineData("reach", 0.9f, true)]
-    [InlineData("reach", 1.1f, false)]
-    public void The_chain_swing_strikes_a_column_at_the_edge_of_its_arc_and_reach_as_far_as_the_column_is_wide(string edge, float outside, bool struck)
+    [MemberData(nameof(SwingEdges))]
+    public void The_chain_swing_strikes_a_column_at_the_edge_of_its_arc_and_reach_as_far_as_the_column_is_wide(string edge, float outside, bool struck, int hitsToBreak)
     {
         var gorm = Balance.Default.Gorm;
         var halfArc = gorm.SwingArc * MathF.PI / 360f;
 
         // "arc": 3 m from him, just behind the start of the swing at his left - its middle outside the arc by `outside`
-        // times the angle half the column fills. "reach": half way to his left, its near side `outside` radii beyond
-        // the reach minus one radius (0.9: 0.1 radius inside the reach, 1.1: 0.1 radius beyond it).
+        // times the angle half the column fills. "arc-end" (issue #634): the same just beyond the end of the swing at his
+        // right. "reach": half way to his left, its near side `outside` radii beyond the reach minus one radius (0.9: 0.1
+        // radius inside the reach, 1.1: 0.1 radius beyond it).
         const float Near = 3f;
-        var column = edge == "arc"
-            ? SeenFromGorm(-halfArc - (outside * MathF.Asin(Column.Radius / Near)), Near)
-            : SeenFromGorm(-halfArc / 2f, gorm.SwingReach + (outside * Column.Radius));
-        var duel = new Duel(column);
+        var beyondArc = halfArc + (outside * MathF.Asin(Column.Radius / Near));
+        var column = edge switch
+        {
+            "arc" => SeenFromGorm(-beyondArc, Near),
+            "arc-end" => SeenFromGorm(beyondArc, Near),
+            _ => SeenFromGorm(-halfArc / 2f, gorm.SwingReach + (outside * Column.Radius)),
+        };
+
+        // Issue #634: the swing is his first attack - no shock wave has struck (or, with one blow to break, broken) the
+        // column before.
+        var duel = Duel.OpeningWith(GormAttack.Swing, hitsToBreak, column);
+        Assert.Equal(0, duel.Wear.HitsOn(column));
 
         var swing = duel.Through(GormAttack.Swing);
 
@@ -339,12 +434,23 @@ public class GormCoverTests
         Assert.Equal(struck, hammer.OfType<ColumnHit>().Any(hit => hit.Column == column));
     }
 
-    [Theory]
-    [InlineData(GormAttack.Hammer, GormAttack.Swing)]
-    [InlineData(GormAttack.Swing, GormAttack.Hammer)]
-    public void The_shelter_kept_at_the_break_ends_with_that_attack_the_next_one_hits_who_stays_put(GormAttack breaking, GormAttack next)
+    public static TheoryData<GormAttack, GormAttack, int> BreakingAndNext()
     {
-        var duel = new Duel(Between);
+        var data = new TheoryData<GormAttack, GormAttack, int>();
+        foreach (var hits in HitsToBreakCases)
+        {
+            data.Add(GormAttack.Hammer, GormAttack.Swing, hits);
+            data.Add(GormAttack.Swing, GormAttack.Hammer, hits);
+        }
+
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(BreakingAndNext))]
+    public void The_shelter_kept_at_the_break_ends_with_that_attack_the_next_one_hits_who_stays_put(GormAttack breaking, GormAttack next, int hitsToBreak)
+    {
+        var duel = Duel.OpeningWith(breaking, hitsToBreak, Between);
         var health = duel.Player.Health;
 
         BreakWith(duel, Between, breaking);
@@ -360,22 +466,36 @@ public class GormCoverTests
         Assert.True(duel.Player.Health < health, $"The {next} after the break did not hit.");
     }
 
-    [Fact]
-    public void Provisional_a_column_behind_one_the_shock_wave_just_broke_takes_a_blow_from_the_same_wave()
+    public static TheoryData<GormAttack, int, bool> AttacksHitsAndOrder()
+    {
+        var data = new TheoryData<GormAttack, int, bool>();
+        foreach (var (attack, hits) in EachAttackAndHitsToBreak().Select(row => ((GormAttack)row[0], (int)row[1])))
+        {
+            data.Add(attack, hits, false);
+            data.Add(attack, hits, true);
+        }
+
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(AttacksHitsAndOrder))]
+    public void Provisional_a_column_behind_one_the_attack_just_broke_takes_a_blow_from_the_same_attack(GormAttack attack, int hitsToBreak, bool behindListedFirst)
     {
         // PROVISIONAL (issue #602): the human has not judged this yet. The cover of a column ends with its break, so the
-        // column behind it is no longer covered and the same wave strikes it. The player behind both stays covered.
-        // Gorm - Between - Behind - the player, all in a line.
+        // column behind it is no longer covered and the same attack - wave or chain - strikes it. The player behind both
+        // stays covered. Gorm - Between - Behind - the player, all in a line. Issue #634: for hammer and swing alike, and
+        // whichever column the level lists first (the chain reaches the wider-looking near column first).
         var behind = Column.AtCell(7, 4);
-        var duel = new Duel(Between, behind);
+        var duel = Duel.OpeningWith(attack, hitsToBreak, behindListedFirst ? [behind, Between] : [Between, behind]);
         var health = duel.Player.Health;
 
-        BreakWithTheHammer(duel, Between);
+        BreakWith(duel, Between, attack);
         Assert.DoesNotContain(duel.Events, e => e is ColumnHit hit && hit.Column == behind);
         var afterBreak = duel.Events.Count;
         duel.Run(5 * Second, () => duel.Gorm.State is GormState.Recovering or GormState.Stuck);
 
-        Assert.Equal([new ColumnHit(behind, 1, HitsToBreak)], duel.Events.Skip(afterBreak).OfType<ColumnHit>());
+        Assert.Equal([new ColumnHit(behind, 1, hitsToBreak)], duel.Events.Skip(afterBreak).OfType<ColumnHit>());
         Assert.Equal(health, duel.Player.Health);
     }
 
