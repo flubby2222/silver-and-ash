@@ -60,6 +60,9 @@ public static class BossPortalShape
         new(1.66f, HalfWidth, HalfDepth, 1.3f, 5.3f, 5.45f),                      // cover plate (Deckplatte)
     ];
 
+    /// <summary>How far the stone reaches from the door plane to either side: to the front of the cover plates.</summary>
+    public static float Reach { get; } = Blocks.Max(block => block.AlongTo);
+
     /// <summary>Number of runs of each jamb.</summary>
     public static int Runs => RunFrom.Length;
 
@@ -175,6 +178,18 @@ public readonly record struct BossPortal(float X, float Z, float Floor, bool Pas
     {
         var (across, along) = Local(point.X, point.Z);
         return BossPortalShape.IsStone(across, along, point.Y - Floor);
+    }
+
+    /// <summary>
+    /// True if <paramref name="point"/> lies at most <paramref name="margin"/> metres (along each axis) from the box
+    /// around all of its stone.
+    /// </summary>
+    public bool IsNear(Vector3 point, float margin)
+    {
+        var (across, along) = Local(point.X, point.Z);
+        var up = point.Y - Floor;
+        return MathF.Abs(across) <= BossPortalShape.HalfWidth + margin && MathF.Abs(along) <= BossPortalShape.Reach + margin
+            && up >= -margin && up <= BossPortalShape.Height + margin;
     }
 
     /// <summary>
@@ -305,8 +320,11 @@ public readonly record struct BossPortal(float X, float Z, float Floor, bool Pas
             return null;
         }
 
+        // The underside of an arch only if the stone lies above or beside the free point at its own depth: a ray along
+        // the passage through a wider run's arch hits the upright face of the next narrower run (issue #628).
         var (across, along) = Local(free.X, free.Z);
-        if (MathF.Abs(along) <= BossPortalShape.HalfDepth
+        var atFreeDepth = PassesAlongZ ? blocked with { Z = free.Z } : blocked with { X = free.X };
+        if (MathF.Abs(along) <= BossPortalShape.HalfDepth && Contains(atFreeDepth)
             && BossPortalShape.ArchNormal(MathF.Abs(across), free.Y - Floor) is { } arch)
         {
             var outward = arch.X * MathF.Sign(across);
