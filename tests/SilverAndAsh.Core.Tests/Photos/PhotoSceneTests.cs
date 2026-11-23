@@ -97,6 +97,7 @@ public class PhotoSceneTests
             "bat-screech", "bat-dive", "gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-phase2", "hud-reload", "hud-texts",
             "hud-calm", "hud-items", "hud-boss", "hud-skillpoint", "hud-pickup",
             "hud-reload-start", "hud-reload-mid", "hud-hit", "hud-lowlife", "hud-skillpoint-glow", "hud-blunderbuss", "hud-melee",
+            "rifle-at-wall", "blunderbuss-at-wall",
             "gorm-hammer-windup", "gorm-shockwave",
             "door-normal", "door-normal-half", "door-normal-open", "door-locked", "door-locked-half", "door-locked-open",
             "door-boss", "door-boss-half", "door-boss-open", "door-cracked", "door-sideways-half", "door-level-seed1",
@@ -260,6 +261,8 @@ public class PhotoSceneTests
     [InlineData("hud-blunderbuss", WeaponKind.Blunderbuss, false)]
     [InlineData("hud-reload", WeaponKind.Pistol, false)]
     [InlineData("hud-melee", WeaponKind.Pistol, true)]
+    [InlineData("rifle-at-wall", WeaponKind.Rifle, false)]
+    [InlineData("blunderbuss-at-wall", WeaponKind.Blunderbuss, false)]
     public void The_ammo_scenes_end_with_their_weapon_chosen_and_the_melee_weapon_in_use_only_in_the_melee_scene(
         string name, WeaponKind chosen, bool meleeInUse)
     {

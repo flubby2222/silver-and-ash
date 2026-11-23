@@ -257,6 +257,7 @@ static void RunGame(
     Raylib.SetConfigFlags(photos is { Bench: true } ? ConfigFlags.ResizableWindow : ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
     Raylib.InitWindow(window?.Width ?? WindowWidth, window?.Height ?? WindowHeight, "Silver & Ash");
     BringWindowOnScreen(log);
+    WeaponDepthPass.SetWorldClipPlanes();
 
     // Esc must not close the game - it opens the Esc menu.
     Raylib.SetExitKey(KeyboardKey.Null);
