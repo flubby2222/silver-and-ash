@@ -15,7 +15,7 @@ public sealed class Door : IInteractable
     private readonly GratesBalance _grates;
     private int _openedTicks;
 
-    // Barred: the arena wants this door shut. Without a grate it blocks at once; with one only while the grate hangs low.
+    // Barred: the arena wants this door shut. It blocks from that tick on, while the grate is still on its way down.
     private bool _barred;
 
     // The grate's own clock (issue #558): the motion it is in and the ticks since that began - never the world's clock.
@@ -58,9 +58,6 @@ public sealed class Door : IInteractable
         ? GratePose.Height(_grateTicks, _motion, _grates)
         : _barred ? 0f : GratePose.OpenHeight;
 
-    /// <summary>True while the grate is on its way down or down: barred, even if it does not block yet.</summary>
-    public bool IsSealing => _barred;
-
     /// <summary>Number of the door in its world (position in <see cref="GameWorld.Doors"/>).</summary>
     public int Id { get; }
 
@@ -98,20 +95,21 @@ public sealed class Door : IInteractable
     public bool OpenedFromLowSide { get; private set; }
 
     /// <summary>
-    /// True while the grate of an arena is down: the door blocks, open or not, and F does nothing. A door with a grate
-    /// (issue #558) blocks only while its spike tips hang below <see cref="GratesBalance.BlockHeight"/> - from part way
-    /// down the fall until part way up the lift.
+    /// True while the grate of an arena is down: the door blocks, open or not, and F does nothing. It blocks from the
+    /// tick its arena seals - a falling grate shuts the way at once, its fall is only the picture (decision of the human
+    /// on issue #558: nobody escapes an arena). A rising grate (issue #558) blocks until its spike tips hang above
+    /// <see cref="GratesBalance.BlockHeight"/> again.
     /// </summary>
-    public bool IsBarred => HasGrate ? GrateHeight < _grates.BlockHeight : _barred;
+    public bool IsBarred => _barred || (HasGrate && GrateHeight < _grates.BlockHeight);
 
     /// <summary>True if nothing can pass: closed, or barred.</summary>
     public bool Blocks => !IsOpen || IsBarred;
 
     /// <summary>
     /// Every closed door that is not barred is offered - a locked one too, to say that it needs a key. A cracked wall
-    /// never is: it is a secret, and F does not open it. Nor is a door whose grate is falling: it will be shut anyway.
+    /// never is: it is a secret, and F does not open it.
     /// </summary>
-    public bool CanInteract => !IsOpen && !IsBarred && !_barred && Kind != DoorKind.Cracked;
+    public bool CanInteract => !IsOpen && !IsBarred && Kind != DoorKind.Cracked;
 
     /// <summary>Wooden and boss doors open with F. A locked door opens with F only for a player with a key, and uses it up.</summary>
     public InteractionOffer OfferFor(Player player)
@@ -145,7 +143,7 @@ public sealed class Door : IInteractable
 
     /// <summary>
     /// One tick of swinging open (nothing while closed or once fully open) and of the grate's motion (nothing once it
-    /// is down or up). True if <see cref="Blocks"/> changed with it - the grate crossed <see cref="GratesBalance.BlockHeight"/>.
+    /// is down or up). True if <see cref="Blocks"/> changed with it - a rising grate crossed <see cref="GratesBalance.BlockHeight"/>.
     /// </summary>
     internal bool Tick()
     {
@@ -164,8 +162,8 @@ public sealed class Door : IInteractable
     }
 
     /// <summary>
-    /// An arena's grate falls - never at an unbroken cracked wall, which would give the secret away. Without a grate
-    /// the door is barred at once. True if a grate started to fall (it was not falling already).
+    /// An arena bars the door: it blocks at once, and its grate starts to fall - never at an unbroken cracked wall,
+    /// which would give the secret away. True if a grate started to fall (it was not falling already).
     /// </summary>
     internal bool Bar()
     {

@@ -61,7 +61,7 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeDoor(1, DoorKind.Normal))),
         new("door-level-seed2-boss", "The boss door of level 0 with seed 2, from 4 to 6 m, closed (issue #245).",
             studio => new PhotoSetup(studio.BeforeDoor(2, DoorKind.Boss))),
-        new("door-level-barred", "A door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #558).",
+        new("door-level-barred", "An open door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #558).",
             studio => BarredDoor(studio)),
         new("ghoul-4m", "A ghoul 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('G', 4))),
@@ -721,10 +721,13 @@ public static class PhotoScenes
                 && LineOfSight.IsClear(level, level.CellCenter(pair.cell.X, pair.cell.Z) + eye, FaceOf(pair.door, level.CellCenter(pair.cell.X, pair.cell.Z))));
         world.Player.PlaceAt(level.CellCenter(place.X, place.Z));
         PhotoStudio.Face(world.Player, (door.BoxMin + door.BoxMax) / 2f);
+
+        // As the door the player came in by: open, its leaves swung away - so the grate is seen, not the closed leaves.
+        door.Open(world.Player.Position);
         return new PhotoSetup(world)
         {
             Ticks = 600,
-            StopWhen = _ => door.IsBarred && door.GrateHeight <= 0f,
+            StopWhen = _ => door.IsBarred && door.GrateHeight <= 0f && door.OpenFraction >= 1f,
         };
     }
 

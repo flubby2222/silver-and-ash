@@ -266,7 +266,7 @@
   "grates": {
     "fallTicks": 63,                    // falling shut: two jerks, then the drop; shut from 3/4 of the time (tick 47)
     "liftTicks": 126,                   // rising fully open, evenly
-    "blockHeight": 1.85                 // metres: the door blocks while the spike tips hang lower than this
+    "blockHeight": 1.85                 // metres: a rising grate blocks until its spike tips are above this (a falling one at once)
   },
 
   // The Well of Sirius (#438). Price per throw, chances and the most throws are still open: using it only spends it.

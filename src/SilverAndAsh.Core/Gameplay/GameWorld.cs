@@ -836,12 +836,16 @@ public sealed class GameWorld
             return;
         }
 
+        // Issue #558, decision of the human: the doors shut in this tick - the grates only start to fall, but nobody gets
+        // out any more. An enemy in a doorway (one that followed the player) is pushed into the arena.
         foreach (var id in room.DoorIds)
         {
             ReportGrate(_doors[id], _doors[id].Bar(), falling: true);
+            PushOutOf(_doors[id], room);
         }
 
         room.Seal();
+
         UpdateLevel();
         _events.Add(new RoomSealed(room.Index));
         if (room.ReleaseNextWave() is { } wave)
@@ -884,20 +888,14 @@ public sealed class GameWorld
         }
     }
 
-    // The grates of a room rise - one event per grate that starts to move. A door the room shares with another sealed
-    // room stays down: it rises only once none of its rooms is sealed any more.
+    // The grates of a room rise - one event per grate that starts to move. (A door shared with a second sealed room
+    // cannot occur: it shuts at once, so no player gets through to seal the other room while this one is sealed.)
     private void LiftGrates(RoomState room)
     {
-        foreach (var id in room.DoorIds.Where(id => !SealsAnotherRoom(_doors[id], room)))
+        foreach (var id in room.DoorIds)
         {
             ReportGrate(_doors[id], _doors[id].Lift(), falling: false);
         }
-    }
-
-    private bool SealsAnotherRoom(Door door, RoomState room)
-    {
-        var other = door.RoomA == room.Index ? door.RoomB : door.RoomA;
-        return other != room.Index && other < _rooms.Count && _rooms[other].IsSealed;
     }
 
     private void ReportGrate(Door door, bool started, bool falling)
@@ -908,21 +906,14 @@ public sealed class GameWorld
         }
     }
 
-    // Issue #558: every door runs its own clock. A grate that starts to block pushes every figure in its door cell into
-    // the arena - nobody is hurt or caught in it - and the level changes for everybody.
+    // Issue #558: every door runs its own clock. A rising grate frees the way once it hangs high enough - then the
+    // level changes for everybody.
     private void TickDoors()
     {
         var changed = false;
         foreach (var door in _doors)
         {
-            if (door.Tick())
-            {
-                changed = true;
-                if (door.Blocks)
-                {
-                    PushOutOf(door);
-                }
-            }
+            changed |= door.Tick();
         }
 
         if (changed)
@@ -931,37 +922,29 @@ public sealed class GameWorld
         }
     }
 
-    private void PushOutOf(Door door)
+    // A door that shuts pushes every enemy in its cell into the arena - nobody is hurt or caught in it. No player can
+    // stand there: a player enters a room only with the whole body out of its doorways.
+    private void PushOutOf(Door door, RoomState arena)
     {
-        foreach (var player in Players.Where(player => Overlaps(door, player.Position, BodySizes.Player.Radius)))
-        {
-            player.ShoveTo(PushedOut(door, player.Position, BodySizes.Player.Radius));
-        }
-
         foreach (var ghoul in _ghouls.Where(ghoul => Overlaps(door, ghoul.Position, ghoul.Body.Radius)))
         {
-            ghoul.PlaceAt(PushedOut(door, ghoul.Position, ghoul.Body.Radius));
+            ghoul.PlaceAt(PushedInto(arena, door, ghoul.Position, ghoul.Body.Radius));
         }
 
         foreach (var bat in _bats.Where(bat => Overlaps(door, bat.Position, bat.Body.Radius)))
         {
-            bat.PlaceAt(PushedOut(door, bat.Position, bat.Body.Radius));
+            bat.PlaceAt(PushedInto(arena, door, bat.Position, bat.Body.Radius));
         }
     }
 
-    // Just out of the door cell along the passage, into the sealed room (if both or neither side is sealed: the nearer
-    // side). Across the passage it stays where it was, but inside the doorway's width, so it never ends up in a wall.
-    private Vector3 PushedOut(Door door, Vector3 at, float radius)
+    // Just out of the door cell along the passage, into the arena. Across the passage it stays where it was, but inside
+    // the doorway's width, so it never ends up in a wall.
+    private static Vector3 PushedInto(RoomState arena, Door door, Vector3 at, float radius)
     {
         const float Gap = 0.01f;
-        var middle = (door.BoxMin + door.BoxMax) / 2f;
         var alongZ = door.Side is RoomSide.North or RoomSide.South;
         var towardsB = door.Side is RoomSide.South or RoomSide.East;
-        var sealedA = door.RoomA < _rooms.Count && _rooms[door.RoomA].IsSealed;
-        var sealedB = door.RoomB < _rooms.Count && _rooms[door.RoomB].IsSealed;
-        var high = sealedA != sealedB
-            ? sealedB == towardsB
-            : alongZ ? at.Z >= middle.Z : at.X >= middle.X;
+        var high = (door.RoomB == arena.Index) == towardsB;
         if (alongZ)
         {
             return at with
@@ -977,32 +960,6 @@ public sealed class GameWorld
             Z = Math.Clamp(at.Z, door.BoxMin.Z + radius, door.BoxMax.Z - radius),
         };
     }
-
-    // Provisional decision of the lead (issue #558): a grate takes a moment to fall, so a quick player can get out of an
-    // arena before it shuts - and nobody would be left inside to clear it. As long as a player lives but none is in the
-    // room or one of its doorways, its grates rise again and it waits to be entered anew; its enemies stay as they are.
-    private void ReopenAbandonedArenas()
-    {
-        if (Players.All(player => player.IsDead))
-        {
-            return;
-        }
-
-        foreach (var room in _rooms.Where(room => room.IsSealed && room.DoorIds.Any(id => _doors[id] is { HasGrate: true, IsSealing: true })).ToList())
-        {
-            if (Players.Any(player => !player.IsDead && IsIn(room, player)))
-            {
-                continue;
-            }
-
-            LiftGrates(room);
-            room.Reopen();
-            UpdateLevel();
-        }
-    }
-
-    private bool IsIn(RoomState room, Player player) =>
-        room.Cells.Contains(Level.ToGrid(player.Position.X, player.Position.Z)) || TouchesDoorOf(room, player);
 
     // A cleared boss room lets the spiral staircase rise in its middle (decision record 0007). A room is cleared only
     // once, and there is one boss room - so it rises only once. Climbing it (F) wins the run.
@@ -1774,7 +1731,6 @@ public sealed class GameWorld
         TickDoors();
         _stairs?.Tick();
         ClearRooms();
-        ReopenAbandonedArenas();
 
         // The clock of the run stops with victory or defeat; this tick still counts.
         var wasOver = IsWon || _lossReported;

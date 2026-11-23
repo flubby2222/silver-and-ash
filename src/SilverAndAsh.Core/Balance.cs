@@ -532,9 +532,9 @@ public sealed record GratesBalance
     public int LiftTicks { get; init; } = 126;
 
     /// <summary>
-    /// Metres above the floor (issue #558): while the spike tips of a grate hang lower than this, its door blocks - on
-    /// the way down and on the way up. The height comes from <see cref="Presentation.GratePose.Height"/>, the same
-    /// number the picture uses.
+    /// Metres above the floor (issue #558): a rising grate keeps its door blocked until its spike tips hang higher than
+    /// this. (A falling one blocks from the tick its arena seals - nobody escapes.) The height comes from
+    /// <see cref="Presentation.GratePose.Height"/>, the same number the picture uses.
     /// </summary>
     public float BlockHeight { get; init; } = 1.85f;
 }

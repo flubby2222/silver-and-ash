@@ -58,8 +58,7 @@ public sealed record LevelDoor(int X, int Z, int RoomA, int RoomB, RoomSide Side
 {
     /// <summary>
     /// True if a portcullis hangs in this door (issue #558, set by <see cref="GratePlacement"/>): when its arena seals,
-    /// the grate falls over <see cref="GratesBalance.FallTicks"/> and blocks only once it hangs low enough. Without one
-    /// the door is barred at once.
+    /// the door is barred at once, and the grate falls over <see cref="GratesBalance.FallTicks"/> - to be seen and heard.
     /// </summary>
     public bool HasGrate { get; init; }
 }

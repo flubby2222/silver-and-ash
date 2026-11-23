@@ -21,16 +21,40 @@ public class GratePlacementTests
     [Fact]
     public void Every_built_level_has_its_grates_at_the_doors_of_its_combat_rooms_and_only_there()
     {
+        // Seen from the rooms, not from the rule: every combat room has a grate in each of its doors except cracked
+        // walls and the boss door, and each grate hangs in a door of some combat room.
         foreach (var level in Levels.Value)
         {
-            Assert.Contains(level.Doors, door => door.HasGrate);
-            foreach (var door in level.Doors)
+            var combatRooms = level.Rooms.Where(room => room.Kind == RoomKind.Combat).Select(room => room.Index).ToHashSet();
+            Assert.NotEmpty(combatRooms);
+            foreach (var room in combatRooms)
             {
-                var kinds = KindsAround(level, door);
-                var expected = door.Kind is DoorKind.Normal or DoorKind.Locked && kinds.Contains(RoomKind.Combat) && !kinds.Contains(RoomKind.Boss);
-                Assert.Equal(expected, door.HasGrate);
+                var doors = level.Doors.Where(door => door.RoomA == room || door.RoomB == room).ToList();
+                Assert.NotEmpty(doors);
+                Assert.All(doors.Where(door => door.Kind is not (DoorKind.Cracked or DoorKind.Boss)), door => Assert.True(door.HasGrate, $"room {room}: door at {door.X}/{door.Z} has no grate"));
             }
+
+            Assert.All(level.Doors.Where(door => door.HasGrate), door =>
+                Assert.True(combatRooms.Contains(door.RoomA) || combatRooms.Contains(door.RoomB), $"grate at {door.X}/{door.Z} is not at a combat room"));
         }
+    }
+
+    [Fact]
+    public void Every_door_of_the_boss_room_is_a_boss_door_which_never_gets_a_grate()
+    {
+        // So no extra rule for the boss room is needed: its doors are of the kind that gets no grate.
+        foreach (var level in Levels.Value)
+        {
+            var boss = level.Rooms.Single(room => room.Kind == RoomKind.Boss).Index;
+            var doors = level.Doors.Where(door => door.RoomA == boss || door.RoomB == boss).ToList();
+            Assert.NotEmpty(doors);
+            Assert.All(doors, door => Assert.Equal(DoorKind.Boss, door.Kind));
+        }
+
+        var rooms = Levels.Value[0].Rooms;
+        var combat = rooms.First(room => room.Kind == RoomKind.Combat).Index;
+        Assert.False(GratePlacement.GetsGrate(new LevelDoor(0, 0, combat, combat, RoomSide.South, DoorKind.Boss), rooms));
+        Assert.True(GratePlacement.GetsGrate(new LevelDoor(0, 0, combat, combat, RoomSide.South, DoorKind.Locked), rooms));
     }
 
     [Fact]

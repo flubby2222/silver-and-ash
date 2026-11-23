@@ -1,15 +1,17 @@
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
 /// <summary>
-/// The portcullis in the doors of an arena (issue #558): it falls and rises on the door's own clock, blocks only while
-/// it hangs below <see cref="GratesBalance.BlockHeight"/>, pushes whoever stands in the doorway into the arena and
-/// reports each start of a motion. Every test runs the world tick by tick with the shipped values.
+/// The portcullis in the doors of an arena (issue #558): it falls and rises on the door's own clock. It shuts the door
+/// in the tick the arena seals (decision of the human: nobody escapes), frees it once it has risen above
+/// <see cref="GratesBalance.BlockHeight"/>, pushes an enemy in the doorway into the arena and reports each start of a
+/// motion. Every test runs the world tick by tick with the shipped values.
 /// </summary>
 public class GrateTests
 {
@@ -81,34 +83,30 @@ public class GrateTests
     private static Vector3 Middle(Door door) => (door.BoxMin + door.BoxMax) / 2f;
 
     [Fact]
-    public void A_falling_grate_blocks_from_the_tick_it_hangs_below_the_block_height_on()
+    public void A_grate_shuts_its_door_in_the_tick_the_room_seals_while_it_still_falls()
     {
         var world = World();
         Enter(world);
         var door = world.Doors[DoorA];
+        var outside = Middle(door) with { Z = door.BoxMin.Z - 1f };
 
-        // The doors move after the players: the tick the room sealed is already tick 1 of the fall. High up, the open
-        // door still lets through.
+        // The doors move after the players: the tick the room sealed is already tick 1 of the fall. The grate still hangs
+        // high up - but the door is shut for walking, sight and shots alike (its cell is wall in the level).
         Assert.Equal(GratePose.Height(1, GrateMotion.Fall, Grates), door.GrateHeight);
-        Assert.False(door.IsBarred);
-        Assert.False(world.Level[door.X, door.Z].IsSolid);
+        Assert.False(Below(door.GrateHeight));
+        Assert.True(door.IsBarred);
+        Assert.True(world.Level[door.X, door.Z].IsSolid);
+        Assert.False(LineOfSight.IsClear(world.Level, world.Player.Position + new Vector3(0f, 1.6f, 0f), outside));
 
-        var firstBlocking = -1;
+        // All the way down it follows the shape of the fall - and blocks in every tick of it.
         for (var tick = 2; tick <= Grates.FallTicks; tick++)
         {
             world.Tick(PlayerInput.None);
-            var height = GratePose.Height(tick, GrateMotion.Fall, Grates);
-            Assert.Equal(height, door.GrateHeight);
-            Assert.Equal(Below(height), door.IsBarred);
-            Assert.Equal(Below(height), world.Level[door.X, door.Z].IsSolid);
-            if (firstBlocking < 0 && Below(height))
-            {
-                firstBlocking = tick;
-            }
+            Assert.Equal(GratePose.Height(tick, GrateMotion.Fall, Grates), door.GrateHeight);
+            Assert.True(door.IsBarred, $"tick {tick}");
+            Assert.True(world.Level[door.X, door.Z].IsSolid, $"tick {tick}");
         }
 
-        // It blocks part way down - after the start, before the grate stands on the floor - and stays down.
-        Assert.InRange(firstBlocking, 2, GratePose.ShutTick(Grates));
         Assert.Equal(0f, door.GrateHeight);
         Run(world, PlayerInput.None, 2 * Grates.LiftTicks);
         Assert.True(door.IsBarred);
@@ -200,52 +198,71 @@ public class GrateTests
         Assert.Contains(rising, e => e is RoomCleared);
     }
 
-    [Fact]
-    public void A_player_in_the_doorway_is_pushed_into_the_arena_unharmed()
-    {
-        var world = World();
-        Enter(world);
-        var door = world.Doors[DoorA];
-        var health = world.Player.Health;
-
-        // Back into the door cell while the grate is still high (the cell reaches from z = 2 m to 4 m).
-        Run(world, Back, 60, () => world.Player.Position.Z < door.BoxMax.Z - 0.5f);
-        Assert.False(door.IsBarred);
-        Run(world, PlayerInput.None, Grates.FallTicks, () => door.IsBarred);
-        Assert.True(door.IsBarred);
-
-        // Out of the door cell on the arena's side, by its body's radius - in the tick the grate started to block.
-        var position = world.Player.Position;
-        Assert.True(position.Z - BodySizes.Player.Radius > door.BoxMax.Z, $"z = {position.Z}");
-        Assert.InRange(position.Z, door.BoxMax.Z + BodySizes.Player.Radius, door.BoxMax.Z + BodySizes.Player.Radius + 0.1f);
-        Assert.Contains(Level.ToGrid(position.X, position.Z), world.Rooms[1].Cells);
-        Assert.Equal(health, world.Player.Health);
-        Assert.True(world.Rooms[1].IsSealed);
-
-        // Walking back against the grate gets nowhere.
-        Run(world, Back, 60);
-        Assert.True(world.Player.Position.Z - BodySizes.Player.Radius >= door.BoxMax.Z - 0.01f);
-    }
-
-    [Fact]
-    public void A_player_in_the_far_doorway_is_pushed_back_into_the_arena_too()
-    {
-        // Door B: the arena is room A of the door, on its low side (smaller z). The player starts in the corridor, turns
-        // round and comes in through it.
-        var world = World(map: FromTheCorridor);
+    // Turns the player round by 180 degrees - to start in the corridor facing door B.
+    private static void TurnRound(GameWorld world) =>
         world.Player.Look(PlayerInput.None with { Look = new Vector2(MathF.PI / ControlSettings.MouseSensitivity, 0f) });
-        Run(world, PressF, 1);
-        Assert.True(world.Doors[DoorB].IsOpen);
-        Run(world, Forward, 300, () => world.Rooms[1].IsSealed);
-        Assert.True(world.Rooms[1].IsSealed);
-        var door = world.Doors[DoorB];
 
-        Run(world, Back, 120, () => world.Player.Position.Z > door.BoxMin.Z + 0.5f);
-        Assert.False(door.IsBarred);
-        Run(world, PlayerInput.None, Grates.FallTicks, () => door.IsBarred);
+    private static bool Touches(Door door, Vector3 at) =>
+        Math.Clamp(at.X, door.BoxMin.X, door.BoxMax.X) is var x && Math.Clamp(at.Z, door.BoxMin.Z, door.BoxMax.Z) is var z
+        && ((at.X - x) * (at.X - x)) + ((at.Z - z) * (at.Z - z)) < BodySizes.Player.Radius * BodySizes.Player.Radius;
 
-        Assert.True(world.Player.Position.Z + BodySizes.Player.Radius < door.BoxMin.Z, $"z = {world.Player.Position.Z}");
-        Assert.Contains(Level.ToGrid(world.Player.Position.X, world.Player.Position.Z), world.Rooms[1].Cells);
+    private static bool InCells(RoomState room, Vector3 at) => room.Cells.Contains(Level.ToGrid(at.X, at.Z));
+
+    private static PlayerInput Attempt(string escape) => escape switch
+    {
+        "dash" => Back with { Dash = true },
+        "jump" => Back with { Jump = true },
+        _ => Back with { Dash = true, Jump = true },
+    };
+
+    // Decision of the human on issue #558: nobody escapes an arena. The review of PR #560 found the old way round
+    // (a quick player got out while the grate fell, the arena opened again, its wave was already out and the room could
+    // never be cleared). Here the player turns straight back with a dash, a jump or both, again and again - through
+    // the door they came in by, from either side of the arena.
+    [Theory]
+    [InlineData(false, "dash")]
+    [InlineData(false, "jump")]
+    [InlineData(false, "dash and jump")]
+    [InlineData(true, "dash")]
+    [InlineData(true, "jump")]
+    [InlineData(true, "dash and jump")]
+    public void A_player_who_tries_to_flee_stays_in_the_sealed_arena_until_it_is_cleared(bool fromTheCorridor, string escape)
+    {
+        var world = World(map: fromTheCorridor ? FromTheCorridor : Map);
+        if (fromTheCorridor)
+        {
+            TurnRound(world);
+        }
+
+        var room = world.Rooms[1];
+        var door = world.Doors[fromTheCorridor ? DoorB : DoorA];
+        var events = Enter(world);
+        Assert.True(door.IsOpen);
+
+        // Sealed only with the whole body out of every doorway - nobody is caught in a door that shuts.
+        Assert.All(room.DoorIds, id => Assert.False(Touches(world.Doors[id], world.Player.Position)));
+
+        for (var tick = 0; tick < 3 * Grates.FallTicks; tick++)
+        {
+            world.Tick(tick % 20 == 0 ? Attempt(escape) : Back);
+            events.AddRange(world.Events);
+            Assert.True(InCells(room, world.Player.Position), $"tick {tick}: the player is out at {world.Player.Position}");
+            Assert.True(room.IsSealed, $"tick {tick}");
+            Assert.True(door.IsBarred, $"tick {tick}");
+        }
+
+        // The wave is out - and stays in with the player.
+        Assert.True(room.WavesReleased >= 1);
+        Assert.Single(events, e => e is RoomSealed);
+        Assert.DoesNotContain(events, e => e == new GrateStarted(door.Id, false));
+
+        // Cleared, the grates rise and the way out is free again.
+        KillEverything(world);
+        Run(world, PlayerInput.None, Grates.LiftTicks + 1);
+        Assert.True(room.IsCleared);
+        Assert.All(room.DoorIds, id => Assert.False(world.Doors[id].IsBarred));
+        Run(world, Back, 180, () => !InCells(room, world.Player.Position) && !Touches(door, world.Player.Position));
+        Assert.False(InCells(room, world.Player.Position));
     }
 
     // Two combat rooms of one row each that share a door (tester finding on PR #560): room 0 (start) in row 0, door 0 in
@@ -274,19 +291,24 @@ public class GrateTests
         var world = new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
         if (fromTheCorridor)
         {
-            world.Player.Look(PlayerInput.None with { Look = new Vector2(MathF.PI / ControlSettings.MouseSensitivity, 0f) });
+            TurnRound(world);
         }
 
         return world;
     }
 
-    // Opens the first door, steps onto the first arena's floor while still in its doorway (not entered yet), opens the
-    // shared door from there, then runs in: the first arena seals, and the player dodges on through the shared door
-    // into the second arena before its grate blocks. Returns the events from the first seal on.
-    private static List<GameEvent> RunThroughBoth(GameWorld world, int first, int second)
+    [Theory]
+    [InlineData(false, 1, 2)]
+    [InlineData(true, 2, 1)]
+    public void A_door_two_arenas_share_shuts_with_the_first_so_the_second_waits_until_the_first_is_cleared(
+        bool fromTheCorridor, int first, int second)
     {
-        var sign = first < second ? 1f : -1f;
+        var world = TwoArenas(fromTheCorridor);
         var shared = world.Doors[SharedDoor];
+
+        // Opens the first door, steps onto the first arena's floor while still in its doorway (not entered yet) and
+        // opens the shared door from there - then dashes for it.
+        var sign = first < second ? 1f : -1f;
         var near = sign > 0 ? shared.BoxMin.Z : shared.BoxMax.Z;
         Run(world, PressF, 1);
         var creep = new PlayerInput(new Vector2(0f, 0.3f), Vector2.Zero, false);
@@ -295,49 +317,38 @@ public class GrateTests
         Assert.False(world.Rooms[first].IsEntered);
         Run(world, PressF, 1);
         Assert.True(shared.IsOpen);
-
         var events = Run(world, Forward with { Dash = true }, 1);
-        events.AddRange(Run(world, Forward, Grates.FallTicks, () => world.Rooms[second].IsSealed));
-        Assert.True(world.Rooms[second].IsSealed);
-        Assert.Contains(new RoomSealed(first), events);
-        Assert.False(shared.IsBarred);
-        return events;
-    }
+        events.AddRange(Run(world, Forward, 2 * Grates.FallTicks));
 
-    [Theory]
-    [InlineData(false, 1, 2)]
-    [InlineData(true, 2, 1)]
-    public void A_door_two_sealed_arenas_share_stays_down_while_either_is_sealed_and_rises_once_with_the_last(
-        bool fromTheCorridor, int first, int second)
-    {
-        var world = TwoArenas(fromTheCorridor);
-        var events = RunThroughBoth(world, first, second);
-        var shared = world.Doors[SharedDoor];
-
-        // The player got through: the first arena is left behind and opens again - but the shared door belongs to the
-        // second one, too, and stays down with all its other doors.
-        events.AddRange(Run(world, PlayerInput.None, Grates.FallTicks));
-        Assert.False(world.Rooms[first].IsSealed);
-        Assert.True(world.Rooms[second].IsSealed);
-        Assert.All(world.Rooms[second].DoorIds, id => Assert.True(world.Doors[id].IsBarred, $"door {id} is open"));
-        Assert.Equal(0f, shared.GrateHeight);
-        Assert.True(world.Level[shared.X, shared.Z].IsSolid);
+        // The first arena sealed - and the shared door, one of its doors, shut with it: the player is still in the first.
+        Assert.True(world.Rooms[first].IsSealed);
+        Assert.False(world.Rooms[second].IsEntered);
+        Assert.True(shared.IsBarred);
+        Assert.True(InCells(world.Rooms[first], world.Player.Position), $"the player is at {world.Player.Position}");
         Assert.Single(events, e => e == new GrateStarted(SharedDoor, true));
-        Assert.DoesNotContain(new GrateStarted(SharedDoor, false), events);
 
-        // Once the second arena is cleared too, no room of the shared door is sealed any more: it rises - once.
-        KillEverything(world);
+        // Cleared (its own ghoul only), all its grates rise - the shared one, too.
+        foreach (var ghoul in world.Targets.OfType<Ghoul>().Where(ghoul => InCells(world.Rooms[first], ghoul.Position)).ToList())
+        {
+            ghoul.TakeDamage(10_000, []);
+        }
+
         var rising = Run(world, PlayerInput.None, Grates.LiftTicks + 1);
-        Assert.True(world.Rooms[second].IsCleared);
+        Assert.True(world.Rooms[first].IsCleared);
         Assert.False(shared.IsBarred);
         Assert.Single(rising, e => e == new GrateStarted(SharedDoor, false));
-        Assert.DoesNotContain(new GrateStarted(SharedDoor, true), rising);
+
+        // On into the second: it seals as any arena does, the shared grate falls again.
+        var again = Run(world, Forward, 300, () => world.Rooms[second].IsSealed);
+        Assert.True(world.Rooms[second].IsSealed);
+        Assert.True(shared.IsBarred);
+        Assert.Single(again, e => e == new GrateStarted(SharedDoor, true));
     }
-    [Fact]
-    public void A_ghoul_that_follows_a_player_into_the_doorway_is_pushed_into_the_arena_unhurt()
+
+    // A bigger start room (rows 0-2) with an awake enemy two rows behind the player; door A in row 3, the arena in rows
+    // 4-7, door B in row 8, the corridor in rows 9-10.
+    private static GameWorld WithAFollower(char enemy)
     {
-        // A bigger start room (rows 0-2) with an awake ghoul right behind the player; door A in row 3, the arena in rows
-        // 4-7, door B in row 8, the corridor in rows 9-10.
         PlacedRoom[] rooms =
         [
             new(0, RoomKind.Start, "start", 0, 0, 5, 3, 0, Rows(0, 2), [], []),
@@ -349,53 +360,70 @@ public class GrateTests
             new(2, 3, 0, 1, RoomSide.South) { HasGrate = true },
             new(2, 8, 1, 2, RoomSide.South) { HasGrate = true },
         ];
-        var map = "#.G.#\n#...#\n#.P.#\n##.##\n#...#\n#...#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
-        var world = new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
-        var follower = world.Targets.OfType<Ghoul>().Single(g => g.Position.Z < 2f * 3);
-        var door = world.Doors[DoorA];
+        var map = $"#.{enemy}.#\n#...#\n#.P.#\n##.##\n#...#\n#...#\n#.G.#\n#...#\n##.##\n#...#\n#...#";
+        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+    }
 
-        // The player stops just inside; the ghoul crawls after it into the doorway until the grate blocks.
-        Enter(world);
-        var wasInTheDoorway = false;
-        for (var tick = 0; tick < Grates.FallTicks && !door.IsBarred; tick++)
+    // The player waits in the doorway (not in the arena yet) until the follower is in it, too, then steps in. Returns
+    // where the follower was at the end of the tick before the room sealed.
+    private static Vector3 StepInWith(GameWorld world, Func<Vector3> follower, float radius)
+    {
+        var door = world.Doors[DoorA];
+        bool InTheDoorway() => Math.Abs(follower().Z - Middle(door).Z) < (Level.CellSize / 2f) + radius;
+
+        Run(world, PressF, 1);
+        Run(world, Forward, 120, () => world.Player.Position.Z > door.BoxMax.Z - 0.3f);
+        Assert.False(world.Rooms[1].IsEntered);
+        Run(world, PlayerInput.None, 600, InTheDoorway);
+        Assert.True(InTheDoorway(), $"the follower never came into the doorway: {follower()}");
+
+        var before = follower();
+        for (var tick = 0; tick < 60 && !world.Rooms[1].IsSealed; tick++)
         {
-            wasInTheDoorway = follower.Position.Z > door.BoxMin.Z && follower.Position.Z < door.BoxMax.Z;
-            world.Tick(PlayerInput.None);
+            before = follower();
+            world.Tick(Forward);
         }
 
-        Assert.True(door.IsBarred);
-        Assert.True(wasInTheDoorway);
-        Assert.True(follower.Position.Z >= door.BoxMax.Z + follower.Body.Radius);
-        Assert.Equal(Balance.Default.Ghoul.MaxHealth, follower.Health);
+        Assert.True(world.Rooms[1].IsSealed);
+        return before;
     }
+
     [Fact]
-    public void A_player_who_got_out_before_the_grate_shut_finds_the_arena_open_again()
+    public void A_ghoul_that_follows_a_player_into_the_doorway_is_pushed_into_the_arena_unhurt_as_the_room_seals()
     {
-        var world = World();
-        Enter(world);
+        var world = WithAFollower('G');
+        var follower = world.Targets.OfType<Ghoul>().Single(g => g.Position.Z < Level.CellSize * 3);
         var door = world.Doors[DoorA];
 
-        // Straight back out with a dodge, fast enough to be past the grate before it blocks.
-        var events = Run(world, Back with { Dash = true }, 1);
-        events.AddRange(Run(world, Back, Grates.FallTicks, () => !world.Rooms[1].IsSealed));
+        var before = StepInWith(world, () => follower.Position, follower.Body.Radius);
 
-        Assert.False(world.Rooms[1].IsSealed);
-        Assert.False(world.Rooms[1].IsEntered);
-        Assert.False(world.Rooms[1].IsCleared);
-        Assert.Contains(new GrateStarted(DoorA, false), events);
-        Assert.Contains(new GrateStarted(DoorB, false), events);
-
-        // The grates rise again; the room counts as not entered, so stepping back in counts again. With its ghoul dead
-        // (it came out and would follow the player) that clears it, with no new fall.
-        Run(world, PlayerInput.None, Grates.LiftTicks);
-        Assert.False(door.IsBarred);
-        Assert.False(world.Level[door.X, door.Z].IsSolid);
-        KillEverything(world);
-        var again = Run(world, Forward, 300, () => world.Rooms[1].IsEntered);
-        Assert.True(world.Rooms[1].IsCleared);
-        Assert.Contains(new RoomCleared(1), again);
-        Assert.DoesNotContain(again, e => e is GrateStarted);
+        // Reaching into the door cell at the end of the tick before, right behind the door on the arena's side in the sealing
+        // tick - whichever side it came from, so no enemy is ever shut out of its arena.
+        Assert.True(before.Z + follower.Body.Radius > door.BoxMin.Z && before.Z - follower.Body.Radius < door.BoxMax.Z, $"z = {before.Z}");
+        Assert.InRange(follower.Position.Z, door.BoxMax.Z + follower.Body.Radius, door.BoxMax.Z + follower.Body.Radius + 0.02f);
+        Assert.True(InCells(world.Rooms[1], follower.Position));
+        Assert.Equal(Balance.Default.Ghoul.MaxHealth, follower.Health);
+        Assert.True(door.IsBarred);
     }
+
+    [Fact]
+    public void A_bat_that_follows_a_player_into_the_doorway_is_pushed_into_the_arena_unhurt_as_the_room_seals()
+    {
+        var world = WithAFollower('B');
+        var follower = world.Targets.OfType<Bat>().Single();
+        var door = world.Doors[DoorA];
+
+        var before = StepInWith(world, () => follower.Position, follower.Body.Radius);
+
+        Assert.True(before.Z + follower.Body.Radius > door.BoxMin.Z && before.Z - follower.Body.Radius < door.BoxMax.Z, $"z = {before.Z}");
+        // It only reached into the doorway from the start room - and is pushed through into the arena all the same,
+        // out of the door cell on the arena's side (it flies on a little in the same tick).
+        Assert.InRange(follower.Position.Z, door.BoxMax.Z + follower.Body.Radius, door.BoxMax.Z + follower.Body.Radius + 0.1f);
+        Assert.True(InCells(world.Rooms[1], follower.Position));
+        Assert.Equal(Balance.Default.Bat.MaxHealth, follower.Health);
+        Assert.True(door.IsBarred);
+    }
+
     [Fact]
     public void A_player_who_dies_in_the_sealed_arena_leaves_it_sealed_and_the_restart_brings_the_grates_up()
     {
@@ -454,14 +482,15 @@ public class GrateTests
     }
 
     [Fact]
-    public void A_closed_door_is_not_offered_while_its_grate_falls()
+    public void A_closed_door_is_barred_and_not_offered_from_the_tick_its_room_seals()
     {
         // Door B stays closed: the player in the arena looks at it while the grate is still high.
         var world = World();
         Enter(world);
         var door = world.Doors[DoorB];
 
-        Assert.False(door.IsBarred);
+        Assert.False(Below(door.GrateHeight));
+        Assert.True(door.IsBarred);
         Assert.False(door.CanInteract);
     }
 }

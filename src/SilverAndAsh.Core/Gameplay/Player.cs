@@ -104,17 +104,6 @@ public sealed partial class Player
     }
 
     /// <summary>
-    /// A falling grate pushes the player out of its door cell, feet to <paramref name="feet"/> (issue #558). Nothing
-    /// else changes - no harm, the player keeps moving as before; the previous position moves along, so the picture
-    /// does not slide through the grate.
-    /// </summary>
-    internal void ShoveTo(Vector3 feet)
-    {
-        PreviousPosition += feet - Position;
-        Position = feet;
-    }
-
-    /// <summary>
     /// A teleporter carries the player: at rest with their feet on <paramref name="feet"/> - a chain pull, a dash and
     /// a dodge end, so nothing carries the player on afterwards (issue #436).
     /// The previous position moves along, so the picture jumps instead of sliding through the walls.

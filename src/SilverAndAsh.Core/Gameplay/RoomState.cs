@@ -67,16 +67,6 @@ public sealed class RoomState
 
     internal void Seal() => IsSealed = true;
 
-    /// <summary>
-    /// The arena opens again without being cleared (issue #558): nobody is left inside. It counts as not entered, so the
-    /// next player to step in with the whole body seals it again.
-    /// </summary>
-    internal void Reopen()
-    {
-        IsSealed = false;
-        IsEntered = false;
-    }
-
     internal void Clear()
     {
         IsSealed = false;
