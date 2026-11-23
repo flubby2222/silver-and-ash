@@ -491,7 +491,8 @@ public sealed class Gorm : IEnemy
                 var z = target.Position.Z + (MathF.Sin(angle) * distance);
                 // Outside the level counts as wall (see Level's indexer).
                 var cell = Level.ToGrid(x, z);
-                if (level[cell.X, cell.Z].IsSolid || _arena?.Contains(cell) == false || InAStandingColumn(level, x, z))
+                if (level[cell.X, cell.Z].IsSolid || _arena?.Contains(cell) == false || InAStandingColumn(level, x, z)
+                    || InPortalStone(level, x, z))
                 {
                     continue;
                 }
@@ -507,6 +508,11 @@ public sealed class Gorm : IEnemy
     // A stone never falls into a standing column - the column stands on open floor, but its round is no floor (issue #608).
     private bool InAStandingColumn(Level level, float x, float z) =>
         StandingColumns(level).Any(column => Vector2.Distance(column.Centre, new Vector2(x, z)) < Column.Radius);
+
+    // Nor into the stone of a boss door's portal: it stands in the open door cells, but its jambs, plinth and
+    // buttresses are no floor (issue #627).
+    private static bool InPortalStone(Level level, float x, float z) =>
+        level.Portals.Any(portal => portal.Covers(new Vector2(x, z), 0f));
 
     // Walking: close enough for an attack? Otherwise on towards the target (stopping close in front of them).
     private void Walk(Level level, Player? target, IReadOnlyList<CylinderBody> obstacles, ICollection<GameEvent> events)
