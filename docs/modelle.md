@@ -57,7 +57,15 @@ python tools/models/checksums.py
 
 Ein Test (`ModelChecksumsTests.The_checked_in_list_matches_every_checked_in_model_file`) wird rot, wenn Liste und Dateien nicht zusammenpassen.
 
-Das Skript schreibt bei jedem Lauf alle drei Listen (Modelle, Texturen, Geräusche). `python tools/models/checksums.py --help` zeigt nur die Hilfe, eine unbekannte Option (etwa `--check`) bricht mit Exit-Code `2` ab; in beiden Fällen bleibt jede Datei unverändert (Issue #604). Eine reine Prüfung ohne Schreiben gibt es nicht – das übernehmen die Tests.
+Das Skript berechnet bei jedem Lauf alle drei Listen (Modelle, Texturen, Geräusche), schreibt eine Liste aber nur, wenn sich ihr Inhalt ändert, und dann immer mit LF. `.gitattributes` führt alle `*.sha256` mit `eol=lf`, ein Checkout legt sie also genauso ab. Ein Lauf ohne echte Änderung lässt `git status` darum leer, auch mit `core.autocrlf=true` (Issue #636). Früher zeigte Git die Listen danach als geändert: Das Skript schrieb LF über die CRLF-Fassung des Checkouts, und weicht die Dateigröße von der im Index gemerkten ab, meldet Git „geändert“, ohne den Inhalt zu vergleichen.
+
+Nur nachsehen, ohne etwas zu schreiben:
+
+```
+python tools/models/checksums.py --check
+```
+
+Exit-Code `0`, wenn alle Listen zu den Dateien passen; sonst Exit-Code `1` und je betroffene Datei eine Zeile: Liste fehlt, Datei ohne Eintrag, Eintrag ohne Datei, Datei mit anderer Größe oder Summe, oder eine verwaiste `.sha256` im selben Ordner, die kein Skript schreibt. `--help` zeigt nur die Hilfe, eine unbekannte Option bricht mit Exit-Code `2` ab; in beiden Fällen bleibt jede Datei unverändert (Issue #604). Selbsttest des Skripts (ohne Blender und dotnet): `python tools/models/checksums_test.py`.
 
 ## Ein neues Modell einbauen (Kiste, Pistole, Klinge, Fledermaus, Gorm, Tür, Treppe)
 
