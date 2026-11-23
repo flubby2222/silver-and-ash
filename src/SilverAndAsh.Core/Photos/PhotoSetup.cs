@@ -35,6 +35,12 @@ public sealed record PhotoSetup(GameWorld World)
     public bool ShowsShotBodies { get; init; }
 
     /// <summary>
+    /// True for a close look at the world (issue #601): the game draws no hands, no level name and no showroom labels,
+    /// so nothing covers what the scene shows.
+    /// </summary>
+    public bool ShowsOnlyTheWorld { get; init; }
+
+    /// <summary>
     /// Runs the ticks of this scene on <see cref="World"/>; <paramref name="afterTick"/> is called after each one (the
     /// game reads the events there). Returns how many ticks ran.
     /// </summary>

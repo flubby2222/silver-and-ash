@@ -88,6 +88,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `equipment-rifle` | das Gewehr (Forged) im Musterraum aus 0,8 m: „[F] Take Rifle (Forged)“ in Stahlblau (Issue #317) |
 | `equipment-worn`, `equipment-forged`, `equipment-royal`, `equipment-vampiric` | je einen Gegenstand dieser Stufe im Musterraum aus 0,8 m: sein Schein und „[F] Take …“ in der Farbe seiner Stufe |
 | `equipment-taken-royal`, `equipment-taken-vampiric` | Hunter's Eye (Royal) bzw. Leech (Vampiric) im Musterraum mit F genommen: die Karte links, 45 bzw. 15 Ticks danach – beim vampirischen Fund noch mit dem blutroten Schein vom Rand |
+| `column-intact-6m`, `column-hit1-6m`, `column-hit2-6m`, `column-broken-6m` (auch `-10m`) | je eine Stufe der zerbrechenden Säule im Musterraum aus 6 m bzw. 10 m: unversehrt (Z0), nach einem Schlag (Z1), vor dem letzten Schlag (Z2), zerbrochen (Z3); die Schlagseite zeigt zur Kamera (Issue #601) |
 | `showroom-a-corridor`, `showroom-a-room`, … `showroom-c-room` | je einen Teil des Musterraums (Issue #283, [musterraum.md](musterraum.md)): Wandvariante A, B oder C, der Gangteil (3,5 m) mit den Türen und der rissigen Wand bzw. der Raumteil (6 m) mit den Stücken, vom Westende des südlichen Laufwegs schräg auf die Nordwand, mit Schildern |
 
 ## Bild-Varianten vergleichen (`--look`, `--photo compare`)
@@ -193,6 +194,7 @@ powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\Silve
 | `gorm-slam` | Gorms Hammerschlag aus der Nähe: der Spieler steht 8 m vor ihm, hinter ihm stehend, Blick auf Gorm; die Welle aus aufbrechendem Stein läuft auf ihn zu und trifft ihn, sobald der rote Riss seine Füße erreicht (#299) |
 | `gorm-slam-far` | derselbe Schlag aus 14 m, außerhalb der Reichweite (12 m): die ganze Welle von vorn, bis sie vor dem Spieler ausläuft, Boden Variante A |
 | `gorm-slam-far-b`, `gorm-slam-far-c` | dasselbe auf Boden Variante B bzw. C (C, das Kopfsteinpflaster, liegt im Spiel nie im Bossraum) |
+| `column-breaking` | die zerbrechende Säule im Musterraum aus 6 m, von der Hallenseite in voller Höhe, ohne Waffen in der Hand, Raumtitel und Schilder (`PhotoSetup.ShowsOnlyTheWorld`), alle drei Ticks ein Bild: der Bruch, der Fall der Stücke (81 Ticks) mit der Staubwolke und der liegende Stumpf (Issue #601) |
 
 **Eine Bewegungs-Szene ergänzen:** ein Eintrag in `MotionScenes.All` ([`MotionScenes.cs`](../src/SilverAndAsh.Core/Photos/MotionScenes.cs)) – dieselben Bausteine wie bei den Fotos, nur mit `Input` je Tick und genug `Ticks` für den ganzen Ablauf, zum Beispiel:
 
