@@ -884,13 +884,20 @@ public sealed class GameWorld
         }
     }
 
-    // The grates of a room rise - one event per grate that starts to move.
+    // The grates of a room rise - one event per grate that starts to move. A door the room shares with another sealed
+    // room stays down: it rises only once none of its rooms is sealed any more.
     private void LiftGrates(RoomState room)
     {
-        foreach (var id in room.DoorIds)
+        foreach (var id in room.DoorIds.Where(id => !SealsAnotherRoom(_doors[id], room)))
         {
             ReportGrate(_doors[id], _doors[id].Lift(), falling: false);
         }
+    }
+
+    private bool SealsAnotherRoom(Door door, RoomState room)
+    {
+        var other = door.RoomA == room.Index ? door.RoomB : door.RoomA;
+        return other != room.Index && other < _rooms.Count && _rooms[other].IsSealed;
     }
 
     private void ReportGrate(Door door, bool started, bool falling)

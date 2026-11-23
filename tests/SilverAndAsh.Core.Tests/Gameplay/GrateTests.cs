@@ -248,6 +248,91 @@ public class GrateTests
         Assert.Contains(Level.ToGrid(world.Player.Position.X, world.Player.Position.Z), world.Rooms[1].Cells);
     }
 
+    // Two combat rooms of one row each that share a door (tester finding on PR #560): room 0 (start) in row 0, door 0 in
+    // row 1, room 1 (arena, one ghoul) in row 2, the shared door 1 in row 3, room 2 (arena, one ghoul) in row 4, door 2
+    // in row 5, room 3 (corridor) in rows 6-7. The player starts in row 0 or, mirrored, in row 6.
+    private const int SharedDoor = 1;
+
+    private static GameWorld TwoArenas(bool fromTheCorridor)
+    {
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, Rows(0, 0), [], []),
+            new(1, RoomKind.Combat, "arena", 0, 2, 5, 1, 1, Rows(2, 2), [(1, 2)], []),
+            new(2, RoomKind.Combat, "arena", 0, 4, 5, 1, 2, Rows(4, 4), [(3, 4)], []),
+            new(3, RoomKind.Corridor, "corridor", 0, 6, 5, 2, 3, Rows(6, 7), [], []),
+        ];
+        LevelDoor[] doors =
+        [
+            new(2, 1, 0, 1, RoomSide.South) { HasGrate = true },
+            new(2, 3, 1, 2, RoomSide.South) { HasGrate = true },
+            new(2, 5, 2, 3, RoomSide.South) { HasGrate = true },
+        ];
+        var map = fromTheCorridor
+            ? "#...#\n##.##\n#G..#\n##.##\n#..G#\n##.##\n#.P.#\n#...#"
+            : "#.P.#\n##.##\n#G..#\n##.##\n#..G#\n##.##\n#...#\n#...#";
+        var world = new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+        if (fromTheCorridor)
+        {
+            world.Player.Look(PlayerInput.None with { Look = new Vector2(MathF.PI / ControlSettings.MouseSensitivity, 0f) });
+        }
+
+        return world;
+    }
+
+    // Opens the first door, steps onto the first arena's floor while still in its doorway (not entered yet), opens the
+    // shared door from there, then runs in: the first arena seals, and the player dodges on through the shared door
+    // into the second arena before its grate blocks. Returns the events from the first seal on.
+    private static List<GameEvent> RunThroughBoth(GameWorld world, int first, int second)
+    {
+        var sign = first < second ? 1f : -1f;
+        var shared = world.Doors[SharedDoor];
+        var near = sign > 0 ? shared.BoxMin.Z : shared.BoxMax.Z;
+        Run(world, PressF, 1);
+        var creep = new PlayerInput(new Vector2(0f, 0.3f), Vector2.Zero, false);
+        Run(world, creep, 300, () => sign * (near - world.Player.Position.Z) < ControlSettings.InteractionReach - 0.1f);
+        Run(world, PlayerInput.None, 30);
+        Assert.False(world.Rooms[first].IsEntered);
+        Run(world, PressF, 1);
+        Assert.True(shared.IsOpen);
+
+        var events = Run(world, Forward with { Dash = true }, 1);
+        events.AddRange(Run(world, Forward, Grates.FallTicks, () => world.Rooms[second].IsSealed));
+        Assert.True(world.Rooms[second].IsSealed);
+        Assert.Contains(new RoomSealed(first), events);
+        Assert.False(shared.IsBarred);
+        return events;
+    }
+
+    [Theory]
+    [InlineData(false, 1, 2)]
+    [InlineData(true, 2, 1)]
+    public void A_door_two_sealed_arenas_share_stays_down_while_either_is_sealed_and_rises_once_with_the_last(
+        bool fromTheCorridor, int first, int second)
+    {
+        var world = TwoArenas(fromTheCorridor);
+        var events = RunThroughBoth(world, first, second);
+        var shared = world.Doors[SharedDoor];
+
+        // The player got through: the first arena is left behind and opens again - but the shared door belongs to the
+        // second one, too, and stays down with all its other doors.
+        events.AddRange(Run(world, PlayerInput.None, Grates.FallTicks));
+        Assert.False(world.Rooms[first].IsSealed);
+        Assert.True(world.Rooms[second].IsSealed);
+        Assert.All(world.Rooms[second].DoorIds, id => Assert.True(world.Doors[id].IsBarred, $"door {id} is open"));
+        Assert.Equal(0f, shared.GrateHeight);
+        Assert.True(world.Level[shared.X, shared.Z].IsSolid);
+        Assert.Single(events, e => e == new GrateStarted(SharedDoor, true));
+        Assert.DoesNotContain(new GrateStarted(SharedDoor, false), events);
+
+        // Once the second arena is cleared too, no room of the shared door is sealed any more: it rises - once.
+        KillEverything(world);
+        var rising = Run(world, PlayerInput.None, Grates.LiftTicks + 1);
+        Assert.True(world.Rooms[second].IsCleared);
+        Assert.False(shared.IsBarred);
+        Assert.Single(rising, e => e == new GrateStarted(SharedDoor, false));
+        Assert.DoesNotContain(new GrateStarted(SharedDoor, true), rising);
+    }
     [Fact]
     public void A_ghoul_that_follows_a_player_into_the_doorway_is_pushed_into_the_arena_unhurt()
     {

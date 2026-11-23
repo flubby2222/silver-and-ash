@@ -75,6 +75,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `cracked-wall-break`, `cracked-wall-break-after` | eine rissige Wand aus 2 m vom Geheimraum aus mit voll aufgeladener Klinge zerschlagen: 8 bzw. 100 Ticks nach dem Schlag (Brocken im Flug bzw. am Boden). Im Geheimraum, weil kein Gegner hineinkommt und das Bild stört |
 | `door-sideways-half` | eine Holztür in einem Ost-West-Durchgang, halb offen: das Modell ist um 90° gedreht |
 | `door-level-seed1`, `door-level-seed2-boss` | die erste Holztür in Seed 1 bzw. das Bosstor in Seed 2, aus 2–3 Zellen Abstand |
+| `door-level-barred` | eine Tür des ersten Kampfraums von innen aus 2–3 Zellen Abstand: Der Raum hat beim Betreten versiegelt, das Bild entsteht, sobald das Fallgitter ganz unten ist. Zeigt das Gitter im Level, ohne Modell den Platzhalter (Issue #558) |
 | `menu-title`, `menu-pause`, `menu-settings` | das Titelbild, das Esc-Menü und die Einstellungen (aus dem Esc-Menü) über dem Startraum, gezeichnet wie im Spiel (Issue #349) |
 | `teleporter-locked-3m`, `teleporter-unlocked-3m`, `teleporter-locked-10m`, `teleporter-unlocked-10m` | ein Teleporter gesperrt bzw. freigeschaltet in einer leeren Halle aus 3 m bzw. 10 m, Blick auf den Kristall (Issue #480) |
 | `teleporter-hint` | Ebene 0, alle Teleporter freigeschaltet, man steht auf dem im Startraum: „[T] Travel“ unter dem Fadenkreuz |
