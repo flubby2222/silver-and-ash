@@ -151,7 +151,7 @@ public sealed class GameWorld
         }
 
         // Every enemy belongs to the room it starts in; in an arena it sleeps until the room is entered.
-        foreach (var enemy in _ghouls.Cast<ITarget>().Concat(_bats).Concat(_gorm is null ? [] : [_gorm]))
+        foreach (var enemy in Enemies)
         {
             var position = enemy.Body.Position;
             if (_roomOfCell.TryGetValue(Level.ToGrid(position.X, position.Z), out var room))
@@ -860,7 +860,8 @@ public sealed class GameWorld
     }
 
     // When the last enemy of an arena is dead, its grates rise. The door the player came through is open (they walked
-    // through it), so it is free again at once; the others open with F as before. While a combat room still has a
+    // through it), but it stays shut until its grate hangs above grates.blockHeight again (issue #558); a door without
+    // a grate (the boss room) is free at once. The others open with F as before. While a combat room still has a
     // hidden wave, the next one comes out instead once all that came out before are dead (today there is only one).
     private void ClearRooms()
     {
@@ -923,17 +924,18 @@ public sealed class GameWorld
     }
 
     // A door that shuts pushes every enemy in its cell into the arena - nobody is hurt or caught in it. No player can
-    // stand there: a player enters a room only with the whole body out of its doorways.
+    // stand there: a player enters a room only with the whole body out of its doorways. Every kind of enemy, through
+    // the one list of them (issue #572).
+    //
+    // PROVISIONAL (decision of the lead, issue #572; the human judges it at the play test): this pulls in strangers,
+    // too - an enemy from the corridor or the start room that followed a player into the doorway ends up in the arena.
+    // It does not count for the arena (not in room.Enemies), so it does not hold up the clearing; but it fights in there.
+    // The other way (pushed back to where it came from) would leave it waiting outside the grate.
     private void PushOutOf(Door door, RoomState arena)
     {
-        foreach (var ghoul in _ghouls.Where(ghoul => Overlaps(door, ghoul.Position, ghoul.Body.Radius)))
+        foreach (var enemy in Enemies.Where(enemy => Overlaps(door, enemy.Body.Position, enemy.Body.Radius)))
         {
-            ghoul.PlaceAt(PushedInto(arena, door, ghoul.Position, ghoul.Body.Radius));
-        }
-
-        foreach (var bat in _bats.Where(bat => Overlaps(door, bat.Position, bat.Body.Radius)))
-        {
-            bat.PlaceAt(PushedInto(arena, door, bat.Position, bat.Body.Radius));
+            enemy.PlaceAt(PushedInto(arena, door, enemy.Body.Position, enemy.Body.Radius));
         }
     }
 
@@ -1415,7 +1417,11 @@ public sealed class GameWorld
     public IReadOnlyList<Bat> Bats => _bats;
 
     /// <summary>Everything the weapons can hit: dummies and ghouls.</summary>
-    public IEnumerable<ITarget> Targets => _dummies.Cast<ITarget>().Concat(_ghouls).Concat(_bats).Concat(_gorm is null ? [] : [_gorm]);
+    public IEnumerable<ITarget> Targets => _dummies.Cast<ITarget>().Concat(Enemies);
+
+    // Every enemy of every kind, once (issue #572): a new kind of enemy goes here, and with it into the rooms and out of
+    // doorways that shut.
+    private IEnumerable<IEnemy> Enemies => _ghouls.Cast<IEnemy>().Concat(_bats).Concat(_gorm is null ? [] : [_gorm]);
 
     /// <summary>
     /// The rules that turn a hit into damage (headshots, later items, ...). Part of the world, not static:

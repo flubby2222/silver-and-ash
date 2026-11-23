@@ -32,7 +32,7 @@ public enum BatState
 /// corners it finds its way with the same grid search as the ghoul (<see cref="Pathfinder"/>), in "flying mode".
 /// </para>
 /// </summary>
-public sealed class Bat : ITarget
+public sealed class Bat : IEnemy
 {
     /// <summary>Flying: any floor height can be passed, only walls block.</summary>
     private const float FlyingStepHeight = float.PositiveInfinity;
@@ -166,8 +166,13 @@ public sealed class Bat : ITarget
     /// <summary>Where it is drawn: its position, pulled up into the ceiling while it is hidden or sinking.</summary>
     public Vector3 ShownPosition => Position + Emergence.Offset;
 
-    /// <summary>Moves it while it is still hidden (issue #445: it comes out elsewhere, away from the players).</summary>
+    /// <summary>
+    /// Moves it while it is still hidden (issue #445: it comes out elsewhere, away from the players) or out of a doorway
+    /// that shuts (issue #558).
+    /// </summary>
     internal void PlaceAt(Vector3 position) => Position = position;
+
+    void IEnemy.PlaceAt(Vector3 position) => PlaceAt(position);
 
     public bool IsHittable => !IsDead && Emergence.IsPresent;
 
