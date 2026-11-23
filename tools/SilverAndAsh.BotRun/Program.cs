@@ -8,28 +8,41 @@ using SilverAndAsh.Core.World;
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- arena                 -> seeds 1..6
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- death --seeds 1..20
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- boss --seeds 7
+//   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- slam                  -> the boss portal (issue #629)
+//   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- bat
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- seeds --seeds 1..1000
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- all
 // Exit code: 0 = no findings, 1 = findings, 2 = wrong arguments or the tool itself failed.
 
-const string Usage = "Usage: <arena|death|boss|seeds|all> [--seeds FROM..TO] [--repo FOLDER]";
-string[] modes = ["arena", "death", "boss", "seeds"];
+// The modes, in the order "all" plays them. A new mode is one more line here (issue #629), not one more branch.
+BotMode[] modes =
+[
+    new("arena", "every arena door: seal, escape attempts, clear, walk out; two arenas side by side; the boss door", ArenaDoors.Run),
+    new("death", "die in a sealed arena and in the boss fight, restart, walk in again", DeathAndRestart.Run),
+    new("boss", "run to the boss (antechamber, teleporters, boss door), win, climb the stairs", BossRun.Run),
+    new("slam", "the boss door slams shut with a body in its doorway (player, ghoul, bat, Gorm): nobody in the stone", DoorSlam.Run),
+    new("bat", "a bat at the boss portal: knocked at the stone, flying round a player there, falling dead onto a plinth", PortalBat.Run),
+    new("seeds", "build every level twice: failures, generator tries, same level for the same seed", SeedProbe.Run, SeedProbe.PrintAttemptNote),
+];
+var usage = $"Usage: <{string.Join('|', modes.Select(m => m.Name))}|all> [--seeds FROM..TO] [--repo FOLDER]";
 
 if (args.Length == 0 || args[0] is "--help" or "-h")
 {
-    Console.WriteLine(Usage);
-    Console.WriteLine("  arena  every arena door: seal, escape attempts, clear, walk out; two arenas side by side; the boss door");
-    Console.WriteLine("  death  die in a sealed arena and in the boss fight, restart, walk in again");
-    Console.WriteLine("  boss   run to the boss (antechamber, teleporters, boss door), win, climb the stairs");
-    Console.WriteLine("  seeds  build every level twice: failures, generator tries, same level for the same seed");
-    Console.WriteLine("  all    all of the above, one after the other");
+    Console.WriteLine(usage);
+    foreach (var each in modes)
+    {
+        Console.WriteLine($"  {each.Name,-6} {each.Help}");
+    }
+
+    Console.WriteLine($"  {"all",-6} all of the above, one after the other");
     return args.Length == 0 ? 2 : 0;
 }
 
 var mode = args[0];
-if (mode != "all" && !modes.Contains(mode))
+var chosen = mode == "all" ? modes : modes.Where(m => m.Name == mode).ToArray();
+if (chosen.Length == 0)
 {
-    Console.Error.WriteLine($"Unknown mode '{mode}'. {Usage}");
+    Console.Error.WriteLine($"Unknown mode '{mode}'. {usage}");
     return 2;
 }
 
@@ -47,7 +60,7 @@ for (var i = 1; i < args.Length; i++)
             repo = args[++i];
             break;
         default:
-            Console.Error.WriteLine($"Unknown or incomplete argument '{args[i]}'. {Usage}");
+            Console.Error.WriteLine($"Unknown or incomplete argument '{args[i]}'. {usage}");
             return 2;
     }
 }
@@ -69,14 +82,14 @@ foreach (var warning in loaded.Warnings)
 Play.Use(loaded.Balance);
 var zero = new LevelZero(RoomTemplateParser.LoadAll(Path.Combine(repo, "assets", "rooms")));
 var report = new Report();
-foreach (var current in mode == "all" ? modes : [mode])
+foreach (var current in chosen)
 {
-    report.Section(current);
+    report.Section(current.Name);
     for (var seed = from; seed <= to; seed++)
     {
         try
         {
-            Run(current, seed);
+            current.Run(zero, seed, report);
         }
         catch (MissingCoreMember e)
         {
@@ -85,37 +98,15 @@ foreach (var current in mode == "all" ? modes : [mode])
         }
         catch (Exception e)
         {
-            report.Finding($"seed {seed}: {current} threw {e.GetType().Name}: {e.Message}");
+            report.Finding($"seed {seed}: {current.Name} threw {e.GetType().Name}: {e.Message}");
         }
     }
 
-    if (current == "seeds")
-    {
-        SeedProbe.PrintAttemptNote(report);
-    }
+    current.After?.Invoke(report);
 }
 
 report.Print(mode, from, to);
 return report.Findings == 0 ? 0 : 1;
-
-void Run(string current, int seed)
-{
-    switch (current)
-    {
-        case "arena":
-            ArenaDoors.Run(zero, seed, report);
-            break;
-        case "death":
-            DeathAndRestart.Run(zero, seed, report);
-            break;
-        case "boss":
-            BossRun.Run(zero, seed, report);
-            break;
-        default:
-            SeedProbe.Run(zero, seed, report);
-            break;
-    }
-}
 
 static string? FindRepository()
 {
@@ -129,6 +120,12 @@ static string? FindRepository()
 
     return null;
 }
+
+/// <summary>
+/// One mode of the bot: its name on the command line, one line of help, what it plays for one seed, and what it prints
+/// once after the last seed (if anything).
+/// </summary>
+internal sealed record BotMode(string Name, string Help, Action<LevelZero, int, Report> Run, Action<Report>? After = null);
 
 /// <summary>Reads "7" or "1..6" (also "1-6").</summary>
 internal static class SeedRange
