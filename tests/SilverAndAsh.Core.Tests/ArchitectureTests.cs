@@ -56,6 +56,7 @@ public partial class ArchitectureTests
         ["Gameplay/GameWorld.cs"] = "carries the texture variants of the surfaces (SurfaceVariants) for the picture - #704",
         ["Gameplay/LevelZero.cs"] = "builds those SurfaceVariants for a new world - #704",
         ["Gameplay/RoomPreview.cs"] = "builds those SurfaceVariants for a room preview - #704",
+        ["Course/TestCourse.cs"] = "builds those SurfaceVariants for the world of the test course (#718) - #704",
         ["Gameplay/ShowroomExhibits.cs"] = "exhibits of the showroom with their model looks - #704",
     };
 

@@ -62,6 +62,7 @@ public sealed class GameWorld
     private bool _lossReported;
     private bool _endSummaryTaken;
     private ShowroomExhibits? _showroom;
+    private readonly GroundFinds? _finds;
 
     /// <summary>
     /// Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.
@@ -327,25 +328,48 @@ public sealed class GameWorld
                 _stairs.Tick();
             }
 
-            foreach (var loot in value.Loot)
-            {
-                _loot.Add(new Loot(_nextLootId++, loot.Kind, loot.Amount, loot.Position));
-            }
+            Lay(new GroundFinds(value.Loot, value.Consumables, value.Weapons, value.Items));
+        }
+    }
 
-            foreach (var consumable in value.Consumables)
+    /// <summary>
+    /// Finds lying on the floor from the start in a normal world, with every rule (the test course, issue #718) - or
+    /// null, which this never changes. Unlike <see cref="Showroom"/> it leaves <see cref="IsShowroom"/> false.
+    /// </summary>
+    public GroundFinds? Finds
+    {
+        get => _finds;
+        init
+        {
+            _finds = value;
+            if (value is not null)
             {
-                _pickups.Add(new Pickup(_nextPickupId++, consumable.Kind, consumable.Position));
+                Lay(value);
             }
+        }
+    }
 
-            foreach (var weapon in value.Weapons)
-            {
-                _equipmentDrops.Add(new WeaponDrop(_nextEquipmentDropId++, weapon.Kind, weapon.Position));
-            }
+    /// <summary>Puts <paramref name="finds"/> on the floor, as loot, pickups and equipment.</summary>
+    private void Lay(GroundFinds finds)
+    {
+        foreach (var loot in finds.Loot)
+        {
+            _loot.Add(new Loot(_nextLootId++, loot.Kind, loot.Amount, loot.Position));
+        }
 
-            foreach (var item in value.Items)
-            {
-                _equipmentDrops.Add(new ItemDrop(_nextEquipmentDropId++, item.Kind, item.Position));
-            }
+        foreach (var consumable in finds.Consumables)
+        {
+            _pickups.Add(new Pickup(_nextPickupId++, consumable.Kind, consumable.Position));
+        }
+
+        foreach (var weapon in finds.Weapons)
+        {
+            _equipmentDrops.Add(new WeaponDrop(_nextEquipmentDropId++, weapon.Kind, weapon.Position));
+        }
+
+        foreach (var item in finds.Items)
+        {
+            _equipmentDrops.Add(new ItemDrop(_nextEquipmentDropId++, item.Kind, item.Position));
         }
     }
 
