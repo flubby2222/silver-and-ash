@@ -24,6 +24,9 @@
 #                    the exit code of the bot (1 with findings) besides the one of this script (issue #660)
 #   --message        when caught, also show the message of the first red test as listed (issue #682), at most
 #                    30 lines, paths shortened; tests only - with --bot it stops with exit code 2
+#   --timeout SECONDS  end a test that runs longer than this (issue #712, default 60): dotnet test gets
+#                    --blame-hang-timeout, so a change that makes a test loop forever ends the run with "TIMED OUT"
+#                    instead of blocking it; 0 = no limit, as before; tests only - with --bot it stops with exit code 2
 #
 # Every new option or way out of this script gets a case in its self-test tools/gegenprobe.tests.sh (issue #660).
 # Log lines it shows (build errors, the end of an aborted run) have their absolute paths shortened to ".../<name>", so
@@ -40,9 +43,10 @@
 #
 # Exit code: 0 = caught (at least one test red, with --bot: a finding), 1 = survived (all green, no finding), 2 = could
 # not run (another run in this working folder, unclean working folder, text not found or found more than once without
-# --all, control run red or with findings, the bot ended with another code than 0 or 1 ...), 3 = no result with the change (it does not compile, a built file could not be copied, or the test
+# --all, control run red, with findings or timed out, the bot ended with another code than 0 or 1 ...), 3 = no result with the change (it does not compile, a built file could not be copied, or the test
 # project does not build: no statement about the tests), 4 = the test run with the change was aborted (fewer tests ran
-# than in the control run, e.g. the test process crashed: no statement about the tests, issue #657).
+# than in the control run, e.g. the test process crashed, or a test ran longer than --timeout: no statement about the
+# tests, issues #657 and #712).
 #
 # Example (issue #578): the restart must reset the doors.
 #   tools/gegenprobe.sh src/SilverAndAsh.Core/Gameplay/GameWorld.cs \
@@ -64,9 +68,12 @@ bot=0
 message=0
 project="tests/SilverAndAsh.Core.Tests"
 name=""
+timeout=60
+timeout_given=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --all) all=1; shift ;;
+        --timeout) timeout="${2?--timeout needs a number of seconds}"; timeout_given=1; shift 2 ;;
         --regex) regex=1; shift ;;
         --bot) bot=1; shift ;;
         --message) message=1; shift ;;
@@ -85,6 +92,16 @@ if [ $# -ne 4 ]; then
 fi
 if [ "$message" = 1 ] && [ "$bot" = 1 ]; then
     echo "gegenprobe: --message shows the message of a red test - the bot has none, its findings are shown anyway" >&2
+    exit 2
+fi
+case "$timeout" in
+    ''|*[!0-9]*)
+        echo "gegenprobe: --timeout needs a whole number of seconds (0 = no limit), not '$timeout'" >&2
+        exit 2 ;;
+esac
+timeout=$((10#$timeout))
+if [ "$timeout_given" = 1 ] && [ "$bot" = 1 ]; then
+    echo "gegenprobe: --timeout limits a test of dotnet test - the bot run has no such limit" >&2
     exit 2
 fi
 
@@ -107,6 +124,7 @@ cd "$root" || exit 2
 work=""
 last_trx=""
 bot_exit=""
+hung=""
 changed=0
 built_changed=0
 
@@ -223,12 +241,35 @@ build_errors() {
     grep -E "error [A-Z]+[0-9]+" "$1" | sed -E 's/ \[[^]]*\]$//' | shorten_paths | sort -u | head -n 10 >&2
 }
 
-# Runs the filtered tests; sets total, failed, red (names) and returns 3 if nothing could be run (build error).
+# With --timeout (issue #712, default 60 s): dotnet test ends a test that runs longer and the run with it. No dump:
+# it would take minutes and some hundred MB, and nobody reads it here.
+hang_limit=()
+if [ "$timeout" -gt 0 ]; then
+    hang_limit=(--blame-hang-timeout "${timeout}s" --blame-hang-dump-type none)
+fi
+
+# The name of the test that ran longer than --timeout in the run <label>, or nothing. That it was the limit and not a
+# crash only the output says, in the language of dotnet ("inactivity time" / German "Inaktivit..."); which test it was
+# says the sequence file of the blame collector in any language: the one not completed. "?" if that file is missing.
+hung_test() {
+    local label="$1"
+    [ "$timeout" -gt 0 ] || return 0
+    grep -q -E 'Blame.*(inactivity|Inaktivit)' "$work/$label.log" 2>/dev/null || return 0
+    local name
+    name="$(find "$work/$label" -name 'Sequence_*.xml' 2>/dev/null | head -n 1 | while read -r sequence; do
+        perl -ne 'if (/<Test\b[^>]*\bName="([^"]*)"[^>]*\bCompleted="False"/) { print "$1\n"; exit }' "$sequence"
+    done)"
+    echo "${name:-?}"
+}
+
+# Runs the filtered tests; sets total, failed, red (names), hung (the test that ran longer than --timeout, empty if
+# none did) and returns 3 if nothing could be run (build error).
 run_tests() {
     local label="$1"
     local results="$work/$label"
-    dotnet test "$project" -c Release --filter "$filter" \
+    dotnet test "$project" -c Release --filter "$filter" "${hang_limit[@]}" \
         --logger "trx;LogFileName=results.trx" --results-directory "$results" > "$work/$label.log" 2>&1
+    hung="$(hung_test "$label")"
     local trx
     trx="$(find "$results" -name '*.trx' 2>/dev/null | head -n 1)"
     if [ -z "$trx" ]; then
@@ -335,8 +376,11 @@ report_bot() {
     exit 0
 }
 
-# The result of the test run with the change: aborted, survived or caught.
+# The result of the test run with the change: timed out, aborted, survived or caught.
 report_tests() {
+    if [ -n "$hung" ]; then
+        report_timed_out
+    fi
     if [ "$total" -lt "$control_total" ]; then
         report_aborted
     fi
@@ -375,6 +419,21 @@ report_aborted() {
     exit 4
 }
 
+# A test ran longer than --timeout with the change (issue #712): dotnet test ended it and the run with it, so the tests
+# after it did not run. Most likely the change makes it loop forever; it may also only need longer than the limit.
+report_timed_out() {
+    echo "   result: TIMED OUT - a test ran longer than $timeout s with the change and was ended (endless loop?):"
+    echo "     $hung"
+    echo "   $total of $control_total test(s) finished before - no statement about the tests"
+    if [ "$failed" != 0 ]; then
+        echo "   red before the run ended:"
+        echo "$red" | sed 's/^/     /'
+    fi
+    echo "gegenprobe: the test run with the change was ended after the limit of $timeout s. If the test only needs" >&2
+    echo "   longer, raise the limit (--timeout 300) or pass --timeout 0 for none." >&2
+    exit 4
+}
+
 echo "== gegenprobe: $name"
 echo "   file:   $file"
 if [ "$bot" = 1 ]; then
@@ -402,6 +461,12 @@ fi
 if [ "$bot" = 1 ]; then
     echo "   control run: bot without findings (bot exit code $bot_exit)"
 else
+    if [ -n "$hung" ]; then
+        echo "gegenprobe: control run already has a test that ran longer than $timeout s - fix that first, or raise the" >&2
+        echo "   limit (--timeout 300) if it only needs longer:" >&2
+        echo "   $hung" >&2
+        exit 2
+    fi
     if [ "$total" = 0 ]; then
         echo "gegenprobe: the filter '$filter' selects no tests" >&2
         exit 2
