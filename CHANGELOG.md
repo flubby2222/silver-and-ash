@@ -6,6 +6,8 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+## [0.12.0] – 2026-11-24 – Portal & Säulen
+
 ### Hinzugefügt
 - **Bot-Lauf findet hängende Gegner:** Der neue Modus `stuck` steht in jeder Arena und im Bossraum still und meldet jeden Ghul, jede Fledermaus und Gorm, die einen Spieler jagen, sich aber deutlich länger als ihre längste erlaubte Pause weder bewegen noch angreifen – mit Seed, Tick, Gegner und Ort. Die Schwelle folgt aus den Balancing-Werten. Aufruf: `dotnet run --project tools/SilverAndAsh.BotRun -c Release -- stuck --seeds 1..40`, siehe `docs/bot-und-gegenprobe.md` (#591)
 - **Die Bossraum-Tür klingt:** Fällt die Tür hinter einem Spieler zu, grollt sie tief, und im Augenblick des harten Anschlags schlägt sie mit langem Nachhall zu. Öffnet man sie oder geht sie nach dem Sieg wieder auf, schleift Stein über feines Geröll, solange die Flügel schwingen. Das Knarren der gewöhnlichen Türen spielt dann für diese Tür nicht mehr. Beide Klänge hört man von der Tür her; sie kommen aus der Hörprobe, die der Mensch ausgewählt hat (Schließen Nr. 2, Öffnen Nr. 1).
@@ -326,7 +328,8 @@ Das technische Grundgerüst: noch kein Spiel, aber alles, was ein Spiel braucht,
 - Automatische Prüfung (CI) jedes Pull Requests
 - Automatisches Windows-Paket bei jedem Versions-Tag
 
-[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.11.1...HEAD
+[Unveröffentlicht]: https://github.com/flubby2222/silver-and-ash/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/flubby2222/silver-and-ash/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/flubby2222/silver-and-ash/compare/v0.9.0...v0.10.0
