@@ -389,6 +389,12 @@ public sealed partial class Player
         return healed;
     }
 
+    /// <summary>
+    /// True on the test course (issue #718): damage still hits and is reported, but health never falls below 1, so a
+    /// player walks every station to the end. False in a normal game.
+    /// </summary>
+    public bool CannotDie { get; set; }
+
     /// <summary>Takes <paramref name="damage"/> (never below 0) and reports it into <paramref name="events"/>.</summary>
     public void TakeDamage(int damage, ICollection<GameEvent> events)
     {
@@ -399,7 +405,7 @@ public sealed partial class Player
             return;
         }
 
-        var taken = Math.Min(damage, Health);
+        var taken = Math.Min(damage, CannotDie ? Health - 1 : Health);
         Health -= taken;
         events.Add(new PlayerHit(Id, taken));
         if (IsDead)

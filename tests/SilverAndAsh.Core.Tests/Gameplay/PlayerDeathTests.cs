@@ -26,6 +26,23 @@ public class PlayerDeathTests
         Assert.Equal([new PlayerHit(player.Id, 60), new PlayerHit(player.Id, 40), new PlayerDied(player.Id)], events);
     }
 
+    /// <summary>Issue #718: on the test course health stops at 1 - every hit is still reported, none kills.</summary>
+    [Fact]
+    public void A_player_who_cannot_die_keeps_one_health_and_still_feels_each_hit()
+    {
+        var player = new Player(LevelParser.Parse("P")) { CannotDie = true };
+        var events = new List<GameEvent>();
+        var health = player.Health;
+
+        player.TakeDamage(health - 10, events);
+        player.TakeDamage(health, events);
+        player.TakeDamage(health, events);
+
+        Assert.False(player.IsDead);
+        Assert.Equal(1, player.Health);
+        Assert.Equal([new PlayerHit(player.Id, health - 10), new PlayerHit(player.Id, 9), new PlayerHit(player.Id, 0)], events);
+    }
+
     [Fact]
     public void A_dead_player_no_longer_moves_looks_or_attacks()
     {
