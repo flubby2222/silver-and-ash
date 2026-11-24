@@ -126,6 +126,8 @@ Abweichung: Die dunklen Bänder der Kistenplatzhalter im Code (56, 44, 36; 52, 5
 
 **Raum-Bausteine:** Bogenarten, Wand in drei Zonen, Profile und die Maße von Wandpfeiler, Säule, Deckenbogen, Nische und Türrahmen stehen in der [Formenlehre Gotik](formenlehre-gotik.md) und sind für alle Bausteine verbindlich.
 
+- **Wandbänder bleiben schlicht; Spitzbögen gehören den Bausteinen** (Urteil des Menschen am 2026-11-21 zur Probe der Wandzonen, Issue [#282](https://github.com/flubby2222/silver-and-ash/issues/282): „Alles a“). Sockel und Abschluss der Wand sind der Quader-Sockel mit Fase und das glatte Gesims; der Spitzbogenfries wird nicht gebaut. Spitzbögen tragen Türrahmen, Deckenbogen und Nische, nie die Wandfläche.
+
 Hintergrund mit Quellen: [Grundlagen Grafik](grundlagen-grafik.md), Abschnitte 3 und 4 und der Nachtrag d. Verbindlich sind nur die Regeln in diesem Dokument.
 
 ## Vom Modell ins Spiel
