@@ -123,7 +123,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo compare --out D:\fotos\ver
 
 ## Eine Szene ergänzen
 
-Eine Zeile in `PhotoScenes.All`, zum Beispiel ein Ghul aus 6 m:
+Eine Zeile in der passenden Themenliste in [`PhotoScenes.cs`](../src/SilverAndAsh.Core/Photos/PhotoScenes.cs) (etwa `GhoulScenes()`, `HudScenes()`, `MenuScenes()`; `PhotoScenes.All` setzt sich aus diesen Listen zusammen, Issue #589), zum Beispiel ein Ghul aus 6 m:
 
 ```csharp
 new("ghoul-6m", "A ghoul 6 m away in a bare hall.",
@@ -141,6 +141,8 @@ Bausteine im `PhotoStudio`:
 Und in der `PhotoSetup`: `Ticks` (wie lange die Welt läuft), `Input` (Eingabe je Tick, z. B. `PressMenu = MenuKey.Equipment` in Tick 0), `StopWhen` (früher abdrücken, z. B. sobald ein Ghul ausholt), `Menu` (Titel, Pause oder Einstellungen darüber), `IsModelProbe`.
 
 Danach: Name in den Test `Every_scene_the_issue_asks_for_is_there` aufnehmen ([`PhotoSceneTests.cs`](../tests/SilverAndAsh.Core.Tests/Photos/PhotoSceneTests.cs)), die Szene einmal laufen lassen und **das Bild ansehen**.
+
+Die Aufnahme [`photo-scenes.txt`](../tests/SilverAndAsh.Core.Tests/Photos/photo-scenes.txt) hält jede Szene in der Reihenfolge von `--photo all` als eine Zeile fest: Name, Ticks, Menü, Schalter, Beschreibung. Eine neue Szene bekommt dort **genau eine neue Zeile** an ihrer Stelle; ist der Test `Every_scene_keeps_its_place_name_description_and_setup_as_recorded` rot, nennt er Zeilennummer, aufgenommene und jetzige Zeile. Ändert sich dabei die Zeile einer **anderen** Szene, ist das ein Warnsignal, kein Grund zum Abnicken. Aufnahme-Tests vergleichen nur, was eine Szene selbst festlegt – nichts, was aus dem Balancing folgt (wie lange sie läuft, wo der Spieler am Ende steht).
 
 ## Bewegte Vorschau (`--clip`)
 

@@ -9,13 +9,50 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Core.Photos;
 
 /// <summary>
-/// Every photo scene in one place (issue #224). A new scene is one more line here: a name, what it shows and how the
-/// <see cref="PhotoStudio"/> builds it. See docs/foto-skript.md.
+/// Every photo scene in one place (issue #224). A new scene is one more line in the list of its theme: a name, what it
+/// shows and how the <see cref="PhotoStudio"/> builds it; a new theme is one more list in <see cref="All"/> (issue #589).
+/// See docs/foto-skript.md.
 /// </summary>
 public static class PhotoScenes
 {
     /// <summary>All scenes, in the order <c>--photo all</c> takes them.</summary>
     public static IReadOnlyList<PhotoScene> All { get; } =
+    [
+        .. RoomScenes(),
+        .. FixtureScenes(),
+        .. DoorAndWallScenes(),
+        .. GhoulScenes(),
+        .. WeaponScenes(),
+        .. BatScenes(),
+        .. GormScenes(),
+        .. GormLateFightScenes(),
+        .. HudScenes(),
+        .. ScreenEffectScenes(),
+        .. MenuScenes(),
+        .. FigureScenes(),
+        .. ShowroomScenes(),
+        .. WallPillarScenes(),
+        .. CeilingArchScenes(),
+        .. WallNicheScenes(),
+        .. PortcullisScenes(),
+        .. ColumnScenes(),
+        .. BreakingColumnScenes(),
+        .. EquipmentScenes(),
+    ];
+
+    /// <summary>
+    /// The scenes <c>--photo compare</c> takes in every picture variant (issue #234): corridor, combat room, a ghoul from
+    /// near and far and drawing back, a bat from far, Gorm.
+    /// </summary>
+    public static IReadOnlyList<PhotoScene> LookComparison { get; } =
+        new[] { "room-corridor", "room-combat", "ghoul-4m", "ghoul-10m", "ghoul-windup", "bat-10m", "gorm" }
+            .Select(name => All.First(scene => scene.Name == name)).ToList();
+
+    /// <summary>The scene called <paramref name="name"/>, or null.</summary>
+    public static PhotoScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
+
+    // The rooms of level 0: the start room and one room of every kind.
+    private static PhotoScene[] RoomScenes() =>
     [
         new("start-room", "Level 0 as a run begins: start room, level name, standard weapons.",
             studio => new PhotoSetup(studio.StartRun())),
@@ -31,6 +68,11 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.AtAntechamberEntrance())),
         new("room-boss", "The boss room from 12 m, Gorm waiting.",
             studio => new PhotoSetup(studio.BeforeGorm(12f))),
+    ];
+
+    // The fixtures of a level: chests, the well and the teleporters with their destination choice.
+    private static PhotoScene[] FixtureScenes() =>
+    [
         new("chests-4m", "The chests of all four tiers side by side 4 m away, closed and locked, and an open one.",
             studio => new PhotoSetup(studio.ChestRow())),
         new("well-ready", "The Well of Sirius 4 m away, ready: water in its three bowls.",
@@ -51,6 +93,11 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.AtStartTeleporter(sealBossGate: false)) { Menu = PhotoMenu.Travel }),
         new("menu-travel-sealed", "The destination choice with the boss-gate room sealed: its mark grey, no Travel (issue #480).",
             studio => new PhotoSetup(studio.AtStartTeleporter(sealBossGate: true)) { Menu = PhotoMenu.Travel }),
+    ];
+
+    // The doors in a bare hall and in the level, the cracked walls and the boss portal.
+    private static PhotoScene[] DoorAndWallScenes() =>
+    [
         .. DoorScenes(DoorKind.Normal, "wooden double door"),
         .. DoorScenes(DoorKind.Locked, "locked door"),
         .. DoorScenes(DoorKind.Boss, "boss door"),
@@ -68,6 +115,11 @@ public static class PhotoScenes
             studio => BarredDoor(studio, open: true)),
         new("door-level-barred-shut", "A closed door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #572).",
             studio => BarredDoor(studio, open: false)),
+    ];
+
+    // A ghoul in a bare hall, near, far and drawing back.
+    private static PhotoScene[] GhoulScenes() =>
+    [
         new("ghoul-4m", "A ghoul 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('G', 4))),
         new("ghoul-10m", "A ghoul 10 m away in a bare hall.",
@@ -78,6 +130,11 @@ public static class PhotoScenes
                 Ticks = 600,
                 StopWhen = world => world.Ghouls[0] is { State: GhoulState.WindingUp, WindUpProgress: >= 0.5f },
             }),
+    ];
+
+    // The weapons in hand: the pistol's shot, the blade and the club at rest, charged and swinging.
+    private static PhotoScene[] WeaponScenes() =>
+    [
         new("pistol-recoil", "The pistol right after a shot: kicked up, hammer down, muzzle flash (issue #249).",
             studio => new PhotoSetup(studio.Arena('G', 10))
             {
@@ -136,6 +193,11 @@ public static class PhotoScenes
             studio => ChargedClubSwing(studio)),
         new("showroom-club", "The club in hand before the club (Worn) lying in the showroom (issue #403).",
             studio => new PhotoSetup(ClubInHand(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Club })))),
+    ];
+
+    // A bat in a bare hall, near, far, screeching and diving.
+    private static PhotoScene[] BatScenes() =>
+    [
         new("bat-4m", "A bat 4 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('B', 4))),
         new("bat-10m", "A bat 10 m away in a bare hall.",
@@ -155,6 +217,11 @@ public static class PhotoScenes
                 StopWhen = world => world.Bats[0].State == BatState.Diving
                     && System.Numerics.Vector3.Distance(world.Bats[0].Position, world.Player.Position) < 4f,
             }),
+    ];
+
+    // Gorm in his boss room, and the warnings and the swing of his attacks in a hall as high.
+    private static PhotoScene[] GormScenes() =>
+    [
         new("gorm", "Gorm, the Chained, 6 m away in his boss room.",
             studio => new PhotoSetup(studio.BeforeGorm(6f))),
         new("gorm-swing-windup", "Gorm whirling his chain above his head, the warning before the swing, the chain out to his right; in a hall as high as his boss room (issues #249, #254).",
@@ -181,6 +248,11 @@ public static class PhotoScenes
                 Ticks = 3000,
                 StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Hammer, StateProgress: >= 0.8f },
             }),
+    ];
+
+    // Later in the fight against Gorm: his shock wave, his phase 2 and the stairs after his death.
+    private static PhotoScene[] GormLateFightScenes() =>
+    [
         new("gorm-shockwave", "Gorm's shock wave half way out (6 m), seen from 14 m, just outside its reach; for --bench with the wave in view (issue #299).",
             studio => MotionScenes.Find("gorm-slam-far")!.Build(studio) with
             {
@@ -204,6 +276,11 @@ public static class PhotoScenes
                 Ticks = 600,
                 StopWhen = world => world.Stairs is { CanInteract: true },
             }),
+    ];
+
+    // The HUD: weapon places, rounds, texts, items, the boss bar, the skill point and the pickup toast.
+    private static PhotoScene[] HudScenes() =>
+    [
         new("hud-weapons", "The HUD with every weapon place taken: club in hand, pistol, rifle and blunderbuss.",
             studio => new PhotoSetup(AllWeapons(studio.StartRun()))),
         new("hud-rifle", "Like hud-weapons, but the rifle chosen (2): a placeholder next to the club (issue #249).",
@@ -261,6 +338,11 @@ public static class PhotoScenes
                 Ticks = 45,
                 Input = tick => PlayerInput.None with { Interact = tick == 0 },
             }),
+    ];
+
+    // The screen effects over the HUD (issue #370): the reload veil, a blow landing, little life, the level up.
+    private static PhotoScene[] ScreenEffectScenes() =>
+    [
         new("hud-reload-start", "The pistol just started reloading (R) with one round gone: the veil covers its picture (issue #370).",
             studio => ReloadingPistol(studio, 0.1f)),
         new("hud-reload-mid", "The pistol half way through its reload: the veil has shrunk to the right half of the frame (issues #370, #389).",
@@ -283,6 +365,11 @@ public static class PhotoScenes
                 Input = tick => PlayerInput.None with { Shoot = tick % 4 == 0 },
                 StopWhen = TicksAfter<LevelUp>(4),
             }),
+    ];
+
+    // The pages of the menu in a run and the title, pause, settings and quit screens.
+    private static PhotoScene[] MenuScenes() =>
+    [
         new("inventory", "The equipment page of the menu (G) open, every place of the bag taken (issue #348).",
             studio => new PhotoSetup(FullBag(AllWeapons(studio.StartRun())))
             {
@@ -306,6 +393,11 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.StartRun()) { Menu = PhotoMenu.Settings }),
         new("menu-quit", "The question before quitting, asked from the pause menu: Cancel, Quit (issues #349, #371).",
             studio => new PhotoSetup(studio.StartRun()) { Menu = PhotoMenu.Quit }),
+    ];
+
+    // The figures of the showroom close up (shot bodies, poses) and the model probe.
+    private static PhotoScene[] FigureScenes() =>
+    [
         new("ghoul-shotbody-front", "The showroom's ghoul from 1.8 m in front, with what a shot can hit drawn over it as wires (issue #433).",
             studio => new PhotoSetup(BesideTheGhoul(studio, ahead: 1.8f, aside: 0f)) { ShowsShotBodies = true }),
         new("ghoul-shotbody-side", "The showroom's ghoul from 1.8 m to its side, with what a shot can hit drawn over it as wires (issue #433).",
@@ -326,13 +418,11 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.Arena('G', 4)) { IsModelProbe = true }),
         new("model-probe-10m", "One target on a bare floor, 10 m away - stands in for a model under game conditions.",
             studio => new PhotoSetup(studio.Arena('G', 10)) { IsModelProbe = true }),
-        .. ShowroomScenes(),
-        .. WallPillarScenes(),
-        .. CeilingArchScenes(),
-        .. WallNicheScenes(),
-        .. PortcullisScenes(),
-        .. ColumnScenes(),
-        .. BreakingColumnScenes(),
+    ];
+
+    // The equipment lying in the showroom with its "[F] Take" prompt, and just taken (issue #317).
+    private static PhotoScene[] EquipmentScenes() =>
+    [
         new("equipment-rifle", "The rifle (Forged) lying in the showroom, 0.8 m away: \"[F] Take Rifle (Forged)\" in steel blue (issue #317).",
             studio => new PhotoSetup(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Rifle }))),
         .. EquipmentTierScenes(),
@@ -349,17 +439,6 @@ public static class PhotoScenes
                 Input = tick => PlayerInput.None with { Interact = tick == 0 },
             }),
     ];
-
-    /// <summary>
-    /// The scenes <c>--photo compare</c> takes in every picture variant (issue #234): corridor, combat room, a ghoul from
-    /// near and far and drawing back, a bat from far, Gorm.
-    /// </summary>
-    public static IReadOnlyList<PhotoScene> LookComparison { get; } =
-        new[] { "room-corridor", "room-combat", "ghoul-4m", "ghoul-10m", "ghoul-windup", "bat-10m", "gorm" }
-            .Select(name => All.First(scene => scene.Name == name)).ToList();
-
-    /// <summary>The scene called <paramref name="name"/>, or null.</summary>
-    public static PhotoScene? Find(string name) => All.FirstOrDefault(scene => scene.Name == name);
 
     // The showroom (issue #283): every part of every section from its west end, across to its north wall and pieces.
     private static IEnumerable<PhotoScene> ShowroomScenes()
