@@ -10,7 +10,7 @@
 1. **Ein Skillpunkt alle 3 Stufen.** Ein voller Lauf durch die Katakomben (Ebene 0) bringt heute **2 oder 3 Punkte**, wer Räume auslässt **2**.
 2. **Punkte zahlen alles:** 1. Punkt = aktiver Skill, 2. Punkt = sein Statuseffekt, jeder weitere = eine Ausbaustufe. **Fünf Punkte** bauen einen Skill ganz aus; mehr haben keine Verwendung.
 3. **Ein aktiver Skill je Lauf** (Taste **Q**). Der erste Altarbesuch bietet **drei zufällige** von fünf Skills, der zweite **drei zufällige** von fünf Statuseffekten.
-4. **Fünf Statuseffekte:** Leech, Stun, Cleansing Flame (Weihfeuer), Grave Chill (Grabeskälte), Marked (Gezeichnet). Startwerte halb so stark wie zuerst vorgeschlagen.
+4. **Fünf Statuseffekte:** Leech, Stun, Cleansing Flame, Grave Chill (Grabeskälte), Marked (Gezeichnet). Startwerte halb so stark wie zuerst vorgeschlagen.
 5. **Waffen:** **30 %** der gefundenen Waffen tragen einen Effekt. Er löst je Treffer mit **10 bis 25 %** aus, je nach Seltenheit.
 6. **Ausbau** ab dem dritten Punkt in **fester Reihenfolge je Skill** (I, II, III).
 7. **Synergie:** Tragen Waffe und Skill denselben Effekt, hält er **1,5-mal so lange** (Leech: 1,5-mal so stark).
@@ -86,13 +86,13 @@ Startwerte = etwa die Hälfte des ersten Vorschlags (5 %, 1 s, 4 s, 40 %/4 s, 25
 |---|---|---|---|---|---|---|
 | **Leech** (Lifedrain) | Anteil des Schadens als Leben für den Angreifer | 2,5 % je Treffer | 3,75 % | voll | fahles Violett, dünner Faden zum Spieler | keiner (sofort) |
 | **Stun** | Gegner betäubt: kein Gehen, kein Angriff; ein ausholender Ghul bricht ab | 0,5 s | 0,75 s | **Taumeln 0,2 s**, bricht keine Ankündigung ab, danach **5 s immun** | Silbergrau, kreisende Funken über dem Kopf | ja |
-| **Cleansing Flame** (Weihfeuer) | Schaden über Zeit, alle 0,5 s | 2 s, 5 Schaden/s | 3 s | voll | weißgold, kleine Flammen am Körper | ja |
+| **Cleansing Flame** | Schaden über Zeit, alle 0,5 s | 2 s, 5 Schaden/s | 3 s | voll | weißgold, kleine Flammen am Körper | ja |
 | **Grave Chill** (Grabeskälte) | langsamer (nur Bewegung, Ankündigungen bleiben gleich lang) | 20 % für 2 s | 3 s | voll | blassblau, Reif und kalter Hauch | ja |
 | **Marked** (Gezeichnet) | Gegner nimmt mehr Schaden, von allen Spielern | 12,5 % für 3 s | 4,5 s | voll | Aschweiß, ein Zeichen auf der Brust | ja |
 
 - **Auffrischen:** Neue Dauer = die längere von Rest und neuer Dauer; die Stärke bleibt. Verschiedene Effekte liegen nebeneinander.
 - **Timer, wörtlich gewünscht** („Überm Kopf ein kleiner Timer“): Restzeit je Effekt als kleine Zahl in seiner Farbe, Spielschrift englisch, also „0.4s“. Mehrere Effekte stehen untereinander, höchstens drei.
-- **Rot bleibt frei** für die Angriffs-Ankündigung (Ghul-Augen, Art-Bible). Farben kommen aus der Hauptpalette; Weihfeuer aus der Reihe Messing/Gold, aber klar weg vom Gold der Stufe *Royal*.
+- **Rot bleibt frei** für die Angriffs-Ankündigung (Ghul-Augen, Art-Bible). Farben kommen aus der Hauptpalette; Cleansing Flame aus der Reihe Messing/Gold, aber klar weg vom Gold der Stufe *Royal*.
 - **Kills durch Cleansing Flame** zählen für den Spieler, der es ausgelöst hat.
 
 ## 5. Waffen mit Statuseffekt
