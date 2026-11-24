@@ -30,7 +30,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 
 ## Szenen
 
-`--photo list` zeigt die aktuelle Liste. Stand bei Einführung:
+`--photo list` zeigt die aktuelle Liste. Die Szene `entrance` steht nicht darin: Sie gehört zu einer einzelnen Raumvorlage und geht nur zusammen mit `--room` (`--room <datei> --photo entrance`, siehe [level-format.md](level-format.md); dafür wird nur diese eine Vorlage geladen, Issue #534). Stand bei Einführung:
 
 | Szene | Zeigt |
 |---|---|
