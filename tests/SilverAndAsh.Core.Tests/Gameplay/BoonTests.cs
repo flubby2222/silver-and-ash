@@ -208,9 +208,11 @@ public class BoonTests
     /// <remarks>
     /// On the flat, open floor of these tests nothing in the game costs any of the way: with the standard balance
     /// the player covers exactly this ideal way (2.75 m in half a second, 1.25 m in a quarter). The 10 % left are
-    /// room for how a tick is counted, not for the walking itself - moving first and speeding up after would cost
-    /// half a tick at top speed (5 cm, 2 to 4 % here). A player who walks a quarter or a third slower after the
-    /// level up falls far below.
+    /// room for how a tick is counted, not for the walking itself: moving first and speeding up after would move
+    /// each tick at the speed of the tick before and so cost a whole tick at top speed (10 cm) - 1.15 m instead of
+    /// 1.25 m in a quarter of a second (92 %), 2.65 m instead of 2.75 m in half a second (96.4 %). That is only
+    /// 2.5 cm above the threshold of 1.125 m, so the share must not go above 90 %. A player who walks a quarter or
+    /// a third slower after the level up falls far below.
     /// </remarks>
     private static float LeastWalk(Balance balance, int ticks)
     {
