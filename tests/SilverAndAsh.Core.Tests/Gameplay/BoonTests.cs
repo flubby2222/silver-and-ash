@@ -83,9 +83,14 @@ public class BoonTests
     [Fact]
     public void A_boon_that_was_not_offered_cannot_be_chosen()
     {
-        var player = new Player(LevelParser.Parse("P"));
-        player.AddExperience(FirstLevel, []);
-        var missing = Pool.Except(player.CurrentOffer).First();
+        // An offer of its own that leaves exactly one boon out (issue #586) - with the whole pool on offer,
+        // nothing would be missing.
+        var player = new Player(LevelParser.Parse("P"), balance: Balance.Default with
+        {
+            Boons = Balance.Default.Boons with { Offered = Pool.Length - 1 },
+        });
+        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
+        var missing = Assert.Single(Pool.Except(player.CurrentOffer));
 
         Assert.False(player.Choose(missing, []));
         Assert.Equal(1, player.PendingBoons);
