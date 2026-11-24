@@ -15,7 +15,9 @@ internal static class InteractionPrompt
     private static readonly Color Text = new(220, 220, 228, 255);
     private static readonly Color NotPossible = new(160, 150, 150, 255);
 
-    public static void Draw(IInteractable? target, Player player)
+    /// <param name="seconds">The clock of the views (in photos: the ticks run so far), for the pulse of Vampiric -
+    /// not the time since the window opened, so a photo comes out the same every time (issue #639).</param>
+    public static void Draw(IInteractable? target, Player player, float seconds)
     {
         if (target is null)
         {
@@ -30,7 +32,7 @@ internal static class InteractionPrompt
         var x = (Raylib.GetScreenWidth() - total) / 2;
         PixelText.Draw(key, x, line.Top, line.FontSize, Key);
         var colour = !offer.IsPossible ? NotPossible
-            : offer.Tier is { } tier ? EquipmentCard.Readable(TierColours.Of(tier, (float)Raylib.GetTime()))
+            : offer.Tier is { } tier ? EquipmentCard.Readable(TierColours.Of(tier, seconds))
             : Text;
         PixelText.Draw(offer.Text, x + keyWidth, line.Top, line.FontSize, colour);
     }
