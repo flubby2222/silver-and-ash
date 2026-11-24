@@ -14,6 +14,15 @@ public class ExperienceTests
         Bat = Balance.Default.Bat with { MaxHealth = 1 },
     };
 
+    /// <summary>
+    /// A round level curve of its own (issue #586): 10 for the first level, then half as much again each time -
+    /// 10, 15, 22.5 -> 23, 33.75 -> 34. Half points round up (22.5 -> 23, not to the even 22).
+    /// </summary>
+    private static readonly Balance Curve = Balance.Default with
+    {
+        Experience = new ExperienceBalance { FirstLevel = 10, Growth = 1.5f },
+    };
+
     [Fact]
     public void A_new_player_is_level_zero_without_experience()
     {
@@ -28,11 +37,10 @@ public class ExperienceTests
     public void The_first_threshold_leads_to_level_one_with_one_skill_point_and_the_thresholds_stay()
     {
         // Issue #391: counting starts at 0, but every threshold and skill point stays where it was.
-        var experience = Balance.Default.Experience;
-        var player = new Player(LevelParser.Parse("P"));
+        var player = new Player(LevelParser.Parse("P"), balance: Curve);
         var events = new List<GameEvent>();
 
-        player.AddExperience(experience.FirstLevel - 1, events);
+        player.AddExperience(9, events);
         Assert.Equal(0, player.Level);
         Assert.Equal(0, player.PendingBoons);
 
@@ -41,9 +49,7 @@ public class ExperienceTests
         Assert.Equal(1, player.PendingBoons);
         Assert.Equal(new LevelUp(player.Id, 1), Assert.Single(events.OfType<LevelUp>()));
         Assert.Equal(0, player.Experience);
-        Assert.Equal(
-            (int)MathF.Round(experience.FirstLevel * experience.Growth, MidpointRounding.AwayFromZero),
-            player.ExperienceToNextLevel);
+        Assert.Equal(15, player.ExperienceToNextLevel);     // 10 x 1.5
     }
 
     [Fact]
@@ -88,11 +94,17 @@ public class ExperienceTests
     [Fact]
     public void A_hit_that_does_not_kill_gives_nothing()
     {
-        var world = new GameWorld(LevelParser.Parse("P\n.\nG"));     // standard ghoul: 80 health, a shot does 35
+        // A ghoul of its own (issue #586): 100 health, a shot does 10.
+        var world = new GameWorld(LevelParser.Parse("P\n.\nG"), balance: Balance.Default with
+        {
+            Ghoul = Balance.Default.Ghoul with { MaxHealth = 100 },
+            Pistol = Balance.Default.Pistol with { Damage = 10 },
+        });
         var ghoul = world.Ghouls[0];
 
         Shoot(world, ghoul.Position + new Vector3(0f, 0.3f, 0f));
 
+        Assert.Equal(90, ghoul.Health);
         Assert.False(ghoul.IsDead);
         Assert.Equal(0, world.Player.Experience);
     }
@@ -102,7 +114,8 @@ public class ExperienceTests
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\nG"));
 
-        world.Ghouls[0].TakeDamage(10_000, []);
+        world.Ghouls[0].TakeDamage(Balance.Default.Ghoul.MaxHealth, []);
+        Assert.True(world.Ghouls[0].IsDead);
         world.Tick(PlayerInput.None);
 
         Assert.Equal(0, world.Player.Experience);
@@ -126,55 +139,55 @@ public class ExperienceTests
     }
 
     [Fact]
-    public void Each_level_needs_a_quarter_more_than_the_last()
+    public void Each_level_needs_growth_times_the_last_rounded()
     {
-        // 100, 125, 156.25 -> 156, 195.3 -> 195: every level x 1.25, rounded.
-        var player = new Player(LevelParser.Parse("P"));
+        // 10, 15, 22.5 -> 23, 33.75 -> 34: every level x 1.5, rounded.
+        var player = new Player(LevelParser.Parse("P"), balance: Curve);
 
-        player.AddExperience(100, []);
+        player.AddExperience(10, []);
         Assert.Equal(1, player.Level);
-        Assert.Equal(125, player.ExperienceToNextLevel);
+        Assert.Equal(15, player.ExperienceToNextLevel);
 
-        player.AddExperience(125, []);
+        player.AddExperience(15, []);
         Assert.Equal(2, player.Level);
-        Assert.Equal(156, player.ExperienceToNextLevel);
+        Assert.Equal(23, player.ExperienceToNextLevel);
 
-        player.AddExperience(156, []);
+        player.AddExperience(23, []);
         Assert.Equal(3, player.Level);
-        Assert.Equal(195, player.ExperienceToNextLevel);
+        Assert.Equal(34, player.ExperienceToNextLevel);
     }
 
     [Fact]
     public void What_is_left_over_counts_towards_the_next_level()
     {
-        var player = new Player(LevelParser.Parse("P"));
+        var player = new Player(LevelParser.Parse("P"), balance: Curve);
 
-        player.AddExperience(130, []);
+        player.AddExperience(13, []);
 
         Assert.Equal(1, player.Level);
-        Assert.Equal(30, player.Experience);
+        Assert.Equal(3, player.Experience);
     }
 
     [Fact]
     public void Enough_experience_for_two_levels_gives_both()
     {
-        var player = new Player(LevelParser.Parse("P"));
+        var player = new Player(LevelParser.Parse("P"), balance: Curve);
         var events = new List<GameEvent>();
 
-        player.AddExperience(235, events);      // 100 + 125, 10 left
+        player.AddExperience(27, events);       // 10 + 15, 2 left
 
         Assert.Equal(2, player.Level);
-        Assert.Equal(10, player.Experience);
+        Assert.Equal(2, player.Experience);
         Assert.Equal([new LevelUp(player.Id, 1), new LevelUp(player.Id, 2)], events.OfType<LevelUp>());
     }
 
     [Fact]
     public void Just_below_the_threshold_is_not_enough()
     {
-        var player = new Player(LevelParser.Parse("P"));
+        var player = new Player(LevelParser.Parse("P"), balance: Curve);
         var events = new List<GameEvent>();
 
-        player.AddExperience(99, events);
+        player.AddExperience(9, events);
 
         Assert.Equal(0, player.Level);
         Assert.DoesNotContain(events, e => e is LevelUp);
@@ -197,10 +210,10 @@ public class ExperienceTests
     [Fact]
     public void The_dead_gain_nothing()
     {
-        var player = new Player(LevelParser.Parse("P"));
+        var player = new Player(LevelParser.Parse("P"), balance: Curve);
         player.TakeDamage(player.MaxHealth, []);
 
-        player.AddExperience(500, []);
+        player.AddExperience(50, []);           // alive, that would be three levels
 
         Assert.Equal(0, player.Level);
         Assert.Equal(0, player.Experience);
@@ -209,8 +222,9 @@ public class ExperienceTests
     [Fact]
     public void A_restart_begins_at_level_zero_again()
     {
-        var world = new GameWorld(LevelParser.Parse("P"));
-        world.Player.AddExperience(300, []);
+        var world = new GameWorld(LevelParser.Parse("P"), balance: Curve);
+        world.Player.AddExperience(30, []);     // 10 + 15, 5 left
+        Assert.Equal(2, world.Player.Level);
 
         var restarted = world.Restarted();
 
