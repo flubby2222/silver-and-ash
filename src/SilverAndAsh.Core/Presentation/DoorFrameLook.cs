@@ -35,7 +35,7 @@ public static class DoorFrameLook
     /// How many cells side by side the model and frame of <paramref name="kind"/> fill: two for the boss portal (issue
     /// #568, as wide as the boss door of issue #566), one for every other kind.
     /// </summary>
-    public static int CellsWide(DoorKind kind) => kind == DoorKind.Boss ? 2 : 1;
+    public static int CellsWide(DoorKind kind) => kind == DoorKind.Boss ? BossPortalShape.CellsWide : 1;
 
     /// <summary>
     /// Whether the model of <paramref name="kind"/> fits a door of <paramref name="cells"/> cells: only a door exactly as
