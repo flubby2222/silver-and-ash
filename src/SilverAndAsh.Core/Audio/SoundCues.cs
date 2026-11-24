@@ -172,6 +172,20 @@ public enum SoundKind
     /// that broke it.
     /// </summary>
     ColumnBroke,
+
+    /// <summary>
+    /// The boss door swings shut (issue #569): heavy rumbling through the run-up, then the slam - 78 ticks after the
+    /// sound begins, where the leaves hit their stop (<see cref="DoorsBalance.BossShutTick"/>) - and a long echo.
+    /// Take 2 of round 2 of the listening test of issue #549.
+    /// </summary>
+    BossDoorClosing,
+
+    /// <summary>
+    /// The boss door swings open (issue #569): stone grinding over fine rubble for its 132 ticks of opening, without a
+    /// stop. Take 1 of round 2 of the listening test of issue #549. Plays instead of the creak of an ordinary door
+    /// (<see cref="DoorOpened"/>) when a player opens the boss door.
+    /// </summary>
+    BossDoorOpening,
 }
 
 /// <summary>
@@ -320,7 +334,8 @@ public static class SoundBoard
     /// (issue #297); Gorm's steps, a warning of its own for each of his three attacks, the hammer's impact, the chain,
     /// the throw and the hook's hit, a hit on his body or head, his roar and his death (issue #298); taking equipment,
     /// a Vampiric piece with a sound of its own (issue #317); a skill point from a level up (issue #375); the events
-    /// of <see cref="KindsByEventType"/> - a blow on a column by its stage and the column's break (issue #605).
+    /// of <see cref="KindsByEventType"/> - a blow on a column by its stage and the column's break (issue #605), the boss
+    /// door swinging shut or open (issue #569).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -384,7 +399,24 @@ public static class SoundBoard
         {
             [typeof(ColumnHit)] = gameEvent => ColumnHitKind((ColumnHit)gameEvent),
             [typeof(ColumnBroke)] = _ => SoundKind.ColumnBroke,
+            [typeof(DoorSwingStarted)] = gameEvent =>
+                ((DoorSwingStarted)gameEvent).Closing ? SoundKind.BossDoorClosing : SoundKind.BossDoorOpening,
         }.ToImmutableDictionary();
+
+    /// <summary>
+    /// Whether <paramref name="gameEvent"/> stays silent because another event of the same tick (<paramref name="tick"/>)
+    /// plays the sound of the same thing in <paramref name="pack"/>: a player opening the boss door raises both
+    /// <see cref="DoorOpened"/> and <see cref="DoorSwingStarted"/> - only the boss door's grinding plays, not the creak of
+    /// an ordinary door on top (issue #569). Without a file for the grinding in the pack, the creak plays as before.
+    /// </summary>
+    public static bool IsReplacedIn(GameEvent gameEvent, IReadOnlyList<GameEvent> tick, SoundPack pack)
+    {
+        ArgumentNullException.ThrowIfNull(tick);
+        ArgumentNullException.ThrowIfNull(pack);
+        return gameEvent is DoorOpened opened
+            && !pack.Variants(SoundKind.BossDoorOpening).IsEmpty
+            && tick.Any(other => other is DoorSwingStarted { Closing: false } swing && swing.DoorId == opened.DoorId);
+    }
 
     /// <summary>
     /// The sound of a blow on a column (issue #605), by the stage it leaves the column in (<see cref="ColumnBreakLook.StageOf"/>,
@@ -412,6 +444,8 @@ public static class SoundBoard
 /// miss; both together would smear into one.</item>
 /// <item>A creature's own hit sound (<see cref="SoundBoard.OwnHitKinds"/>, e.g. a bat's or Gorm's) replaces the
 /// blade's hit of the same tick (issues #297, #298).</item>
+/// <item>The boss door's grinding replaces the creak of an ordinary door of the same tick (<see cref="SoundBoard.IsReplacedIn"/>,
+/// issue #569).</item>
 /// <item>Of several files it picks one at random, never the one it picked last time from that set.</item>
 /// <item>A wing beat plays only near the listener (<see cref="SoundBoard.IsInEarshot"/>) and not sooner than
 /// <see cref="SoundBoard.MinimumGap"/> after the last one, from whichever bat (issue #297). For that it counts the
@@ -475,9 +509,10 @@ public sealed class SoundCues
         _tick++;
         var mixes = new Dictionary<SoundKind, SoundMix>();
         var kinds = new List<SoundKind>();
-        foreach (var gameEvent in events)
+        var tick = events.ToList();
+        foreach (var gameEvent in tick)
         {
-            if (SoundBoard.KindFor(gameEvent) is not { } kind)
+            if (SoundBoard.KindFor(gameEvent) is not { } kind || SoundBoard.IsReplacedIn(gameEvent, tick, pack))
             {
                 continue;
             }

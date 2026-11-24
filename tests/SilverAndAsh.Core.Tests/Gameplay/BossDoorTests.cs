@@ -20,18 +20,18 @@ public class BossDoorTests
     private const string Map =
         "#.P..#\n##..##\n#....#\n#....#\n#....#\n#....#\n#....#\n#....#\n#....#\n#...G#\n###.##\n#....#";
 
-    private const int BossDoor = 0;
+    internal const int BossDoor = 0;
     private const int BackDoor = 1;
 
     private static readonly DoorsBalance Doors = Balance.Default.Doors;
     private static readonly int OpenTicks = SimulationClock.SecondsToTicks(Doors.BossOpenTime);
     private static readonly PlayerInput Back = new(new Vector2(0f, -1f), Vector2.Zero, false);
-    private static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
+    internal static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
 
     private static List<(int X, int Z)> Rows(int from, int to) =>
         Enumerable.Range(from, to - from + 1).SelectMany(z => new[] { (1, z), (2, z), (3, z), (4, z) }).ToList();
 
-    private static GameWorld World(string map = Map, IReadOnlyList<(int X, int Z)>? moreCells = null)
+    internal static GameWorld World(string map = Map, IReadOnlyList<(int X, int Z)>? moreCells = null)
     {
         PlacedRoom[] rooms =
         [
@@ -62,7 +62,7 @@ public class BossDoorTests
     // Issue #598: the stone jambs of the portal leave a passage only as wide as its opening (2 m at the door plane); the
     // player starts at a cell middle a metre beside its middle. Forward (+Z) and towards the middle of the opening, as a
     // player aims for a door - in the player's own view (Move.X goes to the view's right).
-    private static PlayerInput IntoTheOpening(GameWorld world)
+    internal static PlayerInput IntoTheOpening(GameWorld world)
     {
         var door = world.Doors[BossDoor];
         var aside = Math.Clamp(((door.BoxMin.X + door.BoxMax.X) / 2f - world.Player.Position.X) * 2f, -1f, 1f);
@@ -94,7 +94,7 @@ public class BossDoorTests
         return events;
     }
 
-    private static void KillEverything(GameWorld world)
+    internal static void KillEverything(GameWorld world)
     {
         foreach (var target in world.Targets.ToList())
         {

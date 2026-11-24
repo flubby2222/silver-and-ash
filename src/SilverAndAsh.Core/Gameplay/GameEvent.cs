@@ -230,7 +230,8 @@ public sealed record GrateStarted(int DoorId, bool Falling) : GameEvent;
 /// <summary>
 /// The boss door <paramref name="DoorId"/> starts to swing (issue #566): shut when <paramref name="Closing"/> (its boss
 /// room sealed), else open (a player opened it, or the boss room was cleared). One event per door, however many cells
-/// it fills; <see cref="GameEvent.Place"/> is the middle of the doorway. No sound yet (issue #569).
+/// it fills; <see cref="GameEvent.Place"/> is the middle of the doorway. Heard from there (issue #569): rumbling with the
+/// slam at the hard stop when closing, grinding over rubble when opening.
 /// </summary>
 public sealed record DoorSwingStarted(int DoorId, bool Closing) : GameEvent;
 
