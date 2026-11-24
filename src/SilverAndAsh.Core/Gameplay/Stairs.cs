@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
 
@@ -12,8 +13,11 @@ public sealed class Stairs : IInteractable
     /// <summary>Radius of the staircase (its steps around the pole), in metres.</summary>
     public const float Radius = 1.2f;
 
-    /// <summary>Height of the staircase, in metres.</summary>
-    public const float Height = 4f;
+    /// <summary>
+    /// Height of the staircase, in metres: the ceiling of the boss room it stands in (issue #723), so it leads up to the
+    /// next level and does not stand in the middle of the room. The model (tools/models/stairs.py) is built to it.
+    /// </summary>
+    public const float Height = RoomTemplate.RoomCeilingHeight;
 
     private readonly int _riseTicks;
     private int _risenTicks;

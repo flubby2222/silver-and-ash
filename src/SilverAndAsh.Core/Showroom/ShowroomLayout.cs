@@ -740,7 +740,7 @@ public sealed class ShowroomLayout
     private static float SetStairs(ref Vector3? stairs, Vector3 position)
     {
         stairs = position;
-        return Stairs.Height + 0.4f;
+        return Stairs.Height - 0.4f;                                        // the staircase reaches the ceiling: its label hangs just under it
     }
 
     private static float AddSkeleton(List<ExhibitCrossbowSkeleton> skeletons, ExhibitCrossbowSkeleton skeleton)
