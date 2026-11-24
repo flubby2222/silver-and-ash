@@ -120,6 +120,123 @@ public class DoorFrameLookTests
         }
     }
 
+    // The arch of the innermost run: circles of 1.4375 m around (+-0.5625, 2) (door.py, stufenportal: R0 1.5625 less the run's
+    // width 0.125; the springing at 2 m). The right half of the arch is a piece of the circle around the LEFT centre.
+    private const float ArchRadius = 1.4375f;
+    private const float ArchCentreX = 0.5625f;
+    private const float Springing = 2f;
+
+    public static TheoryData<DoorKind, TextureVariant> NormalAndLocked()
+    {
+        var data = new TheoryData<DoorKind, TextureVariant>();
+        foreach (var kind in new[] { DoorKind.Normal, DoorKind.Locked })
+        {
+            foreach (var variant in new[] { TextureVariant.A, TextureVariant.B, TextureVariant.C })
+            {
+                data.Add(kind, variant);
+            }
+        }
+
+        return data;
+    }
+
+    private static IEnumerable<Vector3[]> TrianglesOf(string file, string part)
+    {
+        var (_, pivot, corners, indices) = WeaponPoseTests.Triangles(file).Single(p => p.Name == part);
+        for (var first = 0; first < indices.Length; first += 3)
+        {
+            yield return [corners[indices[first]] + pivot, corners[indices[first + 1]] + pivot, corners[indices[first + 2]] + pivot];
+        }
+    }
+
+    private static Vector2 CentreOf(Vector3 point) => new(point.X > 0 ? -ArchCentreX : ArchCentreX, Springing);
+
+    [Theory]
+    [MemberData(nameof(NormalAndLocked))]
+    public void The_underside_strip_lies_on_the_innermost_run_and_faces_down_into_the_opening(DoorKind kind, TextureVariant variant)
+    {
+        // Issue #714, review: the strip must close the gap of the innermost run (radius 1.4375), not the outer one of the
+        // frame (1.5625), and it must face the middle of the arch - seen from below. A strip facing up is invisible from
+        // below and leaves the dark stripe as it was.
+        var file = DoorFrameLook.FileName(kind, variant);
+        foreach (var part in new[] { DoorFrameLook.Front, DoorFrameLook.Back })
+        {
+            var strip = TrianglesOf(file, part)
+                .Where(triangle => triangle.All(corner => corner.Y > Springing - Tolerance && MathF.Abs(corner.Z) < 0.07f + Tolerance))
+                .ToList();
+            Assert.True(strip.Count >= 24, $"{part} of the {kind} frame has only {strip.Count} strip triangles under the arch.");
+            foreach (var triangle in strip)
+            {
+                foreach (var corner in triangle)
+                {
+                    var radius = Vector2.Distance(new Vector2(corner.X, corner.Y), CentreOf(corner));
+                    // The arch is a polygon of 6 chords per half: the corners lie on the circle, a point cut into a chord (at
+                    // y = 3) up to 0.01 m inside it (sagitta of a 12 degree chord).
+                    Assert.True(radius is > ArchRadius - 0.01f and < ArchRadius + 0.001f, $"A strip corner of the {part} at {corner} has radius {radius}, not {ArchRadius}.");
+                }
+
+                var middle = (triangle[0] + triangle[1] + triangle[2]) / 3f;
+                var normal = Vector3.Cross(triangle[1] - triangle[0], triangle[2] - triangle[0]);
+                var toCentre = new Vector3(CentreOf(middle) - new Vector2(middle.X, middle.Y), 0f);
+                Assert.True(Vector3.Dot(normal, toCentre) > 0f, $"A strip triangle of the {part} faces away from the middle of the arch.");
+            }
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(NormalAndLocked))]
+    public void No_face_of_the_guide_ring_lies_on_a_face_of_the_frame(DoorKind kind, TextureVariant variant)
+    {
+        // Issue #714, review: a door with a portcullis (Door.HasGrate) draws the frame AND the guide ring of
+        // portcullis_guide_<v>.glb at the same place. Two faces on the same plane, facing the same way, flicker against each
+        // other (z-fighting) under the arch. Samples inside every ring triangle must not lie inside a frame triangle of the
+        // same plane and direction.
+        var ring = TrianglesOf(GratePose.GuideFileName(variant), GratePose.Guide).ToList();
+        var frame = new List<Vector3[]>();
+        foreach (var part in new[] { DoorFrameLook.Front, DoorFrameLook.Back })
+        {
+            frame.AddRange(TrianglesOf(DoorFrameLook.FileName(kind, variant), part));
+        }
+
+        Assert.NotEmpty(ring);
+        Assert.NotEmpty(frame);
+        var weights = new[] { (1 / 3f, 1 / 3f), (0.6f, 0.2f), (0.2f, 0.6f), (0.2f, 0.2f) };
+        foreach (var a in ring)
+        {
+            var normalA = Vector3.Normalize(Vector3.Cross(a[1] - a[0], a[2] - a[0]));
+            foreach (var b in frame)
+            {
+                var normalB = Vector3.Normalize(Vector3.Cross(b[1] - b[0], b[2] - b[0]));
+                if (Vector3.Dot(normalA, normalB) < 0.99f || MathF.Abs(Vector3.Dot(normalA, b[0] - a[0])) > 0.001f)
+                {
+                    continue;
+                }
+
+                foreach (var (u, v) in weights)
+                {
+                    var sample = (a[0] * u) + (a[1] * v) + (a[2] * (1 - u - v));
+                    Assert.False(
+                        InsideTriangle(sample, b, normalB),
+                        $"A face of the guide ring lies on a face of the {kind} frame near {sample}: the two flicker (z-fighting).");
+                }
+            }
+        }
+    }
+
+    private static bool InsideTriangle(Vector3 point, Vector3[] triangle, Vector3 normal)
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            var edge = triangle[(i + 1) % 3] - triangle[i];
+            if (Vector3.Dot(Vector3.Cross(edge, point - triangle[i]), normal) < -Tolerance)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     [Fact]
     public void The_boss_portal_spans_both_cells_of_the_boss_door_and_reaches_the_ceiling_of_its_rooms()
     {

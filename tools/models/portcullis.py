@@ -18,8 +18,8 @@ Ganzes in y verschoben (y = Unterkante der Spitzen ueber dem Boden); der Ring bl
 Dateien:
   portcullis.glb / .png          ein Knoten grate: 9 Vierkantstaebe 0,07 mit Pyramidenspitze, drei Querbaender und der
                                  obere Abschluss; 1,70 breit, 3,50 hoch. Atlas 64 x 64 (Stab links, Band rechts), nur K2.
-  portcullis_guide_<v>.glb / .png  ein Knoten guide: Spitzbogenring 1/8 breit wie der innerste Lauf des Rahmens, so tief
-                                 wie die Tuerebene; Atlas ist die Wandkachel der Variante v (a, b, c) in Welt-UV.
+  portcullis_guide_<v>.glb / .png  ein Knoten guide: Spitzbogenring 1/16 breit hinter dem innersten Lauf des Rahmens (R 1,5 bis
+                                 1,5625, seit #714 im Stein hinter der Leibung), so tief wie die Tuerebene; Atlas ist die Wandkachel der Variante v (a, b, c) in Welt-UV.
 Jedes Netz rundum geschlossen. Zwei Laeufe liefern gleiche Dateien (die Fleckung nutzt einen festen Seed). Aendert sich
 eine Wand-Textur, passt der Ring nicht mehr zur Wand; ein Test vergleicht portcullis_sources.sha256 mit
 assets/textures/textures.sha256 und schlaegt fehl, bis dieses Skript neu gelaufen ist.
@@ -50,8 +50,12 @@ BAND_Z = 0.05                # halbe Tiefe (Stab: 0,035) - das Band umfasst die 
 RAIL = (3.38, 3.50)          # oberer Abschluss, liegt im Zustand "zu" hinter dem Bogenscheitel (3,32)
 HALF_WIDTH, BARS = 0.85, 9   # Form "breit"
 
-# Ring (Kreismittelpunkt x, R innen, R aussen, Ansatz, halbe Tiefe) nach tools/models/door.py (stufenportal, innerster Lauf)
-RING = (1.0 - 1.5625, 1.4375, 1.5625, 2.0, 0.07)
+# Ring (Kreismittelpunkt x, R innen, R aussen, Ansatz, halbe Tiefe) nach tools/models/door.py (stufenportal, innerster Lauf).
+# Seit Issue #714 schliesst der Rahmen den Bogen selbst: Seine Leibung (innerster Lauf, R 1,4375) reicht von der Wandebene bis
+# zur Tuerebene und ueber sie hinweg bis z = +-0,07 und zurueck. Der Ring lag mit seiner Innenflaeche bei demselben R auf
+# derselben Stelle (zwei gleich ausgerichtete Flaechen = Z-Fighting). Er sitzt jetzt 1/16 weiter aussen (R innen 1,5) im Stein
+# hinter der Leibung: rundum geschlossen, nichts mehr deckungsgleich, im Bild von der Leibung verdeckt.
+RING = (1.0 - 1.5625, 1.5, 1.5625, 2.0, 0.07)
 
 # --- Atlas -----------------------------------------------------------------------------------------------------------
 G_SIZE = (64, 64)
@@ -159,7 +163,7 @@ def face(part, pts, hint):
 
 def build_guide():
     """Bogenring (Spitzbogen aus zwei Kreisen wie der innerste Lauf des Rahmens), 1/8 breit, so tief wie die Tuerebene
-    (z = +-hz). Innenflaeche setzt die Leibung des Rahmens ueber die Tuerebene fort; rundum geschlossen."""
+    (z = +-hz). Seit #714 ohne Flaeche auf der Leibung des Rahmens: Der Ring liegt hinter ihr im Stein; rundum geschlossen."""
     xc, r_in, r_out, spring, hz = RING
     part = Part("guide", (0.0, 0.0, 0.0), F_UV)
     ri, ro = arc_pts(xc, r_in, spring), arc_pts(xc, r_out, spring)
