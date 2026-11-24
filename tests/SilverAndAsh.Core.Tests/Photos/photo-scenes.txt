@@ -50,8 +50,8 @@ boss-portal-back-6m | ticks 1 menu None ----- | The boss portal from inside the 
 boss-portal-back-6m-open | ticks 1 menu None ----- | The boss portal from inside the boss room, 6 m away, open, in the tick the room seals and the slam begins (issue #568).
 boss-portal-barred | ticks 100 menu None ----S | The boss portal from inside the boss room, 6 m away, slammed shut and barred: no placeholder bars (issue #568).
 boss-portal-gorm | ticks 1 menu None ----- | The open boss portal from the antechamber, 8 m away, Gorm asleep 2 m behind it: the size (issue #568).
-door-normal-open-below | ticks 600 menu None ----S | The arch of an open wooden double door seen from below, standing 0.5 m before its plane, looking up at its underside (issue #730).
-door-barred-open-below | ticks 600 menu None ----S | The arch of an open wooden double door with a portcullis hanging up, seen from below, standing 0.5 m before its plane (issue #730).
+door-normal-open-below | ticks 600 menu None ----S | The arch of a wooden double door, leaves half open, seen from 1.5 m before its plane, looking up at the arch springer (issues #730, #722).
+door-barred-open-below | ticks 600 menu None ----S | The arch of a wooden double door with a portcullis hanging up, leaves half open, seen from 1.5 m before its plane, looking up at the arch springer: the guide ring shows there (issues #730, #722).
 door-level-barred | ticks 600 menu None ----S | An open door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #558).
 door-level-barred-shut | ticks 600 menu None ----S | A closed door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #572).
 ghoul-4m | ticks 1 menu None ----- | A ghoul 4 m away in a bare hall.
@@ -185,10 +185,10 @@ equipment-royal | ticks 1 menu None ----- | Hunter's Eye (Royal) lying in the sh
 equipment-vampiric | ticks 1 menu None ----- | Leech (Vampiric) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
 equipment-taken-royal | ticks 45 menu None ---I- | Hunter's Eye (Royal) just taken with F: its card on the left, framed in gold (issue #317).
 equipment-taken-vampiric | ticks 15 menu None ---I- | The Leech (Vampiric) just taken with F: its card and the short blood-red glow from the edges (issue #317).
-course-1-arms | ticks 1 menu None ----- | Station 1 of the test course from its south-east corner back to its sign: the weapons along the north wall, the start teleporter on the way (issue #718).
-course-2-columns | ticks 1 menu None ----- | Station 2 of the test course from just inside its entrance: two columns either side of the way, silver beside one, a ghoul beyond (issue #718).
-course-3-cracked-wall | ticks 1 menu None ----- | Station 3 of the test course from its south-east corner: the cracked wall in the middle of its north wall (issue #718).
-course-4-portcullis | ticks 65 menu None ----- | Station 4 of the test course, sealed: from inside the arena back at the fallen grate, the ghoul and the bat coming out by the column (issue #718).
-course-5-teleporter | ticks 1 menu None ----- | Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, Sirius' Relief beside the way (issue #718).
-course-6-boss | ticks 1 menu None ----- | Station 6 of the test course from its north-east corner: the antechamber, silver and a blood vial before the boss portal (issue #718).
-course-boss-stairs | ticks 600 menu None ----S | The boss room of the test course after the victory: Gorm dead, the spiral staircase risen in its middle and its lamp lit, from 6 m towards the portal, up to under the 6 m ceiling (issue #727).
+course-1-arms | ticks 215 menu None ----- | Station 1 of the test course from its south-east corner: the five weapons along the north wall, the items on the south wall, the start teleporter on the way and the sign (issues #718, #722).
+course-2-columns | ticks 1 menu None ----- | Station 2 of the test course from its far corner back to its sign: two columns either side of the way, silver beside one, a ghoul beyond (issues #718, #722).
+course-3-cracked-wall | ticks 1 menu None ----- | Station 3 of the test course from 5 m: the cracked wall in the middle of its north wall and the sign over the first cell (issues #718, #722).
+course-4-portcullis | ticks 215 menu None ----- | Station 4 of the test course, sealed: from inside the arena back at the fallen grate and its sign, the bat circling by the column; the player is hurt by then, the enemies attack while the level's name fades (issues #718, #722).
+course-5-teleporter | ticks 215 menu None ----- | Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, Sirius' Relief beside the way (issue #718).
+course-6-boss | ticks 215 menu None ----- | Station 6 of the test course from its north-east corner: the antechamber, silver and a blood vial before the boss portal (issue #718).
+course-boss-stairs | ticks 600 menu None ----S | The boss room of the test course after the victory: Gorm dead, the spiral staircase risen in its middle and its lamp lit, from 6 m towards the portal, up to under the 6 m ceiling, the level's name faded (issues #727, #722).
