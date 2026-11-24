@@ -4,6 +4,7 @@ using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Presentation;
 
@@ -16,9 +17,6 @@ public class ColumnFallInTheBossRoomTests
 {
     private static readonly int Second = SimulationClock.TicksPerSecond;
     private static readonly IReadOnlyList<RoomTemplate> Templates = RoomTemplateParser.LoadAll(RepositoryFiles.Find("assets/rooms"));
-
-    /// <summary>A player who survives a lot - to let Gorm strike until a column breaks.</summary>
-    private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
 
     public static TheoryData<int> Seeds => new(Enumerable.Range(1, 6));
 

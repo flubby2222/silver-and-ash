@@ -10,7 +10,7 @@ namespace SilverAndAsh.Core.Tests;
 /// Helpers that many test classes share: driving the simulation tick by tick and measuring on the floor plane.
 /// Use them with <c>using static SilverAndAsh.Core.Tests.TestKit;</c> instead of a private copy per class (#697).
 /// </summary>
-internal static class TestKit
+internal static partial class TestKit
 {
     /// <summary>
     /// Ticks the world <paramref name="ticks"/> times with the same input every tick, or fewer if

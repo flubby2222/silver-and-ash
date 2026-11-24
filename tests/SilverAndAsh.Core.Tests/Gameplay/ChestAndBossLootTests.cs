@@ -89,16 +89,9 @@ public class ChestAndBossLootTests
         int seed, Balance? balance = null, int gormRow = 10, string below = "", Column[]? columns = null, int gormColumn = 3,
         Func<(int X, int Z), bool>? inHall = null, Func<Level, Level>? reshape = null)
     {
-        var hall = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).Where(inHall ?? (_ => true)).ToList();
-        PlacedRoom[] rooms =
-        [
-            new(0, RoomKind.Start, "start", 0, 0, 7, 1, 0, [(2, 0), (3, 0), (4, 0)], [], []),
-            new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, hall, [], []),
-        ];
-        LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
         var level = LevelParser.Parse(BossMap(gormRow, below, gormColumn)).WithColumns(columns ?? []);
         level = reshape?.Invoke(level) ?? level;
-        return new GameWorld(level, seed, balance ?? NoOtherLoot, doors, rooms);
+        return GormHallWorld(level, seed, balance ?? NoOtherLoot, inHall);
     }
 
     /// <summary>Turns the player's view (through the mouse, as in the game) to look at <paramref name="point"/>.</summary>

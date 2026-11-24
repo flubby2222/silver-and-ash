@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -16,9 +17,6 @@ public class BossRoomCoverTests
     private static readonly int Second = SimulationClock.TicksPerSecond;
     private static readonly int HitsToBreak = Balance.Default.Columns.HitsToBreak;
     private static readonly IReadOnlyList<RoomTemplate> Templates = RoomTemplateParser.LoadAll(RepositoryFiles.Find("assets/rooms"));
-
-    /// <summary>A player who survives a lot - to watch many attacks in a row.</summary>
-    private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
 
     private static readonly Balance NoAttacks = Tough with { Gorm = Tough.Gorm with { NearRange = 0f, FarRange = 0f } };
 
