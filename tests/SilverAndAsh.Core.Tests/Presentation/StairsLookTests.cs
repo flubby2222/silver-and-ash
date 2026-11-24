@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Presentation;
 
@@ -145,15 +146,8 @@ public class StairsLookTests
     public void The_stairs_rise_in_the_cell_the_look_is_worked_out_for()
     {
         // The same small boss fight as in GormTests: a boss room 5 wide in rows 2-11, Gorm in row 10.
-        const string map = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
         var bossCells = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
-        PlacedRoom[] rooms =
-        [
-            new(0, RoomKind.Start, "start", 0, 0, 7, 1, 0, [(2, 0), (3, 0), (4, 0)], [], []),
-            new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, bossCells, [], []),
-        ];
-        LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
-        var world = new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+        var world = GormHallWorld();
         world.Tick(PlayerInput.None with { Interact = true });
         for (var tick = 0; tick < 3 * SimulationClock.TicksPerSecond && !world.Rooms[1].IsSealed; tick++)
         {

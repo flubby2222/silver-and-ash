@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -16,16 +17,13 @@ public class GormCoverTests
     private static readonly int Second = SimulationClock.TicksPerSecond;
     private static readonly int HitsToBreak = Balance.Default.Columns.HitsToBreak;
 
-    /// <summary>A player who survives a lot - to watch many attacks in a row.</summary>
-    internal static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
-
     /// <summary>
     /// Issue #634: the tests with a chain swing run with every value of <see cref="ColumnsBalance.HitsToBreak"/> they
     /// may meet - the one of <see cref="Balance.Default"/>, and 1 (a column that breaks at its first blow).
     /// </summary>
     private static readonly int[] HitsToBreakCases = new[] { HitsToBreak, 1 }.Distinct().ToArray();
 
-    /// <summary><see cref="Tough"/>, its columns breaking after <paramref name="hitsToBreak"/> blows.</summary>
+    /// <summary><see cref="TestKit.Tough"/>, its columns breaking after <paramref name="hitsToBreak"/> blows.</summary>
     private static Balance Breaking(int hitsToBreak) => Tough with { Columns = Tough.Columns with { HitsToBreak = hitsToBreak } };
 
     public static TheoryData<int> EachHitsToBreak()
@@ -501,15 +499,12 @@ public class GormCoverTests
 
     // ---- In the world: the broken column leaves the level ------------------------------------------------------------
 
-    // As in ColumnEnemyTests: room 0 (start) in row 0, door in row 1, the boss room (5 wide) in rows 2-11, Gorm ('T') in row 10.
-    internal const string GormMap = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
-
     [Fact]
     public void In_the_world_a_broken_column_no_longer_blocks_the_way_nor_is_built_and_a_restart_brings_it_back()
     {
         var column = Column.AtCell(3, 6);
-        var world = GormWorld(LevelParser.Parse(GormMap).WithColumns([column]));
-        Enter(world);
+        var world = GormHallWorld(LevelParser.Parse(GormHallMap).WithColumns([column]), balance: Tough);
+        EnterGormHall(world);
         var across = (From: new Vector3(column.X, 1f, column.Z - 3f), To: new Vector3(column.X, 1f, column.Z + 3f));
         Assert.False(LineOfSight.IsClear(world.Level, across.From, across.To));
         var builtBefore = world.LevelAsBuilt;
@@ -532,28 +527,5 @@ public class GormCoverTests
         Assert.Null(world.Level.ColumnAt(new Vector3(column.X, 1f, column.Z)));
         Assert.True(LineOfSight.IsClear(world.Level, across.From, across.To));
         Assert.Equal([column], world.Restarted().Level.Columns);
-    }
-
-    internal static GameWorld GormWorld(Level level)
-    {
-        var rows = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
-        PlacedRoom[] rooms =
-        [
-            new(0, RoomKind.Start, "start", 0, 0, 7, 1, 0, [(2, 0), (3, 0), (4, 0)], [], []),
-            new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, rows, [], []),
-        ];
-        LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
-        return new GameWorld(level, 1, Tough, doors, rooms);
-    }
-
-    internal static void Enter(GameWorld world)
-    {
-        world.Tick(PlayerInput.None with { Interact = true });
-        for (var tick = 0; tick < 3 * Second && !world.Rooms[1].IsSealed; tick++)
-        {
-            world.Tick(PlayerInput.None with { Move = new Vector2(0f, 1f) });
-        }
-
-        Assert.True(world.Rooms[1].IsSealed, "The boss room never sealed - the test would prove nothing.");
     }
 }

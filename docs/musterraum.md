@@ -55,7 +55,7 @@ new WallPiece("Iron gate", DoorKind.IronGate),      // eine neue Türart: steht 
 new WeaponPiece("Crossbow (Royal)", WeaponKind.Crossbow),
 ```
 
-Der Aufbau (`ShowroomLayout.Build`) rechnet die Länge der Teile aus der Liste aus und verteilt die Stücke selbst; die Tests prüfen, dass jedes Stück vorkommt, erreichbar ist und keines auf einem anderen steht. Nur eine **neue Art** von Stück (z. B. eine Falle) braucht eine neue Unterklasse von `ShowroomPiece` und eine Zeile in `ShowroomLayout.Build`, die sie in die Welt setzt.
+Der Aufbau (`ShowroomLayout.Build`) rechnet die Länge der Teile aus der Liste aus und verteilt die Stücke selbst; die Tests prüfen, dass jedes Stück vorkommt, erreichbar ist und keines auf einem anderen steht. Nur eine **neue Art** von Stück (z. B. eine Falle) braucht eine neue Unterklasse von `ShowroomPiece` und einen Eintrag in der Tabelle `ShowroomLayout.Placers`, der sie in die Welt setzt und ihr Schild gibt (Issue #588); fehlt der Eintrag, lehnt `Build` das Stück mit seinem Namen ab. Ein neuer **Baustein** neben den Stücken (wie Wandpfeiler, Nischen oder Säulen) ist ein Eintrag in der Tabelle `ShowroomLayout.Fixtures`; deren Reihenfolge ist die Reihenfolge der Schilder und Ausstellungsstücke. Die Aufnahme [showroom-layout.txt](../tests/SilverAndAsh.Core.Tests/Showroom/showroom-layout.txt) hält alles fest, was `Build` erzeugt: Neue Zeilen für das Neue gehören in denselben Pull Request, eine geänderte Zeile von etwas anderem ist ein Warnzeichen.
 
 Einschränkung: Es gibt nur einen Gorm je Welt; ein zweiter `EnemyPiece` mit `ShowroomEnemy.Gorm` wird abgelehnt.
 

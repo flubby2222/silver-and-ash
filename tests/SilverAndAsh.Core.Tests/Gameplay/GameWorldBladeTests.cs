@@ -126,6 +126,25 @@ public class GameWorldBladeTests
         }
     }
 
+    [Fact]
+    public void A_blade_with_a_knockback_in_the_balance_pushes_a_ghoul_back_that_far()
+    {
+        // The blade pushes no one in balance.json; given a knockback of its own (not the club's), a quick swing pushes by it.
+        var blade = Balance.Default.Blade with { Knockback = 2f, ChargedKnockback = 4f };
+        var balance = Balance.Default with { Blade = blade, Ghoul = Balance.Default.Ghoul with { MaxHealth = 10_000 } };
+        var world = new GameWorld(LevelParser.Parse("P\nG\n.\n.\n.\n."), 1, balance);
+        var ghoul = world.Ghouls[0];
+
+        world.Tick(Melee);
+        var before = ghoul.Position;
+        world.Tick(PlayerInput.None);
+        Assert.True(ghoul.Knockback.IsActive, "The blade missed the ghoul - the test would prove nothing.");
+        RunTicks(world, PlayerInput.None, SimulationClock.SecondsToTicks(blade.KnockbackTime) - 1);
+
+        Assert.False(ghoul.Knockback.IsActive);
+        Assert.Equal(blade.Knockback, ghoul.Position.Z - before.Z, 0.05f);
+    }
+
     /// <summary>A quick (uncharged) swing: button pressed in one tick, let go in the next - the swing happens then.</summary>
     private static void Swing(GameWorld world)
     {
