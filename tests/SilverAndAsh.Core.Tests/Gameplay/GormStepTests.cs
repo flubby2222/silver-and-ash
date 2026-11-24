@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -16,8 +17,6 @@ public class GormStepTests
     // A long corridor without rooms: Gorm is awake from the start and walks towards the player at its other end.
     private static GameWorld Corridor(Balance balance, int length = 40) =>
         new(LevelParser.Parse("P" + new string('.', length) + "T"), 1, balance);
-
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     // Each tick: the distance he has walked so far (flat) and the number of steps in that tick.
     private static List<(float Walked, int Steps)> Walk(GameWorld world, int ticks)

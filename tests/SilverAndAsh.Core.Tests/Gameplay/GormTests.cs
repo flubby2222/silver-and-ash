@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -50,8 +51,6 @@ public class GormTests
         Assert.True(world.Rooms[1].IsSealed, "The boss room never sealed - the test would prove nothing.");
         return events;
     }
-
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     [Fact]
     public void Gorm_stands_on_his_place_with_full_health_and_his_own_number()

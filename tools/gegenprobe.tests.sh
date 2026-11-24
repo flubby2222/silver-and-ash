@@ -303,6 +303,10 @@ if grep -q tworeds probe.txt; then
     body="$(result Probe.Zeta Failed 'the message of Probe.Zeta')$body"
 fi
 mkdir -p -- "$results"
+# STANDIN_NO_TRX=1: the run ended after the limit before any result file was written (review of PR #732, issue #733).
+if [ "$hung" = 1 ] && [ "${STANDIN_NO_TRX:-0}" = 1 ]; then
+    exit 1
+fi
 printf '<TestRun><Counters total="%s" failed="%s" />%s</TestRun>\n' "$total" "$failed" "$body" > "$results/results.trx"
 # The path of the result file as dotnet writes it on Windows, with STANDIN_UNIX_PATH=1 as Git Bash writes it.
 shown="$(cygpath -w "$results" 2>/dev/null || echo "$results")"
@@ -393,7 +397,7 @@ expect 'run: fewer, no crash text, exit 4'  [ $? = 4 ]
 expect 'run: fewer, no cause section'       lacks 'The cause:'
 expect 'run: fewer, shows the end'          grep -q 'away. The end of its output:' "$work/lock-err"
 
-# --timeout (issue #712): every test run gets the limit, 60 s if none is given; 0 gives none, as before the option.
+# --timeout (issue #712): every test run gets the limit, 120 s if none is given (issue #733); 0 gives none, as before the option.
 # The stand-in writes the arguments of each run into "args", one line per run (control run and run with the change).
 run_with() { local replace="$1"; shift; ( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" "$@" probe.txt good "$replace" Probe ); }
 runs_with() { [ "$(grep -c -F -e "$1" "$work/args")" = "$2" ]; }
@@ -403,7 +407,11 @@ export STANDIN_ARGS="$work/args"
 fresh_args
 run_with broken > "$work/run-out" 2>"$work/lock-err"
 expect 'timeout: default, exit 0'           [ $? = 0 ]
-expect 'timeout: default, 60 s in each run' runs_with '--blame-hang-timeout 60s --blame-hang-dump-type none' 2
+expect 'timeout: default, 120 s in each run' runs_with '--blame-hang-timeout 120s --blame-hang-dump-type none' 2
+# The default was 60 s until issue #733: the slowest test needs about 45 s alone, so 60 s was close. The help says it.
+expect 'timeout: default, not the old 60 s' runs_with '--blame-hang-timeout 60s' 0
+help_names() { bash "$gegenprobe" --help | grep -q -F -e "$1"; }
+expect 'timeout: help names the default'    help_names '(issue #712, default 120, #733)'
 
 fresh_args
 run_with broken --timeout 5 > "$work/run-out" 2>"$work/lock-err"
@@ -420,7 +428,7 @@ expect 'timeout: 0, no limit'               runs_with '--blame-hang' 0
 fresh_args
 run_with hang > "$work/run-out" 2>"$work/lock-err"
 expect 'timeout: hang, exit 4'              [ $? = 4 ]
-expect 'timeout: hang, says so'             run_out 'TIMED OUT - a test ran longer than 60 s with the change'
+expect 'timeout: hang, says so'             run_out 'TIMED OUT - a test ran longer than 120 s with the change'
 expect 'timeout: hang, names the test'      grep -q -x '     Probe.Test' "$work/run-out"
 expect 'timeout: hang, counts the rest'     run_out '0 of 1 test(s) finished before'
 expect 'timeout: hang, not aborted'         not_in_run_out ABORTED
@@ -449,6 +457,23 @@ fresh_args
 expect 'timeout: no sequence, exit 4'       [ $? = 4 ]
 expect 'timeout: no sequence, test unknown' grep -q -x '     ?' "$work/run-out"
 
+# No result file after the limit (review of PR #732, issue #733): still timed out, not "does not compile".
+fresh_args
+( export STANDIN_NO_TRX=1; run_with hang ) > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: no trx, exit 4'            [ $? = 4 ]
+expect 'timeout: no trx, says so'           run_out 'TIMED OUT - a test ran longer than'
+expect 'timeout: no trx, names the test'    grep -q -x '     Probe.Test' "$work/run-out"
+expect 'timeout: no trx, count unknown'     run_out 'no result file was written, how many test(s) finished before is unknown'
+expect 'timeout: no trx, no build error'    lacks 'the change did not compile'
+expect 'timeout: no trx, file back'         probe_back
+expect 'timeout: no trx, lock gone'         [ ! -e "$lock_of_repo" ]
+# The control run: exit code 2 as with a result file, nothing changed.
+fresh_args
+( export STANDIN_NO_TRX=1 STANDIN_HANG=1; run_with broken ) > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: no trx control, exit 2'    [ $? = 2 ]
+expect 'timeout: no trx control, says so'   grep -q 'control run already has a test that ran longer than' "$work/lock-err"
+expect 'timeout: no trx control, one run'   [ "$(wc -l < "$work/args" | tr -d ' ')" = 1 ]
+
 # Red tests before the run was ended are named.
 fresh_args
 ( export STANDIN_TOTAL=3; run_with 'hang tworeds' ) > "$work/run-out" 2>"$work/lock-err"
@@ -460,7 +485,7 @@ expect 'timeout: hang with red, the test'   grep -q -x '     Probe.Zeta' "$work/
 fresh_args
 ( export STANDIN_HANG=1; run_with broken ) > "$work/run-out" 2>"$work/lock-err"
 expect 'timeout: control hangs, exit 2'     [ $? = 2 ]
-expect 'timeout: control hangs, says so'    grep -q 'control run already has a test that ran longer than 60 s' "$work/lock-err"
+expect 'timeout: control hangs, says so'    grep -q 'control run already has a test that ran longer than 120 s' "$work/lock-err"
 expect 'timeout: control hangs, the test'   grep -q -x '   Probe.Test' "$work/lock-err"
 expect 'timeout: control hangs, one run'    [ "$(wc -l < "$work/args" | tr -d ' ')" = 1 ]
 expect 'timeout: control hangs, file back'  probe_back
@@ -483,6 +508,24 @@ run_with broken --bot --timeout 5 > "$work/run-out" 2>"$work/lock-err"
 expect 'timeout: with --bot, exit 2'        [ $? = 2 ]
 expect 'timeout: with --bot, says so'       grep -q -e '--timeout limits a test of dotnet test - the bot run has no such limit' "$work/lock-err"
 expect 'timeout: with --bot, file back'     probe_back
+
+# An option that needs a value stands last without one (issue #733): exit code 2 with a message, not the 1 of
+# "survived"; --project and --name also with an empty value. Nothing runs.
+run_bare() { ( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" "$@" ); }
+for option in --timeout --project --name; do
+    fresh_args
+    run_bare "$option" > "$work/run-out" 2>"$work/lock-err"
+    expect "no value: $option last, exit 2"     [ $? = 2 ]
+    expect "no value: $option last, says so"    grep -q -e "gegenprobe: $option needs .* after it" "$work/lock-err"
+    expect "no value: $option last, nothing ran" [ ! -s "$work/args" ]
+done
+for option in --project --name; do
+    fresh_args
+    run_bare "$option" '' probe.txt good broken Probe > "$work/run-out" 2>"$work/lock-err"
+    expect "no value: $option empty, exit 2"    [ $? = 2 ]
+    expect "no value: $option empty, says so"   grep -q -e "gegenprobe: $option needs .* after it" "$work/lock-err"
+    expect "no value: $option empty, file back" probe_back
+done
 unset STANDIN_ARGS
 
 # A user whose folder name holds a space (issue #660): neither the Windows nor the Git Bash form of his folders may
