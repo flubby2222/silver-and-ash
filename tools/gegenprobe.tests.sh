@@ -55,5 +55,100 @@ check 'crlf stays'                 0 "$(printf 'x\r\nc\r\n')" "$(printf 'x\r\ny\
 # Counting.
 check 'count'                      0 '3'                    'a a a'           'a' '' --count
 
+# The lock (tools/gegenprobe-lock.sh, issue #639). A contender is a run of its own: it takes the lock, writes its
+# number into "won", holds the lock <hold> seconds and lets it go. Its exit code is the one of lock_take.
+lockfile="$(cd "$(dirname "$0")" && pwd)/gegenprobe-lock.sh"
+contender() {
+    local hold="$1" pause="$2"
+    GEGENPROBE_TEST_PAUSE_BEFORE_TAKEOVER="$pause" bash -c '
+        . "$1" || exit 9
+        lock_take "$2" || exit $?
+        echo $$ >> "$3"
+        sleep "$4"
+        lock_release' contender "$lockfile" "$work/lock" "$work/won" "$hold" 2>>"$work/lock-err"
+}
+
+# A process number nobody has any more: a run that has ended.
+bash -c 'exit 0' &
+dead=$!
+wait "$dead"
+
+# expect <name> <condition...>: one passed or failed case.
+expect() {
+    local name="$1"
+    shift
+    if "$@"; then
+        passed=$((passed + 1))
+    else
+        failed=$((failed + 1))
+        echo "FAIL $name"
+        sed 's/^/   stderr: /' "$work/lock-err" 2>/dev/null
+    fi
+}
+fresh_lock() {
+    rm -rf -- "$work/lock" "$work/lock".* "$work/won" "$work/lock-err"
+    : > "$work/won"
+    : > "$work/lock-err"
+}
+winners() { [ "$(wc -l < "$work/won" | tr -d ' ')" = "$1" ]; }
+no_lock_left() { [ -z "$(ls -d -- "$work/lock" "$work/lock".* 2>/dev/null)" ]; }
+stale_lock() { mkdir -- "$work/lock" && echo "$dead" > "$work/lock/pid"; }
+
+fresh_lock
+contender 0 ''
+expect 'lock: free lock is taken'           [ $? = 0 ]
+expect 'lock: free lock, one winner'        winners 1
+expect 'lock: let go after the run'         no_lock_left
+
+fresh_lock
+mkdir -- "$work/lock" && echo $$ > "$work/lock/pid"
+contender 0 ''
+expect 'lock: running owner, exit 2'        [ $? = 2 ]
+expect 'lock: running owner, no winner'     winners 0
+expect 'lock: running owner keeps it'       [ "$(cat "$work/lock/pid")" = $$ ]
+
+fresh_lock
+mkdir -- "$work/lock"
+contender 0 ''
+expect 'lock: without a number, exit 2'     [ $? = 2 ]
+expect 'lock: without a number, kept'       [ -d "$work/lock" ]
+
+fresh_lock
+stale_lock
+contender 0 ''
+expect 'lock: stale lock is taken over'     [ $? = 0 ]
+expect 'lock: stale lock, one winner'       winners 1
+expect 'lock: stale lock, says so'          grep -q "removing the stale lock of run $dead" "$work/lock-err"
+expect 'lock: stale lock, nothing left'     no_lock_left
+
+# Two runs find the same stale lock. The first takes it over after 1 s and holds it for 4 s; the second goes on only
+# after 2.5 s - while the first is holding its fresh lock. Exactly one may win, and the lock of the first must stay.
+fresh_lock
+stale_lock
+contender 4 1 &
+first=$!
+contender 0 2.5 &
+second=$!
+sleep 3.2
+expect 'lock: race, the first holds it'     [ "$(cat "$work/lock/pid" 2>/dev/null)" = "$(head -n 1 "$work/won")" ]
+wait "$first"
+first_exit=$?
+wait "$second"
+second_exit=$?
+expect 'lock: race, first run wins'         [ "$first_exit" = 0 ]
+expect 'lock: race, second run exit 2'      [ "$second_exit" = 2 ]
+expect 'lock: race, exactly one winner'     winners 1
+expect 'lock: race, nothing left'           no_lock_left
+
+# Letting go removes only the own lock.
+fresh_lock
+bash -c '
+    . "$1" || exit 9
+    lock_take "$2" || exit 8
+    echo 1 > "$2/pid"
+    lock_release
+    [ -d "$2" ]' contender "$lockfile" "$work/lock" 2>>"$work/lock-err"
+expect 'lock: release keeps a foreign lock' [ $? = 0 ]
+
 echo "gegenprobe.tests: $passed passed, $failed failed"
 [ "$failed" = 0 ]
