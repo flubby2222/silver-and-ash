@@ -32,18 +32,6 @@ public class GormTests
     /// <summary>A Gorm who never attacks (no range for any attack) - to look at his walking alone.</summary>
     private static readonly Balance NoAttacks = Balance.Default with { Gorm = Balance.Default.Gorm with { NearRange = 0f, FarRange = 0f } };
 
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        var events = new List<GameEvent>();
-        for (var tick = 0; tick < ticks && until?.Invoke() != true; tick++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
-    }
-
     private static List<GameEvent> Enter(GameWorld world)
     {
         var events = Run(world, PressF, 1);

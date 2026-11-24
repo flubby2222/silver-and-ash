@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -102,7 +103,7 @@ public class ConsecratedAmmoTests
     {
         var world = WorldWithAmmoPickedUp(AlwaysAmmo);
 
-        Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.ConsecratedAmmo.Duration));
+        RunTicks(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.ConsecratedAmmo.Duration));
 
         Assert.False(world.Player.IsConsecrated);
         Assert.Equal(PistolTicks, TicksUntilThePistolIsReadyAgain(world));
@@ -114,7 +115,7 @@ public class ConsecratedAmmoTests
         var world = WorldWithAmmoPickedUp(AlwaysAmmo);
         var before = world.Player.ConsecratedSecondsLeft;
 
-        Run(world, PlayerInput.None, 2 * Second);
+        RunTicks(world, PlayerInput.None, 2 * Second);
 
         Assert.Equal(before - 2f, world.Player.ConsecratedSecondsLeft, 0.02f);
     }
@@ -135,7 +136,7 @@ public class ConsecratedAmmoTests
     public void A_second_pickup_restarts_the_time_but_is_not_faster()
     {
         var world = WorldWithAmmoPickedUp(AlwaysAmmo);
-        Run(world, PlayerInput.None, Second);
+        RunTicks(world, PlayerInput.None, Second);
 
         world.Player.Consecrate(Balance.Default.ConsecratedAmmo.Duration);
 
@@ -198,7 +199,7 @@ public class ConsecratedAmmoTests
         }
 
         Assert.Empty(world.Pickups);
-        Run(world, PlayerInput.None, Second / 4);     // come to a stop
+        RunTicks(world, PlayerInput.None, Second / 4);     // come to a stop
         return world;
     }
 
@@ -230,13 +231,5 @@ public class ConsecratedAmmoTests
         });
         world.Tick(Shoot);
         return dummy.Health;
-    }
-
-    private static void Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        for (var tick = 0; tick < ticks; tick++)
-        {
-            world.Tick(input);
-        }
     }
 }

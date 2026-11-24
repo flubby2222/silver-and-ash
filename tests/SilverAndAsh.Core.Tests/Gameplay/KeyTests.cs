@@ -385,16 +385,4 @@ public class KeyTests
         world.Tick(PlayerInput.None);
         return world.Loot.Where(loot => loot.Kind == LootKind.Key).Select(loot => loot.Position).ToList();
     }
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        var events = new List<GameEvent>();
-        for (var tick = 0; tick < ticks && until?.Invoke() != true; tick++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
-    }
 }

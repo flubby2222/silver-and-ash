@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -15,18 +16,6 @@ public class WellOfSiriusTests
     // A corridor along +Z, one cell wide: the player in row 0, the well in row 3.
     private static GameWorld Corridor(Balance? balance = null) =>
         new(LevelParser.Parse("#P#\n#.#\n#.#\n#.#\n#.#\n#.#"), 1, balance ?? Balance.Default, well: new WellPlan(1, 3, 0));
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        var events = new List<GameEvent>();
-        for (var tick = 0; tick < ticks && until?.Invoke() != true; tick++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
-    }
 
     /// <summary>Walks into the well until it stops the player, then looks down at it a little.</summary>
     private static void StandBeforeWell(GameWorld world)

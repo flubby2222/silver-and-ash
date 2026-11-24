@@ -4,6 +4,7 @@ using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -47,18 +48,6 @@ public class GrateTests
             new(2, 6, 1, 2, RoomSide.South) { HasGrate = grates },
         ];
         return new GameWorld(LevelParser.Parse(map), 1, balance ?? Balance.Default, doors, rooms);
-    }
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        var events = new List<GameEvent>();
-        for (var i = 0; i < ticks && until?.Invoke() != true; i++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
     }
 
     // Opens door A and walks in until the room seals (at most 3 s).

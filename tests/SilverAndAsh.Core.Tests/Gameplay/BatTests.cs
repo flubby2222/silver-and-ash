@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -48,7 +49,7 @@ public class BatTests
         Assert.Equal(Balance.Default.Bat.MaxHealth, bat.Health);
         Assert.True(bat.IsHittable);
 
-        Run(world, PlayerInput.None, 2 * SimulationClock.TicksPerSecond);
+        RunTicks(world, PlayerInput.None, 2 * SimulationClock.TicksPerSecond);
 
         Assert.Equal(floor.Y + BodySizes.Bat.HoverHeight, bat.Position.Y, 0.001f);
     }
@@ -90,11 +91,11 @@ public class BatTests
         var bat = world.Bats[0];
         bat.TakeDamage(Balance.Default.Bat.MaxHealth, []);
 
-        Run(world, PlayerInput.None, SimulationClock.TicksPerSecond);
+        RunTicks(world, PlayerInput.None, SimulationClock.TicksPerSecond);
         Assert.Equal(Room.CellCenter(2, 0).Y, bat.Position.Y, 0.001f);
         Assert.False(bat.IsGone);
 
-        Run(world, PlayerInput.None, CorpseTicks - SimulationClock.TicksPerSecond);
+        RunTicks(world, PlayerInput.None, CorpseTicks - SimulationClock.TicksPerSecond);
         Assert.True(bat.IsGone);
     }
 
@@ -133,7 +134,7 @@ public class BatTests
     {
         var world = new GameWorld(LevelParser.Parse("P\nB\n.\n."));
 
-        Run(world, PlayerInput.None with { Move = new Vector2(0f, 1f) }, SimulationClock.TicksPerSecond);
+        RunTicks(world, PlayerInput.None with { Move = new Vector2(0f, 1f) }, SimulationClock.TicksPerSecond);
 
         Assert.True(world.Player.Position.Z > world.Bats[0].Position.Z, "The bat blocked the way on the ground.");
     }
@@ -158,13 +159,5 @@ public class BatTests
                 -(MathF.Atan2(direction.X, direction.Z) - player.View.YawRadians) / ControlSettings.MouseSensitivity,
                 -(MathF.Asin(direction.Y) - player.View.PitchRadians) / ControlSettings.MouseSensitivity),
         });
-    }
-
-    private static void Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            world.Tick(input);
-        }
     }
 }

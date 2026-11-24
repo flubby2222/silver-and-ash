@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -91,18 +92,6 @@ public class BossRoomNoWayBackTests
         "##########\n.#........\nP.........\n..........\n.#.......G\n##########", false);
 
     private static Layout LayoutNamed(string name) => name == "north-south" ? NorthSouth : EastWest;
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        var events = new List<GameEvent>();
-        for (var i = 0; i < ticks && until?.Invoke() != true; i++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
-    }
 
     private static bool InCells(GameWorld world, int room, Vector3 at) => world.Rooms[room].Cells.Contains(Level.ToGrid(at.X, at.Z));
 

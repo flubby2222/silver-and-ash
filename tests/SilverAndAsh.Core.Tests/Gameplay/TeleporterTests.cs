@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -22,18 +23,6 @@ public class TeleporterTests
 
     private static GameWorld HallWorld(Balance? balance = null) =>
         new(LevelParser.Parse(Hall), 1, balance ?? Balance.Default, teleporters: HallTeleporters);
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        var events = new List<GameEvent>();
-        for (var i = 0; i < ticks && until?.Invoke() != true; i++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
-    }
 
     // Walks from the start (teleporter 0) to teleporter 1 and stops on it the tick it is unlocked: 0 and 1 are
     // unlocked, 2 is not, and the player stands on 1.

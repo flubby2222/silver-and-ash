@@ -1,6 +1,7 @@
 using System.Numerics;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Physics;
 
@@ -36,7 +37,7 @@ public class CharacterCollisionTests
     public void Running_straight_into_a_wall_stops_at_the_wall()
     {
         // The wall on the +X side starts at x = 8 m.
-        var (position, velocity) = RunTicks(Room, new Vector3(5f, 0f, 5f), new Vector3(6f, 0f, 0f), 120);
+        var (position, velocity) = RunTicks(Room, new Vector3(5f, 0f, 5f), new Vector3(6f, 0f, 0f), Radius, 120);
 
         Assert.Equal(8f - Radius, position.X, Tolerance);
         Assert.Equal(0f, velocity.X, Tolerance);
@@ -47,7 +48,7 @@ public class CharacterCollisionTests
     {
         // Mostly towards the wall (+X), a bit along it (+Z).
         var start = new Vector3(7f, 0f, 3f);
-        var (position, velocity) = RunTicks(Room, start, new Vector3(5f, 0f, 1f), 30);
+        var (position, velocity) = RunTicks(Room, start, new Vector3(5f, 0f, 1f), Radius, 30);
 
         Assert.Equal(8f - Radius, position.X, Tolerance);   // pressed against the wall
         Assert.True(position.Z > start.Z + 0.3f);             // but still moving along it
@@ -58,7 +59,7 @@ public class CharacterCollisionTests
     public void Pushing_into_a_corner_stays_still_without_jitter()
     {
         var velocity = new Vector3(4f, 0f, 4f);
-        var (position, _) = RunTicks(Room, new Vector3(5f, 0f, 5f), velocity, 120);
+        var (position, _) = RunTicks(Room, new Vector3(5f, 0f, 5f), velocity, Radius, 120);
 
         Assert.Equal(8f - Radius, position.X, Tolerance);
         Assert.Equal(8f - Radius, position.Z, Tolerance);
@@ -105,7 +106,7 @@ public class CharacterCollisionTests
         var start = corridor.PlayerStartPosition;
 
         // 14.65 m to the far wall at 6 m/s: 3 seconds are enough.
-        var (position, _) = RunTicks(corridor, start, new Vector3(6f, 0f, 0f), 3 * SimulationClock.TicksPerSecond);
+        var (position, _) = RunTicks(corridor, start, new Vector3(6f, 0f, 0f), Radius, 3 * SimulationClock.TicksPerSecond);
 
         Assert.Equal(18f - Radius, position.X, Tolerance);   // reached the far wall
         Assert.Equal(start.Z, position.Z, Tolerance);         // stayed in the middle
@@ -127,7 +128,7 @@ public class CharacterCollisionTests
         // Start so far left that the body clips the corner of the door frame (x = 4 m),
         // then walk straight "up" (-Z). The round body should slide around the corner into the doorway.
         var start = new Vector3(4.2f, 0f, 7f);
-        var (position, _) = RunTicks(level, start, new Vector3(0f, 0f, -6f), 60);
+        var (position, _) = RunTicks(level, start, new Vector3(0f, 0f, -6f), Radius, 60);
 
         Assert.True(position.Z < 4f, $"Got stuck in front of the door frame at z = {position.Z}.");
         Assert.False(CharacterCollision.Overlaps(level, position, Radius));
@@ -142,7 +143,7 @@ public class CharacterCollisionTests
         var level = LevelParser.Parse("P.#..");
         var start = level.PlayerStartPosition;
 
-        var (position, _) = RunTicks(level, start, new Vector3(speed, 0f, 0f), 10);
+        var (position, _) = RunTicks(level, start, new Vector3(speed, 0f, 0f), Radius, 10);
 
         Assert.True(position.X <= 4f - Radius + Tolerance, $"Tunnelled through the wall to x = {position.X}.");
     }
@@ -152,7 +153,7 @@ public class CharacterCollisionTests
     {
         var start = new Vector3(5f, 1.23f, 5f);
 
-        var (position, _) = RunTicks(Room, start, new Vector3(6f, 0f, 6f), 60);
+        var (position, _) = RunTicks(Room, start, new Vector3(6f, 0f, 6f), Radius, 60);
 
         Assert.Equal(1.23f, position.Y);
     }
@@ -190,7 +191,7 @@ public class CharacterCollisionTests
     {
         var level = RowWithMiddleCell(new Cell(false, 0.3f, 3f));
 
-        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), 20);
+        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), Radius, 20);
 
         Assert.True(position.X > 2.5f, "The step should not block.");
         Assert.Equal(0.3f, CharacterCollision.FloorAndCeiling(level, position, Radius).Floor);
@@ -201,7 +202,7 @@ public class CharacterCollisionTests
     {
         var level = RowWithMiddleCell(new Cell(false, 1f, 3f));
 
-        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), 60);
+        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), Radius, 60);
 
         Assert.Equal(2f - Radius, position.X, Tolerance);
     }
@@ -212,7 +213,7 @@ public class CharacterCollisionTests
         var level = RowWithMiddleCell(new Cell(false, 1f, 3f));
 
         // Feet at 0.9 m (in the middle of a jump): the ledge is within one step.
-        var (position, _) = RunTicks(level, level.PlayerStartPosition with { Y = 0.9f }, new Vector3(6f, 0f, 0f), 20);
+        var (position, _) = RunTicks(level, level.PlayerStartPosition with { Y = 0.9f }, new Vector3(6f, 0f, 0f), Radius, 20);
 
         Assert.True(position.X > 2.5f);
     }
@@ -222,7 +223,7 @@ public class CharacterCollisionTests
     {
         var level = RowWithMiddleCell(new Cell(false, 0f, 1.5f));
 
-        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), 60);
+        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), Radius, 60);
 
         Assert.Equal(2f - Radius, position.X, Tolerance);
     }
@@ -232,21 +233,9 @@ public class CharacterCollisionTests
     {
         var level = RowWithMiddleCell(new Cell(false, -2f, 3f));
 
-        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), 20);
+        var (position, _) = RunTicks(level, level.PlayerStartPosition, new Vector3(6f, 0f, 0f), Radius, 20);
 
         Assert.True(position.X > 2.5f);
-    }
-
-    private static (Vector3 Position, Vector3 Velocity) RunTicks(Level level, Vector3 position, Vector3 velocity, int ticks)
-    {
-        var current = (position, velocity);
-        for (var i = 0; i < ticks; i++)
-        {
-            // Like the player: wants to keep moving in the same direction every tick.
-            current = CharacterCollision.Move(level, current.position, velocity, Radius, Tick);
-        }
-
-        return current;
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using System.Numerics;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Physics;
 
@@ -31,7 +32,7 @@ public class ColumnCollisionTests
         var towards = new Vector3(x, 0f, z);
         var start = new Vector3(Middle.X, 0f, Middle.Z) - (towards * 5f);
 
-        var (position, velocity) = RunTicks(Hall, start, towards * 6f, 120);
+        var (position, velocity) = RunTicks(Hall, start, towards * 6f, Radius, 120);
 
         // Pressed against the round side, no speed left into it. Aimed at a slant, the rounding of the numbers puts the
         // runner a hair beside the middle, so it may slide a little along the side - as on any round thing.
@@ -50,7 +51,7 @@ public class ColumnCollisionTests
             .WithColumns([Middle]);
         var start = new Vector3(Middle.X - 5f, 1f, Middle.Z);
 
-        var (position, _) = RunTicks(raised, start, new Vector3(6f, 0f, 0f), 120);
+        var (position, _) = RunTicks(raised, start, new Vector3(6f, 0f, 0f), Radius, 120);
 
         Assert.Equal(Middle.X - Column.Radius - Radius, position.X, Tolerance);
         Assert.Equal(1f, position.Y);
@@ -60,7 +61,7 @@ public class ColumnCollisionTests
     public void Without_the_column_the_same_run_goes_through()
     {
         // The counter-check of the tests above: the same level without its column lets the runner pass the middle.
-        var (position, _) = RunTicks(Open(9, 9), new Vector3(Middle.X - 5f, 0f, Middle.Z), new Vector3(6f, 0f, 0f), 120);
+        var (position, _) = RunTicks(Open(9, 9), new Vector3(Middle.X - 5f, 0f, Middle.Z), new Vector3(6f, 0f, 0f), Radius, 120);
 
         Assert.True(position.X > Middle.X + 1f);
     }
@@ -163,16 +164,4 @@ public class ColumnCollisionTests
     }
 
     private static float FlatDistance(Vector3 position) => Vector2.Distance(new Vector2(position.X, position.Z), Middle.Centre);
-
-    private static (Vector3 Position, Vector3 Velocity) RunTicks(Level level, Vector3 start, Vector3 velocity, int ticks)
-    {
-        var position = start;
-        var current = velocity;
-        for (var tick = 0; tick < ticks; tick++)
-        {
-            (position, current) = CharacterCollision.Move(level, position, velocity, Radius, Tick);
-        }
-
-        return (position, current);
-    }
 }

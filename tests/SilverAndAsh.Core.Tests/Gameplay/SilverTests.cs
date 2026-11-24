@@ -315,16 +315,4 @@ public class SilverTests
         world.Tick(PlayerInput.None);
         return world.SilverPiles.Select(pile => (pile.Position, pile.Amount)).ToList();
     }
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        var seen = new List<GameEvent>();
-        for (var tick = 0; tick < ticks; tick++)
-        {
-            world.Tick(input);
-            seen.AddRange(world.Events);
-        }
-
-        return seen;
-    }
 }

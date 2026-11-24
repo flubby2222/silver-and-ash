@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -35,14 +36,6 @@ public class EmergenceDoorCellsTests
         return new GameWorld(LevelParser.Parse(Map), 1, Balance.Default, doors, rooms);
     }
 
-    private static void Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        for (var i = 0; i < ticks && until?.Invoke() != true; i++)
-        {
-            world.Tick(input);
-        }
-    }
-
     private static (int X, int Z) CellOf(Vector3 at) => Level.ToGrid(at.X, at.Z);
 
     [Fact]
@@ -53,8 +46,8 @@ public class EmergenceDoorCellsTests
         var ghoul = world.Ghouls.Single();
         var start = CellOf(ghoul.Position);
 
-        Run(world, PressF, 1);
-        Run(world, Forward, 180, () => world.Rooms[Arena].IsSealed);
+        RunTicks(world, PressF, 1);
+        RunTicks(world, Forward, 180, () => world.Rooms[Arena].IsSealed);
 
         // The room sealed with the player so near the ghoul's start cell that it had to give way.
         Assert.True(world.Rooms[Arena].IsSealed);
