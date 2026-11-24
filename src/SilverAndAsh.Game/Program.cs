@@ -227,8 +227,9 @@ using (log)
     }
     catch (Exception exception) when (exception is ArgumentException or LevelFormatException or IOException or UnauthorizedAccessException or InvalidOperationException)
     {
-        log?.Error("Could not load the level.", exception);
-        Console.Error.WriteLine($"Could not load the level: {exception.Message}");
+        var failure = StartFailure.Describe(exception);
+        log?.Error(failure, exception);
+        Console.Error.WriteLine(failure);
         Environment.ExitCode = 1;
 
         // No game after a failed start - also when the level was already loaded (e.g. '--photo' in the release version).
