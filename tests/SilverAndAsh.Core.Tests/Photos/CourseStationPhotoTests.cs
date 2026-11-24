@@ -55,11 +55,19 @@ public class CourseStationPhotoTests
     private static void AssertShows(GameWorld world, string what, Vector3 point) =>
         Assert.True(Shows(world, point), $"{what} at {point} is not in the picture (eye {world.Player.EyePosition}, looking {world.Player.View.Forward}).");
 
+    /// <summary>Where a point lies across the picture: -1 at the left edge, 0 in the middle, 1 at the right edge.</summary>
+    private static float AcrossThePicture(GameWorld world, Vector3 point)
+    {
+        var d = point - world.Player.EyePosition;
+        var depth = Vector3.Dot(d, world.Player.View.Forward);
+        var tanV = MathF.Tan(VerticalFovDegrees * MathF.PI / 360f);
+        return Vector3.Dot(d, world.Player.View.FlatRight) / depth / (tanV * Aspect);
+    }
+
     private static void AssertShowsItsSign(GameWorld world, string text)
     {
         var sign = SignOf(text);
-        AssertShows(world, $"the sign '{text}'", sign);
-        Assert.True(ShowroomLabelSight.Sees(world.Level, world.Player.EyePosition, sign), $"The game does not draw the sign '{text}' from here.");
+        AssertShows(world, $"the sign '{text}'", sign); // includes the game's own rule (ShowroomLabelSight.Sees)
     }
 
     [Fact]
@@ -92,7 +100,18 @@ public class CourseStationPhotoTests
         }
 
         AssertShows(world, "the silver", Course.Finds.Loot.First().Position + new Vector3(0f, 0.3f, 0f));
-        AssertShows(world, "the ghoul", world.Ghouls.OrderBy(ghoul => Vector2.Distance(new Vector2(ghoul.Position.X, ghoul.Position.Z), new Vector2(25f, 11f))).First().Position + new Vector3(0f, 1f, 0f));
+        var ghoul = world.Ghouls.OrderBy(ghoul => Vector2.Distance(new Vector2(ghoul.Position.X, ghoul.Position.Z), new Vector2(25f, 11f))).First().Position + new Vector3(0f, 1f, 0f);
+        AssertShows(world, "the ghoul", ghoul);
+
+        // The composition, not only "somewhere in view": the sign over the entrance stands left of the middle, the columns
+        // in the middle and the ghoul at the right. A camera turned by 40 degrees moves them out of these bands.
+        Assert.InRange(AcrossThePicture(world, SignOf("2 - Columns")), -0.4f, 0.3f);
+        foreach (var column in world.Level.Columns.Where(column => column.X is > 18f and < 24f))
+        {
+            Assert.InRange(AcrossThePicture(world, new Vector3(column.X, 1.5f, column.Z)), -0.5f, 0.5f);
+        }
+
+        Assert.InRange(AcrossThePicture(world, ghoul), 0.5f, 0.9f);
     }
 
     [Fact]
@@ -167,7 +186,7 @@ public class CourseStationPhotoTests
     }
 
     [Fact]
-    public void The_arch_scene_looks_at_the_springer_with_the_leaves_half_open_and_the_barred_twin_is_gone()
+    public void The_arch_scene_looks_at_the_springer_with_the_leaves_half_open()
     {
         var (setup, _) = Taken("door-normal-open-below");
         var world = setup.World;
@@ -177,7 +196,23 @@ public class CourseStationPhotoTests
         AssertShows(world, "the arch springer", new Vector3(middle.X, door.BoxMin.Y, middle.Z) + PhotoScenes.BelowTheArchTarget);
         Assert.True(door.OpenFraction >= PhotoScenes.BelowTheArchSwing);
         Assert.True(door.OpenFraction < 1f, "The leaves are open all the way and hide the springer.");
-        Assert.Null(PhotoScenes.Find("door-barred-open-below"));
+    }
+
+    [Fact]
+    public void The_two_arch_scenes_differ_in_the_door_with_a_grate_and_in_nothing_else()
+    {
+        // The guide ring of a portcullis shows at the arch springer even with the grate up (review of PR #734), so the
+        // barred scene is a picture of its own: the same camera, the same swing, only the door has a grate.
+        var (plain, plainRan) = Taken("door-normal-open-below");
+        var (barred, barredRan) = Taken("door-barred-open-below");
+
+        Assert.False(plain.World.Doors.Single().HasGrate);
+        Assert.True(barred.World.Doors.Single().HasGrate);
+        Assert.Equal(plain.World.Player.EyePosition, barred.World.Player.EyePosition);
+        Assert.Equal(plain.World.Player.View.Forward, barred.World.Player.View.Forward);
+        Assert.Equal(plainRan, barredRan);
+        Assert.Equal(plain.World.Doors.Single().OpenFraction, barred.World.Doors.Single().OpenFraction);
+        AssertShows(barred.World, "the arch springer", new Vector3((barred.World.Doors.Single().BoxMin.X + barred.World.Doors.Single().BoxMax.X) / 2f, barred.World.Doors.Single().BoxMin.Y, (barred.World.Doors.Single().BoxMin.Z + barred.World.Doors.Single().BoxMax.Z) / 2f) + PhotoScenes.BelowTheArchTarget);
     }
 
     [Fact]

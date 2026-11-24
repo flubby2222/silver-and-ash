@@ -101,7 +101,7 @@ public class PhotoSceneTests
             "gorm-hammer-windup", "gorm-shockwave",
             "door-normal", "door-normal-half", "door-normal-open", "door-locked", "door-locked-half", "door-locked-open",
             "door-boss", "door-boss-half", "door-boss-open", "door-cracked", "door-sideways-half", "door-level-seed1",
-            "door-level-seed2-boss", "door-normal-open-below", "door-level-barred", "door-level-barred-shut", "door-normal-10m", "door-locked-10m", "door-boss-10m",
+            "door-level-seed2-boss", "door-normal-open-below", "door-barred-open-below", "door-level-barred", "door-level-barred-shut", "door-normal-10m", "door-locked-10m", "door-boss-10m",
             "cracked-wall-2m", "cracked-wall-4m", "cracked-wall-10m", "cracked-wall-flat", "cracked-wall-a-4m",
             "cracked-wall-b-4m", "cracked-wall-c-4m", "cracked-wall-sideways-4m", "cracked-wall-secret-4m", "cracked-wall-break",
             "cracked-wall-break-dust", "cracked-wall-break-after",

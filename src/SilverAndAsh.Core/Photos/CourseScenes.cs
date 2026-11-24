@@ -44,7 +44,7 @@ internal static class CourseScenes
             studio => new PhotoSetup(Within(studio, 1, ColumnsShot))),
         new("course-3-cracked-wall", "Station 3 of the test course from 5 m: the cracked wall in the middle of its north wall and the sign over the first cell (issues #718, #722).",
             studio => new PhotoSetup(Within(studio, 2, CrackedWallShot))),
-        new("course-4-portcullis", "Station 4 of the test course, sealed: from inside the arena back at the fallen grate, the ghoul and the bat coming out by the column (issue #718).",
+        new("course-4-portcullis", "Station 4 of the test course, sealed: from inside the arena back at the fallen grate and its sign, the bat circling by the column; the player is hurt by then, the enemies attack while the level's name fades (issues #718, #722).",
             SealedArena),
         new("course-5-teleporter", "Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, Sirius' Relief beside the way (issue #718).",
             studio => Settled(Within(studio, 4, room => (LastX(room), CourseRoom.Top), room => SignOf(room)))),

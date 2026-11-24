@@ -859,12 +859,15 @@ public static class PhotoScenes
 
     // The arch of a door seen from below, the leaves half swung open (issues #730, #722): the arch springer, the stone
     // ledge where the arch begins, shows only from there - fully open leaves hide it, and at eye level there is no gap
-    // in the underside (issue #714). A raised portcullis is not drawn, so a second scene with a grate would be
-    // bit-identical to this one and is left out.
+    // in the underside (issue #714). The second scene is the same door with a portcullis hanging up: the grate itself is
+    // not drawn then, but its guide ring is (PortcullisView draws it for every door with HasGrate), and it shows at the
+    // springer - the two pictures differ there and only there.
     private static PhotoScene[] BelowTheArchScenes() =>
     [
         new("door-normal-open-below", "The arch of a wooden double door, leaves half open, seen from 1.5 m before its plane, looking up at the arch springer (issues #730, #722).",
-            studio => BelowTheArch(studio)),
+            studio => BelowTheArch(studio, grate: false)),
+        new("door-barred-open-below", "The arch of a wooden double door with a portcullis hanging up, leaves half open, seen from 1.5 m before its plane, looking up at the arch springer: the guide ring shows there (issues #730, #722).",
+            studio => BelowTheArch(studio, grate: true)),
     ];
 
     /// <summary>How far before the door plane the player stands, in metres.</summary>
@@ -876,10 +879,10 @@ public static class PhotoScenes
     /// <summary>Where the camera looks, relative to the door's middle: at the arch springer, 0.9 m aside and 2 m up, in the plane.</summary>
     public static readonly Vector3 BelowTheArchTarget = new(0.9f, 2f, 0f);
 
-    // The door hall with the door open, the player 1.5 m before its plane and looking at the arch springer.
-    private static PhotoSetup BelowTheArch(PhotoStudio studio)
+    // The door hall with the door open (with a grate hanging up if `grate`), the player 1.5 m before its plane and looking at the arch springer.
+    private static PhotoSetup BelowTheArch(PhotoStudio studio, bool grate)
     {
-        var world = studio.DoorHall(DoorKind.Normal, open: true);
+        var world = studio.DoorHall(DoorKind.Normal, open: true, grate: grate);
         var door = world.Doors.Single();
         var middle = (door.BoxMin + door.BoxMax) / 2f;
         world.Player.PlaceAt(new Vector3(middle.X, door.BoxMin.Y, middle.Z - BelowTheArchDistance));
