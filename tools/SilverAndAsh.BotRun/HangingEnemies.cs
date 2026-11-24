@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Numerics;
 using SilverAndAsh.Core;
+using SilverAndAsh.Core.Diagnostics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
@@ -14,9 +15,10 @@ namespace SilverAndAsh.BotRun;
 /// Gorm. Meanwhile it watches every enemy. One hangs if it is awake and hunting, sees a living player by its own rule
 /// (or is in the same room with him), and for <see cref="Kind.Ticks"/> ticks in a row moves less than its own body
 /// radius (flat) from where it was and starts no attack. The number of ticks comes from the balancing: the longest
-/// pause a healthy one of its kind takes standing still between two attacks, twice over.
+/// pause a healthy one of its kind takes standing still between two attacks, twice over. One instance is one run over all
+/// its seeds (no static state).
 /// </summary>
-internal static class HangingEnemies
+internal sealed class HangingEnemies
 {
     /// <summary>How many times the longest legitimate pause an enemy may stand still before it counts as hanging.</summary>
     private const float Margin = 2f;
@@ -24,10 +26,11 @@ internal static class HangingEnemies
     /// <summary>How many times the longest threshold of the room the bot stands at each place.</summary>
     private const int StandFor = 2;
 
-    // Over all seeds of the run, per kind: how many were watched, and the longest still spell (ticks) without an attack
-    // that stayed below the threshold - printed once at the end, so a threshold far too generous shows.
-    private static readonly Dictionary<string, int> Watched = [];
-    private static readonly Dictionary<string, int> Longest = [];
+    // Over all seeds of the run, per kind: how many were watched, and the longest still spell without an attack that
+    // stayed below the threshold, with its seed and enemy - printed once at the end, so a threshold far too generous
+    // shows and a kind close to hanging can be replayed (issue #699).
+    private readonly Dictionary<string, int> _watched = [];
+    private readonly LongestStillSpells _longest = new();
 
     /// <summary>
     /// One kind of enemy: its name, its body radius (it hangs while it stays within it), the longest pause it takes
@@ -117,7 +120,7 @@ internal static class HangingEnemies
             }),
     ];
 
-    public static void Run(LevelZero zero, int seed, Report report)
+    public void Run(LevelZero zero, int seed, Report report)
     {
         var probe = zero.NewRun(seed, Play.Balance);
         var watched = new Dictionary<string, int>();
@@ -137,22 +140,24 @@ internal static class HangingEnemies
 
         foreach (var (kind, count) in watched)
         {
-            Watched[kind] = Watched.GetValueOrDefault(kind) + count;
+            _watched[kind] = _watched.GetValueOrDefault(kind) + count;
         }
     }
 
-    /// <summary>After the last seed: the thresholds and the longest still spell seen below them, per kind.</summary>
-    public static void PrintLongest(Report report)
+    /// <summary>
+    /// After the last seed: per kind the threshold and the longest still spell seen below it, with seed, enemy and place.
+    /// </summary>
+    public void PrintLongest(Report report)
     {
-        report.Check(Watched.GetValueOrDefault("bat") == 0, "stuck: no bat watched in any seed - the mode checks (almost) nothing for bats");
+        report.Check(_watched.GetValueOrDefault("bat") == 0, "stuck: no bat watched in any seed - the mode checks (almost) nothing for bats");
         foreach (var kind in Kinds)
         {
-            Console.WriteLine($"stuck: {kind.Name}: {Watched.GetValueOrDefault(kind.Name)} watched, longest still without an attack {Longest.GetValueOrDefault(kind.Name)} ticks, hangs from {kind.Ticks(Play.Balance)} ticks");
+            Console.WriteLine(_longest.Line(kind.Name, _watched.GetValueOrDefault(kind.Name), kind.Ticks(Play.Balance)));
         }
     }
 
     /// <summary>Walks into the combat room until it seals, then stands where it came in and in the middle.</summary>
-    private static void InArena(LevelZero zero, int seed, int roomIndex, Report report, Dictionary<string, int> watched)
+    private void InArena(LevelZero zero, int seed, int roomIndex, Report report, Dictionary<string, int> watched)
     {
         var world = zero.NewRun(seed, Play.Balance);
         var room = world.Rooms[roomIndex];
@@ -175,13 +180,14 @@ internal static class HangingEnemies
         }
 
         report.Count("arenas played");
-        Stand(play, report, "at the door", room, watched);
+        var place = new Place(seed, $"room {roomIndex}");
+        Stand(play, report, place, "at the door", room, watched);
         play.PlaceAt(Middle(world, room));
-        Stand(play, report, "in the middle", room, watched);
+        Stand(play, report, place, "in the middle", room, watched);
     }
 
     /// <summary>Opens the boss door, walks in until the fight starts, then stands where it came in and in the middle.</summary>
-    private static void InBossRoom(LevelZero zero, int seed, Report report, Dictionary<string, int> watched)
+    private void InBossRoom(LevelZero zero, int seed, Report report, Dictionary<string, int> watched)
     {
         var world = zero.NewRun(seed, Play.Balance);
         var play = new Play(world, report, $"seed {seed} boss room");
@@ -192,9 +198,10 @@ internal static class HangingEnemies
         }
 
         report.Count("boss rooms played");
-        Stand(play, report, "at the boss door", site.Boss, watched);
+        var place = new Place(seed, "boss room");
+        Stand(play, report, place, "at the boss door", site.Boss, watched);
         play.PlaceAt(Middle(world, site.Boss));
-        Stand(play, report, "in the middle", site.Boss, watched);
+        Stand(play, report, place, "in the middle", site.Boss, watched);
     }
 
     /// <summary>The floor cell of <paramref name="room"/> nearest its middle.</summary>
@@ -214,7 +221,7 @@ internal static class HangingEnemies
     /// Stands still for <see cref="StandFor"/> times the longest threshold of the enemies there and watches every one of
     /// them, tick by tick.
     /// </summary>
-    private static void Stand(Play play, Report report, string where, RoomState room, Dictionary<string, int> watched)
+    private void Stand(Play play, Report report, Place place, string where, RoomState room, Dictionary<string, int> watched)
     {
         var world = play.World;
         var watches = Kinds.SelectMany(kind => kind.All(world).Where(enemy => !IsDead(enemy)).Select(enemy => new Watch(kind, enemy, kind.Ticks(world.Balance)))).ToList();
@@ -226,6 +233,7 @@ internal static class HangingEnemies
         }
 
         var ticks = StandFor * inRoom.Max(watch => watch.Threshold);
+        var spot = place with { Name = $"{place.Name} {where}" };
         foreach (var watch in watches)
         {
             watch.Restart(world);
@@ -237,7 +245,7 @@ internal static class HangingEnemies
             var attacked = world.Events.Select(ev => Kinds.Select(kind => kind.Attacked(ev)).FirstOrDefault(id => id is not null)).OfType<int>().ToHashSet();
             foreach (var watch in watches)
             {
-                Observe(play, report, where, watch, attacked);
+                Observe(play, report, spot, where, watch, attacked);
             }
         }
 
@@ -247,7 +255,7 @@ internal static class HangingEnemies
         }
     }
 
-    private static void Observe(Play play, Report report, string where, Watch watch, HashSet<int> attacked)
+    private void Observe(Play play, Report report, Place place, string where, Watch watch, HashSet<int> attacked)
     {
         var world = play.World;
         var enemy = watch.Enemy;
@@ -261,12 +269,13 @@ internal static class HangingEnemies
         }
 
         watch.WasWatched = true;
-        var still = (int)(world.Ticks - watch.Since);
-        if (still < watch.Threshold)
+        var spell = new StillSpell(watch.Kind.Name, place.Seed, place.Name, enemy.Id, (int)(world.Ticks - watch.Since), watch.Threshold);
+        var still = spell.Ticks;
+        if (!spell.Hangs)
         {
             if (!watch.Kind.Queues || !Crowded(world, enemy))
             {
-                Longest[watch.Kind.Name] = Math.Max(Longest.GetValueOrDefault(watch.Kind.Name), still);
+                _longest.Record(spell);
             }
 
             return;
@@ -315,6 +324,9 @@ internal static class HangingEnemies
         var (ca, cb) = (Play.Cell(a), Play.Cell(b));
         return world.Rooms.Any(room => room.Cells.Contains(ca) && room.Cells.Contains(cb));
     }
+
+    /// <summary>Where the bot stands: the seed and the place, e.g. "room 4" or, while it stands, "room 4 at the door".</summary>
+    private readonly record struct Place(int Seed, string Name);
 
     /// <summary>One enemy being watched: where and since which world tick it has stood still without an attack.</summary>
     private sealed class Watch(Kind kind, ITarget enemy, int threshold)
