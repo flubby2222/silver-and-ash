@@ -11,12 +11,13 @@ public class DoorFrameLookTests
 
     private static readonly DoorKind[] FramedKinds = [DoorKind.Normal, DoorKind.Locked, DoorKind.Boss];
 
-    // How far the stone of each frame stands out of the wall in front of the doorway: the plates of the door frames, the
-    // buttresses of the boss portal (issue #568).
+    // How far the stone of each frame stands out of the wall in front of the doorway. The plates of the door frames sit
+    // flush in the wall plane (issue #715, art bible rule 26: nothing stands into an opening without a purpose); only the
+    // buttresses of the boss portal stand out, 0.3 m (issue #568).
     private static readonly Dictionary<DoorKind, float> OutOfWall = new()
     {
-        [DoorKind.Normal] = 0.125f,
-        [DoorKind.Locked] = 0.125f,
+        [DoorKind.Normal] = 0f,
+        [DoorKind.Locked] = 0f,
         [DoorKind.Boss] = 0.3f,
     };
 
@@ -73,9 +74,9 @@ public class DoorFrameLookTests
         Assert.Equal(DoorFrameLook.Parts.Select(part => part.Name).Order(), parts.Keys.Order());
 
         // Both faces fill the doorway's width and height: from the floor to the ceiling of its cells, across all its cells
-        // (the boss portal two, issue #568), the wall at +-1 m, the stone standing out of it by at most OutOfWall - the
-        // plates 1/8 m, the buttresses of the boss portal 0.3 m. The front face lies on the file's +z side, the back face
-        // on its -z side.
+        // (the boss portal two, issue #568), the wall at +-1 m. Each face ends exactly OutOfWall in front of the wall: the
+        // door frames in the wall plane (issue #715, a plate standing out again is red), the buttresses of the boss portal
+        // 0.3 m in front of it. The front face lies on the file's +z side, the back face on its -z side.
         var front = parts[DoorFrameLook.Front];
         var back = parts[DoorFrameLook.Back];
         var halfWidth = DoorFrameLook.CellsWide(kind) * Level.CellSize / 2f;
