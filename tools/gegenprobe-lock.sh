@@ -10,6 +10,10 @@
 # rename the same folder (mv -T) - and checks that it really got the stale one before it deletes it. If it got the
 # fresh lock of a run that was quicker, it gives it back.
 #
+# Known limit (issue #651): if three runs meet in exactly that gap, the third may rename the fresh lock of the second
+# while it is still empty (no pid yet), as mv -T replaces an empty folder. Closing this would need a rename that fails
+# on an existing folder, which Git Bash does not offer; an empty lock must count as held. Start runs one after another.
+#
 # For the self-test only: GEGENPROBE_TEST_PAUSE_BEFORE_TAKEOVER=<seconds> waits that long between finding a stale lock
 # and taking it over, so two runs meet in exactly that gap.
 

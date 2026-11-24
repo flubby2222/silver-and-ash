@@ -150,5 +150,136 @@ bash -c '
     [ -d "$2" ]' contender "$lockfile" "$work/lock" 2>>"$work/lock-err"
 expect 'lock: release keeps a foreign lock' [ $? = 0 ]
 
+# The whole run (issue #651) in a small repository of its own, with a stand-in for dotnet: it waits a moment, then
+# writes a result file whose one test is red while probe.txt holds "broken", and builds nothing while it holds
+# "nocompile". As the bot (--bot, issue #647) it answers "build" (fails on "nocompile") and "run": a finding (exit 1)
+# while probe.txt holds "broken" or the bot arguments say "found", exit 2 while probe.txt or the arguments say "crash".
+gegenprobe="$(cd "$(dirname "$0")" && pwd)/gegenprobe.sh"
+repo="$work/repo"
+mkdir -p -- "$repo" "$work/stand-in"
+git -C "$repo" init -q
+printf 'value = good;\n' > "$repo/probe.txt"
+git -C "$repo" add probe.txt
+git -C "$repo" -c user.name=probe -c user.email=probe@example.invalid commit -q -m probe
+cat > "$work/stand-in/dotnet" <<'STANDIN'
+#!/usr/bin/env bash
+case "${1:-}" in
+    build)
+        sleep 1
+        if grep -q nocompile probe.txt; then
+            echo "probe.txt(1,9): error CS1002: ; expected"
+            exit 1
+        fi
+        exit 0 ;;
+    run)
+        while [ $# -gt 0 ] && [ "$1" != -- ]; do shift; done
+        [ $# -gt 0 ] && shift
+        case " $* " in
+            *' found '*) echo "FINDING [probe] found in every run"; exit 1 ;;
+            *' crash '*) echo "Unknown mode 'crash'"; exit 2 ;;
+        esac
+        if grep -q crash probe.txt; then echo "the tool failed"; exit 2; fi
+        if grep -q broken probe.txt; then echo "FINDING [probe] value is broken"; exit 1; fi
+        echo "SUMMARY mode probe: 0 finding(s)"
+        exit 0 ;;
+esac
+results=""
+while [ $# -gt 0 ]; do
+    [ "$1" = --results-directory ] && results="$2"
+    shift
+done
+sleep 1
+if grep -q nocompile probe.txt; then
+    echo "probe.txt(1,9): error CS1002: ; expected"
+    exit 1
+fi
+outcome=Passed
+grep -q broken probe.txt && outcome=Failed
+failed=0
+[ "$outcome" = Failed ] && failed=1
+mkdir -p -- "$results"
+printf '<TestRun><Counters total="1" failed="%s" /><UnitTestResult testName="Probe.Test" outcome="%s" /></TestRun>\n' \
+    "$failed" "$outcome" > "$results/results.trx"
+STANDIN
+chmod +x "$work/stand-in/dotnet"
+lock_of_repo="$repo/.git/gegenprobe.lock"
+lacks() { ! grep -q "$1" "$work/lock-err"; }
+probe_back() { [ "$(cat "$repo/probe.txt")" = 'value = good;' ]; }
+run_probe() { ( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" probe.txt good "$1" Probe ); }
+
+: > "$work/lock-err"
+run_probe broken > /dev/null 2>"$work/lock-err"
+expect 'run: caught, exit 0'                [ $? = 0 ]
+expect 'run: caught, file back'             probe_back
+expect 'run: caught, lock gone'             [ ! -e "$lock_of_repo" ]
+expect 'run: caught, says to build again'   grep -q 'still holds the changed code' "$work/lock-err"
+
+# A change that does not compile built nothing: the message must not claim the output holds it.
+: > "$work/lock-err"
+run_probe nocompile > /dev/null 2>"$work/lock-err"
+expect 'run: no compile, exit 3'            [ $? = 3 ]
+expect 'run: no compile, file back'         probe_back
+expect 'run: no compile, no false claim'    lacks 'still holds the changed code'
+expect 'run: no compile, says so'           grep -q 'the change did not compile' "$work/lock-err"
+
+# The output closed early (2>&1 | head, as in the test of PR #648): head stops after the line of the control run, so
+# the result line and the messages of the clean-up meet a closed pipe while the file is changed. The run must still
+# put the file back and let go of the lock.
+: > "$work/lock-err"
+run_probe broken 2>&1 | head -n 4 > /dev/null
+expect 'run: | head, file back'             probe_back
+expect 'run: | head, lock gone'             [ ! -e "$lock_of_repo" ]
+expect 'run: | head, working folder clean'  [ -z "$(git -C "$repo" status --porcelain)" ]
+
+# The same with --bot (issue #647): one case per way out of run_bot and check.
+run_bot_probe() { ( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" --bot probe.txt good "$1" "$2" ); }
+said() { grep -q "$1" "$work/bot-out"; }
+
+: > "$work/lock-err"
+run_bot_probe broken 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
+expect 'bot: caught, exit 0'                [ $? = 0 ]
+expect 'bot: caught, names the finding'     said 'FINDING \[probe\] value is broken'
+expect 'bot: caught, file back'             probe_back
+expect 'bot: caught, lock gone'             [ ! -e "$lock_of_repo" ]
+expect 'bot: caught, says to build again'   grep -q 'still holds the changed code' "$work/lock-err"
+
+: > "$work/lock-err"
+run_bot_probe fine 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
+expect 'bot: survived, exit 1'              [ $? = 1 ]
+expect 'bot: survived, says so'             said 'SURVIVED - the bot reports no finding'
+expect 'bot: survived, file back'           probe_back
+
+: > "$work/lock-err"
+run_bot_probe broken 'probe found' > "$work/bot-out" 2>"$work/lock-err"
+expect 'bot: control finding, exit 2'       [ $? = 2 ]
+expect 'bot: control finding, says so'      grep -q 'control run of the bot already reports findings' "$work/lock-err"
+expect 'bot: control finding, file back'    probe_back
+
+: > "$work/lock-err"
+run_bot_probe broken 'probe crash' > "$work/bot-out" 2>"$work/lock-err"
+expect 'bot: control exit 2, exit 2'        [ $? = 2 ]
+expect 'bot: control exit 2, says so'       grep -q "the bot could not run with 'probe crash'" "$work/lock-err"
+expect 'bot: control exit 2, file back'     probe_back
+
+: > "$work/lock-err"
+run_bot_probe crash 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
+expect 'bot: changed exit 2, exit 2'        [ $? = 2 ]
+expect 'bot: changed exit 2, says so'       grep -q 'the bot could not run with the change' "$work/lock-err"
+expect 'bot: changed exit 2, file back'     probe_back
+expect 'bot: changed exit 2, lock gone'     [ ! -e "$lock_of_repo" ]
+
+: > "$work/lock-err"
+run_bot_probe nocompile 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
+expect 'bot: no compile, exit 3'            [ $? = 3 ]
+expect 'bot: no compile, names the error'   grep -q 'error CS1002' "$work/lock-err"
+expect 'bot: no compile, no false claim'    lacks 'still holds the changed code'
+expect 'bot: no compile, file back'         probe_back
+
+: > "$work/lock-err"
+run_bot_probe broken 'probe --seeds 1' 2>&1 | head -n 4 > /dev/null
+expect 'bot: | head, file back'             probe_back
+expect 'bot: | head, lock gone'             [ ! -e "$lock_of_repo" ]
+expect 'bot: | head, working folder clean'  [ -z "$(git -C "$repo" status --porcelain)" ]
+
 echo "gegenprobe.tests: $passed passed, $failed failed"
 [ "$failed" = 0 ]

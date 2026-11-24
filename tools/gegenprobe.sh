@@ -12,22 +12,27 @@
 #                  <search> (\$ writes a plain $, \\ a plain \, every other backslash stays as it is)
 #   <test filter>  a class or test name part (becomes FullyQualifiedName~<filter>),
 #                  or a full dotnet test filter expression if it contains = ~ | & or !
+#                  with --bot: the arguments of the bot run instead (e.g. 'slam --seeds 1')
 #
 # Options:
 #   --all            replace every place the text occurs (default: it must occur exactly once)
 #   --regex          <search> is a Perl regular expression
 #   --project PATH   test project (default: tests/SilverAndAsh.Core.Tests)
 #   --name NAME      name of this probe in the output (default: the search text)
+#   --bot            check with a bot run (tools/SilverAndAsh.BotRun, issue #647) instead of tests: the control run
+#                    must end without findings, the change is caught if the bot reports a finding
 #
 # Only one run per working folder at a time (issue #604): a second run started while the first one has the file
 # changed would take the broken file for the original. It stops at once with exit code 2 and names the running one.
 # A lock left behind by a run that is gone is taken over by exactly one run (issue #639, tools/gegenprobe-lock.sh).
 #
-# Afterwards the build output still holds the changed code: build again before anything runs with --no-build.
+# Afterwards the build output still holds the changed code: build again before anything runs with --no-build (not
+# after exit code 3: a change that does not compile builds nothing). Closing the output early (2>&1 | head) still
+# puts the file back and lets go of the lock (issue #651).
 #
-# Exit code: 0 = caught (at least one test red), 1 = survived (all green), 2 = could not run (another run in this
-# working folder, unclean working folder, text not found, control run red ...), 3 = the change does not compile
-# (no statement about the tests).
+# Exit code: 0 = caught (at least one test red, with --bot: a finding), 1 = survived (all green, no finding), 2 = could
+# not run (another run in this working folder, unclean working folder, text not found, control run red or with
+# findings ...), 3 = the change does not compile (no statement about the tests).
 #
 # Example (issue #578): the restart must reset the doors.
 #   tools/gegenprobe.sh src/SilverAndAsh.Core/Gameplay/GameWorld.cs \
@@ -36,20 +41,26 @@
 # The same with --regex and a group (issue #604): ${1} puts back what the brackets in <search> matched.
 #   tools/gegenprobe.sh --regex src/SilverAndAsh.Core/Gameplay/GameWorld.cs \
 #     '(GameWorld Restarted[(][)] => new[(])_levelWithOpenDoors,' '${1}Level,' GrateTests
+#
+# With --bot (issue #647): a grid half as fine must make mode "slam" report a finding.
+#   tools/gegenprobe.sh --bot tools/SilverAndAsh.BotRun/BossPortalRuns.cs \
+#     'PortalSite.Steps(-1.95f, 1.95f, 0.05f)' 'PortalSite.Steps(-1.95f, 1.95f, 0.1f)' 'slam --seeds 1'
 
 set -u
 
 all=0
 regex=0
+bot=0
 project="tests/SilverAndAsh.Core.Tests"
 name=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --all) all=1; shift ;;
         --regex) regex=1; shift ;;
+        --bot) bot=1; shift ;;
         --project) project="${2:?--project needs a path}"; shift 2 ;;
         --name) name="${2:?--name needs a text}"; shift 2 ;;
-        -h|--help) sed -n '2,38p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,47p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         --) shift; break ;;
         -*) echo "gegenprobe: unknown option $1 (see --help)" >&2; exit 2 ;;
         *) break ;;
@@ -66,10 +77,12 @@ export GEGENPROBE_SEARCH="$2"
 export GEGENPROBE_REPLACE="$3"
 filter="$4"
 name="${name:-$2}"
-case "$filter" in
-    *[=~\|\&!]*) ;;
-    *) filter="FullyQualifiedName~$filter" ;;
-esac
+if [ "$bot" = 0 ]; then
+    case "$filter" in
+        *[=~\|\&!]*) ;;
+        *) filter="FullyQualifiedName~$filter" ;;
+    esac
+fi
 
 tools="$(cd "$(dirname "$0")" && pwd)" || exit 2
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "gegenprobe: not inside a git repository" >&2; exit 2; }
@@ -80,6 +93,9 @@ changed=0
 built_changed=0
 
 restore() {
+    # The output may be closed already (2>&1 | head): a message must not end the clean-up before the lock is let go
+    # (issue #651).
+    trap '' PIPE
     if [ "$changed" = 1 ]; then
         cp -- "$backup" "$file"
         changed=0
@@ -167,36 +183,101 @@ run_tests() {
     return 0
 }
 
+# With --bot: builds the bot and runs it with the arguments in $filter (word by word); sets total (1: the run),
+# failed (1 if it reported a finding) and red (its FINDING lines). Returns 3 if the bot does not build, 2 if it could
+# not run (its exit code 2: wrong arguments or the tool itself failed).
+run_bot() {
+    local label="$1"
+    local bot_project="tools/SilverAndAsh.BotRun"
+    if ! dotnet build "$bot_project" -c Release > "$work/$label.build.log" 2>&1; then
+        grep -E "error [A-Z]+[0-9]+" "$work/$label.build.log" | sed -E 's/ \[[^]]*\]$//' | sort -u | head -n 10 >&2
+        return 3
+    fi
+    local args
+    read -r -a args <<< "$filter"
+    dotnet run --project "$bot_project" -c Release --no-build -- "${args[@]}" > "$work/$label.log" 2>&1
+    local code=$?
+    total=1
+    red="$(grep -E '^FINDING ' "$work/$label.log" | head -n 10)"
+    case "$code" in
+        0) failed=0 ;;
+        1) failed=1 ;;
+        *) tail -n 5 "$work/$label.log" >&2; return 2 ;;
+    esac
+    return 0
+}
+
+check() {
+    if [ "$bot" = 1 ]; then
+        run_bot "$1"
+    else
+        run_tests "$1"
+    fi
+}
+
 echo "== gegenprobe: $name"
 echo "   file:   $file"
-echo "   filter: $filter"
+if [ "$bot" = 1 ]; then
+    echo "   bot:    $filter"
+else
+    echo "   filter: $filter"
+fi
 
-run_tests control
+check control
 status=$?
 if [ "$status" = 3 ]; then
     echo "gegenprobe: control run does not build" >&2
     exit 2
 fi
-if [ "$total" = 0 ]; then
-    echo "gegenprobe: the filter '$filter' selects no tests" >&2
+if [ "$status" = 2 ]; then
+    echo "gegenprobe: the bot could not run with '$filter' (exit code 2)" >&2
     exit 2
 fi
-if [ "$failed" != 0 ]; then
-    echo "gegenprobe: control run already has $failed red test(s) - fix those first:" >&2
+if [ "$bot" = 1 ] && [ "$failed" != 0 ]; then
+    echo "gegenprobe: control run of the bot already reports findings - fix those first:" >&2
     echo "$red" | sed 's/^/   /' >&2
     exit 2
 fi
-echo "   control run: $total test(s), all green"
+if [ "$bot" = 1 ]; then
+    echo "   control run: bot without findings"
+else
+    if [ "$total" = 0 ]; then
+        echo "gegenprobe: the filter '$filter' selects no tests" >&2
+        exit 2
+    fi
+    if [ "$failed" != 0 ]; then
+        echo "gegenprobe: control run already has $failed red test(s) - fix those first:" >&2
+        echo "$red" | sed 's/^/   /' >&2
+        exit 2
+    fi
+    echo "   control run: $total test(s), all green"
+fi
 
 changed=1
 built_changed=1
 cp -- "$work/changed-file" "$file"
 
-run_tests mutated
+check mutated
 status=$?
 if [ "$status" = 3 ]; then
     echo "   result: the change does not compile - no statement about the tests"
+    # Nothing was built with the change, so the build output is still the one of the control run (issue #651).
+    built_changed=0
+    echo "gegenprobe: the change did not compile - the build output is still the one of the control run" >&2
     exit 3
+fi
+if [ "$status" = 2 ]; then
+    echo "gegenprobe: the bot could not run with the change (exit code 2) - no statement" >&2
+    exit 2
+fi
+if [ "$bot" = 1 ]; then
+    if [ "$failed" = 0 ]; then
+        echo "   result: SURVIVED - the bot reports no finding with the change"
+        exit 1
+    fi
+    echo "   result: CAUGHT - the bot reports findings (the first ten):"
+    echo "$red" | sed 's/^/     /'
+    exit 0
 fi
 if [ "$failed" = 0 ]; then
     echo "   result: SURVIVED - $total test(s), all green with the change"
