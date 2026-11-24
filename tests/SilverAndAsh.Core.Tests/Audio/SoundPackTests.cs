@@ -77,6 +77,10 @@ public class SoundPackTests
         // Issue #605: the breaking column - the blow before the last one, and the break.
         { new ColumnHit(Pillar, HitsToBreak - 1, HitsToBreak), SoundKind.ColumnHit2, ["saeule-treffer-stufe2.wav"] },
         { new ColumnBroke(Pillar), SoundKind.ColumnBroke, ["saeule-bruch.wav"] },
+
+        // Issue #569: the boss door swinging shut and swinging open.
+        { new DoorSwingStarted(0, Closing: true), SoundKind.BossDoorClosing, ["bosstuer-schliessen.wav"] },
+        { new DoorSwingStarted(0, Closing: false), SoundKind.BossDoorOpening, ["bosstuer-oeffnen.wav"] },
     };
 
     private static readonly Column Pillar = Column.AtCell(3, 6);
