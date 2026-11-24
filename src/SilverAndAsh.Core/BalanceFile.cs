@@ -59,10 +59,12 @@ public static class BalanceFile
 
     /// <summary>
     /// Lowest sensible values. An enemy never stands in a doorway nor comes out on a player's cell (issue #445): door
-    /// and player distance are at least one cell.
+    /// and player distance are at least one cell. A player walks at least half a metre a second (issue #706): with a
+    /// top speed of almost 0 the steps would come in floods - the game neither moves nor sounds right below that.
     /// </summary>
     private static readonly Dictionary<string, double> Minimum = new(StringComparer.OrdinalIgnoreCase)
     {
+        ["player.maxSpeed"] = 0.5,
         ["difficulty.doorDistance"] = Level.CellSize,
         ["difficulty.playerDistance"] = Level.CellSize,
         ["difficulty.sideDoorDistance"] = Level.CellSize,

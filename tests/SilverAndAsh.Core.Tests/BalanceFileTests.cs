@@ -220,6 +220,27 @@ public class BalanceFileTests
         Assert.Contains(result.Warnings, w => w.Contains($"difficulty.{name}"));
     }
 
+    [Theory]
+    [InlineData("0.00000001")]
+    [InlineData("0.4")]
+    public void A_top_speed_of_almost_nothing_falls_back_to_its_standard(string speed)
+    {
+        // Issue #706: with a tiny top speed the steps would come in floods.
+        var result = BalanceFile.Parse($$"""{ "player": { "maxSpeed": {{speed}} } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains("player.maxSpeed") && w.Contains("below its limit"));
+    }
+
+    [Fact]
+    public void A_top_speed_of_half_a_metre_a_second_is_allowed()
+    {
+        var result = BalanceFile.Parse("""{ "player": { "maxSpeed": 0.5 } }""");
+
+        Assert.Equal(0.5f, result.Balance.Player.MaxSpeed);
+        Assert.Empty(result.Warnings);
+    }
+
     [Fact]
     public void Door_and_player_distance_of_one_cell_are_allowed()
     {

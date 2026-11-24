@@ -18,6 +18,14 @@ public sealed partial class Player
     /// </summary>
     public const float StepsPerSecond = 2f;
 
+    /// <summary>
+    /// Most steps one tick reports (issue #706). At any real speed a tick covers a few centimetres and a step about three
+    /// metres, so there is never more than one; the limit only stops a tiny step length (a top speed of almost 0 set in
+    /// code) from counting without end - below the float resolution of the walked distance a step would no longer
+    /// shorten it.
+    /// </summary>
+    public const int MaxStepsPerTick = 4;
+
     // Distance walked on the ground since the latest step, and the foot of the next one.
     private float _strideDistance;
     private Foot _nextFoot = Foot.Left;
@@ -29,7 +37,8 @@ public sealed partial class Player
     /// Adds this tick's flat distance on the ground and reports a step (<see cref="PlayerStepped"/>) for every full
     /// <see cref="StepLength"/>. In the air, while standing, dead or pulled by Gorm's chain the count starts anew - no
     /// step there, and the first step after them comes after a whole step length. A player without a step length (top
-    /// speed 0 in a balance built in code) takes no steps: the loop below would otherwise never end (issue #698).
+    /// speed 0 in a balance built in code) takes no steps: the loop below would otherwise never end (issue #698). One
+    /// with a tiny step length takes at most <see cref="MaxStepsPerTick"/> per tick (issue #706).
     /// </summary>
     private void CountSteps(bool onGroundThroughout, bool pulled)
     {
@@ -41,7 +50,7 @@ public sealed partial class Player
         }
 
         _strideDistance += distance;
-        while (_strideDistance >= StepLength)
+        for (var steps = 0; steps < MaxStepsPerTick && _strideDistance >= StepLength; steps++)
         {
             _strideDistance -= StepLength;
             _events.Add(new PlayerStepped(Id, _nextFoot) { Place = Position });
