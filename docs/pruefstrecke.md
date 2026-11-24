@@ -47,7 +47,7 @@ Nach dem Titelbildschirm stehst du am Westende des Wegs und blickst nach Osten. 
 
 ## Fotos
 
-Für jede Station gibt es ein Foto mit Schildern (siehe [foto-skript.md](foto-skript.md)):
+Für jede Station gibt es ein Foto mit Schildern (siehe [foto-skript.md](foto-skript.md)). Welche Schilder zu sehen sind, entscheidet die Welt selbst, nicht der Startschalter (`WorldSigns.Of` und `GameWorld.IsTestCourse`, Issue #722). Deshalb zeigen die Fotos dieselben Schilder wie `--course`, obwohl sie ihre Welt ohne `--course` bauen:
 
 ```powershell
 dotnet run --project src/SilverAndAsh.Game -- --photo course-1-arms --out <leerer Ordner>

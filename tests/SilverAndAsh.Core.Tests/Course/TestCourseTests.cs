@@ -376,6 +376,34 @@ public class TestCourseTests
         Assert.Equal(touches ? 1 : 2, course.Rooms.Count);
     }
 
+    /// <summary>
+    /// The second room on every side of the first (review of PR #728): a check that looks at only half of the eight
+    /// neighbours - only to the left, only above - lets one side through. The first room's floor is 5 .. 7 both ways.
+    /// </summary>
+    [Theory]
+    [InlineData(2, 5, true)]    // left: column 4 and column 5
+    [InlineData(8, 5, true)]    // right: column 7 and column 8
+    [InlineData(5, 2, true)]    // above: row 4 and row 5
+    [InlineData(5, 8, true)]    // below: row 7 and row 8
+    [InlineData(2, 2, true)]    // over the upper left corner: (4, 4) and (5, 5)
+    [InlineData(8, 2, true)]    // over the upper right corner: (8, 4) and (7, 5)
+    [InlineData(2, 8, true)]    // over the lower left corner: (4, 8) and (5, 7)
+    [InlineData(8, 8, true)]    // over the lower right corner: (7, 7) and (8, 8)
+    [InlineData(1, 5, false)]   // left, one column of wall between them
+    [InlineData(5, 1, false)]   // above, one row of wall between them
+    [InlineData(1, 1, false)]   // upper left, one cell of wall over the corner
+    [InlineData(9, 1, false)]   // upper right, one cell of wall over the corner
+    public void Two_rooms_need_a_wall_between_them_on_every_side(int x0, int z0, bool touches)
+    {
+        var course = new CourseBuilder();
+        course.AddRoom(RoomKind.Start, "First", 5, 5, 7, 7, 0);
+
+        var second = Record.Exception(() => course.AddRoom(RoomKind.Start, "Second", x0, z0, x0 + 2, z0 + 2, 1));
+
+        Assert.Equal(touches, second is InvalidOperationException { Message: var message } && message.Contains("touches"));
+        Assert.Equal(touches ? 1 : 2, course.Rooms.Count);
+    }
+
     [Fact]
     public void Starting_again_gives_the_course_from_the_start()
     {

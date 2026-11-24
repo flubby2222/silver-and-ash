@@ -59,7 +59,6 @@ using (log)
     int? look = null;
     WindowSize? window = null;
     PhotoRequest? photos = null;
-    var onCourse = false;
     try
     {
         var options = LaunchOptions.Parse(args);
@@ -122,7 +121,6 @@ using (log)
         {
             newWorld = TestCourse.NewWorld;
             nextWorld = TestCourse.NextWorld;
-            onCourse = true;
             log?.Info($"Test course: {TestCourse.Stations.Count} stations.");
         }
 
@@ -259,7 +257,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look), window, onCourse);
+            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look), window);
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -273,10 +271,9 @@ using (log)
 
 // newWorld builds a world from a seed and balancing values; nextWorld the one after a run ended (new layout on level 0).
 // look: how the 3D world is drawn - the standard variant 2 (issue #237) unless --look chose another (debug version, issue #234).
-// onCourse: the worlds are the test course (--course), which shows a sign over each station (issue #722).
 static void RunGame(
     Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
-    PhotoRequest? photos, LookVariant look, WindowSize? window, bool onCourse)
+    PhotoRequest? photos, LookVariant look, WindowSize? window)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted. The bench (--bench) draws as
     // fast as it can: no VSync, and no frame rate limit is set anywhere.
@@ -382,19 +379,26 @@ static void RunGame(
         // The level name ("THE CATACOMBS") shows for a few seconds whenever a run starts.
         var levelNameSeconds = 0f;
 
-        // The showroom (--showroom, issue #283): the labels of its pieces, built once it is shown; L hides and shows them.
-        // The test course (--course, issue #718) has a sign at each station, shown the same way.
-        // The camera of the last 3D picture places them on the screen.
-        IReadOnlyList<ShowroomLabel>? showroomLabels = null;
-        IReadOnlyList<ShowroomLabel>? courseSigns = null;
+        // The showroom (--showroom, issue #283) labels its pieces, the test course (--course, issue #718) has a sign at
+        // each station; L hides and shows them. The camera of the last 3D picture places them on the screen.
         var showroomLabelsShown = true;
 
-        // The labels the world in hand shows - or null for a run, which has none. The course's signs go by the launch
-        // option, not by IsTestWorld: a test world is not always the course (issue #722).
-        IReadOnlyList<ShowroomLabel>? LabelsOf(GameWorld world) =>
-            world.IsShowroom ? showroomLabels ??= ShowroomLayout.Build().Labels
-            : onCourse ? courseSigns ??= TestCourse.Build(world.Seed, world.Balance).Labels
-            : null;
+        // The labels the world in hand shows - or null for a run, which has none. Which ones is decided in Core by the
+        // world itself (WorldSigns.Of, issue #722), so the photos of the course show them as --course does. Built once
+        // per world, not every frame.
+        GameWorld? signedWorld = null;
+        IReadOnlyList<ShowroomLabel>? signs = null;
+        IReadOnlyList<ShowroomLabel>? LabelsOf(GameWorld world)
+        {
+            if (!ReferenceEquals(world, signedWorld))
+            {
+                signs = WorldSigns.Of(world);
+                signedWorld = world;
+            }
+
+            return signs;
+        }
+
         var lastCamera = default(Camera3D);
 
         // The end of a run: its numbers while "YOU DIED" / "VICTORY" is shown (null while the run is on), and how long

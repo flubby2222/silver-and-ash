@@ -392,6 +392,12 @@ public sealed class GameWorld
     }
 
     /// <summary>
+    /// True for a world of the test course (issue #722, set by <c>TestCourse.NewWorld</c>): it shows a sign over each
+    /// station, in the game and on its photos. Not the same as <see cref="IsTestWorld"/>, which every showroom is too.
+    /// </summary>
+    public bool IsTestCourse { get; init; }
+
+    /// <summary>
     /// True on the test course (issue #718): no player of this world can die (<see cref="Player.CannotDie"/>). A rule of
     /// the world, not of the players who are there at the start - every player it makes asks it at each hit, so one who
     /// joins later cannot die either (issue #722, decision record 0003). It also hides what saves a player from death,
