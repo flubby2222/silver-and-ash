@@ -58,6 +58,52 @@ internal sealed record PortalSite(Door Door, BossPortal Portal, RoomState Boss, 
             !play.TicksUntil(600, Play.Forward, () => { play.Face(At(0f, 4f)); return Boss.IsSealed; }),
             $"{play.Context}: boss room not sealed after walking in, player at {play.World.Player.Position}");
 
+    /// <summary>
+    /// How far <paramref name="at"/> lies past the door's box (Door.BoxMin/BoxMax, the whole door cells) on the side of
+    /// the boss room, along the passage, in metres; negative inside the box or before it.
+    /// </summary>
+    public float BeyondDoor(Vector3 at) => Portal.PassesAlongZ
+        ? Inwards > 0 ? at.Z - Door.BoxMax.Z : Door.BoxMin.Z - at.Z
+        : Inwards > 0 ? at.X - Door.BoxMax.X : Door.BoxMin.X - at.X;
+
+    /// <summary>True if the middle of a body at <paramref name="at"/> lies inside the door's box along the passage.</summary>
+    public bool InDoorway(Vector3 at)
+    {
+        var (low, high, along) = Portal.PassesAlongZ ? (Door.BoxMin.Z, Door.BoxMax.Z, at.Z) : (Door.BoxMin.X, Door.BoxMax.X, at.X);
+        return along > low && along < high;
+    }
+
+    /// <summary>
+    /// Wakes the first of <paramref name="enemies"/> that waits in a combat room behind an arena door, as in a real run:
+    /// the player enters its arena, which seals, and it comes out. Only an awake enemy acts - is knocked back, moves.
+    /// Null (with a finding) if none does.
+    /// </summary>
+    public static T? WakeInArena<T>(Play play, IEnumerable<T> enemies, string kind, Report report)
+        where T : class, ITarget
+    {
+        var world = play.World;
+        foreach (var enemy in enemies)
+        {
+            var room = world.Rooms.FirstOrDefault(room => room.Kind == RoomKind.Combat && room.Cells.Contains(Play.Cell(enemy.Body.Position)));
+            var arena = room?.DoorIds.Select(id => world.Doors[id])
+                .Where(door => door.Kind != DoorKind.Cracked)
+                .Select(door => Arena.Find(world, door))
+                .FirstOrDefault(arena => arena?.Room == room);
+            if (arena is null)
+            {
+                continue;
+            }
+
+            arena.Enter(play);
+            return report.Check(!play.TicksUntil(600, PlayerInput.None, () => enemy.IsHittable && !world.IsAsleep(enemy)), $"{play.Context}: {kind} {enemy.Id} not awake after its arena sealed")
+                ? null
+                : enemy;
+        }
+
+        report.Finding($"{play.Context}: no {kind} in an arena");
+        return null;
+    }
+
     public static string Where(float across, float along) =>
         string.Create(CultureInfo.InvariantCulture, $"across {across:0.00} along {along:0.00}");
 
@@ -76,24 +122,45 @@ internal sealed record PortalSite(Door Door, BossPortal Portal, RoomState Boss, 
 /// player in co-op), a ghoul, a bat and Gorm, each at every free place of a grid over the doorway. The shutting door
 /// pushes it into the boss room (GameWorld.PushOutOf); nobody may end up in the portal's stone (issue #598, PR #623) or in
 /// the blocking door. The body is set into the doorway again every tick until the door blocks, so it stands there at the
-/// slam.
+/// slam. Then the player, a ghoul and a bat run into the doorway from the antechamber - walking in, or knocked in by a
+/// club blow - timed so that they are in it in the slam tick. Each time the bot checks that the door has really pushed
+/// the body just past its box (issue #647): a body that was not in the doorway at the slam is a finding, not a pass.
 /// </summary>
 internal static class DoorSlam
 {
-    // Walking bodies step as the player does (BodySizes.Player.StepHeight); a bat flies over any floor (Bat.FlyingStepHeight,
-    // private in the core: written here as infinity).
+    // Where the push leaves a body: this far past the door's box (GameWorld.OnThreshold: its radius and a gap of 1 cm),
+    // give or take a little for rounding.
+    private const float PushGap = 0.01f;
+    private const float PushTolerance = 0.002f;
+
+    // A running body starts this far before the door's box (on the antechamber side) and is let go so that it is in the
+    // doorway in the slam tick: the player walks in (full input), a ghoul or bat is knocked in by a charged club blow.
+    private const float RunUp = 0.6f;
+
+    // Ticks a running body is held at its start before it is let go, in the probe that finds when it reaches the doorway.
+    private const int ProbeHold = 10;
+
+    // Walking bodies step as the player does (BodySizes.Player.StepHeight); a bat flies over any floor
+    // (BodySizes.Bat.StepHeight). Standing and Running: places played per side of the middle at least - about three
+    // quarters of what seeds 1..6 play today (issue #647: standing player 16, ghoul 14, bat 21, Gorm 3; running player
+    // 9, ghoul 13, bat 17 on each side), so a grid half as fine is a finding. Gorm does not run in: he has no knockback,
+    // and his own steps would make the run-up depend on the tick it starts (a gap, issue #647).
     private static readonly Body[] Bodies =
     [
-        new("player", BodySizes.Player.Radius, BodySizes.Player.Height, BodySizes.Player.StepHeight, false, _ => null),
-        new("ghoul", BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height, BodySizes.Player.StepHeight, false, world => world.Ghouls.FirstOrDefault(ghoul => !ghoul.IsDead)),
-        new("bat", BodySizes.Bat.Radius, BodySizes.Bat.Height, float.PositiveInfinity, true, world => world.Bats.FirstOrDefault(bat => !bat.IsDead)),
-        new("Gorm", BodySizes.Gorm.Radius, BodySizes.Gorm.Height, BodySizes.Player.StepHeight, false, world => world.Gorm),
+        new("player", BodySizes.Player.Radius, BodySizes.Player.Height, BodySizes.Player.StepHeight, false, 12, 7, _ => null,
+            (_, _) => null, RunInPlayer),
+        new("ghoul", BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height, BodySizes.Player.StepHeight, false, 10, 10, world => world.Ghouls.FirstOrDefault(ghoul => !ghoul.IsDead),
+            (play, report) => PortalSite.WakeInArena(play, play.World.Ghouls.Where(ghoul => !ghoul.IsDead), "ghoul", report), KnockIn),
+        new("bat", BodySizes.Bat.Radius, BodySizes.Bat.Height, BodySizes.Bat.StepHeight, true, 15, 13, world => world.Bats.FirstOrDefault(bat => !bat.IsDead),
+            (play, report) => PortalSite.WakeInArena(play, play.World.Bats.Where(bat => !bat.IsDead), "bat", report), KnockIn),
+        new("Gorm", BodySizes.Gorm.Radius, BodySizes.Gorm.Height, BodySizes.Player.StepHeight, false, 2, 0, world => world.Gorm, null, null),
     ];
 
     public static void Run(LevelZero zero, int seed, Report report)
     {
         var ctx = $"seed {seed} slam";
         var start = zero.NewRun(seed, Play.Balance);
+        Play.CheckPortalStoneHeights(report, ctx, Bodies.Select(body => body.Height));
 
         // The free places of the doorway, with the door open (the door cell is floor then).
         var probe = new Play(start.Restarted(), report, $"{ctx} probe");
@@ -107,7 +174,7 @@ internal static class DoorSlam
         // few and narrow - the stepped jambs (PR #623: 0.8 m beside the middle, only 0.65 m deep in the outer reveal).
         foreach (var body in Bodies)
         {
-            var places = report.Tally($"{ctx} {body.Name}", $"{body.Name}: no free place at this distance from the middle");
+            var places = report.Tally($"{ctx} {body.Name}", $"{body.Name}: no free place at this distance from the middle", body.Standing);
             foreach (var across in PortalSite.Steps(-1.95f, 1.95f, 0.05f))
             {
                 var free = PortalSite.Steps(-0.95f, 0.95f, 0.05f)
@@ -125,49 +192,31 @@ internal static class DoorSlam
 
             places.Verify();
         }
+
+        foreach (var body in Bodies.Where(body => body.Launch is not null))
+        {
+            RunsIn(start, ctx, body, probe.World.Level, site, report);
+        }
     }
 
     private static void Slam(GameWorld start, string where, Body body, float across, float along, Report report, Report.Places places)
     {
-        var world = start.Restarted();
-        var play = new Play(world, report, where);
-        var site = PortalSite.Find(world, report, where)!;
-        var enemy = body.Enemy(world);
-        if (body.Name != "player" && enemy is null)
-        {
-            report.Count($"{body.Name}: none in the level");
-            return;
-        }
-
-        // Gorm stays alive: with every enemy of the boss room dead it would be cleared at once, and no door would shut.
-        Play.KillEnemies(world, null, enemy);
-        if (!site.Open(play, report) || !site.WalkIn(play, report))
+        if (Prepare(start, where, body, report) is not { } prepared)
         {
             return;
         }
 
-        if (enemy is not null)
-        {
-            play.PlaceAt(site.At(0f, 4f));
-        }
-
-        var at = body.Place(world.Level, site.At(across, along));
-        var limit = Play.BossDoorShutTicks(world);
+        var (play, site, enemy) = prepared;
+        var at = body.Place(play.World.Level, site.At(across, along));
+        var limit = Play.BossDoorShutTicks(play.World);
         for (var tick = 0; tick <= limit && !site.Door.Blocks; tick++)
         {
-            if (enemy is null)
-            {
-                play.PlaceAt(at);
-            }
-            else
-            {
-                Play.PlaceEnemyAt(enemy, at);
-            }
-
+            body.PlaceAt(play, enemy, at);
             play.Tick(PlayerInput.None);
         }
 
-        if (report.Check(!site.Door.Blocks, $"{where}: boss door does not block {limit} ticks after the boss room sealed"))
+        if (report.Check(!site.Door.Blocks, $"{where}: boss door does not block {limit} ticks after the boss room sealed")
+            || !Pushed(play, site, body, enemy, where, report))
         {
             return;
         }
@@ -177,12 +226,184 @@ internal static class DoorSlam
         places.Played(across);
     }
 
-    private sealed record Body(string Name, float Radius, float Height, float StepHeight, bool Flies, Func<GameWorld, ITarget?> Enemy)
+    // The body runs into the doorway and is in it in the slam tick: from every free place RunUp before the door's box,
+    // every 10 cm across.
+    private static void RunsIn(GameWorld start, string ctx, Body body, Level level, PortalSite site, Report report)
+    {
+        var places = report.Tally($"{ctx} {body.Name} running", $"{body.Name}: no free run-up at this distance from the middle or it does not reach the doorway", body.Running);
+        var from = -(BossPortalShape.HalfDepth + body.Radius + RunUp);
+        foreach (var across in PortalSite.Steps(-1.9f, 1.9f, 0.1f))
+        {
+            if (!body.IsFree(level, body.Place(level, site.At(across, from))))
+            {
+                places.Skipped();
+                continue;
+            }
+
+            var where = $"{ctx} {body.Name} running {PortalSite.Where(across, from)}";
+            report.Try(where, () => RunIn(start, where, body, across, from, report, places));
+        }
+
+        places.Verify();
+    }
+
+    // First a probe: held at the start for ProbeHold ticks, then let go - which tick after letting go has it in the
+    // doorway, and which tick (counted from the sealing) the door blocks. Then the run itself: held so long that it
+    // reaches the doorway in the slam tick.
+    private static void RunIn(GameWorld start, string where, Body body, float across, float from, Report report, Report.Places places)
+    {
+        if (Prepare(start, where, body, report, awake: true) is not { } prepared)
+        {
+            return;
+        }
+
+        var (probe, probeSite, probeEnemy) = prepared;
+        var at = body.Place(probe.World.Level, probeSite.At(across, from));
+        var limit = Play.BossDoorShutTicks(probe.World);
+        int? inDoorway = null;
+        var shut = -1;
+        for (var tick = 0; tick <= limit && shut < 0; tick++)
+        {
+            probe.Tick(Step(probe, probeSite, body, probeEnemy, at, tick < ProbeHold, tick == ProbeHold));
+            if (tick >= ProbeHold && inDoorway is null && !probeSite.Door.Blocks && probeSite.InDoorway(Position(probe, probeEnemy)))
+            {
+                inDoorway = tick - ProbeHold;
+            }
+
+            shut = probeSite.Door.Blocks ? tick : -1;
+        }
+
+        if (report.Check(shut < 0, $"{where}: boss door does not block {limit} ticks after the boss room sealed"))
+        {
+            return;
+        }
+
+        var hold = shut - (inDoorway ?? shut);
+        if (inDoorway is null || hold < 0)
+        {
+            places.Skipped();
+            return;
+        }
+
+        if (Prepare(start, where, body, report, awake: true) is not { } again)
+        {
+            return;
+        }
+
+        var (play, site, enemy) = again;
+        for (var tick = 0; tick <= shut; tick++)
+        {
+            play.Tick(Step(play, site, body, enemy, at, tick < hold, tick == hold));
+        }
+
+        if (report.Check(!site.Door.Blocks, $"{where}: boss door does not block in tick {shut} after the sealing, as in the probe")
+            || !Pushed(play, site, body, enemy, where, report))
+        {
+            return;
+        }
+
+        play.Ticks(30, PlayerInput.None);
+        report.Count($"{body.Name}: running into the doorway at the slam");
+        places.Played(across);
+    }
+
+    // One tick of a run-up: held at the start, let go (launched), or running on.
+    private static PlayerInput Step(Play play, PortalSite site, Body body, ITarget? enemy, Vector3 at, bool held, bool letGo)
+    {
+        if (held || letGo)
+        {
+            body.PlaceAt(play, enemy, at);
+        }
+
+        if (letGo)
+        {
+            body.Launch!(play, site, enemy, at);
+        }
+
+        return held || enemy is not null ? PlayerInput.None : Play.Forward;
+    }
+
+    // The player walks straight along the passage into the boss room.
+    private static void RunInPlayer(Play play, PortalSite site, ITarget? enemy, Vector3 at) => play.Face(at + (Inwards(site) * 10f));
+
+    // A charged club blow along the passage, into the boss room (the farthest knock, as in mode "bat").
+    private static void KnockIn(Play play, PortalSite site, ITarget? enemy, Vector3 at)
+    {
+        var club = play.World.Balance.Club;
+        var knockback = enemy switch
+        {
+            Ghoul ghoul => ghoul.Knockback,
+            Bat bat => bat.Knockback,
+            _ => throw new InvalidOperationException($"no knockback for {enemy}"),
+        };
+        knockback.Start(Inwards(site), club.ChargedKnockback, club.KnockbackTime);
+    }
+
+    // The direction along the passage into the boss room, on the ground plane.
+    private static Vector3 Inwards(PortalSite site) => Vector3.Normalize(site.At(0f, 1f) - site.At(0f, 0f));
+
+    private static Vector3 Position(Play play, ITarget? enemy) => enemy?.Body.Position ?? play.World.Player.Position;
+
+    // A finding unless the shutting door has pushed the body just past its box into the boss room, as GameWorld.PushOutOf
+    // does with every body in its doorway - else it was not in the doorway at the slam, and the run checked nothing.
+    private static bool Pushed(Play play, PortalSite site, Body body, ITarget? enemy, string where, Report report)
+    {
+        var beyond = site.BeyondDoor(Position(play, enemy));
+        return !report.Check(
+            MathF.Abs(beyond - (body.Radius + PushGap)) > PushTolerance,
+            string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{where}: not in the doorway at the slam - {beyond:0.000} m past the door's box, a pushed body stands {body.Radius + PushGap:0.000} m past it"));
+    }
+
+    // A fresh world with the door open, the player walked in and the boss room sealed; the enemy that plays the body
+    // (null for the player) alive and every other ghoul and bat dead, the player then in the boss room. Null if not.
+    // Awake: the enemy is woken first in its arena (Body.Awake), so it acts - a running body must move.
+    private static (Play Play, PortalSite Site, ITarget? Enemy)? Prepare(GameWorld start, string where, Body body, Report report, bool awake = false)
+    {
+        var world = start.Restarted();
+        var play = new Play(world, report, where);
+        var site = PortalSite.Find(world, report, where)!;
+        var enemy = awake ? body.Awake!(play, report) : body.Enemy(world);
+        if (body.Name != "player" && enemy is null)
+        {
+            report.Count($"{body.Name}: none in the level");
+            return null;
+        }
+
+        // Gorm stays alive: with every enemy of the boss room dead it would be cleared at once, and no door would shut.
+        Play.KillEnemies(world, null, enemy);
+        if (!site.Open(play, report) || !site.WalkIn(play, report))
+        {
+            return null;
+        }
+
+        if (enemy is not null)
+        {
+            play.PlaceAt(site.At(0f, 4f));
+        }
+
+        return (play, site, enemy);
+    }
+
+    private sealed record Body(
+        string Name, float Radius, float Height, float StepHeight, bool Flies, int Standing, int Running,
+        Func<GameWorld, ITarget?> Enemy, Func<Play, Report, ITarget?>? Awake, Action<Play, PortalSite, ITarget?, Vector3>? Launch)
     {
         public Vector3 Place(Level level, Vector3 floor) => Flies ? Bat.HoverPosition(level, floor) : floor;
 
         public bool IsFree(Level level, Vector3 at) =>
             !CharacterCollision.Overlaps(level, at, Radius, Height, StepHeight) && !Play.InPortalStone(level, new CylinderBody(at, Radius, Height));
+
+        public void PlaceAt(Play play, ITarget? enemy, Vector3 at)
+        {
+            if (enemy is null)
+            {
+                play.PlaceAt(at);
+            }
+            else
+            {
+                Play.PlaceEnemyAt(enemy, at);
+            }
+        }
     }
 }
 
@@ -198,6 +419,7 @@ internal static class PortalBat
     {
         var ctx = $"seed {seed} bat";
         var start = zero.NewRun(seed, Play.Balance);
+        Play.CheckPortalStoneHeights(report, ctx, [BodySizes.Bat.Height]);
         if (Awake(start, $"{ctx} knocks", report) is { } knocks)
         {
             Knocks(knocks.Play, knocks.Bat, knocks.Site, report);
@@ -219,43 +441,27 @@ internal static class PortalBat
     {
         var world = start.Restarted();
         var play = new Play(world, report, ctx);
-        foreach (var bat in world.Bats)
+        if (PortalSite.WakeInArena(play, world.Bats, "bat", report) is not { } bat)
         {
-            var room = world.Rooms.FirstOrDefault(room => room.Kind == RoomKind.Combat && room.Cells.Contains(Play.Cell(bat.Position)));
-            var arena = room?.DoorIds.Select(id => world.Doors[id])
-                .Where(door => door.Kind != DoorKind.Cracked)
-                .Select(door => Arena.Find(world, door))
-                .FirstOrDefault(arena => arena?.Room == room);
-            if (arena is null)
-            {
-                continue;
-            }
-
-            arena.Enter(play);
-            if (report.Check(!play.TicksUntil(600, PlayerInput.None, () => bat.Emergence.IsPresent && !world.IsAsleep(bat)), $"{ctx}: bat {bat.Id} not awake after its arena sealed"))
-            {
-                return null;
-            }
-
-            Play.KillEnemies(world, null, bat);
-            if (PortalSite.Find(world, report, ctx) is not { } site || !site.Open(play, report))
-            {
-                return null;
-            }
-
-            return (play, bat, site);
+            return null;
         }
 
-        report.Finding($"{ctx}: no bat in an arena");
-        return null;
+        Play.KillEnemies(world, null, bat);
+        if (PortalSite.Find(world, report, ctx) is not { } site || !site.Open(play, report))
+        {
+            return null;
+        }
+
+        return (play, bat, site);
     }
 
     // A charged club blow (the farthest knock) from every free place round the portal at hover height, in eight
-    // directions: at the jambs, the buttresses, the plinths' edges and through the opening.
+    // directions: at the jambs, the buttresses, the plinths' edges and through the opening. Seeds 1..6 play 36 places on
+    // each side of the middle (issue #647): fewer than three quarters of it is a finding.
     private static void Knocks(Play play, Bat bat, PortalSite site, Report report)
     {
         var club = play.World.Balance.Club;
-        var places = report.Tally(play.Context, "knocks: places in stone or wall");
+        var places = report.Tally(play.Context, "knocks: places in stone or wall", 27);
         foreach (var across in PortalSite.Steps(-2.6f, 2.6f, 0.4f))
         {
             foreach (var along in PortalSite.Steps(-2f, 2f, 0.5f))
@@ -306,8 +512,9 @@ internal static class PortalBat
     // fresh world (a sleeping bat falls as well, Bat.Tick).
     private static void Corpses(GameWorld start, string ctx, Report report)
     {
-        // Only 4 places per seed lie free over a plinth: none left on one side is already a finding.
-        var places = report.Tally($"{ctx} corpse", "corpses: places not over a plinth or in stone");
+        // Only 4 places per seed lie free over a plinth, 2 on each side of the middle (seeds 1..6, issue #647): one left
+        // on a side is already a finding.
+        var places = report.Tally($"{ctx} corpse", "corpses: places not over a plinth or in stone", 2);
         foreach (var side in new[] { -1f, 1f })
         {
             foreach (var face in new[] { -1f, 1f })
@@ -352,6 +559,6 @@ internal static class PortalBat
     }
 
     private static bool IsFree(Level level, Vector3 at) =>
-        !CharacterCollision.Overlaps(level, at, BodySizes.Bat.Radius, BodySizes.Bat.Height, float.PositiveInfinity)
+        !CharacterCollision.Overlaps(level, at, BodySizes.Bat.Radius, BodySizes.Bat.Height, BodySizes.Bat.StepHeight)
         && !Play.InPortalStone(level, new CylinderBody(at, BodySizes.Bat.Radius, BodySizes.Bat.Height));
 }
