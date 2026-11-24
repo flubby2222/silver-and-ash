@@ -20,7 +20,12 @@
 #   --project PATH   test project (default: tests/SilverAndAsh.Core.Tests)
 #   --name NAME      name of this probe in the output (default: the search text)
 #   --bot            check with a bot run (tools/SilverAndAsh.BotRun, issue #647) instead of tests: the control run
-#                    must end without findings, the change is caught if the bot reports a finding
+#                    must end without findings, the change is caught if the bot reports a finding; the output names
+#                    the exit code of the bot (1 with findings) besides the one of this script (issue #660)
+#
+# Every new option or way out of this script gets a case in its self-test tools/gegenprobe.tests.sh (issue #660).
+# Log lines it shows (build errors, the end of an aborted run) have their absolute paths shortened to ".../<name>", so
+# no temp folder or user name ends up in a PR comment.
 #
 # Only one run per working folder at a time (issue #604): a second run started while the first one has the file
 # changed would take the broken file for the original. It stops at once with exit code 2 and names the running one.
@@ -91,6 +96,7 @@ root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "gegenprobe: not i
 cd "$root" || exit 2
 
 work=""
+bot_exit=""
 changed=0
 built_changed=0
 
@@ -165,6 +171,17 @@ if cmp -s -- "$work/changed-file" "$backup"; then
     exit 2
 fi
 
+# Lines of a log shown to the reader may end up in PR comments: absolute paths (the temp folder of the trx file, the
+# user folder) become ".../<last part>" (issue #660).
+shorten_paths() {
+    perl -pe 's{(?<![^\s"'"'"'(\[=])(?:[A-Za-z]:)?([\\/])(?:[^\s\\/:"'"'"']+[\\/])+}{...$1}g'
+}
+
+# The error lines of a build log (error CS..., error MSB...), each once, at most ten.
+build_errors() {
+    grep -E "error [A-Z]+[0-9]+" "$1" | sed -E 's/ \[[^]]*\]$//' | shorten_paths | sort -u | head -n 10 >&2
+}
+
 # Runs the filtered tests; sets total, failed, red (names) and returns 3 if nothing could be run (build error).
 run_tests() {
     local label="$1"
@@ -174,7 +191,7 @@ run_tests() {
     local trx
     trx="$(find "$results" -name '*.trx' 2>/dev/null | head -n 1)"
     if [ -z "$trx" ]; then
-        grep -E "error [A-Z]+[0-9]+" "$work/$label.log" | sed -E 's/ \[[^]]*\]$//' | sort -u | head -n 10 >&2
+        build_errors "$work/$label.log"
         return 3
     fi
     total="$(perl -ne 'print $1 if /<Counters\b[^>]*\btotal="(\d+)"/' "$trx")"
@@ -192,19 +209,19 @@ run_bot() {
     local label="$1"
     local bot_project="tools/SilverAndAsh.BotRun"
     if ! dotnet build "$bot_project" -c Release > "$work/$label.build.log" 2>&1; then
-        grep -E "error [A-Z]+[0-9]+" "$work/$label.build.log" | sed -E 's/ \[[^]]*\]$//' | sort -u | head -n 10 >&2
+        build_errors "$work/$label.build.log"
         return 3
     fi
     local args
     read -r -a args <<< "$filter"
     dotnet run --project "$bot_project" -c Release --no-build -- "${args[@]}" > "$work/$label.log" 2>&1
-    local code=$?
+    bot_exit=$?
     total=1
     red="$(grep -E '^FINDING ' "$work/$label.log" | head -n 10)"
-    case "$code" in
+    case "$bot_exit" in
         0) failed=0 ;;
         1) failed=1 ;;
-        *) tail -n 5 "$work/$label.log" >&2; return 2 ;;
+        *) tail -n 5 "$work/$label.log" | shorten_paths >&2; return 2 ;;
     esac
     return 0
 }
@@ -233,10 +250,11 @@ no_result() {
 # The result of the bot run with the change: a finding means caught.
 report_bot() {
     if [ "$failed" = 0 ]; then
-        echo "   result: SURVIVED - the bot reports no finding with the change"
+        echo "   result: SURVIVED - the bot reports no finding with the change (bot exit code $bot_exit)"
         exit 1
     fi
-    echo "   result: CAUGHT - the bot reports findings (the first ten):"
+    # The exit code of this script is 0 here; the one of the bot is 1 (issue #660).
+    echo "   result: CAUGHT - the bot reports findings (bot exit code $bot_exit), the first ten:"
     echo "$red" | sed 's/^/     /'
     exit 0
 }
@@ -265,8 +283,17 @@ report_aborted() {
         echo "$red" | sed 's/^/     /'
     fi
     echo "gegenprobe: the test run with the change was aborted (the test process crashed?) or the change took tests" >&2
-    echo "   away. The end of its output:" >&2
-    tail -n 5 "$work/mutated.log" | sed 's/^/   /' >&2
+    # After a crash the end of the output is the stack; the cause ("Stack overflow") stands further up (issue #660).
+    local cause
+    cause="$(grep -i -E 'Stack overflow|crashed|abgebrochen|aborted' "$work/mutated.log" | awk '!seen[$0]++' | head -n 5)"
+    if [ -n "$cause" ]; then
+        echo "   away. The cause:" >&2
+        echo "$cause" | shorten_paths | sed 's/^/   /' >&2
+        echo "   The end of its output:" >&2
+    else
+        echo "   away. The end of its output:" >&2
+    fi
+    tail -n 5 "$work/mutated.log" | shorten_paths | sed 's/^/   /' >&2
     exit 4
 }
 
@@ -295,7 +322,7 @@ if [ "$bot" = 1 ] && [ "$failed" != 0 ]; then
     exit 2
 fi
 if [ "$bot" = 1 ]; then
-    echo "   control run: bot without findings"
+    echo "   control run: bot without findings (bot exit code $bot_exit)"
 else
     if [ "$total" = 0 ]; then
         echo "gegenprobe: the filter '$filter' selects no tests" >&2
