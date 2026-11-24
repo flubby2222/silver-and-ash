@@ -115,6 +115,7 @@ public static class PhotoScenes
         new("door-level-seed2-boss", "The boss door of level 0 with seed 2, from 4 to 6 m, closed (issue #245).",
             studio => new PhotoSetup(studio.BeforeDoor(2, DoorKind.Boss))),
         .. BossPortalScenes(),
+        .. BelowTheArchScenes(),
         new("door-level-barred", "An open door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #558).",
             studio => BarredDoor(studio, open: true)),
         new("door-level-barred-shut", "A closed door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #572).",
@@ -855,6 +856,27 @@ public static class PhotoScenes
         new("boss-portal-gorm", "The open boss portal from the antechamber, 8 m away, Gorm asleep 2 m behind it: the size (issue #568).",
             studio => new PhotoSetup(studio.BeforeBossPortal(8f, open: true, gormInDoorway: true))),
     ];
+
+    // The arch of a door seen from below, the leaves swung open (issue #730): a gap in the underside of the arch shows
+    // only from there, never at eye level (issue #714). A door without a grate and one with a grate that hangs up.
+    private static PhotoScene[] BelowTheArchScenes() =>
+    [
+        new("door-normal-open-below", "The arch of an open wooden double door seen from below, standing 0.5 m before its plane, looking up at its underside (issue #730).",
+            studio => BelowTheArch(studio, grate: false)),
+        new("door-barred-open-below", "The arch of an open wooden double door with a portcullis hanging up, seen from below, standing 0.5 m before its plane (issue #730).",
+            studio => BelowTheArch(studio, grate: true)),
+    ];
+
+    // The door hall with the door open, the player 0.5 m before its plane looking up at the arch 3 m up, 0.6 m beyond the plane.
+    private static PhotoSetup BelowTheArch(PhotoStudio studio, bool grate)
+    {
+        var world = studio.DoorHall(DoorKind.Normal, open: true, grate: grate);
+        var door = world.Doors.Single();
+        var middle = (door.BoxMin + door.BoxMax) / 2f;
+        world.Player.PlaceAt(new Vector3(middle.X, door.BoxMin.Y, middle.Z - 0.5f));
+        PhotoStudio.Face(world.Player, new Vector3(middle.X, door.BoxMin.Y + 3.0f, middle.Z + 0.6f));
+        return new PhotoSetup(world) { Ticks = 600, StopWhen = Swung(1f) };
+    }
 
     // The open portal from inside the boss room: the room seals on the first tick, the leaves slam shut; the picture is
     // taken in the tick they hit the stop and the door is barred - before Gorm's hook can pull the player away. Barred

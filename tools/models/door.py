@@ -471,6 +471,7 @@ def stufenportal(parts, hw0, R0, spring, zs, z_door, plate_x_in, vertical_reveal
 
 LEAF_TOP_N = 1.94               # Normal: Bezug fuer das oberste Beschlagband (bis #543 auch die Oberkante des Fluegels)
 SPRING_N = 2.0                  # Normal und Verschlossen: Bogenansatz, Lauf R = 1,5625 (Scheitel 3,458), Oeffnung 1,75 m
+ARCH_FOOT = 0.875               # Normal und Verschlossen: der Bogenlauf R = 1,4375 beginnt am Ansatz bei x = +-0,875
 POST_N = 0.105                  # Pfosten an der Scharnierseite (Normal): Dicke 0,14 / 2 + Beschlag 0,03 + Luft
 POST_L = 0.135                  # Locked: Dicke 0,14 / 2 + Platten und Baender 0,06 + Luft
 
@@ -480,7 +481,9 @@ def frame_nodes():
 
 
 def frame_normal(kind):
-    """Ein Lauf 0,125 breit, 1/16 hinter der Wandebene; Steinpfosten an der Scharnierseite (hinter dem Pfostenband)."""
+    """Ein Lauf 0,125 breit, 1/16 hinter der Wandebene; Steinpfosten an der Scharnierseite (hinter dem Pfostenband). Steht der
+    Pfosten weiter aussen als der Bogenansatz (Normal: 0,895 statt 0,875), schliesst eine Flaeche nach unten die Stufe
+    zwischen beiden bei y = 2 (Issue #730): ohne sie war dort ein 2 cm breiter Schlitz nach oben offen."""
     front, back = frame_nodes()
     stufenportal((front, back), 1.0, 1.5625, SPRING_N, [0.9375], 0.07, 0.875, False, core_reveal=True)
     post = POST_N if kind == "normal" else POST_L
@@ -490,6 +493,10 @@ def frame_normal(kind):
         inner = "+x" if sx < 0 else "-x"
         box_faces(front, (lo, 0, 0), (hi, SPRING_N, zp), "stone", ["+z", inner])
         box_faces(back, (lo, 0, -zp), (hi, SPRING_N, 0), "stone", ["-z", inner])
+        if 1.0 - post > ARCH_FOOT:                                           # Issue #730: Unterseite der Stufe zwischen Pfosten und Bogenansatz
+            ledge = sorted((sx * ARCH_FOOT, sx * (1.0 - post)))
+            box_faces(front, (ledge[0], SPRING_N, 0), (ledge[1], SPRING_N, zp), "stone", ["-y"])
+            box_faces(back, (ledge[0], SPRING_N, -zp), (ledge[1], SPRING_N, 0), "stone", ["-y"])
     return [front, back]
 
 

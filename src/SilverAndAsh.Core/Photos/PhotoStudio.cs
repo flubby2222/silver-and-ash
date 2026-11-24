@@ -429,7 +429,7 @@ public sealed class PhotoStudio
     /// <paramref name="open"/>: the door is opened by the player before the first tick - its leaves swing away from them
     /// while the scene's ticks run.
     /// </summary>
-    public GameWorld DoorHall(DoorKind kind, bool sideways = false, bool open = false, int cells = 3)
+    public GameWorld DoorHall(DoorKind kind, bool sideways = false, bool open = false, int cells = 3, bool grate = false)
     {
         const int Width = 9;
         const int Depth = 10;
@@ -458,7 +458,7 @@ public sealed class PhotoStudio
         var doorCells = doorColumns.Select(column => sideways ? (X: DoorRow, Z: column) : (X: column, Z: DoorRow)).ToList();
         LevelDoor[] doors =
         [
-            new(doorCells[0].X, doorCells[0].Z, 0, 1, sideways ? RoomSide.East : RoomSide.South, kind) { MoreCells = doorCells.Skip(1).ToList() },
+            new(doorCells[0].X, doorCells[0].Z, 0, 1, sideways ? RoomSide.East : RoomSide.South, kind) { MoreCells = doorCells.Skip(1).ToList(), HasGrate = grate },
         ];
 
         // The hall is as high as the door's frame (6 m for the boss portal), so no ceiling cuts into it.

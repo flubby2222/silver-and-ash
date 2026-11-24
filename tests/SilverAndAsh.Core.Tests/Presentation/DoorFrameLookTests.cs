@@ -184,6 +184,29 @@ public class DoorFrameLookTests
     }
 
     [Theory]
+    [InlineData(TextureVariant.A)]
+    [InlineData(TextureVariant.B)]
+    [InlineData(TextureVariant.C)]
+    public void The_guide_ring_lies_behind_the_innermost_run_of_the_arch_not_in_the_opening(TextureVariant variant)
+    {
+        // Issue #730: the ring stays (without it the edge of the arch shows a dark sliver, see the pictures of the issue).
+        // It hides behind the reveal: no corner of the ring may come closer to the middle of its arch than the innermost
+        // run (radius 1.4375) - else a bit of it would stand in the opening beside the reveal.
+        var ring = TrianglesOf(GratePose.GuideFileName(variant), GratePose.Guide).ToList();
+        Assert.NotEmpty(ring);
+        foreach (var triangle in ring)
+        {
+            foreach (var corner in triangle)
+            {
+                var distance = Vector2.Distance(new Vector2(corner.X, corner.Y), CentreOf(corner));
+                Assert.True(
+                    distance >= ArchRadius - Tolerance,
+                    $"A corner of the guide ring at {corner} lies {distance} m from the middle of its arch - inside the reveal ({ArchRadius} m).");
+            }
+        }
+    }
+
+    [Theory]
     [MemberData(nameof(NormalAndLocked))]
     public void No_face_of_the_guide_ring_lies_on_a_face_of_the_frame(DoorKind kind, TextureVariant variant)
     {
@@ -218,6 +241,39 @@ public class DoorFrameLookTests
                     Assert.False(
                         InsideTriangle(sample, b, normalB),
                         $"A face of the guide ring lies on a face of the {kind} frame near {sample}: the two flicker (z-fighting).");
+                }
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(TextureVariant.A)]
+    [InlineData(TextureVariant.B)]
+    [InlineData(TextureVariant.C)]
+    public void The_step_between_the_hinge_post_and_the_springing_of_a_normal_door_is_closed_from_below(TextureVariant variant)
+    {
+        // Issue #730 (review of #726): the stone post on the hinge side of a normal door stands at x = 0.895, the arch begins
+        // at x = 0.875. At the springing (y = 2) a strip 0.02 m wide, as deep as the post (0.1 m either side of the door
+        // plane), was open downwards: no face of the frame covered it. Every point of the strip must lie in a face at y = 2
+        // that faces down. Both posts, front and back.
+        var file = DoorFrameLook.FileName(DoorKind.Normal, variant);
+        foreach (var (part, side) in new[] { (DoorFrameLook.Front, 1f), (DoorFrameLook.Back, -1f) })
+        {
+            var ledges = TrianglesOf(file, part)
+                .Where(triangle => triangle.All(corner => MathF.Abs(corner.Y - Springing) < Tolerance))
+                .Where(triangle => Vector3.Normalize(Vector3.Cross(triangle[1] - triangle[0], triangle[2] - triangle[0])).Y < -0.99f)
+                .ToList();
+            foreach (var x in new[] { -1f, 1f })
+            {
+                foreach (var xStep in new[] { 0.877f, 0.885f, 0.893f })
+                {
+                    foreach (var zStep in new[] { 0.005f, 0.05f, 0.095f })
+                    {
+                        var point = new Vector3(x * xStep, Springing, side * zStep);
+                        Assert.True(
+                            ledges.Any(triangle => InsideTriangle(point, triangle, -Vector3.UnitY)),
+                            $"The {part} of the normal frame has no face looking down at {point}: the step beside the hinge post is open.");
+                    }
                 }
             }
         }
