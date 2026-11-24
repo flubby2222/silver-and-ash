@@ -16,6 +16,7 @@ using SilverAndAsh.Core.World;
 // Exit code: 0 = no findings, 1 = findings, 2 = wrong arguments or the tool itself failed.
 
 // The modes, in the order "all" plays them. A new mode is one more line here (issue #629), not one more branch.
+var stuck = new HangingEnemies();
 BotMode[] modes =
 [
     new("arena", "every arena door: seal, escape attempts, clear, walk out; two arenas side by side; the boss door", ArenaDoors.Run),
@@ -23,7 +24,7 @@ BotMode[] modes =
     new("boss", "run to the boss (antechamber, teleporters, boss door), win, climb the stairs", BossRun.Run),
     new("slam", "the boss door slams shut with a body in its doorway (player, ghoul, bat, Gorm): nobody in the stone", DoorSlam.Run),
     new("bat", "a bat at the boss portal: knocked at the stone, flying round a player there, falling dead onto a plinth", PortalBat.Run),
-    new("stuck", "stand still in every arena and the boss room: no enemy that hunts a player may hang without attacking", HangingEnemies.Run, HangingEnemies.PrintLongest),
+    new("stuck", "stand still in every arena and the boss room: no enemy that hunts a player may hang without attacking", stuck.Run, stuck.PrintLongest),
     new("seeds", "build every level twice: failures, generator tries, same level for the same seed", SeedProbe.Run, SeedProbe.PrintAttemptNote),
 ];
 var usage = $"Usage: <{string.Join('|', modes.Select(m => m.Name))}|all> [--seeds FROM..TO] [--repo FOLDER]";
