@@ -281,15 +281,15 @@ public sealed class PhotoStudio
     }
 
     /// <summary>
-    /// A bare hall with the Well of Sirius in its middle, 4 m in front of the player, who looks at its middle (issue #438).
-    /// <paramref name="spent"/>: it has been used already and stands dry.
+    /// A bare hall with Sirius' Relief in its middle, <paramref name="cells"/> cells (2 m each) in front of the player, who
+    /// looks at its middle (issues #438, #716). <paramref name="spent"/>: it has been used already and stands dry.
     /// </summary>
-    public GameWorld Well(bool spent)
+    public GameWorld Well(bool spent, int cells = 2)
     {
         const int Width = 9;
         const int Depth = 8;
         const int PlayerRow = 2;
-        const int WellRow = PlayerRow + 2;
+        var wellRow = PlayerRow + cells;
         var text = new StringBuilder();
         for (var z = 0; z < Depth; z++)
         {
@@ -302,7 +302,7 @@ public sealed class PhotoStudio
             text.Append('\n');
         }
 
-        var world = new GameWorld(LevelParser.Parse(text.ToString()), Seed, Balance, well: new WellPlan(Width / 2, WellRow, 0));
+        var world = new GameWorld(LevelParser.Parse(text.ToString()), Seed, Balance, well: new WellPlan(Width / 2, wellRow, 0));
         if (spent)
         {
             world.Well!.Use();

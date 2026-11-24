@@ -81,6 +81,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `menu-title`, `menu-pause`, `menu-settings` | das Titelbild, das Esc-Menü und die Einstellungen (aus dem Esc-Menü) über dem Startraum, gezeichnet wie im Spiel (Issue #349) |
 | `teleporter-locked-3m`, `teleporter-unlocked-3m`, `teleporter-locked-10m`, `teleporter-unlocked-10m` | ein Teleporter gesperrt bzw. freigeschaltet in einer leeren Halle aus 3 m bzw. 10 m, Blick auf den Kristall (Issue #480) |
 | `teleporter-hint` | Ebene 0, alle Teleporter freigeschaltet, man steht auf dem im Startraum: „[T] Travel“ unter dem Fadenkreuz |
+| `well-hint` | der Brunnen „Sirius' Relief“ aus 2 m in einer leeren Halle, in Reichweite: „[F] Use Sirius' Relief“ unter dem Fadenkreuz (Issue #716) |
 | `menu-travel` | wie `teleporter-hint`, dazu die offene Zielwahl (T): Karte, gewähltes Ziel und Knopf „Travel“ |
 | `menu-travel-sealed` | die Zielwahl mit einem Boss-Tor-Teleporter in einem versiegelten Kampfraum, dessen Gegner leben (wie im Koop, wenn ein anderer Spieler dort kämpft): das Ziel steht als „Room sealed“ da. Seit dem Vorraum (Issue #565) steht dieser Teleporter in echten Ebenen nie in einem Kampfraum; die Szene setzt ihn dafür in den Kampfraum vor dem Vorraum (erster Seed ohne Gang davor) |
 | `model-probe-4m`, `model-probe-10m` | ein einzelnes Ziel auf leerem Boden aus 4 m / 10 m – für Modelle unter Spielbedingungen |

@@ -3,7 +3,7 @@ using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.World;
 
-/// <summary>Where the Well of Sirius stands (issue #438): at most one per level, in a quiet room, from the seed.</summary>
+/// <summary>Where Sirius' Relief stands (issue #438): at most one per level, in a quiet room, from the seed.</summary>
 public class WellPlacementTests
 {
     private static readonly IReadOnlyList<RoomTemplate> Templates = RoomTemplateParser.LoadAll(RepositoryFiles.Find("assets/rooms"));

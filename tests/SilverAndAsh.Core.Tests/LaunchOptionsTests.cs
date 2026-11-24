@@ -367,6 +367,49 @@ public class LaunchOptionsTests
     }
 
     [Fact]
+    public void Course_opens_the_test_course_and_goes_with_look()
+    {
+        Assert.False(LaunchOptions.Parse([]).Course);
+        Assert.True(LaunchOptions.Parse(["--course"]).Course);
+
+        var options = LaunchOptions.Parse(["--look", "2", "--course"]);
+        Assert.True(options.Course);
+        Assert.Equal(2, options.Look);
+    }
+
+    [Theory]
+    [InlineData("--level", "heights")]
+    [InlineData("--seed", "123")]
+    [InlineData("--give", "club")]
+    [InlineData("--photo", "ghoul-4m")]
+    [InlineData("--bench", "ghoul-4m")]
+    [InlineData("--clip", "all")]
+    [InlineData("--showroom")]
+    [InlineData("--window", "854x480")]
+    public void Course_cannot_be_combined_with_anything_but_look(params string[] other)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--course", .. other]));
+
+        Assert.Contains("'--course'", error.Message);
+    }
+
+    [Fact]
+    public void Course_may_come_only_once()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--course", "--course"]));
+
+        Assert.Contains("only once", error.Message);
+    }
+
+    [Fact]
+    public void The_unknown_option_message_names_course()
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--corse"]));
+
+        Assert.Contains("--course", error.Message);
+    }
+
+    [Fact]
     public void Without_room_option_there_is_no_room()
     {
         Assert.Null(LaunchOptions.Parse([]).Room);

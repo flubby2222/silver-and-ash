@@ -1,7 +1,7 @@
 namespace SilverAndAsh.Core.World;
 
 /// <summary>
-/// Puts the Well of Sirius (issue #438) into a generated level: at most one, with the chance
+/// Puts Sirius' Relief (issue #438) into a generated level: at most one, with the chance
 /// <see cref="WellBalance.LevelChance"/>. It stands in the middle of a floor cell of a quiet room - not a combat or boss
 /// room, so enemies never have to come out next to it, and not the antechamber - whose eight neighbours are floor of the same room too (no wall,
 /// no door), with no chest, no teleporter and not the player's start in that block. Rolled with its own random numbers

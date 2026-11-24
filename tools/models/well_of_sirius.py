@@ -1,4 +1,4 @@
-"""Brunnen "Well of Sirius" (Issue #438): Dreischaler aus Stein, bereit (mit Wasser) und verbraucht (trocken).
+"""Brunnen "Sirius' Relief" (Issue #438, Name seit #716; Dateinamen bleiben well_of_sirius_*): Dreischaler aus Stein, bereit (mit Wasser) und verbraucht (trocken).
 
 Erzeuger fuer das Spiel. Uebergabe aus dem Probestueck design/proben/grafik/brunnen-438/brunnen3.py (Endfassung, vom Menschen
 am 2026-11-19 abgenommen: Form A2, Textur und Moosmenge von A1). Bereinigt: nur diese Fassung, keine Probebilder, kein Blatt.

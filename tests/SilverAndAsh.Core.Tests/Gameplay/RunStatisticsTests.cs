@@ -1,6 +1,7 @@
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Showroom;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
@@ -294,5 +295,45 @@ public sealed class RunStatisticsTests : IDisposable
         File.WriteAllText(blocker, "x");
 
         Assert.False(RunLog.Append(Path.Combine(blocker, "runs.log"), "line"));
+    }
+
+    // ---- Only real runs go into the log (review of PR #720) ------------------------------------------------------
+
+    [Fact]
+    public void The_end_of_a_real_run_goes_into_the_run_log()
+    {
+        var world = new LevelZero(RoomTemplateParser.LoadAll(RepositoryFiles.Find("assets/rooms"))).NewRun(77, Balance.Default);
+        world.Player.TakeDamage(world.Player.MaxHealth, []);
+        world.Tick(PlayerInput.None);
+        var line = world.TakeEndSummary()!.ToLogLine(DateTimeOffset.Now);
+        var path = Path.Combine(_folder, "runs.log");
+
+        Assert.False(world.IsTestWorld);
+        Assert.True(RunLog.AppendRun(path, world, line));
+
+        Assert.Equal([line], File.ReadAllLines(path));
+    }
+
+    [Fact]
+    public void The_showroom_is_a_test_world_and_never_reaches_the_run_log()
+    {
+        var world = ShowroomLayout.Build().NewWorld(Balance.Default);
+        var path = Path.Combine(_folder, "runs.log");
+
+        Assert.True(world.IsTestWorld);
+        Assert.True(RunLog.AppendRun(path, world, world.Summary().ToLogLine(DateTimeOffset.Now)));
+
+        Assert.False(File.Exists(path));
+    }
+
+    [Fact]
+    public void A_run_log_that_cannot_be_written_is_reported_for_a_real_run()
+    {
+        var world = new GameWorld(LevelParser.Parse(Hall));
+        Directory.CreateDirectory(_folder);
+        var blocker = Path.Combine(_folder, "blocker");
+        File.WriteAllText(blocker, "x");
+
+        Assert.False(RunLog.AppendRun(Path.Combine(blocker, "runs.log"), world, "line"));
     }
 }

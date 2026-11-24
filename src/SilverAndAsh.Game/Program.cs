@@ -4,6 +4,7 @@ using System.Reflection;
 using Raylib_cs;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Audio;
+using SilverAndAsh.Core.Course;
 using SilverAndAsh.Core.Diagnostics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
@@ -113,6 +114,16 @@ using (log)
             log?.Info($"Showroom: {showroom.Placed.Count} pieces in {showroom.Sections.Count} sections.");
         }
 
+        // Test option: --course - the test course: every station whose look or sound waits for a judgement, one after
+        // the other, with the real rules (issue #718, docs/pruefstrecke.md). Only in the debug version: the player
+        // there cannot die and has every weapon.
+        if (options.Course)
+        {
+            newWorld = TestCourse.NewWorld;
+            nextWorld = TestCourse.NextWorld;
+            log?.Info($"Test course: {TestCourse.Stations.Count} stations.");
+        }
+
         // Test option: --window 2520x1080 opens the window in another shape, e.g. for photos in 21:9 (issue #350).
         window = options.Window;
 
@@ -197,6 +208,11 @@ using (log)
         if (options.Showroom)
         {
             throw new ArgumentException("'--showroom' works only in the debug version (dotnet run).");
+        }
+
+        if (options.Course)
+        {
+            throw new ArgumentException("'--course' works only in the debug version (dotnet run).");
         }
 
         if (options.Bench is not null)
@@ -364,9 +380,18 @@ static void RunGame(
         var levelNameSeconds = 0f;
 
         // The showroom (--showroom, issue #283): the labels of its pieces, built once it is shown; L hides and shows them.
+        // The test course (--course, issue #718) has a sign at each station, shown the same way.
         // The camera of the last 3D picture places them on the screen.
         IReadOnlyList<ShowroomLabel>? showroomLabels = null;
+        IReadOnlyList<ShowroomLabel>? courseSigns = null;
         var showroomLabelsShown = true;
+
+        // The labels the world in hand shows - or null for a run, which has none. The test worlds are the showroom and
+        // the test course.
+        IReadOnlyList<ShowroomLabel>? LabelsOf(GameWorld world) =>
+            world.IsShowroom ? showroomLabels ??= ShowroomLayout.Build().Labels
+            : world.IsTestWorld ? courseSigns ??= TestCourse.Build(world.Seed, world.Balance).Labels
+            : null;
         var lastCamera = default(Camera3D);
 
         // The end of a run: its numbers while "YOU DIED" / "VICTORY" is shown (null while the run is on), and how long
@@ -484,7 +509,7 @@ static void RunGame(
         // The spiral staircase of every wall variant (issue #300); without one the placeholder boxes.
         using var stairsView = StairsView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
-        // The Well of Sirius, ready or spent (issue #438); without its model a stone placeholder.
+        // Sirius' Relief, ready or spent (issue #438); without its model a stone placeholder.
         using var wellView = WellOfSiriusView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
         // The teleporters, locked or unlocked (issue #480); without their models placeholder boxes.
@@ -711,10 +736,9 @@ static void RunGame(
                 damageFeedback.Draw();
             }
 
-            if (gameWorld.IsShowroom && showroomLabelsShown && endSummary is null && !frozen)
+            if (showroomLabelsShown && endSummary is null && !frozen && LabelsOf(gameWorld) is { } labels)
             {
-                showroomLabels ??= ShowroomLayout.Build().Labels;
-                ShowroomLabelView.Draw(showroomLabels, gameWorld.Level, lastCamera, picture.Width, picture.Height);
+                ShowroomLabelView.Draw(labels, gameWorld.Level, lastCamera, picture.Width, picture.Height);
             }
 
             hud?.Draw(gameWorld, player, picture.Width, picture.Height);
@@ -1090,8 +1114,9 @@ static void RunGame(
 
             soundPacks.Update(Raylib.GetFrameTime());
 
-            // L hides and shows the labels of the showroom (issue #283). Presentation only, never part of the world.
-            if (gameWorld.IsShowroom && Raylib.IsKeyPressed(KeyboardKey.L))
+            // L hides and shows the labels of the showroom (issue #283) and the signs of the test course (issue #718).
+            // Presentation only, never part of the world.
+            if (LabelsOf(gameWorld) is not null && Raylib.IsKeyPressed(KeyboardKey.L))
             {
                 showroomLabelsShown = !showroomLabelsShown;
             }
@@ -1342,7 +1367,8 @@ static void RunGame(
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
             // the local run log (one line) and the technical log. The world hands its summary out only once, so
-            // going back to the title (which clears the end screen) never logs the same run again.
+            // going back to the title (which clears the end screen) never logs the same run again. A test world (showroom,
+            // test course) is no run: Core leaves it out of the run log.
             wonSeconds = gameWorld.IsWon ? wonSeconds + Raylib.GetFrameTime() : 0f;
             if (endSummary is null && (gameWorld.ShouldRestart || wonSeconds >= VictoryScreenDelay)
                 && gameWorld.TakeEndSummary() is { } finished)
@@ -1350,7 +1376,7 @@ static void RunGame(
                 endSummary = finished;
                 var line = endSummary.ToLogLine(DateTimeOffset.Now);
                 log?.Info($"Run ended: {line}");
-                if (!RunLog.Append(runLogPath, line))
+                if (!RunLog.AppendRun(runLogPath, gameWorld, line))
                 {
                     log?.Warning($"Could not write the run log '{runLogPath}'.");
                 }
