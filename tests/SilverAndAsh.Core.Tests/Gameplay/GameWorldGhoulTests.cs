@@ -183,6 +183,18 @@ public class GameWorldGhoulTests
         Assert.True(world.Ghouls[0].IsGone);
     }
 
+    [Fact]
+    public void The_world_keeps_a_dead_ghoul_for_the_whole_corpse_time()
+    {
+        // The counterpart to the test above: a corpse gone too early (say after half the time) shows here.
+        var world = new GameWorld(LevelParser.Parse("P\n.\nG"));
+        world.Ghouls[0].TakeDamage(Balance.Default.Ghoul.MaxHealth, []);
+
+        RunTicks(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Ghoul.CorpseTime) - 1);
+
+        Assert.False(world.Ghouls[0].IsGone);
+    }
+
     private static GameWorld InFrontOfAGhoul()
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\nG"));

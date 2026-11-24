@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Presentation;
 
@@ -223,7 +224,7 @@ public class HudReadoutTests
     [Fact]
     public void In_the_boss_fight_the_boss_shows_with_the_share_of_his_health_left()
     {
-        var world = BossWorld();
+        var world = GormHallWorld();
         Assert.Null(HudReadout.Of(world, world.Player).Boss);
 
         Enter(world);
@@ -255,21 +256,6 @@ public class HudReadoutTests
     {
         Assert.All(Enum.GetValues<ConsumableKind>(), kind => Assert.False(string.IsNullOrWhiteSpace(PickupToast.NameOf(kind))));
         Assert.Equal(Equipment.All.Count + Enum.GetValues<ConsumableKind>().Length + 1, PickupToast.AllTexts().Distinct().Count());
-    }
-
-    // As in GormTests: room 0 (start), a door, the boss room with Gorm ('T').
-    private const string Map = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
-
-    private static GameWorld BossWorld()
-    {
-        var hall = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
-        PlacedRoom[] rooms =
-        [
-            new(0, RoomKind.Start, "start", 0, 0, 7, 1, 0, [(2, 0), (3, 0), (4, 0)], [], []),
-            new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, hall, [], []),
-        ];
-        LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
-        return new GameWorld(LevelParser.Parse(Map), 1, Balance.Default, doors, rooms);
     }
 
     private static void Enter(GameWorld world)

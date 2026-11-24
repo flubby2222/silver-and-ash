@@ -14,8 +14,6 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 public class ColumnEnemyTests
 {
     private static readonly int Second = SimulationClock.TicksPerSecond;
-    private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
-    private static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
 
     // 11 x 7 open cells: the player in the middle row at the west end, a ghoul at the east end, 20 m apart.
     private const string GhoulHall =
@@ -66,19 +64,16 @@ public class ColumnEnemyTests
         }
     }
 
-    // As in GormTests: room 0 (start) in row 0, door in row 1, the boss room (5 wide) in rows 2-11, Gorm ('T') in row 10.
-    private const string GormMap = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
-
     private static readonly Balance NoAttacks = Balance.Default with { Gorm = Balance.Default.Gorm with { NearRange = 0f, FarRange = 0f } };
 
     [Fact]
     public void Gorm_with_a_column_exactly_between_him_and_the_player_still_walks_up_to_the_player()
     {
-        var level = LevelParser.Parse(GormMap);
+        var level = LevelParser.Parse(GormHallMap);
         var column = Column.AtCell(3, 6);
         Assert.Equal(ColumnFit.Fits, ColumnPlacement.Check(level, column, [(3, 1)]));
-        var world = GormWorld(level.WithColumns([column]));
-        Enter(world);
+        var world = GormHallWorld(level.WithColumns([column]), balance: NoAttacks);
+        EnterGormHall(world);
         var gorm = world.Gorm!;
         Assert.Equal(gorm.Position.X, column.X, 0.01f);                   // in line with the column and the player
         Assert.Equal(world.Player.Position.X, column.X, 0.01f);
@@ -90,28 +85,5 @@ public class ColumnEnemyTests
 
         Assert.True(gorm.Position.Z < column.Z, $"Gorm never got past the column, stuck at {gorm.Position}.");
         Assert.InRange(FlatDistance(gorm.Position, world.Player.Position), 0f, Balance.Default.Gorm.StopDistance + 0.2f);
-    }
-
-    private static GameWorld GormWorld(Level level)
-    {
-        var rows = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
-        PlacedRoom[] rooms =
-        [
-            new(0, RoomKind.Start, "start", 0, 0, 7, 1, 0, [(2, 0), (3, 0), (4, 0)], [], []),
-            new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, rows, [], []),
-        ];
-        LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
-        return new GameWorld(level, 1, NoAttacks, doors, rooms);
-    }
-
-    private static void Enter(GameWorld world)
-    {
-        world.Tick(PressF);
-        for (var tick = 0; tick < 3 * Second && !world.Rooms[1].IsSealed; tick++)
-        {
-            world.Tick(Forward);
-        }
-
-        Assert.True(world.Rooms[1].IsSealed, "The boss room never sealed - the test would prove nothing.");
     }
 }

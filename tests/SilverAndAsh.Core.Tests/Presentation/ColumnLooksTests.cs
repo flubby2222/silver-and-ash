@@ -4,6 +4,7 @@ using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Presentation;
 
@@ -17,17 +18,11 @@ public class ColumnLooksTests
     private static readonly int Second = SimulationClock.TicksPerSecond;
     private static readonly int HitsToBreak = Balance.Default.Columns.HitsToBreak;
 
-    /// <summary>A player who survives a lot - to let Gorm strike the column until it breaks.</summary>
-    private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
-
-    // As in GormCoverTests: room 0 (start) in row 0, door in row 1, the boss room (5 wide) in rows 2-11, Gorm ('T') in row 10.
-    private const string GormMap = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
-
     [Fact]
     public void In_the_world_every_blow_shows_its_stage_the_break_starts_the_fall_and_81_ticks_later_the_column_lies()
     {
         var column = Column.AtCell(3, 6);
-        var world = GormWorld(LevelParser.Parse(GormMap).WithColumns([column]));
+        var world = GormHallWorld(LevelParser.Parse(GormHallMap).WithColumns([column]), balance: Tough);
         var looks = new ColumnLooks();
         Enter(world, looks);
         Assert.Equal(ColumnLook.Intact, looks.Of(column, world.Ticks));
@@ -96,7 +91,7 @@ public class ColumnLooksTests
         // Issue #611: two columns of the hall between Gorm and the player, at different distances from Gorm - his shock
         // wave and his chain reach the nearer one first, so its last blow and its break come a few ticks earlier.
         Column[] columns = [Column.AtCell(2, 7), Column.AtCell(4, 4)];
-        var world = GormWorld(LevelParser.Parse(GormMap).WithColumns(columns));
+        var world = GormHallWorld(LevelParser.Parse(GormHallMap).WithColumns(columns), balance: Tough);
         var looks = new ColumnLooks();
         Enter(world, looks);
 
@@ -226,18 +221,6 @@ public class ColumnLooksTests
         {
             looks.OnEvent(gameEvent, world.Ticks, world.Gorm?.Position);
         }
-    }
-
-    private static GameWorld GormWorld(Level level)
-    {
-        var rows = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
-        PlacedRoom[] rooms =
-        [
-            new(0, RoomKind.Start, "start", 0, 0, 7, 1, 0, [(2, 0), (3, 0), (4, 0)], [], []),
-            new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, rows, [], []),
-        ];
-        LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
-        return new GameWorld(level, 1, Tough, doors, rooms);
     }
 
     private static void Enter(GameWorld world, ColumnLooks looks)

@@ -4,6 +4,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -20,9 +21,6 @@ namespace SilverAndAsh.Core.Tests.Gameplay;
 public class SoundPlaceCoverageTests
 {
     private static readonly int Second = SimulationClock.TicksPerSecond;
-
-    /// <summary>A player who survives every fight here - the tests watch the enemies, not the player's health.</summary>
-    private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
 
     // Rounding of float positions; far below anything that could be heard.
     private const float Slack = 1e-3f;

@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -10,9 +11,6 @@ public class GormSwingTests
 {
     private static readonly int Second = SimulationClock.TicksPerSecond;
     private static readonly GormBalance Values = Balance.Default.Gorm;
-
-    /// <summary>Players who survive a lot - to watch many attacks in a row.</summary>
-    private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
 
     /// <summary>Gorm's cell: column 7, row 6 of the hall. He starts looking along -Z (towards row 0).</summary>
     private const int GormX = 7;
