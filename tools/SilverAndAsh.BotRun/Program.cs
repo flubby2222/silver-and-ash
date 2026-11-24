@@ -13,7 +13,8 @@ using SilverAndAsh.Core.World;
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- stuck --seeds 1..40   -> enemies that hang (issue #591)
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- seeds --seeds 1..1000
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- all
-// Exit code: 0 = no findings, 1 = findings, 2 = wrong arguments or the tool itself failed.
+// Exit code: 0 = no findings, 1 = findings, 2 = wrong arguments or the tool itself failed, 3 = assets/balance.json gave
+// a warning (nothing was played, issue #688).
 
 // The modes, in the order "all" plays them. A new mode is one more line here (issue #629), not one more branch.
 var stuck = new HangingEnemies();
@@ -76,13 +77,12 @@ if (repo is null || !Directory.Exists(Path.Combine(repo, "assets", "rooms")))
 }
 
 // The balancing as the game ships it (assets/balance.json), so a balancing round is played with its new values.
-var loaded = BalanceFile.Load(Path.Combine(repo, "assets", "balance.json"));
-foreach (var warning in loaded.Warnings)
+if (ShippedBalance(repo) is not { } balance)
 {
-    Console.Error.WriteLine($"balance.json: {warning}");
+    return 3;
 }
 
-Play.Use(loaded.Balance);
+Play.Use(balance);
 var zero = new LevelZero(RoomTemplateParser.LoadAll(Path.Combine(repo, "assets", "rooms")));
 var report = new Report();
 foreach (var current in chosen)
@@ -110,6 +110,27 @@ foreach (var current in chosen)
 
 report.Print(mode, from, to);
 return report.Findings == 0 ? 0 : 1;
+
+// The balancing of assets/balance.json, or null (exit code 3) if reading it gave a warning (issue #688): the loader
+// then plays standard values in place of the file's, and a run would check other values than the file holds - in a
+// balancing round as in a gegenprobe that changes the file (tools/gegenprobe.sh --bot then ends with exit code 2 and
+// this message instead of SURVIVED).
+static Balance? ShippedBalance(string repo)
+{
+    var loaded = BalanceFile.Load(Path.Combine(repo, "assets", "balance.json"));
+    foreach (var warning in loaded.Warnings)
+    {
+        Console.Error.WriteLine($"balance.json: {warning}");
+    }
+
+    if (loaded.Warnings.Count == 0)
+    {
+        return loaded.Balance;
+    }
+
+    Console.Error.WriteLine($"The bot does not run: balance.json gave {loaded.Warnings.Count} warning(s) (above), so the game would play standard values in place of the file's - fix the file (exit code 3).");
+    return null;
+}
 
 static string? FindRepository()
 {
