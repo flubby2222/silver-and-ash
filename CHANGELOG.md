@@ -14,6 +14,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Der Brunnen heißt „Sirius' Relief“:** Am Brunnen steht jetzt „[F] Use Sirius' Relief“ statt „Use Well of Sirius“. Regeln, Modell und Ort bleiben gleich. Foto: `--photo well-hint` (#716)
 
 ### Behoben
+- **Kein dunkler Streifen mehr im Bogen der Tür:** Stand eine normale oder verschlossene Tür offen und man sah von unten in den Spitzbogen, klaffte dort ein schwarzer, gebogener Streifen. Dort, wo das Türblatt steht, hatte der Bogen keine Unterseite; geschlossen füllte sie das Kopffeld des Flügels, beim Öffnen schwang es weg. Der Rahmen hat dort jetzt eine Leibung (#714). Der Führungsring des Fallgitters sitzt dafür hinter der Leibung statt auf ihr, damit Türen mit und ohne Gitter gleich aussehen und nichts flimmert. Das Bosstor war nie betroffen.
 - **Türrahmen ohne ragende Rechtecke:** An normalen und verschlossenen Türen standen die hellen Kämpfer- und Sockelplatten vor der Wand und ragten wie lose Klötze in die Öffnung. Sie sitzen jetzt bündig im Pfeiler. Neue Regel in der Art Bible: Kein Bauteil ragt ohne erkennbaren Zweck in eine Öffnung (#715)
 
 ## [0.12.0] – 2026-11-24 – Portal & Säulen
