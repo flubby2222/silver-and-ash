@@ -152,7 +152,6 @@ public class ClubBendTests
         // the wind-up only eases off towards 0 and is still far from it when the swing is at its height.
         var frameSeconds = 1f / framesPerSecond;
         var lowest = Enumerable.Range(0, 101).Min(step => WeaponPose.SwingCurve(step / 100f));
-        var overshoot = Enumerable.Range(0, 101).Max(step => WeaponPose.SwingCurve(step / 100f));
         var swing = 0f;
         var windUp = 1f;
         var hitWindUps = new List<float>();
@@ -164,8 +163,8 @@ public class ClubBendTests
             var (pitch, outward) = WeaponPose.ClubBendDegrees(t, windUp);
             var name = $"{framesPerSecond} fps, swing {t:0.000}, wind-up {windUp:0.00}";
 
-            // Never bent further back than a plain swing bends at its overshoot (nor further than winding up).
-            Assert.True(pitch >= (1f - overshoot) * WeaponPose.ClubBendRestDegrees - Tolerance, $"{name}: bent back to {pitch:0.0} degrees.");
+            // Never bent back past straight, not even in the overshoot (issue #637: before, about 2 degrees were allowed).
+            Assert.True(pitch >= -Tolerance, $"{name}: bent back to {pitch:0.000} degrees.");
             Assert.True(MathF.Abs(outward) <= WeaponPose.ClubBendRestOutwardDegrees * (1f - lowest) + Tolerance, $"{name}: turned {outward:0.0} degrees.");
 
             var bend = WeaponPose.ClubBend(t, windUp);
@@ -340,7 +339,7 @@ public class ClubBendTests
 
     // Inside a closed mesh: rays in several directions cross it an odd number of times (a majority, so that a ray
     // grazing an edge does not decide).
-    private static bool Inside(Vector3 point, Vector3[][] mesh)
+    internal static bool Inside(Vector3 point, Vector3[][] mesh)
     {
         Vector3[] directions = [new(0.31f, 0.17f, 0.93f), new(0.93f, 0.31f, 0.17f), new(-0.17f, 0.93f, 0.31f), new(-0.6f, -0.5f, 0.62f), new(0.2f, -0.95f, -0.2f)];
         var odd = directions.Count(direction => mesh.Count(triangle => Hit(point, direction, triangle) is > 0f) % 2 == 1);
@@ -352,7 +351,7 @@ public class ClubBendTests
         Hit(from, to - from, triangle) is > 0f and < 0.999f;
 
     // Where the ray from `origin` along `direction` meets the triangle, in lengths of `direction` (Moeller-Trumbore).
-    private static float? Hit(Vector3 origin, Vector3 direction, Vector3[] triangle)
+    internal static float? Hit(Vector3 origin, Vector3 direction, Vector3[] triangle)
     {
         var ab = triangle[1] - triangle[0];
         var ac = triangle[2] - triangle[0];
