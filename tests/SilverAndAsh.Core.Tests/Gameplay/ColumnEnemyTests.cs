@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -113,8 +114,6 @@ public class ColumnEnemyTests
 
         Assert.True(world.Rooms[1].IsSealed, "The boss room never sealed - the test would prove nothing.");
     }
-
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     private static bool RunUntil(GameWorld world, PlayerInput input, int maxTicks, Func<GameWorld, bool> condition)
     {

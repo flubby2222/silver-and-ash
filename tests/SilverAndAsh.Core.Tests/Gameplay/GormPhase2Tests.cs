@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -90,8 +91,6 @@ public class GormPhase2Tests
 
         public List<Vector3> StoneSpots() => Events.OfType<StoneFalling>().Select(stone => stone.At).ToList();
     }
-
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     // ---- Phase 2 ----------------------------------------------------------------------------------------------------
 

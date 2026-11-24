@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -139,13 +140,5 @@ public class GameWorldBladeTests
         RunTicks(world, Forward, SimulationClock.TicksPerSecond);
         RunTicks(world, PlayerInput.None, 10);
         return world;
-    }
-
-    private static void RunTicks(GameWorld world, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            world.Tick(input);
-        }
     }
 }

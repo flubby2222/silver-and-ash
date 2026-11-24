@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -213,8 +214,6 @@ public class PickupTests
             "The body did not slide far enough to touch the vial - the test would prove nothing.");
         Assert.DoesNotContain(seen, e => e is PickupTaken);
     }
-
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     private static void Kill(ITarget target) => target.TakeDamage(10_000, []);
 

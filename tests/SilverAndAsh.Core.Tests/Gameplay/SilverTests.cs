@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -302,8 +303,6 @@ public class SilverTests
     }
 
     private static void Kill(ITarget target) => target.TakeDamage(10_000, []);
-
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     private static List<(Vector3, int)> SilverAfterKillingEverything(int seed, Balance? balance = null)
     {
