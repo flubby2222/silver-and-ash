@@ -2,8 +2,8 @@ using SilverAndAsh.Core.Audio;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Presentation;
-using SilverAndAsh.Core.Tests.Gameplay;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Audio;
 
@@ -21,8 +21,8 @@ public class ColumnSoundTests
     public void In_the_world_each_blow_plays_its_stage_and_the_last_one_only_the_break_exactly_once()
     {
         // Gorm's boss room with one column between the player and him (as in GormCoverTests); Gorm wears it down.
-        var world = GormCoverTests.GormWorld(LevelParser.Parse(GormCoverTests.GormMap).WithColumns([Pillar]));
-        GormCoverTests.Enter(world);
+        var world = GormHallWorld(LevelParser.Parse(GormHallMap).WithColumns([Pillar]), balance: Tough);
+        EnterGormHall(world);
         var cues = new SoundCues(world.Seed);
         var heard = new List<(ColumnHit? Hit, bool Broke, List<SoundKind> Kinds)>();
 

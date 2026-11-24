@@ -12,9 +12,6 @@ public class GormPhase2Tests
     private static readonly int Second = SimulationClock.TicksPerSecond;
     private static readonly GormBalance Values = Balance.Default.Gorm;
 
-    /// <summary>A player who survives a lot - to watch many attacks in a row.</summary>
-    private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
-
     /// <summary>The damage that brings him from full health to exactly the limit of phase 2.</summary>
     private static int DownToHalf(GormBalance gorm) => gorm.MaxHealth - (int)MathF.Floor(gorm.MaxHealth * gorm.Phase2Health);
 
@@ -425,16 +422,9 @@ public class GormPhase2Tests
     {
         // Room 0 (start) in row 0, door in row 1, the boss room in rows 2-11. The player stays right behind the door:
         // without the room as limit many stones would land in the start room.
-        const string Map = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
         var bossRoom = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
-        PlacedRoom[] rooms =
-        [
-            new(0, RoomKind.Start, "start", 0, 0, 7, 1, 0, [(2, 0), (3, 0), (4, 0)], [], []),
-            new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, bossRoom, [], []),
-        ];
-        LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
         var balance = Tough with { Gorm = Tough.Gorm with { StoneCount = 40 } };
-        var world = new GameWorld(LevelParser.Parse(Map), 1, balance, doors, rooms);
+        var world = GormHallWorld(balance: balance);
         var events = new List<GameEvent>();
         void Run(PlayerInput input, int ticks, Func<bool> until)
         {

@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -19,7 +20,6 @@ public class BossPortalNeighbourTests
     private const float DoorPlaneZ = 9f;
     private const int Second = SimulationClock.TicksPerSecond;
 
-    private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
     private static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
     private static readonly PlayerInput Forward = new(new Vector2(0f, 1f), Vector2.Zero, false);
 

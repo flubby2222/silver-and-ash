@@ -19,9 +19,6 @@ public class GormHookTests
     private static readonly int ChaseThrowTicks = SimulationClock.SecondsToTicks(Values.ChaseThrowTime);
     private static readonly int ChaseWarnTicks = SimulationClock.SecondsToTicks(Values.ChaseWarnTime);
 
-    /// <summary>A player who survives a lot - so a hit does not end the duel.</summary>
-    private static readonly Balance Tough = Balance.Default with { Player = Balance.Default.Player with { MaxHealth = 100_000 } };
-
     private static readonly PlayerInput RunRight = PlayerInput.None with { Move = new Vector2(1f, 0f) };
 
     /// <summary>A hall 15 cells wide; the player in column 7 of row <paramref name="playerRow"/>, looking along +Z.</summary>

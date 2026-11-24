@@ -12,23 +12,6 @@ public class GormTests
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
     private static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
 
-    // Room 0 (start) in row 0, door in row 1, room 1 (the boss room, 5 wide) in rows 2-11 with Gorm ('T') in row 10.
-    private const string Map = "##.P.##\n###.###\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#.....#\n#..T..#\n#.....#";
-
-    private static List<(int X, int Z)> Rows(int from, int to) =>
-        Enumerable.Range(from, to - from + 1).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
-
-    private static GameWorld World(Balance? balance = null)
-    {
-        PlacedRoom[] rooms =
-        [
-            new(0, RoomKind.Start, "start", 0, 0, 7, 1, 0, [(2, 0), (3, 0), (4, 0)], [], []),
-            new(1, RoomKind.Boss, "hall", 0, 2, 7, 10, 1, Rows(2, 11), [], []),
-        ];
-        LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
-        return new GameWorld(LevelParser.Parse(Map), 1, balance ?? Balance.Default, doors, rooms);
-    }
-
     /// <summary>A Gorm who never attacks (no range for any attack) - to look at his walking alone.</summary>
     private static readonly Balance NoAttacks = Balance.Default with { Gorm = Balance.Default.Gorm with { NearRange = 0f, FarRange = 0f } };
 
@@ -43,7 +26,7 @@ public class GormTests
     [Fact]
     public void Gorm_stands_on_his_place_with_full_health_and_his_own_number()
     {
-        var world = World();
+        var world = GormHallWorld();
 
         var gorm = Assert.IsType<Gorm>(world.Gorm);
         Assert.Equal(world.Level.CellCenter(3, 10), gorm.Position);
@@ -55,7 +38,7 @@ public class GormTests
     [Fact]
     public void Gorm_sleeps_until_the_boss_room_is_entered()
     {
-        var world = World();
+        var world = GormHallWorld();
         var start = world.Gorm!.Position;
 
         Run(world, PressF, 1);
@@ -69,7 +52,7 @@ public class GormTests
     public void A_sleeping_gorm_takes_no_step()
     {
         // Issue #298: his steps are heard only once he walks.
-        var world = World(NoAttacks);
+        var world = GormHallWorld(balance: NoAttacks);
 
         var events = Run(world, PlayerInput.None, 3 * Second);
 
@@ -79,7 +62,7 @@ public class GormTests
     [Fact]
     public void Entering_starts_the_boss_fight()
     {
-        var world = World();
+        var world = GormHallWorld();
 
         var events = Enter(world);
 
@@ -91,7 +74,7 @@ public class GormTests
     [Fact]
     public void Gorm_walks_up_to_the_player_and_stops_close_in_front()
     {
-        var world = World(NoAttacks);
+        var world = GormHallWorld(balance: NoAttacks);
         Enter(world);
         var before = FlatDistance(world.Gorm!.Position, world.Player.Position);
 
@@ -105,7 +88,7 @@ public class GormTests
     [Fact]
     public void Gorm_walks_at_his_speed()
     {
-        var world = World(NoAttacks);
+        var world = GormHallWorld(balance: NoAttacks);
         Enter(world);
         var start = world.Gorm!.Position;
 
@@ -152,7 +135,7 @@ public class GormTests
     [Fact]
     public void Dead_he_leaves_a_silver_pile_and_a_blood_vial_once()
     {
-        var world = World();
+        var world = GormHallWorld();
         Enter(world);
 
         world.Gorm!.TakeDamage(10_000, []);
@@ -167,7 +150,7 @@ public class GormTests
     [Fact]
     public void His_death_clears_the_room_ends_the_fight_and_raises_the_stairs()
     {
-        var world = World();
+        var world = GormHallWorld();
         Enter(world);
 
         world.Gorm!.TakeDamage(10_000, []);
@@ -183,7 +166,7 @@ public class GormTests
     public void The_statistics_know_whether_he_died_and_how_long_the_fight_took()
     {
         // A weak Gorm, so one pistol shot (straight ahead at his body) kills him - through the world, as in the game.
-        var world = World(Balance.Default with { Gorm = Balance.Default.Gorm with { MaxHealth = 10 } });
+        var world = GormHallWorld(balance: Balance.Default with { Gorm = Balance.Default.Gorm with { MaxHealth = 10 } });
         Enter(world);
         Run(world, PlayerInput.None, 2 * Second);
 
@@ -201,7 +184,7 @@ public class GormTests
     [Fact]
     public void A_run_without_the_boss_fight_says_so()
     {
-        var world = World();
+        var world = GormHallWorld();
 
         Run(world, PlayerInput.None, Second);
 
@@ -213,7 +196,7 @@ public class GormTests
     public void Gorm_s_values_come_from_the_balancing()
     {
         var balance = Balance.Default with { Gorm = Balance.Default.Gorm with { MaxHealth = 500, SilverMin = 7, SilverMax = 7 } };
-        var world = World(balance);
+        var world = GormHallWorld(balance: balance);
         Enter(world);
 
         Assert.Equal(500, world.Gorm!.Health);
