@@ -408,12 +408,14 @@ def plan_prism(part, pts, y0, y1, skip, field, top=True, bottom=False):
         emit(part, [(p[0], y0, p[1]) for p in pts], (0, -1, 0), field)
 
 
-def plate(part, x_in, x_out, y0, y1, sx, sz, field, top=True, bottom=False, depth=0.125):
-    """Kaempfer- oder Sockelplatte vor der Wand (z von 1 bis 1 + depth), Fase 1/16 an den freien senkrechten Kanten."""
-    c = 0.0625
-    pts = [(x_out, 1.0), (x_out - c, 1.0 + depth), (x_in + c, 1.0 + depth), (x_in, 1.0 + depth - c), (x_in, 1.0)]
+def plate(part, x_in, x_out, y0, y1, sx, sz, field, top=True, bottom=False, back=0.9375):
+    """Kaempfer- oder Sockelplatte im Pfostenband, buendig mit der Wandebene (z von `back` bis 1). Sie fuellt nur die Stufe
+    zwischen Wandebene und Band; nichts steht vor der Wand (Issue #715: bis dahin ragte sie 1/8 m vor und hing mit ihrer
+    Innenkante frei in der Oeffnung). Offen bleiben Vorderseite, Innenkante, Ober- bzw. Unterseite; Rueck- und Aussenseite
+    liegen an Band und Wand."""
+    pts = [(x_out, 1.0), (x_in, 1.0), (x_in, back), (x_out, back)]
     pts = [(sx * x, sz * z) for x, z in pts]
-    plan_prism(part, pts, y0, y1, {4}, field, top, bottom)
+    plan_prism(part, pts, y0, y1, {2, 3}, field, top, bottom)
 
 
 def box_faces(part, lo, hi, field, sides):
