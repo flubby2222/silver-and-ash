@@ -8,7 +8,7 @@ namespace SilverAndAsh.Core.Presentation;
 /// The spiral staircase of stone (issue #300): one model per wall variant, assets/models/stairs_spiral_{a,b,c}.glb. Each
 /// is built on the real wall texture of its variant (the floor tile of the same letter on the treads), so its joints
 /// continue the grid of the room. Two parts, neither hangs on the other and neither moves in the file:
-/// <see cref="Stone"/> (plinth, pole, twelve steps, capital) and <see cref="Glow"/> (the lamp on top).
+/// <see cref="Stone"/> (plinth, pole, twenty steps, capital) and <see cref="Glow"/> (the lamp on top).
 /// <para>
 /// The staircase stands in the file space of <see cref="Stairs"/> (origin on the floor in its middle, never turned)
 /// and shows the wall variant of the room it rises in. While it rises it comes up out of the floor
