@@ -171,6 +171,10 @@ public sealed class Bat : IEnemy
 
     void IEnemy.PlaceAt(Vector3 position) => PlaceAt(position);
 
+    bool IEnemy.IsHidden => Emergence.IsHidden;
+
+    bool IEnemy.IsOut => Emergence.IsPresent;
+
     public bool IsHittable => !IsDead && Emergence.IsPresent;
 
     public CylinderBody Body => new(Position, BodySizes.Bat.Radius, BodySizes.Bat.Height);

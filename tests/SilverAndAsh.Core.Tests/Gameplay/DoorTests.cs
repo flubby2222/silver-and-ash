@@ -256,6 +256,36 @@ public class DoorTests
         Assert.Throws<ArgumentException>(() => World(Hall, (5, 1)));
     }
 
+    // Issue #572: a body pushed out of a shutting doorway stays where it was across the passage, but inside the doorway's
+    // width - here a ghoul that stood right at the west edge of a south door, and one at the north edge of an east door.
+    [Fact]
+    public void A_pushed_body_stays_inside_the_width_of_the_doorway()
+    {
+        var radius = BodySizes.Ghoul.Radius;
+        var south = Assert.Single(World(Hall, (1, 1)).Doors);
+        var east = new Door(0, new LevelDoor(1, 1, 0, 1, RoomSide.East), LevelParser.Parse("P..\n...\n..."));
+
+        Assert.Equal(south.BoxMin.X + radius, south.PushedAcross(south.BoxMin.X, radius));
+        Assert.Equal(south.BoxMin.X + radius + 0.1f, south.PushedAcross(south.BoxMin.X + radius + 0.1f, radius));
+        Assert.Equal(east.BoxMax.Z - radius, east.PushedAcross(east.BoxMax.Z + 1f, radius));
+    }
+
+    // Issue #580, error branch: a body as wide as the doorway or wider has no place inside its width. It goes to the
+    // middle (as at a boss portal) - Math.Clamp would throw, its lower bound above its upper one. No body of the game is
+    // that wide today (Gorm has 0.9 m in a doorway of 2 m).
+    [Theory]
+    [InlineData(0f)]
+    [InlineData(0.2f)]
+    public void A_body_wider_than_the_doorway_is_pushed_to_its_middle(float beyondHalfWidth)
+    {
+        var door = Assert.Single(World(Hall, (1, 1)).Doors);
+        var halfWidth = (door.BoxMax.X - door.BoxMin.X) / 2f;
+        var middle = (door.BoxMin.X + door.BoxMax.X) / 2f;
+
+        Assert.Equal(middle, door.PushedAcross(door.BoxMin.X, halfWidth + beyondHalfWidth));
+        Assert.Equal(middle, door.PushedAcross(door.BoxMax.X, halfWidth + beyondHalfWidth));
+    }
+
     [Fact]
     public void A_level_without_doors_has_none()
     {
