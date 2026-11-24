@@ -196,16 +196,40 @@ public class BoonTests
         Assert.True(walked > least, $"The player did not walk after choosing: {walked:0.00} m, at least {least:0.00} m.");
     }
 
+    /// <summary>Share of the ideal way a walking player must cover - see <see cref="LeastWalk"/>.</summary>
+    private const float LeastWalkShare = 0.9f;
+
     /// <summary>
-    /// Half the way a player covers walking from a standstill for <paramref name="ticks"/> ticks with
-    /// <paramref name="balance"/> (issue #664): speeding up evenly to the top speed, then at the top speed.
+    /// 90 % of the way a player covers walking straight ahead from a standstill for <paramref name="ticks"/> ticks
+    /// with <paramref name="balance"/> (issues #664, #677), counted tick by tick as the game moves: each tick the
+    /// speed first grows by <see cref="PlayerBalance.Acceleration"/> up to <see cref="PlayerBalance.MaxSpeed"/>,
+    /// then the player moves one tick at that speed.
     /// </summary>
+    /// <remarks>
+    /// On the flat, open floor of these tests nothing in the game costs any of the way: with the standard balance
+    /// the player covers exactly this ideal way (2.75 m in half a second, 1.25 m in a quarter). The 10 % left are
+    /// room for how a tick is counted, not for the walking itself: moving first and speeding up after would move
+    /// each tick at the speed of the tick before and so cost a whole tick at top speed (10 cm) - 1.15 m instead of
+    /// 1.25 m in a quarter of a second (92 %), 2.65 m instead of 2.75 m in half a second (96.4 %). That is only
+    /// 2.5 cm above the threshold of 1.125 m, so the share must not go above 90 %. A player who walks a quarter or
+    /// a third slower after the level up falls far below.
+    /// </remarks>
     private static float LeastWalk(Balance balance, int ticks)
     {
-        var seconds = ticks * SimulationClock.SecondsPerTick;
         var walking = balance.Player;
-        Assert.True(seconds > walking.AccelerationTime, "The player is still speeding up - the case would prove nothing.");
-        return walking.MaxSpeed * (seconds - (walking.AccelerationTime / 2f)) / 2f;
+        Assert.True(
+            ticks * SimulationClock.SecondsPerTick > walking.AccelerationTime,
+            "The player is still speeding up - the case would prove nothing.");
+
+        var speed = 0f;
+        var way = 0f;
+        for (var tick = 0; tick < ticks; tick++)
+        {
+            speed = MathF.Min(speed + (walking.Acceleration * SimulationClock.SecondsPerTick), walking.MaxSpeed);
+            way += speed * SimulationClock.SecondsPerTick;
+        }
+
+        return LeastWalkShare * way;
     }
 
     [Fact]
