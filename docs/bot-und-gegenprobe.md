@@ -101,7 +101,15 @@ Der Modus `stuck` (Issue #591) sucht Gegner, die einen Spieler jagen, aber weder
 
 **Anstehende Ghule:** Ghule drängen sich vor einem stillstehenden Spieler; wer hinter einem anderen wartet, hängt nicht. Steht ein Ghul bei Erreichen der Schwelle an einen anderen Gegner gedrückt, zählt der Bot das als „pressed against another enemy (not counted as hanging)“ und fängt neu an zu messen. Fledermaus und Gorm haben keine solche Ausnahme.
 
-**Untergrenzen:** Wird in einem Seed kein jagender Ghul oder kein Gorm beobachtet, oder über alle Seeds keine Fledermaus, ist das ein Befund – sonst könnte der Modus unbemerkt nichts mehr prüfen. Am Ende steht je Gegnerart, wie viele beobachtet wurden und wie lange der längste Stillstand ohne Angriff war, neben der Schwelle.
+**Untergrenzen:** Wird in einem Seed kein jagender Ghul oder kein Gorm beobachtet, oder über alle Seeds keine Fledermaus, ist das ein Befund – sonst könnte der Modus unbemerkt nichts mehr prüfen.
+
+**Längster Stillstand** (#699): Am Ende steht je Gegnerart, wie viele beobachtet wurden und wie lange der längste Stillstand ohne Angriff unter der Schwelle war – mit Gegner und Nummer, Seed und Ort (Raum, an der Tür oder in der Mitte), der Schwelle und wie viele Ticks bis zu ihr fehlten. Liegt eine Gegnerart knapp darunter, lässt sich der Fall so ohne Suchen mit genau diesem Seed nachspielen:
+
+```
+stuck: ghoul: 3078 watched, longest still without an attack 188 ticks (ghoul 33, seed 11, room 12 in the middle), hangs from 192 ticks (4 short)
+```
+
+Gleich lange Stillstände nennen den ersten, also den kleinsten Seed des Laufs. Ticks, in denen ein Ghul an einen anderen Gegner gedrückt steht (siehe oben), zählen hier nicht mit; ein Ghul, der sich erst kurz vor dem Ende seines Stillstands vom Nachbarn löst, aber schon. So einer ist der Ghul von Seed 11: Mit der Schwelle auf 182, 144 oder 96 Ticks herabgesetzt stand er beim Erreichen gedrückt und wurde kein Befund (#699). Ausgewertet wird in `LongestStillSpells` (`src/SilverAndAsh.Core/Diagnostics/`), getestet in `LongestStillSpellsTests`.
 
 **Dauer:** etwa 8 bis 10 Sekunden je Seed (40 Seeds etwa 6 min).
 
@@ -113,6 +121,7 @@ Gegenproben (Issue #591; nach jeder neu bauen):
 | Fledermaus kreist, spuckt und stößt nicht (`Bat.cs`, Zustand `Circling`) | `stuck --seeds 1..3` | gefangen |
 | Gorm greift nie an (`Gorm.cs`: `ChooseAttack(…) ?? ChaseThrow(…)` → `null`) | `stuck --seeds 1` | gefangen |
 | Bot beobachtet nie einen jagenden Gegner (`HangingEnemies.cs`) | `stuck --seeds 1` | gefangen (Untergrenzen) |
+| Schwelle herabgesetzt (`HangingEnemies.cs`: `Margin` 2 → 0,3, beim Ghul 29 statt 192 Ticks, bei Gorm 135 statt 900; #699) | `stuck --seeds 11` | gefangen (45 Befunde, jeder mit „seed 11“) |
 
 ### Warum Reflection
 
