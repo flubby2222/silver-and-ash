@@ -137,5 +137,11 @@ public static class BodySizes
 
         /// <summary>It keeps at least this much room between the top of its body and the ceiling, in metres.</summary>
         public const float CeilingGap = 0.3f;
+
+        /// <summary>
+        /// Highest floor step it passes: any - it flies, so floor heights do not matter and only walls block (as the
+        /// collision, the way-finding, tests and the bot take it; issue #647).
+        /// </summary>
+        public const float StepHeight = float.PositiveInfinity;
     }
 }

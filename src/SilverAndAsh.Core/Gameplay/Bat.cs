@@ -34,9 +34,6 @@ public enum BatState
 /// </summary>
 public sealed class Bat : IEnemy
 {
-    /// <summary>Flying: any floor height can be passed, only walls block.</summary>
-    private const float FlyingStepHeight = float.PositiveInfinity;
-
     private const float HalfHeight = BodySizes.Bat.Height / 2f;
 
     private readonly BatBalance _bat;
@@ -223,7 +220,7 @@ public sealed class Bat : IEnemy
         if (Knockback.IsActive)
         {
             (Position, _) = CharacterCollision.Move(
-                level, Position, Knockback.Velocity, BodySizes.Bat.Radius, SimulationClock.SecondsPerTick, BodySizes.Bat.Height, FlyingStepHeight);
+                level, Position, Knockback.Velocity, BodySizes.Bat.Radius, SimulationClock.SecondsPerTick, BodySizes.Bat.Height, BodySizes.Bat.StepHeight);
             Knockback.Tick();
             return;
         }
@@ -305,7 +302,7 @@ public sealed class Bat : IEnemy
     {
         var there = Position with { Y = height };
         if (height != Position.Y
-            && CharacterCollision.BlockedAtHeight(level, there, BodySizes.Bat.Radius, BodySizes.Bat.Height, FlyingStepHeight))
+            && CharacterCollision.BlockedAtHeight(level, there, BodySizes.Bat.Radius, BodySizes.Bat.Height, BodySizes.Bat.StepHeight))
         {
             return false;
         }
@@ -401,7 +398,7 @@ public sealed class Bat : IEnemy
 
         var floor = level.CellAt(next).FloorHeight;
         var blocked = next.Y < floor
-            || CharacterCollision.Overlaps(level, next, BodySizes.Bat.Radius, BodySizes.Bat.Height, FlyingStepHeight);
+            || CharacterCollision.Overlaps(level, next, BodySizes.Bat.Radius, BodySizes.Bat.Height, BodySizes.Bat.StepHeight);
         if (!blocked)
         {
             Position = next;
@@ -436,7 +433,7 @@ public sealed class Bat : IEnemy
         }
 
         Vector3 velocity;
-        if (Pathfinder.CanWalkStraight(level, Position, target.Position, BodySizes.Bat.Radius, FlyingStepHeight))
+        if (Pathfinder.CanWalkStraight(level, Position, target.Position, BodySizes.Bat.Radius, BodySizes.Bat.StepHeight))
         {
             _waypoints.Clear();
             var offset = (Position - target.Position) with { Y = 0f };
@@ -458,7 +455,7 @@ public sealed class Bat : IEnemy
         }
 
         var (position, slid) = CharacterCollision.Move(
-            level, Position, velocity, BodySizes.Bat.Radius, SimulationClock.SecondsPerTick, BodySizes.Bat.Height, FlyingStepHeight);
+            level, Position, velocity, BodySizes.Bat.Radius, SimulationClock.SecondsPerTick, BodySizes.Bat.Height, BodySizes.Bat.StepHeight);
 
         // A wall took most of the movement away for a while: circle the other way round.
         _blockedTicks = velocity.Length() > 0.5f && slid.Length() < velocity.Length() / 2f ? _blockedTicks + 1 : 0;
@@ -486,8 +483,8 @@ public sealed class Bat : IEnemy
         if (--_repathTicksLeft <= 0 || goal != _pathGoal || _waypoints.Count == 0)
         {
             var start = Level.ToGrid(Position.X, Position.Z);
-            var path = Pathfinder.FindPath(level, start, goal, FlyingStepHeight);
-            _waypoints = path is null ? [] : Pathfinder.Smooth(level, path, BodySizes.Bat.Radius, FlyingStepHeight).ToList();
+            var path = Pathfinder.FindPath(level, start, goal, BodySizes.Bat.StepHeight);
+            _waypoints = path is null ? [] : Pathfinder.Smooth(level, path, BodySizes.Bat.Radius, BodySizes.Bat.StepHeight).ToList();
             _repathTicksLeft = _repathTicks;
             _pathGoal = goal;
         }

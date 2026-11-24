@@ -143,10 +143,20 @@ internal sealed class Play(GameWorld world, Report report, string context)
     public static float Distance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     /// <summary>
+    /// The heights <see cref="InPortalStone"/> tests at lie at most this far apart: four fifths of the thinnest block of
+    /// the portal (<see cref="BossPortalShape.Blocks"/>, now the impost: 0.125 m), so none slips between two of them.
+    /// </summary>
+    public static float PortalStoneStep { get; } = BossPortalShape.Blocks.Min(block => block.Top - block.Bottom) * 0.8f;
+
+    // The bottom and top of a body are tested this far inside it: a body standing on a plinth or touching the underside
+    // of an impost is not in the stone.
+    private const float PortalStoneInset = 0.01f;
+
+    /// <summary>
     /// True if a body (a standing cylinder: feet, radius, height) reaches into the stone of a boss portal, by
-    /// <see cref="BossPortal.Contains"/>: its axis and 24 points round its rim, every 0.1 m from the feet to the top. The
-    /// rim is taken 5 mm inside (the same for every body, also for big Gorm), so a body that only touches the stone, as
-    /// the collision leaves it, is no finding.
+    /// <see cref="BossPortal.Contains"/>: its axis and 24 points round its rim, at heights at most
+    /// <see cref="PortalStoneStep"/> apart from the feet to the top. The rim is taken 5 mm inside (the same for every
+    /// body, also for big Gorm), so a body that only touches the stone, as the collision leaves it, is no finding.
     /// </summary>
     public static bool InPortalStone(Level level, CylinderBody body)
     {
@@ -154,10 +164,9 @@ internal sealed class Play(GameWorld world, Report report, string context)
         const float Touch = 0.005f;
         foreach (var portal in level.Portals.Where(portal => Distance(body.Position, new Vector3(portal.X, 0f, portal.Z)) < body.Radius + 3f))
         {
-            var heights = Math.Max(2, (int)MathF.Ceiling(body.Height / 0.1f) + 1);
-            for (var h = 0; h < heights; h++)
+            foreach (var up in PortalStoneHeights(body.Height))
             {
-                var y = body.Position.Y + 0.01f + ((body.Height - 0.02f) * h / (heights - 1));
+                var y = body.Position.Y + PortalStoneInset + up;
                 if (portal.Contains(body.Position with { Y = y }))
                 {
                     return true;
@@ -176,6 +185,43 @@ internal sealed class Play(GameWorld world, Report report, string context)
         }
 
         return false;
+    }
+
+    /// <summary>The heights at which <see cref="InPortalStone"/> tests a body this high, above its feet and the inset.</summary>
+    public static IEnumerable<float> PortalStoneHeights(float height)
+    {
+        var heights = Math.Max(2, (int)MathF.Ceiling(height / PortalStoneStep) + 1);
+        for (var h = 0; h < heights; h++)
+        {
+            yield return (height - (2f * PortalStoneInset)) * h / (heights - 1);
+        }
+    }
+
+    /// <summary>
+    /// A finding if a block of the portal could slip between the heights <see cref="InPortalStone"/> tests: for every
+    /// body height and every block, with the feet every centimetre from below the block to above it, some tested height
+    /// lies in the block whenever the block lies between the lowest and the highest tested height (issue #647).
+    /// </summary>
+    public static void CheckPortalStoneHeights(Report report, string context, IEnumerable<float> bodyHeights)
+    {
+        foreach (var height in bodyHeights)
+        {
+            var ups = PortalStoneHeights(height).ToList();
+            foreach (var block in BossPortalShape.Blocks)
+            {
+                for (var feet = block.Bottom - height; feet <= block.Top; feet += 0.01f)
+                {
+                    var tested = ups.Select(rise => feet + PortalStoneInset + rise).ToList();
+                    var between = block.Bottom >= tested[0] && block.Top <= tested[^1];
+                    if (between && !tested.Any(y => y >= block.Bottom && y <= block.Top))
+                    {
+                        report.Finding(string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                            $"{context}: the stone check misses the block {block.Bottom:0.000}..{block.Top:0.000} m for a body {height:0.00} m high with its feet at {feet:0.00} m (heights {PortalStoneStep:0.000} m apart)"));
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private static bool Overlaps(Door door, Vector3 at, float radius)
