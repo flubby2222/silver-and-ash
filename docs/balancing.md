@@ -100,6 +100,41 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Runde 4 – 24.11.2026 (QC-Runde vor dem Spieltest zu 0.12.0, ohne Wertänderung)
+
+**Anlass:** QC-Runde (#690) vor dem Spieltest zu 0.12.0, Stand `main` 47862b7.
+
+**Werte:** In dieser Runde **nichts geändert**, `assets/balance.json` bleibt, wie es ist. Die Bot-Läufe geben keinen Anlass dazu.
+
+**Bot-Läufe (Tester):** Alle sieben BotRun-Modi mit den Seeds 1 bis 6 ohne Befund; `stuck` zusätzlich mit den Seeds 7 bis 40 ohne Befund (2632 Ghule beobachtet, 375 Mal „pressed against another enemy“, 0 Befunde). Keine Abbrüche, Ausnahmen oder Exit-Codes ungleich 0.
+
+**Report (500 Ebenen), Tag `v0.11.1` gegen `main`:** Der Vergleich nur mit getauschter `balance.json` ist zeilengleich zu `main` und belegt nichts: Der Report liest einen Teil der geänderten Werte nicht, und neue Schlüssel fehlen in der alten Datei und fallen auf `Balance.Default` zurück. Der echte Vergleich ist daher Code und Datei von `v0.11.1` gegen `main`:
+
+| Kennzahl | v0.11.1 | main | Veränderung |
+|---|---|---|---|
+| Kampfräume | 13,01 | 13,0 | gleich |
+| Gänge | 9,89 | 10,24 | +0,35 |
+| Abstand zum Boss (Räume) | 11,5 (7..21) | 12,67 (8..22) | +1,2 |
+| Bodenzellen | 1548 | 1585 | +37 |
+| Gegner | 96,86 | 96,78 | gleich |
+| Ghule / Fledermäuse | 73,33 / 23,53 | 73,27 / 23,51 | gleich |
+| Gegner-Leben (mit Gorm) | 11 875 | 11 867 | gleich |
+| Erfahrung / Stufe | 2671 / 8,65 | 2668 / 8,65 | gleich |
+| Silber gesamt | 324 | 323 | gleich |
+| Kisten | 7,18 | 7,18 | gleich |
+| Ausrüstung gesamt | 4,76 | 4,76 | gleich |
+| Heilung (erwartet) | 286 (2,86-mal Maximum) | 285 (2,85-mal) | gleich |
+| Zeit grob: Gehen | 8,6 min | 8,8 min | +0,2 |
+| Zeit grob: gesamt | 10,58 min | 10,78 min | +0,2 |
+
+Beute, Gegnerzahl und Leben sind unverändert; die Ebenen sind etwas größer (längerer Weg zum Boss, grob +0,2 min). Als Ursache **vermutet** der Tester Säulen im Bossraum, die Bosstür über zwei Zellen und das Platzieren; der Report erklärt es nicht, belegt ist es nicht.
+
+**Offen und vorläufig:**
+- **Ghul-Schwelle in `stuck` ist knapp:** Längster Stillstand eines jagenden Ghuls ohne Angriff, Schwelle 192 Ticks: Seed 11 mit 188, Seed 27 mit 186, Seed 34 mit 184, Seed 40 mit 175, Seed 20 mit 144, alle anderen unter 61. Ein Hinweis, kein Fehler. Wer `WindUpTime`, `RecoverTime` oder `RepathTime` der Ghule ändert, lässt `stuck` mit den Seeds 1 bis 40 neu laufen und nimmt Seed 11, 27 und 34 zuerst.
+- **Kein Bot-Modus kämpft einen ganzen Lauf:** `boss` trägt den Spieler zu Gorm und setzt ihn mit einem Schadenstreffer um; das ist ein Pfad-Test. Aussagen zu Gorms Kampf, zum Tod oder zur Heilung sind per Bot nicht möglich. Gorm im `slam` wird nur stehend geprüft (432 Plätze übersprungen).
+- **`runs.log`** enthält nur Läufe bis 20.11. (55 Einträge, 24 gewonnen, 31 verloren), also vor Raumkegel, Säulen, Bosstür und Fallgittern; sie beschreiben nicht den Stand von `main`. Die gewonnenen Läufe (etwa 8:40 bis 11:08) passen zur Schätzung von 10,8 min.
+- **Urteil des Menschen** aus dem Spieltest zu 0.12.0 (#691) steht aus, auch ob der längere Weg zum Boss gewollt ist.
+
 ### Zwischenschritt – 24.11.2026 (#635, ohne Wertänderung)
 
 **Anlass:** Issue #635: Der Abstand, in dem Gorms Blutfläschchen vor ihm fällt, stand fest im Code und steht jetzt in `balance.json`. Der Wert bleibt gleich; nachgetragen mit #642.
