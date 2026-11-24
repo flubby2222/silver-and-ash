@@ -119,6 +119,36 @@ public class BossPortalTests
     }
 
     [Fact]
+    public void A_ray_that_grazes_the_outer_corner_of_a_buttress_hits_it()
+    {
+        // The buttress stands 1.72-2 m beside the middle, 1-1.24 m from the door plane - its outer face (2 m) is the edge
+        // of the box around the stone, and the box reaches on to the cover plates (1.3 m). A ray from outside comes in
+        // diagonally through that outer face 1 cm before the corner and leaves through the buttress's front at once:
+        // only 1.4 cm of it lie in the stone. Only the short steps from a step's length before the box catch that
+        // (Raycast.StepAt, BossPortal.IsNear with its margin, issue #642); from just at the box a long step would
+        // land past the corner. From origins a tenth to a fifth of a metre outside, so the long steps fall differently.
+        var level = OpenLevel().WithPortals([Portal]);
+        var buttress = BossPortalShape.Blocks.Single(block => block.Bottom == 0.5f && block.Top > BossPortalShape.Spring);
+        Assert.Equal(BossPortalShape.HalfWidth, buttress.AcrossTo);
+        var corner = new Vector3(Portal.X + buttress.AcrossTo, 2f, Portal.Z + buttress.AlongTo);
+        var entry = corner - new Vector3(0f, 0f, 0.01f);
+        var direction = Vector3.Normalize(new Vector3(-1f, 0f, 1f));
+
+        for (var outside = 0.1f; outside <= 0.2001f; outside += 0.01f)
+        {
+            var origin = entry - (direction * outside * MathF.Sqrt(2f));
+            Assert.False(Portal.IsNear(origin, 0f), $"{origin} is already in the box around the stone.");
+
+            var hit = Raycast.AgainstLevel(level, origin, direction, 1f);
+
+            Assert.True(hit is not null, $"the ray from {origin} passes the corner.");
+            Assert.Equal(entry.X, hit.Value.Point.X, 0.002f);
+            Assert.Equal(entry.Z, hit.Value.Point.Z, 0.002f);
+            Assert.Equal(Vector3.UnitX, hit.Value.Normal);
+        }
+    }
+
+    [Fact]
     public void Sight_ends_in_the_stone_and_passes_through_the_opening()
     {
         var level = OpenLevel().WithPortals([Portal]);

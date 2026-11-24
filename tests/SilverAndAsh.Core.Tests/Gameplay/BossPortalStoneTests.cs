@@ -398,6 +398,44 @@ public class BossPortalStoneTests
         Assert.Equal(Vector3.UnitX, impact.Normal);
     }
 
+    [Theory]
+    [InlineData(2.9f)]
+    [InlineData(3.1f)]
+    [InlineData(3.3f)]
+    [InlineData(3.5f)]
+    public void A_shot_at_the_lower_corner_of_a_buttress_ends_on_its_face(float x)
+    {
+        // Issue #642: a player in the start room, beside the left buttress (x 4-4.28 m, 1.76-2 m in z, from 0.5 m up),
+        // shoots steeply down at its outer face (x 4 m) 1.2 cm above its bottom edge. Only about 1.3 cm of the shot lie in
+        // the stone before it comes out of the bottom - a long step of 0.1 m would land past the corner, and the shot
+        // would end on the plinth or the floor behind it. From four places, so the long steps fall differently.
+        var world = World();
+        var buttress = BossPortalShape.Blocks.Single(block => block.AcrossFrom == 1.72f);
+        var target = new Vector3(MiddleX - buttress.AcrossTo, buttress.Bottom + 0.012f, 1.8f);
+        var at = new Vector3(x, 0f, DoorPlaneZ - BossPortalShape.HalfDepth - Radius - 0.05f);
+        world.Player.PlaceAt(at);
+        Run(world, PlayerInput.None, 10);
+        Assert.Equal(at, world.Player.Position);
+
+        var eye = world.Player.EyePosition;
+        var aim = Vector3.Normalize(target - eye);
+        var view = world.Player.View;
+        view.ApplyMouse(new Vector2(view.YawRadians - MathF.Atan2(aim.X, aim.Z), view.PitchRadians - MathF.Asin(aim.Y)), 1f);
+        Assert.True(Vector3.Distance(aim, view.Forward) < 1e-5f, $"aims along {view.Forward}, not {aim}");
+
+        // Out of the stone below its bottom the shot is still in front of the plinth (z under 1.875 m): it would end
+        // somewhere else, not on the buttress's outer face.
+        var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
+        var leaves = eye + (aim * ((buttress.Bottom - eye.Y) / aim.Y));
+        Assert.True(leaves.Z < DoorPlaneZ - plinth.AlongTo, $"leaves the buttress at {leaves}");
+
+        world.Tick(Shoot);
+
+        var impact = Assert.Single(world.Events.OfType<BulletImpact>());
+        Assert.Equal(-Vector3.UnitX, impact.Normal);
+        Assert.True(Vector3.Distance(target, impact.Point) < 0.01f, $"the shot ended at {impact.Point}");
+    }
+
     [Fact]
     public void A_shot_through_the_opening_flies_on_to_the_far_wall()
     {
