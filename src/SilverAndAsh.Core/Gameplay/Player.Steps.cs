@@ -28,12 +28,13 @@ public sealed partial class Player
     /// <summary>
     /// Adds this tick's flat distance on the ground and reports a step (<see cref="PlayerStepped"/>) for every full
     /// <see cref="StepLength"/>. In the air, while standing, dead or pulled by Gorm's chain the count starts anew - no
-    /// step there, and the first step after them comes after a whole step length.
+    /// step there, and the first step after them comes after a whole step length. A player without a step length (top
+    /// speed 0 in a balance built in code) takes no steps: the loop below would otherwise never end (issue #698).
     /// </summary>
     private void CountSteps(bool onGroundThroughout, bool pulled)
     {
         var distance = ((Position - PreviousPosition) with { Y = 0f }).Length();
-        if (!onGroundThroughout || pulled || IsDead || distance <= 0f)
+        if (!onGroundThroughout || pulled || IsDead || distance <= 0f || StepLength <= 0f)
         {
             _strideDistance = 0f;
             return;

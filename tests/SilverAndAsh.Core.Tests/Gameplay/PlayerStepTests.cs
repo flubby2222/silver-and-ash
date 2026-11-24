@@ -144,6 +144,36 @@ public class PlayerStepTests
         Assert.Equal(Steps(aloneSteps), Steps(walkerSteps));
     }
 
+    [Fact]
+    public async Task A_player_without_top_speed_moved_on_the_ground_takes_no_steps_and_the_tick_ends()
+    {
+        // Issue #698: with MaxSpeed 0 the step length is 0, and counting steps never ended once the player moved on
+        // the ground without walking - here by a dodge, whose speed does not depend on MaxSpeed. The ticks run on
+        // their own thread, so a relapse turns this test red instead of hanging the whole test run.
+        var balance = Balance.Default with { Player = Balance.Default.Player with { MaxSpeed = 0f } };
+        var player = new Player(OpenHall, balance: balance);
+        var start = player.Position;
+        var dodgeTicks = SimulationClock.SecondsToTicks(balance.Player.DodgeDuration);
+        var shift = PlayerInput.None with { Dash = true };
+
+        var run = Task.Run(() =>
+        {
+            var events = new List<GameEvent>();
+            player.Tick(shift);
+            events.AddRange(player.Events);
+            events.AddRange(Run(player, PlayerInput.None, dodgeTicks));
+            return events;
+        });
+
+        var ended = await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(10))) == run;
+
+        Assert.True(ended, "The ticks did not end - counting steps loops at a step length of 0.");
+        var events = await run;
+        Assert.True(player.IsGrounded);
+        Assert.True(Vector3.Distance(start, player.Position) > 0f, "The dodge did not move the player - the test would check nothing.");
+        Assert.Empty(Steps(events));
+    }
+
     private static List<PlayerStepped> Steps(IEnumerable<GameEvent> events) => [.. events.OfType<PlayerStepped>()];
 
     private static List<GameEvent> Run(Player player, PlayerInput input, int ticks)
