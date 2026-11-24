@@ -19,11 +19,12 @@ namespace SilverAndAsh.Game.Rendering;
 /// </summary>
 internal sealed class StairsView : IDisposable
 {
-    private const int Steps = 16;
+    private const int Steps = 24;
 
-    // The box of the staircase (+-Stairs.Radius, 0..Stairs.Height) has its corners 2.62 m from the middle at half height,
-    // but the model and the placeholder are round: their farthest points are 2.33 and 2.35 m away. A little more, for safety.
-    private const float BoundingRadius = 2.5f;
+    // The box of the staircase (+-Stairs.Radius, 0..Stairs.Height, 6 m) has its corners 3.45 m from the middle at half height,
+    // but the model and the placeholder are round: their farthest points are 3.23 and 3.24 m away (half the height 3 m, the
+    // model 1.2 m out). A little more, for safety.
+    private const float BoundingRadius = 3.5f;
 
     private static readonly Color Stone = new(120, 114, 108, 255);
     private static readonly Color Pole = new(84, 80, 76, 255);

@@ -817,6 +817,17 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void The_label_of_the_stairs_hangs_under_the_ceiling_of_the_room_it_stands_in()
+    {
+        // Issue #723: the staircase reaches the 6 m ceiling, so a label above it would hang outside the room.
+        var place = Layout.Placed.Single(place => place.Piece is StairsPiece);
+        var label = Assert.Single(Layout.Labels, label => label.Text == place.Piece.Label);
+
+        var ceiling = Layout.Level.CellAt(label.Position with { Y = 0f }).CeilingHeight;
+        Assert.InRange(label.Position.Y, Stairs.Height / 2f, ceiling - 0.1f);
+    }
+
+    [Fact]
     public void The_stairs_stand_but_cannot_be_climbed()
     {
         var place = Layout.Placed.Single(place => place.Piece is StairsPiece);

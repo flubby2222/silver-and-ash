@@ -10,8 +10,10 @@ Aufruf (aus dem Repository-Wurzelverzeichnis), danach python tools/models/checks
     "D:\\Program Files\\Blender Foundation\\Blender 5.3\\blender.exe" --background --python tools/models/stairs.py
 
 Alles per Skript, nichts heruntergeladen. Spiel-Achsen (x seitlich, y oben, z vorn), Meter. Ursprung: Mitte am Boden.
-Die Treppe steht im Kasten von Stairs (+-1,2 m, 4 m hoch): zwei achteckige Sockelstufen, eine achteckige Spindel bis 3,5 m,
-12 Stufen zu 0,25 m und 45 Grad (anderthalb Umdrehungen), ein Kapitell aus Werkstein (3,5 bis 3,75) und die Lampe (3,75 bis 4).
+Die Treppe steht im Kasten von Stairs (+-1,2 m, so hoch wie der Raum: 6 m, Issue #723; vorher 4 m): zwei achteckige Sockelstufen,
+eine achteckige Spindel bis 5,5 m, 20 Stufen zu 0,25 m und 45 Grad (zweieinhalb Umdrehungen; Stufenhoehe und Radius wie vorher,
+nur mehr Stufen), ein Kapitell aus Werkstein (5,5 bis 5,75) und die Lampe (5,75 bis 6). Die Hoehe steht hier als HEIGHT und
+muss RoomTemplate.RoomCeilingHeight entsprechen (ein Test prueft es).
 
 Je Wandvariante v eine Datei stairs_spiral_<v>.glb mit zwei Knoten, beide fest und ohne Eltern:
   stairs   der Stein: Wandkachel der Variante auf den Seiten, Bodenkachel derselben Variante auf allen nach oben zeigenden
@@ -49,6 +51,8 @@ SOURCES = os.path.join(TOOLS, "stairs_sources.sha256")
 W = H = 128
 RECTS = {"stone": (0, 64, 64, 128), "floor": (64, 64, 128, 128), "werk": (0, 0, 64, 64), "glow": (64, 16, 128, 48)}
 UV = rects_from_pixels(RECTS, (W, H))
+HEIGHT = 6.0                                                                        # = RoomTemplate.RoomCeilingHeight = Stairs.Height
+STEPS = 20                                                                          # 0,5 + 0,25 * 19 = 5,25: die letzte Stufe liegt 0,25 unter dem Kapitell, wie vorher
 WALL = {"a": "catacomb_wall.png", "b": "catacomb_wall_b.png", "c": "catacomb_wall_c.png"}
 FLOOR = {"a": "catacomb_floor.png", "b": "catacomb_floor_b.png", "c": "catacomb_floor_c.png"}
 
@@ -172,16 +176,16 @@ def spiral():
     st, gl = Part("stairs", (0, 0, 0), UV), Part("glow", (0, 0, 0), UV)
     prism(st, octagon(1.1875), 0.0, 0.125, "stone")                                 # Sockel, zwei Stufen
     prism(st, octagon(1.0625), 0.125, 0.25, "stone")
-    prism(st, octagon(0.3125), 0.25, 3.5, "stone", top=False)                       # Spindel
-    r_in, r_out, rise, n = 0.25, 1.0625, 0.25, 12
-    for i in range(n):                                                              # 12 Stufen, 45 Grad je Stufe
+    prism(st, octagon(0.3125), 0.25, HEIGHT - 0.5, "stone", top=False)             # Spindel
+    r_in, r_out, rise, n = 0.25, 1.0625, 0.25, STEPS
+    for i in range(n):                                                              # 20 Stufen, 45 Grad je Stufe
         a0, a1 = math.radians(45 * i), math.radians(45 * (i + 1))
         pts = [(r_in * math.cos(a0), r_in * math.sin(a0)), (r_out * math.cos(a0), r_out * math.sin(a0)),
                (r_out * math.cos(a1), r_out * math.sin(a1)), (r_in * math.cos(a1), r_in * math.sin(a1))]
         top = 0.5 + rise * i
         prism(st, pts, top - 0.25, top, "stone", skip=(3,), top=True)
-    prism(st, octagon(0.5), 3.5, 3.75, "werk")                                      # Kapitell: Werkstein, nur hier
-    prism(gl, octagon(0.3125), 3.75, 4.0, "glow")                                   # Lampe
+    prism(st, octagon(0.5), HEIGHT - 0.5, HEIGHT - 0.25, "werk")                                      # Kapitell: Werkstein, nur hier
+    prism(gl, octagon(0.3125), HEIGHT - 0.25, HEIGHT, "glow")                                   # Lampe
     return [st, gl]
 
 

@@ -67,6 +67,31 @@ public class StairsLookTests
     }
 
     [Fact]
+    public void The_stairs_are_as_high_as_the_ceiling_of_the_boss_room()
+    {
+        // Issue #723: the room is 6 m high and the staircase led up to 4 m only - a podium in the middle of the room.
+        // Its box reaches the ceiling over its whole footprint, in every generated boss room.
+        foreach (var generated in ManyLevels.Value)
+        {
+            var boss = Assert.Single(generated.Rooms, room => room.Kind == RoomKind.Boss);
+            var (x, z) = Stairs.CellIn(boss.FloorCells);
+            var middle = generated.Level.CellCenter(x, z);
+
+            foreach (var corner in new[] { new Vector3(-1f, 0f, -1f), new Vector3(1f, 0f, -1f), new Vector3(-1f, 0f, 1f), new Vector3(1f, 0f, 1f), Vector3.Zero })
+            {
+                var cell = generated.Level.CellAt(middle + (corner * (Stairs.Radius - 0.01f)));
+                Assert.Equal(Stairs.Height, cell.CeilingHeight, Tolerance);
+            }
+        }
+    }
+
+    [Fact]
+    public void The_stairs_are_as_high_as_the_rooms_are()
+    {
+        Assert.Equal(RoomTemplate.RoomCeilingHeight, Stairs.Height, Tolerance);
+    }
+
+    [Fact]
     public void In_a_hand_made_level_the_stairs_show_variant_a()
     {
         Assert.Equal(TextureVariant.A, StairsLook.Variant(SurfaceVariants.Plain, new Vector3(7f, 0f, 9f)));
