@@ -39,7 +39,9 @@ $text = '' unless defined $text;
 my $pattern = $regex ? qr/$search/ : qr/\Q$search\E/;
 
 if ($count) {
-    my $hits = () = $text =~ /$pattern/g;
+    # One step per match: a match in list context would give one item per group instead (issue #676).
+    my $hits = 0;
+    $hits++ while $text =~ /$pattern/g;
     print "$hits";
     exit 0;
 }
