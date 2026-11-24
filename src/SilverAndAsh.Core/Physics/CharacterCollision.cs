@@ -22,6 +22,12 @@ public static class CharacterCollision
     /// <summary>How often overlaps are resolved per step. Corners need more than one pass.</summary>
     private const int ResolveIterations = 8;
 
+    /// <summary>
+    /// One pass over columns, standing bodies and boxes, as before issue #694: a second pass could push a body again and
+    /// change where it ends up.
+    /// </summary>
+    private const int SinglePass = 1;
+
     /// <summary>Upper limit for steps per move, so absurd inputs cannot freeze the game.</summary>
     private const int MaxSteps = 1000;
 
@@ -73,10 +79,12 @@ public static class CharacterCollision
             position += new Vector3(velocity.X, 0f, velocity.Z) * stepSeconds;
 
             // Bodies and boxes first, walls last: walls always win, so nobody is ever pushed into a wall.
-            (position, velocity) = ResolveBodyOverlaps(position, velocity, radius, height, bodies);
-            (position, velocity) = ResolveBoxOverlaps(position, velocity, radius, height, stepHeight, boxes);
-            (position, velocity) = ResolveColumnOverlaps(level, position, velocity, radius);
-            (position, velocity) = ResolvePortalOverlaps(level, position, velocity, radius, height, stepHeight);
+            (position, velocity) = ResolveSolidOverlaps(bodies, position, velocity, radius, height, stepHeight, SinglePass);
+            (position, velocity) = ResolveSolidOverlaps(boxes, position, velocity, radius, height, stepHeight, SinglePass);
+            (position, velocity) = ResolveSolidOverlaps(level.Columns, position, velocity, radius, height, stepHeight, SinglePass);
+
+            // The jambs are stepped: in an inner corner the circle touches two blocks, so more than one pass.
+            (position, velocity) = ResolveSolidOverlaps(level.Portals, position, velocity, radius, height, stepHeight, ResolveIterations);
             (position, velocity) = ResolveOverlaps(level, position, velocity, radius, height, stepHeight);
         }
 
@@ -231,6 +239,8 @@ public static class CharacterCollision
         return false;
     }
 
+    // The walls (blocking cells) are no ISolid (issue #694): they are the level's grid, not a list of solids, and their
+    // sliding keeps the velocity's Y exactly, where Slide writes Y - 0 * into (a Y of -0 comes back as +0).
     private static (Vector3 Position, Vector3 Velocity) ResolveOverlaps(
         Level level, Vector3 position, Vector3 velocity, float radius, float height, float stepHeight)
     {
@@ -277,111 +287,28 @@ public static class CharacterCollision
     }
 
     /// <summary>
-    /// Pushes the character out of standing bodies (upright cylinders) on the ground plane and removes the
-    /// "into the body" part of the velocity - the same sliding as along walls. Bodies above or below the
-    /// character (no height overlap) are ignored.
+    /// Pushes the character out of <paramref name="solids"/> (issue #694: standing bodies, boxes, the level's columns, the
+    /// stone of the boss portals - each decides itself at which heights it is in the way) and removes the "into the solid"
+    /// part of the velocity - the same sliding as along walls. Solid by solid in list order, in up to
+    /// <paramref name="passes"/> passes; it stops after the first pass that pushed nothing.
     /// </summary>
-    private static (Vector3 Position, Vector3 Velocity) ResolveBodyOverlaps(
-        Vector3 position, Vector3 velocity, float radius, float height, IReadOnlyList<CylinderBody>? bodies)
+    internal static (Vector3 Position, Vector3 Velocity) ResolveSolidOverlaps<TSolid>(
+        IReadOnlyList<TSolid>? solids, Vector3 position, Vector3 velocity, float radius, float height, float stepHeight, int passes)
+        where TSolid : ISolid
     {
-        if (bodies is null)
+        if (solids is null)
         {
             return (position, velocity);
         }
 
-        foreach (var body in bodies)
-        {
-            var heightsOverlap = position.Y < body.Position.Y + body.Height && body.Position.Y < position.Y + height;
-            if (!heightsOverlap)
-            {
-                continue;
-            }
-
-            var offset = new Vector2(position.X - body.Position.X, position.Z - body.Position.Z);
-            var distance = offset.Length();
-            var penetration = radius + body.Radius - distance;
-            if (penetration <= 0f)
-            {
-                continue;
-            }
-
-            // Exactly on the centre (should not happen): leave in any fixed direction.
-            var normal = distance > Epsilon ? offset / distance : Vector2.UnitX;
-            position += new Vector3(normal.X, 0f, normal.Y) * penetration;
-
-            var into = (velocity.X * normal.X) + (velocity.Z * normal.Y);
-            if (into < 0f)
-            {
-                velocity -= new Vector3(normal.X, 0f, normal.Y) * into;
-            }
-        }
-
-        return (position, velocity);
-    }
-
-    /// <summary>
-    /// Pushes the character out of the level's columns (issue #539) and removes the "into the column" part of the
-    /// velocity - sliding round it. A column reaches from floor to ceiling, so it stops every character at every height.
-    /// </summary>
-    private static (Vector3 Position, Vector3 Velocity) ResolveColumnOverlaps(Level level, Vector3 position, Vector3 velocity, float radius)
-    {
-        foreach (var column in level.Columns)
-        {
-            var offset = new Vector2(position.X, position.Z) - column.Centre;
-            var distance = offset.Length();
-            var penetration = radius + Column.Radius - distance;
-            if (penetration <= 0f)
-            {
-                continue;
-            }
-
-            // Exactly on the middle (should not happen): leave in any fixed direction.
-            var normal = distance > Epsilon ? offset / distance : Vector2.UnitX;
-            position += new Vector3(normal.X, 0f, normal.Y) * penetration;
-
-            var into = (velocity.X * normal.X) + (velocity.Z * normal.Y);
-            if (into < 0f)
-            {
-                velocity -= new Vector3(normal.X, 0f, normal.Y) * into;
-            }
-        }
-
-        return (position, velocity);
-    }
-
-    /// <summary>
-    /// Pushes the character out of the stone of the boss portals (issue #598) - the jambs beside the opening, the plinths
-    /// and buttresses in front of the walls - like walls, with sliding. A block whose top is at most a step above the feet
-    /// does not stop it, nor does one above its head (the same rule as for boxes).
-    /// </summary>
-    private static (Vector3 Position, Vector3 Velocity) ResolvePortalOverlaps(
-        Level level, Vector3 position, Vector3 velocity, float radius, float height, float stepHeight)
-    {
-        if (level.Portals.Count == 0)
-        {
-            return (position, velocity);
-        }
-
-        // The jambs are stepped: in an inner corner the circle touches two blocks, so more than one pass.
-        for (var iteration = 0; iteration < ResolveIterations; iteration++)
+        for (var pass = 0; pass < passes; pass++)
         {
             var pushedOut = false;
-            foreach (var (min, max) in PortalStoneInTheWay(level, position, height, stepHeight))
+
+            // By index, without an enumerator: Move runs every tick (issue #653).
+            for (var i = 0; i < solids.Count; i++)
             {
-                var depth = RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out var normal);
-                if (depth <= 0f)
-                {
-                    continue;
-                }
-
-                position += new Vector3(normal.X, 0f, normal.Y) * depth;
-                var into = (velocity.X * normal.X) + (velocity.Z * normal.Y);
-                if (into < 0f)
-                {
-                    velocity -= new Vector3(normal.X, 0f, normal.Y) * into;
-                }
-
-                pushedOut = true;
+                pushedOut |= solids[i].PushOut(ref position, ref velocity, radius, height, stepHeight);
             }
 
             if (!pushedOut)
@@ -393,10 +320,66 @@ public static class CharacterCollision
         return (position, velocity);
     }
 
-    // The ground plans of the portal blocks a body standing at position.Y meets: from a step above its feet to its head
-    // (a head that only touches a block's bottom does not meet it: there the block is a ceiling).
-    private static StoneInTheWay PortalStoneInTheWay(Level level, Vector3 position, float height, float stepHeight) =>
-        new(level.Portals, position.Y + StepOntoStone(stepHeight), position.Y + height - HeadTouch);
+    /// <summary>
+    /// <see cref="ISolid.PushOut"/> for a solid that is a circle on the ground plane (a column, a standing body): out along
+    /// the line from its <paramref name="centre"/>, with sliding.
+    /// </summary>
+    internal static bool PushOutOfCircle(ref Vector3 position, ref Vector3 velocity, float radius, Vector2 centre, float solidRadius)
+    {
+        var offset = new Vector2(position.X, position.Z) - centre;
+        var distance = offset.Length();
+        var penetration = radius + solidRadius - distance;
+        if (penetration <= 0f)
+        {
+            return false;
+        }
+
+        // Exactly on the middle (should not happen): leave in any fixed direction.
+        var normal = distance > Epsilon ? offset / distance : Vector2.UnitX;
+        Slide(ref position, ref velocity, normal, penetration);
+        return true;
+    }
+
+    /// <summary>
+    /// <see cref="ISolid.PushOut"/> for a solid that is a rectangle on the ground plane (a box, a block of portal stone,
+    /// from <paramref name="min"/> to <paramref name="max"/> in X and Z): out by the nearest way, with sliding.
+    /// </summary>
+    internal static bool PushOutOfRectangle(ref Vector3 position, ref Vector3 velocity, float radius, Vector2 min, Vector2 max)
+    {
+        var depth = RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out var normal);
+        if (depth <= 0f)
+        {
+            return false;
+        }
+
+        Slide(ref position, ref velocity, normal, depth);
+        return true;
+    }
+
+    // Resolution of a solid: push the circle out along the normal, then remove the velocity that points into the solid.
+    private static void Slide(ref Vector3 position, ref Vector3 velocity, Vector2 normal, float depth)
+    {
+        position += new Vector3(normal.X, 0f, normal.Y) * depth;
+        var into = (velocity.X * normal.X) + (velocity.Z * normal.Y);
+        if (into < 0f)
+        {
+            velocity -= new Vector3(normal.X, 0f, normal.Y) * into;
+        }
+    }
+
+    /// <summary>
+    /// The heights (world) between which a body standing at <paramref name="position"/> meets portal stone: from a step
+    /// above its feet to its head (a head that only touches a block's bottom does not meet it: there the block is a ceiling).
+    /// </summary>
+    internal static (float From, float To) StoneInTheWayHeights(Vector3 position, float height, float stepHeight) =>
+        (position.Y + StepOntoStone(stepHeight), position.Y + height - HeadTouch);
+
+    // The ground plans of the portal blocks a body standing at position.Y meets (see StoneInTheWayHeights).
+    private static StoneInTheWay PortalStoneInTheWay(Level level, Vector3 position, float height, float stepHeight)
+    {
+        var (from, to) = StoneInTheWayHeights(position, height, stepHeight);
+        return new(level.Portals, from, to);
+    }
 
     /// <summary>
     /// The walk of <see cref="PortalStoneInTheWay"/>: portal by portal (by index), the blocks of each its
@@ -508,37 +491,6 @@ public static class CharacterCollision
     /// floors, but meets every block from its feet up, so a bat in the passage still bumps into the jambs.
     /// </summary>
     private static float StepOntoStone(float stepHeight) => float.IsPositiveInfinity(stepHeight) ? 0f : stepHeight;
-
-    /// <summary>
-    /// Pushes the character out of solid boxes on the ground plane - like walls, with sliding. A box whose top is
-    /// at most a step above the feet does not stop it (it stands on it or steps up), nor does one above its head.
-    /// </summary>
-    private static (Vector3 Position, Vector3 Velocity) ResolveBoxOverlaps(
-        Vector3 position, Vector3 velocity, float radius, float height, float stepHeight, IReadOnlyList<BoxBody>? boxes)
-    {
-        foreach (var box in boxes ?? [])
-        {
-            if (box.Max.Y <= position.Y + stepHeight || box.Min.Y >= position.Y + height)
-            {
-                continue;
-            }
-
-            var depth = BoxPenetration(position, radius, box, out var normal);
-            if (depth <= 0f)
-            {
-                continue;
-            }
-
-            position += new Vector3(normal.X, 0f, normal.Y) * depth;
-            var into = (velocity.X * normal.X) + (velocity.Z * normal.Y);
-            if (into < 0f)
-            {
-                velocity -= new Vector3(normal.X, 0f, normal.Y) * into;
-            }
-        }
-
-        return (position, velocity);
-    }
 
     private static float BoxPenetration(Vector3 position, float radius, BoxBody box, out Vector2 normal) =>
         RectanglePenetration(position, radius, box.Min.X, box.Min.Z, box.Max.X, box.Max.Z, out normal);
