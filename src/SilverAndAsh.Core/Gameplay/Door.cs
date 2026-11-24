@@ -172,6 +172,18 @@ public sealed class Door : IInteractable
 
     public Vector3 BoxMax { get; }
 
+    /// <summary>
+    /// Where across the passage (world X for a north or south door, else world Z) a body of <paramref name="radius"/>
+    /// comes to stand that the shutting door pushes out of its doorway: where it was, but inside the doorway's width. A
+    /// body as wide as the doorway or wider goes to its middle (issue #580) - like at a boss portal
+    /// (<see cref="BossPortal.PushedAcross"/>).
+    /// </summary>
+    internal float PushedAcross(float across, float radius)
+    {
+        var (low, high) = Side is RoomSide.North or RoomSide.South ? (BoxMin.X, BoxMax.X) : (BoxMin.Z, BoxMax.Z);
+        return low + radius <= high - radius ? Math.Clamp(across, low + radius, high - radius) : (low + high) / 2f;
+    }
+
     /// <summary>Opens the door for a player standing at <paramref name="from"/>: the leaves will swing away from there.</summary>
     internal void Open(Vector3 from)
     {

@@ -206,7 +206,7 @@ public sealed class GameWorld
 
     // A wave comes out: its enemies wake up and rise out of the floor or sink out of the ceiling. Nothing to hear yet
     // (a new kind of sound needs a listening test first) - only the event, for effects later.
-    private void Release(RoomState room, IReadOnlyList<ITarget> wave)
+    private void Release(RoomState room, IReadOnlyList<IEnemy> wave)
     {
         KeepAwayFromPlayers(room, wave);
         var emergeTicks = SimulationClock.SecondsToTicks(Balance.Difficulty.EmergeTime);
@@ -233,7 +233,7 @@ public sealed class GameWorld
     // to every player and keeps clear of every door (DoorClearance, issue #490: straight in difficulty.doorDistance,
     // beside the door difficulty.sideDoorDistance) - or, if there is none, on the free cell farthest from all players
     // (clear of the doors if possible). No chance involved: the same places give the same cells.
-    private void KeepAwayFromPlayers(RoomState room, IReadOnlyList<ITarget> wave)
+    private void KeepAwayFromPlayers(RoomState room, IReadOnlyList<IEnemy> wave)
     {
         var difficulty = Balance.Difficulty;
         var players = Players.Select(player => new Vector2(player.Position.X, player.Position.Z)).ToList();
@@ -245,7 +245,7 @@ public sealed class GameWorld
 
         // Enemies that stay - all others of the room, and those of the wave that are far enough - keep their cells.
         var movers = wave.Where(enemy => Nearest(players, CellOf(enemy)) < difficulty.PlayerDistance).ToList();
-        var taken = room.Enemies.Where(enemy => !IsDead(enemy) && !movers.Contains(enemy)).Select(CellOf).ToHashSet();
+        var taken = room.Enemies.Where(enemy => !enemy.IsDead && !movers.Contains(enemy)).Select(CellOf).ToHashSet();
         var cells = room.Cells.OrderBy(cell => cell.Z).ThenBy(cell => cell.X).ToList();
 
         foreach (var enemy in movers)
@@ -903,7 +903,7 @@ public sealed class GameWorld
         }
 
         WakeUp(room);
-        if (room.Enemies.All(IsDead))
+        if (room.Enemies.All(enemy => enemy.IsDead))
         {
             room.Clear();
             _events.Add(new RoomCleared(room.Index));
@@ -946,13 +946,13 @@ public sealed class GameWorld
         foreach (var room in _rooms.Where(room => room.IsSealed))
         {
             var released = room.Waves.Take(room.WavesReleased).SelectMany(wave => wave);
-            if (room.WavesReleased < room.WaveCount && released.All(IsDead))
+            if (room.WavesReleased < room.WaveCount && released.All(enemy => enemy.IsDead))
             {
                 Release(room, room.ReleaseNextWave()!);
                 continue;
             }
 
-            if (!room.Enemies.All(IsDead))
+            if (!room.Enemies.All(enemy => enemy.IsDead))
             {
                 continue;
             }
@@ -1107,9 +1107,7 @@ public sealed class GameWorld
             return portal.PushedAcross(across, radius);
         }
 
-        return PassesAlongZ(door)
-            ? Math.Clamp(across, door.BoxMin.X + radius, door.BoxMax.X - radius)
-            : Math.Clamp(across, door.BoxMin.Z + radius, door.BoxMax.Z - radius);
+        return door.PushedAcross(across, radius);
     }
 
     /// <summary>
@@ -1160,26 +1158,11 @@ public sealed class GameWorld
     // their wave comes out).
     private void WakeUp(RoomState room)
     {
-        foreach (var enemy in room.Enemies.Where(enemy => !IsHidden(enemy)))
+        foreach (var enemy in room.Enemies.Where(enemy => !enemy.IsHidden))
         {
             _asleep.Remove(enemy.Id);
         }
     }
-
-    private static bool IsHidden(ITarget enemy) => enemy switch
-    {
-        Ghoul ghoul => ghoul.Emergence.IsHidden,
-        Bat bat => bat.Emergence.IsHidden,
-        _ => false,
-    };
-
-    // Only an enemy that is fully out acts (issue #424: while it comes out it does not attack).
-    private static bool IsOut(ITarget enemy) => enemy switch
-    {
-        Ghoul ghoul => ghoul.Emergence.IsPresent,
-        Bat bat => bat.Emergence.IsPresent,
-        _ => true,
-    };
 
     private bool TouchesDoorOf(RoomState room, Player player) =>
         room.DoorIds.Any(id => Overlaps(_doors[id], player.Position, BodySizes.Player.Radius));
@@ -1191,13 +1174,6 @@ public sealed class GameWorld
         var dz = at.Z - Math.Clamp(at.Z, door.BoxMin.Z, door.BoxMax.Z);
         return dx * dx + dz * dz < radius * radius;
     }
-
-    private static bool IsDead(ITarget enemy) => enemy switch
-    {
-        Ghoul ghoul => ghoul.IsDead,
-        Bat bat => bat.IsDead,
-        _ => !enemy.IsHittable,
-    };
 
     public IReadOnlyList<TrainingDummy> Dummies => _dummies;
 
@@ -1807,7 +1783,7 @@ public sealed class GameWorld
                 .Concat(StandingChests.Select(chest => chest.RoundBody))
                 .Concat(WellBodies)
                 .ToList();
-            if (!_asleep.Contains(ghoul.Id) && IsOut(ghoul) && !IsShowroom)
+            if (!_asleep.Contains(ghoul.Id) && ((IEnemy)ghoul).IsOut && !IsShowroom)
             {
                 ghoul.Act(_enemyLevel, Players, obstacles, _events, EnemyPaths());
             }
@@ -1829,7 +1805,7 @@ public sealed class GameWorld
         var batEventsFrom = _events.Count;
         foreach (var bat in _bats)
         {
-            if (!_asleep.Contains(bat.Id) && IsOut(bat) && !IsShowroom)
+            if (!_asleep.Contains(bat.Id) && ((IEnemy)bat).IsOut && !IsShowroom)
             {
                 bat.Act(_enemyLevel, Players, _events);
             }
