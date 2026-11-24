@@ -18,7 +18,7 @@
 # finding a stale lock and taking it over:
 #   GEGENPROBE_TEST_FOUND_STALE=<file>        makes <file> - "this run has found the stale lock"
 #   GEGENPROBE_TEST_WAIT_BEFORE_TAKEOVER=<file>  waits until <file> is there (at most 60 s)
-# so two runs meet in exactly that gap.
+# so two runs meet in exactly that gap. GEGENPROBE_TEST_WAIT_SECONDS=<n> sets a shorter limit than 60 s (issue #660).
 
 lock_path=""
 lock_owned=0
@@ -76,11 +76,12 @@ lock_take() {
     return 0
 }
 
-# For the self-test only: waits until the file $1 is there, at most 60 s - a test that goes wrong fails, it does not
-# hang.
+# For the self-test only: waits until the file $1 is there, at most GEGENPROBE_TEST_WAIT_SECONDS (default 60 s) - a
+# test that goes wrong fails, it does not hang.
 lock_test_wait_for() {
     local tries=0
-    while [ ! -e "$1" ] && [ "$tries" -lt 1200 ]; do
+    local limit=$(( ${GEGENPROBE_TEST_WAIT_SECONDS:-60} * 20 ))
+    while [ ! -e "$1" ] && [ "$tries" -lt "$limit" ]; do
         sleep 0.05
         tries=$((tries + 1))
     done
