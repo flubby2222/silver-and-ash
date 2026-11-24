@@ -140,6 +140,42 @@ public class PhotoSceneTests
     }
 
     [Fact]
+    public void Every_scene_keeps_its_place_name_description_and_picture_as_recorded()
+    {
+        // Issue #589: the list of the scenes was split into one list per theme. The recording was made before the split:
+        // in the order of --photo all, each scene's name, what its setup asks for, how many ticks it ran and where the
+        // player stood and looked then, and its description. A scene that changes on purpose changes its line here.
+        var recorded = File.ReadAllLines(RepositoryFiles.Find("tests/SilverAndAsh.Core.Tests/Photos/photo-scenes.txt"));
+        var studio = Studio();
+
+        var now = PhotoScenes.All.Select(scene => Fingerprint(scene, studio)).ToArray();
+
+        Assert.Equal(recorded, now);
+    }
+
+    private static string Fingerprint(PhotoScene scene, PhotoStudio studio)
+    {
+        var setup = scene.Build(studio);
+        var ran = setup.Run();
+        var player = setup.World.Player;
+        var flags = string.Concat(
+            setup.IsModelProbe ? "P" : "-",
+            setup.ShowsShotBodies ? "W" : "-",
+            setup.ShowsOnlyTheWorld ? "O" : "-",
+            setup.Input is null ? "-" : "I",
+            setup.StopWhen is null ? "-" : "S");
+        return string.Join(
+            " | ",
+            scene.Name,
+            $"ticks {setup.Ticks} ran {ran} menu {setup.Menu} {flags}",
+            $"at {Rounded(player.Position)} looking {Rounded(player.View.Forward)}",
+            scene.Description);
+    }
+
+    private static string Rounded(Vector3 v) =>
+        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{v.X:F3} {v.Y:F3} {v.Z:F3}");
+
+    [Fact]
     public void Scene_names_are_unique_and_safe_as_file_names()
     {
         var names = PhotoScenes.All.Select(scene => scene.Name).ToList();
@@ -426,6 +462,76 @@ public class PhotoSceneTests
         Assert.True(setup.World.Gorm!.IsInPhase2);
         Assert.Equal(GormState.Roaring, setup.World.Gorm.State);
         Assert.InRange(setup.World.Gorm.StateProgress, 0.95f, 1f);
+    }
+
+    public static TheoryData<string, string> GormMomentPairs()
+    {
+        // Issue #589: every scene that waits for a moment of Gorm's, against the world another of them stopped in.
+        string[] moments = ["gorm-swing-windup", "gorm-swing", "gorm-throw-windup", "gorm-hammer-windup", "gorm-phase2", "gorm-shockwave"];
+        var pairs = new TheoryData<string, string>();
+        foreach (var waiting in moments)
+        {
+            foreach (var stopped in moments.Where(other => other != waiting))
+            {
+                pairs.Add(waiting, stopped);
+            }
+        }
+
+        return pairs;
+    }
+
+    [Theory]
+    [MemberData(nameof(GormMomentPairs))]
+    public void A_gorm_scene_does_not_stop_in_the_moment_another_gorm_scene_stops_in(string waiting, string stopped)
+    {
+        var other = Built(stopped);
+        Assert.True(other.Run() < other.Ticks, $"{stopped} should reach its moment.");
+
+        Assert.False(Built(waiting).StopWhen!(other.World));
+    }
+
+    [Theory]
+    [InlineData("gorm-swing-windup")]
+    [InlineData("gorm-swing")]
+    [InlineData("gorm-throw-windup")]
+    [InlineData("gorm-hammer-windup")]
+    [InlineData("gorm-phase2")]
+    [InlineData("gorm-shockwave")]
+    [InlineData("stairs-4m")]
+    [InlineData("stairs-10m")]
+    public void A_scene_waiting_for_gorm_or_his_stairs_does_not_stop_where_neither_is(string name)
+    {
+        // Issue #589: a hall with only a ghoul in it has no Gorm and no stairs.
+        var ghoulHall = Built("ghoul-4m");
+        ghoulHall.Run();
+
+        Assert.Null(ghoulHall.World.Gorm);
+        Assert.Null(ghoulHall.World.Stairs);
+        Assert.False(Built(name).StopWhen!(ghoulHall.World));
+    }
+
+    [Theory]
+    [InlineData("blade-charged")]
+    [InlineData("club-charged")]
+    public void A_charged_scene_does_not_stop_before_the_player_starts_to_charge(string name)
+    {
+        // Issue #589: before the first tick the melee button has not been held yet.
+        var setup = Built(name);
+
+        Assert.False(setup.StopWhen!(setup.World));
+    }
+
+    [Theory]
+    [InlineData("inventory", MenuKey.Equipment)]
+    [InlineData("map", MenuKey.Map)]
+    [InlineData("map-skillpoint", MenuKey.Map)]
+    public void A_menu_page_scene_presses_its_key_on_the_first_tick_only(string name, MenuKey key)
+    {
+        // Issue #589: the key is pressed once, as a player opens the page, not on every tick.
+        var input = Built(name).Input!;
+
+        Assert.Equal(key, input(0).PressMenu);
+        Assert.Null(input(1).PressMenu);
     }
 
     [Fact]

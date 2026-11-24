@@ -1,0 +1,183 @@
+start-room | ticks 1 ran 1 menu None ----- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | Level 0 as a run begins: start room, level name, standard weapons.
+room-combat | ticks 1 ran 1 menu None ----- | at 89.000 0.000 145.000 looking -0.894 -0.045 -0.447 | A combat room from its far corner, just entered: its enemies wake up.
+room-corridor | ticks 1 ran 1 menu None ----- | at 93.000 0.000 141.000 looking 0.989 -0.148 -0.000 | A corridor from one end.
+room-treasure | ticks 1 ran 1 menu None ----- | at 111.000 0.000 69.000 looking 0.829 -0.083 0.553 | A treasure room from its far corner, its chests in view.
+room-secret | ticks 1 ran 1 menu None ----- | at 81.000 0.000 153.000 looking 0.000 -0.148 0.989 | A secret room (behind a cracked wall) from its far corner.
+room-antechamber | ticks 1 ran 1 menu None ----- | at 67.650 0.000 61.000 looking 0.000 -0.119 0.993 | The antechamber from its entrance: the boss door to one side, the boss-gate teleporter in the far corner (issue #565).
+room-boss | ticks 1 ran 1 menu None ----- | at 39.000 0.000 53.000 looking 0.000 0.000 1.000 | The boss room from 12 m, Gorm waiting.
+chests-4m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 -0.298 0.954 | The chests of all four tiers side by side 4 m away, closed and locked, and an open one.
+well-ready | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 -0.112 0.994 | The Well of Sirius 4 m away, ready: water in its three bowls.
+well-spent | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 -0.112 0.994 | The Well of Sirius 4 m away, spent: dry.
+teleporter-locked-3m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 6.000 looking 0.000 0.164 0.986 | A teleporter not found yet, 3 m away: dark crystal (issue #480).
+teleporter-unlocked-3m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 6.000 looking 0.000 0.164 0.986 | A found teleporter 3 m away: its crystal shines by itself (issue #480).
+teleporter-locked-10m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 0.050 0.999 | A teleporter not found yet, 10 m away (issue #480).
+teleporter-unlocked-10m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 0.050 0.999 | A found teleporter 10 m away: the crystal still shines through the dark (issue #480).
+teleporter-hint | ticks 1 ran 1 menu None ----- | at 55.000 0.000 141.000 looking 0.000 0.000 1.000 | On the start-hall teleporter of level 0 with every teleporter found: the hint [T] Travel (issue #480).
+menu-travel | ticks 1 ran 1 menu Travel ----- | at 55.000 0.000 141.000 looking 0.000 0.000 1.000 | The destination choice on the start-hall teleporter: map, marks, Boss Gate chosen (issue #480).
+menu-travel-sealed | ticks 1 ran 1 menu Travel ----- | at 55.000 0.000 141.000 looking 0.000 0.000 1.000 | The destination choice with the boss-gate room sealed: its mark grey, no Travel (issue #480).
+door-normal | ticks 1 ran 1 menu None ----- | at 9.000 0.000 7.000 looking 0.000 0.025 1.000 | A wooden double door 6 m away in a bare hall, closed (issue #245).
+door-normal-half | ticks 600 ran 26 menu None ----S | at 9.000 0.000 7.000 looking 0.000 0.025 1.000 | A wooden double door 6 m away, opened by the player, halfway through its swing (issue #245).
+door-normal-open | ticks 600 ran 53 menu None ----S | at 9.000 0.000 7.000 looking 0.000 0.025 1.000 | A wooden double door 6 m away, opened by the player and fully swung open (issue #245).
+door-normal-10m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 3.000 looking 0.000 0.015 1.000 | A wooden double door 10 m away in a bare hall, closed: can its kind still be told apart (issue #245)?
+door-locked | ticks 1 ran 1 menu None ----- | at 9.000 0.000 7.000 looking 0.000 0.025 1.000 | A locked door 6 m away in a bare hall, closed (issue #245).
+door-locked-half | ticks 600 ran 38 menu None ----S | at 9.000 0.000 7.000 looking 0.000 0.025 1.000 | A locked door 6 m away, opened by the player, halfway through its swing (issue #245).
+door-locked-open | ticks 600 ran 77 menu None ----S | at 9.000 0.000 7.000 looking 0.000 0.025 1.000 | A locked door 6 m away, opened by the player and fully swung open (issue #245).
+door-locked-10m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 3.000 looking 0.000 0.015 1.000 | A locked door 10 m away in a bare hall, closed: can its kind still be told apart (issue #245)?
+door-boss | ticks 1 ran 1 menu None ----- | at 9.000 0.000 7.000 looking 0.160 0.224 0.961 | A boss door 6 m away in a bare hall, closed (issue #245).
+door-boss-half | ticks 600 ran 65 menu None ----S | at 9.000 0.000 7.000 looking 0.160 0.224 0.961 | A boss door 6 m away, opened by the player, halfway through its swing (issue #245).
+door-boss-open | ticks 600 ran 131 menu None ----S | at 9.000 0.000 7.000 looking 0.160 0.224 0.961 | A boss door 6 m away, opened by the player and fully swung open (issue #245).
+door-boss-10m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 3.000 looking 0.099 0.138 0.986 | A boss door 10 m away in a bare hall, closed: can its kind still be told apart (issue #245)?
+door-cracked | ticks 1 ran 1 menu None ----- | at 9.000 0.000 7.000 looking 0.000 0.025 1.000 | A cracked wall 6 m away in a bare hall: only its fine cracks give it away (issue #245).
+cracked-wall-2m | ticks 1 ran 1 menu None ----- | at 81.000 0.000 149.000 looking 0.000 -0.555 0.832 | The first cracked wall of level 0 from 2 m, outside the secret room (issue #246).
+cracked-wall-4m | ticks 1 ran 1 menu None ----- | at 81.000 0.000 147.000 looking 0.000 -0.203 0.979 | The first cracked wall of level 0 from 4 m (issue #246).
+cracked-wall-10m | ticks 1 ran 1 menu None ----- | at 81.000 0.000 141.000 looking 0.000 -0.067 0.998 | A cracked wall of level 0 from 10 m: does it still sit in the wall (issue #246)?
+cracked-wall-flat | ticks 1 ran 1 menu None ----- | at 75.000 0.000 149.000 looking 0.984 -0.098 0.148 | A cracked wall from 2 m out and 6 m along: its plate at a flat angle (issue #246).
+cracked-wall-a-4m | ticks 1 ran 1 menu None ----- | at 81.000 0.000 147.000 looking 0.000 -0.203 0.979 | A cracked wall in wall variant A from 4 m (issue #246).
+cracked-wall-b-4m | ticks 1 ran 1 menu None ----- | at 121.000 0.000 119.000 looking 0.000 -0.203 0.979 | A cracked wall in wall variant B from 4 m (issue #246).
+cracked-wall-c-4m | ticks 1 ran 1 menu None ----- | at 97.000 0.000 119.000 looking 0.000 -0.203 0.979 | A cracked wall in wall variant C from 4 m (issue #246).
+cracked-wall-sideways-4m | ticks 1 ran 1 menu None ----- | at 15.000 0.000 23.000 looking -0.979 -0.203 -0.000 | A cracked wall of an East/West door from 4 m: the plates turned a quarter (issue #246).
+cracked-wall-secret-4m | ticks 1 ran 1 menu None ----- | at 81.000 0.000 155.000 looking -0.000 -0.203 -0.979 | A cracked wall from inside its secret room, 4 m away (issue #246).
+cracked-wall-break | ticks 600 ran 69 menu None ---IS | at 81.000 0.000 153.000 looking -0.000 -0.555 -0.832 | A cracked wall 2 m away, broken from inside its secret room: the stone chunks in flight, 8 ticks after the blow (issue #246).
+cracked-wall-break-dust | ticks 600 ran 85 menu None ---IS | at 81.000 0.000 153.000 looking -0.000 -0.555 -0.832 | The same wall 24 ticks after the blow: the cloud of dust at its densest, the stone chunks still in flight (issue #614).
+cracked-wall-break-after | ticks 600 ran 161 menu None ---IS | at 81.000 0.000 153.000 looking -0.000 -0.555 -0.832 | The same wall 100 ticks after the blow: the dust gone, the stone chunks on the floor (issue #246).
+door-sideways-half | ticks 600 ran 26 menu None ----S | at 7.000 0.000 9.000 looking 1.000 0.025 -0.000 | A wooden double door in a wall running north/south, 6 m away, half open (issue #245).
+door-level-seed1 | ticks 1 ran 1 menu None ----- | at 69.000 0.000 141.000 looking -0.999 0.037 -0.000 | The first wooden door of level 0 with seed 1, from 4 to 6 m, closed (issue #245).
+door-level-seed2-boss | ticks 1 ran 1 menu None ----- | at 33.000 0.000 85.000 looking -0.230 0.322 -0.919 | The boss door of level 0 with seed 2, from 4 to 6 m, closed (issue #245).
+boss-portal-front-6m | ticks 1 ran 1 menu None ----- | at 69.000 0.000 66.000 looking -0.991 0.132 -0.000 | The boss portal from the antechamber, 6 m away, closed (issue #568).
+boss-portal-front-6m-open | ticks 1 ran 1 menu None ----- | at 69.000 0.000 66.000 looking -0.991 0.132 -0.000 | The boss portal from the antechamber, 6 m away, opened with F and swung all the way into the boss room (issue #568).
+boss-portal-back-6m | ticks 1 ran 1 menu None ----- | at 57.000 0.000 66.000 looking 0.991 0.132 -0.000 | The boss portal from inside the boss room, 6 m away, closed - barred at once as the room seals (issue #568).
+boss-portal-back-6m-open | ticks 1 ran 1 menu None ----- | at 57.000 0.000 66.000 looking 0.991 0.132 -0.000 | The boss portal from inside the boss room, 6 m away, open, in the tick the room seals and the slam begins (issue #568).
+boss-portal-barred | ticks 100 ran 78 menu None ----S | at 57.000 0.000 66.000 looking 0.991 0.132 -0.000 | The boss portal from inside the boss room, 6 m away, slammed shut and barred: no placeholder bars (issue #568).
+boss-portal-gorm | ticks 1 ran 1 menu None ----- | at 71.000 0.000 66.000 looking -0.995 0.100 -0.000 | The open boss portal from the antechamber, 8 m away, Gorm asleep 2 m behind it: the size (issue #568).
+door-level-barred | ticks 600 ran 58 menu None ----S | at 69.000 0.000 141.000 looking -0.999 0.037 -0.000 | An open door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #558).
+door-level-barred-shut | ticks 600 ran 47 menu None ----S | at 69.000 0.000 141.000 looking -0.999 0.037 -0.000 | A closed door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #572).
+ghoul-4m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 -0.265 0.964 | A ghoul 4 m away in a bare hall.
+ghoul-10m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | A ghoul 10 m away in a bare hall.
+ghoul-windup | ticks 600 ran 45 menu None ----S | at 9.000 0.000 5.000 looking 0.000 -0.265 0.964 | A ghoul drawing back for a blow, halfway through.
+pistol-recoil | ticks 2 ran 2 menu None ---I- | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | The pistol right after a shot: kicked up, hammer down, muzzle flash (issue #249).
+bullet-impact-wall | ticks 2 ran 2 menu None ---I- | at 9.000 0.000 5.000 looking 0.163 -0.130 -0.978 | A pistol shot into the wall 3 m away, 2 ticks later: the spark of the impact still shows (issue #609).
+blade-charged | ticks 600 ran 61 menu None ---IS | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | The silver blade fully charged, drawn back and trembling (issue #249).
+blade-swing-half | ticks 3 ran 3 menu None ---I- | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | A quick blade swing halfway away: the forearm turns towards the shoulder (issue #265).
+blade-swing-full | ticks 8 ran 8 menu None ---I- | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | A quick blade swing at its height: the forearm turns towards the shoulder (issue #265).
+club-rest | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | The club in hand at rest, held like the blade (issue #403).
+club-swing-half | ticks 3 ran 3 menu None ---I- | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | A quick club swing halfway out, the same movement as the blade's (issue #403).
+club-charged | ticks 600 ran 61 menu None ---IS | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | The club fully wound up: the bend at the grip eases to 20 degrees, the head turns in (issue #417).
+club-swing-full | ticks 8 ran 8 menu None ---I- | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | A quick club swing at its height, where it hits: the club straight in the sleeve (issue #417).
+club-charged-release | ticks 600 ran 69 menu None ---IS | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | A fully charged club swing let go, at its height: the club straight in the sleeve although the wind-up is still easing off (issue #417).
+showroom-club | ticks 1 ran 1 menu None ----- | at 95.000 0.000 33.800 looking -0.000 -0.860 -0.510 | The club in hand before the club (Worn) lying in the showroom (issue #403).
+bat-4m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 0.196 0.981 | A bat 4 m away in a bare hall.
+bat-10m | ticks 1 ran 1 menu None ----- | at 9.000 0.000 5.000 looking 0.000 0.080 0.997 | A bat 10 m away in a bare hall.
+bat-screech | ticks 1200 ran 404 menu None ----S | at 9.000 0.000 5.000 looking 0.000 0.196 0.981 | A bat screeching, the warning before its dive, halfway through (issue #249).
+bat-dive | ticks 1200 ran 420 menu None ----S | at 9.000 0.000 5.000 looking 0.000 0.196 0.981 | A bat diving at the player, within 4 m of its feet (issue #249).
+gorm | ticks 1 ran 1 menu None ----- | at 39.000 0.000 59.000 looking 0.000 0.000 1.000 | Gorm, the Chained, 6 m away in his boss room.
+gorm-swing-windup | ticks 3000 ran 243 menu None ----S | at 9.000 0.000 5.000 looking 0.000 0.000 1.000 | Gorm whirling his chain above his head, the warning before the swing, the chain out to his right; in a hall as high as his boss room (issues #249, #254).
+gorm-swing | ticks 3000 ran 260 menu None ----S | at 9.000 0.000 5.000 looking 0.000 0.000 1.000 | Gorm sweeping his chain from his left to his right, a third of the way; in a hall as high as his boss room (issues #249, #254).
+gorm-throw-windup | ticks 3000 ran 16 menu None ----S | at 9.000 0.000 5.000 looking 0.000 0.000 1.000 | Gorm about to throw his hook, which glows red: the warning, halfway through; in a hall as high as his boss room (issues #249, #254).
+gorm-hammer-windup | ticks 3000 ran 40 menu None ----S | at 9.000 0.000 5.000 looking 0.000 0.000 1.000 | Gorm with his club raised high, the warning before the hammer, near its top; in a hall as high as his boss room (issue #254).
+gorm-shockwave | ticks 120 ran 53 menu None ----S | at 9.000 0.000 5.000 looking 0.000 -0.007 1.000 | Gorm's shock wave half way out (6 m), seen from 14 m, just outside its reach; for --bench with the wave in view (issue #299).
+gorm-phase2 | ticks 600 ran 86 menu None ----S | at 39.000 0.000 55.000 looking 0.000 0.000 1.000 | Gorm in phase 2 (half his health gone, red marks), 10 m away in his boss room, at the end of his roar (issue #249).
+stairs-4m | ticks 600 ran 180 menu None ----S | at 47.000 0.000 61.000 looking 0.000 0.100 0.995 | The spiral staircase of stone, standing in the boss room after Gorm's death, seen from 4 m, its lamp lit (issue #300).
+stairs-10m | ticks 600 ran 180 menu None ----S | at 47.000 0.000 55.000 looking 0.000 0.040 0.999 | Like stairs-4m, from 10 m: what is left of its outline at that distance (issue #300).
+hud-weapons | ticks 1 ran 1 menu None ----- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The HUD with every weapon place taken: club in hand, pistol, rifle and blunderbuss.
+hud-rifle | ticks 30 ran 30 menu None ---I- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | Like hud-weapons, but the rifle chosen (2): a placeholder next to the club (issue #249).
+hud-blunderbuss | ticks 30 ran 30 menu None ---I- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | Like hud-weapons, but the blunderbuss chosen (3): its one round large above the weapons (issue #388).
+rifle-at-wall | ticks 120 ran 120 menu None ---I- | at 10.983 0.000 2.350 looking 0.163 -0.130 -0.978 | The rifle chosen (2), walked up to a wall until it stops the player: the weapon in front of the wall (issue #624).
+blunderbuss-at-wall | ticks 120 ran 120 menu None ---I- | at 10.983 0.000 2.350 looking 0.163 -0.130 -0.978 | The blunderbuss chosen (3), walked up to a wall until it stops the player: the weapon in front of the wall (issue #624).
+hud-melee | ticks 20 ran 20 menu None ---I- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | Like hud-weapons, the club held charging: the large rounds number gives way (issue #388).
+hud-reload | ticks 1200 ran 265 menu None ---IS | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The pistol fired empty in the start room: "Reload [R]" under the crosshair (issue #259).
+hud-texts | ticks 1200 ran 145 menu None ---IS | at 101.000 0.000 13.800 looking -0.000 -0.860 -0.510 | Every HUD text at once (issues #340, #369): "Reload [R]" and "[F] Take Rifle (Forged)" under the crosshair, the skill point at the top left and the consecrated time above the weapons.
+hud-calm | ticks 1 ran 1 menu None ----- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The HUD in a calm moment (issue #369): three items, every weapon place taken, a quarter of the life gone, silver and a key.
+hud-items | ticks 1 ran 1 menu None ----- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The HUD with the club in hand and the six items drawn last (issue #381): boots, rosary, holster, parry, leech, ashen heart.
+hud-boss | ticks 120 ran 1 menu None ----S | at 39.000 0.000 55.000 looking 0.000 0.000 1.000 | The HUD in the boss fight (issue #369): Gorm's name and bar at the top, a quarter of his health gone.
+hud-skillpoint | ticks 1 ran 1 menu None ----- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The HUD while a boon waits (issue #369): the skill point with its key [X] at the top left.
+hud-pickup | ticks 45 ran 45 menu None ---I- | at 107.000 0.000 33.800 looking -0.000 -0.860 -0.510 | The HUD just after Hunter's Eye is taken with F (issue #369): the gold toast above the items.
+hud-reload-start | ticks 20 ran 20 menu None ---I- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The pistol just started reloading (R) with one round gone: the veil covers its picture (issue #370).
+hud-reload-mid | ticks 56 ran 56 menu None ---I- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The pistol half way through its reload: the veil has shrunk to the right half of the frame (issues #370, #389).
+hud-hit | ticks 1200 ran 63 menu None ----S | at 9.000 0.000 5.000 looking 0.000 -0.265 0.964 | A ghoul's blow has just landed: the picture darkened for a moment, the ghoul still visible (issue #370).
+hud-lowlife | ticks 48 ran 48 menu None ----- | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | Little life left: the dark red edge at the height of its slow pulse (issue #370).
+hud-skillpoint-glow | ticks 1200 ran 49 menu None ---IS | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | A ghoul shot dead brings a level up: the short gold shine at the edge (issue #370).
+inventory | ticks 1 ran 1 menu None ---I- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The equipment page of the menu (G) open, every place of the bag taken (issue #348).
+map | ticks 1 ran 1 menu None ---I- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The map page of the menu (Tab) early in a run: values and five chosen boons on the left, the map on the right (issues #347, #348).
+map-skillpoint | ticks 1 ran 1 menu None ---I- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The map page of the menu (Tab) while a boon waits: the yellow "[X] to level up" above the values (issue #387).
+menu-title | ticks 1 ran 1 menu Title ----- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The title screen: Start, Settings, Quit (issue #349).
+menu-pause | ticks 1 ran 1 menu Pause ----- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The pause menu (Esc) over a run: Resume, Settings, Back to title, Quit (issue #349).
+menu-settings | ticks 1 ran 1 menu Settings ----- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The settings opened from the pause menu: sensitivity, three volumes, window or full screen (issue #349).
+menu-quit | ticks 1 ran 1 menu Quit ----- | at 59.000 0.000 141.000 looking 0.000 0.000 1.000 | The question before quitting, asked from the pause menu: Cancel, Quit (issues #349, #371).
+ghoul-shotbody-front | ticks 1 ran 1 menu None -W--- | at 75.542 0.000 51.944 looking 0.651 -0.595 0.471 | The showroom's ghoul from 1.8 m in front, with what a shot can hit drawn over it as wires (issue #433).
+ghoul-shotbody-side | ticks 1 ran 1 menu None -W--- | at 75.944 0.000 54.458 looking 0.424 -0.556 -0.715 | The showroom's ghoul from 1.8 m to its side, with what a shot can hit drawn over it as wires (issue #433).
+crossbow-skeleton-rest-4m | ticks 1 ran 1 menu None ----- | at 83.000 0.000 57.000 looking -0.000 -0.120 -0.993 | The showroom's crossbow skeleton at rest, 4 m in front of it: crossbow lowered, eyes dark (issue #497).
+crossbow-skeleton-announce-4m | ticks 1 ran 1 menu None ----- | at 89.000 0.000 17.000 looking -0.000 -0.120 -0.993 | The showroom's crossbow skeleton announcing a shot, 4 m in front of it: crossbow raised, eyes red (issue #497).
+crossbow-skeleton-announce-2m | ticks 1 ran 1 menu None ----- | at 89.000 0.000 15.000 looking -0.000 -0.235 -0.972 | The showroom's crossbow skeleton announcing a shot, 2 m in front of it - the red eyes up close (issue #497).
+crypt-warden-rest-4m | ticks 1 ran 1 menu None ----- | at 89.000 0.000 37.000 looking -0.000 -0.022 -1.000 | The showroom's crypt warden at rest, 4 m in front of it: pole propped up, eye dull (issue #530).
+crypt-warden-announce-4m | ticks 1 ran 1 menu None ----- | at 89.000 0.000 57.000 looking -0.000 -0.022 -1.000 | The showroom's crypt warden announcing its blow, 4 m in front of it: pole raised, eye red (issue #530).
+crypt-warden-announce-2m | ticks 1 ran 1 menu None ----- | at 89.000 0.000 55.000 looking -0.000 -0.044 -0.999 | The showroom's crypt warden announcing its blow, 2 m in front of it - the red eye up close (issue #530).
+model-probe-4m | ticks 1 ran 1 menu None P---- | at 9.000 0.000 5.000 looking 0.000 -0.265 0.964 | One target on a bare floor, 4 m away - stands in for a model under game conditions.
+model-probe-10m | ticks 1 ran 1 menu None P---- | at 9.000 0.000 5.000 looking 0.000 -0.109 0.994 | One target on a bare floor, 10 m away - stands in for a model under game conditions.
+showroom-a-corridor | ticks 1 ran 1 menu None ----- | at 17.000 0.000 13.000 looking 0.970 0.024 -0.242 | The showroom, wall variant A: the corridor (3.5 m) with its doors and cracked wall.
+showroom-a-room | ticks 1 ran 1 menu None ----- | at 67.000 0.000 17.000 looking 0.894 0.022 -0.447 | The showroom, wall variant A: the room (6 m) with its pieces.
+showroom-b-corridor | ticks 1 ran 1 menu None ----- | at 17.000 0.000 33.000 looking 0.970 0.024 -0.242 | The showroom, wall variant B: the corridor (3.5 m) with its doors and cracked wall.
+showroom-b-room | ticks 1 ran 1 menu None ----- | at 67.000 0.000 37.000 looking 0.894 0.022 -0.447 | The showroom, wall variant B: the room (6 m) with its pieces.
+showroom-c-corridor | ticks 1 ran 1 menu None ----- | at 17.000 0.000 53.000 looking 0.970 0.024 -0.242 | The showroom, wall variant C: the corridor (3.5 m) with its doors and cracked wall.
+showroom-c-room | ticks 1 ran 1 menu None ----- | at 67.000 0.000 57.000 looking 0.894 0.022 -0.447 | The showroom, wall variant C: the room (6 m) with its pieces.
+wall-pillar-a-corridor | ticks 1 ran 1 menu None ----- | at 34.500 0.000 13.500 looking -0.263 -0.004 -0.965 | The wall pillars of the showroom against wall variant A under a ceiling of 3.5 m (issue #536).
+wall-pillar-a-room | ticks 1 ran 1 menu None ----- | at 80.500 0.000 17.500 looking -0.156 0.042 -0.987 | The wall pillars of the showroom against wall variant A under a ceiling of 6 m (issue #536).
+wall-pillar-b-corridor | ticks 1 ran 1 menu None ----- | at 34.500 0.000 33.500 looking -0.263 -0.004 -0.965 | The wall pillars of the showroom against wall variant B under a ceiling of 3.5 m (issue #536).
+wall-pillar-b-room | ticks 1 ran 1 menu None ----- | at 80.500 0.000 37.500 looking -0.156 0.042 -0.987 | The wall pillars of the showroom against wall variant B under a ceiling of 6 m (issue #536).
+wall-pillar-c-corridor | ticks 1 ran 1 menu None ----- | at 34.500 0.000 53.500 looking -0.263 -0.004 -0.965 | The wall pillars of the showroom against wall variant C under a ceiling of 3.5 m (issue #536).
+wall-pillar-c-room | ticks 1 ran 1 menu None ----- | at 80.500 0.000 57.500 looking -0.156 0.042 -0.987 | The wall pillars of the showroom against wall variant C under a ceiling of 6 m (issue #536).
+ceiling-arch-a | ticks 1 ran 1 menu None ----- | at 63.500 0.000 17.000 looking -0.952 0.305 -0.000 | A ceiling arch of the showroom across a corridor 2 m wide in wall variant A, from 2.5 m (issue #537).
+ceiling-arch-b | ticks 1 ran 1 menu None ----- | at 63.500 0.000 37.000 looking -0.952 0.305 -0.000 | A ceiling arch of the showroom across a corridor 2 m wide in wall variant B, from 2.5 m (issue #537).
+ceiling-arch-c | ticks 1 ran 1 menu None ----- | at 63.500 0.000 57.000 looking -0.952 0.305 -0.000 | A ceiling arch of the showroom across a corridor 2 m wide in wall variant C, from 2.5 m (issue #537).
+ceiling-arch-sequence | ticks 1 ran 1 menu None ----- | at 65.000 0.000 17.000 looking -1.000 0.025 -0.000 | Down the showroom's arch corridor of wall variant A from its mouth: three ceiling arches, 4 m apart (issue #537).
+wall-niche-a-corridor | ticks 1 ran 1 menu None ----- | at 29.800 0.000 11.000 looking -0.256 -0.096 0.962 | A wall niche of the showroom in wall variant A under a ceiling of 3.5 m, from 3 m (issue #538).
+wall-niche-a-room | ticks 1 ran 1 menu None ----- | at 79.800 0.000 15.000 looking -0.256 -0.096 0.962 | A wall niche of the showroom in wall variant A under a ceiling of 6 m, from 3 m (issue #538).
+wall-niche-b-corridor | ticks 1 ran 1 menu None ----- | at 29.800 0.000 31.000 looking -0.256 -0.096 0.962 | A wall niche of the showroom in wall variant B under a ceiling of 3.5 m, from 3 m (issue #538).
+wall-niche-b-room | ticks 1 ran 1 menu None ----- | at 79.800 0.000 35.000 looking -0.256 -0.096 0.962 | A wall niche of the showroom in wall variant B under a ceiling of 6 m, from 3 m (issue #538).
+wall-niche-c-corridor | ticks 1 ran 1 menu None ----- | at 29.800 0.000 51.000 looking -0.256 -0.096 0.962 | A wall niche of the showroom in wall variant C under a ceiling of 3.5 m, from 3 m (issue #538).
+wall-niche-c-room | ticks 1 ran 1 menu None ----- | at 79.800 0.000 55.000 looking -0.256 -0.096 0.962 | A wall niche of the showroom in wall variant C under a ceiling of 6 m, from 3 m (issue #538).
+wall-niche-deep-a-corridor | ticks 1 ran 1 menu None ----- | at 25.800 0.000 11.000 looking -0.256 -0.096 0.962 | A deep wall niche of the showroom in wall variant A under a ceiling of 3.5 m, from 3 m (issue #553).
+wall-niche-shelf-a-corridor | ticks 1 ran 1 menu None ----- | at 33.800 0.000 11.000 looking -0.256 -0.096 0.962 | A deep wall niche with a shelf of the showroom in wall variant A under a ceiling of 3.5 m, from 3 m (issue #553).
+wall-niche-deep-a-room | ticks 1 ran 1 menu None ----- | at 75.800 0.000 15.000 looking -0.256 -0.096 0.962 | A deep wall niche of the showroom in wall variant A under a ceiling of 6 m, from 3 m (issue #553).
+wall-niche-shelf-a-room | ticks 1 ran 1 menu None ----- | at 83.800 0.000 15.000 looking -0.256 -0.096 0.962 | A deep wall niche with a shelf of the showroom in wall variant A under a ceiling of 6 m, from 3 m (issue #553).
+wall-niche-deep-b-corridor | ticks 1 ran 1 menu None ----- | at 25.800 0.000 31.000 looking -0.256 -0.096 0.962 | A deep wall niche of the showroom in wall variant B under a ceiling of 3.5 m, from 3 m (issue #553).
+wall-niche-shelf-b-corridor | ticks 1 ran 1 menu None ----- | at 33.800 0.000 31.000 looking -0.256 -0.096 0.962 | A deep wall niche with a shelf of the showroom in wall variant B under a ceiling of 3.5 m, from 3 m (issue #553).
+wall-niche-deep-b-room | ticks 1 ran 1 menu None ----- | at 75.800 0.000 35.000 looking -0.256 -0.096 0.962 | A deep wall niche of the showroom in wall variant B under a ceiling of 6 m, from 3 m (issue #553).
+wall-niche-shelf-b-room | ticks 1 ran 1 menu None ----- | at 83.800 0.000 35.000 looking -0.256 -0.096 0.962 | A deep wall niche with a shelf of the showroom in wall variant B under a ceiling of 6 m, from 3 m (issue #553).
+wall-niche-deep-c-corridor | ticks 1 ran 1 menu None ----- | at 25.800 0.000 51.000 looking -0.256 -0.096 0.962 | A deep wall niche of the showroom in wall variant C under a ceiling of 3.5 m, from 3 m (issue #553).
+wall-niche-shelf-c-corridor | ticks 1 ran 1 menu None ----- | at 33.800 0.000 51.000 looking -0.256 -0.096 0.962 | A deep wall niche with a shelf of the showroom in wall variant C under a ceiling of 3.5 m, from 3 m (issue #553).
+wall-niche-deep-c-room | ticks 1 ran 1 menu None ----- | at 75.800 0.000 55.000 looking -0.256 -0.096 0.962 | A deep wall niche of the showroom in wall variant C under a ceiling of 6 m, from 3 m (issue #553).
+wall-niche-shelf-c-room | ticks 1 ran 1 menu None ----- | at 83.800 0.000 55.000 looking -0.256 -0.096 0.962 | A deep wall niche with a shelf of the showroom in wall variant C under a ceiling of 6 m, from 3 m (issue #553).
+wall-niche-bottles | ticks 1 ran 1 menu None ----- | at 41.300 0.000 12.000 looking -0.127 -0.401 0.907 | A deep wall niche of the showroom filled with bottles, from the front 2 m away (issue #553).
+wall-niche-bottles-askew | ticks 1 ran 1 menu None ----- | at 42.400 0.000 13.100 looking -0.703 -0.477 0.527 | A deep wall niche of the showroom filled with bottles, askew from 1.4 m to the side (issue #553).
+wall-niche-bottles-shelf | ticks 1 ran 1 menu None ----- | at 83.300 0.000 16.000 looking -0.127 -0.401 0.907 | A deep wall niche of the showroom filled with bottles, from the front 2 m away (issue #553).
+wall-niche-bottles-shelf-askew | ticks 1 ran 1 menu None ----- | at 84.400 0.000 17.100 looking -0.703 -0.477 0.527 | A deep wall niche of the showroom filled with bottles, askew from 1.4 m to the side (issue #553).
+wall-niche-candles | ticks 1 ran 1 menu None ----- | at 33.300 0.000 12.000 looking -0.135 -0.203 0.970 | A deep wall niche of the showroom filled with candles, from the front 2 m away (issue #553).
+wall-niche-candles-askew | ticks 1 ran 1 menu None ----- | at 34.400 0.000 13.100 looking -0.775 -0.249 0.581 | A deep wall niche of the showroom filled with candles, askew from 1.4 m to the side (issue #553).
+wall-niche-skulls | ticks 1 ran 1 menu None ----- | at 49.300 0.000 12.000 looking -0.135 -0.203 0.970 | A deep wall niche of the showroom filled with skulls, from the front 2 m away (issue #553).
+wall-niche-skulls-askew | ticks 1 ran 1 menu None ----- | at 50.400 0.000 13.100 looking -0.775 -0.249 0.581 | A deep wall niche of the showroom filled with skulls, askew from 1.4 m to the side (issue #553).
+portcullis-closed-room | ticks 183 ran 183 menu None ----- | at 75.600 0.000 10.000 looking -0.196 0.000 -0.981 | The portcullis of the showroom closed, seen from room (issue #540).
+portcullis-closed-closet | ticks 183 ran 183 menu None ----- | at 75.600 0.000 4.000 looking -0.196 0.000 0.981 | The portcullis of the showroom closed, seen from closet (issue #540).
+portcullis-closed-far | ticks 183 ran 183 menu None ----- | at 75.600 0.000 13.000 looking -0.100 0.000 -0.995 | The portcullis of the showroom closed, seen from far (issue #540).
+portcullis-half-room | ticks 312 ran 312 menu None ----- | at 75.600 0.000 10.000 looking -0.196 0.000 -0.981 | The portcullis of the showroom half, seen from room (issue #540).
+portcullis-half-closet | ticks 312 ran 312 menu None ----- | at 75.600 0.000 4.000 looking -0.196 0.000 0.981 | The portcullis of the showroom half, seen from closet (issue #540).
+portcullis-half-far | ticks 312 ran 312 menu None ----- | at 75.600 0.000 13.000 looking -0.100 0.000 -0.995 | The portcullis of the showroom half, seen from far (issue #540).
+portcullis-open-room | ticks 10 ran 10 menu None ----- | at 75.600 0.000 10.000 looking -0.196 0.000 -0.981 | The portcullis of the showroom open, seen from room (issue #540).
+portcullis-open-closet | ticks 10 ran 10 menu None ----- | at 75.600 0.000 4.000 looking -0.196 0.000 0.981 | The portcullis of the showroom open, seen from closet (issue #540).
+portcullis-open-far | ticks 10 ran 10 menu None ----- | at 75.600 0.000 13.000 looking -0.100 0.000 -0.995 | The portcullis of the showroom open, seen from far (issue #540).
+column-corridor | ticks 1 ran 1 menu None ----- | at 26.000 0.000 67.000 looking -0.241 0.120 0.963 | The free-standing column of the showroom under the 3.5 m ceiling, from 4 m in front (issue #539).
+column-room | ticks 1 ran 1 menu None ----- | at 36.000 0.000 67.000 looking -0.218 0.436 0.873 | The free-standing column of the showroom under the 6 m ceiling, from 4 m in front (issue #539).
+column-intact-6m | ticks 1 ran 1 menu None ----- | at 31.500 0.000 69.000 looking -0.083 0.099 0.992 | The breaking column of the showroom: Intact, from 6 m (issue #601).
+column-intact-10m | ticks 1 ran 1 menu None ----- | at 31.500 0.000 65.000 looking -0.050 0.060 0.997 | The breaking column of the showroom: Intact, from 10 m (issue #601).
+column-hit1-6m | ticks 1 ran 1 menu None ----- | at 33.500 0.000 69.000 looking -0.083 0.099 0.992 | The breaking column of the showroom: 1 blow, from 6 m (issue #601).
+column-hit1-10m | ticks 1 ran 1 menu None ----- | at 33.500 0.000 65.000 looking -0.050 0.060 0.997 | The breaking column of the showroom: 1 blow, from 10 m (issue #601).
+column-hit2-6m | ticks 1 ran 1 menu None ----- | at 36.500 0.000 69.000 looking 0.083 0.099 0.992 | The breaking column of the showroom: 2 blows, from 6 m (issue #601).
+column-hit2-10m | ticks 1 ran 1 menu None ----- | at 36.500 0.000 65.000 looking 0.050 0.060 0.997 | The breaking column of the showroom: 2 blows, from 10 m (issue #601).
+column-broken-6m | ticks 1 ran 1 menu None ----- | at 38.500 0.000 69.000 looking 0.082 -0.164 0.983 | The breaking column of the showroom: Broken, from 6 m (issue #601).
+column-broken-10m | ticks 1 ran 1 menu None ----- | at 38.500 0.000 65.000 looking 0.050 -0.099 0.994 | The breaking column of the showroom: Broken, from 10 m (issue #601).
+equipment-rifle | ticks 1 ran 1 menu None ----- | at 101.000 0.000 13.800 looking -0.000 -0.860 -0.510 | The rifle (Forged) lying in the showroom, 0.8 m away: "[F] Take Rifle (Forged)" in steel blue (issue #317).
+equipment-worn | ticks 1 ran 1 menu None ----- | at 101.000 0.000 53.800 looking -0.000 -0.860 -0.510 | Hunter's Boots (Worn) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
+equipment-forged | ticks 1 ran 1 menu None ----- | at 107.000 0.000 13.800 looking -0.000 -0.860 -0.510 | Silver Rosary (Forged) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
+equipment-royal | ticks 1 ran 1 menu None ----- | at 107.000 0.000 33.800 looking -0.000 -0.860 -0.510 | Hunter's Eye (Royal) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
+equipment-vampiric | ticks 1 ran 1 menu None ----- | at 107.000 0.000 53.800 looking -0.000 -0.860 -0.510 | Leech (Vampiric) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
+equipment-taken-royal | ticks 45 ran 45 menu None ---I- | at 107.000 0.000 33.800 looking -0.000 -0.860 -0.510 | Hunter's Eye (Royal) just taken with F: its card on the left, framed in gold (issue #317).
+equipment-taken-vampiric | ticks 15 ran 15 menu None ---I- | at 107.000 0.000 53.800 looking -0.000 -0.860 -0.510 | The Leech (Vampiric) just taken with F: its card and the short blood-red glow from the edges (issue #317).
