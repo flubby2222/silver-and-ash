@@ -165,6 +165,74 @@ public class BossPortalStoneTests
         Assert.Equal(inFront.Z, world.Player.Position.Z, 0.0001f);
     }
 
+    [Theory]
+    [InlineData(0f, false)]
+    [InlineData(0.00005f, false)]
+    [InlineData(0f, true)]
+    [InlineData(0.00005f, true)]
+    public void A_head_at_the_impost_s_bottom_has_it_as_a_ceiling_and_is_not_pushed_aside(float intoTheStone, bool ghoul)
+    {
+        // Issue #635, the border between ceiling and stone in the way: a body on the left plinth below the impost, its
+        // head exactly at the impost's bottom or 0.05 mm into it (less than the 0.1 mm a head may touch it). The impost
+        // is its ceiling - rising stops there - and not in its way: standing still it is not pushed off its place. The
+        // rule holds for every body, not only a player's: also for a ghoul (0.4 m wide, 1 m high).
+        var level = World().Level;
+        var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
+        var impost = BossPortalShape.Blocks.Single(block => block.Top == BossPortalShape.Spring);
+        var (radius, height) = ghoul
+            ? (BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height)
+            : (BodySizes.Player.Radius, BodySizes.Player.Height);
+        var at = new Vector3(MiddleX - 1.3f, impost.Bottom + intoTheStone - height, DoorPlaneZ - BossPortalShape.HalfDepth - radius - 0.01f);
+        Assert.True(at.Y > plinth.Top);
+        var player = Balance.Default.Player;
+
+        var (moved, _) = CharacterCollision.Move(level, at, Vector3.Zero, radius, SimulationClock.SecondsPerTick, height);
+        var (risen, velocity, _) = CharacterCollision.MoveVertically(
+            level, at, new Vector3(0f, player.JumpSpeed, 0f), radius, height, player.Gravity, SimulationClock.SecondsPerTick);
+
+        Assert.Equal(at.X, moved.X);
+        Assert.Equal(at.Z, moved.Z);
+        Assert.True(velocity.Y <= 0f, $"still rising at {velocity.Y} m/s");
+        Assert.True(risen.Y + height <= impost.Bottom + intoTheStone, $"its head rose to {risen.Y + height}");
+    }
+
+    [Fact]
+    public void A_player_who_jumps_on_the_plinth_of_a_raised_portal_stays_on_his_line_though_his_head_rounds_into_the_impost()
+    {
+        // Issue #635, the same jump as on floor 0, but every cell 2.74 m up. There the head stopped at the impost's bottom
+        // does not come out at that bottom again in float32: (5.815 - 1.8) + 1.8 is a hair (0.5 micrometres) above 5.815.
+        // He is not pushed off his line for that hair - his head only touches the impost.
+        const float Floor = 2.74f;
+        var world = World(floor: Floor);
+        var portal = Assert.Single(world.Level.Portals);
+        Assert.Equal(Floor, portal.Floor);
+        var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
+        var impost = BossPortalShape.Blocks.Single(block => block.Top == BossPortalShape.Spring);
+        var bottom = Floor + impost.Bottom;
+        var onThePlinth = new Vector3(MiddleX - 1.3f, Floor + plinth.Top, DoorPlaneZ - BossPortalShape.HalfDepth - Radius - 0.01f);
+        world.Player.PlaceAt(onThePlinth);
+        Run(world, PlayerInput.None, 10);
+        Assert.Equal(onThePlinth, world.Player.Position);
+
+        world.Tick(PlayerInput.None with { Jump = true });
+        var roundedIn = 0;
+        for (var tick = 0; tick < 2 * SimulationClock.TicksPerSecond && !world.Player.IsGrounded; tick++)
+        {
+            world.Tick(PlayerInput.None);
+
+            var at = world.Player.Position;
+            Assert.Equal(onThePlinth.X, at.X, 0.0001f);
+            Assert.Equal(onThePlinth.Z, at.Z, 0.0001f);
+            Assert.True(at.Y + BodySizes.Player.Height <= bottom + 0.0001f, $"tick {tick}: his head at {at.Y + BodySizes.Player.Height}");
+            roundedIn += at.Y + BodySizes.Player.Height > bottom ? 1 : 0;
+        }
+
+        // His head really came out above the impost's bottom - the test would prove nothing otherwise.
+        Assert.True(roundedIn >= 1, "his head never rounded above the impost's bottom");
+        Assert.True(world.Player.IsGrounded, $"never landed: {world.Player.Position}");
+        Assert.Equal(onThePlinth, world.Player.Position);
+    }
+
     [Fact]
     public void A_player_who_strafes_at_a_jamb_in_the_doorway_stops_at_the_opening()
     {
@@ -343,7 +411,8 @@ public class BossPortalStoneTests
         Assert.Equal(-Vector3.UnitZ, impact.Normal);
     }
 
-    private static GameWorld World(string map = Map)
+    // floor: every cell raised by that much, floor and ceiling alike - the portal stands on it.
+    private static GameWorld World(string map = Map, float floor = 0f)
     {
         PlacedRoom[] rooms =
         [
@@ -351,7 +420,11 @@ public class BossPortalStoneTests
             new(1, RoomKind.Boss, "boss", 0, 2, 6, 8, 1, Rows(2, 9), [(4, 9)], []),
         ];
         LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South, DoorKind.Boss) { MoreCells = [(3, 1)] }];
-        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+        var level = LevelParser.Parse(map);
+        level = level.WithCells(
+            Enumerable.Range(0, level.Depth).SelectMany(z => Enumerable.Range(0, level.Width).Select(x =>
+                (x, z, level[x, z] with { FloorHeight = level[x, z].FloorHeight + floor, CeilingHeight = level[x, z].CeilingHeight + floor }))));
+        return new GameWorld(level, 1, Balance.Default, doors, rooms);
 
         static List<(int X, int Z)> Rows(int from, int to) =>
             Enumerable.Range(from, to - from + 1).SelectMany(z => new[] { (1, z), (2, z), (3, z), (4, z) }).ToList();
