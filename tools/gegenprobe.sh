@@ -26,13 +26,15 @@
 # changed would take the broken file for the original. It stops at once with exit code 2 and names the running one.
 # A lock left behind by a run that is gone is taken over by exactly one run (issue #639, tools/gegenprobe-lock.sh).
 #
-# Afterwards the build output still holds the changed code: build again before anything runs with --no-build (not
-# after exit code 3: a change that does not compile builds nothing). Closing the output early (2>&1 | head) still
-# puts the file back and lets go of the lock (issue #651).
+# Afterwards the build output still holds the changed code: build again before anything runs with --no-build (also
+# after exit code 3: no result came out, but parts of the change may have been built). Closing the output early
+# (2>&1 | head) still puts the file back and lets go of the lock (issue #651).
 #
 # Exit code: 0 = caught (at least one test red, with --bot: a finding), 1 = survived (all green, no finding), 2 = could
 # not run (another run in this working folder, unclean working folder, text not found, control run red or with
-# findings ...), 3 = the change does not compile (no statement about the tests).
+# findings ...), 3 = no result with the change (it does not compile, a built file could not be copied, or the test
+# project does not build: no statement about the tests), 4 = the test run with the change was aborted (fewer tests ran
+# than in the control run, e.g. the test process crashed: no statement about the tests, issue #657).
 #
 # Example (issue #578): the restart must reset the doors.
 #   tools/gegenprobe.sh src/SilverAndAsh.Core/Gameplay/GameWorld.cs \
@@ -60,7 +62,7 @@ while [ $# -gt 0 ]; do
         --bot) bot=1; shift ;;
         --project) project="${2:?--project needs a path}"; shift 2 ;;
         --name) name="${2:?--name needs a text}"; shift 2 ;;
-        -h|--help) sed -n '2,47p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         --) shift; break ;;
         -*) echo "gegenprobe: unknown option $1 (see --help)" >&2; exit 2 ;;
         *) break ;;
@@ -215,6 +217,59 @@ check() {
     fi
 }
 
+# No result came out with the change (exit code 3). That has three causes (issue #657): the change does not compile
+# (nothing was built with it), a built file could not be copied (locked by another process), or the test project or
+# the bot does not build - in the last two the changed code is built already, at least in part. So say neither that
+# the output holds the change nor that it does not.
+no_result() {
+    built_changed=0
+    echo "   result: no result with the change - no statement about the tests"
+    echo "gegenprobe: no result with the change: the change did not compile, a built file could not be copied (locked" >&2
+    echo "   by another process?), or the test project does not build - see the errors above. Parts of the build output" >&2
+    echo "   may hold the changed code: build again before running anything with --no-build: dotnet build -c Release" >&2
+    exit 3
+}
+
+# The result of the bot run with the change: a finding means caught.
+report_bot() {
+    if [ "$failed" = 0 ]; then
+        echo "   result: SURVIVED - the bot reports no finding with the change"
+        exit 1
+    fi
+    echo "   result: CAUGHT - the bot reports findings (the first ten):"
+    echo "$red" | sed 's/^/     /'
+    exit 0
+}
+
+# The result of the test run with the change: aborted, survived or caught.
+report_tests() {
+    if [ "$total" -lt "$control_total" ]; then
+        report_aborted
+    fi
+    if [ "$failed" = 0 ]; then
+        echo "   result: SURVIVED - $total test(s), all green with the change"
+        exit 1
+    fi
+    echo "   result: CAUGHT - $failed of $total test(s) red:"
+    echo "$red" | sed 's/^/     /'
+    exit 0
+}
+
+# Fewer tests ran with the change than in the control run (issue #657): the test process ended early - a change that
+# makes it crash (endless recursion, stack overflow) leaves a result file with total="0" - or the change took tests
+# away. Either way the green ones say nothing; this is neither "caught" nor "survived".
+report_aborted() {
+    echo "   result: ABORTED - only $total of $control_total test(s) ran with the change - no statement about the tests"
+    if [ "$failed" != 0 ]; then
+        echo "   red before the run ended:"
+        echo "$red" | sed 's/^/     /'
+    fi
+    echo "gegenprobe: the test run with the change was aborted (the test process crashed?) or the change took tests" >&2
+    echo "   away. The end of its output:" >&2
+    tail -n 5 "$work/mutated.log" | sed 's/^/   /' >&2
+    exit 4
+}
+
 echo "== gegenprobe: $name"
 echo "   file:   $file"
 if [ "$bot" = 1 ]; then
@@ -225,6 +280,7 @@ fi
 
 check control
 status=$?
+control_total="${total:-0}"
 if [ "$status" = 3 ]; then
     echo "gegenprobe: control run does not build" >&2
     exit 2
@@ -260,29 +316,13 @@ cp -- "$work/changed-file" "$file"
 check mutated
 status=$?
 if [ "$status" = 3 ]; then
-    echo "   result: the change does not compile - no statement about the tests"
-    # Nothing was built with the change, so the build output is still the one of the control run (issue #651).
-    built_changed=0
-    echo "gegenprobe: the change did not compile - the build output is still the one of the control run" >&2
-    exit 3
+    no_result
 fi
 if [ "$status" = 2 ]; then
     echo "gegenprobe: the bot could not run with the change (exit code 2) - no statement" >&2
     exit 2
 fi
 if [ "$bot" = 1 ]; then
-    if [ "$failed" = 0 ]; then
-        echo "   result: SURVIVED - the bot reports no finding with the change"
-        exit 1
-    fi
-    echo "   result: CAUGHT - the bot reports findings (the first ten):"
-    echo "$red" | sed 's/^/     /'
-    exit 0
+    report_bot
 fi
-if [ "$failed" = 0 ]; then
-    echo "   result: SURVIVED - $total test(s), all green with the change"
-    exit 1
-fi
-echo "   result: CAUGHT - $failed of $total test(s) red:"
-echo "$red" | sed 's/^/     /'
-exit 0
+report_tests

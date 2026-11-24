@@ -14,8 +14,11 @@
 # while it is still empty (no pid yet), as mv -T replaces an empty folder. Closing this would need a rename that fails
 # on an existing folder, which Git Bash does not offer; an empty lock must count as held. Start runs one after another.
 #
-# For the self-test only: GEGENPROBE_TEST_PAUSE_BEFORE_TAKEOVER=<seconds> waits that long between finding a stale lock
-# and taking it over, so two runs meet in exactly that gap.
+# For the self-test only (issue #657: by events, not by fixed times, so it holds on a busy machine too), between
+# finding a stale lock and taking it over:
+#   GEGENPROBE_TEST_FOUND_STALE=<file>        makes <file> - "this run has found the stale lock"
+#   GEGENPROBE_TEST_WAIT_BEFORE_TAKEOVER=<file>  waits until <file> is there (at most 60 s)
+# so two runs meet in exactly that gap.
 
 lock_path=""
 lock_owned=0
@@ -44,8 +47,11 @@ lock_take() {
     fi
 
     # The run that left the lock is gone: take the lock over.
-    if [ -n "${GEGENPROBE_TEST_PAUSE_BEFORE_TAKEOVER:-}" ]; then
-        sleep "$GEGENPROBE_TEST_PAUSE_BEFORE_TAKEOVER"
+    if [ -n "${GEGENPROBE_TEST_FOUND_STALE:-}" ]; then
+        : > "$GEGENPROBE_TEST_FOUND_STALE"
+    fi
+    if [ -n "${GEGENPROBE_TEST_WAIT_BEFORE_TAKEOVER:-}" ]; then
+        lock_test_wait_for "$GEGENPROBE_TEST_WAIT_BEFORE_TAKEOVER"
     fi
     local stale="$lock_path.stale.$$"
     rm -rf -- "$stale"
@@ -68,6 +74,16 @@ lock_take() {
         return 2
     fi
     return 0
+}
+
+# For the self-test only: waits until the file $1 is there, at most 60 s - a test that goes wrong fails, it does not
+# hang.
+lock_test_wait_for() {
+    local tries=0
+    while [ ! -e "$1" ] && [ "$tries" -lt 1200 ]; do
+        sleep 0.05
+        tries=$((tries + 1))
+    done
 }
 
 lock_release() {
