@@ -182,9 +182,10 @@ public class BoonTests
         var start = Start(world, twin);
 
         // Whatever the balance and the seed offer (issue #664): the first boon on offer, and the choice must succeed.
-        // The twin gets the same input; with no level up waiting there, the choice does nothing.
+        // The twin gets the same input without the choice: the two worlds differ in just what is tested, so a fault
+        // that hangs on pressing the choice (not only on taking the offer) does not hit both alike.
         var boon = player.CurrentOffer[0];
-        TickBoth(world, twin, PlayerInput.None with { ChooseBoon = boon });
+        TickBoth(world, twin, PlayerInput.None with { ChooseBoon = boon }, PlayerInput.None);
         Assert.Equal(0, player.PendingBoons);
         Assert.Equal(1, player.BoonCount(boon));
         WalkBoth(world, twin, Second / 4);
@@ -204,8 +205,10 @@ public class BoonTests
         var boon = player.CurrentOffer[0];
         WalkBoth(world, twin, Second / 4);
         var start = Start(world, twin);
+        var speedBefore = player.HorizontalSpeed;
 
-        TickBoth(world, twin, Forward with { ChooseBoon = boon });
+        // The twin walks on without pressing the choice - the only difference between the worlds is the choice itself.
+        TickBoth(world, twin, Forward with { ChooseBoon = boon }, Forward);
         Assert.Equal(0, player.PendingBoons);
         Assert.Equal(1, player.BoonCount(boon));
         var speed = player.HorizontalSpeed;
@@ -213,6 +216,9 @@ public class BoonTests
         Assert.True(
             speed >= WalkShare * twinSpeed,
             $"The choice cost the player's pace: {speed:0.000} m/s, the run without the level up {twinSpeed:0.000} m/s.");
+        Assert.True(
+            speed >= WalkShare * speedBefore,
+            $"The choice cost the player's pace: {speed:0.000} m/s, before it {speedBefore:0.000} m/s.");
         WalkBoth(world, twin, Second / 4);
 
         AssertWalkedAsFar(world, twin, start, "after choosing while walking");
@@ -226,10 +232,13 @@ public class BoonTests
         (world.Player.Position, twin.Player.Position);
 
     /// <summary>One tick with the same <paramref name="input"/> in both worlds.</summary>
-    private static void TickBoth(GameWorld world, GameWorld twin, PlayerInput input)
+    private static void TickBoth(GameWorld world, GameWorld twin, PlayerInput input) => TickBoth(world, twin, input, input);
+
+    /// <summary>One tick: <paramref name="input"/> in <paramref name="world"/>, <paramref name="twinInput"/> in <paramref name="twin"/>.</summary>
+    private static void TickBoth(GameWorld world, GameWorld twin, PlayerInput input, PlayerInput twinInput)
     {
         world.Tick(input);
-        twin.Tick(input);
+        twin.Tick(twinInput);
     }
 
     /// <summary>
@@ -255,7 +264,7 @@ public class BoonTests
     /// <summary>
     /// The player of <paramref name="world"/> (with a level up) covered at least 99 % of the way the player of
     /// <paramref name="twin"/> covered since <paramref name="start"/> - the twin is the same level with the same seed,
-    /// balance and input, but without the level up (issue #687).
+    /// balance and input, but without the level up and without pressing the choice (issue #687).
     /// </summary>
     /// <remarks>
     /// <para>
@@ -268,8 +277,10 @@ public class BoonTests
     /// What the 1 % lets through, counted with the standard balance (top speed 6 m/s, +1 m/s per tick, so 0.1 m per
     /// tick at top speed). The shortest run is a quarter of a second from a standstill: (1+2+3+4+5 + 10 x 6) / 60 =
     /// 1.25 m, of which 1 % is 1.25 cm - an eighth of one tick at top speed. A top speed lower by the factor f after
-    /// the level up gives (15 + 60 f) / 60 m there; below 99 % of 1.25 m once f &lt; 0.9875, so only a pace less than
-    /// 1.25 % slower slips through (in half a second, (15 + 150 f) / 165 &lt; 0.99 once f &lt; 0.989).
+    /// the level up gives (15 + 60 f) / 60 m there; below 99 % of 1.25 m once f &lt; 0.9875. That 1.25 % is only the
+    /// loosest bound: while a boon waits (half a second, (15 + 150 f) / 165 &lt; 0.99) the way is short from f &lt; 0.989,
+    /// so from about 1.1 % slower; after a choice made while walking the pace itself is compared at top speed, so
+    /// anything more than 1 % slower is caught already.
     /// </para>
     /// <para>
     /// What must be caught lies far below 99 %: 7 % slower after the choice gives (15 + 60 x 0.93) / 60 = 1.18 m,
