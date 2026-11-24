@@ -118,6 +118,31 @@ public class BossPortalTests
         float Between(float min, float max) => min + ((float)random.NextDouble() * (max - min));
     }
 
+    [Theory]
+    [InlineData(-0.05f, true)]
+    [InlineData(0.01f, false)]
+    public void A_body_mostly_beside_the_plinth_stands_on_it_while_it_overlaps_it(float clear, bool onIt)
+    {
+        // The plinth reaches out to the side of the box around the portal's stone (2 m beside the middle). A player
+        // standing on its outer edge has his middle nearly a radius beside that box - 5 cm of him still on the stone, he
+        // stays on it, tick by tick. With his middle 1 cm more than a radius off he is beside it and falls to the floor.
+        // The filter of CharacterCollision.MoveVertically (issue #642) must not drop the portal while a body reaches it.
+        var level = OpenLevel().WithPortals([Portal]);
+        var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
+        var radius = BodySizes.Player.Radius;
+        var at = new Vector3(Portal.X + plinth.AcrossTo + radius + clear, plinth.Top, Portal.Z + ((plinth.AlongFrom + plinth.AlongTo) / 2f));
+        var velocity = Vector3.Zero;
+        var gravity = Balance.Default.Player.Gravity;
+
+        for (var tick = 0; tick < SimulationClock.TicksPerSecond; tick++)
+        {
+            (at, velocity, _) = CharacterCollision.MoveVertically(
+                level, at, velocity, radius, BodySizes.Player.Height, gravity, SimulationClock.SecondsPerTick);
+        }
+
+        Assert.Equal(onIt ? plinth.Top : 0f, at.Y);
+    }
+
     [Fact]
     public void A_ray_that_grazes_the_outer_corner_of_a_buttress_hits_it()
     {
