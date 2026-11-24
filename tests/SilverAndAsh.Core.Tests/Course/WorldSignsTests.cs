@@ -73,6 +73,7 @@ public class WorldSignsTests
     /// </summary>
     [Theory]
     [InlineData("course-1-arms", "1 - Arms")]
+    [InlineData("course-1-arms-row", "1 - Arms")]
     [InlineData("course-2-columns", "2 - Columns")]
     [InlineData("course-3-cracked-wall", "3 - Cracked wall")]
     [InlineData("course-4-portcullis", "4 - Portcullis")]
