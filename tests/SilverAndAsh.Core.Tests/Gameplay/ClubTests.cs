@@ -15,18 +15,6 @@ public class ClubTests
     private static readonly int KnockTicks = SimulationClock.SecondsToTicks(Club.KnockbackTime);
     private static readonly PlayerInput Melee = PlayerInput.None with { Melee = true };
 
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        var events = new List<GameEvent>();
-        for (var tick = 0; tick < ticks; tick++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
-    }
-
     /// <summary>Holds the melee button <paramref name="ticks"/> ticks and lets go (the swing happens on letting go).</summary>
     private static List<GameEvent> Swing(GameWorld world, int ticks = 1)
     {
@@ -201,7 +189,7 @@ public class ClubTests
         var noAttacks = Balance.Default with { Gorm = Balance.Default.Gorm with { NearRange = 0f, FarRange = 0f, StopDistance = 0.5f } };
         var world = WithClub("P\n.\nT\n.\n.\n.", noAttacks);
         var gorm = world.Gorm!;
-        Run(world, PlayerInput.None, Second, () => FlatDistance(gorm.Position, world.Player.Position) < 2.5f);
+        RunTicks(world, PlayerInput.None, Second, () => FlatDistance(gorm.Position, world.Player.Position) < 2.5f);
         var before = FlatDistance(gorm.Position, world.Player.Position);
 
         Swing(world, FullCharge + 2);
@@ -233,13 +221,5 @@ public class ClubTests
 
         Assert.True(ghoul.IsDead);
         Assert.False(ghoul.Knockback.IsActive);
-    }
-
-    private static void Run(GameWorld world, PlayerInput input, int ticks, Func<bool> until)
-    {
-        for (var tick = 0; tick < ticks && !until(); tick++)
-        {
-            world.Tick(input);
-        }
     }
 }

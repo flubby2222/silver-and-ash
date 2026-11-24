@@ -228,16 +228,4 @@ public class PickupTests
         world.Tick(PlayerInput.None);
         return world.Pickups.Select(p => p.Position).ToList();
     }
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        var seen = new List<GameEvent>();
-        for (var tick = 0; tick < ticks; tick++)
-        {
-            world.Tick(input);
-            seen.AddRange(world.Events);
-        }
-
-        return seen;
-    }
 }

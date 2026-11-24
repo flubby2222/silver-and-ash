@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -139,18 +140,6 @@ public class ProjectileTests
 
     /// <summary>A corridor along +Z: the player in row 0, then <paramref name="rows"/> more rows, closed by the outer wall.</summary>
     private static Level Corridor(int rows) => LevelParser.Parse(string.Join('\n', Enumerable.Repeat(".", rows).Prepend("P")));
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        var seen = new List<GameEvent>();
-        for (var i = 0; i < ticks; i++)
-        {
-            world.Tick(input);
-            seen.AddRange(world.Events);
-        }
-
-        return seen;
-    }
 
     private sealed class Vector3Comparer(float tolerance) : IEqualityComparer<Vector3>
     {

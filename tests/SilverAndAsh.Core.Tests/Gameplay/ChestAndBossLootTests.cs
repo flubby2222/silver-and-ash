@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -132,18 +133,6 @@ public class ChestAndBossLootTests
     {
         world.Gorm!.TakeDamage(10_000, []);
         return Run(world, PlayerInput.None, 2);
-    }
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        var events = new List<GameEvent>();
-        for (var tick = 0; tick < ticks; tick++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
     }
 
     private static void EmptyThePool(GameWorld world)

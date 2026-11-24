@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -18,7 +19,7 @@ public class GhoulBehaviourTests
         var world = new GameWorld(LevelParser.Parse("P.#.G"));
         var start = world.Ghouls[0].Position;
 
-        Run(world, PlayerInput.None, 2 * Second);
+        RunTicks(world, PlayerInput.None, 2 * Second);
 
         Assert.Equal(GhoulState.Lurking, world.Ghouls[0].State);
         Assert.Equal(start, world.Ghouls[0].Position);
@@ -30,7 +31,7 @@ public class GhoulBehaviourTests
         // 16 m: farther than the sight range of 12 m.
         var world = new GameWorld(LevelParser.Parse("P.......G"));
 
-        Run(world, PlayerInput.None, 2 * Second);
+        RunTicks(world, PlayerInput.None, 2 * Second);
 
         Assert.Equal(GhoulState.Lurking, world.Ghouls[0].State);
     }
@@ -41,7 +42,7 @@ public class GhoulBehaviourTests
         var world = new GameWorld(LevelParser.Parse("P...G"));             // 8 m, nothing in between
         var startDistance = Distance(world);
 
-        Run(world, PlayerInput.None, Second / 2);
+        RunTicks(world, PlayerInput.None, Second / 2);
 
         Assert.Equal(GhoulState.Chasing, world.Ghouls[0].State);
         Assert.Equal(startDistance - Balance.Default.Ghoul.Speed / 2f, Distance(world), 0.3f);
@@ -53,7 +54,7 @@ public class GhoulBehaviourTests
         var world = new GameWorld(LevelParser.Parse("P.......G"));
 
         world.Ghouls[0].TakeDamage(10, []);
-        Run(world, PlayerInput.None, 1);
+        RunTicks(world, PlayerInput.None, 1);
 
         Assert.Equal(GhoulState.Chasing, world.Ghouls[0].State);
     }
@@ -78,7 +79,7 @@ public class GhoulBehaviourTests
         Assert.True(RunUntil(world, PlayerInput.None, 3 * Second, w => w.Events.Any(e => e is GhoulWindUp)));
         Assert.Equal(GhoulState.WindingUp, world.Ghouls[0].State);
 
-        Run(world, PlayerInput.None, WindUpTicks - 1);
+        RunTicks(world, PlayerInput.None, WindUpTicks - 1);
         Assert.Equal(Balance.Default.Player.MaxHealth, world.Player.Health);
 
         world.Tick(PlayerInput.None);
@@ -115,8 +116,8 @@ public class GhoulBehaviourTests
         var world = new GameWorld(LevelParser.Parse("...P...G"));
         Assert.True(RunUntil(world, PlayerInput.None, 3 * Second, w => w.Events.Any(e => e is GhoulWindUp)));
 
-        Run(world, PlayerInput.None with { Move = new Vector2(1f, 0f) }, 6);    // a short step away
-        Run(world, PlayerInput.None, WindUpTicks - 7);
+        RunTicks(world, PlayerInput.None with { Move = new Vector2(1f, 0f) }, 6);    // a short step away
+        RunTicks(world, PlayerInput.None, WindUpTicks - 7);
         var distance = Distance(world);
         Assert.InRange(distance, Balance.Default.Ghoul.AttackReach, Balance.Default.Ghoul.HitReach);   // the test only means something here
 
@@ -150,7 +151,7 @@ public class GhoulBehaviourTests
         Assert.True(RunUntil(world, PlayerInput.None, 3 * Second, w => w.Events.Any(e => e is GhoulWindUp)));
 
         world.Ghouls[0].TakeDamage(10, []);
-        Run(world, PlayerInput.None, WindUpTicks);
+        RunTicks(world, PlayerInput.None, WindUpTicks);
 
         Assert.Equal(Balance.Default.Player.MaxHealth - Balance.Default.Ghoul.AttackDamage, world.Player.Health);
     }
@@ -204,28 +205,5 @@ public class GhoulBehaviourTests
         var a = world.Player.Position;
         var b = world.Ghouls[0].Position;
         return new Vector2(a.X - b.X, a.Z - b.Z).Length();
-    }
-
-    private static void Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            world.Tick(input);
-        }
-    }
-
-    /// <summary>Ticks until <paramref name="condition"/> holds after a tick (true), or <paramref name="maxTicks"/> passed (false).</summary>
-    private static bool RunUntil(GameWorld world, PlayerInput input, int maxTicks, Func<GameWorld, bool> condition)
-    {
-        for (var i = 0; i < maxTicks; i++)
-        {
-            world.Tick(input);
-            if (condition(world))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

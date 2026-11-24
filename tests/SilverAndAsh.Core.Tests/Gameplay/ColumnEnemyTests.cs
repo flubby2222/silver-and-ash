@@ -114,18 +114,4 @@ public class ColumnEnemyTests
 
         Assert.True(world.Rooms[1].IsSealed, "The boss room never sealed - the test would prove nothing.");
     }
-
-    private static bool RunUntil(GameWorld world, PlayerInput input, int maxTicks, Func<GameWorld, bool> condition)
-    {
-        for (var i = 0; i < maxTicks; i++)
-        {
-            world.Tick(input);
-            if (condition(world))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -18,14 +19,6 @@ public class DoorOpeningTests
     private static GameWorld World(DoorKind kind = DoorKind.Normal, Balance? balance = null) =>
         new(LevelParser.Parse(Hall), 1, balance ?? Balance.Default, [new LevelDoor(1, 1, 0, 1, RoomSide.South, kind)]);
 
-    private static void Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            world.Tick(input);
-        }
-    }
-
     private static int Ticks(DoorKind kind) => SimulationClock.SecondsToTicks(Balance.Default.Doors.OpenTime(kind));
 
     [Fact]
@@ -33,7 +26,7 @@ public class DoorOpeningTests
     {
         var world = World();
 
-        Run(world, PlayerInput.None, 30);
+        RunTicks(world, PlayerInput.None, 30);
 
         Assert.Equal(0f, world.Doors[0].OpenFraction);
     }
@@ -48,19 +41,19 @@ public class DoorOpeningTests
         var total = Ticks(kind);
 
         // The tick of F opens the door and already counts as the first tick of swinging.
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
         Assert.Equal(1f / total, door.OpenFraction, 0.0001f);
 
-        Run(world, PlayerInput.None, (total / 2) - 1);
+        RunTicks(world, PlayerInput.None, (total / 2) - 1);
         Assert.Equal((float)(total / 2) / total, door.OpenFraction, 0.0001f);
 
-        Run(world, PlayerInput.None, total - (total / 2) - 1);
+        RunTicks(world, PlayerInput.None, total - (total / 2) - 1);
         Assert.True(door.OpenFraction < 1f, "One tick before its time the door must not be fully open yet.");
 
-        Run(world, PlayerInput.None, 1);
+        RunTicks(world, PlayerInput.None, 1);
         Assert.Equal(1f, door.OpenFraction);
 
-        Run(world, PlayerInput.None, 60);
+        RunTicks(world, PlayerInput.None, 60);
         Assert.Equal(1f, door.OpenFraction);
     }
 
@@ -70,8 +63,8 @@ public class DoorOpeningTests
         var slow = Balance.Default with { Doors = new DoorsBalance { NormalOpenTime = 2f } };
         var world = World(DoorKind.Normal, slow);
 
-        Run(world, PressF, 1);
-        Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(1f) - 1);
+        RunTicks(world, PressF, 1);
+        RunTicks(world, PlayerInput.None, SimulationClock.SecondsToTicks(1f) - 1);
 
         Assert.Equal(0.5f, world.Doors[0].OpenFraction, 0.0001f);
     }
@@ -94,13 +87,13 @@ public class DoorOpeningTests
     {
         var world = World(DoorKind.Boss);
 
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
         Assert.True(world.Doors[0].OpenFraction < 0.1f);
         Assert.False(world.Doors[0].Blocks);
         Assert.False(world.Level[1, 1].IsSolid);
 
-        Run(world, Forward, 60);
+        RunTicks(world, Forward, 60);
         Assert.True(world.Player.Position.Z > 3f, $"The player only got to z = {world.Player.Position.Z} through the swinging door.");
     }
 
@@ -108,13 +101,13 @@ public class DoorOpeningTests
     public void Opened_from_the_north_the_leaves_swing_south_and_from_the_south_north()
     {
         var fromNorth = World();
-        Run(fromNorth, PressF, 1);
+        RunTicks(fromNorth, PressF, 1);
 
         // The same hall the other way round: the player starts south of the door and looks north at it.
         var map = "#.#\n#.#\n#.#\n#P#\n#.#";
         var fromSouth = new GameWorld(LevelParser.Parse(map), 1, Balance.Default, [new LevelDoor(1, 2, 0, 1, RoomSide.North)]);
         PhotoStudio.Face(fromSouth.Player, (fromSouth.Doors[0].BoxMin + fromSouth.Doors[0].BoxMax) / 2f);
-        Run(fromSouth, PressF, 1);
+        RunTicks(fromSouth, PressF, 1);
 
         Assert.True(fromNorth.Doors[0].IsOpen);
         Assert.True(fromNorth.Doors[0].OpenedFromLowSide);
@@ -129,12 +122,12 @@ public class DoorOpeningTests
         const string Corridor = "#####\n#P..#\n#####";
         var fromWest = new GameWorld(LevelParser.Parse(Corridor), 1, Balance.Default, [new LevelDoor(2, 1, 0, 1, RoomSide.East)]);
         PhotoStudio.Face(fromWest.Player, (fromWest.Doors[0].BoxMin + fromWest.Doors[0].BoxMax) / 2f);
-        Run(fromWest, PressF, 1);
+        RunTicks(fromWest, PressF, 1);
 
         const string Mirrored = "#####\n#..P#\n#####";
         var fromEast = new GameWorld(LevelParser.Parse(Mirrored), 1, Balance.Default, [new LevelDoor(2, 1, 0, 1, RoomSide.West)]);
         PhotoStudio.Face(fromEast.Player, (fromEast.Doors[0].BoxMin + fromEast.Doors[0].BoxMax) / 2f);
-        Run(fromEast, PressF, 1);
+        RunTicks(fromEast, PressF, 1);
 
         Assert.True(fromWest.Doors[0].IsOpen);
         Assert.True(fromWest.Doors[0].OpenedFromLowSide);
@@ -148,8 +141,8 @@ public class DoorOpeningTests
         static float After(int ticks)
         {
             var world = World(DoorKind.Boss);
-            Run(world, PressF, 1);
-            Run(world, PlayerInput.None, ticks);
+            RunTicks(world, PressF, 1);
+            RunTicks(world, PlayerInput.None, ticks);
             return world.Doors[0].OpenFraction;
         }
 

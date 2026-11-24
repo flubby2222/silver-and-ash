@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -14,14 +15,6 @@ public class ChestBlockingTests
     private static ChestPlan Plan(int x, int z, bool rises = false, int room = 0) =>
         new(x, z, room, ChestTier.Beggar, IsLocked: false, Silver: 5, HasBloodVial: false, RisesWhenCleared: rises);
 
-    private static void Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        for (var tick = 0; tick < ticks && until?.Invoke() != true; tick++)
-        {
-            world.Tick(input);
-        }
-    }
-
     // A corridor along +Z, one cell wide; the player in row 0, the chest in row 3.
     private static GameWorld Corridor(bool rises = false) =>
         new(LevelParser.Parse("#P#\n#.#\n#.#\n#.#\n#.#\n#.#"), 1, Balance.Default, chests: [Plan(1, 3, rises)]);
@@ -32,7 +25,7 @@ public class ChestBlockingTests
         var world = Corridor();
         var chest = world.Chests[0];
 
-        Run(world, Forward, 3 * Second);
+        RunTicks(world, Forward, 3 * Second);
 
         Assert.Equal(chest.BoxMin.Z - BodySizes.Player.Radius, world.Player.Position.Z, 0.02f);
     }
@@ -42,10 +35,10 @@ public class ChestBlockingTests
     {
         var world = Corridor();
         var chest = world.Chests[0];
-        Run(world, Forward, 3 * Second, () => world.Player.Position.Z >= chest.BoxMin.Z - 1.2f);
+        RunTicks(world, Forward, 3 * Second, () => world.Player.Position.Z >= chest.BoxMin.Z - 1.2f);
 
         world.Tick(Forward with { Jump = true });
-        Run(world, Forward, Second / 2);
+        RunTicks(world, Forward, Second / 2);
 
         Assert.True(world.Player.Position.Z > chest.BoxMin.Z, $"Stuck in front of the chest at z {world.Player.Position.Z}.");
     }
@@ -56,11 +49,11 @@ public class ChestBlockingTests
         // Jump straight up from beside its middle, drift onto it, stop.
         var world = Corridor();
         var chest = world.Chests[0];
-        Run(world, Forward, 3 * Second, () => world.Player.Position.Z >= chest.BoxMin.Z - 1.2f);
+        RunTicks(world, Forward, 3 * Second, () => world.Player.Position.Z >= chest.BoxMin.Z - 1.2f);
         world.Tick(Forward with { Jump = true });
-        Run(world, Forward, Second, () => world.Player.Position.Z >= chest.Position.Z - 0.1f);
-        Run(world, PlayerInput.None, Second, () => world.Player.IsGrounded);
-        Run(world, PlayerInput.None, Second / 2);
+        RunTicks(world, Forward, Second, () => world.Player.Position.Z >= chest.Position.Z - 0.1f);
+        RunTicks(world, PlayerInput.None, Second, () => world.Player.IsGrounded);
+        RunTicks(world, PlayerInput.None, Second / 2);
 
         Assert.True(world.Player.IsGrounded);
         Assert.Equal(chest.BoxMax.Y, world.Player.Position.Y, 0.01f);
@@ -73,7 +66,7 @@ public class ChestBlockingTests
         var world = Corridor(rises: true);
         var chest = world.Chests[0];
 
-        Run(world, Forward, 3 * Second);
+        RunTicks(world, Forward, 3 * Second);
 
         Assert.Equal(0f, chest.RiseFraction);
         Assert.True(world.Player.Position.Z > chest.BoxMax.Z, $"Stopped at z {world.Player.Position.Z}.");
@@ -95,14 +88,14 @@ public class ChestBlockingTests
         LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South)];
         var world = new GameWorld(LevelParser.Parse(Map), 1, Balance.Default, doors, rooms, [Plan(2, 3, rises: true, room: 1)]);
         var chest = world.Chests[0];
-        Run(world, PlayerInput.None with { Interact = true }, 1);
-        Run(world, Forward, 3 * Second, () => world.Player.Position.Z >= chest.Position.Z - 0.15f);
-        Run(world, PlayerInput.None, Second / 4);
+        RunTicks(world, PlayerInput.None with { Interact = true }, 1);
+        RunTicks(world, Forward, 3 * Second, () => world.Player.Position.Z >= chest.Position.Z - 0.15f);
+        RunTicks(world, PlayerInput.None, Second / 4);
         Assert.True(world.Rooms[1].IsSealed, "The room never sealed - the test would prove nothing.");
         Assert.Equal(0f, chest.RiseFraction);
 
         world.Ghouls[0].TakeDamage(10_000, []);
-        Run(world, PlayerInput.None, 2 * Second);
+        RunTicks(world, PlayerInput.None, 2 * Second);
 
         Assert.Equal(1f, chest.RiseFraction);
         Assert.Equal(chest.BoxMax.Y, world.Player.Position.Y, 0.01f);
@@ -119,7 +112,7 @@ public class ChestBlockingTests
         var ghoul = world.Ghouls[0];
         var closest = float.MaxValue;
 
-        Run(world, PlayerInput.None, 6 * Second, () =>
+        RunTicks(world, PlayerInput.None, 6 * Second, () =>
         {
             closest = MathF.Min(closest, Flat(ghoul.Position - chest.Position));
             return world.Player.Health < world.Player.MaxHealth;
@@ -139,7 +132,7 @@ public class ChestBlockingTests
         var gorm = world.Gorm!;
         var closest = float.MaxValue;
 
-        Run(world, PlayerInput.None, 8 * Second, () =>
+        RunTicks(world, PlayerInput.None, 8 * Second, () =>
         {
             closest = MathF.Min(closest, Flat(gorm.Position - chest.Position));
             return false;
@@ -156,14 +149,14 @@ public class ChestBlockingTests
         var level = LevelParser.Parse("#P###\n#.###\n#.###\n#.###\n#...#\n###.#\n#G..#");
         var world = new GameWorld(level, 1, Balance.Default, chests: [Plan(1, 3)]);
         var chest = world.Chests[0];
-        Run(world, Forward, 3 * Second, () => world.Player.Position.Z >= chest.BoxMin.Z - 1.2f);
+        RunTicks(world, Forward, 3 * Second, () => world.Player.Position.Z >= chest.BoxMin.Z - 1.2f);
         world.Tick(Forward with { Jump = true });
-        Run(world, Forward, Second, () => world.Player.Position.Z >= chest.Position.Z - 0.1f);
-        Run(world, PlayerInput.None, Second, () => world.Player.IsGrounded);
+        RunTicks(world, Forward, Second, () => world.Player.Position.Z >= chest.Position.Z - 0.1f);
+        RunTicks(world, PlayerInput.None, Second, () => world.Player.IsGrounded);
         Assert.Equal(chest.BoxMax.Y, world.Player.Position.Y, 0.01f);
 
         world.Ghouls[0].TakeDamage(1, []);
-        Run(world, PlayerInput.None, 10 * Second, () => world.Player.Health < world.Player.MaxHealth);
+        RunTicks(world, PlayerInput.None, 10 * Second, () => world.Player.Health < world.Player.MaxHealth);
 
         Assert.True(world.Player.Health < world.Player.MaxHealth, "The ghoul never reached the player on the chest.");
     }
@@ -176,7 +169,7 @@ public class ChestBlockingTests
         var world = new GameWorld(level, 1, Balance.Default, chests: [Plan(1, 3, rises: true)]);
         world.Ghouls[0].TakeDamage(1, []);
 
-        Run(world, PlayerInput.None, 6 * Second, () => world.Player.Health < world.Player.MaxHealth);
+        RunTicks(world, PlayerInput.None, 6 * Second, () => world.Player.Health < world.Player.MaxHealth);
 
         Assert.True(world.Player.Health < world.Player.MaxHealth, "The ghoul never got past the hidden chest.");
     }
@@ -193,11 +186,11 @@ public class ChestBlockingTests
 
         // Pushed off by the whole chest (its corners included), not just part of it. It sees the player, so nothing
         // else moves it: it has to find its way from inside the chest's cell.
-        Run(world, PlayerInput.None, 2);
+        RunTicks(world, PlayerInput.None, 2);
         var corner = new Vector2(Chest.Width / 2f, Chest.Depth / 2f).Length();
         Assert.True(Flat(ghoul.Position - chest.Position) >= corner + BodySizes.Ghoul.Radius - 0.01f, $"Still on the chest: {Flat(ghoul.Position - chest.Position)} m from its middle.");
 
-        Run(world, PlayerInput.None, 6 * Second, () => world.Player.Health < world.Player.MaxHealth);
+        RunTicks(world, PlayerInput.None, 6 * Second, () => world.Player.Health < world.Player.MaxHealth);
         Assert.True(world.Player.Health < world.Player.MaxHealth, "The ghoul never left the chest's cell.");
     }
 
@@ -232,10 +225,10 @@ public class ChestBlockingTests
         var gorm = world.Gorm!;
         var start = gorm.Position;
 
-        Run(world, PlayerInput.None, 2);
+        RunTicks(world, PlayerInput.None, 2);
         Assert.True(Flat(gorm.Position - chest.Position) >= chest.RoundBody.Radius, "Gorm is still on the chest.");
 
-        Run(world, PlayerInput.None, 6 * Second);
+        RunTicks(world, PlayerInput.None, 6 * Second);
         Assert.True(Flat(gorm.Position - start) > 3f, "Gorm never left the chest's cell.");
     }
 
