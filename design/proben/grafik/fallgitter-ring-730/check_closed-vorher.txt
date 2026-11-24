@@ -1,0 +1,20 @@
+portcullis.glb: geschlossen (174 Dreiecke, 0 offene Kanten)
+portcullis_guide_a.glb: geschlossen (100 Dreiecke, 0 offene Kanten)
+door_frame_normal_a.glb: OFFEN (380 Dreiecke, 144 offene Kanten)
+    portal_back: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+    portal_front: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+door_frame_normal_b.glb: OFFEN (380 Dreiecke, 144 offene Kanten)
+    portal_back: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+    portal_front: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+door_frame_normal_c.glb: OFFEN (380 Dreiecke, 144 offene Kanten)
+    portal_back: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+    portal_front: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+door_frame_locked_a.glb: OFFEN (380 Dreiecke, 144 offene Kanten)
+    portal_back: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+    portal_front: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+door_frame_locked_b.glb: OFFEN (380 Dreiecke, 144 offene Kanten)
+    portal_back: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+    portal_front: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+door_frame_locked_c.glb: OFFEN (380 Dreiecke, 144 offene Kanten)
+    portal_back: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen
+    portal_front: 190 Dreiecke, 72 offene Kanten, 0 Kanten mit mehr als zwei Flaechen

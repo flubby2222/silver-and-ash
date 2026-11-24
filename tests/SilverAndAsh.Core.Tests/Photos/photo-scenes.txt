@@ -50,6 +50,8 @@ boss-portal-back-6m | ticks 1 menu None ----- | The boss portal from inside the 
 boss-portal-back-6m-open | ticks 1 menu None ----- | The boss portal from inside the boss room, 6 m away, open, in the tick the room seals and the slam begins (issue #568).
 boss-portal-barred | ticks 100 menu None ----S | The boss portal from inside the boss room, 6 m away, slammed shut and barred: no placeholder bars (issue #568).
 boss-portal-gorm | ticks 1 menu None ----- | The open boss portal from the antechamber, 8 m away, Gorm asleep 2 m behind it: the size (issue #568).
+door-normal-open-below | ticks 600 menu None ----S | The arch of an open wooden double door seen from below, standing 0.5 m before its plane, looking up at its underside (issue #730).
+door-barred-open-below | ticks 600 menu None ----S | The arch of an open wooden double door with a portcullis hanging up, seen from below, standing 0.5 m before its plane (issue #730).
 door-level-barred | ticks 600 menu None ----S | An open door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #558).
 door-level-barred-shut | ticks 600 menu None ----S | A closed door of the first combat room of level 0 from inside, 4 to 6 m away, the room sealed and the grate down (issue #572).
 ghoul-4m | ticks 1 menu None ----- | A ghoul 4 m away in a bare hall.

@@ -162,8 +162,10 @@ def face(part, pts, hint):
 
 
 def build_guide():
-    """Bogenring (Spitzbogen aus zwei Kreisen wie der innerste Lauf des Rahmens), 1/8 breit, so tief wie die Tuerebene
-    (z = +-hz). Seit #714 ohne Flaeche auf der Leibung des Rahmens: Der Ring liegt hinter ihr im Stein; rundum geschlossen."""
+    """Bogenring (Spitzbogen aus zwei Kreisen wie der innerste Lauf des Rahmens), 1/16 breit (R 1,5 bis 1,5625), so tief wie
+    die Tuerebene (z = +-hz). Seit #714 ohne Flaeche auf der Leibung des Rahmens: Der Ring liegt hinter ihr im Stein; rundum
+    geschlossen. Er bleibt (Issue #730): Ohne ihn zeigt das Bild an der Bogenkante einen dunklen Spalt (Vorher/Nachher-Fotos
+    unter design/proben/grafik/fallgitter-ring-730/)."""
     xc, r_in, r_out, spring, hz = RING
     part = Part("guide", (0.0, 0.0, 0.0), F_UV)
     ri, ro = arc_pts(xc, r_in, spring), arc_pts(xc, r_out, spring)
