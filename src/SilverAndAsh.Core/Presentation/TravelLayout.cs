@@ -181,11 +181,12 @@ public sealed class TravelLayout
         return page.Spots.FirstOrDefault(spot => spot.Target.Contains(point))?.Choice.Teleporter.Id;
     }
 
-    /// <summary>The name of a destination: the place its teleporter marks.</summary>
+    /// <summary>The name of a destination: its teleporter's own name if it has one, else the place it marks.</summary>
     public static string Name(TravelChoice choice)
     {
         ArgumentNullException.ThrowIfNull(choice);
-        return TeleporterLook.PlaceName(choice.Teleporter.Plan.Site);
+        var plan = choice.Teleporter.Plan;
+        return plan.Name ?? TeleporterLook.PlaceName(plan.Site);
     }
 
     /// <summary>The line under the chosen destination's name.</summary>

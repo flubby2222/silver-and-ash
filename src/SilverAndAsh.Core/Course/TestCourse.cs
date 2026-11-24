@@ -88,10 +88,11 @@ public static class TestCourse
             Surfaces = SurfaceVariants.For(generated),
             Finds = course.Finds,
             IsTestWorld = true,
+            IsTestCourse = true,
+            PlayersCannotDie = true,
         };
         foreach (var player in world.Players)
         {
-            player.CannotDie = true;
             ShowroomLayout.ArmFully(player);
             PhotoStudio.Face(player, player.EyePosition + Vector3.UnitX);
         }

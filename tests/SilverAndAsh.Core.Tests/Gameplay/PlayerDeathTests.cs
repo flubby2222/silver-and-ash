@@ -43,6 +43,63 @@ public class PlayerDeathTests
         Assert.Equal([new PlayerHit(player.Id, health - 10), new PlayerHit(player.Id, 9), new PlayerHit(player.Id, 0)], events);
     }
 
+    /// <summary>
+    /// Issue #722: "cannot die" is a rule of the world, asked at every hit - not a mark set on the players there at the
+    /// start - so a player the world makes later follows it, too.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Whether_a_player_can_die_is_a_rule_of_the_world(bool cannotDie)
+    {
+        var world = new GameWorld(LevelParser.Parse("P\n.\n.")) { PlayersCannotDie = cannotDie };
+        var player = world.Player;
+
+        player.TakeDamage(player.MaxHealth, []);
+        player.TakeDamage(player.MaxHealth, []);
+        world.Tick(PlayerInput.None);
+
+        Assert.Equal(cannotDie, player.CannotDie);
+        Assert.Equal(!cannotDie, player.IsDead);
+        Assert.Equal(cannotDie ? 1 : 0, player.Health);
+        Assert.Equal(!cannotDie, world.IsLost);
+    }
+
+    /// <summary>
+    /// The same rule against real blows in the tick (review of PR #728): a ghoul attacks until a blow would kill. Where
+    /// players cannot die, health stays at 1 and blows keep landing (reported as hits of 0); elsewhere the player dies.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_ghouls_blows_in_the_tick_follow_the_rule_of_the_world(bool cannotDie)
+    {
+        var world = new GameWorld(LevelParser.Parse("#P#\n#.#\n#.#\n#G#"), 1, Balance.Default) { PlayersCannotDie = cannotDie };
+        var player = world.Player;
+        world.Ghouls[0].TakeDamage(1, []);   // awake, so it comes for the player
+        var hits = new List<PlayerHit>();
+
+        for (var tick = 0; tick < 60 * SimulationClock.TicksPerSecond && !world.IsLost; tick++)
+        {
+            world.Tick(PlayerInput.None);
+            hits.AddRange(world.Events.OfType<PlayerHit>());
+            Assert.True(cannotDie ? player.Health >= 1 : player.Health >= 0, $"Health {player.Health} after tick {tick}.");
+            if (hits.Any(hit => hit.Damage == 0))
+            {
+                break;
+            }
+        }
+
+        Assert.True(hits.Count >= 2, $"The ghoul landed only {hits.Count} blow(s) - the test would prove nothing.");
+        Assert.Equal(!cannotDie, player.IsDead);
+        Assert.Equal(!cannotDie, world.IsLost);
+        if (cannotDie)
+        {
+            Assert.Equal(1, player.Health);
+            Assert.Contains(hits, hit => hit.Damage == 0);   // a blow that landed at 1 health and took nothing
+        }
+    }
+
     [Fact]
     public void A_dead_player_no_longer_moves_looks_or_attacks()
     {
