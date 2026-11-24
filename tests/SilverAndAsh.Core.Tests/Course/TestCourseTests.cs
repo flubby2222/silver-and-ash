@@ -360,6 +360,22 @@ public class TestCourseTests
         Assert.Contains("Boss B", error.Message);
     }
 
+    [Theory]
+    [InlineData(4, 4, true)]    // over the corner: (3, 3) and (4, 4) touch diagonally
+    [InlineData(4, 1, true)]    // side by side: column 3 and column 4
+    [InlineData(5, 1, false)]   // one column of wall between them
+    [InlineData(5, 5, false)]   // one cell of wall over the corner
+    public void Two_rooms_need_a_wall_between_them_even_over_the_corner(int x0, int z0, bool touches)
+    {
+        var course = new CourseBuilder();
+        course.AddRoom(RoomKind.Start, "First", 1, 1, 3, 3, 0);
+
+        var second = Record.Exception(() => course.AddRoom(RoomKind.Start, "Second", x0, z0, x0 + 2, z0 + 2, 1));
+
+        Assert.Equal(touches, second is InvalidOperationException { Message: var message } && message.Contains("touches"));
+        Assert.Equal(touches ? 1 : 2, course.Rooms.Count);
+    }
+
     [Fact]
     public void Starting_again_gives_the_course_from_the_start()
     {
