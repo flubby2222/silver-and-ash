@@ -857,25 +857,34 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeBossPortal(8f, open: true, gormInDoorway: true))),
     ];
 
-    // The arch of a door seen from below, the leaves swung open (issue #730): a gap in the underside of the arch shows
-    // only from there, never at eye level (issue #714). A door without a grate and one with a grate that hangs up.
+    // The arch of a door seen from below, the leaves half swung open (issues #730, #722): the arch springer, the stone
+    // ledge where the arch begins, shows only from there - fully open leaves hide it, and at eye level there is no gap
+    // in the underside (issue #714). A raised portcullis is not drawn, so a second scene with a grate would be
+    // bit-identical to this one and is left out.
     private static PhotoScene[] BelowTheArchScenes() =>
     [
-        new("door-normal-open-below", "The arch of an open wooden double door seen from below, standing 0.5 m before its plane, looking up at its underside (issue #730).",
-            studio => BelowTheArch(studio, grate: false)),
-        new("door-barred-open-below", "The arch of an open wooden double door with a portcullis hanging up, seen from below, standing 0.5 m before its plane (issue #730).",
-            studio => BelowTheArch(studio, grate: true)),
+        new("door-normal-open-below", "The arch of a wooden double door, leaves half open, seen from 1.5 m before its plane, looking up at the arch springer (issues #730, #722).",
+            studio => BelowTheArch(studio)),
     ];
 
-    // The door hall with the door open, the player 0.5 m before its plane looking up at the arch 3 m up, 0.6 m beyond the plane.
-    private static PhotoSetup BelowTheArch(PhotoStudio studio, bool grate)
+    /// <summary>How far before the door plane the player stands, in metres.</summary>
+    public const float BelowTheArchDistance = 1.5f;
+
+    /// <summary>How far the leaves have swung open when the picture is taken (1 = all the way).</summary>
+    public const float BelowTheArchSwing = 0.5f;
+
+    /// <summary>Where the camera looks, relative to the door's middle: at the arch springer, 0.9 m aside and 2 m up, in the plane.</summary>
+    public static readonly Vector3 BelowTheArchTarget = new(0.9f, 2f, 0f);
+
+    // The door hall with the door open, the player 1.5 m before its plane and looking at the arch springer.
+    private static PhotoSetup BelowTheArch(PhotoStudio studio)
     {
-        var world = studio.DoorHall(DoorKind.Normal, open: true, grate: grate);
+        var world = studio.DoorHall(DoorKind.Normal, open: true);
         var door = world.Doors.Single();
         var middle = (door.BoxMin + door.BoxMax) / 2f;
-        world.Player.PlaceAt(new Vector3(middle.X, door.BoxMin.Y, middle.Z - 0.5f));
-        PhotoStudio.Face(world.Player, new Vector3(middle.X, door.BoxMin.Y + 3.0f, middle.Z + 0.6f));
-        return new PhotoSetup(world) { Ticks = 600, StopWhen = Swung(1f) };
+        world.Player.PlaceAt(new Vector3(middle.X, door.BoxMin.Y, middle.Z - BelowTheArchDistance));
+        PhotoStudio.Face(world.Player, new Vector3(middle.X, door.BoxMin.Y, middle.Z) + BelowTheArchTarget);
+        return new PhotoSetup(world) { Ticks = 600, StopWhen = Swung(BelowTheArchSwing) };
     }
 
     // The open portal from inside the boss room: the room seals on the first tick, the leaves slam shut; the picture is
