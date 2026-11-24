@@ -27,8 +27,9 @@ Aufbau: `<modus> [--seeds VON..BIS] [--repo ORDNER]`. Ohne `--seeds` laufen die 
 | `boss` | Der ganze Weg: Vorraum, Boss-Tor-Teleporter freischalten und hin- und herreisen, Bosstür mit F öffnen, Bossraum versiegelt, die Bosstür sperrt spätestens ab `doors.bossShutTick`, Gorm besiegen, Treppe hinauf, gewonnen. | etwa 5 s |
 | `slam` | Die Bosstür schlägt zu, während ein Körper in ihrem Durchgang steht (#629): nacheinander ein Spieler, ein Ghul, eine Fledermaus und Gorm, jeweils an jeder Stelle quer zum Durchgang alle 5 cm. Die Tiefe längs des Durchgangs ist die erste freie Stelle; wo der Körper nirgends frei steht, zählt der Bot die Stelle als übersprungen. Der Körper wird jeden Tick neu an seinen Platz gestellt, bis die Tür sperrt; danach darf er nicht im Stein des Portals stecken. Dass er im Tick des Zuschlagens wirklich in der Türbox stand, prüft der Bot daran, wohin die Tür ihn geschoben hat: genau Radius + `GameWorld.ThresholdGap` (1 cm) hinter ihre Box (`GameWorld.OnThreshold`), sonst ein Befund „not in the doorway at the slam“ (#647). **Mit Schwung** (#647): Spieler, Ghul und Fledermaus starten alle 10 cm quer zum Durchgang 0,6 m vor der Türbox; der Spieler läuft los, Ghul und Fledermaus (vorher in ihrer Arena geweckt) fliegt ein aufgeladener Keulenschlag hinein. Ein Probelauf misst, wann der Körper im Durchgang ist und wann die Tür sperrt; der echte Lauf lässt ihn so spät los, dass er im Tick des Zuschlagens im Durchgang ist. Gorm läuft nicht mit Schwung hinein (kein Rückstoß, und seine eigenen Schritte hingen vom Starttick ab) – eine bekannte Lücke. | etwa 1,5 min |
 | `bat` | Eine wache Fledermaus am Bossportal (#627, #629): an jeder freien Stelle eines Rasters vor und hinter dem Portal in acht Richtungen weggeschlagen; um einen Spieler herum geflogen, der an vier Stellen im Portal steht; tot auf einen Sockel des Portals fallen gelassen, bis sie verschwunden ist. | etwa 25 s |
+| `stuck` | In jeder Arena und im Bossraum still stehen, erst an der Tür, dann in der Raummitte: kein Gegner (Ghul, Fledermaus, Gorm), der einen Spieler jagt, darf länger als das Doppelte seiner längsten erlaubten Pause aus der Balance hängen, ohne sich zu bewegen oder anzugreifen (#591, siehe [Hängende Gegner](#hängende-gegner-stuck)). Findet nur Gegner, die hängen, während der Spieler stillsteht. | etwa 1 min; 40 Seeds etwa 6 min |
 | `seeds` | Baut jede Ebene zweimal und vergleicht sie (gleicher Seed muss gleiche Ebene geben) und zählt, wie viele Versuche der Generator brauchte. | etwa 3 s; 1 000 Seeds etwa 100 s |
-| `all` | alle sechs nacheinander | etwa 5 min |
+| `all` | alle sieben nacheinander, in der Reihenfolge der Tabelle (auch `stuck`) | etwa 6 min |
 
 Nebenbei prüft der Bot nach **jedem Tick**, dass weder ein Spieler noch ein Gegner (Ghul, Fledermaus, Gorm) in einer geschlossenen Tür oder im Stein eines Bossportals steckt und kein Spieler in einer festen Zelle. Für den Stein prüft er bei jedem Körper die Achse und 24 Punkte 5 mm innerhalb seines Rands (für jeden Körper gleich, auch für Gorm), in Höhen von den Füßen bis zum Kopf (`BossPortal.Contains`); ein Körper, der den Stein nur berührt, ist kein Befund. Der Abstand der Höhen folgt aus `BossPortalShape.Blocks`: vier Fünftel des dünnsten Blocks (heute der Kämpfer, 0,125 m, also 0,1 m). `slam` und `bat` prüfen zu Beginn selbst, dass für keine ihrer Körperhöhen ein Block zwischen zwei Messhöhen durchrutscht („the stone check misses the block …“, #647) – bekommt das Portal einen dünneren Block, rücken die Höhen von selbst enger. Auch eine tote Fledermaus zählt, solange sie noch fällt oder liegt.
 
@@ -79,6 +80,37 @@ git worktree remove ../vergleich-main
 `main.txt` und `pr.txt` nicht ins Repository legen. Solange `main` das Werkzeug noch nicht hat, geht das erst nach dem Merge von #573.
 
 Ein Agent, der selbst schon in einem Worktree arbeitet, legt keinen zweiten an. Er holt den Stand von `main` für einzelne Dateien mit `git checkout origin/main -- <pfad>`, lässt den Modus laufen und holt seinen eigenen Stand mit `git checkout HEAD -- <pfad>` zurück.
+
+### Hängende Gegner (`stuck`)
+
+Der Modus `stuck` (Issue #591) sucht Gegner, die einen Spieler jagen, aber weder zu ihm kommen noch angreifen – etwa weil sie an einer Säule, Kiste oder Stufe festhängen. Der Bot betritt jede Arena (versiegelt) und den Bossraum und steht dort still: erst an der Tür, dann in der Mitte des Raums. Er schlägt und schießt nicht, damit die Gegner frei handeln.
+
+**Grenze:** Der Modus findet nur Gegner, die hängen, während der Spieler stillsteht. Wer nur hängen bleibt, wenn ein Spieler läuft, springt oder ausweicht (etwa beim Umweg um eine Säule hinter einem fliehenden Spieler), fällt hier nicht auf.
+
+**Wann ein Gegner hängt:** Er lebt, ist treffbar, schläft nicht und jagt (Ghul und Fledermaus nicht mehr lauernd und nicht im Rückstoß; Gorm immer). Er sieht einen lebenden Spieler nach seiner eigenen Sichtregel oder steht mit ihm im selben Raum. Und er bleibt `N` Ticks lang (flach gemessen) innerhalb seines eigenen Körperradius und löst keines seiner Angriffsereignisse aus. Jeder Befund nennt Seed, Raum, Ticks, Gegner mit Nummer, Zustand, Ort mit Zelle, den Abstand zum Spieler und zum nächsten Gegner.
+
+**Die Schwelle `N` kommt aus der Balance:** das Doppelte der längsten Pause, in der ein Gegner zu Recht stillsteht. Ändert jemand die Werte in `assets/balance.json`, wandert die Schwelle mit.
+
+| Gegner | Längste erlaubte Pause (Balance) | `N` bei den aktuellen Werten |
+|---|---|---|
+| Ghul | `WindUpTime` + `RecoverTime` + `RepathTime` | 192 Ticks |
+| Fledermaus | `SpitInterval` + `SpitWindUpTime` + `ScreechTime` + `CircleHeightMax` / `ClimbSpeed` + `RepathTime` | 472 Ticks |
+| Gorm | `HammerWindUp` + `ShockwaveRadius` / `ShockwaveSpeed` + `StuckTime` + `PauseTime` + `RoarTime` + `RepathTime` | 900 Ticks |
+
+**Anstehende Ghule:** Ghule drängen sich vor einem stillstehenden Spieler; wer hinter einem anderen wartet, hängt nicht. Steht ein Ghul bei Erreichen der Schwelle an einen anderen Gegner gedrückt, zählt der Bot das als „pressed against another enemy (not counted as hanging)“ und fängt neu an zu messen. Fledermaus und Gorm haben keine solche Ausnahme.
+
+**Untergrenzen:** Wird in einem Seed kein jagender Ghul oder kein Gorm beobachtet, oder über alle Seeds keine Fledermaus, ist das ein Befund – sonst könnte der Modus unbemerkt nichts mehr prüfen. Am Ende steht je Gegnerart, wie viele beobachtet wurden und wie lange der längste Stillstand ohne Angriff war, neben der Schwelle.
+
+**Dauer:** etwa 8 bis 10 Sekunden je Seed (40 Seeds etwa 6 min).
+
+Gegenproben (Issue #591; nach jeder neu bauen):
+
+| Änderung | Aufruf | Ergebnis |
+|---|---|---|
+| Ghul kriecht nicht (`Ghoul.cs`: `Move(level, Facing * _ghoul.Speed, …)` → `Vector3.Zero`) | `stuck --seeds 1` | gefangen |
+| Fledermaus kreist, spuckt und stößt nicht (`Bat.cs`, Zustand `Circling`) | `stuck --seeds 1..3` | gefangen |
+| Gorm greift nie an (`Gorm.cs`: `ChooseAttack(…) ?? ChaseThrow(…)` → `null`) | `stuck --seeds 1` | gefangen |
+| Bot beobachtet nie einen jagenden Gegner (`HangingEnemies.cs`) | `stuck --seeds 1` | gefangen (Untergrenzen) |
 
 ### Warum Reflection
 
