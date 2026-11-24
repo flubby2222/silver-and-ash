@@ -38,6 +38,8 @@ public sealed class Door : IInteractable
             }
         }
 
+        RequireSideBySide(id, plan);
+
         var cell = level[plan.X, plan.Z];
         Id = id;
         X = plan.X;
@@ -54,6 +56,24 @@ public sealed class Door : IInteractable
         HasGrate = plan.HasGrate;
         _grates = grates ?? new GratesBalance();
         _grateTicks = _grates.LiftTicks;
+    }
+
+    /// <summary>
+    /// The cells of a door lie side by side in its wall, across the passage (issue #583): a north or south door in one
+    /// row, an east or west door in one column, without a gap and without a cell twice. Otherwise its box
+    /// (<see cref="BoxMin"/>, <see cref="BoxMax"/>) would take in cells that are no door.
+    /// </summary>
+    private static void RequireSideBySide(int id, LevelDoor plan)
+    {
+        var acrossX = plan.Side is RoomSide.North or RoomSide.South;
+        var inOneWall = plan.Cells.Select(cell => acrossX ? cell.Z : cell.X).Distinct().Count() == 1;
+        var along = plan.Cells.Select(cell => acrossX ? cell.X : cell.Z).Order().ToList();
+        var noGap = along.Zip(along.Skip(1), (a, b) => b - a).All(step => step == 1);
+        if (!inOneWall || !noGap)
+        {
+            var cells = string.Join(", ", plan.Cells.Select(cell => $"{cell.X}/{cell.Z}"));
+            throw new ArgumentException($"Door {id} with the cells {cells} must lie side by side in its {plan.Side} wall.", nameof(plan));
+        }
     }
 
     /// <summary>
