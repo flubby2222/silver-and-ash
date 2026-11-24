@@ -13,11 +13,11 @@ namespace SilverAndAsh.Game.Rendering;
 /// </summary>
 internal sealed class WallPillarView : IDisposable
 {
-    private readonly Dictionary<(WallPillarSize Size, TextureVariant Variant), TexturedModel> _models;
+    private readonly WallVariantModels<WallPillarSize> _models;
     private readonly Matrix4x4[] _turns = new Matrix4x4[1];
     private readonly Matrix4x4[] _frames = new Matrix4x4[1];
 
-    private WallPillarView(Dictionary<(WallPillarSize, TextureVariant), TexturedModel> models)
+    private WallPillarView(WallVariantModels<WallPillarSize> models)
     {
         _models = models;
     }
@@ -26,23 +26,9 @@ internal sealed class WallPillarView : IDisposable
     /// Loads the pillar of every size and wall variant from <paramref name="directory"/> (<see cref="WallPillarLook.FileName(WallPillarSize, TextureVariant)"/>).
     /// A missing or broken one: a warning in the log and the fallback for it. Needs the window.
     /// </summary>
-    public static WallPillarView Load(string directory, FileLog? log)
-    {
-        var models = new Dictionary<(WallPillarSize, TextureVariant), TexturedModel>();
-        foreach (var size in Enum.GetValues<WallPillarSize>())
-        {
-            foreach (var variant in new[] { TextureVariant.A, TextureVariant.B, TextureVariant.C })
-            {
-                var path = Path.Combine(directory, WallPillarLook.FileName(size, variant));
-                if (TexturedModel.TryLoad(path, WallPillarLook.Parts, log) is { } model)
-                {
-                    models[(size, variant)] = model;
-                }
-            }
-        }
-
-        return new WallPillarView(models);
-    }
+    public static WallPillarView Load(string directory, FileLog? log) =>
+        new(WallVariantModels<WallPillarSize>.Load(
+            directory, Enum.GetValues<WallPillarSize>(), WallPillarLook.FileName, _ => WallPillarLook.Parts, log));
 
     /// <summary>
     /// Draws every pillar of <paramref name="pillars"/> that <paramref name="view"/> may see. <paramref name="textures"/>:
@@ -60,7 +46,7 @@ internal sealed class WallPillarView : IDisposable
 
             var height = WallPillarLook.Height(size);
             if (!view.MaySee(pillar.Position + new Vector3(0f, height / 2f, 0f), (height / 2f) + WallPillarLook.Width)
-                || Model(size, textures.Resolve(SurfaceKind.Wall, pillar.Variant)) is not { } model)
+                || _models.Pick(size, textures.Resolve(SurfaceKind.Wall, pillar.Variant)) is not { } model)
             {
                 continue;
             }
@@ -72,17 +58,5 @@ internal sealed class WallPillarView : IDisposable
         }
     }
 
-    public void Dispose()
-    {
-        foreach (var model in _models.Values)
-        {
-            model.Dispose();
-        }
-    }
-
-    private TexturedModel? Model(WallPillarSize size, TextureVariant wanted)
-    {
-        var pick = WallPillarLook.Pick(wanted, _models.ContainsKey((size, wanted)), _models.ContainsKey((size, TextureVariant.A)));
-        return pick is { } variant ? _models[(size, variant)] : null;
-    }
+    public void Dispose() => _models.Dispose();
 }

@@ -74,13 +74,6 @@ public static class DoorFrameLook
         CrackedWallLook.Variants(surfaces, x, z, side);
 
     /// <summary>
-    /// The frame file to draw a face from: the one of <paramref name="wanted"/> (the variant the level really draws
-    /// there) if it was loaded, else the one of variant A, else none.
-    /// </summary>
-    public static TextureVariant? Pick(TextureVariant wanted, bool wantedLoaded, bool variantALoaded) =>
-        wantedLoaded ? wanted : variantALoaded ? TextureVariant.A : null;
-
-    /// <summary>
     /// Whether the door model is drawn at all: only with its model and a frame for both faces. Without the frame the
     /// leaves would hang in a hole in the wall - then the whole door is the coded placeholder.
     /// </summary>

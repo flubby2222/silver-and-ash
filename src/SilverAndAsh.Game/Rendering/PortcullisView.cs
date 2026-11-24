@@ -21,14 +21,12 @@ internal sealed class PortcullisView : IDisposable
     private const float MiddleHeight = 1.75f;
     private const float BoundingRadius = 2.5f;
 
-    private static readonly TextureVariant[] WallVariants = [TextureVariant.A, TextureVariant.B, TextureVariant.C];
-
     private readonly TexturedModel? _grate;
-    private readonly Dictionary<TextureVariant, TexturedModel> _guides;
+    private readonly WallVariantModels<ValueTuple> _guides;
     private readonly Matrix4x4[] _turns = new Matrix4x4[2];
     private readonly Matrix4x4[] _poses = new Matrix4x4[2];
 
-    private PortcullisView(TexturedModel? grate, Dictionary<TextureVariant, TexturedModel> guides)
+    private PortcullisView(TexturedModel? grate, WallVariantModels<ValueTuple> guides)
     {
         _grate = grate;
         _guides = guides;
@@ -45,15 +43,7 @@ internal sealed class PortcullisView : IDisposable
     public static PortcullisView Load(string directory, FileLog? log)
     {
         var grate = TexturedModel.TryLoad(Path.Combine(directory, GratePose.FileName), GratePose.Parts, log);
-        var guides = new Dictionary<TextureVariant, TexturedModel>();
-        foreach (var variant in WallVariants)
-        {
-            if (TexturedModel.TryLoad(Path.Combine(directory, GratePose.GuideFileName(variant)), GratePose.GuideRigParts, log) is { } guide)
-            {
-                guides[variant] = guide;
-            }
-        }
-
+        var guides = WallVariantModels.Load(directory, GratePose.GuideFileName, GratePose.GuideRigParts, log);
         return new PortcullisView(grate, guides);
     }
 
@@ -103,17 +93,14 @@ internal sealed class PortcullisView : IDisposable
     public void Dispose()
     {
         _grate?.Dispose();
-        foreach (var model in _guides.Values)
-        {
-            model.Dispose();
-        }
+        _guides.Dispose();
     }
 
     // Ring and grate stand on the floor in the middle of the cell, turned like a door in that wall.
     private void DrawPortcullis(TextureVariant variant, RoomSide side, Vector3 feet, float height)
     {
         var place = Matrix4x4.CreateRotationY(DoorPose.Yaw(side)) * Matrix4x4.CreateTranslation(feet);
-        if (Guide(variant) is { } guide)
+        if (_guides.Pick(variant) is { } guide)
         {
             DrawFixed(guide, 0, place);
         }
@@ -122,12 +109,6 @@ internal sealed class PortcullisView : IDisposable
         {
             DrawFixed(_grate, 0, Matrix4x4.CreateTranslation(0f, height, 0f) * place);
         }
-    }
-
-    private TexturedModel? Guide(TextureVariant wanted)
-    {
-        var pick = GratePose.Pick(wanted, _guides.ContainsKey(wanted), _guides.ContainsKey(TextureVariant.A));
-        return pick is { } variant ? _guides[variant] : null;
     }
 
     // Nothing in these files moves: every part stands where it is in its file, the whole set at place.

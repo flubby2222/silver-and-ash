@@ -64,14 +64,14 @@ internal sealed class DoorView : IDisposable
 
     private readonly Dictionary<DoorKind, TexturedModel> _models;
     private readonly Dictionary<TextureVariant, TexturedModel> _crackedWalls;
-    private readonly Dictionary<(DoorKind Kind, TextureVariant Variant), TexturedModel> _doorFrames;
+    private readonly WallVariantModels<DoorKind> _doorFrames;
     private readonly Matrix4x4[] _turns = new Matrix4x4[MostParts];
     private readonly Matrix4x4[] _frames = new Matrix4x4[MostParts];
 
     private DoorView(
         Dictionary<DoorKind, TexturedModel> models,
         Dictionary<TextureVariant, TexturedModel> crackedWalls,
-        Dictionary<(DoorKind Kind, TextureVariant Variant), TexturedModel> doorFrames)
+        WallVariantModels<DoorKind> doorFrames)
     {
         _models = models;
         _crackedWalls = crackedWalls;
@@ -106,19 +106,8 @@ internal sealed class DoorView : IDisposable
             }
         }
 
-        var doorFrames = new Dictionary<(DoorKind Kind, TextureVariant Variant), TexturedModel>();
-        foreach (var kind in Enum.GetValues<DoorKind>().Where(DoorFrameLook.HasFrame))
-        {
-            foreach (var variant in Enum.GetValues<TextureVariant>())
-            {
-                var path = Path.Combine(directory, DoorFrameLook.FileName(kind, variant));
-                if (TexturedModel.TryLoad(path, DoorFrameLook.Parts, log) is { } model)
-                {
-                    doorFrames[(kind, variant)] = model;
-                }
-            }
-        }
-
+        var doorFrames = WallVariantModels<DoorKind>.Load(
+            directory, Enum.GetValues<DoorKind>().Where(DoorFrameLook.HasFrame), DoorFrameLook.FileName, _ => DoorFrameLook.Parts, log);
         return new DoorView(models, crackedWalls, doorFrames);
     }
 
@@ -218,10 +207,7 @@ internal sealed class DoorView : IDisposable
             model.Dispose();
         }
 
-        foreach (var model in _doorFrames.Values)
-        {
-            model.Dispose();
-        }
+        _doorFrames.Dispose();
     }
 
     // The frame model for each face: the variant the level really draws there (a missing B or C falls back to A there,
@@ -234,11 +220,7 @@ internal sealed class DoorView : IDisposable
         return (Frame(door.Kind, textures.Resolve(SurfaceKind.Wall, front)), Frame(door.Kind, textures.Resolve(SurfaceKind.Wall, back)));
     }
 
-    private TexturedModel? Frame(DoorKind kind, TextureVariant wanted)
-    {
-        var pick = DoorFrameLook.Pick(wanted, _doorFrames.ContainsKey((kind, wanted)), _doorFrames.ContainsKey((kind, TextureVariant.A)));
-        return pick is { } variant ? _doorFrames[(kind, variant)] : null;
-    }
+    private TexturedModel? Frame(DoorKind kind, TextureVariant wanted) => _doorFrames.Pick(kind, wanted);
 
     // Nothing of the frame moves: both faces stand where they are in their files.
     private void DrawFrame(TexturedModel front, TexturedModel back, Matrix4x4 place)

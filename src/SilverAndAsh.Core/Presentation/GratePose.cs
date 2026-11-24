@@ -73,11 +73,4 @@ public static class GratePose
 
     /// <summary>Whether a grate at <paramref name="height"/> is drawn: not when fully open.</summary>
     public static bool IsDrawn(float height) => height < OpenHeight;
-
-    /// <summary>
-    /// The guide ring to draw: the one of <paramref name="wanted"/> (the variant of the door frame) if it was loaded,
-    /// else the one of variant A, else none - then the grate runs without a ring.
-    /// </summary>
-    public static TextureVariant? Pick(TextureVariant wanted, bool wantedLoaded, bool variantALoaded) =>
-        WallPillarLook.Pick(wanted, wantedLoaded, variantALoaded);
 }
