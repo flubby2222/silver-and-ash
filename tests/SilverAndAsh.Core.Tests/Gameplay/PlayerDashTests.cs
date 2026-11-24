@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
 using static SilverAndAsh.Core.Tests.Gameplay.JumpTestKit;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -337,8 +338,6 @@ public class PlayerDashTests
         rows[5] = "....." + "P" + ".....";
         return LevelParser.Parse(string.Join('\n', rows));
     }
-
-    private static float FlatDistance(Vector3 from, Vector3 to) => new Vector2(to.X - from.X, to.Z - from.Z).Length();
 
     private static Vector3 FlatDirection(Vector3 from, Vector3 to) => Vector3.Normalize((to - from) with { Y = 0f });
 }

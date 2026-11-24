@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -100,13 +101,5 @@ public class PlayerHeightTests
         }
 
         Assert.Equal(new HashSet<float> { -1f, 0f, 0.25f, 0.5f, 0.75f }, floors);
-    }
-
-    private static void RunTicks(Player player, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            player.Tick(input);
-        }
     }
 }

@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -95,14 +96,6 @@ internal static class JumpTestKit
     }
 
     public static float HorizontalSpeed(Player player) => new Vector2(player.Velocity.X, player.Velocity.Z).Length();
-
-    public static void RunTicks(Player player, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            player.Tick(input);
-        }
-    }
 
     private static int MeasureAirTicks()
     {
