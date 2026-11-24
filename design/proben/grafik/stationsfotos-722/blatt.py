@@ -3,7 +3,7 @@
 Aufruf: python blatt.py <vorher-ordner> <nachher-ordner> <ausgabe.png>
 
 In beiden Ordnern liegt je Szene ein Unterordner mit `<szene>-screen.png`. Das Blatt hat je Szene eine Zeile,
-links vorher, rechts nachher, auf die halbe Groesse verkleinert. Die Reihenfolge steht in SZENEN.
+links vorher, rechts nachher, auf die halbe Groesse verkleinert. Die Reihenfolge steht in SZENEN. Unten folgt eine Zeile mit dem Kaempfer der beiden Tuer-Szenen (ohne und mit Gitter)\nvergroessert nebeneinander (Ausschnitt AUSSCHNITT, Faktor VERGROESSERUNG, Bilder ohne HUD).
 """
 import struct
 import sys
@@ -18,8 +18,11 @@ SZENEN = [
     "course-6-boss",
     "course-boss-stairs",
     "door-normal-open-below",
+    "door-barred-open-below",
 ]
 LUECKE = 8
+AUSSCHNITT = (370, 205, 450, 265)  # x0, y0, x1, y1 im 854x480-Bild
+VERGROESSERUNG = 7
 HINTERGRUND = (24, 24, 28)
 
 
@@ -80,6 +83,30 @@ def halbieren(bild):
     return breite // 2, hoehe // 2, ergebnis
 
 
+def ausschnitt(pfad):
+    breite, hoehe, kanaele, zeilen = lesen(pfad)
+    x0, y0, x1, y1 = AUSSCHNITT
+    ergebnis = []
+    for y in range(y0, y1):
+        neu = bytearray()
+        for x in range(x0, x1):
+            pixel = bytes(zeilen[y][x * kanaele:x * kanaele + 3])
+            neu += pixel * VERGROESSERUNG
+        for _ in range(VERGROESSERUNG):
+            ergebnis.append(bytearray(neu))
+    return (x1 - x0) * VERGROESSERUNG, (y1 - y0) * VERGROESSERUNG, ergebnis
+
+
+def unterschied(pfad_a, pfad_b):
+    a, b = lesen(pfad_a), lesen(pfad_b)
+    kanaele = a[2]
+    anzahl = 0
+    for y in range(a[1]):
+        for x in range(a[0]):
+            if a[3][y][x * kanaele:x * kanaele + 3] != b[3][y][x * kanaele:x * kanaele + 3]:
+                anzahl += 1
+    return anzahl
+
 def schreiben(pfad, breite, hoehe, zeilen):
     roh = b"".join(b"\x00" + bytes(zeile) for zeile in zeilen)
 
@@ -98,9 +125,11 @@ def main(vorher, nachher, ausgabe):
     paare = []
     for szene in SZENEN:
         paare.append([halbieren(lesen(f"{ordner}/{szene}/{szene}-screen.png")) for ordner in (vorher, nachher)])
+    nah = [ausschnitt(f"{nachher}/{s}/{s}.png") for s in ("door-normal-open-below", "door-barred-open-below")]
+    print("Pixel verschieden (ohne/mit Gitter):", unterschied(*[f"{nachher}/{s}/{s}.png" for s in ("door-normal-open-below", "door-barred-open-below")]))
     zelle_b, zelle_h = paare[0][0][0], paare[0][0][1]
     breite = 2 * zelle_b + 3 * LUECKE
-    hoehe = len(paare) * (zelle_h + LUECKE) + LUECKE
+    hoehe = len(paare) * (zelle_h + LUECKE) + LUECKE + nah[0][1] + LUECKE
     leer = bytes(HINTERGRUND) * breite
     zeilen = [bytearray(leer) for _ in range(hoehe)]
     for zeile_nr, paar in enumerate(paare):
@@ -109,6 +138,11 @@ def main(vorher, nachher, ausgabe):
             links = LUECKE + spalte * (zelle_b + LUECKE)
             for y in range(min(h, zelle_h)):
                 zeilen[oben + y][links * 3:(links + min(b, zelle_b)) * 3] = bildzeilen[y][:min(b, zelle_b) * 3]
+    oben = LUECKE + len(paare) * (zelle_h + LUECKE)
+    for spalte, (b, h, bildzeilen) in enumerate(nah):
+        links = LUECKE + spalte * (b + LUECKE)
+        for y in range(h):
+            zeilen[oben + y][links * 3:(links + b) * 3] = bildzeilen[y]
     schreiben(ausgabe, breite, hoehe, zeilen)
 
 
