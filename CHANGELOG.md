@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Prüfstrecke:** `dotnet run --project src/SilverAndAsh.Game -- --course` startet ein von Hand gebautes Level, in dem die offenen Urteile des Releases als sechs Stationen auf einem geraden Weg stehen – Waffen, Säulen, rissige Wand, Fallgitter-Arena, Teleporter mit Brunnen und Bossraum –, nach den echten Spielregeln. Über jeder Station hängt ein Schild (Taste **L** blendet sie aus und ein); der Spieler stirbt dort nicht, sein Leben bleibt mindestens 1. Ein Sieg auf der Strecke kommt nicht in `runs.log` (ebenso wenig wie der Musterraum). Nur in der Debug-Version, dazu passt nur `--look`. Fotos jeder Station mit `--photo course-1-arms` usw., siehe `docs/pruefstrecke.md` (#718)
+
 ### Geändert
 - **Der Brunnen heißt „Sirius' Relief“:** Am Brunnen steht jetzt „[F] Use Sirius' Relief“ statt „Use Well of Sirius“. Regeln, Modell und Ort bleiben gleich. Foto: `--photo well-hint` (#716)
 

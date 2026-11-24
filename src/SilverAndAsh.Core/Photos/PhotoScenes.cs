@@ -38,6 +38,7 @@ public static class PhotoScenes
         .. ColumnScenes(),
         .. BreakingColumnScenes(),
         .. EquipmentScenes(),
+        .. CourseScenes.All(),
     ];
 
     /// <summary>

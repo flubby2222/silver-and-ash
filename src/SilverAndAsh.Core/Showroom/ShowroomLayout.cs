@@ -689,13 +689,22 @@ public sealed class ShowroomLayout
             Surfaces = Surfaces,
             Showroom = Exhibits,
         };
-        var player = world.Player;
+        ArmFully(world.Player);
+        PhotoStudio.Face(world.Player, world.Player.EyePosition + Vector3.UnitX);
+        return world;
+    }
+
+    /// <summary>
+    /// Gives <paramref name="player"/> every weapon: the blade stays in the hand, the club goes in the bag, pistol, rifle
+    /// and blunderbuss on 1, 2, 3 - as in the showroom and on the test course (issue #718).
+    /// </summary>
+    public static void ArmFully(Player player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
         player.Equip(0, WeaponKind.Pistol);
         player.Equip(1, WeaponKind.Rifle);
         player.Equip(2, WeaponKind.Blunderbuss);
         player.Stow(WeaponKind.Club);
-        PhotoStudio.Face(player, player.EyePosition + Vector3.UnitX);
-        return world;
     }
 
     /// <summary>

@@ -182,3 +182,9 @@ equipment-royal | ticks 1 menu None ----- | Hunter's Eye (Royal) lying in the sh
 equipment-vampiric | ticks 1 menu None ----- | Leech (Vampiric) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
 equipment-taken-royal | ticks 45 menu None ---I- | Hunter's Eye (Royal) just taken with F: its card on the left, framed in gold (issue #317).
 equipment-taken-vampiric | ticks 15 menu None ---I- | The Leech (Vampiric) just taken with F: its card and the short blood-red glow from the edges (issue #317).
+course-1-arms | ticks 1 menu None ----- | Station 1 of the test course from its south-east corner back to its sign: the weapons along the north wall, the start teleporter on the way (issue #718).
+course-2-columns | ticks 1 menu None ----- | Station 2 of the test course from just inside its entrance: two columns either side of the way, silver beside one, a ghoul beyond (issue #718).
+course-3-cracked-wall | ticks 1 menu None ----- | Station 3 of the test course from its south-east corner: the cracked wall in the middle of its north wall (issue #718).
+course-4-portcullis | ticks 65 menu None ----- | Station 4 of the test course, sealed: from inside the arena back at the fallen grate, the ghoul and the bat coming out by the column (issue #718).
+course-5-teleporter | ticks 1 menu None ----- | Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, Sirius' Relief beside the way (issue #718).
+course-6-boss | ticks 1 menu None ----- | Station 6 of the test course from its north-east corner: the antechamber, silver and a blood vial before the boss portal (issue #718).

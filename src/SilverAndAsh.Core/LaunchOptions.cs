@@ -41,10 +41,14 @@ namespace SilverAndAsh.Core;
 /// <c>--room &lt;file&gt;</c> (and <c>--no-enemies</c>): walk through this one room template instead of a level (issue #528).
 /// Null: play a level.
 /// </param>
+/// <param name="Course">
+/// <c>--course</c>: walk through the test course instead of playing - one station for every open judgement of a release,
+/// with the real rules (issue #718, docs/pruefstrecke.md). Only in the debug version (see <see cref="CourseOptions"/>).
+/// </param>
 public sealed partial record LaunchOptions(
     string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null, string? Photo = null, string? PhotoFolder = null,
     int? Look = null, string? Bench = null, string? Clip = null, bool Showroom = false, WindowSize? Window = null,
-    RoomOptions? Room = null)
+    RoomOptions? Room = null, bool Course = false)
 {
     /// <summary>Smallest window <c>--window</c> accepts, in pixels per side.</summary>
     public const int SmallestWindowSide = 200;
@@ -81,6 +85,7 @@ public sealed partial record LaunchOptions(
     {
         ArgumentNullException.ThrowIfNull(args);
         (args, var room) = RoomOptions.Extract(args);
+        (args, var course) = CourseOptions.Extract(args);
         var levelName = DefaultLevelName;
         int? seed = null;
         var give = new List<Gameplay.WeaponKind>();
@@ -226,7 +231,7 @@ public sealed partial record LaunchOptions(
 
                 default:
                     throw new ArgumentException(
-                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom, --window <width>x<height>, --room <file>, --no-enemies.");
+                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom, --course, --window <width>x<height>, --room <file>, --no-enemies.");
             }
         }
 
@@ -256,8 +261,9 @@ public sealed partial record LaunchOptions(
             throw new ArgumentException($"'--photo {ComparePhotos}' takes every picture variant; leave out '--look'.");
         }
 
-        var options = new LaunchOptions(levelName, seed, give, photo, photoFolder, look, bench, clip, showroom, window, room);
+        var options = new LaunchOptions(levelName, seed, give, photo, photoFolder, look, bench, clip, showroom, window, room, course);
         RoomOptions.Check(options);
+        CourseOptions.Check(options);
         return options;
     }
 
