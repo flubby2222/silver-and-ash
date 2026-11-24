@@ -353,4 +353,32 @@ public class BossDoorTests
 
         Assert.Contains("2/-1", error.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_door_with_a_gap_between_its_cells_is_refused()
+    {
+        // Error branch (issue #583): (2, 1) and (4, 1) are both walkable, but the wall at (3, 1) lies between them.
+        var gap = Map.Replace("##..##", "##.#.#", StringComparison.Ordinal);
+
+        var error = Assert.Throws<ArgumentException>(() => World(gap, [(4, 1)]));
+
+        Assert.Contains("2/1, 4/1", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_door_cell_along_the_passage_is_refused()
+    {
+        // Error branch (issue #583): (2, 2) is walkable floor of the boss room, but behind (2, 1), not beside it.
+        var error = Assert.Throws<ArgumentException>(() => World(moreCells: [(2, 2)]));
+
+        Assert.Contains("2/1, 2/2", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_door_with_a_cell_twice_is_refused()
+    {
+        var error = Assert.Throws<ArgumentException>(() => World(moreCells: [(2, 1)]));
+
+        Assert.Contains("2/1, 2/1", error.Message, StringComparison.Ordinal);
+    }
 }
