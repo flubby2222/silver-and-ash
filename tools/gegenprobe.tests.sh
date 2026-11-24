@@ -57,6 +57,9 @@ check 'count'                      0 '3'                    'a a a'           'a
 
 # The lock (tools/gegenprobe-lock.sh, issue #639). A contender is a run of its own: it takes the lock, writes its
 # number into "won", holds the lock <hold> seconds and lets it go. Its exit code is the one of lock_take.
+# If a waiting hook fails, a case waits at most this long instead of 60 s (issue #660): red in about a minute, not
+# four. The runs reach each other within a second even on a busy machine.
+export GEGENPROBE_TEST_WAIT_SECONDS=10
 lockfile="$(cd "$(dirname "$0")" && pwd)/gegenprobe-lock.sh"
 contender() {
     local hold="$1"
@@ -167,7 +170,9 @@ expect 'lock: release keeps a foreign lock' [ $? = 0 ]
 
 # The whole run (issue #651) in a small repository of its own, with a stand-in for dotnet: it waits a moment, then
 # writes a result file whose one test is red while probe.txt holds "broken", and builds nothing while it holds
-# "nocompile"; while it holds "aborted", the test process crashes (issue #657). As the bot (--bot, issue #647) it answers "build" (fails on "nocompile") and "run": a finding (exit 1)
+# "nocompile"; while it holds "aborted", the test process crashes (issue #657); while it holds "locked", a built file
+# cannot be copied (MSB3027, issue #660). As the bot (--bot, issue #647) it answers "build" (fails on "nocompile", and
+# always with STANDIN_BUILD_FAILS=1) and "run": a finding (exit 1)
 # while probe.txt holds "broken" or the bot arguments say "found", exit 2 while probe.txt or the arguments say "crash".
 gegenprobe="$(cd "$(dirname "$0")" && pwd)/gegenprobe.sh"
 repo="$work/repo"
@@ -181,7 +186,7 @@ cat > "$work/stand-in/dotnet" <<'STANDIN'
 case "${1:-}" in
     build)
         sleep 1
-        if grep -q nocompile probe.txt; then
+        if grep -q nocompile probe.txt || [ "${STANDIN_BUILD_FAILS:-0}" = 1 ]; then
             echo "probe.txt(1,9): error CS1002: ; expected"
             exit 1
         fi
@@ -193,6 +198,7 @@ case "${1:-}" in
             *' found '*) echo "FINDING [probe] found in every run"; exit 1 ;;
             *' crash '*) echo "Unknown mode 'crash'"; exit 2 ;;
         esac
+        if grep -q explode probe.txt; then echo "Fatal error. Internal CLR error."; exit 134; fi
         if grep -q crash probe.txt; then echo "the tool failed"; exit 2; fi
         if grep -q broken probe.txt; then echo "FINDING [probe] value is broken"; exit 1; fi
         echo "SUMMARY mode probe: 0 finding(s)"
@@ -208,6 +214,10 @@ if grep -q nocompile probe.txt; then
     echo "probe.txt(1,9): error CS1002: ; expected"
     exit 1
 fi
+if grep -q locked probe.txt; then
+    echo "C:\\Program Files\\dotnet\\sdk\\Microsoft.Common.CurrentVersion.targets(5,5): error MSB3027: Could not copy \"obj\\Probe.dll\" to \"bin\\Probe.dll\". Exceeded retry count of 10. The file is locked by: \"testhost (1234)\""
+    exit 1
+fi
 outcome=Passed
 grep -q broken probe.txt && outcome=Failed
 failed=0
@@ -215,17 +225,43 @@ failed=0
 # STANDIN_TOTAL tests (default 1); while probe.txt holds "aborted", the test process crashes and one test fewer ran
 # (issue #657) - with the default none, as dotnet test writes total="0" after a stack overflow.
 total="${STANDIN_TOTAL:-1}"
+# As in a real crash (issue #660), the cause comes first and the stack after it, so the last lines are stack lines;
+# the path of the result file comes last, as dotnet writes it on Windows: with the temp folder of the user.
 if grep -q aborted probe.txt; then
     total=$((total - 1))
     echo "The active test run was aborted. Reason: Test host process crashed : Stack overflow."
+    echo "Repeat 20000 times:"
+    echo "--------------------------------"
+    for frame in 1 2 3 4 5 6; do echo "   at Probe.Recurse(Int32)"; done
+    echo "--------------------------------"
+    echo "   at Probe.Test() in $(cygpath -w "$HOME" 2>/dev/null || echo "$HOME")\\src\\Probe.cs:line 3"
 fi
+# "crashmany": the same cause line twice (only the path differs) and six more lines with a cause word; "fewer": a test
+# less, no crash text.
+if grep -q crashmany probe.txt; then
+    total=$((total - 1))
+    dir="$(cygpath -w "$results" 2>/dev/null || echo "$results")"
+    echo "Test host process crashed : Stack overflow. Dump in $dir\\a\\crash.dmp"
+    echo "Test host process crashed : Stack overflow. Dump in $dir\\b\\crash.dmp"
+    for n in 1 2 3 4 5 6; do echo "Probe $n aborted"; done
+    echo "   at Probe.Test()"
+fi
+grep -q fewer probe.txt && total=$((total - 1))
 mkdir -p -- "$results"
 printf '<TestRun><Counters total="%s" failed="%s" /><UnitTestResult testName="Probe.Test" outcome="%s" /></TestRun>\n' \
     "$total" "$failed" "$outcome" > "$results/results.trx"
+# The path of the result file as dotnet writes it on Windows, with STANDIN_UNIX_PATH=1 as Git Bash writes it.
+shown="$(cygpath -w "$results" 2>/dev/null || echo "$results")"
+if [ "${STANDIN_UNIX_PATH:-0}" = 1 ]; then
+    echo "Results File: $(cygpath -u "$results" 2>/dev/null || echo "$results")/results.trx"
+else
+    echo "Results File: $shown\\results.trx"
+fi
 STANDIN
 chmod +x "$work/stand-in/dotnet"
 lock_of_repo="$repo/.git/gegenprobe.lock"
 lacks() { ! grep -q "$1" "$work/lock-err"; }
+lacks_regex() { ! grep -q -E "$1" "$work/lock-err"; }
 probe_back() { [ "$(cat "$repo/probe.txt")" = 'value = good;' ]; }
 run_probe() { ( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" probe.txt good "$1" Probe ); }
 
@@ -247,6 +283,15 @@ expect 'run: no compile, says so'           grep -q 'the change did not compile'
 expect 'run: no compile, names every cause' grep -q 'a built file could not be copied' "$work/lock-err"
 expect 'run: no compile, says to build'     grep -q 'build again before running anything with --no-build' "$work/lock-err"
 
+# A built file that cannot be copied (MSB3027, locked by another process, issue #660): also exit code 3, and the error
+# line names the cause. The stand-in writes the error as dotnet does; a file really held open is not used here.
+: > "$work/lock-err"
+run_probe locked > /dev/null 2>"$work/lock-err"
+expect 'run: locked file, exit 3'           [ $? = 3 ]
+expect 'run: locked file, names the error'  grep -q 'error MSB3027' "$work/lock-err"
+expect 'run: locked file, says to build'    grep -q 'build again before running anything with --no-build' "$work/lock-err"
+expect 'run: locked file, file back'        probe_back
+
 # A test process that crashes with the change (endless recursion) leaves a result file with fewer tests than the
 # control run, with the default of the stand-in none at all: that is no "SURVIVED" (issue #657).
 run_out() { grep -q "$1" "$work/run-out"; }
@@ -257,6 +302,10 @@ expect 'run: aborted, exit 4'               [ $? = 4 ]
 expect 'run: aborted, says so'              run_out 'ABORTED - only 0 of 1 test(s) ran with the change'
 expect 'run: aborted, not survived'         not_in_run_out SURVIVED
 expect 'run: aborted, shows the crash'      grep -q 'Test host process crashed' "$work/lock-err"
+# The cause stands above the last five lines (issue #660); the path of the result file is shortened.
+expect 'run: aborted, names the cause'      grep -q 'The cause:' "$work/lock-err"
+expect 'run: aborted, path shortened'       grep -q -E 'Results File: [.]{3}[\\/]results[.]trx' "$work/lock-err"
+expect 'run: aborted, no temp folder shown' lacks_regex '[\\/]mutated[\\/]results[.]trx'
 expect 'run: aborted, file back'            probe_back
 expect 'run: aborted, lock gone'            [ ! -e "$lock_of_repo" ]
 expect 'run: aborted, says to build again'  grep -q 'still holds the changed code' "$work/lock-err"
@@ -271,6 +320,47 @@ expect 'run: fewer than control, says so'   run_out 'ABORTED - only 2 of 3 test(
 expect 'run: aborted with red, exit 4'      [ $? = 4 ]
 expect 'run: aborted with red, names it'    run_out 'Probe.Test'
 expect 'run: aborted with red, file back'   probe_back
+
+# The cause lines (issue #660): each once - also two that differ only in their path -, at most five.
+cause_lines() { awk '/The cause:/ { on = 1; next } /The end of its output:/ { on = 0 } on' "$work/lock-err"; }
+: > "$work/lock-err"
+run_probe crashmany > "$work/run-out" 2>"$work/lock-err"
+expect 'run: many causes, exit 4'           [ $? = 4 ]
+expect 'run: many causes, at most five'     [ "$(cause_lines | wc -l | tr -d ' ')" = 5 ]
+expect 'run: many causes, each once'        [ "$(cause_lines | grep -c 'Stack overflow')" = 1 ]
+expect 'run: many causes, first ones kept'  [ "$(cause_lines | tail -n 1 | tr -d ' ')" = Probe4aborted ]
+
+# Fewer tests without any crash text: no cause section, only the end of the output.
+: > "$work/lock-err"
+run_probe fewer > "$work/run-out" 2>"$work/lock-err"
+expect 'run: fewer, no crash text, exit 4'  [ $? = 4 ]
+expect 'run: fewer, no cause section'       lacks 'The cause:'
+expect 'run: fewer, shows the end'          grep -q 'away. The end of its output:' "$work/lock-err"
+
+# A user whose folder name holds a space (issue #660): neither the Windows nor the Git Bash form of his folders may
+# show his name. Home, user folder and temp folder of the run are set to such a folder.
+spaced_home="$work/Max Mustermann"
+mkdir -p -- "$spaced_home/AppData/Local/Temp"
+as_spaced_user() {
+    (
+        export HOME="$spaced_home"
+        USERPROFILE="$(cygpath -w "$spaced_home" 2>/dev/null || echo "$spaced_home")"
+        TEMP="$(cygpath -w "$spaced_home/AppData/Local/Temp" 2>/dev/null || echo "$spaced_home/AppData/Local/Temp")"
+        export USERPROFILE TEMP TMP="$TEMP" TMPDIR="$spaced_home/AppData/Local/Temp"
+        "$@"
+    )
+}
+: > "$work/lock-err"
+as_spaced_user run_probe aborted > "$work/run-out" 2>"$work/lock-err"
+expect 'run: spaced user, exit 4'           [ $? = 4 ]
+expect 'run: spaced user, windows form'     lacks 'Mustermann'
+expect 'run: spaced user, still the file'   grep -q 'results[.]trx' "$work/lock-err"
+expect 'run: spaced user, file back'        probe_back
+: > "$work/lock-err"
+( export STANDIN_UNIX_PATH=1; as_spaced_user run_probe aborted ) > "$work/run-out" 2>"$work/lock-err"
+expect 'run: spaced user, git bash, exit 4' [ $? = 4 ]
+expect 'run: spaced user, git bash form'    lacks 'Mustermann'
+expect 'run: spaced user, git bash file'    grep -q 'results[.]trx' "$work/lock-err"
 
 # The output closed early (2>&1 | head, as in the test of PR #648): head stops after the line of the control run, so
 # the result line and the messages of the clean-up meet a closed pipe while the file is changed. The run must still
@@ -289,6 +379,8 @@ said() { grep -q "$1" "$work/bot-out"; }
 run_bot_probe broken 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
 expect 'bot: caught, exit 0'                [ $? = 0 ]
 expect 'bot: caught, names the finding'     said 'FINDING \[probe\] value is broken'
+expect 'bot: caught, names the bot exit'    said 'CAUGHT - the bot reports findings (bot exit code 1)'
+expect 'bot: control, names the bot exit'   said 'control run: bot without findings (bot exit code 0)'
 expect 'bot: caught, file back'             probe_back
 expect 'bot: caught, lock gone'             [ ! -e "$lock_of_repo" ]
 expect 'bot: caught, says to build again'   grep -q 'still holds the changed code' "$work/lock-err"
@@ -297,6 +389,7 @@ expect 'bot: caught, says to build again'   grep -q 'still holds the changed cod
 run_bot_probe fine 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
 expect 'bot: survived, exit 1'              [ $? = 1 ]
 expect 'bot: survived, says so'             said 'SURVIVED - the bot reports no finding'
+expect 'bot: survived, names the bot exit'  said 'no finding with the change (bot exit code 0)'
 expect 'bot: survived, file back'           probe_back
 
 : > "$work/lock-err"
@@ -318,12 +411,28 @@ expect 'bot: changed exit 2, says so'       grep -q 'the bot could not run with 
 expect 'bot: changed exit 2, file back'     probe_back
 expect 'bot: changed exit 2, lock gone'     [ ! -e "$lock_of_repo" ]
 
+# The bot ends with another code than 0, 1 or 2 (a crash, 134): the script ends with 2 and names the real code.
+: > "$work/lock-err"
+run_bot_probe explode 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
+expect 'bot: changed exit 134, exit 2'      [ $? = 2 ]
+expect 'bot: changed exit 134, names it'    grep -q 'could not run with the change (bot exit code 134)' "$work/lock-err"
+expect 'bot: changed exit 134, file back'   probe_back
+
 : > "$work/lock-err"
 run_bot_probe nocompile 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
 expect 'bot: no compile, exit 3'            [ $? = 3 ]
 expect 'bot: no compile, names the error'   grep -q 'error CS1002' "$work/lock-err"
 expect 'bot: no compile, no false claim'    lacks 'still holds the changed code'
 expect 'bot: no compile, file back'         probe_back
+
+# The control run of the bot does not build (issue #660): exit code 2, before anything is changed.
+: > "$work/lock-err"
+( export STANDIN_BUILD_FAILS=1; run_bot_probe broken 'probe --seeds 1' ) > "$work/bot-out" 2>"$work/lock-err"
+expect 'bot: control no build, exit 2'      [ $? = 2 ]
+expect 'bot: control no build, says so'     grep -q 'control run does not build' "$work/lock-err"
+expect 'bot: control no build, names it'    grep -q 'error CS1002' "$work/lock-err"
+expect 'bot: control no build, file back'   probe_back
+expect 'bot: control no build, lock gone'   [ ! -e "$lock_of_repo" ]
 
 : > "$work/lock-err"
 run_bot_probe broken 'probe --seeds 1' 2>&1 | head -n 4 > /dev/null

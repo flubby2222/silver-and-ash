@@ -20,7 +20,13 @@
 #   --project PATH   test project (default: tests/SilverAndAsh.Core.Tests)
 #   --name NAME      name of this probe in the output (default: the search text)
 #   --bot            check with a bot run (tools/SilverAndAsh.BotRun, issue #647) instead of tests: the control run
-#                    must end without findings, the change is caught if the bot reports a finding
+#                    must end without findings, the change is caught if the bot reports a finding; the output names
+#                    the exit code of the bot (1 with findings) besides the one of this script (issue #660)
+#
+# Every new option or way out of this script gets a case in its self-test tools/gegenprobe.tests.sh (issue #660).
+# Log lines it shows (build errors, the end of an aborted run) have their absolute paths shortened to ".../<name>", so
+# no temp folder or user name ends up in a PR comment - see shorten_paths for what it does not catch. The message of
+# the lock names the absolute path of the git folder on purpose (it is needed to act on it): do not copy that one.
 #
 # Only one run per working folder at a time (issue #604): a second run started while the first one has the file
 # changed would take the broken file for the original. It stops at once with exit code 2 and names the running one.
@@ -31,8 +37,8 @@
 # (2>&1 | head) still puts the file back and lets go of the lock (issue #651).
 #
 # Exit code: 0 = caught (at least one test red, with --bot: a finding), 1 = survived (all green, no finding), 2 = could
-# not run (another run in this working folder, unclean working folder, text not found, control run red or with
-# findings ...), 3 = no result with the change (it does not compile, a built file could not be copied, or the test
+# not run (another run in this working folder, unclean working folder, text not found or found more than once without
+# --all, control run red or with findings, the bot ended with another code than 0 or 1 ...), 3 = no result with the change (it does not compile, a built file could not be copied, or the test
 # project does not build: no statement about the tests), 4 = the test run with the change was aborted (fewer tests ran
 # than in the control run, e.g. the test process crashed: no statement about the tests, issue #657).
 #
@@ -91,6 +97,7 @@ root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "gegenprobe: not i
 cd "$root" || exit 2
 
 work=""
+bot_exit=""
 changed=0
 built_changed=0
 
@@ -165,6 +172,48 @@ if cmp -s -- "$work/changed-file" "$backup"; then
     exit 2
 fi
 
+# Lines of a log shown to the reader may end up in PR comments, so no user name may be in them (issue #660). First the
+# known roots - TEMP, TMP, USERPROFILE, HOME, each also as cygpath writes it (C:\..., /c/..., C:/..., long and 8.3
+# names) - are replaced literally, whatever spaces they hold: the temp folders by <temp>, the user folders by ~. Then
+# every absolute path made of parts without spaces becomes ".../<last part>".
+# Not shortened: a path with a space outside these roots keeps the part from the space on (D:\My Games\x\y.cs ->
+# ...\My Games\x\y.cs), a path straight after , : or < keeps all of it, and a user name outside these roots (another
+# user's folder, a share \\server\...) stays.
+path_roots() {
+    local name value holder form
+    for name in TEMP TMP USERPROFILE HOME; do
+        value="${!name:-}"
+        [ -n "$value" ] || continue
+        holder='~'
+        case "$name" in TEMP|TMP) holder='<temp>' ;; esac
+        printf '%s\t%s\n' "$holder" "$value"
+        if command -v cygpath >/dev/null 2>&1; then
+            for form in -u -w -m '-w -l' '-w -s' '-m -l' '-m -s'; do
+                # shellcheck disable=SC2086 # the form is one or two options
+                printf '%s\t%s\n' "$holder" "$(cygpath $form -- "$value" 2>/dev/null)"
+            done
+        fi
+    done | awk -F '\t' 'length($2) >= 4 && !seen[tolower($2)]++ { print length($2) "\t" $0 }' | sort -rn | cut -f 2-
+}
+GEGENPROBE_PATH_ROOTS="$(path_roots)"
+export GEGENPROBE_PATH_ROOTS
+read -r -d '' shorten_paths_perl <<'PERL'
+BEGIN { @roots = map { [split /\t/, $_, 2] } grep { length } split /\n/, ($ENV{GEGENPROBE_PATH_ROOTS} // ""); }
+for my $root (@roots) {
+    my ($holder, $path) = @$root;
+    s{\Q$path\E(?=[\\/\s"']|$)}{$holder}gi;
+}
+s{(?<![^\s"'(\[=])(?:<temp>|~|[A-Za-z]:)?([\\/])(?:[^\s\\/:"']+[\\/])+}{...$1}g;
+PERL
+shorten_paths() {
+    perl -pe "$shorten_paths_perl"
+}
+
+# The error lines of a build log (error CS..., error MSB...), each once, at most ten.
+build_errors() {
+    grep -E "error [A-Z]+[0-9]+" "$1" | sed -E 's/ \[[^]]*\]$//' | shorten_paths | sort -u | head -n 10 >&2
+}
+
 # Runs the filtered tests; sets total, failed, red (names) and returns 3 if nothing could be run (build error).
 run_tests() {
     local label="$1"
@@ -174,7 +223,7 @@ run_tests() {
     local trx
     trx="$(find "$results" -name '*.trx' 2>/dev/null | head -n 1)"
     if [ -z "$trx" ]; then
-        grep -E "error [A-Z]+[0-9]+" "$work/$label.log" | sed -E 's/ \[[^]]*\]$//' | sort -u | head -n 10 >&2
+        build_errors "$work/$label.log"
         return 3
     fi
     total="$(perl -ne 'print $1 if /<Counters\b[^>]*\btotal="(\d+)"/' "$trx")"
@@ -192,19 +241,19 @@ run_bot() {
     local label="$1"
     local bot_project="tools/SilverAndAsh.BotRun"
     if ! dotnet build "$bot_project" -c Release > "$work/$label.build.log" 2>&1; then
-        grep -E "error [A-Z]+[0-9]+" "$work/$label.build.log" | sed -E 's/ \[[^]]*\]$//' | sort -u | head -n 10 >&2
+        build_errors "$work/$label.build.log"
         return 3
     fi
     local args
     read -r -a args <<< "$filter"
     dotnet run --project "$bot_project" -c Release --no-build -- "${args[@]}" > "$work/$label.log" 2>&1
-    local code=$?
+    bot_exit=$?
     total=1
     red="$(grep -E '^FINDING ' "$work/$label.log" | head -n 10)"
-    case "$code" in
+    case "$bot_exit" in
         0) failed=0 ;;
         1) failed=1 ;;
-        *) tail -n 5 "$work/$label.log" >&2; return 2 ;;
+        *) tail -n 5 "$work/$label.log" | shorten_paths >&2; return 2 ;;
     esac
     return 0
 }
@@ -233,10 +282,11 @@ no_result() {
 # The result of the bot run with the change: a finding means caught.
 report_bot() {
     if [ "$failed" = 0 ]; then
-        echo "   result: SURVIVED - the bot reports no finding with the change"
+        echo "   result: SURVIVED - the bot reports no finding with the change (bot exit code $bot_exit)"
         exit 1
     fi
-    echo "   result: CAUGHT - the bot reports findings (the first ten):"
+    # The exit code of this script is 0 here; the one of the bot is 1 (issue #660).
+    echo "   result: CAUGHT - the bot reports findings (bot exit code $bot_exit), the first ten:"
     echo "$red" | sed 's/^/     /'
     exit 0
 }
@@ -265,8 +315,18 @@ report_aborted() {
         echo "$red" | sed 's/^/     /'
     fi
     echo "gegenprobe: the test run with the change was aborted (the test process crashed?) or the change took tests" >&2
-    echo "   away. The end of its output:" >&2
-    tail -n 5 "$work/mutated.log" | sed 's/^/   /' >&2
+    # After a crash the end of the output is the stack; the cause ("Stack overflow") stands further up (issue #660).
+    local cause
+    # Shortened first, so two lines that differ only in their path count as one.
+    cause="$(grep -i -E 'Stack overflow|crashed|abgebrochen|aborted' "$work/mutated.log" | shorten_paths | awk '!seen[$0]++' | head -n 5)"
+    if [ -n "$cause" ]; then
+        echo "   away. The cause:" >&2
+        echo "$cause" | sed 's/^/   /' >&2
+        echo "   The end of its output:" >&2
+    else
+        echo "   away. The end of its output:" >&2
+    fi
+    tail -n 5 "$work/mutated.log" | shorten_paths | sed 's/^/   /' >&2
     exit 4
 }
 
@@ -286,7 +346,7 @@ if [ "$status" = 3 ]; then
     exit 2
 fi
 if [ "$status" = 2 ]; then
-    echo "gegenprobe: the bot could not run with '$filter' (exit code 2)" >&2
+    echo "gegenprobe: the bot could not run with '$filter' (bot exit code $bot_exit)" >&2
     exit 2
 fi
 if [ "$bot" = 1 ] && [ "$failed" != 0 ]; then
@@ -295,7 +355,7 @@ if [ "$bot" = 1 ] && [ "$failed" != 0 ]; then
     exit 2
 fi
 if [ "$bot" = 1 ]; then
-    echo "   control run: bot without findings"
+    echo "   control run: bot without findings (bot exit code $bot_exit)"
 else
     if [ "$total" = 0 ]; then
         echo "gegenprobe: the filter '$filter' selects no tests" >&2
@@ -319,7 +379,7 @@ if [ "$status" = 3 ]; then
     no_result
 fi
 if [ "$status" = 2 ]; then
-    echo "gegenprobe: the bot could not run with the change (exit code 2) - no statement" >&2
+    echo "gegenprobe: the bot could not run with the change (bot exit code $bot_exit) - no statement" >&2
     exit 2
 fi
 if [ "$bot" = 1 ]; then
