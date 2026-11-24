@@ -13,7 +13,10 @@ sonst bricht das Skript ab und schreibt nichts. Nur Standardbibliothek, Zufall n
 
 Daneben schreibt es die Begleitdatei bosstuer-ticks.json (Issue 668) mit den Ticks, auf die die Klaenge gebaut sind
 (Anschlag, Dauer des Oeffnens). Ein Test vergleicht sie mit Balance.Default: Aendert eine Balancing-Runde bossShutTick
-oder bossOpenTime, wird er rot, bis die Klaenge mit den neuen Ticks neu gebaut und abgehoert sind.
+oder bossOpenTime, wird er rot, bis die Klaenge mit den neuen Ticks neu gebaut und abgehoert sind. Derselbe Test liest
+ANSCHLAG_TICK und OEFFNEN_TICKS aus diesem Skript (Issue 680, Zeilen "NAME = Zahl" am Zeilenanfang, je genau einmal):
+Eine von Hand angeglichene Begleitdatei macht ihn nicht gruen. Fehlt die Begleitdatei oder ist sie kaputt, endet
+--pruefen mit Exit 1 und einer Meldung; ohne --pruefen schreibt das Skript sie neu.
 
     python tools/audio/bosstuer_klang.py           # schreibt assets/audio/bosstuer-*.wav und bosstuer-ticks.json
     python tools/audio/bosstuer_klang.py --pruefen # baut neu und vergleicht mit assets/audio
@@ -57,13 +60,25 @@ def ticks():
     }
 
 
+class BegleitdateiFehler(Exception):
+    """Die Begleitdatei fehlt oder ist kaputt (Issue 680); die Meldung sagt, was zu tun ist."""
+
+
 def ticks_lesen():
-    """Die Begleitdatei in assets/audio, oder None, wenn es sie nicht gibt."""
+    """Die Begleitdatei in assets/audio als dict. Fehlt sie oder ist sie kein JSON-Objekt: BegleitdateiFehler."""
     pfad = os.path.join(ZIEL, TICKS)
+    name = f"assets/audio/{TICKS}"
+    neu_bauen = "python tools/audio/bosstuer_klang.py schreibt sie neu"
     if not os.path.exists(pfad):
-        return None
-    with open(pfad, encoding="utf-8") as f:
-        return json.load(f)
+        raise BegleitdateiFehler(f"{name} fehlt ({neu_bauen}).")
+    try:
+        with open(pfad, encoding="utf-8") as f:
+            inhalt = json.load(f)
+    except (OSError, UnicodeDecodeError, ValueError) as fehler:
+        raise BegleitdateiFehler(f"{name} ist nicht lesbar: {fehler} ({neu_bauen}).") from None
+    if not isinstance(inhalt, dict):
+        raise BegleitdateiFehler(f"{name} ist kein JSON-Objekt ({neu_bauen}).")
+    return inhalt
 
 
 def sha256(daten):
@@ -128,14 +143,24 @@ def main():
                 schlecht.append(spiel)
         print("bitgleich zu assets/audio:", not schlecht, schlecht)
         # Die Begleitdatei nach Inhalt vergleichen: git schreibt sie unter Windows mit CRLF aus.
-        passt = ticks_lesen() == ticks()
+        try:
+            passt = ticks_lesen() == ticks()
+        except BegleitdateiFehler as fehler:
+            print("FEHLER:", fehler, file=sys.stderr)
+            return 1
         print(f"{TICKS} passt zu den Ticks des Skripts:", passt)
         return 1 if schlecht or not passt else 0
     for spiel, (_, daten) in neu.items():
         with open(os.path.join(ZIEL, spiel), "wb") as f:
             f.write(daten)
         print("geschrieben:", spiel, len(daten), "Bytes")
-    if ticks_lesen() != ticks():
+    try:
+        passt = ticks_lesen() == ticks()
+    except BegleitdateiFehler as fehler:
+        # Ohne --pruefen ist Schreiben die Abhilfe: eine fehlende oder kaputte Begleitdatei wird neu geschrieben.
+        print("Hinweis:", fehler)
+        passt = False
+    if not passt:
         # Nur bei anderem Inhalt schreiben, sonst zeigte git status nach jedem Lauf andere Zeilenenden.
         with open(os.path.join(ZIEL, TICKS), "w", encoding="utf-8", newline="\n") as f:
             json.dump(ticks(), f, indent=2)
