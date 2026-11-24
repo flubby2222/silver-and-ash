@@ -116,21 +116,19 @@ public class BoonTests
     public void While_a_boon_waits_the_world_goes_on()
     {
         // Decision record 0008: no standstill - the player walks, the ghoul crawls, the boon keeps waiting.
-        var world = new GameWorld(LevelParser.Parse("P\n.\n.\n.\n.\n.\nG"));
+        // The twin is the same world without the level up (issue #687).
+        const string Level = "P\n.\n.\n.\n.\n.\nG";
+        var world = new GameWorld(LevelParser.Parse(Level));
+        var twin = new GameWorld(LevelParser.Parse(Level));
         var player = world.Player;
         var ghoul = world.Ghouls[0];
         player.AddExperience(Balance.Default.Experience.FirstLevel, []);
-        var playerAt = player.Position;
+        var start = Start(world, twin);
         var ghoulAt = ghoul.Position;
 
-        for (var tick = 0; tick < Second / 2; tick++)
-        {
-            world.Tick(Forward);
-        }
+        WalkBoth(world, twin, Second / 2);
 
-        var walked = player.Position.Z - playerAt.Z;
-        var least = LeastWalk(world.Balance, Second / 2);
-        Assert.True(walked > least, $"The player did not walk: {walked:0.00} m, at least {least:0.00} m.");
+        AssertWalkedAsFar(world, twin, start, "while a boon waits");
         Assert.NotEqual(ghoulAt, ghoul.Position);
         Assert.Equal(1, player.PendingBoons);
     }
@@ -176,60 +174,121 @@ public class BoonTests
     [Fact]
     public void After_the_choice_the_world_goes_on()
     {
-        var world = new GameWorld(LevelParser.Parse("P\n.\n."));
+        const string Level = "P\n.\n.";
+        var world = new GameWorld(LevelParser.Parse(Level));
+        var twin = new GameWorld(LevelParser.Parse(Level));
         var player = world.Player;
         player.AddExperience(FirstLevel, []);
-        var start = player.Position;
+        var start = Start(world, twin);
 
         // Whatever the balance and the seed offer (issue #664): the first boon on offer, and the choice must succeed.
+        // The twin gets the same input; with no level up waiting there, the choice does nothing.
         var boon = player.CurrentOffer[0];
-        world.Tick(PlayerInput.None with { ChooseBoon = boon });
+        TickBoth(world, twin, PlayerInput.None with { ChooseBoon = boon });
         Assert.Equal(0, player.PendingBoons);
         Assert.Equal(1, player.BoonCount(boon));
-        for (var tick = 0; tick < Second / 4; tick++)
-        {
-            world.Tick(Forward);
-        }
+        WalkBoth(world, twin, Second / 4);
 
-        var walked = player.Position.Z - start.Z;
-        var least = LeastWalk(world.Balance, Second / 4);
-        Assert.True(walked > least, $"The player did not walk after choosing: {walked:0.00} m, at least {least:0.00} m.");
+        AssertWalkedAsFar(world, twin, start, "after choosing");
     }
 
-    /// <summary>Share of the ideal way a walking player must cover - see <see cref="LeastWalk"/>.</summary>
-    private const float LeastWalkShare = 0.9f;
+    [Fact]
+    public void A_player_who_chooses_while_walking_keeps_the_pace()
+    {
+        // Issue #687: the choice comes in the middle of a run, at top speed - it must not cost any of it.
+        const string Level = "P\n.\n.\n.\n.\n.\n.\n.\n.\n.";
+        var world = new GameWorld(LevelParser.Parse(Level));
+        var twin = new GameWorld(LevelParser.Parse(Level));
+        var player = world.Player;
+        player.AddExperience(FirstLevel, []);
+        var boon = player.CurrentOffer[0];
+        WalkBoth(world, twin, Second / 4);
+        var start = Start(world, twin);
+
+        TickBoth(world, twin, Forward with { ChooseBoon = boon });
+        Assert.Equal(0, player.PendingBoons);
+        Assert.Equal(1, player.BoonCount(boon));
+        var speed = player.HorizontalSpeed;
+        var twinSpeed = twin.Player.HorizontalSpeed;
+        Assert.True(
+            speed >= WalkShare * twinSpeed,
+            $"The choice cost the player's pace: {speed:0.000} m/s, the run without the level up {twinSpeed:0.000} m/s.");
+        WalkBoth(world, twin, Second / 4);
+
+        AssertWalkedAsFar(world, twin, start, "after choosing while walking");
+    }
+
+    /// <summary>Share of the twin's way (and pace) a player with a level up must reach - see <see cref="AssertWalkedAsFar"/>.</summary>
+    private const float WalkShare = 0.99f;
+
+    /// <summary>Where the players of <paramref name="world"/> and <paramref name="twin"/> stand now.</summary>
+    private static (Vector3 World, Vector3 Twin) Start(GameWorld world, GameWorld twin) =>
+        (world.Player.Position, twin.Player.Position);
+
+    /// <summary>One tick with the same <paramref name="input"/> in both worlds.</summary>
+    private static void TickBoth(GameWorld world, GameWorld twin, PlayerInput input)
+    {
+        world.Tick(input);
+        twin.Tick(input);
+    }
 
     /// <summary>
-    /// 90 % of the way a player covers walking straight ahead from a standstill for <paramref name="ticks"/> ticks
-    /// with <paramref name="balance"/> (issues #664, #677), counted tick by tick as the game moves: each tick the
-    /// speed first grows by <see cref="PlayerBalance.Acceleration"/> up to <see cref="PlayerBalance.MaxSpeed"/>,
-    /// then the player moves one tick at that speed.
+    /// Both worlds walk straight ahead for <paramref name="ticks"/> ticks. The twin must end at its top speed - while
+    /// the player is still speeding up or stopped by a wall, a slower top speed would not show and the case would prove
+    /// nothing. That is measured in the twin itself (its speed no longer grows), not counted from the balance.
     /// </summary>
-    /// <remarks>
-    /// On the flat, open floor of these tests nothing in the game costs any of the way: with the standard balance
-    /// the player covers exactly this ideal way (2.75 m in half a second, 1.25 m in a quarter). The 10 % left are
-    /// room for how a tick is counted, not for the walking itself: moving first and speeding up after would move
-    /// each tick at the speed of the tick before and so cost a whole tick at top speed (10 cm) - 1.15 m instead of
-    /// 1.25 m in a quarter of a second (92 %), 2.65 m instead of 2.75 m in half a second (96.4 %). That is only
-    /// 2.5 cm above the threshold of 1.125 m, so the share must not go above 90 %. A player who walks a quarter or
-    /// a third slower after the level up falls far below.
-    /// </remarks>
-    private static float LeastWalk(Balance balance, int ticks)
+    private static void WalkBoth(GameWorld world, GameWorld twin, int ticks)
     {
-        var walking = balance.Player;
-        Assert.True(
-            ticks * SimulationClock.SecondsPerTick > walking.AccelerationTime,
-            "The player is still speeding up - the case would prove nothing.");
-
-        var speed = 0f;
-        var way = 0f;
+        var speedBefore = twin.Player.HorizontalSpeed;
         for (var tick = 0; tick < ticks; tick++)
         {
-            speed = MathF.Min(speed + (walking.Acceleration * SimulationClock.SecondsPerTick), walking.MaxSpeed);
-            way += speed * SimulationClock.SecondsPerTick;
+            speedBefore = twin.Player.HorizontalSpeed;
+            TickBoth(world, twin, Forward);
         }
 
-        return LeastWalkShare * way;
+        var speed = twin.Player.HorizontalSpeed;
+        Assert.True(
+            speed > 0f && speed == speedBefore,
+            $"The run without the level up is not at its top speed ({speedBefore:0.000} -> {speed:0.000} m/s) - the case would prove nothing.");
+    }
+
+    /// <summary>
+    /// The player of <paramref name="world"/> (with a level up) covered at least 99 % of the way the player of
+    /// <paramref name="twin"/> covered since <paramref name="start"/> - the twin is the same level with the same seed,
+    /// balance and input, but without the level up (issue #687).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Both players run through the same code with the same input, and nothing in walking reads the boons: on the
+    /// flat floor of these tests both end on the same spot (measured: 100.0 % in all three tests). Unlike the ideal
+    /// way counted from the balance before (issue #677, 90 %), the twin moves with every change to walking, so the
+    /// share need not leave room for how a tick is counted.
+    /// </para>
+    /// <para>
+    /// What the 1 % lets through, counted with the standard balance (top speed 6 m/s, +1 m/s per tick, so 0.1 m per
+    /// tick at top speed). The shortest run is a quarter of a second from a standstill: (1+2+3+4+5 + 10 x 6) / 60 =
+    /// 1.25 m, of which 1 % is 1.25 cm - an eighth of one tick at top speed. A top speed lower by the factor f after
+    /// the level up gives (15 + 60 f) / 60 m there; below 99 % of 1.25 m once f &lt; 0.9875, so only a pace less than
+    /// 1.25 % slower slips through (in half a second, (15 + 150 f) / 165 &lt; 0.99 once f &lt; 0.989).
+    /// </para>
+    /// <para>
+    /// What must be caught lies far below 99 %: 7 % slower after the choice gives (15 + 60 x 0.93) / 60 = 1.18 m,
+    /// 94.4 %; one walking tick lost costs a tick at top speed, 0.1 m: 1.15 m of 1.25 m (92 %), 2.65 m of 2.75 m
+    /// (96.4 %); the pace set to 0 at the choice costs the whole run-up, (6 x 6 - 21) / 60 = 0.25 m.
+    /// </para>
+    /// <para>
+    /// Why not 100 %: the two worlds are not the same on purpose - only one of them drew an offer from the world's
+    /// random generator, so whatever draws from it later goes its own way. None of that may touch the walk, and the
+    /// room it gets is far below any fault worth catching.
+    /// </para>
+    /// </remarks>
+    private static void AssertWalkedAsFar(GameWorld world, GameWorld twin, (Vector3 World, Vector3 Twin) start, string when)
+    {
+        var walked = world.Player.Position.Z - start.World.Z;
+        var twinWalked = twin.Player.Position.Z - start.Twin.Z;
+        Assert.True(
+            walked >= WalkShare * twinWalked,
+            $"The player did not walk {when}: {walked:0.000} m, the run without the level up {twinWalked:0.000} m.");
     }
 
     [Fact]
