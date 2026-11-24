@@ -87,7 +87,7 @@ public sealed class CourseRoom
         _course.Teleporters.Add(new TeleporterPlan(x, z, Index, site) { Facing = facing });
     }
 
-    /// <summary>The Well of Sirius in the middle of that cell - the only one of the course.</summary>
+    /// <summary>Sirius' Relief in the middle of that cell - the only one of the course.</summary>
     public void Well(int step, int row)
     {
         if (_course.Well is not null)

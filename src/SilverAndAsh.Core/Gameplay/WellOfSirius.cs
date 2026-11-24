@@ -5,7 +5,7 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// The Well of Sirius (issue #438): a three-tier fountain in the middle of its cell. Nobody walks through it - players,
+/// Sirius' Relief (issue #438, named so since #716; the code still says well): a three-tier fountain in the middle of its cell. Nobody walks through it - players,
 /// ghouls and Gorm bump into a circle of <see cref="WellBalance.CollisionRadius"/>, and ghouls and Gorm plan their way
 /// round its cell as round a standing chest (they still see past it; bats fly over it). It is
 /// ready until a player uses it with F, then it is spent and stays dry.
@@ -17,7 +17,7 @@ namespace SilverAndAsh.Core.Gameplay;
 public sealed class WellOfSirius : IInteractable
 {
     /// <summary>Name shown in the game.</summary>
-    public const string Name = "Well of Sirius";
+    public const string Name = "Sirius' Relief";
 
     /// <summary>Height of the well with its top bowl, in metres (from the model).</summary>
     public const float Height = 2.3f;
@@ -54,7 +54,7 @@ public sealed class WellOfSirius : IInteractable
     /// <summary>Its solid body: a standing cylinder, as high as the well.</summary>
     public CylinderBody Body => new(Position, Radius, Height);
 
-    /// <summary>"Use Well of Sirius" while it is ready.</summary>
+    /// <summary>"Use Sirius' Relief" while it is ready.</summary>
     public InteractionOffer OfferFor(Player player)
     {
         ArgumentNullException.ThrowIfNull(player);

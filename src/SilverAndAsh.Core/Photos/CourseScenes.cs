@@ -26,7 +26,7 @@ internal static class CourseScenes
             studio => new PhotoSetup(Within(studio, 2, room => (LastX(room), CourseRoom.Bottom), room => NorthWallMiddle(room)))),
         new("course-4-portcullis", "Station 4 of the test course, sealed: from inside the arena back at the fallen grate, the ghoul and the bat coming out by the column (issue #718).",
             SealedArena),
-        new("course-5-teleporter", "Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, the Well of Sirius beside the way (issue #718).",
+        new("course-5-teleporter", "Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, Sirius' Relief beside the way (issue #718).",
             studio => new PhotoSetup(Within(studio, 4, room => (LastX(room), CourseRoom.Top), room => SignOf(room)))),
         new("course-6-boss", "Station 6 of the test course from its north-east corner: the antechamber, silver and a blood vial before the boss portal (issue #718).",
             studio => new PhotoSetup(Within(studio, 5, room => (LastX(room), CourseRoom.Top), room => PortalOf(room)))),

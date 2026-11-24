@@ -106,7 +106,7 @@ public class PhotoSceneTests
             "cracked-wall-b-4m", "cracked-wall-c-4m", "cracked-wall-sideways-4m", "cracked-wall-secret-4m", "cracked-wall-break",
             "cracked-wall-break-dust", "cracked-wall-break-after",
             "showroom-a-corridor", "showroom-a-room", "showroom-b-corridor", "showroom-b-room", "showroom-c-corridor",
-            "showroom-c-room", "stairs-4m", "stairs-10m", "well-ready", "well-spent",
+            "showroom-c-room", "stairs-4m", "stairs-10m", "well-ready", "well-spent", "well-hint",
             "teleporter-locked-3m", "teleporter-unlocked-3m", "teleporter-locked-10m", "teleporter-unlocked-10m",
             "teleporter-hint", "menu-travel", "menu-travel-sealed", "room-antechamber",
             "equipment-rifle", "equipment-worn", "equipment-forged", "equipment-royal", "equipment-vampiric", "equipment-taken-royal", "equipment-taken-vampiric",
@@ -1229,6 +1229,19 @@ public class PhotoSceneTests
         var target = Assert.IsType<WeaponDrop>(world.InteractionTarget(world.Player));
         Assert.Equal(WeaponKind.Rifle, target.Kind);
         Assert.Equal(new InteractionOffer("Take Rifle (Forged)", true, ItemTier.Forged), target.OfferFor(world.Player));
+    }
+
+    // Issue #716: the photo of the hint shows the well's name as the game offers it.
+    [Fact]
+    public void The_well_hint_scene_looks_at_sirius_relief_within_reach()
+    {
+        var setup = Built("well-hint");
+
+        setup.Run();
+
+        var world = setup.World;
+        var target = Assert.IsType<WellOfSirius>(world.InteractionTarget(world.Player));
+        Assert.Equal(new InteractionOffer("Use Sirius' Relief", true), target.OfferFor(world.Player));
     }
 
     [Fact]

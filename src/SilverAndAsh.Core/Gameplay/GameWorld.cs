@@ -73,8 +73,8 @@ public sealed class GameWorld
     /// start closed. Their cells must be walkable in <paramref name="level"/>. <paramref name="rooms"/> (optional) are
     /// the rooms of a generated level: enemies in combat and boss rooms sleep until a player enters, then the room
     /// becomes an arena (see <see cref="RoomState"/>). <paramref name="chests"/> (optional) are the chests of a generated
-    /// level; a combat room's chest rises once its room is cleared. <paramref name="well"/> (optional) is its Well of
-    /// Sirius. <paramref name="teleporters"/> (optional) are the teleporters of a generated level; they all start
+    /// level; a combat room's chest rises once its room is cleared. <paramref name="well"/> (optional) is its well,
+    /// Sirius' Relief. <paramref name="teleporters"/> (optional) are the teleporters of a generated level; they all start
     /// locked (issue #436).
     /// </summary>
     public GameWorld(
@@ -480,7 +480,7 @@ public sealed class GameWorld
     /// <summary>True while the boss room is sealed and Gorm lives: his health bar shows.</summary>
     public bool IsBossFightOn => _gorm is { IsDead: false } && _rooms.Any(room => room.Kind == RoomKind.Boss && room.IsSealed);
 
-    /// <summary>The Well of Sirius of the level, or null if it has none (issue #438).</summary>
+    /// <summary>Sirius' Relief of the level, or null if it has none (issue #438).</summary>
     public WellOfSirius? Well { get; }
 
     // The well's solid circle for players, if the level has one.

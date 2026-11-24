@@ -272,7 +272,7 @@
     "blockHeight": 1.85                 // metres: a rising grate blocks until its spike tips are above this (a falling one at once)
   },
 
-  // The Well of Sirius (#438). Price per throw, chances and the most throws are still open: using it only spends it.
+  // Sirius' Relief, the well (#438, #716). Price per throw, chances and the most throws are still open: using it only spends it.
   "well": {
     "levelChance": 1,                   // chance that a level has a well (at most one); provisional: every level
     "collisionRadius": 0.95             // m: the circle nobody walks through

@@ -34,7 +34,7 @@ Nach dem Titelbildschirm stehst du am Westende des Wegs und blickst nach Osten. 
 | 2 | **Columns** | Start | Zwei Säulen links und rechts des Wegs, Silber neben einer, dahinter ein wacher Ghul |
 | 3 | **Cracked wall** | Start | Rissige Wand in der Mitte der Nordwand, dahinter die geheime Kammer mit Truhe. **So geht sie auf:** dicht vor die Wand treten, sie ansehen, die linke Maustaste halten, bis die Silberklinge voll aufgeladen ist und zittert, dann loslassen. Nur ein voll aufgeladener Nahkampfhieb aus Klingenreichweite bricht sie auf; **F**, normale Hiebe und Schüsse tun nichts |
 | 4 | **Portcullis** | Arena | Betritt ein Spieler sie, fallen die Gitter; ein Ghul und eine Fledermaus kommen bei der Säule heraus |
-| 5 | **Teleporter** | Start | Ein zweiter Teleporter (zum Eingang gedreht) und der Brunnen des Sirius neben dem Weg |
+| 5 | **Teleporter** | Start | Ein zweiter Teleporter (zum Eingang gedreht) und der Brunnen „Sirius' Relief“ neben dem Weg |
 | 6 | **Boss** | Vorraum | Silber und eine Blutphiole vor dem Bossportal, dahinter der Bossraum mit Gorm |
 
 **Eine neue Station** ist ein Eintrag in `TestCourse.Stations` (`src/SilverAndAsh.Core/Course/TestCourse.cs`): Name, Raumart, Breite in Zellen und eine Methode, die sie einrichtet (`CourseRoom.Ghoul`, `Column`, `Weapon`, `Teleporter`, `Well`, `SecretRoomNorth`, `BossRoomSouth` …). Tür und Schild entstehen von selbst. Säulen prüft dieselbe Regel wie in den erzeugten Levels (`ColumnPlacement.Check`); passt eine nicht, bricht der Aufbau mit einer Meldung ab, statt sie still wegzulassen.

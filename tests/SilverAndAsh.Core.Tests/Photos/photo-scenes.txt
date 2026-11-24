@@ -6,8 +6,9 @@ room-secret | ticks 1 menu None ----- | A secret room (behind a cracked wall) fr
 room-antechamber | ticks 1 menu None ----- | The antechamber from its entrance: the boss door to one side, the boss-gate teleporter in the far corner (issue #565).
 room-boss | ticks 1 menu None ----- | The boss room from 12 m, Gorm waiting.
 chests-4m | ticks 1 menu None ----- | The chests of all four tiers side by side 4 m away, closed and locked, and an open one.
-well-ready | ticks 1 menu None ----- | The Well of Sirius 4 m away, ready: water in its three bowls.
-well-spent | ticks 1 menu None ----- | The Well of Sirius 4 m away, spent: dry.
+well-ready | ticks 1 menu None ----- | Sirius' Relief 4 m away, ready: water in its three bowls.
+well-spent | ticks 1 menu None ----- | Sirius' Relief 4 m away, spent: dry.
+well-hint | ticks 1 menu None ----- | Sirius' Relief 2 m away, within reach: the hint [F] Use Sirius' Relief (issue #716).
 teleporter-locked-3m | ticks 1 menu None ----- | A teleporter not found yet, 3 m away: dark crystal (issue #480).
 teleporter-unlocked-3m | ticks 1 menu None ----- | A found teleporter 3 m away: its crystal shines by itself (issue #480).
 teleporter-locked-10m | ticks 1 menu None ----- | A teleporter not found yet, 10 m away (issue #480).
@@ -185,5 +186,5 @@ course-1-arms | ticks 1 menu None ----- | Station 1 of the test course from its 
 course-2-columns | ticks 1 menu None ----- | Station 2 of the test course from just inside its entrance: two columns either side of the way, silver beside one, a ghoul beyond (issue #718).
 course-3-cracked-wall | ticks 1 menu None ----- | Station 3 of the test course from its south-east corner: the cracked wall in the middle of its north wall (issue #718).
 course-4-portcullis | ticks 65 menu None ----- | Station 4 of the test course, sealed: from inside the arena back at the fallen grate, the ghoul and the bat coming out by the column (issue #718).
-course-5-teleporter | ticks 1 menu None ----- | Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, the Well of Sirius beside the way (issue #718).
+course-5-teleporter | ticks 1 menu None ----- | Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, Sirius' Relief beside the way (issue #718).
 course-6-boss | ticks 1 menu None ----- | Station 6 of the test course from its north-east corner: the antechamber, silver and a blood vial before the boss portal (issue #718).

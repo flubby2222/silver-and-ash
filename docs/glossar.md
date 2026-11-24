@@ -63,6 +63,7 @@ Die eigenen Wörter des Projekts, je einmal festgelegt. Wer in Issues, Pull Requ
 | **Ein Spieler** | In `Core` nie „der Spieler“ – so bleibt Online-Coop möglich ([ADR 0003](entscheidungen/0003-online-coop-offenhalten.md)). |
 | **Seed** | Die Startzahl des Zufalls. Sie liegt im Spielzustand, damit ein Durchlauf wiederholbar ist. |
 | **Zelle** | Ein Feld im Raster eines Levels, mit Boden- und Deckenhöhe ([level-format.md](level-format.md)). |
+| **Brunnen** („Sirius' Relief“, im Code *WellOfSirius*) | Der dreistufige Steinbrunnen, der in einem ruhigen Raum je Ebene stehen kann; man benutzt ihn mit F. Bis #716 hieß er im Spiel „Well of Sirius“; Klassen, Ereignis und Modelldateien tragen noch den alten Namen. |
 | **Balancing-Werte** | Die Zahlen des Spiels (Schaden, Kosten, Zeiten) in `assets/balance.json`. Tests rechnen mit `Balance.Default`. |
 
 ## Release und Qualität

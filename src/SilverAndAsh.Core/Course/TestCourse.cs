@@ -157,7 +157,7 @@ public static class TestCourse
         room.Bat(2, CourseRoom.Way + 1);
     }
 
-    // 5: a teleporter turned towards the way in (west), the Well of Sirius beside the way - and with the start's
+    // 5: a teleporter turned towards the way in (west), Sirius' Relief beside the way - and with the start's
     // teleporter, two to travel between.
     private static void TeleporterAndWell(CourseRoom room)
     {
