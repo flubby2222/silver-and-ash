@@ -182,6 +182,17 @@ public class PhotoSceneTests
         Assert.Equal(string.Join("\n", differences.Take(2)), FirstDifferences(differences.Take(2).ToList()));
     }
 
+    [Fact]
+    public void The_recording_message_counts_the_rest_only_beyond_the_shown_differences()
+    {
+        // Issue #682: the edge of the shortened message - exactly ShownDifferences in full without a count, one more
+        // with "... and 1 more" (with ">=" instead of ">" the first would end in "... and 0 more").
+        var differences = Enumerable.Range(1, ShownDifferences + 1).Select(line => $"line {line}:\n  recorded: a\n  now:      b").ToList();
+
+        Assert.Equal(string.Join("\n", differences.Take(ShownDifferences)), FirstDifferences(differences.Take(ShownDifferences).ToList()));
+        Assert.Equal(string.Join("\n", differences.Take(ShownDifferences)) + "\n... and 1 more", FirstDifferences(differences));
+    }
+
     private static string Fingerprint(PhotoScene scene, PhotoStudio studio)
     {
         var setup = scene.Build(studio);
@@ -246,7 +257,42 @@ public class PhotoSceneTests
 
         var ran = setup.Run();
 
-        Assert.True(ran < setup.Ticks, $"{name}: the stop condition never fired, all {setup.Ticks} ticks ran");
+        var problem = CapProblem(name, setup, ran);
+        Assert.True(problem is null, problem);
+    }
+
+    // Issue #682: Run returns tick + 1 when the condition fires, so a condition that fires only at the last tick gives
+    // the same count as one that never fires. The message names both, so nobody hunts for a condition that does fire.
+    private static string? CapProblem(string name, PhotoSetup setup, int ran) =>
+        ran < setup.Ticks
+            ? null
+            : $"{name}: did not stop before its cap, all {setup.Ticks} ticks ran (the stop condition fired only at the last tick or never)";
+
+    [Fact]
+    public void A_stop_condition_that_fires_only_at_the_last_tick_counts_as_not_stopping_and_the_message_says_so()
+    {
+        // Issue #682: a real scene with its condition swapped for one that fires after a given tick, run as the game
+        // runs it.
+        var name = PhotoScenes.All.Select(scene => scene.Name)
+            .First(scene => Built(scene) is { StopWhen: not null, Ticks: >= 2 });
+
+        int RanWithAConditionFiringAfter(int tick, out string? problem)
+        {
+            var built = Built(name);
+            var ticks = 0;
+            var setup = built with { StopWhen = _ => ++ticks >= tick };
+            var ran = setup.Run();
+            problem = CapProblem(name, setup, ran);
+            return ran;
+        }
+
+        var cap = Built(name).Ticks;
+
+        Assert.Equal(cap, RanWithAConditionFiringAfter(cap, out var atTheLastTick));
+        Assert.NotNull(atTheLastTick);
+        Assert.Contains("only at the last tick or never", atTheLastTick, StringComparison.Ordinal);
+        Assert.Equal(cap - 1, RanWithAConditionFiringAfter(cap - 1, out var oneTickEarlier));
+        Assert.Null(oneTickEarlier);
     }
 
     [Theory]
