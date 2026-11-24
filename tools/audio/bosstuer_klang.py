@@ -11,13 +11,18 @@ Fassungen mit den Zeiten der Probe (Anschlag bei Tick 78, Oeffnen 132 Ticks, Anl
 Jede Datei muss Byte fuer Byte die Pruefsumme haben, die wav.sha256 der Probe fuer die abgenommene Fassung nennt;
 sonst bricht das Skript ab und schreibt nichts. Nur Standardbibliothek, Zufall nur mit festen Seeds (in der Probe).
 
-    python tools/audio/bosstuer_klang.py           # schreibt assets/audio/bosstuer-*.wav
+Daneben schreibt es die Begleitdatei bosstuer-ticks.json (Issue 668) mit den Ticks, auf die die Klaenge gebaut sind
+(Anschlag, Dauer des Oeffnens). Ein Test vergleicht sie mit Balance.Default: Aendert eine Balancing-Runde bossShutTick
+oder bossOpenTime, wird er rot, bis die Klaenge mit den neuen Ticks neu gebaut und abgehoert sind.
+
+    python tools/audio/bosstuer_klang.py           # schreibt assets/audio/bosstuer-*.wav und bosstuer-ticks.json
     python tools/audio/bosstuer_klang.py --pruefen # baut neu und vergleicht mit assets/audio
 
 Danach: python tools/models/checksums.py (schreibt audio.sha256 neu).
 """
 import hashlib
 import importlib.util
+import json
 import os
 import sys
 import tempfile
@@ -37,6 +42,28 @@ GEWAEHLT = {
     "r2-tor-schliessen-2-starkes-grollen-langer-nachklang.wav": "bosstuer-schliessen.wav",
     "r2-tor-oeffnen-1-geroell-fein.wav": "bosstuer-oeffnen.wav",
 }
+
+
+# Begleitdatei (Issue 668): die Ticks, auf die die Klaenge gebaut sind, unter den Namen aus assets/balance.json
+TICKS = "bosstuer-ticks.json"
+
+
+def ticks():
+    """Inhalt der Begleitdatei: Anschlag-Tick und Dauer des Oeffnens in Ticks, dazu das Skript, das sie schreibt."""
+    return {
+        "script": "tools/audio/bosstuer_klang.py",
+        "bossShutTick": ANSCHLAG_TICK,
+        "bossOpenTicks": OEFFNEN_TICKS,
+    }
+
+
+def ticks_lesen():
+    """Die Begleitdatei in assets/audio, oder None, wenn es sie nicht gibt."""
+    pfad = os.path.join(ZIEL, TICKS)
+    if not os.path.exists(pfad):
+        return None
+    with open(pfad, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def sha256(daten):
@@ -100,11 +127,20 @@ def main():
             if not os.path.exists(pfad) or open(pfad, "rb").read() != daten:
                 schlecht.append(spiel)
         print("bitgleich zu assets/audio:", not schlecht, schlecht)
-        return 1 if schlecht else 0
+        # Die Begleitdatei nach Inhalt vergleichen: git schreibt sie unter Windows mit CRLF aus.
+        passt = ticks_lesen() == ticks()
+        print(f"{TICKS} passt zu den Ticks des Skripts:", passt)
+        return 1 if schlecht or not passt else 0
     for spiel, (_, daten) in neu.items():
         with open(os.path.join(ZIEL, spiel), "wb") as f:
             f.write(daten)
         print("geschrieben:", spiel, len(daten), "Bytes")
+    if ticks_lesen() != ticks():
+        # Nur bei anderem Inhalt schreiben, sonst zeigte git status nach jedem Lauf andere Zeilenenden.
+        with open(os.path.join(ZIEL, TICKS), "w", encoding="utf-8", newline="\n") as f:
+            json.dump(ticks(), f, indent=2)
+            f.write("\n")
+        print("geschrieben:", TICKS)
     return 0
 
 
