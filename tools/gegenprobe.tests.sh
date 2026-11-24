@@ -394,14 +394,17 @@ expect 'run: | head, working folder clean'  [ -z "$(git -C "$repo" status --porc
 
 # --message (issue #682): when caught, the message of the first red test as listed, decoded, paths shortened.
 run_message_probe() { ( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" --message probe.txt good "$1" Probe ); }
-message_lines() { awk '/message of the first red test/ { on = 1; next } on' "$work/run-out"; }
+# perl, not awk or sed: those drop a CR in Git Bash, and "no CR left" would then never fail.
+message_lines() { perl -ne 'print if $on; $on = 1 if /message of the first red test/' "$work/run-out"; }
 message_has() { message_lines | grep -q -F -- "$1"; }
+# A message line that begins with $1 (plain words, no regex signs) right after the indent.
+message_line_starts() { message_lines | grep -q -- "^     $1"; }
 : > "$work/lock-err"
 run_message_probe broken > "$work/run-out" 2>"$work/lock-err"
 expect 'message: caught, exit 0'            [ $? = 0 ]
 expect 'message: caught, names the test'    run_out 'message of the first red test (Probe.Test):'
 expect 'message: caught, signs decoded'     message_has 'Probe: value is "broken" <not good> &amp; red'
-expect 'message: caught, &#xA; is a line'   message_has 'second line in'
+expect 'message: caught, &#xA; is a line'   message_line_starts 'second line in'
 expect 'message: caught, CRLF is a line'    [ "$(message_lines | tail -n 1)" = '     third line' ]
 expect 'message: caught, no CR left'        [ -z "$(message_lines | tr -d -c '\r')" ]
 expect 'message: caught, path shortened'    message_has '...\Probe.cs:line 3'

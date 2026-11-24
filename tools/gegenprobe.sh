@@ -271,7 +271,8 @@ show_message() {
     fi
     local lines
     lines="$(wc -l < "$work/message" | tr -d ' ')"
-    head -n 30 "$work/message" | shorten_paths | sed 's/^/     /'
+    # Indented with perl, not sed: sed in Git Bash drops a CR on its own, so the line ends would differ by platform.
+    head -n 30 "$work/message" | shorten_paths | perl -pe 's/^/     /'
     if [ "$lines" -gt 30 ]; then
         echo "     ... and $((lines - 30)) more line(s)"
     fi
