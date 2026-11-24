@@ -132,11 +132,12 @@ internal static class DoorSlam
     // give or take a little for rounding.
     private const float PushTolerance = 0.002f;
 
-    // A running body starts this far before the door's box (on the antechamber side) and is let go so that it is in the
-    // doorway in the slam tick: the player walks in (full input), a ghoul or bat is knocked in by a charged club blow.
-    // A tenth of the charged knock (0.6 m by Balance.Default, issue #672): it moves with the club's values, so a knocked
-    // body still reaches the doorway when a balancing round shortens the knock.
-    private static float RunUp(Balance balance) => balance.Club.ChargedKnockback / 10f;
+    // A running body starts one body width before the door's box (on the antechamber side), clear of the doorway, and is
+    // let go so that it is in the doorway in the slam tick: the player walks in (full input), a ghoul or bat is knocked in
+    // by a charged club blow. The run-up follows the body, not the club (issue #676): awake ghouls and bats walk into the
+    // doorway on their own, so the run checks at the slam that the knock still carries them (RunningCase.Carried). A
+    // run-up taken from the knock would shrink with it, and a knock too short to carry a body could never be seen.
+    private static float RunUp(BodyShape shape) => 2f * shape.Radius;
 
     // Ticks a running body is held at its start before it is let go, in the probe that finds when it reaches the doorway.
     private const int ProbeHold = 10;
@@ -144,18 +145,19 @@ internal static class DoorSlam
     // Walking bodies step as the player does (BodySizes.Player.StepHeight); a bat flies over any floor
     // (BodySizes.Bat.StepHeight). Standing and Running: places played per side of the middle at least - about three
     // quarters of what seeds 1..6 play today (issue #647: standing player 16, ghoul 14, bat 21, Gorm 3; running player
-    // 9, ghoul 13, bat 17 on each side), so a grid half as fine is a finding. Gorm does not run in: he has no knockback,
+    // 9, ghoul 9, bat 17 on each side - the ghoul 13 until issue #676, when 4 places a side beside the middle turned out
+    // to be walked in after the knock), so a grid half as fine is a finding. Gorm does not run in: he has no knockback,
     // and his own steps would make the run-up depend on the tick it starts (a gap, issue #647).
     private static readonly Body[] Bodies =
     [
         new("player", new(BodySizes.Player.Radius, BodySizes.Player.Height, BodySizes.Player.StepHeight, Flies: false), 12,
-            _ => null, new(7, (_, _) => null, RunInPlayer)),
+            _ => null, new(7, (_, _) => null, RunInPlayer, _ => true)),
         new("ghoul", new(BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height, BodySizes.Player.StepHeight, Flies: false), 10,
             world => world.Ghouls.FirstOrDefault(ghoul => !ghoul.IsDead),
-            new(10, (play, report) => PortalSite.WakeInArena(play, play.World.Ghouls.Where(ghoul => !ghoul.IsDead), "ghoul", report), KnockIn)),
+            new(7, (play, report) => PortalSite.WakeInArena(play, play.World.Ghouls.Where(ghoul => !ghoul.IsDead), "ghoul", report), KnockIn, IsKnocked)),
         new("bat", new(BodySizes.Bat.Radius, BodySizes.Bat.Height, BodySizes.Bat.StepHeight, Flies: true), 15,
             world => world.Bats.FirstOrDefault(bat => !bat.IsDead),
-            new(13, (play, report) => PortalSite.WakeInArena(play, play.World.Bats.Where(bat => !bat.IsDead), "bat", report), KnockIn)),
+            new(13, (play, report) => PortalSite.WakeInArena(play, play.World.Bats.Where(bat => !bat.IsDead), "bat", report), KnockIn, IsKnocked)),
         new("Gorm", new(BodySizes.Gorm.Radius, BodySizes.Gorm.Height, BodySizes.Player.StepHeight, Flies: false), 2,
             world => world.Gorm, Running: null),
     ];
@@ -237,8 +239,8 @@ internal static class DoorSlam
     // every 10 cm across.
     private static void RunsIn(GameWorld start, string ctx, Body body, RunningCase running, Level level, PortalSite site, Report report)
     {
-        var places = report.Tally($"{ctx} {body.Name} running", $"{body.Name}: no free run-up at this distance from the middle or it does not reach the doorway", running.Places);
-        var from = -(BossPortalShape.HalfDepth + body.Shape.Radius + RunUp(start.Balance));
+        var places = report.Tally($"{ctx} {body.Name} running", $"{body.Name}: no free run-up at this distance from the middle or it does not reach the doorway while its run carries it", running.Places);
+        var from = -(BossPortalShape.HalfDepth + body.Shape.Radius + RunUp(body.Shape));
         foreach (var across in PortalSite.Steps(-1.9f, 1.9f, 0.1f))
         {
             if (!body.Shape.IsFree(level, body.Shape.Place(level, site.At(across, from))))
@@ -268,6 +270,7 @@ internal static class DoorSlam
         var at = body.Shape.Place(probe.World.Level, probeSite.At(across, from));
         var limit = Play.BossDoorShutTicks(probe.World);
         int? inDoorway = null;
+        var carried = false;
         var shut = -1;
         for (var tick = 0; tick <= limit && shut < 0; tick++)
         {
@@ -275,6 +278,7 @@ internal static class DoorSlam
             if (tick >= ProbeHold && inDoorway is null && !probeSite.Door.Blocks && probeSite.InDoorway(Position(probe, probeEnemy)))
             {
                 inDoorway = tick - ProbeHold;
+                carried = running.Carried(probeEnemy);
             }
 
             shut = probeSite.Door.Blocks ? tick : -1;
@@ -285,8 +289,10 @@ internal static class DoorSlam
             return;
         }
 
+        // A body that gets into the doorway only after its knock is over (the stone of the jamb stopped it, or the knock
+        // is too short for the run-up) walked in on its own: no run with a swing, skipped (issue #676).
         var hold = shut - (inDoorway ?? shut);
-        if (inDoorway is null || hold < 0)
+        if (inDoorway is null || hold < 0 || !carried)
         {
             places.Skipped();
             return;
@@ -304,6 +310,7 @@ internal static class DoorSlam
         }
 
         if (report.Check(!site.Door.Blocks, $"{where}: boss door does not block in tick {shut} after the sealing, as in the probe")
+            || report.Check(!running.Carried(enemy), $"{where}: not carried into the doorway - the knock was over at the slam")
             || !Pushed(play, site, body, enemy, where, report))
         {
             return;
@@ -337,14 +344,18 @@ internal static class DoorSlam
     private static void KnockIn(Play play, PortalSite site, ITarget? enemy, Vector3 at)
     {
         var club = play.World.Balance.Club;
-        var knockback = enemy switch
-        {
-            Ghoul ghoul => ghoul.Knockback,
-            Bat bat => bat.Knockback,
-            _ => throw new InvalidOperationException($"no knockback for {enemy}"),
-        };
-        knockback.Start(Inwards(site), club.ChargedKnockback, club.KnockbackTime);
+        KnockbackOf(enemy).Start(Inwards(site), club.ChargedKnockback, club.KnockbackTime);
     }
+
+    // Whether the knock still carries a knocked body (issue #676).
+    private static bool IsKnocked(ITarget? enemy) => KnockbackOf(enemy).IsActive;
+
+    private static Knockback KnockbackOf(ITarget? enemy) => enemy switch
+    {
+        Ghoul ghoul => ghoul.Knockback,
+        Bat bat => bat.Knockback,
+        _ => throw new InvalidOperationException($"no knockback for {enemy}"),
+    };
 
     // The direction along the passage into the boss room, on the ground plane.
     private static Vector3 Inwards(PortalSite site) => Vector3.Normalize(site.At(0f, 1f) - site.At(0f, 0f));
@@ -419,8 +430,10 @@ internal static class DoorSlam
     }
 
     // How a body runs into the doorway: the places it plays per side of the middle at least, how the figure that plays it
-    // is woken (null: the player) and how it is let go (walking in, knocked in).
-    private sealed record RunningCase(int Places, Func<Play, Report, ITarget?> Awake, Action<Play, PortalSite, ITarget?, Vector3> Launch);
+    // is woken (null: the player), how it is let go (walking in, knocked in) and whether that still carries it at the
+    // slam (the player walks under full input to the end; a knocked body only while its knock lasts, issue #676).
+    private sealed record RunningCase(
+        int Places, Func<Play, Report, ITarget?> Awake, Action<Play, PortalSite, ITarget?, Vector3> Launch, Func<ITarget?, bool> Carried);
 }
 
 /// <summary>
