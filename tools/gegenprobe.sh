@@ -24,7 +24,7 @@
 #                    the exit code of the bot (1 with findings) besides the one of this script (issue #660)
 #   --message        when caught, also show the message of the first red test as listed (issue #682), at most
 #                    30 lines, paths shortened; tests only - with --bot it stops with exit code 2
-#   --timeout SECONDS  end a test that runs longer than this (issue #712, default 60): dotnet test gets
+#   --timeout SECONDS  end a test that runs longer than this (issue #712, default 120, #733): dotnet test gets
 #                    --blame-hang-timeout, so a change that makes a test loop forever ends the run with "TIMED OUT"
 #                    instead of blocking it; 0 = no limit, as before; tests only - with --bot it stops with exit code 2
 #
@@ -42,7 +42,7 @@
 # (2>&1 | head) still puts the file back and lets go of the lock (issue #651).
 #
 # Exit code: 0 = caught (at least one test red, with --bot: a finding), 1 = survived (all green, no finding), 2 = could
-# not run (another run in this working folder, unclean working folder, text not found or found more than once without
+# not run (a wrong call such as an option without its value, another run in this working folder, unclean working folder, text not found or found more than once without
 # --all, control run red, with findings or timed out, the bot ended with another code than 0 or 1 ...), 3 = no result with the change (it does not compile, a built file could not be copied, or the test
 # project does not build: no statement about the tests), 4 = the test run with the change was aborted (fewer tests ran
 # than in the control run, e.g. the test process crashed, or a test ran longer than --timeout: no statement about the
@@ -68,17 +68,23 @@ bot=0
 message=0
 project="tests/SilverAndAsh.Core.Tests"
 name=""
-timeout=60
+timeout=120
 timeout_given=0
+# An option that needs a value but stands last (or, for --project and --name, has an empty one) is a wrong call:
+# exit code 2, not the 1 of "${2?...}" - that would read as "survived" in a list of probes (issue #733).
+missing_value() {
+    echo "gegenprobe: $1 needs $2 after it (see --help)" >&2
+    exit 2
+}
 while [ $# -gt 0 ]; do
     case "$1" in
         --all) all=1; shift ;;
-        --timeout) timeout="${2?--timeout needs a number of seconds}"; timeout_given=1; shift 2 ;;
+        --timeout) [ $# -ge 2 ] || missing_value "$1" 'a number of seconds'; timeout="$2"; timeout_given=1; shift 2 ;;
         --regex) regex=1; shift ;;
         --bot) bot=1; shift ;;
         --message) message=1; shift ;;
-        --project) project="${2:?--project needs a path}"; shift 2 ;;
-        --name) name="${2:?--name needs a text}"; shift 2 ;;
+        --project) [ -n "${2:-}" ] || missing_value "$1" 'a path'; project="$2"; shift 2 ;;
+        --name) [ -n "${2:-}" ] || missing_value "$1" 'a text'; name="$2"; shift 2 ;;
         -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         --) shift; break ;;
         -*) echo "gegenprobe: unknown option $1 (see --help)" >&2; exit 2 ;;
@@ -241,7 +247,7 @@ build_errors() {
     grep -E "error [A-Z]+[0-9]+" "$1" | sed -E 's/ \[[^]]*\]$//' | shorten_paths | sort -u | head -n 10 >&2
 }
 
-# With --timeout (issue #712, default 60 s): dotnet test ends a test that runs longer and the run with it. No dump:
+# With --timeout (issue #712, default 120 s since #733): dotnet test ends a test that runs longer and the run with it. No dump:
 # it would take minutes and some hundred MB, and nobody reads it here.
 hang_limit=()
 if [ "$timeout" -gt 0 ]; then
@@ -263,7 +269,8 @@ hung_test() {
 }
 
 # Runs the filtered tests; sets total, failed, red (names), hung (the test that ran longer than --timeout, empty if
-# none did) and returns 3 if nothing could be run (build error).
+# none did) and returns 3 if nothing could be run (build error). A run ended after the limit without a result file
+# sets total to "" (how many finished is unknown).
 run_tests() {
     local label="$1"
     local results="$work/$label"
@@ -272,6 +279,13 @@ run_tests() {
     hung="$(hung_test "$label")"
     local trx
     trx="$(find "$results" -name '*.trx' 2>/dev/null | head -n 1)"
+    if [ -z "$trx" ] && [ -n "$hung" ]; then
+        # The time-out first (issue #733): without a result file it is still no build error.
+        total=""
+        failed=0
+        red=""
+        return 0
+    fi
     if [ -z "$trx" ]; then
         build_errors "$work/$label.log"
         return 3
@@ -424,7 +438,11 @@ report_aborted() {
 report_timed_out() {
     echo "   result: TIMED OUT - a test ran longer than $timeout s with the change and was ended (endless loop?):"
     echo "     $hung"
-    echo "   $total of $control_total test(s) finished before - no statement about the tests"
+    if [ -n "$total" ]; then
+        echo "   $total of $control_total test(s) finished before - no statement about the tests"
+    else
+        echo "   no result file was written, how many test(s) finished before is unknown - no statement about the tests"
+    fi
     if [ "$failed" != 0 ]; then
         echo "   red before the run ended:"
         echo "$red" | sed 's/^/     /'
