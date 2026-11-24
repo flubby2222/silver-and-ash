@@ -7,7 +7,7 @@ using SilverAndAsh.Core.Presentation;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The Well of Sirius (issue #438, see <see cref="WellOfSiriusLook"/>): the ready model with flowing water, or the dry
+/// Sirius' Relief (issue #438, see <see cref="WellOfSiriusLook"/>): the ready model with flowing water, or the dry
 /// spent one. Pure presentation. Without its model a stone placeholder stands in (a basin and a column).
 /// </summary>
 internal sealed class WellOfSiriusView : IDisposable

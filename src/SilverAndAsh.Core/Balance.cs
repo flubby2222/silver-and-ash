@@ -112,7 +112,7 @@ public sealed record Balance
     /// <summary>Portcullises (issue #540): how long one takes to fall and to rise.</summary>
     public GratesBalance Grates { get; init; } = new();
 
-    /// <summary>The Well of Sirius (issue #438): how often a level has one and how wide it stands.</summary>
+    /// <summary>Sirius' Relief (issue #438): how often a level has one and how wide it stands.</summary>
     public WellBalance Well { get; init; } = new();
 
     /// <summary>Free-standing columns (issue #539): how much room they must leave to walls, doors and each other.</summary>
@@ -462,7 +462,7 @@ public sealed record DifficultyBalance
 }
 
 /// <summary>
-/// The Well of Sirius (issue #438). Price per throw, chances and the most throws are not decided yet; until then using
+/// Sirius' Relief (issue #438). Price per throw, chances and the most throws are not decided yet; until then using
 /// it only turns it from ready to spent.
 /// </summary>
 public sealed record WellBalance

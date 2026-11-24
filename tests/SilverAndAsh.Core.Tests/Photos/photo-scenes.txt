@@ -6,8 +6,9 @@ room-secret | ticks 1 menu None ----- | A secret room (behind a cracked wall) fr
 room-antechamber | ticks 1 menu None ----- | The antechamber from its entrance: the boss door to one side, the boss-gate teleporter in the far corner (issue #565).
 room-boss | ticks 1 menu None ----- | The boss room from 12 m, Gorm waiting.
 chests-4m | ticks 1 menu None ----- | The chests of all four tiers side by side 4 m away, closed and locked, and an open one.
-well-ready | ticks 1 menu None ----- | The Well of Sirius 4 m away, ready: water in its three bowls.
-well-spent | ticks 1 menu None ----- | The Well of Sirius 4 m away, spent: dry.
+well-ready | ticks 1 menu None ----- | Sirius' Relief 4 m away, ready: water in its three bowls.
+well-spent | ticks 1 menu None ----- | Sirius' Relief 4 m away, spent: dry.
+well-hint | ticks 1 menu None ----- | Sirius' Relief 2 m away, within reach: the hint [F] Use Sirius' Relief (issue #716).
 teleporter-locked-3m | ticks 1 menu None ----- | A teleporter not found yet, 3 m away: dark crystal (issue #480).
 teleporter-unlocked-3m | ticks 1 menu None ----- | A found teleporter 3 m away: its crystal shines by itself (issue #480).
 teleporter-locked-10m | ticks 1 menu None ----- | A teleporter not found yet, 10 m away (issue #480).

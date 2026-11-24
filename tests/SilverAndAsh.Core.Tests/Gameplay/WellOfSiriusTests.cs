@@ -5,7 +5,7 @@ using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
-/// <summary>The Well of Sirius in the world (issue #438): it blocks the way, is offered with F and turns spent.</summary>
+/// <summary>Sirius' Relief in the world (issue #438): it blocks the way, is offered with F and turns spent.</summary>
 public class WellOfSiriusTests
 {
     private static readonly int Second = SimulationClock.TicksPerSecond;
@@ -92,7 +92,7 @@ public class WellOfSiriusTests
         var target = world.InteractionTarget(world.Player);
 
         Assert.Same(world.Well, target);
-        Assert.Equal(new InteractionOffer("Use Well of Sirius", true), target!.OfferFor(world.Player));
+        Assert.Equal(new InteractionOffer("Use Sirius' Relief", true), target!.OfferFor(world.Player));
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class WellOfSiriusTests
         Run(world, PlayerInput.None, 1);
 
         Assert.Null(world.InteractionTarget(world.Player));
-        Assert.Equal(new InteractionOffer("Use Well of Sirius", false), world.Well!.OfferFor(world.Player));
+        Assert.Equal(new InteractionOffer("Use Sirius' Relief", false), world.Well!.OfferFor(world.Player));
         Assert.DoesNotContain(Run(world, PressF, 1), e => e is WellOfSiriusUsed);
         Assert.True(world.Well.IsSpent);
     }

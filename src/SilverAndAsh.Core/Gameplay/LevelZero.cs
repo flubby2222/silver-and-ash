@@ -34,7 +34,7 @@ public sealed class LevelZero
 
     /// <summary>
     /// The level of a run with <paramref name="seed"/>, exactly as <see cref="NewRun"/> uses it: rooms, then the boss
-    /// room's columns (issue #597, nothing rolled), then enemies, then chests, then teleporters, then the Well of Sirius (which keeps clear of the teleporters), then the grates of the
+    /// room's columns (issue #597, nothing rolled), then enemies, then chests, then teleporters, then Sirius' Relief (which keeps clear of the teleporters), then the grates of the
     /// arena doors (issue #558, nothing rolled). The balance
     /// report builds its levels with this, too.
     /// </summary>

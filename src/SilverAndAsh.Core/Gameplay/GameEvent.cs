@@ -147,7 +147,7 @@ public sealed record ChestUnlocked(int ChestId, int PlayerId) : GameEvent;
 public sealed record ChestOpened(int ChestId, int PlayerId, ChestTier Tier) : GameEvent;
 
 /// <summary>
-/// Player <paramref name="PlayerId"/> used the Well of Sirius; it is spent now (issue #438). No sound yet - a new kind
+/// Player <paramref name="PlayerId"/> used Sirius' Relief; it is spent now (issue #438). No sound yet - a new kind
 /// of sound needs a listening test first.
 /// </summary>
 public sealed record WellOfSiriusUsed(int PlayerId) : GameEvent;

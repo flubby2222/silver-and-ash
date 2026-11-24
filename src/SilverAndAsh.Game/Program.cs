@@ -484,7 +484,7 @@ static void RunGame(
         // The spiral staircase of every wall variant (issue #300); without one the placeholder boxes.
         using var stairsView = StairsView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
-        // The Well of Sirius, ready or spent (issue #438); without its model a stone placeholder.
+        // Sirius' Relief, ready or spent (issue #438); without its model a stone placeholder.
         using var wellView = WellOfSiriusView.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
 
         // The teleporters, locked or unlocked (issue #480); without their models placeholder boxes.

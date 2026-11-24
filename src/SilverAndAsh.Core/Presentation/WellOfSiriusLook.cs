@@ -4,7 +4,7 @@ using SilverAndAsh.Core.Gameplay;
 namespace SilverAndAsh.Core.Presentation;
 
 /// <summary>
-/// The Well of Sirius (issue #438): two models from tools/models/well_of_sirius.py on one texture,
+/// Sirius' Relief (issue #438): two models from tools/models/well_of_sirius.py on one texture,
 /// assets/models/well_of_sirius_bereit.glb (ready, with water) and well_of_sirius_verbraucht.glb (spent, dry). Neither
 /// part moves in its file; the well stands in the file space of <see cref="WellOfSirius"/> (origin on the floor in its
 /// middle, never turned).

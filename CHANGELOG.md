@@ -6,6 +6,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ## [Unveröffentlicht]
 
+### Geändert
+- **Der Brunnen heißt „Sirius' Relief“:** Am Brunnen steht jetzt „[F] Use Sirius' Relief“ statt „Use Well of Sirius“. Regeln, Modell und Ort bleiben gleich. Foto: `--photo well-hint` (#716)
+
 ## [0.12.0] – 2026-11-24 – Portal & Säulen
 
 ### Hinzugefügt
