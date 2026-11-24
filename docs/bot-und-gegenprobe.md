@@ -80,6 +80,35 @@ git worktree remove ../vergleich-main
 
 Ein Agent, der selbst schon in einem Worktree arbeitet, legt keinen zweiten an. Er holt den Stand von `main` für einzelne Dateien mit `git checkout origin/main -- <pfad>`, lässt den Modus laufen und holt seinen eigenen Stand mit `git checkout HEAD -- <pfad>` zurück.
 
+### Hängende Gegner (`stuck`)
+
+Der Modus `stuck` (Issue #591) sucht Gegner, die einen Spieler jagen, aber weder zu ihm kommen noch angreifen – etwa weil sie an einer Säule, Kiste oder Stufe festhängen. Der Bot betritt jede Arena (versiegelt) und den Bossraum und steht dort still: erst an der Tür, dann in der Mitte des Raums. Er schlägt und schießt nicht, damit die Gegner frei handeln.
+
+**Wann ein Gegner hängt:** Er lebt, ist treffbar, schläft nicht und jagt (Ghul und Fledermaus nicht mehr lauernd und nicht im Rückstoß; Gorm immer). Er sieht einen lebenden Spieler nach seiner eigenen Sichtregel oder steht mit ihm im selben Raum. Und er bleibt `N` Ticks lang (flach gemessen) innerhalb seines eigenen Körperradius und löst keines seiner Angriffsereignisse aus. Jeder Befund nennt Seed, Raum, Ticks, Gegner mit Nummer, Zustand, Ort mit Zelle, den Abstand zum Spieler und zum nächsten Gegner.
+
+**Die Schwelle `N` kommt aus der Balance:** das Doppelte der längsten Pause, in der ein Gegner zu Recht stillsteht. Ändert jemand die Werte in `assets/balance.json`, wandert die Schwelle mit.
+
+| Gegner | Längste erlaubte Pause (Balance) | `N` bei den aktuellen Werten |
+|---|---|---|
+| Ghul | `WindUpTime` + `RecoverTime` + `RepathTime` | 192 Ticks |
+| Fledermaus | `SpitInterval` + `SpitWindUpTime` + `ScreechTime` + `CircleHeightMax` / `ClimbSpeed` + `RepathTime` | 472 Ticks |
+| Gorm | `HammerWindUp` + `ShockwaveRadius` / `ShockwaveSpeed` + `StuckTime` + `PauseTime` + `RoarTime` + `RepathTime` | 900 Ticks |
+
+**Anstehende Ghule:** Ghule drängen sich vor einem stillstehenden Spieler; wer hinter einem anderen wartet, hängt nicht. Steht ein Ghul bei Erreichen der Schwelle an einen anderen Gegner gedrückt, zählt der Bot das als „pressed against another enemy (not counted as hanging)“ und fängt neu an zu messen. Fledermaus und Gorm haben keine solche Ausnahme.
+
+**Untergrenzen:** Wird in einem Seed kein jagender Ghul oder kein Gorm beobachtet, oder über alle Seeds keine Fledermaus, ist das ein Befund – sonst könnte der Modus unbemerkt nichts mehr prüfen. Am Ende steht je Gegnerart, wie viele beobachtet wurden und wie lange der längste Stillstand ohne Angriff war, neben der Schwelle.
+
+**Dauer:** etwa 7 bis 8 Sekunden je Seed.
+
+Gegenproben (Issue #591; nach jeder neu bauen):
+
+| Änderung | Aufruf | Ergebnis |
+|---|---|---|
+| Ghul kriecht nicht (`Ghoul.cs`: `Move(level, Facing * _ghoul.Speed, …)` → `Vector3.Zero`) | `stuck --seeds 1` | gefangen |
+| Fledermaus kreist, spuckt und stößt nicht (`Bat.cs`, Zustand `Circling`) | `stuck --seeds 1..3` | gefangen |
+| Gorm greift nie an (`Gorm.cs`: `ChooseAttack(…) ?? ChaseThrow(…)` → `null`) | `stuck --seeds 1` | gefangen |
+| Bot beobachtet nie einen jagenden Gegner (`HangingEnemies.cs`) | `stuck --seeds 1` | gefangen (Untergrenzen) |
+
 ### Warum Reflection
 
 Der Bot ändert nichts am Spielcode. Zwei Dinge sind im Core aber `internal` und werden per *Reflection* aufgerufen (Zugriff auf nicht öffentliche Teile über ihren Namen zur Laufzeit):
