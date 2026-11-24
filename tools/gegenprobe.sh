@@ -25,7 +25,8 @@
 #
 # Every new option or way out of this script gets a case in its self-test tools/gegenprobe.tests.sh (issue #660).
 # Log lines it shows (build errors, the end of an aborted run) have their absolute paths shortened to ".../<name>", so
-# no temp folder or user name ends up in a PR comment.
+# no temp folder or user name ends up in a PR comment - see shorten_paths for what it does not catch. The message of
+# the lock names the absolute path of the git folder on purpose (it is needed to act on it): do not copy that one.
 #
 # Only one run per working folder at a time (issue #604): a second run started while the first one has the file
 # changed would take the broken file for the original. It stops at once with exit code 2 and names the running one.
@@ -36,8 +37,8 @@
 # (2>&1 | head) still puts the file back and lets go of the lock (issue #651).
 #
 # Exit code: 0 = caught (at least one test red, with --bot: a finding), 1 = survived (all green, no finding), 2 = could
-# not run (another run in this working folder, unclean working folder, text not found, control run red or with
-# findings ...), 3 = no result with the change (it does not compile, a built file could not be copied, or the test
+# not run (another run in this working folder, unclean working folder, text not found or found more than once without
+# --all, control run red or with findings, the bot ended with another code than 0 or 1 ...), 3 = no result with the change (it does not compile, a built file could not be copied, or the test
 # project does not build: no statement about the tests), 4 = the test run with the change was aborted (fewer tests ran
 # than in the control run, e.g. the test process crashed: no statement about the tests, issue #657).
 #
@@ -171,10 +172,41 @@ if cmp -s -- "$work/changed-file" "$backup"; then
     exit 2
 fi
 
-# Lines of a log shown to the reader may end up in PR comments: absolute paths (the temp folder of the trx file, the
-# user folder) become ".../<last part>" (issue #660).
+# Lines of a log shown to the reader may end up in PR comments, so no user name may be in them (issue #660). First the
+# known roots - TEMP, TMP, USERPROFILE, HOME, each also as cygpath writes it (C:\..., /c/..., C:/..., long and 8.3
+# names) - are replaced literally, whatever spaces they hold: the temp folders by <temp>, the user folders by ~. Then
+# every absolute path made of parts without spaces becomes ".../<last part>".
+# Not shortened: a path with a space outside these roots keeps the part from the space on (D:\My Games\x\y.cs ->
+# ...\My Games\x\y.cs), a path straight after , : or < keeps all of it, and a user name outside these roots (another
+# user's folder, a share \\server\...) stays.
+path_roots() {
+    local name value holder form
+    for name in TEMP TMP USERPROFILE HOME; do
+        value="${!name:-}"
+        [ -n "$value" ] || continue
+        holder='~'
+        case "$name" in TEMP|TMP) holder='<temp>' ;; esac
+        printf '%s\t%s\n' "$holder" "$value"
+        if command -v cygpath >/dev/null 2>&1; then
+            for form in -u -w -m '-w -l' '-w -s' '-m -l' '-m -s'; do
+                # shellcheck disable=SC2086 # the form is one or two options
+                printf '%s\t%s\n' "$holder" "$(cygpath $form -- "$value" 2>/dev/null)"
+            done
+        fi
+    done | awk -F '\t' 'length($2) >= 4 && !seen[tolower($2)]++ { print length($2) "\t" $0 }' | sort -rn | cut -f 2-
+}
+GEGENPROBE_PATH_ROOTS="$(path_roots)"
+export GEGENPROBE_PATH_ROOTS
+read -r -d '' shorten_paths_perl <<'PERL'
+BEGIN { @roots = map { [split /\t/, $_, 2] } grep { length } split /\n/, ($ENV{GEGENPROBE_PATH_ROOTS} // ""); }
+for my $root (@roots) {
+    my ($holder, $path) = @$root;
+    s{\Q$path\E(?=[\\/\s"']|$)}{$holder}gi;
+}
+s{(?<![^\s"'(\[=])(?:<temp>|~|[A-Za-z]:)?([\\/])(?:[^\s\\/:"']+[\\/])+}{...$1}g;
+PERL
 shorten_paths() {
-    perl -pe 's{(?<![^\s"'"'"'(\[=])(?:[A-Za-z]:)?([\\/])(?:[^\s\\/:"'"'"']+[\\/])+}{...$1}g'
+    perl -pe "$shorten_paths_perl"
 }
 
 # The error lines of a build log (error CS..., error MSB...), each once, at most ten.
@@ -285,10 +317,11 @@ report_aborted() {
     echo "gegenprobe: the test run with the change was aborted (the test process crashed?) or the change took tests" >&2
     # After a crash the end of the output is the stack; the cause ("Stack overflow") stands further up (issue #660).
     local cause
-    cause="$(grep -i -E 'Stack overflow|crashed|abgebrochen|aborted' "$work/mutated.log" | awk '!seen[$0]++' | head -n 5)"
+    # Shortened first, so two lines that differ only in their path count as one.
+    cause="$(grep -i -E 'Stack overflow|crashed|abgebrochen|aborted' "$work/mutated.log" | shorten_paths | awk '!seen[$0]++' | head -n 5)"
     if [ -n "$cause" ]; then
         echo "   away. The cause:" >&2
-        echo "$cause" | shorten_paths | sed 's/^/   /' >&2
+        echo "$cause" | sed 's/^/   /' >&2
         echo "   The end of its output:" >&2
     else
         echo "   away. The end of its output:" >&2
@@ -313,7 +346,7 @@ if [ "$status" = 3 ]; then
     exit 2
 fi
 if [ "$status" = 2 ]; then
-    echo "gegenprobe: the bot could not run with '$filter' (exit code 2)" >&2
+    echo "gegenprobe: the bot could not run with '$filter' (bot exit code $bot_exit)" >&2
     exit 2
 fi
 if [ "$bot" = 1 ] && [ "$failed" != 0 ]; then
@@ -346,7 +379,7 @@ if [ "$status" = 3 ]; then
     no_result
 fi
 if [ "$status" = 2 ]; then
-    echo "gegenprobe: the bot could not run with the change (exit code 2) - no statement" >&2
+    echo "gegenprobe: the bot could not run with the change (bot exit code $bot_exit) - no statement" >&2
     exit 2
 fi
 if [ "$bot" = 1 ]; then

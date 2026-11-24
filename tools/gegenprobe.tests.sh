@@ -198,6 +198,7 @@ case "${1:-}" in
             *' found '*) echo "FINDING [probe] found in every run"; exit 1 ;;
             *' crash '*) echo "Unknown mode 'crash'"; exit 2 ;;
         esac
+        if grep -q explode probe.txt; then echo "Fatal error. Internal CLR error."; exit 134; fi
         if grep -q crash probe.txt; then echo "the tool failed"; exit 2; fi
         if grep -q broken probe.txt; then echo "FINDING [probe] value is broken"; exit 1; fi
         echo "SUMMARY mode probe: 0 finding(s)"
@@ -233,13 +234,29 @@ if grep -q aborted probe.txt; then
     echo "--------------------------------"
     for frame in 1 2 3 4 5 6; do echo "   at Probe.Recurse(Int32)"; done
     echo "--------------------------------"
+    echo "   at Probe.Test() in $(cygpath -w "$HOME" 2>/dev/null || echo "$HOME")\\src\\Probe.cs:line 3"
+fi
+# "crashmany": the same cause line twice (only the path differs) and six more lines with a cause word; "fewer": a test
+# less, no crash text.
+if grep -q crashmany probe.txt; then
+    total=$((total - 1))
+    dir="$(cygpath -w "$results" 2>/dev/null || echo "$results")"
+    echo "Test host process crashed : Stack overflow. Dump in $dir\\a\\crash.dmp"
+    echo "Test host process crashed : Stack overflow. Dump in $dir\\b\\crash.dmp"
+    for n in 1 2 3 4 5 6; do echo "Probe $n aborted"; done
     echo "   at Probe.Test()"
 fi
+grep -q fewer probe.txt && total=$((total - 1))
 mkdir -p -- "$results"
 printf '<TestRun><Counters total="%s" failed="%s" /><UnitTestResult testName="Probe.Test" outcome="%s" /></TestRun>\n' \
     "$total" "$failed" "$outcome" > "$results/results.trx"
+# The path of the result file as dotnet writes it on Windows, with STANDIN_UNIX_PATH=1 as Git Bash writes it.
 shown="$(cygpath -w "$results" 2>/dev/null || echo "$results")"
-echo "Results File: $shown\\results.trx"
+if [ "${STANDIN_UNIX_PATH:-0}" = 1 ]; then
+    echo "Results File: $(cygpath -u "$results" 2>/dev/null || echo "$results")/results.trx"
+else
+    echo "Results File: $shown\\results.trx"
+fi
 STANDIN
 chmod +x "$work/stand-in/dotnet"
 lock_of_repo="$repo/.git/gegenprobe.lock"
@@ -304,6 +321,47 @@ expect 'run: aborted with red, exit 4'      [ $? = 4 ]
 expect 'run: aborted with red, names it'    run_out 'Probe.Test'
 expect 'run: aborted with red, file back'   probe_back
 
+# The cause lines (issue #660): each once - also two that differ only in their path -, at most five.
+cause_lines() { awk '/The cause:/ { on = 1; next } /The end of its output:/ { on = 0 } on' "$work/lock-err"; }
+: > "$work/lock-err"
+run_probe crashmany > "$work/run-out" 2>"$work/lock-err"
+expect 'run: many causes, exit 4'           [ $? = 4 ]
+expect 'run: many causes, at most five'     [ "$(cause_lines | wc -l | tr -d ' ')" = 5 ]
+expect 'run: many causes, each once'        [ "$(cause_lines | grep -c 'Stack overflow')" = 1 ]
+expect 'run: many causes, first ones kept'  [ "$(cause_lines | tail -n 1 | tr -d ' ')" = Probe4aborted ]
+
+# Fewer tests without any crash text: no cause section, only the end of the output.
+: > "$work/lock-err"
+run_probe fewer > "$work/run-out" 2>"$work/lock-err"
+expect 'run: fewer, no crash text, exit 4'  [ $? = 4 ]
+expect 'run: fewer, no cause section'       lacks 'The cause:'
+expect 'run: fewer, shows the end'          grep -q 'away. The end of its output:' "$work/lock-err"
+
+# A user whose folder name holds a space (issue #660): neither the Windows nor the Git Bash form of his folders may
+# show his name. Home, user folder and temp folder of the run are set to such a folder.
+spaced_home="$work/Max Mustermann"
+mkdir -p -- "$spaced_home/AppData/Local/Temp"
+as_spaced_user() {
+    (
+        export HOME="$spaced_home"
+        USERPROFILE="$(cygpath -w "$spaced_home" 2>/dev/null || echo "$spaced_home")"
+        TEMP="$(cygpath -w "$spaced_home/AppData/Local/Temp" 2>/dev/null || echo "$spaced_home/AppData/Local/Temp")"
+        export USERPROFILE TEMP TMP="$TEMP" TMPDIR="$spaced_home/AppData/Local/Temp"
+        "$@"
+    )
+}
+: > "$work/lock-err"
+as_spaced_user run_probe aborted > "$work/run-out" 2>"$work/lock-err"
+expect 'run: spaced user, exit 4'           [ $? = 4 ]
+expect 'run: spaced user, windows form'     lacks 'Mustermann'
+expect 'run: spaced user, still the file'   grep -q 'results[.]trx' "$work/lock-err"
+expect 'run: spaced user, file back'        probe_back
+: > "$work/lock-err"
+( export STANDIN_UNIX_PATH=1; as_spaced_user run_probe aborted ) > "$work/run-out" 2>"$work/lock-err"
+expect 'run: spaced user, git bash, exit 4' [ $? = 4 ]
+expect 'run: spaced user, git bash form'    lacks 'Mustermann'
+expect 'run: spaced user, git bash file'    grep -q 'results[.]trx' "$work/lock-err"
+
 # The output closed early (2>&1 | head, as in the test of PR #648): head stops after the line of the control run, so
 # the result line and the messages of the clean-up meet a closed pipe while the file is changed. The run must still
 # put the file back and let go of the lock.
@@ -352,6 +410,13 @@ expect 'bot: changed exit 2, exit 2'        [ $? = 2 ]
 expect 'bot: changed exit 2, says so'       grep -q 'the bot could not run with the change' "$work/lock-err"
 expect 'bot: changed exit 2, file back'     probe_back
 expect 'bot: changed exit 2, lock gone'     [ ! -e "$lock_of_repo" ]
+
+# The bot ends with another code than 0, 1 or 2 (a crash, 134): the script ends with 2 and names the real code.
+: > "$work/lock-err"
+run_bot_probe explode 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
+expect 'bot: changed exit 134, exit 2'      [ $? = 2 ]
+expect 'bot: changed exit 134, names it'    grep -q 'could not run with the change (bot exit code 134)' "$work/lock-err"
+expect 'bot: changed exit 134, file back'   probe_back
 
 : > "$work/lock-err"
 run_bot_probe nocompile 'probe --seeds 1' > "$work/bot-out" 2>"$work/lock-err"
