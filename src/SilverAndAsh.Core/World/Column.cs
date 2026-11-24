@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Physics;
 
 namespace SilverAndAsh.Core.World;
 
@@ -10,7 +11,7 @@ namespace SilverAndAsh.Core.World;
 /// </summary>
 /// <param name="X">World X of its middle, in metres.</param>
 /// <param name="Z">World Z of its middle, in metres.</param>
-public readonly record struct Column(float X, float Z)
+public readonly record struct Column(float X, float Z) : ISolid
 {
     /// <summary>Radius in metres of the circle it fills (the accepted probe, issue #539: twelve sides over 0.5 m).</summary>
     public const float Radius = 0.5f;
@@ -24,4 +25,11 @@ public readonly record struct Column(float X, float Z)
     /// <summary>True if <paramref name="point"/> lies inside its circle (any height).</summary>
     public bool Contains(Vector3 point) =>
         Vector2.DistanceSquared(new Vector2(point.X, point.Z), Centre) < Radius * Radius;
+
+    /// <summary>
+    /// Pushes a body out of the column and lets it slide round it. A column reaches from floor to ceiling, so it stops
+    /// every body at every height.
+    /// </summary>
+    public bool PushOut(ref Vector3 position, ref Vector3 velocity, float radius, float height, float stepHeight) =>
+        CharacterCollision.PushOutOfCircle(ref position, ref velocity, radius, Centre, Radius);
 }
