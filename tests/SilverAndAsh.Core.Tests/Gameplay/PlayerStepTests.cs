@@ -13,8 +13,9 @@ public class PlayerStepTests
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
     private static readonly float StepLength = Balance.Default.Player.MaxSpeed / Player.StepsPerSecond;
 
-    // Time for ticks that normally take milliseconds - only a loop without end runs into it.
-    private static readonly TimeSpan TimeLimit = TimeSpan.FromSeconds(10);
+    // Time for ticks that normally take milliseconds - only a loop without end runs into it. Until it is up, such a loop
+    // fills the memory with step events (about 0.3 GB a second), so it is no longer than needed.
+    private static readonly TimeSpan TimeLimit = TimeSpan.FromSeconds(5);
 
     // A large open hall (60 x 60 m), so walls never get in the way.
     private static readonly Level OpenHall = CreateOpenHall(size: 31);
