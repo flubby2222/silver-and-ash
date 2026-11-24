@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -18,18 +19,6 @@ public class DoorTests
     private static GameWorld World(string map, params (int X, int Z)[] doors) =>
         new(LevelParser.Parse(map), 1, Balance.Default,
             doors.Select(door => new LevelDoor(door.X, door.Z, 0, 1, RoomSide.South)).ToList());
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        var events = new List<GameEvent>();
-        for (var i = 0; i < ticks; i++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
-    }
 
     [Fact]
     public void Doors_start_closed()

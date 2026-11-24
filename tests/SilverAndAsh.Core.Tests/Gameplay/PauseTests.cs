@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -11,18 +12,6 @@ public class PauseTests
     private const string Hall = "#P#\n#.#\n#.#\n#G#";
 
     private static readonly PlayerInput Forward = new(new Vector2(0f, 1f), Vector2.Zero, false);
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        var events = new List<GameEvent>();
-        for (var i = 0; i < ticks; i++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
-    }
 
     [Fact]
     public void A_paused_world_stands_still()

@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -215,17 +216,5 @@ public class CrackedWallTests
         Assert.True(world.Rooms[1].IsSealed, "The arena never sealed - the test would prove nothing.");
         Assert.True(world.Doors[0].IsBarred);
         Assert.False(world.Doors[1].IsBarred);
-    }
-
-    private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        var events = new List<GameEvent>();
-        for (var tick = 0; tick < ticks && until?.Invoke() != true; tick++)
-        {
-            world.Tick(input);
-            events.AddRange(world.Events);
-        }
-
-        return events;
     }
 }

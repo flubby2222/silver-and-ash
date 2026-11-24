@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -28,14 +29,6 @@ public class EquipmentPickupTests
 
     private static void LookAtFeet(Player player) =>
         player.Look(PlayerInput.None with { Look = new Vector2(0f, 85f * MathF.PI / 180f / ControlSettings.MouseSensitivity) });
-
-    private static void Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        for (var tick = 0; tick < ticks; tick++)
-        {
-            world.Tick(input);
-        }
-    }
 
     private static void FillBag(Player player)
     {
@@ -247,7 +240,7 @@ public class EquipmentPickupTests
         world.Tick(Toggle);
         world.Tick(PlayerInput.None with { InventoryClick = new InventoryClick(InventoryPlace.Ranged, 1, Drop: true) });
         world.Tick(Toggle);
-        Run(world, PlayerInput.None, SimulationClock.TicksPerSecond);
+        RunTicks(world, PlayerInput.None, SimulationClock.TicksPerSecond);
         LookAtFeet(world.Player);
 
         world.Tick(PressF);
@@ -283,7 +276,7 @@ public class EquipmentPickupTests
         var above = Feet + new Vector3(0f, 1f, 0f);
         var world = World(items: [new ExhibitItem(ItemKind.SilverRosary, above)]);
 
-        Run(world, PlayerInput.None, SimulationClock.TicksPerSecond);
+        RunTicks(world, PlayerInput.None, SimulationClock.TicksPerSecond);
 
         Assert.Equal(Feet.Y, world.EquipmentDrops[0].Position.Y, 3);
         Assert.True(world.EquipmentDrops[0].CanInteract);

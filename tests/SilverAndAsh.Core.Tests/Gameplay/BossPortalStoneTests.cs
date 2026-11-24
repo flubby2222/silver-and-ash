@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -47,9 +48,9 @@ public class BossPortalStoneTests
     {
         // The plinth stands 0.125 m out of the wall (z 1.875 m) and 0.5 m high - higher than a step (0.4 m).
         var world = World();
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
-        Run(world, Forward, 120);
+        RunTicks(world, Forward, 120);
 
         var at = world.Player.Position;
         var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
@@ -67,14 +68,14 @@ public class BossPortalStoneTests
         // plinth, so he comes over it only on the way down: straight above it his head would reach the impost (3.075 m)
         // at the top of the jump.
         var world = World();
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
         var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
         var start = new Vector3(MiddleX - 0.3f, 0f, DoorPlaneZ - plinth.AlongTo + 0.075f - Radius);
         world.Player.PlaceAt(start);
         Assert.False(InStone(world.Level, start, Radius, BodySizes.Player.Height));
 
         var drift = new PlayerInput(new Vector2(0.1f, 0f), Vector2.Zero, false);
-        Run(world, drift with { Jump = true }, 1);
+        RunTicks(world, drift with { Jump = true }, 1);
         for (var tick = 0; tick < 2 * SimulationClock.TicksPerSecond && !world.Player.IsGrounded; tick++)
         {
             world.Tick(drift);
@@ -84,14 +85,14 @@ public class BossPortalStoneTests
         }
 
         Assert.True(world.Player.IsGrounded, $"never landed: {world.Player.Position}");
-        Run(world, PlayerInput.None, 2 * SimulationClock.TicksPerSecond);
+        RunTicks(world, PlayerInput.None, 2 * SimulationClock.TicksPerSecond);
 
         var standing = world.Player.Position;
         Assert.Equal(plinth.Top, standing.Y, 0.001f);
         Assert.True(world.Player.IsGrounded);
         Assert.InRange(MiddleX - standing.X, plinth.AcrossFrom - Radius + 0.01f, plinth.AcrossTo + Radius);
         Assert.False(InStone(world.Level, standing + new Vector3(0f, 0.01f, 0f), Radius, BodySizes.Player.Height - 0.01f));
-        Run(world, PlayerInput.None, SimulationClock.TicksPerSecond);
+        RunTicks(world, PlayerInput.None, SimulationClock.TicksPerSecond);
         Assert.Equal(standing, world.Player.Position);
     }
 
@@ -107,7 +108,7 @@ public class BossPortalStoneTests
         var impost = BossPortalShape.Blocks.Single(block => block.Top == BossPortalShape.Spring);
         var onThePlinth = new Vector3(MiddleX - 1.3f, plinth.Top, DoorPlaneZ - BossPortalShape.HalfDepth - Radius - 0.01f);
         world.Player.PlaceAt(onThePlinth);
-        Run(world, PlayerInput.None, 10);
+        RunTicks(world, PlayerInput.None, 10);
         Assert.True(world.Player.IsGrounded);
         Assert.Equal(onThePlinth, world.Player.Position);
 
@@ -148,7 +149,7 @@ public class BossPortalStoneTests
         var impost = BossPortalShape.Blocks.Single(block => block.Top == BossPortalShape.Spring);
         var inFront = new Vector3(MiddleX - 1.3f, 0f, DoorPlaneZ - BossPortalShape.HalfDepth - Radius - 1f);
         world.Player.PlaceAt(inFront);
-        Run(world, PlayerInput.None, 10);
+        RunTicks(world, PlayerInput.None, 10);
 
         world.Tick(PlayerInput.None with { Jump = true });
         var highest = 0f;
@@ -211,7 +212,7 @@ public class BossPortalStoneTests
         var bottom = Floor + impost.Bottom;
         var onThePlinth = new Vector3(MiddleX - 1.3f, Floor + plinth.Top, DoorPlaneZ - BossPortalShape.HalfDepth - Radius - 0.01f);
         world.Player.PlaceAt(onThePlinth);
-        Run(world, PlayerInput.None, 10);
+        RunTicks(world, PlayerInput.None, 10);
         Assert.Equal(onThePlinth, world.Player.Position);
 
         world.Tick(PlayerInput.None with { Jump = true });
@@ -240,13 +241,13 @@ public class BossPortalStoneTests
         StandInTheDoorway(world);
         Assert.InRange(world.Player.Position.Z, DoorPlaneZ - BossPortalShape.RunStart(2), DoorPlaneZ + BossPortalShape.RunStart(2));
 
-        Run(world, StrafeToTheLeftJamb, 120);
+        RunTicks(world, StrafeToTheLeftJamb, 120);
 
         // At the door plane the innermost run leaves 1 m to either side of the middle.
         var at = world.Player.Position;
         Assert.Equal(MiddleX - (BossPortalShape.OpeningHalfWidth - Radius), at.X, 0.01f);
         Assert.False(CharacterCollision.Overlaps(world.Level, at, Radius));
-        Run(world, StrafeToTheLeftJamb, 30);
+        RunTicks(world, StrafeToTheLeftJamb, 30);
         Assert.Equal(at.X, world.Player.Position.X, 0.001f);
     }
 
@@ -254,7 +255,7 @@ public class BossPortalStoneTests
     public void A_player_who_walks_through_the_opening_gets_into_the_boss_room_without_touching_the_stone()
     {
         var world = World();
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
         for (var tick = 0; tick < 300 && world.Player.Position.Z < 6f; tick++)
         {
@@ -274,7 +275,7 @@ public class BossPortalStoneTests
         // instead of the opening, the push would set the player into the plinth.
         var world = World();
         var door = world.Doors[0];
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
         for (var tick = 0; tick < 300 && !world.Rooms[1].IsSealed; tick++)
         {
             world.Tick(IntoTheOpening(world));
@@ -343,8 +344,8 @@ public class BossPortalStoneTests
     private static Vector3 KnockBat(GameWorld world, Vector3 from, Vector3 direction)
     {
         // The door open (the bars lifted, the leaves swung back), so only the stone stands in the way.
-        Run(world, PressF, 1);
-        Run(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Doors.BossOpenTime) + 1);
+        RunTicks(world, PressF, 1);
+        RunTicks(world, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Doors.BossOpenTime) + 1);
         Assert.False(world.Doors[0].Blocks);
         var bat = Assert.Single(world.Bats);
         bat.PlaceAt(from);
@@ -414,7 +415,7 @@ public class BossPortalStoneTests
         var target = new Vector3(MiddleX - buttress.AcrossTo, buttress.Bottom + 0.012f, 1.8f);
         var at = new Vector3(x, 0f, DoorPlaneZ - BossPortalShape.HalfDepth - Radius - 0.05f);
         world.Player.PlaceAt(at);
-        Run(world, PlayerInput.None, 10);
+        RunTicks(world, PlayerInput.None, 10);
         Assert.Equal(at, world.Player.Position);
 
         var eye = world.Player.EyePosition;
@@ -471,13 +472,13 @@ public class BossPortalStoneTests
     // Opens the door, walks into the opening up to the door plane and lets the player come to rest there.
     private static void StandInTheDoorway(GameWorld world)
     {
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
         for (var tick = 0; tick < 300 && world.Player.Position.Z < DoorPlaneZ - 0.2f; tick++)
         {
             world.Tick(IntoTheOpening(world));
         }
 
-        Run(world, PlayerInput.None, 60);
+        RunTicks(world, PlayerInput.None, 60);
         Assert.False(world.Rooms[1].IsSealed);
     }
 
@@ -488,13 +489,5 @@ public class BossPortalStoneTests
         var direction = new Vector3(aside, 0f, 1f);
         var view = world.Player.View;
         return new PlayerInput(new Vector2(Vector3.Dot(direction, view.FlatRight), Vector3.Dot(direction, view.FlatForward)), Vector2.Zero, false);
-    }
-
-    private static void Run(GameWorld world, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            world.Tick(input);
-        }
     }
 }

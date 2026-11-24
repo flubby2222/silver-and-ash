@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -26,14 +27,6 @@ public class MapDiscoveryTests
         ];
         LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
         return new GameWorld(LevelParser.Parse(Map), 1, Balance.Default, doors, rooms);
-    }
-
-    private static void Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
-    {
-        for (var i = 0; i < ticks && until?.Invoke() != true; i++)
-        {
-            world.Tick(input);
-        }
     }
 
     // ---- Blood vials lying around ----------------------------------------------------------------------------------
@@ -85,7 +78,7 @@ public class MapDiscoveryTests
     {
         var world = WorldWithChests();
 
-        Run(world, PlayerInput.None, 5);
+        RunTicks(world, PlayerInput.None, 5);
 
         Assert.Empty(world.KnownChests);
     }
@@ -94,9 +87,9 @@ public class MapDiscoveryTests
     public void A_standing_chest_in_a_discovered_room_is_on_the_map_with_its_tier_and_lock()
     {
         var world = WorldWithChests();
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
-        Run(world, Forward, 120, () => world.Rooms[1].IsDiscovered);
+        RunTicks(world, Forward, 120, () => world.Rooms[1].IsDiscovered);
 
         Assert.True(world.Rooms[1].IsDiscovered);
         var chest = Assert.Single(world.KnownChests);
@@ -110,13 +103,13 @@ public class MapDiscoveryTests
     public void A_chest_still_under_the_floor_shows_once_it_rises()
     {
         var world = WorldWithChests();
-        Run(world, PressF, 1);
-        Run(world, Forward, 120, () => world.Rooms[1].IsSealed);
+        RunTicks(world, PressF, 1);
+        RunTicks(world, Forward, 120, () => world.Rooms[1].IsSealed);
         Assert.True(world.Rooms[1].IsSealed, "The room never sealed - the test would prove nothing.");
         Assert.DoesNotContain(world.Chests[1], world.KnownChests);
 
         world.Ghouls[0].TakeDamage(10_000, []);
-        Run(world, PlayerInput.None, 3);
+        RunTicks(world, PlayerInput.None, 3);
 
         Assert.True(world.Chests[1].IsRising || world.Chests[1].RiseFraction >= 1f, "The cleared room's chest never started to rise.");
         Assert.Contains(world.Chests[1], world.KnownChests);
@@ -135,13 +128,13 @@ public class MapDiscoveryTests
         LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South), new(2, 6, 1, 2, RoomSide.South)];
         ChestPlan[] chests = [new(2, 4, 1, ChestTier.Beggar, IsLocked: false, Silver: 5, HasBloodVial: false, RisesWhenCleared: false)];
         var world = new GameWorld(LevelParser.Parse(Map), 1, Balance.Default, doors, rooms, chests);
-        Run(world, PressF, 1);
-        Run(world, Forward, 3 * SimulationClock.TicksPerSecond, () => world.Player.Position.Z >= 7f);
-        Run(world, PlayerInput.None, SimulationClock.TicksPerSecond / 2);
+        RunTicks(world, PressF, 1);
+        RunTicks(world, Forward, 3 * SimulationClock.TicksPerSecond, () => world.Player.Position.Z >= 7f);
+        RunTicks(world, PlayerInput.None, SimulationClock.TicksPerSecond / 2);
         world.Player.Look(PlayerInput.None with { Look = new Vector2(0f, 35f * MathF.PI / 180f / ControlSettings.MouseSensitivity) });
         Assert.Contains(world.Chests[0], world.KnownChests);
 
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
         Assert.True(world.Chests[0].IsOpen, "The chest never opened - the test would prove nothing.");
         Assert.Empty(world.KnownChests);
@@ -153,7 +146,7 @@ public class MapDiscoveryTests
         var world = WorldWithDrop();
         world.Ghouls[0].TakeDamage(10_000, []);
 
-        Run(world, PlayerInput.None, 5);
+        RunTicks(world, PlayerInput.None, 5);
 
         Assert.Single(world.Pickups);
         Assert.Empty(world.KnownBloodVials);
@@ -164,9 +157,9 @@ public class MapDiscoveryTests
     {
         var world = WorldWithDrop();
         world.Ghouls[0].TakeDamage(10_000, []);
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
-        Run(world, Forward, 120, () => world.Rooms[1].IsDiscovered);
+        RunTicks(world, Forward, 120, () => world.Rooms[1].IsDiscovered);
 
         Assert.True(world.Rooms[1].IsDiscovered);
         Assert.Same(world.Pickups[0], Assert.Single(world.KnownBloodVials));
@@ -178,9 +171,9 @@ public class MapDiscoveryTests
         var world = WorldWithDrop();
         world.Player.TakeDamage(50, []);
         world.Ghouls[0].TakeDamage(10_000, []);
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
-        Run(world, Forward, 3 * SimulationClock.TicksPerSecond, () => world.Pickups.Count == 0);
+        RunTicks(world, Forward, 3 * SimulationClock.TicksPerSecond, () => world.Pickups.Count == 0);
 
         Assert.Empty(world.Pickups);
         Assert.Empty(world.KnownBloodVials);
@@ -191,9 +184,9 @@ public class MapDiscoveryTests
     {
         var world = WorldWithDrop(ammo: true);
         world.Ghouls[0].TakeDamage(10_000, []);
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
-        Run(world, Forward, 120, () => world.Rooms[1].IsDiscovered);
+        RunTicks(world, Forward, 120, () => world.Rooms[1].IsDiscovered);
 
         Assert.Equal(ConsumableKind.ConsecratedAmmo, Assert.Single(world.Pickups).Kind);
         Assert.Empty(world.KnownBloodVials);
@@ -205,7 +198,7 @@ public class MapDiscoveryTests
         var world = new GameWorld(LevelParser.Parse("P\n.\nG"), balance: Balance.Default with { Drops = new DropsBalance { GhoulChance = 1f, ConsecratedAmmoShare = 0f } });
         world.Ghouls[0].TakeDamage(10_000, []);
 
-        Run(world, PlayerInput.None, 2);
+        RunTicks(world, PlayerInput.None, 2);
 
         Assert.Single(world.Pickups);
         Assert.Empty(world.KnownBloodVials);
@@ -235,10 +228,10 @@ public class MapDiscoveryTests
     public void A_room_is_discovered_with_the_first_step_onto_its_floor()
     {
         var world = World();
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
         // Through door A (z 2..4 m) until the feet are on the first floor row of room 1 (z > 4 m).
-        Run(world, Forward, 180, () => world.Player.Position.Z > 4.05f);
+        RunTicks(world, Forward, 180, () => world.Player.Position.Z > 4.05f);
 
         Assert.True(world.Rooms[1].IsDiscovered);
     }
@@ -247,9 +240,9 @@ public class MapDiscoveryTests
     public void Standing_in_a_doorway_discovers_nothing_behind_it()
     {
         var world = World();
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
 
-        Run(world, Forward, 180, () => world.Player.Position.Z > 3f);
+        RunTicks(world, Forward, 180, () => world.Player.Position.Z > 3f);
 
         Assert.False(world.Rooms[1].IsDiscovered);
     }
@@ -258,11 +251,11 @@ public class MapDiscoveryTests
     public void Corridors_are_discovered_too()
     {
         var world = World();
-        Run(world, PressF, 1);
-        Run(world, Forward, 240, () => world.Player.Position.Z > 11f);
-        Run(world, PressF, 1);
+        RunTicks(world, PressF, 1);
+        RunTicks(world, Forward, 240, () => world.Player.Position.Z > 11f);
+        RunTicks(world, PressF, 1);
 
-        Run(world, Forward, 240, () => world.Rooms[2].IsDiscovered);
+        RunTicks(world, Forward, 240, () => world.Rooms[2].IsDiscovered);
 
         Assert.True(world.Rooms[2].IsDiscovered);
     }
@@ -276,8 +269,8 @@ public class MapDiscoveryTests
         Assert.True(world.IsKnown(world.Doors[0]));
         Assert.False(world.IsKnown(world.Doors[1]));
 
-        Run(world, PressF, 1);
-        Run(world, Forward, 180, () => world.Rooms[1].IsDiscovered);
+        RunTicks(world, PressF, 1);
+        RunTicks(world, Forward, 180, () => world.Rooms[1].IsDiscovered);
 
         Assert.True(world.IsKnown(world.Doors[1]));
     }
@@ -287,10 +280,10 @@ public class MapDiscoveryTests
     {
         var world = World();
         world.Tick(PlayerInput.None);
-        Run(world, PressF, 1);
-        Run(world, Forward, 180, () => world.Rooms[1].IsDiscovered);
+        RunTicks(world, PressF, 1);
+        RunTicks(world, Forward, 180, () => world.Rooms[1].IsDiscovered);
 
-        Run(world, new PlayerInput(new Vector2(0f, -1f), Vector2.Zero, false), 240, () => world.Player.Position.Z < 1.5f);
+        RunTicks(world, new PlayerInput(new Vector2(0f, -1f), Vector2.Zero, false), 240, () => world.Player.Position.Z < 1.5f);
 
         Assert.True(world.Rooms[0].IsDiscovered);
         Assert.True(world.Rooms[1].IsDiscovered);
