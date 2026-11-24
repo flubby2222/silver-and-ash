@@ -130,7 +130,7 @@ public class BossPortalNeighbourTests
             }
         }
 
-        Assert.True(stopped.Count >= 4,$"bats stopped below the impost: seeds {string.Join(", ", stopped)}");
+        Assert.True(stopped.Count >= 4, $"bats stopped below the impost: seeds {string.Join(", ", stopped)}");
     }
 
     // One run of the test above with the bat of that seed; true if it was stopped below the impost at least once.
