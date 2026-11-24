@@ -37,6 +37,44 @@ public class TestCourseTests
         Assert.Contains(run.Events, e => e is BossFightStarted);
     }
 
+    /// <summary>
+    /// The course can be won like a run - Gorm slain, the stairs climbed - but its player could not die and carried every
+    /// weapon: the balancing round must never count it, so the run log stays untouched (review of PR #720).
+    /// </summary>
+    [Fact]
+    public void A_win_on_the_course_stays_out_of_the_run_log()
+    {
+        var run = new CourseRun(Seed);
+        run.WalkToTheBossRoom();
+        run.World.Gorm!.TakeDamage(10_000, run.Events);
+        run.Run(PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.Gorm.StairsRiseTime) + 1);
+        var stairs = Assert.IsType<Stairs>(run.World.Stairs);
+        Assert.True(stairs.CanInteract, "The stairs never stood.");
+
+        var before = stairs.Position - new Vector3(0f, 0f, Stairs.Radius + 0.8f);
+        run.WalkTo(before);
+        run.LookAt(stairs.Position + new Vector3(0f, run.World.Player.EyePosition.Y, 0f));
+        run.Run(PressF, 1);
+        Assert.True(run.World.IsWon, "The course was not won - the test would prove nothing.");
+        var summary = run.World.TakeEndSummary();
+        Assert.NotNull(summary);
+
+        var folder = Path.Combine(Path.GetTempPath(), $"course-runs-{Guid.NewGuid():N}");
+        var path = Path.Combine(folder, "runs.log");
+        try
+        {
+            Assert.True(RunLog.AppendRun(path, run.World, summary.ToLogLine(DateTimeOffset.Now)));
+            Assert.False(File.Exists(path), "The win on the test course was written to the run log.");
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+    }
+
     [Fact]
     public void The_course_has_the_stations_of_issue_718_in_their_order()
     {
@@ -99,6 +137,18 @@ public class TestCourseTests
     }
 
     [Fact]
+    public void A_station_that_reaches_past_the_ring_of_wall_is_refused()
+    {
+        // As the first station, the antechamber's great hall would reach six columns west of the course's first column.
+        var first = new CourseStation("Boss first", RoomKind.Antechamber, Antechamber.Width, room => room.BossRoomSouth());
+
+        var error = Assert.Throws<InvalidOperationException>(() => TestCourse.Build(Seed, Balance.Default, [first]));
+
+        Assert.Contains("outside the ring of wall", error.Message);
+        Assert.Contains("Boss first", error.Message);
+    }
+
+    [Fact]
     public void A_column_that_does_not_fit_is_refused()
     {
         // A column in the corner of a station is too close to its walls for the rule of the generated levels.
@@ -128,6 +178,7 @@ public class TestCourseTests
 
         Assert.Equal(TestCourse.Name, world.LevelName);
         Assert.False(world.IsShowroom);
+        Assert.True(world.IsTestWorld);
         foreach (var player in world.Players)
         {
             Assert.True(player.CannotDie);
@@ -283,6 +334,7 @@ public class TestCourseTests
         var again = TestCourse.NextWorld(run.World);
 
         Assert.Equal(TestCourse.Name, again.LevelName);
+        Assert.True(again.IsTestWorld);
         Assert.Equal(run.World.Seed, again.Seed);
         Assert.Equal(again.Level.PlayerStartPosition.X, again.Player.Position.X, 0.001f);
         Assert.All(again.Doors.Where(door => door.Kind != DoorKind.Cracked), door => Assert.False(door.IsOpen));

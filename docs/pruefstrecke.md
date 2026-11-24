@@ -14,6 +14,8 @@ Nach dem Titelbildschirm stehst du am Westende des Wegs und blickst nach Osten. 
 
 **Der Spieler stirbt nicht:** Das Leben fällt nie unter 1 (`Player.CannotDie`). Jeder Treffer wird trotzdem gezeigt und gespielt, auch der Klang. Wer alle Waffen sehen will, hat sie von Anfang an (wie im Musterraum).
 
+**Kein Eintrag in `runs.log`:** Wer auf der Strecke Gorm besiegt und die Treppe hinaufsteigt, sieht den Siegbildschirm wie im Spiel. Die Welt ist aber eine Testwelt (`GameWorld.IsTestWorld`, wie jeder Musterraum), und `RunLog.AppendRun` schreibt für sie keine Zeile. Die Balancing-Runde wertet `runs.log` aus; ein unsterblicher, voll bewaffneter Lauf darf dort nicht stehen.
+
 | Taste | Wirkung |
 |---|---|
 | **L** | Schilder aus- und einblenden |
@@ -30,7 +32,7 @@ Nach dem Titelbildschirm stehst du am Westende des Wegs und blickst nach Osten. 
 |---|---|---|---|
 | 1 | **Arms** | Start | Alle Waffen in einer Reihe an der Nordwand, die Gegenstände *Leech* und *Ashen Heart* an der Südwand, je mit `[F]`-Hinweis; der Teleporter des Starts auf dem Weg |
 | 2 | **Columns** | Start | Zwei Säulen links und rechts des Wegs, Silber neben einer, dahinter ein wacher Ghul |
-| 3 | **Cracked wall** | Start | Rissige Wand in der Mitte der Nordwand, dahinter die geheime Kammer mit Truhe |
+| 3 | **Cracked wall** | Start | Rissige Wand in der Mitte der Nordwand, dahinter die geheime Kammer mit Truhe. **So geht sie auf:** dicht vor die Wand treten, sie ansehen, die linke Maustaste halten, bis die Silberklinge voll aufgeladen ist und zittert, dann loslassen. Nur ein voll aufgeladener Nahkampfhieb aus Klingenreichweite bricht sie auf; **F**, normale Hiebe und Schüsse tun nichts |
 | 4 | **Portcullis** | Arena | Betritt ein Spieler sie, fallen die Gitter; ein Ghul und eine Fledermaus kommen bei der Säule heraus |
 | 5 | **Teleporter** | Start | Ein zweiter Teleporter (zum Eingang gedreht) und der Brunnen des Sirius neben dem Weg |
 | 6 | **Boss** | Vorraum | Silber und eine Blutphiole vor dem Bossportal, dahinter der Bossraum mit Gorm |
@@ -55,4 +57,4 @@ Die Namen sind `course-1-arms`, `course-2-columns`, `course-3-cracked-wall`, `co
 
 ## Tests
 
-`tests/SilverAndAsh.Core.Tests/Course/TestCourseTests.cs` läuft Tick für Tick vom Start durch alle Türen bis in den Bossraum und prüft die Stationen einzeln (Funde, rissige Wand, Gitter, Teleporter, Bosstür und Gorm, Bruch einer Säule im Bossraum). Sie rechnen mit `Balance.Default`.
+`tests/SilverAndAsh.Core.Tests/Course/TestCourseTests.cs` läuft Tick für Tick vom Start durch alle Türen bis in den Bossraum und prüft die Stationen einzeln (Funde, rissige Wand, Gitter, Teleporter, Bosstür und Gorm, Bruch einer Säule im Bossraum). Ein weiterer Lauf geht bis zum Sieg auf der Treppe und prüft, dass er nicht ins Lauf-Protokoll kommt. Sie rechnen mit `Balance.Default`.

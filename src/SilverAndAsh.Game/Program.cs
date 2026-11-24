@@ -386,10 +386,11 @@ static void RunGame(
         IReadOnlyList<ShowroomLabel>? courseSigns = null;
         var showroomLabelsShown = true;
 
-        // The labels the world in hand shows - or null for a run, which has none.
+        // The labels the world in hand shows - or null for a run, which has none. The test worlds are the showroom and
+        // the test course.
         IReadOnlyList<ShowroomLabel>? LabelsOf(GameWorld world) =>
             world.IsShowroom ? showroomLabels ??= ShowroomLayout.Build().Labels
-            : world.LevelName == TestCourse.Name ? courseSigns ??= TestCourse.Build(world.Seed, world.Balance).Labels
+            : world.IsTestWorld ? courseSigns ??= TestCourse.Build(world.Seed, world.Balance).Labels
             : null;
         var lastCamera = default(Camera3D);
 
@@ -1366,7 +1367,8 @@ static void RunGame(
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
             // the local run log (one line) and the technical log. The world hands its summary out only once, so
-            // going back to the title (which clears the end screen) never logs the same run again.
+            // going back to the title (which clears the end screen) never logs the same run again. A test world (showroom,
+            // test course) is no run: Core leaves it out of the run log.
             wonSeconds = gameWorld.IsWon ? wonSeconds + Raylib.GetFrameTime() : 0f;
             if (endSummary is null && (gameWorld.ShouldRestart || wonSeconds >= VictoryScreenDelay)
                 && gameWorld.TakeEndSummary() is { } finished)
@@ -1374,7 +1376,7 @@ static void RunGame(
                 endSummary = finished;
                 var line = endSummary.ToLogLine(DateTimeOffset.Now);
                 log?.Info($"Run ended: {line}");
-                if (!RunLog.Append(runLogPath, line))
+                if (!RunLog.AppendRun(runLogPath, gameWorld, line))
                 {
                     log?.Warning($"Could not write the run log '{runLogPath}'.");
                 }

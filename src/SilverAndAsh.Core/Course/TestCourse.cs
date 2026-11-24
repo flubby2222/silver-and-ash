@@ -15,7 +15,7 @@ namespace SilverAndAsh.Core.Course;
 /// </summary>
 public static class TestCourse
 {
-    /// <summary>Shown briefly when the course is entered; the game knows the course by it.</summary>
+    /// <summary>Shown briefly when the course is entered.</summary>
     public const string Name = "THE TEST COURSE";
 
     // The first floor column of the first station: one ring of wall west of it.
@@ -61,7 +61,6 @@ public static class TestCourse
             }
 
             station.Furnish(room);
-            course.Rooms[index] = room.Placed(course.Rooms[index]);
             labels.Add(new ShowroomLabel(
                 $"{room.Number} - {station.Name}", new Vector3((x + 0.5f) * Level.CellSize, SignHeight, (CourseRoom.Way + 0.5f) * Level.CellSize)));
             rooms.Add(room);
@@ -88,6 +87,7 @@ public static class TestCourse
             LevelName = Name,
             Surfaces = SurfaceVariants.For(generated),
             Finds = course.Finds,
+            IsTestWorld = true,
         };
         foreach (var player in world.Players)
         {

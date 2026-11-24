@@ -7,7 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
-- **Prüfstrecke:** `dotnet run --project src/SilverAndAsh.Game -- --course` startet ein von Hand gebautes Level, in dem die offenen Urteile des Releases als sechs Stationen auf einem geraden Weg stehen – Waffen, Säulen, rissige Wand, Fallgitter-Arena, Teleporter mit Brunnen und Bossraum –, nach den echten Spielregeln. Über jeder Station hängt ein Schild (Taste **L** blendet sie aus und ein); der Spieler stirbt dort nicht, sein Leben bleibt mindestens 1. Nur in der Debug-Version, dazu passt nur `--look`. Fotos jeder Station mit `--photo course-1-arms` usw., siehe `docs/pruefstrecke.md` (#718)
+- **Prüfstrecke:** `dotnet run --project src/SilverAndAsh.Game -- --course` startet ein von Hand gebautes Level, in dem die offenen Urteile des Releases als sechs Stationen auf einem geraden Weg stehen – Waffen, Säulen, rissige Wand, Fallgitter-Arena, Teleporter mit Brunnen und Bossraum –, nach den echten Spielregeln. Über jeder Station hängt ein Schild (Taste **L** blendet sie aus und ein); der Spieler stirbt dort nicht, sein Leben bleibt mindestens 1. Ein Sieg auf der Strecke kommt nicht in `runs.log` (ebenso wenig wie der Musterraum). Nur in der Debug-Version, dazu passt nur `--look`. Fotos jeder Station mit `--photo course-1-arms` usw., siehe `docs/pruefstrecke.md` (#718)
 
 ## [0.12.0] – 2026-11-24 – Portal & Säulen
 

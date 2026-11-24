@@ -63,6 +63,7 @@ public sealed class GameWorld
     private bool _endSummaryTaken;
     private ShowroomExhibits? _showroom;
     private readonly GroundFinds? _finds;
+    private readonly bool _isTestWorld;
 
     /// <summary>
     /// Creates the world for <paramref name="level"/>: the player at its start, dummies at their cells.
@@ -378,6 +379,17 @@ public sealed class GameWorld
     /// climbed - so nobody dies and the level never changes there.
     /// </summary>
     public bool IsShowroom => _showroom is not null;
+
+    /// <summary>
+    /// True in a world made for looking and testing, not for playing a run: the test course sets it (issue #718), and
+    /// every showroom is one. Its end is never a run - <see cref="RunLog.AppendRun"/> leaves it out of the run log, whose
+    /// lines the balancing round counts (docs/balancing.md).
+    /// </summary>
+    public bool IsTestWorld
+    {
+        get => _isTestWorld || IsShowroom;
+        init => _isTestWorld = value;
+    }
 
     /// <summary>
     /// The level as it was built, all doors open - for drawing - except unbroken cracked walls, which are drawn as

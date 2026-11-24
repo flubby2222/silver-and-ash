@@ -25,8 +25,6 @@ public sealed class CourseRoom
     private const int BossRoomSize = 14;
 
     private readonly CourseBuilder _course;
-    private readonly List<(int X, int Z)> _ghoulSlots = [];
-    private readonly List<(int X, int Z)> _batSlots = [];
 
     internal CourseRoom(CourseBuilder course, CourseStation station, int number, int index, int firstX)
     {
@@ -65,18 +63,10 @@ public sealed class CourseRoom
     }
 
     /// <summary>A ghoul starting in that cell.</summary>
-    public void Ghoul(int step, int row)
-    {
-        _ghoulSlots.Add(Cell(step, row));
-        _course.Ghouls.Add(Cell(step, row));
-    }
+    public void Ghoul(int step, int row) => _course.Ghouls.Add(Cell(step, row));
 
     /// <summary>A bat hovering above that cell.</summary>
-    public void Bat(int step, int row)
-    {
-        _batSlots.Add(Cell(step, row));
-        _course.Bats.Add(Cell(step, row));
-    }
+    public void Bat(int step, int row) => _course.Bats.Add(Cell(step, row));
 
     /// <summary><paramref name="amount"/> silver lying in that cell.</summary>
     public void Silver(int step, int row, int amount) => _course.Loot.Add(new ExhibitLoot(LootKind.Silver, amount, OnFloor(step, row)));
@@ -143,9 +133,6 @@ public sealed class CourseRoom
         _course.AddDoor(
             new LevelDoor(portal, Bottom + 1, Index, boss, RoomSide.South, DoorKind.Boss) { MoreCells = [(portal + 1, Bottom + 1)] }, Owner);
     }
-
-    /// <summary>The room as placed, with the enemy places put in.</summary>
-    internal PlacedRoom Placed(PlacedRoom room) => room with { GhoulSlots = _ghoulSlots, BatSlots = _batSlots };
 
     private Vector3 OnFloor(int step, int row)
     {
