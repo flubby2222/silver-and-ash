@@ -134,7 +134,9 @@ internal static class DoorSlam
 
     // A running body starts this far before the door's box (on the antechamber side) and is let go so that it is in the
     // doorway in the slam tick: the player walks in (full input), a ghoul or bat is knocked in by a charged club blow.
-    private const float RunUp = 0.6f;
+    // A tenth of the charged knock (0.6 m by Balance.Default, issue #672): it moves with the club's values, so a knocked
+    // body still reaches the doorway when a balancing round shortens the knock.
+    private static float RunUp(Balance balance) => balance.Club.ChargedKnockback / 10f;
 
     // Ticks a running body is held at its start before it is let go, in the probe that finds when it reaches the doorway.
     private const int ProbeHold = 10;
@@ -146,20 +148,23 @@ internal static class DoorSlam
     // and his own steps would make the run-up depend on the tick it starts (a gap, issue #647).
     private static readonly Body[] Bodies =
     [
-        new("player", BodySizes.Player.Radius, BodySizes.Player.Height, BodySizes.Player.StepHeight, false, 12, 7, _ => null,
-            (_, _) => null, RunInPlayer),
-        new("ghoul", BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height, BodySizes.Player.StepHeight, false, 10, 10, world => world.Ghouls.FirstOrDefault(ghoul => !ghoul.IsDead),
-            (play, report) => PortalSite.WakeInArena(play, play.World.Ghouls.Where(ghoul => !ghoul.IsDead), "ghoul", report), KnockIn),
-        new("bat", BodySizes.Bat.Radius, BodySizes.Bat.Height, BodySizes.Bat.StepHeight, true, 15, 13, world => world.Bats.FirstOrDefault(bat => !bat.IsDead),
-            (play, report) => PortalSite.WakeInArena(play, play.World.Bats.Where(bat => !bat.IsDead), "bat", report), KnockIn),
-        new("Gorm", BodySizes.Gorm.Radius, BodySizes.Gorm.Height, BodySizes.Player.StepHeight, false, 2, 0, world => world.Gorm, null, null),
+        new("player", new(BodySizes.Player.Radius, BodySizes.Player.Height, BodySizes.Player.StepHeight, Flies: false), 12,
+            _ => null, new(7, (_, _) => null, RunInPlayer)),
+        new("ghoul", new(BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height, BodySizes.Player.StepHeight, Flies: false), 10,
+            world => world.Ghouls.FirstOrDefault(ghoul => !ghoul.IsDead),
+            new(10, (play, report) => PortalSite.WakeInArena(play, play.World.Ghouls.Where(ghoul => !ghoul.IsDead), "ghoul", report), KnockIn)),
+        new("bat", new(BodySizes.Bat.Radius, BodySizes.Bat.Height, BodySizes.Bat.StepHeight, Flies: true), 15,
+            world => world.Bats.FirstOrDefault(bat => !bat.IsDead),
+            new(13, (play, report) => PortalSite.WakeInArena(play, play.World.Bats.Where(bat => !bat.IsDead), "bat", report), KnockIn)),
+        new("Gorm", new(BodySizes.Gorm.Radius, BodySizes.Gorm.Height, BodySizes.Player.StepHeight, Flies: false), 2,
+            world => world.Gorm, Running: null),
     ];
 
     public static void Run(LevelZero zero, int seed, Report report)
     {
         var ctx = $"seed {seed} slam";
         var start = zero.NewRun(seed, Play.Balance);
-        Play.CheckPortalStoneHeights(report, ctx, Bodies.Select(body => body.Height));
+        Play.CheckPortalStoneHeights(report, ctx, Bodies.Select(body => body.Shape.Height));
 
         // The free places of the doorway, with the door open (the door cell is floor then).
         var probe = new Play(start.Restarted(), report, $"{ctx} probe");
@@ -178,7 +183,7 @@ internal static class DoorSlam
             {
                 var free = PortalSite.Steps(-0.95f, 0.95f, 0.05f)
                     .Select(along => (float?)along)
-                    .FirstOrDefault(along => body.IsFree(probe.World.Level, body.Place(probe.World.Level, site.At(across, along!.Value))));
+                    .FirstOrDefault(along => body.Shape.IsFree(probe.World.Level, body.Shape.Place(probe.World.Level, site.At(across, along!.Value))));
                 if (free is not { } along)
                 {
                     places.Skipped();
@@ -192,9 +197,12 @@ internal static class DoorSlam
             places.Verify();
         }
 
-        foreach (var body in Bodies.Where(body => body.Launch is not null))
+        foreach (var body in Bodies)
         {
-            RunsIn(start, ctx, body, probe.World.Level, site, report);
+            if (body.Running is { } running)
+            {
+                RunsIn(start, ctx, body, running, probe.World.Level, site, report);
+            }
         }
     }
 
@@ -206,11 +214,11 @@ internal static class DoorSlam
         }
 
         var (play, site, enemy) = prepared;
-        var at = body.Place(play.World.Level, site.At(across, along));
+        var at = body.Shape.Place(play.World.Level, site.At(across, along));
         var limit = Play.BossDoorShutTicks(play.World);
         for (var tick = 0; tick <= limit && !site.Door.Blocks; tick++)
         {
-            body.PlaceAt(play, enemy, at);
+            PlaceAt(play, enemy, at);
             play.Tick(PlayerInput.None);
         }
 
@@ -227,20 +235,20 @@ internal static class DoorSlam
 
     // The body runs into the doorway and is in it in the slam tick: from every free place RunUp before the door's box,
     // every 10 cm across.
-    private static void RunsIn(GameWorld start, string ctx, Body body, Level level, PortalSite site, Report report)
+    private static void RunsIn(GameWorld start, string ctx, Body body, RunningCase running, Level level, PortalSite site, Report report)
     {
-        var places = report.Tally($"{ctx} {body.Name} running", $"{body.Name}: no free run-up at this distance from the middle or it does not reach the doorway", body.Running);
-        var from = -(BossPortalShape.HalfDepth + body.Radius + RunUp);
+        var places = report.Tally($"{ctx} {body.Name} running", $"{body.Name}: no free run-up at this distance from the middle or it does not reach the doorway", running.Places);
+        var from = -(BossPortalShape.HalfDepth + body.Shape.Radius + RunUp(start.Balance));
         foreach (var across in PortalSite.Steps(-1.9f, 1.9f, 0.1f))
         {
-            if (!body.IsFree(level, body.Place(level, site.At(across, from))))
+            if (!body.Shape.IsFree(level, body.Shape.Place(level, site.At(across, from))))
             {
                 places.Skipped();
                 continue;
             }
 
             var where = $"{ctx} {body.Name} running {PortalSite.Where(across, from)}";
-            report.Try(where, () => RunIn(start, where, body, across, from, report, places));
+            report.Try(where, () => RunIn(start, where, body, running, across, from, report, places));
         }
 
         places.Verify();
@@ -249,21 +257,21 @@ internal static class DoorSlam
     // First a probe: held at the start for ProbeHold ticks, then let go - which tick after letting go has it in the
     // doorway, and which tick (counted from the sealing) the door blocks. Then the run itself: held so long that it
     // reaches the doorway in the slam tick.
-    private static void RunIn(GameWorld start, string where, Body body, float across, float from, Report report, Report.Places places)
+    private static void RunIn(GameWorld start, string where, Body body, RunningCase running, float across, float from, Report report, Report.Places places)
     {
-        if (Prepare(start, where, body, report, awake: true) is not { } prepared)
+        if (Prepare(start, where, body, report, running) is not { } prepared)
         {
             return;
         }
 
         var (probe, probeSite, probeEnemy) = prepared;
-        var at = body.Place(probe.World.Level, probeSite.At(across, from));
+        var at = body.Shape.Place(probe.World.Level, probeSite.At(across, from));
         var limit = Play.BossDoorShutTicks(probe.World);
         int? inDoorway = null;
         var shut = -1;
         for (var tick = 0; tick <= limit && shut < 0; tick++)
         {
-            probe.Tick(Step(probe, probeSite, body, probeEnemy, at, tick < ProbeHold, tick == ProbeHold));
+            probe.Tick(Step(probe, probeSite, running, probeEnemy, at, tick < ProbeHold, tick == ProbeHold));
             if (tick >= ProbeHold && inDoorway is null && !probeSite.Door.Blocks && probeSite.InDoorway(Position(probe, probeEnemy)))
             {
                 inDoorway = tick - ProbeHold;
@@ -284,7 +292,7 @@ internal static class DoorSlam
             return;
         }
 
-        if (Prepare(start, where, body, report, awake: true) is not { } again)
+        if (Prepare(start, where, body, report, running) is not { } again)
         {
             return;
         }
@@ -292,7 +300,7 @@ internal static class DoorSlam
         var (play, site, enemy) = again;
         for (var tick = 0; tick <= shut; tick++)
         {
-            play.Tick(Step(play, site, body, enemy, at, tick < hold, tick == hold));
+            play.Tick(Step(play, site, running, enemy, at, tick < hold, tick == hold));
         }
 
         if (report.Check(!site.Door.Blocks, $"{where}: boss door does not block in tick {shut} after the sealing, as in the probe")
@@ -307,16 +315,16 @@ internal static class DoorSlam
     }
 
     // One tick of a run-up: held at the start, let go (launched), or running on.
-    private static PlayerInput Step(Play play, PortalSite site, Body body, ITarget? enemy, Vector3 at, bool held, bool letGo)
+    private static PlayerInput Step(Play play, PortalSite site, RunningCase running, ITarget? enemy, Vector3 at, bool held, bool letGo)
     {
         if (held || letGo)
         {
-            body.PlaceAt(play, enemy, at);
+            PlaceAt(play, enemy, at);
         }
 
         if (letGo)
         {
-            body.Launch!(play, site, enemy, at);
+            running.Launch(play, site, enemy, at);
         }
 
         return held || enemy is not null ? PlayerInput.None : Play.Forward;
@@ -349,19 +357,19 @@ internal static class DoorSlam
     {
         var beyond = site.BeyondDoor(Position(play, enemy));
         return !report.Check(
-            MathF.Abs(beyond - (body.Radius + GameWorld.ThresholdGap)) > PushTolerance,
-            string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{where}: not in the doorway at the slam - {beyond:0.000} m past the door's box, a pushed body stands {body.Radius + GameWorld.ThresholdGap:0.000} m past it"));
+            MathF.Abs(beyond - (body.Shape.Radius + GameWorld.ThresholdGap)) > PushTolerance,
+            string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{where}: not in the doorway at the slam - {beyond:0.000} m past the door's box, a pushed body stands {body.Shape.Radius + GameWorld.ThresholdGap:0.000} m past it"));
     }
 
     // A fresh world with the door open, the player walked in and the boss room sealed; the enemy that plays the body
     // (null for the player) alive and every other ghoul and bat dead, the player then in the boss room. Null if not.
-    // Awake: the enemy is woken first in its arena (Body.Awake), so it acts - a running body must move.
-    private static (Play Play, PortalSite Site, ITarget? Enemy)? Prepare(GameWorld start, string where, Body body, Report report, bool awake = false)
+    // Running: the enemy is woken first in its arena (RunningCase.Awake), so it acts - a running body must move.
+    private static (Play Play, PortalSite Site, ITarget? Enemy)? Prepare(GameWorld start, string where, Body body, Report report, RunningCase? running = null)
     {
         var world = start.Restarted();
         var play = new Play(world, report, where);
         var site = PortalSite.Find(world, report, where)!;
-        var enemy = awake ? body.Awake!(play, report) : body.Enemy(world);
+        var enemy = running is null ? body.Enemy(world) : running.Awake(play, report);
         if (body.Name != "player" && enemy is null)
         {
             report.Count($"{body.Name}: none in the level");
@@ -383,27 +391,36 @@ internal static class DoorSlam
         return (play, site, enemy);
     }
 
-    private sealed record Body(
-        string Name, float Radius, float Height, float StepHeight, bool Flies, int Standing, int Running,
-        Func<GameWorld, ITarget?> Enemy, Func<Play, Report, ITarget?>? Awake, Action<Play, PortalSite, ITarget?, Vector3>? Launch)
+    // Sets the body there: the player (enemy null) or the enemy that plays it.
+    private static void PlaceAt(Play play, ITarget? enemy, Vector3 at)
+    {
+        if (enemy is null)
+        {
+            play.PlaceAt(at);
+        }
+        else
+        {
+            Play.PlaceEnemyAt(enemy, at);
+        }
+    }
+
+    // One kind of body in the doorway (issue #672: split up by task): its measures, the places it plays standing per side
+    // of the middle at least, which figure of a world plays it (null: the player), and how it runs in - null if it does
+    // not (Gorm).
+    private sealed record Body(string Name, BodyShape Shape, int Standing, Func<GameWorld, ITarget?> Enemy, RunningCase? Running);
+
+    // The measures of a body: where it stands (a flying body hovers over the floor) and whether a place is free for it.
+    private sealed record BodyShape(float Radius, float Height, float StepHeight, bool Flies)
     {
         public Vector3 Place(Level level, Vector3 floor) => Flies ? Bat.HoverPosition(level, floor) : floor;
 
         public bool IsFree(Level level, Vector3 at) =>
             !CharacterCollision.Overlaps(level, at, Radius, Height, StepHeight) && !Play.InPortalStone(level, new CylinderBody(at, Radius, Height));
-
-        public void PlaceAt(Play play, ITarget? enemy, Vector3 at)
-        {
-            if (enemy is null)
-            {
-                play.PlaceAt(at);
-            }
-            else
-            {
-                Play.PlaceEnemyAt(enemy, at);
-            }
-        }
     }
+
+    // How a body runs into the doorway: the places it plays per side of the middle at least, how the figure that plays it
+    // is woken (null: the player) and how it is let go (walking in, knocked in).
+    private sealed record RunningCase(int Places, Func<Play, Report, ITarget?> Awake, Action<Play, PortalSite, ITarget?, Vector3> Launch);
 }
 
 /// <summary>
