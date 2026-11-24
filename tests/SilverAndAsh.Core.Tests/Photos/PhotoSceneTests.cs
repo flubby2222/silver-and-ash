@@ -134,7 +134,7 @@ public class PhotoSceneTests
             "boss-portal-front-6m", "boss-portal-front-6m-open", "boss-portal-back-6m", "boss-portal-back-6m-open",
             "boss-portal-barred", "boss-portal-gorm",
             "bullet-impact-wall",
-            "course-1-arms", "course-2-columns", "course-3-cracked-wall", "course-4-portcullis", "course-5-teleporter", "course-6-boss",
+            "course-1-arms", "course-1-arms-row", "course-2-columns", "course-3-cracked-wall", "course-4-portcullis", "course-5-teleporter", "course-6-boss",
             "showroom-stairs", "course-boss-stairs",
         ];
 

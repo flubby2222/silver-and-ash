@@ -1,4 +1,5 @@
 using Raylib_cs;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
@@ -12,7 +13,7 @@ internal static class LookSettings
     /// Height of the picture the 3D world is drawn into (then scaled up with hard pixel edges). Its width follows the
     /// shape of the window (<see cref="SilverAndAsh.Core.Presentation.PictureWidth"/>, issue #350): 854 at 16:9.
     /// </summary>
-    public const int RenderHeight = 480;
+    public const int RenderHeight = CameraFrame.PictureHeight;
 
     /// <summary>Dark violet-black that everything fades into with distance.</summary>
     public static readonly Color FogColor = new(16, 11, 20, 255);
@@ -35,8 +36,8 @@ internal static class LookSettings
     /// <summary>Colour of the bars when the window is narrower than 5:4 or wider than 32:9 (PictureWidth, issue #350).</summary>
     public static readonly Color BarColor = Color.Black;
 
-    /// <summary>Vertical field of view of the camera in degrees.</summary>
-    public const float FieldOfViewDegrees = 70f;
+    /// <summary>Vertical field of view of the camera in degrees - Core's, so tests of the photos count with it too.</summary>
+    public const float FieldOfViewDegrees = CameraFrame.FieldOfViewDegrees;
 
     /// <summary>Base colours of the surfaces before shading.</summary>
     public static readonly Color WallColor = new(122, 104, 112, 255);
