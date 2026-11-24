@@ -12,6 +12,20 @@ namespace SilverAndAsh.Core.World;
 public readonly record struct PortalBlock(float AcrossFrom, float AcrossTo, float AlongFrom, float AlongTo, float Bottom, float Top);
 
 /// <summary>
+/// One block of a boss portal's stone, mirrored to one side of the passage and of the door: its rectangle on the ground
+/// plane (world X and Z, smallest and largest corner) and its <see cref="Bottom"/> and <see cref="Top"/> (world height).
+/// </summary>
+public readonly record struct PortalStone(Vector2 Min, Vector2 Max, float Bottom, float Top)
+{
+    /// <summary>Only the rectangle on the ground plane.</summary>
+    public void Deconstruct(out Vector2 min, out Vector2 max)
+    {
+        min = Min;
+        max = Max;
+    }
+}
+
+/// <summary>
 /// The measure of the boss portal's stone (issue #568, tools/models/boss_portal.py - the numbers are those of the model
 /// script): the stepped jambs (Gewände) of the three-run pointed arch, the plinth, the imposts, the buttresses and their
 /// cover plates. The model and <see cref="BossPortal"/> - walking, sight, shots and way-finding - share these numbers
@@ -99,8 +113,11 @@ public static class BossPortalShape
             return !IsOpen(across, along, up);
         }
 
-        foreach (var block in Blocks)
+        // A plain loop over the list: every short step of a ray near the portal asks here, and foreach over the interface
+        // would make a new enumerator each time (issue #653).
+        for (var i = 0; i < Blocks.Count; i++)
         {
+            var block = Blocks[i];
             if (block.AlongFrom >= HalfDepth && Holds(block, across, along, up))
             {
                 return true;
@@ -193,77 +210,22 @@ public readonly record struct BossPortal(float X, float Z, float Floor, bool Pas
     }
 
     /// <summary>
-    /// The rectangles on the ground plane (world X and Z, smallest and largest corner) of the blocks that stand in the
-    /// way of a body from <paramref name="from"/> to <paramref name="to"/> metres above the floor.
+    /// The blocks (each mirrored, as <see cref="PortalStone"/>) that stand in the way of a body from <paramref name="from"/>
+    /// to <paramref name="to"/> (world heights).
     /// </summary>
-    public IEnumerable<(Vector2 Min, Vector2 Max)> Footprint(float from, float to)
-    {
-        foreach (var block in BossPortalShape.Blocks)
-        {
-            if (block.Top <= from - Floor || block.Bottom >= to - Floor)
-            {
-                continue;
-            }
-
-            // Mirrored four times: left and right of the passage (side), in front of and behind the door (face).
-            for (var side = 1f; side >= -1f; side -= 2f)
-            {
-                for (var face = 1f; face >= -1f; face -= 2f)
-                {
-                    yield return Rectangle(block, side, face);
-                }
-            }
-        }
-    }
+    public Stones Footprint(float from, float to) => new(this, Pick.InTheWay, from, to);
 
     /// <summary>
-    /// The rectangles on the ground plane (as in <see cref="Footprint"/>) of the blocks whose top lies at most at
-    /// <paramref name="height"/>, with that top (world height): what a falling body can come to lie on (issue #627).
+    /// The blocks (as in <see cref="Footprint"/>) whose top lies at most at <paramref name="height"/>: what a falling body
+    /// can come to lie on (issue #627).
     /// </summary>
-    public IEnumerable<(Vector2 Min, Vector2 Max, float Top)> Tops(float height)
-    {
-        foreach (var block in BossPortalShape.Blocks)
-        {
-            if (Floor + block.Top > height)
-            {
-                continue;
-            }
-
-            for (var side = 1f; side >= -1f; side -= 2f)
-            {
-                for (var face = 1f; face >= -1f; face -= 2f)
-                {
-                    var (min, max) = Rectangle(block, side, face);
-                    yield return (min, max, Floor + block.Top);
-                }
-            }
-        }
-    }
+    public Stones Tops(float height) => new(this, Pick.TopUpTo, height, height);
 
     /// <summary>
-    /// The rectangles on the ground plane (as in <see cref="Footprint"/>) of the blocks whose bottom lies at least at
-    /// <paramref name="height"/>, with that bottom (world height): what a rising body can bump its head against - the
-    /// impost above the plinth (issue #635).
+    /// The blocks (as in <see cref="Footprint"/>) whose bottom lies at least at <paramref name="height"/>: what a rising
+    /// body can bump its head against - the impost above the plinth (issue #635).
     /// </summary>
-    public IEnumerable<(Vector2 Min, Vector2 Max, float Bottom)> Bottoms(float height)
-    {
-        foreach (var block in BossPortalShape.Blocks)
-        {
-            if (Floor + block.Bottom < height)
-            {
-                continue;
-            }
-
-            for (var side = 1f; side >= -1f; side -= 2f)
-            {
-                for (var face = 1f; face >= -1f; face -= 2f)
-                {
-                    var (min, max) = Rectangle(block, side, face);
-                    yield return (min, max, Floor + block.Bottom);
-                }
-            }
-        }
-    }
+    public Stones Bottoms(float height) => new(this, Pick.BottomFrom, height, height);
 
     /// <summary>
     /// True if the square of half-width <paramref name="halfWidth"/> around <paramref name="point"/> (on the ground plane)
@@ -367,6 +329,88 @@ public readonly record struct BossPortal(float X, float Z, float Floor, bool Pas
         }
 
         return new Vector3(0f, -MathF.Sign(blocked.Y - free.Y), 0f);
+    }
+
+    // Which blocks a walk of Stones picks: those in the way between two heights, those with their top at most at a
+    // height, or those with their bottom at least at one (all world heights).
+    internal enum Pick
+    {
+        InTheWay,
+        TopUpTo,
+        BottomFrom,
+    }
+
+    /// <summary>
+    /// The blocks a <see cref="Footprint"/>, <see cref="Tops"/> or <see cref="Bottoms"/> picks, each mirrored four times
+    /// (left and right of the passage, in front of and behind the door), block by block. A struct that is its own
+    /// enumerator: walking and every falling body ask for it every tick, and an iterator would make a new object each
+    /// time (issue #653). Only for <c>foreach</c>.
+    /// </summary>
+    public struct Stones
+    {
+        private readonly BossPortal _portal;
+        private readonly Pick _pick;
+        private readonly float _from;
+        private readonly float _to;
+        private int _block;
+        private int _mirror;
+
+        internal Stones(BossPortal portal, Pick pick, float from, float to)
+        {
+            _portal = portal;
+            _pick = pick;
+            _from = from;
+            _to = to;
+            _block = -1;
+            _mirror = Mirrors - 1;
+        }
+
+        /// <summary>The block (mirrored) the walk stands at.</summary>
+        public PortalStone Current { get; private set; }
+
+        /// <summary>The walk itself, for <c>foreach</c>.</summary>
+        public readonly Stones GetEnumerator() => this;
+
+        /// <summary>Goes on to the next mirror of the block, or to the first of the next block picked; false at the end.</summary>
+        public bool MoveNext()
+        {
+            var blocks = BossPortalShape.Blocks;
+            if (_mirror < Mirrors - 1)
+            {
+                _mirror++;
+            }
+            else
+            {
+                do
+                {
+                    if (_block >= blocks.Count - 1)
+                    {
+                        _block = blocks.Count;
+                        return false;
+                    }
+
+                    _block++;
+                }
+                while (!Picks(blocks[_block]));
+
+                _mirror = 0;
+            }
+
+            // In the order of before: side 1 then -1, within each side face 1 then -1.
+            var block = blocks[_block];
+            var (min, max) = _portal.Rectangle(block, _mirror < 2 ? 1f : -1f, _mirror % 2 == 0 ? 1f : -1f);
+            Current = new PortalStone(min, max, _portal.Floor + block.Bottom, _portal.Floor + block.Top);
+            return true;
+        }
+
+        private const int Mirrors = 4;
+
+        private readonly bool Picks(PortalBlock block) => _pick switch
+        {
+            Pick.InTheWay => !(block.Top <= _from - _portal.Floor || block.Bottom >= _to - _portal.Floor),
+            Pick.TopUpTo => !(_portal.Floor + block.Top > _from),
+            _ => !(_portal.Floor + block.Bottom < _from),
+        };
     }
 
     // Across = metres from the middle of the passage, along = metres from the door plane.
