@@ -113,6 +113,11 @@ public sealed class SoundPack
         [SoundKind.ColumnHit1] = ["saeule-treffer-stufe1.wav"],
         [SoundKind.ColumnHit2] = ["saeule-treffer-stufe2.wav"],
         [SoundKind.ColumnBroke] = ["saeule-bruch.wav"],
+
+        // Issue #569: the boss door, from round 2 of its listening test in issue #549 (tools/audio/bosstuer_klang.py).
+        // Closing is take 2 (strong rumble, long echo) with the slam 78 ticks in, opening take 1 (fine rubble).
+        [SoundKind.BossDoorClosing] = ["bosstuer-schliessen.wav"],
+        [SoundKind.BossDoorOpening] = ["bosstuer-oeffnen.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>
