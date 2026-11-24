@@ -66,6 +66,51 @@ public class BossPortalNeighbourTests
     }
 
     [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    [InlineData(5)]
+    public void A_bat_circling_beside_the_portal_with_a_column_in_its_way_keeps_out_of_both_and_climbs_on(int seed)
+    {
+        // As above, but a column stands 0.8 m in front of the wall, left of the impost (x 8.28-9 m): the bat's circle
+        // runs between them, the wall pushes it back against the column. Its middle never gets into the stone or the
+        // column - and the column (in its way at every height alike) does not hold its height: while it touches it, it
+        // goes on rising and sinking (issue #635).
+        var column = new Column(8f, 7.2f);
+        var world = World(seed, withBat: true, columns: [column]);
+        var bat = Assert.Single(world.Bats);
+        var atTheWall = DoorPlaneZ - BossPortalShape.HalfDepth - BodySizes.Bat.Radius;
+        var aside = MiddleX - 0.7f;
+        world.Player.PlaceAt(new Vector3(aside, 0f, atTheWall - 1.5f));
+        bat.PlaceAt(new Vector3(aside, BodySizes.Bat.HoverHeight, atTheWall));
+        var portal = Assert.Single(world.Level.Portals);
+        var (touching, held) = (0, 0);
+
+        for (var tick = 0; tick < 600; tick++)
+        {
+            var before = bat.Position.Y;
+            world.Tick(PlayerInput.None);
+
+            Assert.False(portal.Contains(bat.Centre), $"tick {tick}: its middle at {bat.Centre}");
+            Assert.False(column.Contains(bat.Centre), $"tick {tick}: its middle at {bat.Centre}");
+            Assert.False(
+                BossPortalStoneTests.InStone(world.Level, bat.Position, BodySizes.Bat.Radius, BodySizes.Bat.Height),
+                $"tick {tick}: {bat.Position}");
+            var gap = Vector2.Distance(new Vector2(bat.Position.X, bat.Position.Z), column.Centre)
+                - Column.Radius - BodySizes.Bat.Radius;
+            if (gap < 0.01f && bat.State == BatState.Circling)
+            {
+                touching++;
+                held += bat.Position.Y == before ? 1 : 0;
+            }
+        }
+
+        // It really was pressed against the column while circling - the test would prove nothing otherwise. Only where
+        // its up-and-down wave turns may its height stay the same for a tick: held, it would stay the same nearly always.
+        Assert.True(touching >= 20, $"ticks circling at the column: {touching}");
+        Assert.True(held * 10 <= touching, $"ticks its height was held at the column: {held} of {touching}");
+    }
+
+    [Theory]
     [InlineData(2)]
     [InlineData(6)]
     [InlineData(9)]
@@ -229,21 +274,21 @@ public class BossPortalNeighbourTests
     public void Gorms_vial_does_not_lie_in_the_plinth_when_he_falls_beside_it()
     {
         // He falls 1.5 m in front of the wall of the boss room, 1.5 m beside the middle, looking along -Z: the vial would
-        // lie 1.2 m in front of him - on open floor of the boss room, but reaching into the plinth and the buttress.
+        // lie Balance.Gorm.VialDistance (1.2 m) in front of him - on open floor of the boss room, but reaching into the plinth and the buttress.
         var world = World(1, withBat: false);
         var gorm = world.Gorm!;
         Assert.Equal(-Vector3.UnitZ, gorm.Facing);
         var fell = new Vector3(MiddleX + 1.5f, 0f, DoorPlaneZ + BossPortalShape.HalfDepth + 1.5f);
         ((IEnemy)gorm).PlaceAt(fell);
         var portal = Assert.Single(world.Level.Portals);
-        Assert.True(portal.Covers(new Vector2(fell.X, fell.Z - 1.2f), BodySizes.Pickup.Radius), "the vial would not reach the stone - the test would prove nothing");
+        Assert.True(portal.Covers(new Vector2(fell.X, fell.Z - Balance.Default.Gorm.VialDistance), BodySizes.Pickup.Radius), "the vial would not reach the stone - the test would prove nothing");
 
         gorm.TakeDamage(gorm.Health, new List<GameEvent>());
         world.Tick(PlayerInput.None);
 
         var vial = Assert.Single(world.Pickups, pickup => pickup.Kind == ConsumableKind.BloodVial);
         Assert.False(portal.Covers(new Vector2(vial.Position.X, vial.Position.Z), BodySizes.Pickup.Radius), $"the vial lies at {vial.Position}");
-        Assert.Equal(1.2f, Vector2.Distance(new Vector2(vial.Position.X, vial.Position.Z), new Vector2(fell.X, fell.Z)), 0.001f);
+        Assert.Equal(Balance.Default.Gorm.VialDistance, Vector2.Distance(new Vector2(vial.Position.X, vial.Position.Z), new Vector2(fell.X, fell.Z)), 0.001f);
         for (var y = 0.01f; y < BossPortalShape.Height; y += 0.1f)
         {
             foreach (var corner in new[] { new Vector2(-1f, -1f), new Vector2(-1f, 1f), new Vector2(1f, -1f), new Vector2(1f, 1f) })
@@ -256,7 +301,7 @@ public class BossPortalNeighbourTests
 
     private static int DownToHalf(GormBalance gorm) => gorm.MaxHealth - (int)MathF.Floor(gorm.MaxHealth * gorm.Phase2Health);
 
-    private static GameWorld World(int seed, bool withBat, Balance? balance = null)
+    private static GameWorld World(int seed, bool withBat, Balance? balance = null, Column[]? columns = null)
     {
         var map = string.Join('\n',
             "#....P...#",
@@ -278,7 +323,7 @@ public class BossPortalNeighbourTests
             new(1, RoomKind.Boss, "boss", 0, 5, 10, 7, 1, Rows(5, 11), [], []),
         ];
         LevelDoor[] doors = [new(4, 4, 0, 1, RoomSide.South, DoorKind.Boss) { MoreCells = [(5, 4)] }];
-        return new GameWorld(LevelParser.Parse(map), seed, balance ?? Tough, doors, rooms);
+        return new GameWorld(LevelParser.Parse(map).WithColumns(columns ?? []), seed, balance ?? Tough, doors, rooms);
 
         static List<(int X, int Z)> Rows(int from, int to) =>
             Enumerable.Range(from, to - from + 1).SelectMany(z => Enumerable.Range(1, 8).Select(x => (x, z))).ToList();
