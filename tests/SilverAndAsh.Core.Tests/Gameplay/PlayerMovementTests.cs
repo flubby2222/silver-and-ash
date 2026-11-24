@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -185,13 +186,5 @@ public class PlayerMovementTests
 
         Assert.Equal(player.EyePosition, player.InterpolatedEyePosition(1f));
         Assert.NotEqual(player.EyePosition, player.InterpolatedEyePosition(0f));
-    }
-
-    private static void RunTicks(Player player, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            player.Tick(input);
-        }
     }
 }

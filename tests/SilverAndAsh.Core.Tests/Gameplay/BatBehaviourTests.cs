@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -363,8 +364,6 @@ public class BatBehaviourTests
             Look = new Vector2(-(yaw - player.View.YawRadians) / ControlSettings.MouseSensitivity, 0f),
         });
     }
-
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     private static float AngleAround(Vector3 centre, Vector3 point) => MathF.Atan2(point.Z - centre.Z, point.X - centre.X);
 

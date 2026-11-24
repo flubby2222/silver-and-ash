@@ -3,6 +3,7 @@ using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -83,8 +84,6 @@ public class GormHookTests
         public void UntilHookEnds(PlayerInput? input = null) =>
             Run(3 * Second, input, () => Saw<HookHit>() || Saw<HookStopped>());
     }
-
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     // ---- Lead ------------------------------------------------------------------------------------------------------
 

@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -223,13 +224,5 @@ public class GameWorldGhoulTests
             -(MathF.Atan2(direction.X, direction.Z) - player.View.YawRadians) / ControlSettings.MouseSensitivity,
             -(MathF.Asin(direction.Y) - player.View.PitchRadians) / ControlSettings.MouseSensitivity);
         player.Look(PlayerInput.None with { Look = pixels });
-    }
-
-    private static void RunTicks(GameWorld world, PlayerInput input, int ticks)
-    {
-        for (var i = 0; i < ticks; i++)
-        {
-            world.Tick(input);
-        }
     }
 }

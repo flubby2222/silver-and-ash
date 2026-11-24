@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -370,8 +371,6 @@ public class KeyTests
         var deviation = Math.Sqrt(tries * chance * (1.0 - chance));
         return (expected - (3.5 * deviation), expected + (3.5 * deviation));
     }
-
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     private static void Kill(ITarget target) => target.TakeDamage(10_000, []);
 

@@ -1,6 +1,7 @@
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using static SilverAndAsh.Core.Tests.Gameplay.JumpTestKit;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
