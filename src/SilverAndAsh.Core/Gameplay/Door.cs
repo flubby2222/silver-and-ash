@@ -5,8 +5,9 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// A door between two rooms. It fills one cell of the level, the boss door two (<see cref="Cells"/>): while closed or
-/// barred, the world treats those cells as wall (so it blocks walking, sight, shots, blood bolts and the enemies' way-finding). Once open it stays open -
+/// A door between two rooms. It fills one cell of the level (the boss door of a generated level two, see
+/// <see cref="Cells"/>): while closed or barred, the world treats those cells as wall (so it blocks walking, sight,
+/// shots, blood bolts and the enemies' way-finding). Once open it stays open -
 /// only an arena's grate can block it for a while. A locked door needs a key (<see cref="Player.Keys"/>) to open.
 /// </summary>
 public sealed class Door : IInteractable
