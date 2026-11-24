@@ -175,6 +175,7 @@ column-hit2-6m | ticks 1 menu None ----- | The breaking column of the showroom: 
 column-hit2-10m | ticks 1 menu None ----- | The breaking column of the showroom: 2 blows, from 10 m (issue #601).
 column-broken-6m | ticks 1 menu None ----- | The breaking column of the showroom: Broken, from 6 m (issue #601).
 column-broken-10m | ticks 1 menu None ----- | The breaking column of the showroom: Broken, from 10 m (issue #601).
+showroom-stairs | ticks 1 menu None ----- | The spiral staircase in the showroom's hall from 5 m, looking up to its top: the staircase and its label under the 6 m ceiling, nothing through it (issue #727).
 equipment-rifle | ticks 1 menu None ----- | The rifle (Forged) lying in the showroom, 0.8 m away: "[F] Take Rifle (Forged)" in steel blue (issue #317).
 equipment-worn | ticks 1 menu None ----- | Hunter's Boots (Worn) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
 equipment-forged | ticks 1 menu None ----- | Silver Rosary (Forged) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
@@ -188,3 +189,4 @@ course-3-cracked-wall | ticks 1 menu None ----- | Station 3 of the test course f
 course-4-portcullis | ticks 65 menu None ----- | Station 4 of the test course, sealed: from inside the arena back at the fallen grate, the ghoul and the bat coming out by the column (issue #718).
 course-5-teleporter | ticks 1 menu None ----- | Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, Sirius' Relief beside the way (issue #718).
 course-6-boss | ticks 1 menu None ----- | Station 6 of the test course from its north-east corner: the antechamber, silver and a blood vial before the boss portal (issue #718).
+course-boss-stairs | ticks 600 menu None ----S | The boss room of the test course after the victory: Gorm dead, the spiral staircase risen in its middle and its lamp lit, from 6 m towards the portal, up to under the 6 m ceiling (issue #727).

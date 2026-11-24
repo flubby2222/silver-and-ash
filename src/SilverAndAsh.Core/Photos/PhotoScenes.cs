@@ -37,6 +37,7 @@ public static class PhotoScenes
         .. PortcullisScenes(),
         .. ColumnScenes(),
         .. BreakingColumnScenes(),
+        .. ShowroomStairsScenes(),
         .. EquipmentScenes(),
         .. CourseScenes.All(),
     ];
@@ -673,6 +674,32 @@ public static class PhotoScenes
                     studio => new PhotoSetup(BeforeBreakingColumn(studio, stage, metres)));
             }
         }
+    }
+
+    // The staircase of the showroom with its label, from the floor of its hall (issue #727): both under the 6 m ceiling.
+    private static PhotoScene[] ShowroomStairsScenes() =>
+    [
+        new("showroom-stairs",
+            "The spiral staircase in the showroom's hall from 5 m, looking up to its top: the staircase and its label under the 6 m ceiling, nothing through it (issue #727).",
+            studio => new PhotoSetup(BeforeShowroomStairs(studio, 5f))),
+    ];
+
+    // A player `metres` m from the showroom's staircase, on the first side (south, north, east, west) with open floor
+    // under the same ceiling all the way, looking at it two thirds up.
+    private static GameWorld BeforeShowroomStairs(PhotoStudio studio, float metres)
+    {
+        var layout = ShowroomLayout.Build();
+        var placed = layout.Placed.First(place => place.Piece is StairsPiece);
+        var spot = layout.Level.CellCenter(placed.X, placed.Z);
+        var ceiling = layout.Level[placed.X, placed.Z].CeilingHeight;
+        var target = spot + new Vector3(0f, Stairs.Height * 2f / 3f, 0f);
+        var side = new[] { Vector3.UnitZ, -Vector3.UnitZ, Vector3.UnitX, -Vector3.UnitX }.First(way =>
+            Enumerable.Range(1, (int)metres + 1).All(step =>
+                layout.Level.CellAt(spot + (way * step)) is { IsSolid: false } cell && cell.CeilingHeight == ceiling));
+        var world = layout.NewWorldAt(placed.X, placed.Z, target, studio.Balance);
+        world.Player.PlaceAt(spot + (side * metres));
+        PhotoStudio.Face(world.Player, target);
+        return world;
     }
 
     private static GameWorld BeforeBreakingColumn(PhotoStudio studio, ColumnStage stage, float metres)

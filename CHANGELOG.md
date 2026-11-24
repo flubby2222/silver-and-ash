@@ -15,6 +15,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ### Behoben
 - **Türrahmen ohne ragende Rechtecke:** An normalen und verschlossenen Türen standen die hellen Kämpfer- und Sockelplatten vor der Wand und ragten wie lose Klötze in die Öffnung. Sie sitzen jetzt bündig im Pfeiler. Neue Regel in der Art Bible: Kein Bauteil ragt ohne erkennbaren Zweck in eine Öffnung (#715)
+- **Ersatz-Treppe unter der Decke:** Fehlt das Treppenmodell, ragte die Lampe der Ersatz-Treppe 10 cm durch die Decke des Bossraums. Sie liegt jetzt oben auf der Treppe und endet an der Decke. Neue Fotos der Treppe: `--photo showroom-stairs` (Musterraum mit Schild) und `--photo course-boss-stairs` (Prüfstrecke nach dem Sieg) (#727)
 
 ## [0.12.0] – 2026-11-24 – Portal & Säulen
 
