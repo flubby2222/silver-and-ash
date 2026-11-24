@@ -96,6 +96,30 @@ public class DoorFrameLookTests
         Assert.InRange(back.PositionMax.Z, -0.2f, Tolerance);
     }
 
+    [Theory]
+    [InlineData(DoorKind.Normal, TextureVariant.A)]
+    [InlineData(DoorKind.Normal, TextureVariant.B)]
+    [InlineData(DoorKind.Normal, TextureVariant.C)]
+    [InlineData(DoorKind.Locked, TextureVariant.A)]
+    [InlineData(DoorKind.Locked, TextureVariant.B)]
+    [InlineData(DoorKind.Locked, TextureVariant.C)]
+    public void The_arch_has_its_underside_in_the_depth_of_the_leaf_too(DoorKind kind, TextureVariant variant)
+    {
+        // Issue #714: between the two halves of the frame, where the leaf stands (0.07 m either side of the door plane), the
+        // arch had no surface. Closed, the head panel of the leaf filled it; open, the leaves took it away and a player below
+        // the arch saw a dark curved stripe into the empty space above. Each half therefore reaches up to the door plane
+        // along the whole arch, up to its crown (a 1.4375 m circle from the springing at 2 m, crown at 3.32 m).
+        var bytes = File.ReadAllBytes(RepositoryFiles.Find($"assets/models/{DoorFrameLook.FileName(kind, variant)}"));
+        var corners = GlbVertices.Read(bytes);
+
+        foreach (var face in new[] { DoorFrameLook.Front, DoorFrameLook.Back })
+        {
+            var inDoorPlane = corners[face].Where(corner => MathF.Abs(corner.Z) < Tolerance && corner.Y > 2.05f).ToList();
+            Assert.True(inDoorPlane.Count >= 6, $"{face} of the {kind} frame has no arch surface in the door plane.");
+            Assert.True(inDoorPlane.Max(corner => corner.Y) > 3.3f, $"{face} of the {kind} frame stops short of the crown of the arch.");
+        }
+    }
+
     [Fact]
     public void The_boss_portal_spans_both_cells_of_the_boss_door_and_reaches_the_ceiling_of_its_rooms()
     {
