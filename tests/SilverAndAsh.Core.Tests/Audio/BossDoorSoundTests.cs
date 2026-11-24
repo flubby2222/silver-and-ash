@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using SilverAndAsh.Core.Audio;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
@@ -137,12 +139,46 @@ public class BossDoorSoundTests
         var shutTick = built.RootElement.GetProperty("bossShutTick").GetInt32();
         var openTicks = built.RootElement.GetProperty("bossOpenTicks").GetInt32();
 
+        // Issue #680: the script's own constants, too - the files are built on those, so a companion file set to the
+        // balance by hand must not turn the test green. Only the file is read, Python is not run.
+        var script = File.ReadAllText(RepositoryFiles.Find(Script));
+        var scriptShutTick = ScriptConstant(script, "ANSCHLAG_TICK");
+        var scriptOpenTicks = ScriptConstant(script, "OEFFNEN_TICKS");
+
         Assert.True(
             shutTick == Doors.BossShutTick && openTicks == OpenTicks,
             $"The boss door sounds are built on the slam at tick {shutTick} and an opening of {openTicks} ticks, but the "
             + $"balance has bossShutTick {Doors.BossShutTick} and an opening of {OpenTicks} ticks (bossOpenTime "
             + $"{Doors.BossOpenTime} s). Set the ticks in {Script}, run it, run tools/models/checksums.py and have the "
             + "sounds listened to again (audio bible, rule 13).");
+        Assert.True(
+            scriptShutTick == shutTick && scriptOpenTicks == openTicks,
+            $"{Script} builds the boss door sounds on the slam at tick {scriptShutTick} (ANSCHLAG_TICK) and an opening "
+            + $"of {scriptOpenTicks} ticks (OEFFNEN_TICKS), but assets/audio/{TicksFile} says {shutTick} and "
+            + $"{openTicks}: the companion file was changed by hand or the script was not run. Set the ticks in "
+            + $"{Script} to the balance (bossShutTick {Doors.BossShutTick}, {OpenTicks} ticks for bossOpenTime), run "
+            + "it, run tools/models/checksums.py and have the sounds listened to again (audio bible, rule 13).");
+    }
+
+    // The value of a constant "NAME = 123" at the start of a line of the script; it must be there exactly once.
+    private static int ScriptConstant(string script, string name)
+    {
+        var found = Regex.Matches(script, $@"^{name}[ \t]*=[ \t]*(\d+)[ \t]*(?:#.*)?\r?$", RegexOptions.Multiline);
+        Assert.True(
+            found.Count == 1,
+            $"{Script} must set {name} = <ticks> exactly once at the start of a line, found it {found.Count} times.");
+        return int.Parse(found[0].Groups[1].Value, CultureInfo.InvariantCulture);
+    }
+
+    [Fact]
+    public void A_tick_constant_missing_from_the_script_or_set_twice_is_reported_not_read()
+    {
+        // Error branches of ScriptConstant: a renamed, commented out or doubled constant must not pass for a value.
+        Assert.Equal(78, ScriptConstant("X = 1\nANSCHLAG_TICK = 78  # slam\r\nOEFFNEN_TICKS = 132\n", "ANSCHLAG_TICK"));
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => ScriptConstant("ANSCHLAG = 78\n", "ANSCHLAG_TICK"));
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => ScriptConstant("# ANSCHLAG_TICK = 78\n", "ANSCHLAG_TICK"));
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+            () => ScriptConstant("ANSCHLAG_TICK = 78\nANSCHLAG_TICK = 70\n", "ANSCHLAG_TICK"));
     }
 
     [Fact]
