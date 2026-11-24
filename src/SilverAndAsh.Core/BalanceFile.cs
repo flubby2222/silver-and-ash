@@ -109,7 +109,7 @@ public static class BalanceFile
         ["gorm.equipmentVampiricChance"] = 1,
         ["hearing.maxPan"] = 1,
         ["difficulty.doorConeAngle"] = 90,
-        ["grates.blockHeight"] = Presentation.GratePose.OpenHeight,
+        ["grates.blockHeight"] = GrateTravel.OpenHeight,
     };
 
     /// <summary>Values that must stay below a limit (a penalty of 100 % would mean standing still).</summary>

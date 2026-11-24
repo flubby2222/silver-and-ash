@@ -960,14 +960,14 @@ public sealed class GameWorld
         }
     }
 
-    // Issue #598: the stone portal of every boss door its model fits (DoorFrameLook.Fits - the same rule that decides
-    // whether the portal is drawn, so stone that blocks is always stone that is seen). Its middle is the middle of the
+    // Issue #598: the stone portal of every boss door it fits (BossPortalShape.StandsIn - the rule the picture reads to
+    // decide whether the portal is drawn, so stone that blocks is always stone that is seen). Its middle is the middle of the
     // door's cells, as for the drawing. A boss door of one cell (the showroom, a hand-made level) gets the placeholder
     // and no stone. A level that has these portals already (a restart passes the level on) stays the same level.
     private static Level WithBossPortals(Level level, IReadOnlyList<LevelDoor> doors)
     {
         var portals = doors
-            .Where(door => door.Kind == DoorKind.Boss && DoorFrameLook.Fits(door.Kind, door.Cells.Count))
+            .Where(door => BossPortalShape.StandsIn(door.Kind, door.Cells.Count))
             .Select(door =>
             {
                 var middle = door.Cells.Aggregate(Vector3.Zero, (sum, cell) => sum + level.CellCenter(cell.X, cell.Z)) / door.Cells.Count;

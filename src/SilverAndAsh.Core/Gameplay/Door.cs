@@ -1,5 +1,4 @@
 using System.Numerics;
-using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Gameplay;
@@ -92,13 +91,13 @@ public sealed class Door : IInteractable
     public bool HasGrate { get; }
 
     /// <summary>
-    /// The height of the grate's spike tips above the floor in metres (issue #558), from <see cref="GratePose.Height"/>:
-    /// <see cref="GratePose.OpenHeight"/> while it is up. The picture and the passage use this one number. A door
+    /// The height of the grate's spike tips above the floor in metres (issue #558), from <see cref="GrateTravel.Height"/>:
+    /// <see cref="GrateTravel.OpenHeight"/> while it is up. The picture and the passage use this one number. A door
     /// without a grate is "up" unless barred, then "down".
     /// </summary>
     public float GrateHeight => HasGrate
-        ? GratePose.Height(_grateTicks, _motion, _grates)
-        : _barred ? 0f : GratePose.OpenHeight;
+        ? GrateTravel.Height(_grateTicks, _motion, _grates)
+        : _barred ? 0f : GrateTravel.OpenHeight;
 
     /// <summary>Number of the door in its world (position in <see cref="GameWorld.Doors"/>).</summary>
     public int Id { get; }
@@ -146,7 +145,7 @@ public sealed class Door : IInteractable
     /// <see cref="GratesBalance.BlockHeight"/> again. The boss door (issue #566) has no grate: an open one blocks from the
     /// hard stop of its slam (<see cref="DoorsBalance.BossShutTick"/>) on.
     /// </summary>
-    public bool IsBarred => _barred || (HasGrate && GrateHeight < _grates.BlockHeight) || (_slam?.IsShut ?? false);
+    public bool IsBarred => _barred || (HasGrate && GrateTravel.Blocks(GrateHeight, _grates)) || (_slam?.IsShut ?? false);
 
     /// <summary>True if nothing can pass: closed, or barred.</summary>
     public bool Blocks => !IsOpen || IsBarred;
@@ -199,7 +198,7 @@ public sealed class Door : IInteractable
             _openedTicks++;
         }
 
-        if (HasGrate && _grateTicks < GratePose.MotionTicks(_motion, _grates))
+        if (HasGrate && _grateTicks < GrateTravel.MotionTicks(_motion, _grates))
         {
             _grateTicks++;
         }
@@ -287,6 +286,6 @@ public sealed class Door : IInteractable
     {
         var height = GrateHeight;
         _motion = motion;
-        _grateTicks = GratePose.StartTick(height, motion, _grates);
+        _grateTicks = GrateTravel.StartTick(height, motion, _grates);
     }
 }
