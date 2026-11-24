@@ -9,7 +9,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo ghoul-4m
 ```
 
 ```
-dotnet run --project src/SilverAndAsh.Game -- --photo all --out D:\fotos
+dotnet run --project src/SilverAndAsh.Game -- --photo all --out D:\fotos\lauf-1
 ```
 
 ```
@@ -17,7 +17,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 ```
 
 - `--photo <szene>` – eine Szene; `all` – alle nacheinander; `compare` – die Vergleichsszenen in allen Bild-Varianten (siehe unten); `list` – Namen und Beschreibung aller Szenen ausgeben (ohne Fenster).
-- `--out <ordner>` – wohin die Bilder kommen. Ohne `--out`: `%LOCALAPPDATA%\SilverAndAsh\photos`. **Nie ins Repository legen.** Der Ordner von `--out` muss **leer oder neu** sein (Issue #639); liegt schon etwas darin, bricht das Spiel vor dem ersten Bild mit Exit-Code `1` und der Meldung „The folder for the pictures is not empty: …“ ab – sonst lägen Bilder eines früheren Laufs neben den neuen und würden versehentlich mit ihnen verglichen. Für jeden Lauf also einen neuen Ordner nehmen. Der Standardordner ohne `--out` wird nicht geprüft; dort überschreibt jede Szene nur ihre eigenen zwei Dateien. Clips (`--clip`) räumen ihre Einzelbilder weiter selbst weg (siehe unten).
+- `--out <ordner>` – wohin die Bilder kommen. Ohne `--out`: `%LOCALAPPDATA%\SilverAndAsh\photos`. **Nie ins Repository legen.** Der Ordner von `--out` muss **leer oder neu** sein (Issue #639); liegt schon etwas darin, bricht das Spiel vor dem ersten Bild mit Exit-Code `1` und der Meldung „The folder for the pictures is not empty: …“ ab (ohne den Vorsatz „Could not load the level“ anderer Startfehler, Issue #651) – sonst lägen Bilder eines früheren Laufs neben den neuen und würden versehentlich mit ihnen verglichen. Für jeden Lauf also einen neuen Ordner nehmen (`lauf-2`, `vergleich-2` …). Der Standardordner ohne `--out` wird nicht geprüft; dort überschreibt jede Szene nur ihre eigenen zwei Dateien. Clips (`--clip`) räumen ihre Einzelbilder weiter selbst weg (siehe unten). **Bekommt eine Option eine neue Bedingung** wie diese, gehören alle Beispiele der Option in der Doku in denselben PR (`git grep -n -e "--out" -- docs`); sonst führen alte Beispiele beim zweiten Lauf in den neuen Fehler (Issue #651).
 - Pro Szene entstehen zwei Dateien:
   - `<szene>.png` – das 3D-Bild in Spielauflösung (854 × 480), so wie es die Grafikkarte zeichnet, ohne HUD.
   - `<szene>-screen.png` – das ganze Fenster (1280 × 720) mit HUD, Karte, Inventar usw.
@@ -107,7 +107,7 @@ dotnet run --project src/SilverAndAsh.Game -- --look 3
 ```
 
 ```
-dotnet run --project src/SilverAndAsh.Game -- --photo compare --out D:\fotos\vergleich
+dotnet run --project src/SilverAndAsh.Game -- --photo compare --out D:\fotos\vergleich-1
 ```
 
 - `--look <1-4>` gilt fürs Spielen und für einzelne Fotos (`--photo ghoul-4m --look 4`).
@@ -118,7 +118,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo compare --out D:\fotos\ver
 
 - **Die Szenen stehen im Core**, an einer Stelle: [`PhotoScenes.cs`](../src/SilverAndAsh.Core/Photos/PhotoScenes.cs). Jede Szene ist ein Name, eine Zeile Beschreibung und eine Funktion, die mit dem [`PhotoStudio`](../src/SilverAndAsh.Core/Photos/PhotoStudio.cs) eine [`PhotoSetup`](../src/SilverAndAsh.Core/Photos/PhotoSetup.cs) baut: die Welt, die Zahl der Ticks, die Eingaben je Tick, wann früher abgedrückt wird, welches Menü (Titel, Pause, Einstellungen) darüber liegt.
 - **Kein Sonderweg in den Spielregeln:** Die Welten sind normale `GameWorld`s (Ebene 0 mit Seed `PhotoStudio.Seed`, oder eine kleine handgebaute Halle). Gewählt wird nur, wo der Spieler steht (`Player.PlaceAt`, `internal` – nur der Core kann es aufrufen) und wohin er schaut (über die normale Blick-Eingabe). Waffen kommen über `Equip`/`Stow`, das Menü öffnet sich über die Eingabe `PressMenu` (`MenuKey.Equipment` wie bei G, `MenuKey.Map` wie bei Tab).
-- **Das Spiel zeichnet die Fotos mit demselben Code wie im Spiel** (`DrawWorld`/`DrawScreen` in `Program.cs`): pro Tick werden die Ereignisse gelesen und die Ansichten um 1/60 s weitergestellt, danach wird ein Bild gezeichnet und gespeichert. Was sich mit der Zeit bewegt (etwa das Pulsieren von Vampiric), folgt dieser Uhr der Ansichten, nicht der Zeit seit Fensterstart – sonst wäre z. B. „[F] Take …“ in `equipment-vampiric-screen.png` bei jedem Lauf etwas anders gefärbt (Issue #639). Zwei Läufe derselben Szene geben so bytegleiche Bilder (geprüft mit `cmp` an `equipment-vampiric` und `map`).
+- **Das Spiel zeichnet die Fotos mit demselben Code wie im Spiel** (`DrawWorld`/`DrawScreen` in `Program.cs`): pro Tick werden die Ereignisse gelesen und die Ansichten um 1/60 s weitergestellt, danach wird ein Bild gezeichnet und gespeichert. Was sich mit der Zeit bewegt (etwa das Pulsieren von Vampiric), folgt dieser Uhr der Ansichten, nicht der Zeit seit Fensterstart – sonst wäre z. B. „[F] Take …“ in `equipment-vampiric-screen.png` bei jedem Lauf etwas anders gefärbt (Issue #639). Zwei Läufe derselben Szene geben so bytegleiche Bilder (geprüft mit `cmp` an `equipment-vampiric` und `map`, seit Issue #651 auch an `inventory` und `menu-travel`: Das Inventar nimmt das Pulsieren aus derselben Uhr, die Zielwahl zählt den Doppelklick mit ihrer eigenen Uhr seit dem Öffnen). Im Darstellungs-Code steht kein `Raylib.GetTime()` mehr; neue Bewegungen bekommen die Uhr der Ansichten übergeben.
 - Die Raum-Szenen nehmen den ersten Seed ab `PhotoStudio.Seed`, dessen Ebene so einen Raum hat. Ändert sich der Generator, wandern die Bilder mit – sie bleiben aber für denselben Stand gleich (Tests prüfen das).
 
 ## Eine Szene ergänzen

@@ -8,7 +8,7 @@ namespace SilverAndAsh.Core.Photos;
 public static class PhotoFolder
 {
     /// <summary>Throws if <paramref name="folder"/> exists and holds anything (a file or a folder).</summary>
-    /// <exception cref="ArgumentException">The folder is not empty; the message names it and what to do.</exception>
+    /// <exception cref="PhotoFolderNotEmptyException">The folder is not empty; the message names it and what to do.</exception>
     public static void EnsureEmpty(string folder)
     {
         if (!Directory.Exists(folder) || !Directory.EnumerateFileSystemEntries(folder).Any())
@@ -16,7 +16,7 @@ public static class PhotoFolder
             return;
         }
 
-        throw new ArgumentException(
+        throw new PhotoFolderNotEmptyException(
             $"The folder for the pictures is not empty: '{folder}'. Pictures of an earlier run would lie next to the new ones - " +
             "choose a new folder with '--out' or empty this one first.");
     }
