@@ -31,7 +31,7 @@ public sealed class PhotoFolderTests : IDisposable
     {
         File.WriteAllBytes(Path.Combine(_root, "ghoul-4m.png"), [1, 2, 3]);
 
-        var error = Assert.Throws<ArgumentException>(() => PhotoFolder.EnsureEmpty(_root));
+        var error = Assert.Throws<PhotoFolderNotEmptyException>(() => PhotoFolder.EnsureEmpty(_root));
 
         Assert.StartsWith($"The folder for the pictures is not empty: '{_root}'.", error.Message, StringComparison.Ordinal);
     }
@@ -41,6 +41,6 @@ public sealed class PhotoFolderTests : IDisposable
     {
         Directory.CreateDirectory(Path.Combine(_root, "blade-charge"));
 
-        Assert.Throws<ArgumentException>(() => PhotoFolder.EnsureEmpty(_root));
+        Assert.Throws<PhotoFolderNotEmptyException>(() => PhotoFolder.EnsureEmpty(_root));
     }
 }

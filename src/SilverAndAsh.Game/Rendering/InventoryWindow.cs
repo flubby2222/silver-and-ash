@@ -46,11 +46,14 @@ internal static class InventoryWindow
     }
 
     /// <summary>Draws the window for <paramref name="player"/>, with the frame of values both pages share (issue #390).</summary>
-    public static void Draw(GameWorld world, Player player)
+    /// <param name="world">The world whose values the frame shows.</param>
+    /// <param name="player">The player whose equipment the window shows.</param>
+    /// <param name="seconds">The clock of the views (in photos: the ticks run so far), for the pulse of Vampiric - not the
+    /// time since the window opened, so two photos of the same scene are the same picture (issue #651).</param>
+    public static void Draw(GameWorld world, Player player, float seconds)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(player);
-        var seconds = (float)Raylib.GetTime();
         MenuArt.Shade(Shade);
         MenuTabs.DrawSheet(world, player);
 

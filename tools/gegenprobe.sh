@@ -26,7 +26,9 @@
 # changed would take the broken file for the original. It stops at once with exit code 2 and names the running one.
 # A lock left behind by a run that is gone is taken over by exactly one run (issue #639, tools/gegenprobe-lock.sh).
 #
-# Afterwards the build output still holds the changed code: build again before anything runs with --no-build.
+# Afterwards the build output still holds the changed code: build again before anything runs with --no-build (not
+# after exit code 3: a change that does not compile builds nothing). Closing the output early (2>&1 | head) still
+# puts the file back and lets go of the lock (issue #651).
 #
 # Exit code: 0 = caught (at least one test red, with --bot: a finding), 1 = survived (all green, no finding), 2 = could
 # not run (another run in this working folder, unclean working folder, text not found, control run red or with
@@ -91,6 +93,9 @@ changed=0
 built_changed=0
 
 restore() {
+    # The output may be closed already (2>&1 | head): a message must not end the clean-up before the lock is let go
+    # (issue #651).
+    trap '' PIPE
     if [ "$changed" = 1 ]; then
         cp -- "$backup" "$file"
         changed=0
@@ -256,6 +261,9 @@ check mutated
 status=$?
 if [ "$status" = 3 ]; then
     echo "   result: the change does not compile - no statement about the tests"
+    # Nothing was built with the change, so the build output is still the one of the control run (issue #651).
+    built_changed=0
+    echo "gegenprobe: the change did not compile - the build output is still the one of the control run" >&2
     exit 3
 fi
 if [ "$status" = 2 ]; then
