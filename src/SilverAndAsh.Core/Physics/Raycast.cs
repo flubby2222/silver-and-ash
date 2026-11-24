@@ -104,9 +104,21 @@ public static class Raycast
 
     // The next step from a free point: near the stone of a boss portal the short one - its corners and the thin edges of
     // its arches are thinner than StepLength, a ray would step over them (issue #628). A step of StepLength from a point
-    // further off cannot reach the stone.
-    private static float StepAt(Level level, Vector3 point) =>
-        level.Portals.Any(portal => portal.IsNear(point, StepLength)) ? PortalStepLength : StepLength;
+    // further off cannot reach the stone. A plain loop over the list: it runs at every step of every ray, and a lambda
+    // with its enumerator would make new objects each time (issue #642).
+    private static float StepAt(Level level, Vector3 point)
+    {
+        var portals = level.Portals;
+        for (var i = 0; i < portals.Count; i++)
+        {
+            if (portals[i].IsNear(point, StepLength))
+            {
+                return PortalStepLength;
+            }
+        }
+
+        return StepLength;
+    }
 
     /// <summary>
     /// Which surface was crossed between a free point and a blocked point right next to it: a wall or the side of a
