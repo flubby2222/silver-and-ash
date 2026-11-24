@@ -1,3 +1,5 @@
+using System.Numerics;
+using System.Text.Json;
 using SilverAndAsh.Core.Audio;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
@@ -14,6 +16,10 @@ public class BossDoorSoundTests
 {
     private const string ClosingFile = "bosstuer-schliessen.wav";
     private const string OpeningFile = "bosstuer-oeffnen.wav";
+    private const string TicksFile = "bosstuer-ticks.json";
+    private const string Script = "tools/audio/bosstuer_klang.py";
+    private const int Bystander = 7;
+    private const float Tolerance = 1e-5f;
     private static readonly DoorsBalance Doors = Balance.Default.Doors;
     private static readonly int OpenTicks = SimulationClock.SecondsToTicks(Doors.BossOpenTime);
 
@@ -120,6 +126,61 @@ public class BossDoorSoundTests
         var cue = Assert.Single(heard);
         Assert.Equal(SoundKind.BossDoorOpening, cue.Kind);
         Assert.Equal(OpeningFile, cue.File);
+    }
+
+    [Fact]
+    public void The_boss_door_sounds_are_built_on_the_ticks_of_the_balance()
+    {
+        // Issue #668: the files carry the slam and the length of the opening fixed in them; the script writes the ticks
+        // it built them on next to them. A balancing round that moves either must build and listen to them anew.
+        using var built = JsonDocument.Parse(File.ReadAllText(RepositoryFiles.Find("assets/audio/" + TicksFile)));
+        var shutTick = built.RootElement.GetProperty("bossShutTick").GetInt32();
+        var openTicks = built.RootElement.GetProperty("bossOpenTicks").GetInt32();
+
+        Assert.True(
+            shutTick == Doors.BossShutTick && openTicks == OpenTicks,
+            $"The boss door sounds are built on the slam at tick {shutTick} and an opening of {openTicks} ticks, but the "
+            + $"balance has bossShutTick {Doors.BossShutTick} and an opening of {OpenTicks} ticks (bossOpenTime "
+            + $"{Doors.BossOpenTime} s). Set the ticks in {Script}, run it, run tools/models/checksums.py and have the "
+            + "sounds listened to again (audio bible, rule 13).");
+    }
+
+    [Fact]
+    public void A_listener_beside_the_boss_door_hears_both_swings_from_that_side()
+    {
+        var world = BossDoorTests.World();
+        var door = world.Doors[BossDoorTests.BossDoor];
+        var middle = (door.BoxMin + door.BoxMax) / 2f;
+
+        world.Tick(BossDoorTests.PressF);
+        AssertHeardFromTheSide(world.Events, middle, SoundKind.BossDoorOpening);
+
+        for (var tick = 0; tick < 3 * SimulationClock.TicksPerSecond && !world.Rooms[1].IsSealed; tick++)
+        {
+            world.Tick(BossDoorTests.IntoTheOpening(world));
+        }
+
+        Assert.True(world.Rooms[1].IsSealed, "The boss room never sealed - the test would prove nothing.");
+        AssertHeardFromTheSide(world.Events, middle, SoundKind.BossDoorClosing);
+    }
+
+    // Issue #668: two listeners - not the player who walks - level with the door's middle, as far to either side as
+    // halfway into the hearing range, both looking through the door (+Z, so their right is -X). The one at -X has the
+    // door to the left, the one at +X to the right; each at the volume of that distance.
+    private static void AssertHeardFromTheSide(IReadOnlyList<GameEvent> events, Vector3 middle, SoundKind kind)
+    {
+        var hearing = Balance.Default.Hearing;
+        var aside = new Vector3((hearing.NearDistance + hearing.Range) / 2f, 0f, 0f);
+        foreach (var (ears, pan) in new[] { (middle - aside, -hearing.MaxPan), (middle + aside, hearing.MaxPan) })
+        {
+            var listener = new SoundListener(Bystander, ears, Vector3.UnitZ);
+            var cue = Assert.Single(new SoundCues(1).For(events, SoundPack.Pack1, listener, hearing), c => c.Kind == kind);
+            var volume = SoundBoard.SoundVolume * Hearing.Mix(ears, Vector3.UnitZ, middle, hearing).Volume;
+
+            Assert.Equal(pan, cue.Pan, Tolerance);
+            Assert.Equal(volume, cue.Volume, Tolerance);
+            Assert.True(cue.Volume is > 0f and < SoundBoard.SoundVolume, $"volume {cue.Volume}");
+        }
     }
 
     [Fact]

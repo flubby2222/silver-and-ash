@@ -1,0 +1,5 @@
+{
+  "script": "tools/audio/bosstuer_klang.py",
+  "bossShutTick": 78,
+  "bossOpenTicks": 132
+}
