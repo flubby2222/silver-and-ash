@@ -93,6 +93,26 @@ public class ColumnCollisionTests
     }
 
     [Fact]
+    public void Pressed_into_the_column_or_a_wall_a_body_is_not_blocked_at_its_height_only_a_low_ceiling_blocks_it()
+    {
+        // Issue #635: the column and a solid wall stand in the way at every height alike, so they do not hold a flier's
+        // height; a cell whose ceiling is too low for the body does. East of the column a cell with a 1.5 m ceiling,
+        // north of it a solid one.
+        var level = Hall.WithCells([(5, 4, new Cell(false, 0f, 1.5f)), (4, 5, new Cell(true, 0f, Cell.DefaultCeilingHeight))]);
+        var inTheColumn = new Vector3(Middle.X - Column.Radius - Radius + 0.01f, 0f, Middle.Z);
+        var inTheWall = new Vector3(Middle.X - 0.8f, 0f, 10f - Radius + 0.01f);
+        var underTheLowCeiling = new Vector3(10f + 0.5f, 0f, Middle.Z);
+        const float Step = BodySizes.Player.StepHeight;
+
+        Assert.True(CharacterCollision.Overlaps(level, inTheColumn, Radius));
+        Assert.False(CharacterCollision.BlockedAtHeight(level, inTheColumn, Radius, BodySizes.Player.Height, Step));
+        Assert.True(CharacterCollision.Overlaps(level, inTheWall, Radius));
+        Assert.False(CharacterCollision.BlockedAtHeight(level, inTheWall, Radius, BodySizes.Player.Height, Step));
+        Assert.True(CharacterCollision.BlockedAtHeight(level, underTheLowCeiling, Radius, BodySizes.Player.Height, Step));
+        Assert.False(CharacterCollision.BlockedAtHeight(level, underTheLowCeiling, Radius, 1f, Step));
+    }
+
+    [Fact]
     public void A_shot_stops_at_its_side_with_the_side_facing_back()
     {
         var hit = Raycast.AgainstLevel(Hall, new Vector3(Middle.X - 5f, 1.5f, Middle.Z), Vector3.UnitX, 20f);

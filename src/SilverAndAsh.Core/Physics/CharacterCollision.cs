@@ -108,6 +108,7 @@ public static class CharacterCollision
         }
 
         floor = MathF.Max(floor, PortalStoneUnder(level, position, radius, stepHeight));
+        ceiling = MathF.Min(ceiling, PortalStoneOver(level, position, radius, height));
 
         // Move with the AVERAGE speed of this tick (start speed and end speed, halved).
         // Moving with only the start or only the end speed would make every jump slightly too high or too low;
@@ -190,6 +191,37 @@ public static class CharacterCollision
         foreach (var (x, z) in CellsAround(position, radius))
         {
             if (BlocksMovement(level[x, z], position.Y, height, stepHeight)
+                && PenetrationDepth(position, radius, x, z, out _) > Epsilon)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// True if a circle at <paramref name="position"/> reaches into something that stops it only at some heights:
+    /// stone of a boss portal, or a cell whose floor or ceiling leaves no room for it there. Columns and solid walls
+    /// stop a body at every height alike - <see cref="Move"/> keeps it out of them - so they do not count here: a
+    /// flier pressed against a column may still climb or sink beside it (issue #635).
+    /// </summary>
+    public static bool BlockedAtHeight(Level level, Vector3 position, float radius, float height, float stepHeight)
+    {
+        ArgumentNullException.ThrowIfNull(level);
+        foreach (var (min, max) in PortalStoneInTheWay(level, position, height, stepHeight))
+        {
+            if (RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out _) > Epsilon)
+            {
+                return true;
+            }
+        }
+
+        foreach (var (x, z) in CellsAround(position, radius))
+        {
+            var cell = level[x, z];
+            if (!cell.IsSolid
+                && BlocksMovement(cell, position.Y, height, stepHeight)
                 && PenetrationDepth(position, radius, x, z, out _) > Epsilon)
             {
                 return true;
@@ -361,9 +393,10 @@ public static class CharacterCollision
         return (position, velocity);
     }
 
-    // The ground plans of the portal blocks a body standing at position.Y meets: from a step above its feet to its head.
+    // The ground plans of the portal blocks a body standing at position.Y meets: from a step above its feet to its head
+    // (a head that only touches a block's bottom does not meet it: there the block is a ceiling).
     private static IEnumerable<(Vector2 Min, Vector2 Max)> PortalStoneInTheWay(Level level, Vector3 position, float height, float stepHeight) =>
-        level.Portals.SelectMany(portal => portal.Footprint(position.Y + StepOntoStone(stepHeight), position.Y + height));
+        level.Portals.SelectMany(portal => portal.Footprint(position.Y + StepOntoStone(stepHeight), position.Y + height - HeadTouch));
 
     /// <summary>
     /// The highest top of boss portal stone under the circle that is not above its feet by more than a step - the plinth
@@ -385,6 +418,36 @@ public static class CharacterCollision
 
         return top;
     }
+
+    /// <summary>
+    /// The lowest bottom of boss portal stone over the circle that is not below its head - a ceiling, like the
+    /// impost above the plinth (issue #635): a body jumping under it bumps its head and stops rising instead of being
+    /// pushed aside by <see cref="Move"/> once its head is in the stone. Plus infinity if there is none. A head touching
+    /// the bottom (to rounding) still counts, so the stone stays a ceiling for a body that is held right below it.
+    /// </summary>
+    private static float PortalStoneOver(Level level, Vector3 position, float radius, float height)
+    {
+        var bottom = float.PositiveInfinity;
+        foreach (var portal in level.Portals)
+        {
+            foreach (var (min, max, blockBottom) in portal.Bottoms(position.Y + height - HeadTouch))
+            {
+                if (RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out _) > Epsilon)
+                {
+                    bottom = MathF.Min(bottom, blockBottom);
+                }
+            }
+        }
+
+        return bottom;
+    }
+
+    /// <summary>
+    /// How far (metres) a head may reach past the bottom of the portal's stone and still only touch it: the rounding of
+    /// "ceiling minus height plus height". Within it the stone is a ceiling (<see cref="PortalStoneOver"/>), not in the
+    /// way (<see cref="PortalStoneInTheWay"/>).
+    /// </summary>
+    private const float HeadTouch = 1e-4f;
 
     /// <summary>
     /// How high a body steps up onto the portal's stone. A walking body climbs a block up to its step height. A flying

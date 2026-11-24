@@ -4,6 +4,10 @@
 # Shell-Skripte immer mit LF, sonst scheitert Git Bash an "\r" (Issue #573)
 *.sh text eol=lf
 
+# Prüfsummen-Listen immer mit LF, so wie die Skripte sie schreiben; sonst zeigt git status
+# nach einem Lauf ohne Änderung jede Liste als geändert (LF gegen CRLF, Issue #636)
+*.sha256 text eol=lf
+
 # Binärdateien nie verändern
 *.png binary
 *.jpg binary
