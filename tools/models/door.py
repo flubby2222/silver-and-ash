@@ -435,9 +435,12 @@ def box_faces(part, lo, hi, field, sides):
 SOCKEL = 0.5
 
 
-def stufenportal(parts, hw0, R0, spring, zs, z_door, plate_x_in, vertical_reveals, top=H, width=0.125):
+def stufenportal(parts, hw0, R0, spring, zs, z_door, plate_x_in, vertical_reveals, top=H, width=0.125, core_reveal=False):
     """Alles aus Stein: Bogenfeld (buendig mit der Wand), Bogenlaeufe aus Werkstein (je Lauf eine Stufe nach hinten, alle aus
-    denselben Kreismittelpunkten, Ringbreite `width`), Leibungen, Kaempfer- und Sockelplatte aus Werkstein."""
+    denselben Kreismittelpunkten, Ringbreite `width`), Leibungen, Kaempfer- und Sockelplatte aus Werkstein.
+    `core_reveal`: Leibung des innersten Laufs auch zwischen den Tiefen z_door und 0, vorn und hinten je ein Teil (Issue #714). Dort, wo das Tuerblatt
+    steht, schliesst im Bogen sonst nur das Kopffeld des Fluegels; schwingt der Fluegel auf, fehlt die Flaeche und man sah durch
+    einen dunklen, gebogenen Streifen in den leeren Raum ueber dem Bogen."""
     xc = hw0 - R0
     n = len(zs)
     for sz in (1, -1):
@@ -457,6 +460,8 @@ def stufenportal(parts, hw0, R0, spring, zs, z_door, plate_x_in, vertical_reveal
                     x = sx * (hw0 - width * k)
                     quad(part, (x, SOCKEL, sz * depths[k]), (x, SOCKEL, sz * depths[k + 1]), (x, spring, sz * depths[k + 1]),
                          (x, spring, sz * depths[k]), (-sx, 0, 0), "stone")
+        if core_reveal:                                                     # Streifen von der Tuerebene bis an die Tuerdicke
+            arc_reveal(part, xc, R0 - width * n, spring, z_door, 0.0, sz, "stone")
         for sx in (1, -1):
             plate(part, plate_x_in, 1.0, spring - 0.125, spring, sx, sz, "werk", top=False, bottom=True)
             plate(part, plate_x_in, 1.0, 0.0, SOCKEL, sx, sz, "werk", top=True, bottom=False)
@@ -477,7 +482,7 @@ def frame_nodes():
 def frame_normal(kind):
     """Ein Lauf 0,125 breit, 1/16 hinter der Wandebene; Steinpfosten an der Scharnierseite (hinter dem Pfostenband)."""
     front, back = frame_nodes()
-    stufenportal((front, back), 1.0, 1.5625, SPRING_N, [0.9375], 0.07, 0.875, False)
+    stufenportal((front, back), 1.0, 1.5625, SPRING_N, [0.9375], 0.07, 0.875, False, core_reveal=True)
     post = POST_N if kind == "normal" else POST_L
     zp = 0.1 if kind == "normal" else 0.15
     for sx in (1, -1):
