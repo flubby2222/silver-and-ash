@@ -82,10 +82,13 @@ public class ChestAndBossLootTests
     private static string Row(int first, int last, int at, char mark) =>
         new([.. Enumerable.Range(0, 7).Select(x => x == at ? mark : x >= first && x <= last ? '.' : '#')]);
 
+    // The world of BossMap. inHall picks the cells of the hall's rectangle that belong to the boss room (all of them by
+    // default); reshape changes cells of the parsed level (issue #713).
     private static GameWorld BossWorld(
-        int seed, Balance? balance = null, int gormRow = 10, string below = "", Column[]? columns = null, int gormColumn = 3)
+        int seed, Balance? balance = null, int gormRow = 10, string below = "", Column[]? columns = null, int gormColumn = 3,
+        Func<(int X, int Z), bool>? inHall = null, Func<Level, Level>? reshape = null)
     {
-        var hall = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).ToList();
+        var hall = Enumerable.Range(2, 10).SelectMany(z => Enumerable.Range(1, 5).Select(x => (x, z))).Where(inHall ?? (_ => true)).ToList();
         PlacedRoom[] rooms =
         [
             new(0, RoomKind.Start, "start", 0, 0, 7, 1, 0, [(2, 0), (3, 0), (4, 0)], [], []),
@@ -93,6 +96,7 @@ public class ChestAndBossLootTests
         ];
         LevelDoor[] doors = [new(3, 1, 0, 1, RoomSide.South, DoorKind.Boss)];
         var level = LevelParser.Parse(BossMap(gormRow, below, gormColumn)).WithColumns(columns ?? []);
+        level = reshape?.Invoke(level) ?? level;
         return new GameWorld(level, seed, balance ?? NoOtherLoot, doors, rooms);
     }
 
@@ -317,6 +321,85 @@ public class ChestAndBossLootTests
         Assert.Equal((drop.Id, drop.Piece), (taken.DropId, taken.Piece));
         Assert.Empty(world.EquipmentDrops);
         Assert.False(world.IsWon);
+    }
+
+    /// <summary>
+    /// Issue #713: the four cells next to the stairs' cell (3, 6) - behind Gorm standing on it first (he looks towards
+    /// the player's start), where his piece would move out to first, then to his sides and in front of him.
+    /// </summary>
+    private static readonly (int X, int Z)[] NextToTheStairs = [(3, 7), (4, 6), (2, 6), (3, 5)];
+
+    /// <summary>
+    /// Less than this (metres) between the piece's box and the staircase's box counts as touching: far more than any
+    /// rounding error, far less than the gap the piece keeps (<see cref="BossLootPlacement.StairsClearance"/>).
+    /// </summary>
+    private const float Touching = 0.01f;
+
+    /// <summary>
+    /// Issue #713: Gorm dies right where the staircase will rise, and straight behind him - where his piece moves out to
+    /// first - there is no floor for it: a wall, an open cell outside the boss room, or a raised floor. The cells on his
+    /// other three sides are the same, so turning round him would not help either. The piece moves out in a later
+    /// direction, the nearest free one (45° off, the ones 22.5° off still reach the blocked cell): onto the room's own
+    /// floor at his height, with a gap between its box and the staircase's box.
+    /// </summary>
+    [Theory]
+    [InlineData("wall")]
+    [InlineData("outside the room")]
+    [InlineData("raised floor")]
+    public void With_no_floor_straight_behind_gorm_his_piece_moves_out_from_under_the_stairs_in_a_later_direction(string blocked)
+    {
+        var world = blocked switch
+        {
+            "wall" => BossWorld(4, gormRow: 6, reshape: level => level.WithCells(NextToTheStairs.Select(c => (c.X, c.Z, Cell.Wall)))),
+            "outside the room" => BossWorld(4, gormRow: 6, inHall: cell => !NextToTheStairs.Contains(cell)),
+            _ => BossWorld(4, gormRow: 6, reshape: level => level.WithCells(
+                NextToTheStairs.Select(c => (c.X, c.Z, new Cell(false, LevelParser.PlatformStep, Cell.DefaultCeilingHeight))))),
+        };
+        var gorm = world.Gorm!;
+        var stairs = world.Level.CellCenter(3, 6);
+        Assert.Equal((3, 6), Stairs.CellIn(world.Rooms[1].Cells));
+        Assert.Equal(stairs, gorm.Position);
+        Assert.Equal(-Vector3.UnitZ, gorm.Facing);
+
+        KillGorm(world);
+        Run(world, PlayerInput.None, Second);
+
+        var drop = Assert.Single(world.EquipmentDrops);
+        var apart = MathF.Max(MathF.Abs(drop.Position.X - stairs.X), MathF.Abs(drop.Position.Z - stairs.Z));
+        var gap = apart - (Stairs.Radius + EquipmentDrop.BoxRadius);
+        Assert.True(gap > Touching, $"The piece's box at {drop.Position} touches or reaches into the staircase's box (gap {gap} m).");
+        foreach (var (dx, dz) in new[] { (-1f, -1f), (-1f, 1f), (1f, -1f), (1f, 1f) })
+        {
+            var corner = Level.ToGrid(drop.Position.X + (dx * EquipmentDrop.BoxRadius), drop.Position.Z + (dz * EquipmentDrop.BoxRadius));
+            Assert.Contains(corner, world.Rooms[1].Cells);
+            Assert.False(world.Level[corner.X, corner.Z].IsSolid, $"A corner of the piece at {drop.Position} lies in a wall.");
+            Assert.Equal(gorm.Position.Y, world.Level[corner.X, corner.Z].FloorHeight, 0.01f);
+        }
+
+        Assert.Equal(gorm.Position.Y, drop.Position.Y, 0.01f);
+        var offBehind = MathF.Atan2(MathF.Abs(drop.Position.X - stairs.X), drop.Position.Z - stairs.Z) * 180f / MathF.PI;
+        Assert.Equal(45f, offBehind, 0.5f);
+    }
+
+    /// <summary>
+    /// Issue #713: a boss room of a single cell, Gorm's, where the staircase rises. No direction has floor for his piece,
+    /// so it stays where it would have lain: behind him, <see cref="GameWorld.GormEquipmentDistance"/> away.
+    /// </summary>
+    [Fact]
+    public void In_a_boss_room_too_small_to_move_out_gorm_s_piece_stays_behind_him()
+    {
+        var world = BossWorld(5, gormRow: 6, inHall: cell => cell == (3, 6));
+        var gorm = world.Gorm!;
+        Assert.Equal((3, 6), Stairs.CellIn(world.Rooms[1].Cells));
+        Assert.Equal(world.Level.CellCenter(3, 6), gorm.Position);
+        var behindHim = gorm.Position - (gorm.Facing * GameWorld.GormEquipmentDistance);
+
+        KillGorm(world);
+        Run(world, PlayerInput.None, Second);
+
+        var drop = Assert.Single(world.EquipmentDrops);
+        Assert.Equal(behindHim.X, drop.Position.X, 0.001f);
+        Assert.Equal(behindHim.Z, drop.Position.Z, 0.001f);
     }
 
     /// <summary>
