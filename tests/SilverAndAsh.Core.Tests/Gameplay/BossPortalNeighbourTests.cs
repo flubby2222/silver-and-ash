@@ -119,8 +119,10 @@ public class BossPortalNeighbourTests
         // climbing before its body reaches the stone - and circle on from there instead of hanging in the air rising.
         // Whether a bat's climb ends right below the impost depends on its random circling, so not a few fixed seeds
         // but the first 24 (issue #642): every one keeps out of the stone and never rises longer than a second at a time,
-        // and at least four of them really are stopped below the impost - as many as the fixed seeds before; the test
-        // would prove nothing otherwise (8 of 24 when it was written, half of that leaves room for other balancing).
+        // and at least six of them really are stopped below the impost; the test would prove nothing otherwise. 8 of 24
+        // when it was written; with the bat's climbing, circling or turning 20 % slower or faster 7 to 9 (issue #653), so
+        // six leaves room for other balancing. A lower circling height takes the bats away from the impost altogether
+        // (3 of 24 at 90 %) - then the test must be looked at anyway.
         var stopped = new List<int>();
         for (var seed = 1; seed <= 24; seed++)
         {
@@ -130,7 +132,7 @@ public class BossPortalNeighbourTests
             }
         }
 
-        Assert.True(stopped.Count >= 4, $"bats stopped below the impost: seeds {string.Join(", ", stopped)}");
+        Assert.True(stopped.Count >= 6, $"bats stopped below the impost: seeds {string.Join(", ", stopped)}");
     }
 
     // One run of the test above with the bat of that seed; true if it was stopped below the impost at least once.
