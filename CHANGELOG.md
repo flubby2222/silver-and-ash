@@ -17,6 +17,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ### Behoben
 - **Kein dunkler Streifen mehr im Bogen der Tür:** Stand eine normale oder verschlossene Tür offen und man sah von unten in den Spitzbogen, klaffte dort ein schwarzer, gebogener Streifen. Dort, wo das Türblatt steht, hatte der Bogen keine Unterseite; geschlossen füllte sie das Kopffeld des Flügels, beim Öffnen schwang es weg. Der Rahmen hat dort jetzt eine Leibung (#714). Der Führungsring des Fallgitters sitzt dafür hinter der Leibung statt auf ihr, damit Türen mit und ohne Gitter gleich aussehen und nichts flimmert. Das Bosstor war nie betroffen.
 - **Türrahmen ohne ragende Rechtecke:** An normalen und verschlossenen Türen standen die hellen Kämpfer- und Sockelplatten vor der Wand und ragten wie lose Klötze in die Öffnung. Sie sitzen jetzt bündig im Pfeiler. Neue Regel in der Art Bible: Kein Bauteil ragt ohne erkennbaren Zweck in eine Öffnung (#715)
+- **Ersatz-Treppe unter der Decke:** Fehlt das Treppenmodell, ragte die Lampe der Ersatz-Treppe 10 cm durch die Decke des Bossraums. Sie liegt jetzt oben auf der Treppe und endet an der Decke. Neue Fotos der Treppe: `--photo showroom-stairs` (Musterraum mit Schild) und `--photo course-boss-stairs` (Prüfstrecke nach dem Sieg) (#727)
 
 ## [0.12.0] – 2026-11-24 – Portal & Säulen
 

@@ -144,7 +144,11 @@ internal sealed class StairsView : IDisposable
         if (lit)
         {
             var color = new Color((byte)(Light.R * glow), (byte)(Light.G * glow), (byte)(Light.B * glow), (byte)255);
-            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, Stairs.Height + 0.05f, 0f) * place, new Vector3(0.5f, 0.1f, 0.5f), color);
+            // Under the ceiling: its top ends where the box of the staircase does (issue #727).
+            ShadedBox.Draw(
+                Matrix4x4.CreateTranslation(0f, StairsLook.PlaceholderLampMiddle, 0f) * place,
+                new Vector3(0.5f, StairsLook.PlaceholderLampThickness, 0.5f),
+                color);
         }
     }
 }

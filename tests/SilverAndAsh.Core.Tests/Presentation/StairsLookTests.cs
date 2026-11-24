@@ -85,10 +85,33 @@ public class StairsLookTests
         }
     }
 
-    [Fact]
-    public void The_stairs_are_as_high_as_the_rooms_are()
+    [Theory]
+    [MemberData(nameof(EveryVariant))]
+    public void Every_model_of_the_stairs_reaches_the_ceiling_of_the_boss_room_and_no_further(TextureVariant variant)
     {
-        Assert.Equal(RoomTemplate.RoomCeilingHeight, Stairs.Height, Tolerance);
+        // Issue #727: compares the file itself with the room it stands in - not two names of the same number.
+        var path = RepositoryFiles.Find($"assets/models/{StairsLook.FileName(variant)}");
+        var top = GlbScene.Read(File.ReadAllBytes(path)).Max(part => part.PositionMax.Y);
+
+        foreach (var generated in ManyLevels.Value)
+        {
+            var boss = Assert.Single(generated.Rooms, room => room.Kind == RoomKind.Boss);
+            var (x, z) = Stairs.CellIn(boss.FloorCells);
+            var ceiling = generated.Level.CellAt(generated.Level.CellCenter(x, z)).CeilingHeight;
+            Assert.Equal(ceiling, top, 0.001f);
+        }
+    }
+
+    [Fact]
+    public void The_lamp_of_the_placeholder_lies_on_top_of_it_under_the_ceiling()
+    {
+        // Issue #727: the lamp used to reach from 6.0 to 6.1 m, through the ceiling of the boss room.
+        var bottom = StairsLook.PlaceholderLampMiddle - (StairsLook.PlaceholderLampThickness / 2f);
+        var top = StairsLook.PlaceholderLampMiddle + (StairsLook.PlaceholderLampThickness / 2f);
+
+        Assert.True(top <= Stairs.Height + Tolerance, $"The lamp of the placeholder ends at {top} m, above the stairs ({Stairs.Height} m).");
+        Assert.Equal(Stairs.Height, top, Tolerance);
+        Assert.True(bottom > 0f);
     }
 
     [Fact]
