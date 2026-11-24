@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Numerics;
+using System.Reflection;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
@@ -10,6 +12,9 @@ public class PlayerStepTests
 {
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
     private static readonly float StepLength = Balance.Default.Player.MaxSpeed / Player.StepsPerSecond;
+
+    // Time for ticks that normally take milliseconds - only a loop without end runs into it.
+    private static readonly TimeSpan TimeLimit = TimeSpan.FromSeconds(10);
 
     // A large open hall (60 x 60 m), so walls never get in the way.
     private static readonly Level OpenHall = CreateOpenHall(size: 31);
@@ -156,25 +161,94 @@ public class PlayerStepTests
         var dodgeTicks = SimulationClock.SecondsToTicks(balance.Player.DodgeDuration);
         var shift = PlayerInput.None with { Dash = true };
 
-        var run = Task.Run(() =>
-        {
-            var events = new List<GameEvent>();
-            player.Tick(shift);
-            events.AddRange(player.Events);
-            events.AddRange(Run(player, PlayerInput.None, dodgeTicks));
-            return events;
-        });
-
-        var ended = await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(10))) == run;
+        var (ended, ticks) = await RunWithTimeLimit(player, () => Run(player, [shift, .. Enumerable.Repeat(PlayerInput.None, dodgeTicks)]));
 
         Assert.True(ended, "The ticks did not end - counting steps loops at a step length of 0.");
-        var events = await run;
         Assert.True(player.IsGrounded);
         Assert.True(Vector3.Distance(start, player.Position) > 0f, "The dodge did not move the player - the test would check nothing.");
-        Assert.Empty(Steps(events));
+        Assert.Empty(Steps(ticks.SelectMany(tick => tick)));
+    }
+
+    [Theory]
+    [InlineData(1e-8f)]
+    [InlineData(1e-3f)]
+    public async Task A_player_with_a_tiny_top_speed_takes_only_a_few_steps_a_tick_and_the_tick_ends(float maxSpeed)
+    {
+        // Issue #706: at a step length below the float resolution of the walked distance, taking a step no longer
+        // shortens it and counting steps never ended (1e-8); just above, a tick reported hundreds of steps (1e-3).
+        var balance = Balance.Default with { Player = Balance.Default.Player with { MaxSpeed = maxSpeed } };
+        var player = new Player(OpenHall, balance: balance);
+        var start = player.Position;
+        var dodgeTicks = SimulationClock.SecondsToTicks(balance.Player.DodgeDuration);
+        var shift = PlayerInput.None with { Dash = true };
+
+        var (ended, ticks) = await RunWithTimeLimit(player, () => Run(player, [shift, .. Enumerable.Repeat(PlayerInput.None, dodgeTicks)]));
+
+        Assert.True(ended, $"The ticks did not end - counting steps loops at a step length of {player.StepLength} m.");
+        Assert.True(player.IsGrounded);
+        Assert.True(Vector3.Distance(start, player.Position) > 0f, "The dodge did not move the player - the test would check nothing.");
+        Assert.All(ticks, tick => Assert.InRange(Steps(tick).Count, 0, Player.MaxStepsPerTick));
+    }
+
+    [Fact]
+    public void At_normal_values_no_tick_comes_near_the_step_limit()
+    {
+        // Issue #706: the limit per tick must never change a normal walk - not even when dodging, the fastest way over
+        // the ground.
+        var player = new Player(OpenHall);
+        var dodgeTicks = SimulationClock.SecondsToTicks(Balance.Default.Player.DodgeDuration);
+        var walk = Enumerable.Repeat(Forward, SimulationClock.TicksPerSecond);
+
+        var ticks = Run(player, [.. walk, Forward with { Dash = true }, .. Enumerable.Repeat(Forward, dodgeTicks), .. walk]);
+
+        Assert.NotEmpty(Steps(ticks.SelectMany(tick => tick)));
+        Assert.All(ticks, tick => Assert.InRange(Steps(tick).Count, 0, 1));
     }
 
     private static List<PlayerStepped> Steps(IEnumerable<GameEvent> events) => [.. events.OfType<PlayerStepped>()];
+
+    /// <summary>The events of every tick, one list per input.</summary>
+    private static List<List<GameEvent>> Run(Player player, IEnumerable<PlayerInput> inputs)
+    {
+        var ticks = new List<List<GameEvent>>();
+        foreach (var input in inputs)
+        {
+            player.Tick(input);
+            ticks.Add([.. player.Events]);
+        }
+
+        return ticks;
+    }
+
+    /// <summary>
+    /// Runs <paramref name="ticks"/> on their own thread, so a relapse into a loop without end turns a test red instead
+    /// of hanging the test run (issue #698). If the ticks do not end in time, the loop is stopped from outside: the
+    /// walked distance becomes NaN, which passes no comparison. Otherwise the thread would keep adding step events after
+    /// the test - many gigabytes within minutes (issue #706).
+    /// </summary>
+    private static async Task<(bool Ended, List<List<GameEvent>> Ticks)> RunWithTimeLimit(Player player, Func<List<List<GameEvent>>> ticks)
+    {
+        var stride = typeof(Player).GetField("_strideDistance", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.True(stride is not null, "Player has no field _strideDistance any more - the stop for a loop without end needs a new handle.");
+
+        var run = Task.Run(ticks);
+        if (await Task.WhenAny(run, Task.Delay(TimeLimit)) == run)
+        {
+            return (true, await run);
+        }
+
+        // A stop can get lost while the loop writes the field back, and a later tick may start counting anew - so keep
+        // stopping until the ticks are through.
+        var stopping = Stopwatch.StartNew();
+        while (!run.IsCompleted && stopping.Elapsed < TimeLimit)
+        {
+            stride.SetValue(player, float.NaN);
+            await Task.WhenAny(run, Task.Delay(1));
+        }
+
+        Assert.True(run.IsCompleted, "The ticks did not end and could not be stopped - the test leaves a thread running.");
+        return (false, []);
+    }
 
     private static List<GameEvent> Run(Player player, PlayerInput input, int ticks)
     {
