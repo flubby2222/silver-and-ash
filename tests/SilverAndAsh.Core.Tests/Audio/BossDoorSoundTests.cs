@@ -160,14 +160,34 @@ public class BossDoorSoundTests
             + "it, run tools/models/checksums.py and have the sounds listened to again (audio bible, rule 13).");
     }
 
-    // The value of a constant "NAME = 123" at the start of a line of the script; it must be there exactly once.
+    // An assignment at the start of a line (not indented, not a comment): the targets left of the first "=" that is not
+    // part of "==", "<=", ">=" or "!=", with an augmenting operator ("+=", "//=", ...) or an annotation (": int") allowed.
+    private static readonly Regex Assignment = new(
+        @"^(?<targets>[A-Za-z_(\[*][\w \t,()\[\]*.:]*?)[ \t]*(?://|\*\*|<<|>>|[-+*/%@&|^])?=(?!=)",
+        RegexOptions.Multiline);
+
+    // The value of a constant "NAME = 123" at the start of a line of the script. Issue #684: every assignment at the start
+    // of a line that binds the name counts - also computed ("NAME = NAME - 8"), as a tuple ("NAME, OTHER = 70, 120") or
+    // augmented ("NAME += 8") - so a later rebinding cannot leave the test reading a number the script no longer uses.
     private static int ScriptConstant(string script, string name)
     {
-        var found = Regex.Matches(script, $@"^{name}[ \t]*=[ \t]*(\d+)[ \t]*(?:#.*)?\r?$", RegexOptions.Multiline);
+        var binds = new Regex($@"(?<![\w.]){name}(?!\w)");
+        var bindings = Assignment.Matches(script)
+            .Where(m => binds.IsMatch(m.Groups["targets"].Value))
+            .Select(m => script[m.Index..].Split('\n')[0].TrimEnd('\r'))
+            .ToList();
         Assert.True(
-            found.Count == 1,
-            $"{Script} must set {name} = <ticks> exactly once at the start of a line, found it {found.Count} times.");
-        return int.Parse(found[0].Groups[1].Value, CultureInfo.InvariantCulture);
+            bindings.Count == 1,
+            $"{Script} must set {name} exactly once at the start of a line, as \"{name} = <ticks>\", but binds it "
+            + $"{bindings.Count} times ({string.Join(" | ", bindings)}). Keep the one line {name} = <ticks> and do not "
+            + "set, compute or unpack it anywhere else in the script.");
+        var line = bindings[0];
+        var value = Regex.Match(line, $@"^{name}[ \t]*=[ \t]*(\d+)[ \t]*(?:#.*)?$");
+        Assert.True(
+            value.Success,
+            $"{Script} sets {name} in \"{line}\", which is not a plain number of ticks. Write it as {name} = <ticks> "
+            + "(a whole number, a comment behind it is fine) so the test can read it without running Python.");
+        return int.Parse(value.Groups[1].Value, CultureInfo.InvariantCulture);
     }
 
     [Fact]
@@ -179,6 +199,76 @@ public class BossDoorSoundTests
         Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => ScriptConstant("# ANSCHLAG_TICK = 78\n", "ANSCHLAG_TICK"));
         Assert.ThrowsAny<Xunit.Sdk.XunitException>(
             () => ScriptConstant("ANSCHLAG_TICK = 78\nANSCHLAG_TICK = 70\n", "ANSCHLAG_TICK"));
+    }
+
+    [Fact]
+    public void Uses_comparisons_and_look_alike_names_of_a_tick_constant_are_not_taken_for_a_rebinding()
+    {
+        // The other side of issue #684: reading, comparing or a longer name is no binding, nor is an indented line.
+        const string script = "ANSCHLAG_TICK = 78\r\n"
+            + "ANSCHLAG_TICKS = ANSCHLAG_TICK - 8\r\n"
+            + "ENDE = ANSCHLAG_TICK + 40\r\n"
+            + "bauen(ANSCHLAG_TICK == 78, x=ANSCHLAG_TICK)\r\n"
+            + "assert ANSCHLAG_TICK >= 1 and ANSCHLAG_TICK <= 99 and ANSCHLAG_TICK != 0\r\n"
+            + "r2.ANSCHLAG_TICK = 70\r\n"
+            + "    ANSCHLAG_TICK = 70\r\n"
+            + "# ANSCHLAG_TICK, OEFFNEN_TICKS = 70, 120\r\n";
+
+        Assert.Equal(78, ScriptConstant(script, "ANSCHLAG_TICK"));
+    }
+
+    [Fact]
+    public void A_tick_constant_computed_again_further_down_the_script_is_reported_not_read()
+    {
+        var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+            () => ScriptConstant("ANSCHLAG_TICK = 78\nOEFFNEN_TICKS = 132\nANSCHLAG_TICK = ANSCHLAG_TICK - 8\n", "ANSCHLAG_TICK"));
+        Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
+        Assert.Contains("Keep the one line ANSCHLAG_TICK = <ticks>", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_tick_constant_set_again_in_a_tuple_is_reported_not_read()
+    {
+        foreach (var tuple in new[]
+        {
+            "ANSCHLAG_TICK, OEFFNEN_TICKS = 70, 120",
+            "OEFFNEN_TICKS, ANSCHLAG_TICK = 120, 70",
+            "(ANSCHLAG_TICK, OEFFNEN_TICKS) = (70, 120)",
+            "[OEFFNEN_TICKS,ANSCHLAG_TICK] = [120, 70]",
+        })
+        {
+            var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+                () => ScriptConstant($"ANSCHLAG_TICK = 78\r\nOEFFNEN_TICKS = 132\r\n{tuple}\r\n", "ANSCHLAG_TICK"));
+            Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_tick_constant_moved_by_an_augmented_assignment_is_reported_not_read()
+    {
+        foreach (var augmented in new[] { "ANSCHLAG_TICK += 8", "ANSCHLAG_TICK -= 8", "ANSCHLAG_TICK //= 2" })
+        {
+            var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+                () => ScriptConstant($"ANSCHLAG_TICK = 78\n{augmented}\n", "ANSCHLAG_TICK"));
+            Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_tick_constant_set_once_but_not_as_a_plain_number_is_reported_not_read()
+    {
+        // Bound exactly once, but in a form the test cannot read without running Python.
+        foreach (var once in new[]
+        {
+            "ANSCHLAG_TICK = 70 + 8",
+            "ANSCHLAG_TICK, OEFFNEN_TICKS = 78, 132",
+            "ANSCHLAG_TICK: int = 78",
+            "ANSCHLAG_TICK = 78.0",
+        })
+        {
+            var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => ScriptConstant($"{once}\r\n", "ANSCHLAG_TICK"));
+            Assert.Contains($"sets ANSCHLAG_TICK in \"{once}\", which is not a plain number", error.Message, StringComparison.Ordinal);
+        }
     }
 
     [Fact]
