@@ -10,7 +10,7 @@ namespace SilverAndAsh.Game.Rendering;
 /// The cracked wall breaking (issue #185): stone chunks burst out of it, away from whoever struck, tumble to the floor,
 /// bounce once or twice and sink away; a soft cloud of dust drifts out and fades (<see cref="WallBreakDust"/>, drawn like
 /// the column's by <see cref="DustCloudView"/>). Pure presentation - Core only reports
-/// <see cref="WallBroken"/>, and which wall it was. Its own random numbers: nothing here changes the game.
+/// <see cref="WallBroken"/>, and which wall it was. Its own random numbers, seeded by wall and tick: nothing here changes the game.
 /// <para>
 /// Each chunk is the stone of the cracked wall's model (issue #246, <see cref="CrackedWallLook.Chunk"/>), stretched to
 /// its size and a little darker or lighter, in the wall variant of the face the player struck - the stone of the wall
@@ -27,7 +27,6 @@ internal sealed class WallBreakView
     // A step of the ramp Stein (EffectColours, issue #609).
     private static readonly Color Dust = PaletteColour.Opaque(EffectColours.WallBreakDust);
 
-    private readonly Random _random = new();
     private readonly List<Chunk> _chunks = [];
     private readonly List<Cloud> _clouds = [];
     private readonly List<DustPuff> _puffs = [];
@@ -69,12 +68,17 @@ internal sealed class WallBreakView
         away = away.LengthSquared() > 0.0001f ? Vector3.Normalize(away) : Vector3.UnitZ;
         var side = new Vector3(-away.Z, 0f, away.X);
 
+        // Seeded by the wall and the tick it broke in (issue #637): the same break throws the same chunks, so a photo
+        // scene comes out the same picture each time.
+        var random = new Random(ChunkSeed(broken.DoorId, ticks));
+        float Range(float min, float max) => min + (random.NextSingle() * (max - min));
+
         for (var i = 0; i < ChunkCount; i++)
         {
             // Most fly on, away from the blow; a few spray back towards the player.
-            var backwards = _random.NextSingle() < 0.25f ? -0.6f : 1f;
-            var spot = wall.BoxMin + new Vector3(_random.NextSingle() * size.X, (0.15f + (_random.NextSingle() * 0.8f)) * size.Y, _random.NextSingle() * size.Z);
-            var shade = 0.75f + (0.35f * _random.NextSingle());
+            var backwards = random.NextSingle() < 0.25f ? -0.6f : 1f;
+            var spot = wall.BoxMin + new Vector3(random.NextSingle() * size.X, (0.15f + (random.NextSingle() * 0.8f)) * size.Y, random.NextSingle() * size.Z);
+            var shade = 0.75f + (0.35f * random.NextSingle());
             _chunks.Add(new Chunk
             {
                 Position = spot,
@@ -157,7 +161,8 @@ internal sealed class WallBreakView
 
     private static Vector2 Middle((int X, int Z) cell) => new((cell.X + 0.5f) * Level.CellSize, (cell.Z + 0.5f) * Level.CellSize);
 
-    private float Range(float min, float max) => min + (_random.NextSingle() * (max - min));
+    // A seed of its own for each wall and tick; fixed arithmetic, not string.GetHashCode (that changes with every start).
+    private static int ChunkSeed(int wall, long ticks) => unchecked((wall * 7919) + (int)ticks);
 
     private static Color Scale(Color color, float factor) => new(
         (byte)Math.Clamp(color.R * factor, 0f, 255f),
