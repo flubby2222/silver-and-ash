@@ -30,7 +30,25 @@ internal static class CourseScenes
             studio => new PhotoSetup(Within(studio, 4, room => (LastX(room), CourseRoom.Top), room => SignOf(room)))),
         new("course-6-boss", "Station 6 of the test course from its north-east corner: the antechamber, silver and a blood vial before the boss portal (issue #718).",
             studio => new PhotoSetup(Within(studio, 5, room => (LastX(room), CourseRoom.Top), room => PortalOf(room)))),
+        new("course-boss-stairs", "The boss room of the test course after the victory: Gorm dead, the spiral staircase risen in its middle and its lamp lit, from 6 m towards the portal, up to under the 6 m ceiling (issue #727).",
+            StairsAfterVictory),
     ];
+
+    // Cells between a player and the staircase in the course's boss room, towards the portal (north).
+    private const int StairsDistanceCells = 3;
+
+    // The boss room behind station 6 after the fight: Gorm dead before the first tick, a player in the room between the
+    // portal and the staircase, looking at it two thirds up. The scene runs until it stands, as stairs-4m does.
+    private static PhotoSetup StairsAfterVictory(PhotoStudio studio)
+    {
+        var (world, _) = OpenedUpTo(studio, 5);
+        var boss = world.Rooms.Single(room => room.Kind == RoomKind.Boss);
+        var (x, z) = Stairs.CellIn(boss.Cells);
+        world.Player.PlaceAt(world.Level.CellCenter(x, z - StairsDistanceCells));
+        world.Gorm!.TakeDamage(world.Gorm.Health, new List<GameEvent>());
+        PhotoStudio.Face(world.Player, world.Level.CellCenter(x, z) + new Vector3(0f, Stairs.Height * 2f / 3f, 0f));
+        return new PhotoSetup(world) { Ticks = 600, StopWhen = world => world.Stairs is { CanInteract: true } };
+    }
 
     // The course with every door on the way into station `index` opened and swung open, the player standing on the cell
     // `place` says and looking at what `lookAt` says.

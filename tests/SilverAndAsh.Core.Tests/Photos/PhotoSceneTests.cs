@@ -135,6 +135,7 @@ public class PhotoSceneTests
             "boss-portal-barred", "boss-portal-gorm",
             "bullet-impact-wall",
             "course-1-arms", "course-2-columns", "course-3-cracked-wall", "course-4-portcullis", "course-5-teleporter", "course-6-boss",
+            "showroom-stairs", "course-boss-stairs",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -1219,6 +1220,47 @@ public class PhotoSceneTests
         var middle = stairs.Position + new Vector3(0f, Stairs.Height / 2f, 0f);
         var towards = Vector3.Normalize(middle - setup.World.Player.EyePosition);
         Assert.Equal(1f, Vector3.Dot(setup.World.Player.View.Forward, towards), 0.01f);
+    }
+
+    [Fact]
+    public void The_course_stairs_scene_waits_until_the_stairs_stand_in_the_boss_room_and_looks_up_at_them()
+    {
+        // Issue #727: the test course after the victory, the staircase under the ceiling of its boss room.
+        var setup = Built("course-boss-stairs");
+        var start = setup.World.Player.Body.Position;
+
+        var ticks = setup.Run();
+
+        var stairs = Assert.IsType<Stairs>(setup.World.Stairs);
+        Assert.True(stairs.CanInteract);
+        Assert.True(ticks < setup.Ticks, "The stairs should stand long before the scene gives up.");
+        var boss = Assert.Single(setup.World.Rooms, room => room.Kind == RoomKind.Boss);
+        Assert.Contains(Level.ToGrid(start.X, start.Z), boss.Cells);
+        Assert.Equal(6f, Vector2.Distance(Flat(start), Flat(stairs.Position)), 0.01f);
+        Assert.Equal(Stairs.Height, setup.World.Level.CellAt(stairs.Position).CeilingHeight, 0.0001f);
+
+        var target = stairs.Position + new Vector3(0f, Stairs.Height * 2f / 3f, 0f);
+        var towards = Vector3.Normalize(target - setup.World.Player.EyePosition);
+        Assert.Equal(1f, Vector3.Dot(setup.World.Player.View.Forward, towards), 0.01f);
+    }
+
+    [Fact]
+    public void The_showroom_stairs_scene_looks_up_at_the_standing_stairs_from_open_floor_under_the_same_ceiling()
+    {
+        // Issue #727: the staircase and its label in one picture, both under the 6 m ceiling of the showroom's hall.
+        var world = Built("showroom-stairs").World;
+
+        var stairs = Assert.IsType<Stairs>(world.Stairs);
+        Assert.Equal(1f, stairs.RiseFraction);
+        var here = world.Player.Body.Position;
+        Assert.Equal(5f, Vector2.Distance(Flat(here), Flat(stairs.Position)), 0.01f);
+        var cell = world.Level.CellAt(here);
+        Assert.False(cell.IsSolid);
+        Assert.Equal(world.Level.CellAt(stairs.Position).CeilingHeight, cell.CeilingHeight);
+
+        var target = stairs.Position + new Vector3(0f, Stairs.Height * 2f / 3f, 0f);
+        var towards = Vector3.Normalize(target - world.Player.EyePosition);
+        Assert.Equal(1f, Vector3.Dot(world.Player.View.Forward, towards), 0.01f);
     }
 
     [Fact]

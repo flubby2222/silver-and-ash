@@ -67,4 +67,13 @@ public static class StairsLook
 
     /// <summary>The brightness of the lamp at <paramref name="seconds"/>: from dark to full and back, about every 3 s.</summary>
     public static float GlowTint(float seconds) => 0.5f + (0.5f * MathF.Sin(seconds * 2f));
+
+    /// <summary>
+    /// How thick the lamp of the placeholder is (the stand-in without a model): a flat box lying at the top of the
+    /// staircase's box, under the ceiling of the room (issue #727; it used to stick out above <see cref="Stairs.Height"/>).
+    /// </summary>
+    public const float PlaceholderLampThickness = 0.1f;
+
+    /// <summary>The height of the middle of the placeholder's lamp: its top ends at <see cref="Stairs.Height"/>.</summary>
+    public static float PlaceholderLampMiddle => Stairs.Height - (PlaceholderLampThickness / 2f);
 }
