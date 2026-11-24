@@ -208,9 +208,13 @@ case "${1:-}" in
         echo "SUMMARY mode probe: 0 finding(s)"
         exit 0 ;;
 esac
+# The arguments of each test run, one line per run, into STANDIN_ARGS if set (issue #712).
+[ -n "${STANDIN_ARGS:-}" ] && echo "$*" >> "$STANDIN_ARGS"
 results=""
+hang_after=""
 while [ $# -gt 0 ]; do
     [ "$1" = --results-directory ] && results="$2"
+    [ "$1" = --blame-hang-timeout ] && hang_after="$2"
     shift
 done
 sleep 1
@@ -251,6 +255,30 @@ if grep -q crashmany probe.txt; then
     echo "   at Probe.Test()"
 fi
 grep -q fewer probe.txt && total=$((total - 1))
+# "hang" (or STANDIN_HANG=1, also in the control run): Probe.Test runs forever (issue #712). With --blame-hang-timeout
+# the stand-in answers as dotnet does after the limit - the test does not count, the blame collector names it in its
+# sequence file as not completed, and the output says why (STANDIN_GERMAN=1: in German, as on this machine). Without
+# the limit it cannot hang for real and says so, so a case that forgets the limit does not pass.
+hung=0
+if grep -q hang probe.txt || [ "${STANDIN_HANG:-0}" = 1 ]; then
+    if [ -z "$hang_after" ]; then
+        echo "STAND-IN: would hang forever here (no --blame-hang-timeout)"
+        exit 1
+    fi
+    hung=1
+    total=$((total - 1))
+    seconds="${hang_after%s}"
+    if [ "${STANDIN_GERMAN:-0}" = 1 ]; then
+        echo "Der aktive Testlauf wurde abgebrochen. Grund: Der Testhostprozess ist abgestürzt."
+        echo "Datensammler \"Blame\" – Meldung: Die angegebene Inaktivitätszeit von $seconds Sekunden ist abgelaufen."
+    else
+        echo "The active test run was aborted. Reason: Test host process crashed"
+        echo "Data collector 'Blame' message: The specified inactivity time of $seconds seconds has elapsed."
+    fi
+    [ "${STANDIN_NO_SEQUENCE:-0}" = 1 ] || mkdir -p -- "$results/sequence"
+    [ "${STANDIN_NO_SEQUENCE:-0}" = 1 ] || printf '<TestSequence>\n  <Test Name="Probe.Before" DisplayName="Probe.Before" Completed="True" />\n  <Test Name="Probe.Test" DisplayName="Probe.Test" Completed="False" />\n</TestSequence>\n' \
+        > "$results/sequence/Sequence_probe.xml"
+fi
 # The message of a red test (--message, issue #682) as dotnet writes it: XML signs escaped (&amp;amp; must become
 # &amp;, not &), line ends as &#xD;&#xA; and as a real CRLF, a path in it. "nomessage": none at all (a short tag);
 # "longmessage": 35 lines; "tworeds": a second red test that stands first in the file but not in the sorted list.
@@ -267,6 +295,8 @@ result() {
     fi
 }
 body="$(result Probe.Test "$outcome" "$([ "$outcome" = Failed ] && ! grep -q nomessage probe.txt && printf '%s' "$error")")"
+# A test that was ended after the limit has no result of its own.
+[ "$hung" = 1 ] && body=""
 if grep -q tworeds probe.txt; then
     total=$((total + 1))
     failed=$((failed + 1))
@@ -333,6 +363,8 @@ expect 'run: aborted, no temp folder shown' lacks_regex '[\\/]mutated[\\/]result
 expect 'run: aborted, file back'            probe_back
 expect 'run: aborted, lock gone'            [ ! -e "$lock_of_repo" ]
 expect 'run: aborted, says to build again'  grep -q 'still holds the changed code' "$work/lock-err"
+# A crash is no time-out (issue #712), although the blame collector of the limit is on.
+expect 'run: aborted, not timed out'        not_in_run_out 'TIMED OUT'
 
 : > "$work/lock-err"
 ( export STANDIN_TOTAL=3; run_probe aborted ) > "$work/run-out" 2>"$work/lock-err"
@@ -360,6 +392,98 @@ run_probe fewer > "$work/run-out" 2>"$work/lock-err"
 expect 'run: fewer, no crash text, exit 4'  [ $? = 4 ]
 expect 'run: fewer, no cause section'       lacks 'The cause:'
 expect 'run: fewer, shows the end'          grep -q 'away. The end of its output:' "$work/lock-err"
+
+# --timeout (issue #712): every test run gets the limit, 60 s if none is given; 0 gives none, as before the option.
+# The stand-in writes the arguments of each run into "args", one line per run (control run and run with the change).
+run_with() { local replace="$1"; shift; ( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" "$@" probe.txt good "$replace" Probe ); }
+runs_with() { [ "$(grep -c -F -e "$1" "$work/args")" = "$2" ]; }
+fresh_args() { : > "$work/args"; : > "$work/lock-err"; }
+export STANDIN_ARGS="$work/args"
+
+fresh_args
+run_with broken > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: default, exit 0'           [ $? = 0 ]
+expect 'timeout: default, 60 s in each run' runs_with '--blame-hang-timeout 60s --blame-hang-dump-type none' 2
+
+fresh_args
+run_with broken --timeout 5 > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: 5, exit 0'                 [ $? = 0 ]
+expect 'timeout: 5, 5 s in each run'        runs_with '--blame-hang-timeout 5s --blame-hang-dump-type none' 2
+
+fresh_args
+run_with broken --timeout 0 > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: 0, exit 0'                 [ $? = 0 ]
+expect 'timeout: 0, two runs'               [ "$(wc -l < "$work/args" | tr -d ' ')" = 2 ]
+expect 'timeout: 0, no limit'               runs_with '--blame-hang' 0
+
+# A test that loops forever with the change: ended after the limit, exit code 4, the test named, all put back.
+fresh_args
+run_with hang > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: hang, exit 4'              [ $? = 4 ]
+expect 'timeout: hang, says so'             run_out 'TIMED OUT - a test ran longer than 60 s with the change'
+expect 'timeout: hang, names the test'      grep -q -x '     Probe.Test' "$work/run-out"
+expect 'timeout: hang, counts the rest'     run_out '0 of 1 test(s) finished before'
+expect 'timeout: hang, not aborted'         not_in_run_out ABORTED
+expect 'timeout: hang, not survived'        not_in_run_out SURVIVED
+expect 'timeout: hang, names the way out'   grep -q -e 'raise the limit (--timeout 300) or pass --timeout 0' "$work/lock-err"
+expect 'timeout: hang, file back'           probe_back
+expect 'timeout: hang, lock gone'           [ ! -e "$lock_of_repo" ]
+expect 'timeout: hang, working folder clean' [ -z "$(git -C "$repo" status --porcelain)" ]
+expect 'timeout: hang, says to build again' grep -q 'still holds the changed code' "$work/lock-err"
+
+fresh_args
+run_with hang --timeout 7 > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: hang at 7, exit 4'         [ $? = 4 ]
+expect 'timeout: hang at 7, names it'       run_out 'TIMED OUT - a test ran longer than 7 s'
+
+# dotnet in German, as on the machine of this project.
+fresh_args
+( export STANDIN_GERMAN=1; run_with hang ) > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: hang german, exit 4'       [ $? = 4 ]
+expect 'timeout: hang german, says so'      run_out 'TIMED OUT'
+expect 'timeout: hang german, names test'   grep -q -x '     Probe.Test' "$work/run-out"
+
+# No sequence file of the blame collector: still timed out, the test unknown.
+fresh_args
+( export STANDIN_NO_SEQUENCE=1; run_with hang ) > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: no sequence, exit 4'       [ $? = 4 ]
+expect 'timeout: no sequence, test unknown' grep -q -x '     ?' "$work/run-out"
+
+# Red tests before the run was ended are named.
+fresh_args
+( export STANDIN_TOTAL=3; run_with 'hang tworeds' ) > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: hang with red, exit 4'     [ $? = 4 ]
+expect 'timeout: hang with red, names it'   run_out 'red before the run ended'
+expect 'timeout: hang with red, the test'   grep -q -x '     Probe.Zeta' "$work/run-out"
+
+# The control run hangs already: exit code 2, nothing changed.
+fresh_args
+( export STANDIN_HANG=1; run_with broken ) > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: control hangs, exit 2'     [ $? = 2 ]
+expect 'timeout: control hangs, says so'    grep -q 'control run already has a test that ran longer than 60 s' "$work/lock-err"
+expect 'timeout: control hangs, the test'   grep -q -x '   Probe.Test' "$work/lock-err"
+expect 'timeout: control hangs, one run'    [ "$(wc -l < "$work/args" | tr -d ' ')" = 1 ]
+expect 'timeout: control hangs, file back'  probe_back
+expect 'timeout: control hangs, lock gone'  [ ! -e "$lock_of_repo" ]
+
+# Wrong values and --bot: exit code 2 before anything runs.
+fresh_args
+run_with broken --timeout abc > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: abc, exit 2'               [ $? = 2 ]
+expect 'timeout: abc, says so'              grep -q -e "--timeout needs a whole number of seconds (0 = no limit), not 'abc'" "$work/lock-err"
+expect 'timeout: abc, nothing ran'          [ ! -s "$work/args" ]
+fresh_args
+run_with broken --timeout '' > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: empty, exit 2'             [ $? = 2 ]
+fresh_args
+run_with broken --timeout -5 > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: negative, exit 2'          [ $? = 2 ]
+fresh_args
+run_with broken --bot --timeout 5 > "$work/run-out" 2>"$work/lock-err"
+expect 'timeout: with --bot, exit 2'        [ $? = 2 ]
+expect 'timeout: with --bot, says so'       grep -q -e '--timeout limits a test of dotnet test - the bot run has no such limit' "$work/lock-err"
+expect 'timeout: with --bot, file back'     probe_back
+unset STANDIN_ARGS
 
 # A user whose folder name holds a space (issue #660): neither the Windows nor the Git Bash form of his folders may
 # show his name. Home, user folder and temp folder of the run are set to such a folder.
