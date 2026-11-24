@@ -120,6 +120,10 @@ public sealed class Ghoul : IEnemy
 
     void IEnemy.PlaceAt(Vector3 position) => PlaceAt(position);
 
+    bool IEnemy.IsHidden => Emergence.IsHidden;
+
+    bool IEnemy.IsOut => Emergence.IsPresent;
+
     public bool IsHittable => !IsDead && Emergence.IsPresent;
 
     public CylinderBody Body => new(Position, BodySizes.Ghoul.Radius, BodySizes.Ghoul.Height);

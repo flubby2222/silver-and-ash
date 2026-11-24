@@ -266,15 +266,37 @@ public static class LevelGenerator
             var farthest = distances.Max();
             var slots = _open.OrderByDescending(slot => distances[slot.Room]).ThenBy(_ => random.Next()).ToList();
 
+            // The antechamber joins a slot (directly or through a corridor) with its entrance, the boss room joins the
+            // antechamber's other door slot. If there is no room for both, nothing is placed.
+            return TryJoinAtFirst(
+                slots,
+                (slot, steps) => distances[slot.Room] + steps > farthest,
+                corridorFirst: () => random.NextDouble() < layout.CorridorChance,
+                (slot, useCorridor) => TryJoin(slot, useCorridor, AntechamberAndBossAt));
+        }
+
+        // What can be joined with its entrance on the door cell (x, z): how to place it at a free slot there, or null if
+        // nothing fits. 'corridor' is about to be placed in front of it (null if it joins directly).
+        private delegate Action<OpenSlot>? JoinAt(int x, int z, RoomSide side, Placement? corridor);
+
+        // Issue #580: the one walk over the slots that the boss room and the treasure rooms share. For each slot in order
+        // it tries the direct way and the way through a corridor - the corridor first if 'corridorFirst' says so (one
+        // random draw per slot) - wherever 'farEnough' allows a room that many steps (1 directly, 2 through a corridor)
+        // beyond the slot's room. The first way that joins ends the walk.
+        private bool TryJoinAtFirst(
+            List<OpenSlot> slots,
+            Func<OpenSlot, int, bool> farEnough,
+            Func<bool> corridorFirst,
+            Func<OpenSlot, bool, bool> tryJoin)
+        {
             foreach (var slot in slots)
             {
-                var direct = distances[slot.Room] + 1 > farthest;
-                var throughCorridor = UsesCorridors && distances[slot.Room] + 2 > farthest;
-                var corridorFirst = random.NextDouble() < layout.CorridorChance;
+                var direct = farEnough(slot, 1);
+                var throughCorridor = UsesCorridors && farEnough(slot, 2);
 
-                foreach (var useCorridor in corridorFirst ? new[] { true, false } : [false, true])
+                foreach (var useCorridor in corridorFirst() ? new[] { true, false } : [false, true])
                 {
-                    if ((useCorridor ? throughCorridor : direct) && TryJoinBossBehindAntechamber(slot, useCorridor))
+                    if ((useCorridor ? throughCorridor : direct) && tryJoin(slot, useCorridor))
                     {
                         return true;
                     }
@@ -284,14 +306,20 @@ public static class LevelGenerator
             return false;
         }
 
-        // The antechamber joins 'slot' (directly or through a corridor) with its entrance, the boss room joins the
-        // antechamber's other door slot. If there is no room for both, nothing is placed.
-        private bool TryJoinBossBehindAntechamber(OpenSlot slot, bool useCorridor)
+        // Issue #580: the one place that joins something at a slot, directly or through a corridor. Through a corridor:
+        // the first of up to CorridorsPerSlot fitting corridors (in random order) with an exit behind which 'joinAt'
+        // finds a fit; then the corridor is placed, and behind it what fits.
+        private bool TryJoin(OpenSlot slot, bool useCorridor, JoinAt joinAt)
         {
             if (!useCorridor)
             {
-                return AntechamberAndBosses(slot.X, slot.Z, slot.Side, corridor: null) is { } direct
-                    && PlaceAntechamberAndBoss(direct, slot);
+                if (joinAt(slot.X, slot.Z, slot.Side, corridor: null) is not { } place)
+                {
+                    return false;
+                }
+
+                place(slot);
+                return true;
             }
 
             if (!UsesCorridors)
@@ -305,16 +333,28 @@ public static class LevelGenerator
             {
                 foreach (var exit in corridor.Slots.Where(exit => (exit.X, exit.Z) != (slot.X, slot.Z)))
                 {
-                    if (AntechamberAndBosses(exit.X, exit.Z, exit.Side, corridor) is { } fit)
+                    if (joinAt(exit.X, exit.Z, exit.Side, corridor) is { } place)
                     {
                         var corridorIndex = Place(corridor, slot);
-                        return PlaceAntechamberAndBoss(fit, new OpenSlot(corridorIndex, exit.X, exit.Z, exit.Side));
+                        place(new OpenSlot(corridorIndex, exit.X, exit.Z, exit.Side));
+                        return true;
                     }
                 }
             }
 
             return false;
         }
+
+        // An antechamber with its entrance on (x, z) and a boss room behind it (see AntechamberAndBosses).
+        private Action<OpenSlot>? AntechamberAndBossAt(int x, int z, RoomSide side, Placement? corridor) =>
+            AntechamberAndBosses(x, z, side, corridor) is { } fit ? entrance => PlaceAntechamberAndBoss(fit, entrance) : null;
+
+        // A room of 'kind' (one of those that fit, chosen at random once it is placed).
+        private JoinAt RoomOf(RoomKind kind) => (x, z, side, _) =>
+        {
+            var rooms = Fitting(kind, x, z, side);
+            return rooms.Count == 0 ? null : at => { Place(rooms[random.Next(rooms.Count)], at); };
+        };
 
         // The first antechamber (in the fixed order of its variants - no random number) that fits with its entrance on
         // the door cell (x, z) and leaves room for a boss room at its other door slot, with every boss room that fits
@@ -342,13 +382,12 @@ public static class LevelGenerator
             return null;
         }
 
-        private bool PlaceAntechamberAndBoss((Placement Antechamber, List<Placement> Bosses) fit, OpenSlot entrance)
+        private void PlaceAntechamberAndBoss((Placement Antechamber, List<Placement> Bosses) fit, OpenSlot entrance)
         {
             var antechamber = Place(fit.Antechamber, entrance);
             var bossDoor = _open.Single(open => open.Room == antechamber);
             Place(fit.Bosses[random.Next(fit.Bosses.Count)], bossDoor);
             WidenBossDoor(fit.Antechamber);
-            return true;
         }
 
         // Issue #566: the boss door fills the two middle cells of the antechamber's short side - its slot (the middle cell
@@ -402,11 +441,18 @@ public static class LevelGenerator
                     return false;
                 }
 
-                var entrance = _doors.FindIndex(door => door.RoomB == _rooms.Count - 1);
-                _doors[entrance] = _doors[entrance] with { Kind = DoorKind.Cracked };
+                SetEntranceOfLastRoom(DoorKind.Cracked);
             }
 
             return true;
+        }
+
+        // The only door of the room placed last - the one leading into it - becomes of 'kind' (a secret room's cracked
+        // wall, a locked treasure room's lock).
+        private void SetEntranceOfLastRoom(DoorKind kind)
+        {
+            var entrance = _doors.FindIndex(door => door.RoomB == _rooms.Count - 1);
+            _doors[entrance] = _doors[entrance] with { Kind = kind };
         }
 
         // Treasure rooms come after the boss: they must stay nearer to the start than the boss room.
@@ -443,31 +489,19 @@ public static class LevelGenerator
             var boss = distances[_rooms.FindIndex(room => room.Variant.Kind == RoomKind.Boss)];
             var slots = _open.Where(slot => slot.Room != 0).OrderBy(_ => random.Next()).ToList();
 
-            foreach (var slot in slots)
+            // With corridors always (chance 1) a treasure room is never joined through a shared wall. Unlike the boss
+            // room, a treasure room draws "corridor first" only when corridors are used at all.
+            var joined = TryJoinAtFirst(
+                slots,
+                (slot, steps) => distances[slot.Room] + steps < boss && (steps == 2 || layout.CorridorChance < 1f),
+                corridorFirst: () => UsesCorridors && random.NextDouble() < layout.CorridorChance,
+                (slot, useCorridor) => TryJoin(RoomKind.Treasure, slot, useCorridor));
+            if (joined && locked)
             {
-                var direct = distances[slot.Room] + 1 < boss;
-                var throughCorridor = UsesCorridors && distances[slot.Room] + 2 < boss;
-                var corridorFirst = UsesCorridors && random.NextDouble() < layout.CorridorChance;
-
-                // With corridors always (chance 1) a treasure room is never joined through a shared wall.
-                var ways = corridorFirst ? new[] { true, false } : [false, true];
-                foreach (var useCorridor in ways.Where(corridor => corridor || layout.CorridorChance < 1f))
-                {
-                    if ((useCorridor ? throughCorridor : direct) && TryJoin(RoomKind.Treasure, slot, useCorridor))
-                    {
-                        if (locked)
-                        {
-                            // Its only door - the one leading into it - gets the lock.
-                            var entrance = _doors.FindIndex(door => door.RoomB == _rooms.Count - 1);
-                            _doors[entrance] = _doors[entrance] with { Kind = DoorKind.Locked };
-                        }
-
-                        return true;
-                    }
-                }
+                SetEntranceOfLastRoom(DoorKind.Locked);
             }
 
-            return false;
+            return joined;
         }
 
         private bool TryJoin(RoomKind kind, OpenSlot slot)
@@ -478,43 +512,7 @@ public static class LevelGenerator
                 : TryJoin(kind, slot, useCorridor: false) || (UsesCorridors && TryJoin(kind, slot, useCorridor: true));
         }
 
-        private bool TryJoin(RoomKind kind, OpenSlot slot, bool useCorridor)
-        {
-            if (!useCorridor)
-            {
-                var rooms = Fitting(kind, slot.X, slot.Z, slot.Side);
-                if (rooms.Count == 0)
-                {
-                    return false;
-                }
-
-                Place(rooms[random.Next(rooms.Count)], slot);
-                return true;
-            }
-
-            if (!UsesCorridors)
-            {
-                return false;
-            }
-
-            var corridors = Fitting(RoomKind.Corridor, slot.X, slot.Z, slot.Side)
-                .OrderBy(_ => random.Next()).Take(CorridorsPerSlot);
-            foreach (var corridor in corridors)
-            {
-                foreach (var exit in corridor.Slots.Where(exit => (exit.X, exit.Z) != (slot.X, slot.Z)))
-                {
-                    var rooms = Fitting(kind, exit.X, exit.Z, exit.Side);
-                    if (rooms.Count > 0)
-                    {
-                        var corridorIndex = Place(corridor, slot);
-                        Place(rooms[random.Next(rooms.Count)], new OpenSlot(corridorIndex, exit.X, exit.Z, exit.Side));
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
+        private bool TryJoin(RoomKind kind, OpenSlot slot, bool useCorridor) => TryJoin(slot, useCorridor, RoomOf(kind));
 
         // A room that fits at one free door slot and with another of its door slots meets a second free slot.
         private bool TryCloseLoopWithRoom(RoomKind kind)

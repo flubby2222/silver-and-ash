@@ -165,6 +165,11 @@ public sealed class Gorm : IEnemy
     /// <summary>Moves him out of a doorway that shuts (issue #558), like every other enemy.</summary>
     void IEnemy.PlaceAt(Vector3 position) => Position = position;
 
+    // Gorm never waits inside the floor or the ceiling: he stands in his room from the start.
+    bool IEnemy.IsHidden => false;
+
+    bool IEnemy.IsOut => true;
+
     /// <summary>His movement in metres per second.</summary>
     public Vector3 Velocity { get; private set; }
 

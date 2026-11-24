@@ -58,7 +58,7 @@ public class AntechamberTests
             Assert.Equal(
                 [Antechamber.Width, Antechamber.Depth],
                 new[] { width, depth }.Order());
-            Assert.All(room.FloorCells, cell => Assert.Equal(6f, level.Level[cell.X, cell.Z].CeilingHeight));
+            Assert.All(room.FloorCells, cell => Assert.Equal(RoomTemplate.RoomCeilingHeight, level.Level[cell.X, cell.Z].CeilingHeight));
         });
     }
 
@@ -135,21 +135,17 @@ public class AntechamberTests
     }
 
     [Fact]
-    public void Walking_into_the_antechamber_enters_it_but_never_seals_it()
+    public void Standing_in_the_antechamber_enters_it_but_never_seals_it()
     {
-        // Real ticks: the player starts in the middle of the antechamber and stands there for a second.
+        // Real ticks: the player starts in the middle of the antechamber and stands there for a second (issue #580: it
+        // does not walk in - a player who starts in a room has entered it as well).
         foreach (var level in Levels.Value.Take(10))
         {
             var room = TheAntechamber(level);
             var middle = room.FloorCells[room.FloorCells.Count / 2];
             var world = new GameWorld(StartingAt(level.Level, middle), level.Seed, Balance.Default, level.Doors, level.Rooms, level.Chests, level.Well, level.Teleporters);
-            var events = new List<object>();
 
-            for (var tick = 0; tick < SimulationClock.TicksPerSecond; tick++)
-            {
-                world.Tick(PlayerInput.None);
-                events.AddRange(world.Events);
-            }
+            var events = TestKit.Run(world, PlayerInput.None, SimulationClock.TicksPerSecond);
 
             var state = world.Rooms[room.Index];
             Assert.True(state.IsEntered, $"seed {level.Seed}: the antechamber was not entered");
@@ -267,6 +263,33 @@ public class AntechamberTests
         var error = Assert.Throws<LevelFormatException>(() => RoomTemplateParser.Parse("#+#\n#.#\n###", RoomKind.Boss, "boss"));
 
         Assert.Contains("flush with a side wall", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_boss_room_never_runs_into_the_corridor_in_front_of_the_antechamber()
+    {
+        // Issue #580: the corridor is about to be placed when the boss room behind the antechamber is chosen, so only
+        // LevelGenerator.Overlaps keeps them apart. A short bend: the antechamber at its exit lies beside its long leg,
+        // and a wide boss room on the antechamber's side towards the leg's far end would reach over that leg. On the other
+        // side it fits - every level is built, and no floor cell belongs to two rooms.
+        var corridor = string.Join('\n', "#+####", "#.####", "#.####", "#.####", "#.####", "#.####", "#.####", "#....+", "######");
+        var boss = $"{new string('#', 8)}+{new string('#', 8)}\n#{new string('.', 15)}#\n#{new string('.', 15)}#\n{new string('#', 17)}";
+        RoomTemplate[] rooms =
+        [
+            RoomTemplateParser.Parse("##+##\n#.P.#\n#####", RoomKind.Start, "start"),
+            RoomTemplateParser.Parse("##+##\n#...#\n#...#\n##+##", RoomKind.Combat, "combat"),
+            RoomTemplateParser.Parse(corridor, RoomKind.Corridor, "short-bend"),
+            RoomTemplateParser.Parse(boss, RoomKind.Boss, "wide-boss"),
+        ];
+        var layout = new LayoutBalance { CombatRoomsMin = 1, CombatRoomsMax = 1, CorridorChance = 1f, MaxLoops = 0 };
+
+        Assert.All(Enumerable.Range(0, 30), seed =>
+        {
+            var generated = LevelGenerator.Generate(rooms, seed, layout);
+            var owner = new Dictionary<(int X, int Z), int>();
+            Assert.All(generated.Rooms, room => Assert.All(room.FloorCells, cell =>
+                Assert.True(owner.TryAdd(cell, room.Index), $"seed {seed}: room {room.Index} ({room.Kind}) runs into room {owner.GetValueOrDefault(cell)} at {cell}")));
+        });
     }
 
     // 41 cells of floor from west to east, the door in the middle of the long side.
