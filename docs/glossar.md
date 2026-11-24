@@ -70,6 +70,7 @@ Die eigenen Wörter des Projekts, je einmal festgelegt. Wer in Issues, Pull Requ
 | Begriff | Bedeutung |
 | --- | --- |
 | **Spieltest** | Der Mensch spielt einmal je Release und bekommt dazu die Liste der offenen Urteile samt Startbefehl. |
+| **Prüfstrecke** (im Code *test course*) | Ein von Hand gebautes Level mit allen offenen Urteilen eines Releases als Stationen auf einem geraden Weg, nach den echten Spielregeln; Start mit `--course` ([pruefstrecke.md](pruefstrecke.md)). |
 | **Balancing-Runde** | Vor jedem Release: Werte prüfen und anpassen, Ergebnis in [balancing.md](balancing.md). |
 | **Balance-Report** | Die Auswertung mit Vorher/Nachher, die eine Balancing-Runde belegt. |
 | **Bot-Durchlauf** | Ein Durchlauf, in dem ein Programm statt eines Menschen spielt; liefert Zahlen für Tester und Balancing. |
