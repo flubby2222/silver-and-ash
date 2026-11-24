@@ -120,12 +120,14 @@ public class BossPortalTests
 
     [Theory]
     [InlineData(-0.05f, true)]
+    [InlineData(-0.005f, true)]
     [InlineData(0.01f, false)]
     public void A_body_mostly_beside_the_plinth_stands_on_it_while_it_overlaps_it(float clear, bool onIt)
     {
         // The plinth reaches out to the side of the box around the portal's stone (2 m beside the middle). A player
         // standing on its outer edge has his middle nearly a radius beside that box - 5 cm of him still on the stone, he
-        // stays on it, tick by tick. With his middle 1 cm more than a radius off he is beside it and falls to the floor.
+        // stays on it, tick by tick; also with only 5 mm on it, so the filter's bound is held to the millimetres, not to
+        // 5 cm (issue #653). With his middle 1 cm more than a radius off he is beside it and falls to the floor.
         // The filter of CharacterCollision.MoveVertically (issue #642) must not drop the portal while a body reaches it.
         var level = OpenLevel().WithPortals([Portal]);
         var plinth = BossPortalShape.Blocks[BossPortalShape.Runs];
