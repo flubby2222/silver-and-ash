@@ -7,7 +7,7 @@ namespace SilverAndAsh.Core.Tests.Presentation;
 /// Finds the text of every string literal in C# source (issue #367): plain "..." with escapes, verbatim @"...",
 /// raw """...""" and interpolated $"..." - of an interpolated string only its own text, the holes {...} are code and
 /// are searched for strings themselves. Comments and character literals are skipped. Enough for the game's own code,
-/// not a full C# parser.
+/// not a full C# parser. <see cref="CodeOf"/> gives the code itself, without strings and comments (issue #672).
 /// </summary>
 internal static class CSharpStringLiterals
 {
@@ -15,32 +15,49 @@ internal static class CSharpStringLiterals
     {
         var found = new List<string>();
         var position = 0;
-        ReadCode(source, ref position, found, stopAtBrace: false);
+        ReadCode(source, ref position, found, source.ToCharArray(), stopAtBrace: false);
         return found;
     }
 
-    private static void ReadCode(string s, ref int i, List<string> found, bool stopAtBrace)
+    /// <summary>
+    /// The source with every comment, string literal (its text, quotes and prefix; the holes of an interpolated string
+    /// stay, they are code) and character literal blanked out by spaces. Line breaks stay, so a place in the result is the
+    /// same place in the source - same line, same column.
+    /// </summary>
+    public static string CodeOf(string source)
+    {
+        var code = source.ToCharArray();
+        var position = 0;
+        ReadCode(source, ref position, [], code, stopAtBrace: false);
+        return new string(code);
+    }
+
+    private static void ReadCode(string s, ref int i, List<string> found, char[] code, bool stopAtBrace)
     {
         var depth = 0;
         while (i < s.Length)
         {
             var c = s[i];
+            var start = i;
             if (c == '/' && Next(s, i) == '/')
             {
                 i = s.IndexOf('\n', i) is var end and >= 0 ? end + 1 : s.Length;
+                Blank(code, start, i);
             }
             else if (c == '/' && Next(s, i) == '*')
             {
                 i = s.IndexOf("*/", i + 2, StringComparison.Ordinal) is var end and >= 0 ? end + 2 : s.Length;
+                Blank(code, start, i);
             }
             else if (c == '\'')
             {
                 SkipCharLiteral(s, ref i);
+                Blank(code, start, i);
             }
             else if (StartsString(s, i, out var interpolated, out var verbatim, out var dollars, out var length))
             {
                 i += length;
-                found.Add(ReadString(s, ref i, interpolated, verbatim, dollars, found));
+                found.Add(ReadString(s, ref i, start, interpolated, verbatim, dollars, found, code));
             }
             else if (c == '{')
             {
@@ -96,9 +113,11 @@ internal static class CSharpStringLiterals
         return length == 0 || i == 0 || !char.IsLetterOrDigit(s[i - 1]);
     }
 
-    private static string ReadString(string s, ref int i, bool interpolated, bool verbatim, int dollars, List<string> found)
+    // Reads the string whose quotes start at i (its prefix starts at start) and blanks it out in code, all but its holes.
+    private static string ReadString(string s, ref int i, int start, bool interpolated, bool verbatim, int dollars, List<string> found, char[] code)
     {
         var text = new StringBuilder();
+        var segment = start;
         var quotes = CountRun(s, i, '"');
         if (quotes >= 3)
         {
@@ -109,6 +128,7 @@ internal static class CSharpStringLiterals
                 if (s[i] == '"' && CountRun(s, i, '"') >= quotes)
                 {
                     i += quotes;
+                    Blank(code, segment, i);
                     return text.ToString();
                 }
 
@@ -117,7 +137,9 @@ internal static class CSharpStringLiterals
                     var braces = CountRun(s, i, '{');
                     text.Append('{', braces - dollars);
                     i += braces;
-                    ReadCode(s, ref i, found, stopAtBrace: true);
+                    Blank(code, segment, i);
+                    ReadCode(s, ref i, found, code, stopAtBrace: true);
+                    segment = i;
                     i += dollars - 1;
                     continue;
                 }
@@ -126,6 +148,7 @@ internal static class CSharpStringLiterals
                 i++;
             }
 
+            Blank(code, segment, i);
             return text.ToString();
         }
 
@@ -143,6 +166,7 @@ internal static class CSharpStringLiterals
                 }
 
                 i++;
+                Blank(code, segment, i);
                 return text.ToString();
             }
 
@@ -158,7 +182,9 @@ internal static class CSharpStringLiterals
                 i++;
                 if (c == '{')
                 {
-                    ReadCode(s, ref i, found, stopAtBrace: true);
+                    Blank(code, segment, i);
+                    ReadCode(s, ref i, found, code, stopAtBrace: true);
+                    segment = i;
                 }
 
                 continue;
@@ -174,7 +200,20 @@ internal static class CSharpStringLiterals
             i++;
         }
 
+        Blank(code, segment, i);
         return text.ToString();
+    }
+
+    // Spaces over code[from..to), line breaks kept.
+    private static void Blank(char[] code, int from, int to)
+    {
+        for (var k = from; k < Math.Min(to, code.Length); k++)
+        {
+            if (code[k] is not ('\n' or '\r'))
+            {
+                code[k] = ' ';
+            }
+        }
     }
 
     private static string Escape(string s, ref int i)
