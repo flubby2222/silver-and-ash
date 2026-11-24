@@ -241,6 +241,31 @@ public readonly record struct BossPortal(float X, float Z, float Floor, bool Pas
     }
 
     /// <summary>
+    /// The rectangles on the ground plane (as in <see cref="Footprint"/>) of the blocks whose bottom lies at least at
+    /// <paramref name="height"/>, with that bottom (world height): what a rising body can bump its head against - the
+    /// impost above the plinth (issue #635).
+    /// </summary>
+    public IEnumerable<(Vector2 Min, Vector2 Max, float Bottom)> Bottoms(float height)
+    {
+        foreach (var block in BossPortalShape.Blocks)
+        {
+            if (Floor + block.Bottom < height)
+            {
+                continue;
+            }
+
+            for (var side = 1f; side >= -1f; side -= 2f)
+            {
+                for (var face = 1f; face >= -1f; face -= 2f)
+                {
+                    var (min, max) = Rectangle(block, side, face);
+                    yield return (min, max, Floor + block.Bottom);
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// True if the square of half-width <paramref name="halfWidth"/> around <paramref name="point"/> (on the ground plane)
     /// overlaps the ground plan of any block, at any height: no piece of loot lies there and no stone falls there - it
     /// would lie in the stone or fall through it (issue #627).

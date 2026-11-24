@@ -1225,7 +1225,7 @@ public sealed class GameWorld
             _events.Add(new SilverDropped(pile.Id, silver, _gorm.Position));
         }
 
-        var vialPlace = FreePlace(_gorm.Position + (_gorm.Facing * 1.2f), BodySizes.Pickup.Radius, _gorm.Position);
+        var vialPlace = FreePlace(_gorm.Position + (_gorm.Facing * Balance.Gorm.VialDistance), BodySizes.Pickup.Radius, _gorm.Position);
         var vial = new Pickup(_nextPickupId++, ConsumableKind.BloodVial, vialPlace);
         _pickups.Add(vial);
         _events.Add(new PickupDropped(vial.Id, vial.Kind, vialPlace));

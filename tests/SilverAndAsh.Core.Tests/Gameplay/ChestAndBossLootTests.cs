@@ -439,7 +439,7 @@ public class ChestAndBossLootTests
         data.Add(11, 270, 7, 0f, 3);
 
         // In front of him, 5 cm beyond where the vial's box would end: less than ColumnClearance.
-        data.Add(12, 0, 10, BodySizes.Pickup.Radius + 1.2f - BodySizes.Gorm.Radius - 0.02f + 0.05f, 3);
+        data.Add(12, 0, 10, BodySizes.Pickup.Radius + Balance.Default.Gorm.VialDistance - BodySizes.Gorm.Radius - 0.02f + 0.05f, 3);
 
         // Gorm right at the west or east wall, the column in front: turning towards the wall, the vial would reach into it.
         data.Add(13, 0, 10, 0f, 1);
@@ -535,7 +535,7 @@ public class ChestAndBossLootTests
         Assert.True(broke, "Gorm never broke the column.");
         Assert.Empty(world.Level.Columns);
         var (at, facing) = (gorm.Position, gorm.Facing);
-        var falls = at + (facing * 1.2f);
+        var falls = at + (facing * Balance.Default.Gorm.VialDistance);
         var flat = new Vector2(falls.X, falls.Z);
         var nearest = Vector2.Clamp(column.Centre, flat - new Vector2(BodySizes.Pickup.Radius), flat + new Vector2(BodySizes.Pickup.Radius));
         Assert.True(
@@ -546,6 +546,30 @@ public class ChestAndBossLootTests
         Run(world, PlayerInput.None, Second);
 
         var vial = Assert.Single(world.Pickups);
+        Assert.Equal(falls.X, vial.Position.X, 0.001f);
+        Assert.Equal(falls.Z, vial.Position.Z, 0.001f);
+    }
+
+    /// <summary>
+    /// Issue #635: how far in front of Gorm his vial falls is a balancing value (gorm.vialDistance), not a number in the
+    /// code. In the open hall nothing is in the way: it lies exactly that far in front of him - with the standard value
+    /// and with another one.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Gorm_s_vial_falls_as_far_in_front_of_him_as_the_balance_says(bool standard)
+    {
+        var vialDistance = standard ? Balance.Default.Gorm.VialDistance : 2f;
+        var balance = NoOtherLoot with { Gorm = NoOtherLoot.Gorm with { VialDistance = vialDistance } };
+        var world = BossWorld(1, balance);
+        var (at, facing) = (world.Gorm!.Position, world.Gorm.Facing);
+
+        KillGorm(world);
+        Run(world, PlayerInput.None, Second);
+
+        var vial = Assert.Single(world.Pickups);
+        var falls = at + (facing * vialDistance);
         Assert.Equal(falls.X, vial.Position.X, 0.001f);
         Assert.Equal(falls.Z, vial.Position.Z, 0.001f);
     }
@@ -564,7 +588,7 @@ public class ChestAndBossLootTests
         var world = new GameWorld(LevelParser.Parse(string.Join('\n', rows)), seed, NoOtherLoot);
         var at = world.Gorm!.Position;
         Assert.Empty(world.Rooms);
-        var blocked = Level.ToGrid(at.X + (world.Gorm.Facing.X * 1.2f), at.Z + (world.Gorm.Facing.Z * 1.2f));
+        var blocked = Level.ToGrid(at.X + (world.Gorm.Facing.X * Balance.Default.Gorm.VialDistance), at.Z + (world.Gorm.Facing.Z * Balance.Default.Gorm.VialDistance));
         Assert.Equal((3, 3), blocked);
         world.Player.TakeDamage(Balance.Default.BloodVial.Heal, []);
 
