@@ -25,8 +25,9 @@ Mehrere dieser Regeln erzwingen Hooks in [.claude/hooks/](.claude/hooks/). Block
 ## Die Leitung hält die Arbeit schmal
 
 - **Höchstens drei Code-Sitzungen gleichzeitig.** Designer mit Probestücken außerhalb des Spiels zählen nicht mit.
-- **Pull Requests einzeln durchbringen, in fester Reihenfolge:** Review und Test für den nächsten PR beginnen erst, wenn der davor gemergt und der nächste auf dem neuesten `main` ist. Sind drei PRs offen, startet keine weitere Code-Sitzung.
-- **Warum:** Jeder Merge macht die anderen offenen PRs veraltet; ihre Freigaben müssen dann neu erteilt werden, ohne dass etwas Neues geprüft wird (am 2026-11-17 dreimal bei PR #306).
+- **Parallel prüfen, einzeln mergen:** Review und Test dürfen für alle offenen PRs gleichzeitig laufen. Gemergt wird einzeln, in der Reihenfolge der PR-Nummern; nach jedem Merge zieht `tools/pr-nachziehen.ps1` die übrigen nach und überträgt ihre Freigaben. Sind drei PRs offen, startet keine weitere Code-Sitzung.
+- **Warum:** Früher machte jeder Merge die Freigaben der anderen PRs wertlos (am 2026-11-17 dreimal bei PR #306); seit das Skript sie überträgt, kostet Warten nur Zeit. Neu geprüft wird ein PR nur, wenn das Nachziehen einen Konflikt hatte. Deshalb vergibt die Leitung gleichzeitig nur Issues, die verschiedene Dateien anfassen.
+- **Hinweise sammeln, Features zuerst:** Ein eigenes Issue bekommt aus Review und Test nur, was ein Fehler ist oder im Spiel sichtbar. Alle übrigen Hinweise kommen in ein Sammel-Issue je Meilenstein und werden am Meilenstein-Ende zusammen erledigt. Prüfer trennen im Bericht *Befunde* (halten den Merge auf) von *Hinweisen*. Freie Sitzungen bauen vorrangig Features (Entscheidung vom 2026-11-24: aus jedem Nachtrag wurde sonst ein neuer Nachtrag).
 - **Nach jedem Merge:** `git pull`, `tools/pr-nachziehen.ps1`, Board nachziehen. Der Hook `nach-merge.ps1` meldet sich danach; die Leitung vergibt dann ohne Rückfrage das nächste passende Issue, soweit die Grenzen oben es erlauben.
 
 ## Die Leitung unterbricht den Menschen nur, wenn
