@@ -17,12 +17,21 @@ public class BoonTests
         Boons = Balance.Default.Boons with { Offered = Enum.GetValues<Boon>().Length },
     };
 
+    /// <summary>Experience of the first level in the standard balance - enough for exactly one level up.</summary>
+    private static readonly int FirstLevel = Balance.Default.Experience.FirstLevel;
+
+    /// <summary>A round level curve of its own (issue #586): 100 for the first level, 200 for the second, 400 ...</summary>
+    private static readonly Balance RoundCurve = OfferAll with
+    {
+        Experience = new ExperienceBalance { FirstLevel = 100, Growth = 2f },
+    };
+
     [Fact]
-    public void A_level_up_offers_three_different_boons_from_the_pool()
+    public void A_level_up_offers_as_many_different_boons_from_the_pool_as_the_balance_says()
     {
         var player = new Player(LevelParser.Parse("P"));
 
-        player.AddExperience(100, []);
+        player.AddExperience(FirstLevel, []);
 
         Assert.Equal(1, player.PendingBoons);
         Assert.Equal(Balance.Default.Boons.Offered, player.CurrentOffer.Count);
@@ -65,7 +74,7 @@ public class BoonTests
             Boons = Balance.Default.Boons with { Offered = 0 },
         });
 
-        world.Player.AddExperience(100, []);
+        world.Player.AddExperience(FirstLevel, []);
 
         Assert.Equal(1, world.Player.Level);
         Assert.Equal(0, world.Player.PendingBoons);
@@ -74,9 +83,14 @@ public class BoonTests
     [Fact]
     public void A_boon_that_was_not_offered_cannot_be_chosen()
     {
-        var player = new Player(LevelParser.Parse("P"));
-        player.AddExperience(100, []);
-        var missing = Pool.Except(player.CurrentOffer).First();
+        // An offer of its own that leaves exactly one boon out (issue #586) - with the whole pool on offer,
+        // nothing would be missing.
+        var player = new Player(LevelParser.Parse("P"), balance: Balance.Default with
+        {
+            Boons = Balance.Default.Boons with { Offered = Pool.Length - 1 },
+        });
+        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
+        var missing = Assert.Single(Pool.Except(player.CurrentOffer));
 
         Assert.False(player.Choose(missing, []));
         Assert.Equal(1, player.PendingBoons);
@@ -85,9 +99,9 @@ public class BoonTests
     [Fact]
     public void Two_levels_at_once_are_chosen_one_after_the_other()
     {
-        var world = new GameWorld(LevelParser.Parse("P"), balance: OfferAll);
+        var world = new GameWorld(LevelParser.Parse("P"), balance: RoundCurve);
         var player = world.Player;
-        player.AddExperience(225, []);          // 100 + 125
+        player.AddExperience(300, []);          // 100 + 200
         Assert.Equal(2, player.PendingBoons);
 
         world.Tick(PlayerInput.None with { ChooseBoon = Boon.Health });
@@ -140,13 +154,13 @@ public class BoonTests
     public void A_level_up_while_a_boon_waits_queues_up_behind_it()
     {
         // The second level up comes later, during play: its offer waits behind the first and comes after it.
-        var world = new GameWorld(LevelParser.Parse("P\n.\n."));
+        var world = new GameWorld(LevelParser.Parse("P\n.\n."), balance: RoundCurve with { Boons = Balance.Default.Boons });
         var player = world.Player;
-        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
+        player.AddExperience(100, []);
         var first = player.CurrentOffer.ToList();
         world.Tick(PlayerInput.None);
 
-        player.AddExperience(10_000, []);
+        player.AddExperience(200 + 400, []);    // levels 2 and 3
         var waiting = player.PendingBoons;
         Assert.True(waiting >= 2, $"Only {waiting} level ups wait.");
         Assert.Equal(first, player.CurrentOffer);
@@ -162,7 +176,7 @@ public class BoonTests
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\n."));
         var player = world.Player;
-        player.AddExperience(100, []);
+        player.AddExperience(FirstLevel, []);
         var start = player.Position;
 
         world.Tick(PlayerInput.None with { ChooseBoon = Boon.Damage });
@@ -215,7 +229,7 @@ public class BoonTests
     {
         // The bonus choice stays open when hit (issue #346) - also by the deadly hit. Choosing then changes nothing.
         var player = new Player(LevelParser.Parse("P"), balance: OfferAll);
-        player.AddExperience(100, []);
+        player.AddExperience(FirstLevel, []);
         player.TakeDamage(player.MaxHealth, []);
         var events = new List<GameEvent>();
 
@@ -232,7 +246,7 @@ public class BoonTests
     public void A_dead_player_choosing_health_in_the_world_stays_dead()
     {
         var world = new GameWorld(LevelParser.Parse("P"), balance: OfferAll);
-        world.Player.AddExperience(100, []);
+        world.Player.AddExperience(FirstLevel, []);
         world.Player.TakeDamage(world.Player.MaxHealth, []);
 
         // Choosing in every tick until the end screen is due: the run still ends.
@@ -251,7 +265,7 @@ public class BoonTests
     public void Choosing_is_reported()
     {
         var world = new GameWorld(LevelParser.Parse("P"));
-        world.Player.AddExperience(100, []);
+        world.Player.AddExperience(FirstLevel, []);
         var boon = world.Player.CurrentOffer[0];
 
         world.Tick(PlayerInput.None with { ChooseBoon = boon });
@@ -263,73 +277,95 @@ public class BoonTests
     [Fact]
     public void Health_adds_to_the_maximum_and_heals_as_much()
     {
-        var player = PlayerWith(Boon.Health, times: 3, damageFirst: 50);
+        var balance = OfferAll with
+        {
+            Player = OfferAll.Player with { MaxHealth = 100 },
+            Boons = OfferAll.Boons with { Health = 10, HealthCap = 1000 },
+        };
+        var player = PlayerWith(Boon.Health, times: 3, damageFirst: 50, balance);
 
-        // +5 three times, always from the base: 115 maximum, 50 + 15 health.
-        Assert.Equal(115, player.MaxHealth);
-        Assert.Equal(65, player.Health);
+        // +10 three times, always from the base: 130 maximum, 50 + 30 health.
+        Assert.Equal(130, player.MaxHealth);
+        Assert.Equal(80, player.Health);
     }
 
     [Fact]
-    public void Damage_adds_five_percent_of_the_base_each_time()
+    public void Damage_adds_its_share_of_the_base_each_time()
     {
-        var rules = DamageRules.Standard();
+        var rules = DamageRules.Standard(Balance.Default with
+        {
+            Boons = Balance.Default.Boons with { Damage = 0.1f },
+        });
 
-        Assert.Equal(42, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, DamageBoons: 1)).Amount);   // 40 x 1.05
-        Assert.Equal(46, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, DamageBoons: 3)).Amount);   // 40 x 1.15
-        Assert.Equal(60, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, DamageBoons: 10)).Amount);  // 40 x 1.5, not 1.05^10 = 65
-        Assert.Equal(37, rules.Calculate(new Hit(Weapon.Pistol, HitZone.Body, 35, DamageBoons: 1)).Amount);  // 36.75
+        Assert.Equal(44, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, DamageBoons: 1)).Amount);   // 40 x 1.1
+        Assert.Equal(52, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, DamageBoons: 3)).Amount);   // 40 x 1.3
+        Assert.Equal(80, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40, DamageBoons: 10)).Amount);  // 40 x 2, not 1.1^10 = 104
+        Assert.Equal(41, rules.Calculate(new Hit(Weapon.Pistol, HitZone.Body, 37, DamageBoons: 1)).Amount);  // 40.7
         Assert.Equal(40, rules.Calculate(new Hit(Weapon.Blade, HitZone.Body, 40)).Amount);
     }
 
     [Fact]
     public void A_stronger_player_hits_harder_in_the_world()
     {
-        var world = new GameWorld(LevelParser.Parse("P\nD"), balance: OfferAll);
+        var balance = OfferAll with
+        {
+            Blade = OfferAll.Blade with { Damage = 40 },
+            Dummy = OfferAll.Dummy with { MaxHealth = 100 },
+            Boons = OfferAll.Boons with { Damage = 0.1f },
+        };
+        var world = new GameWorld(LevelParser.Parse("P\nD"), balance: balance);
         var dummy = world.Dummies[0];
-        world.Player.AddExperience(100, []);
+        world.Player.AddExperience(balance.Experience.FirstLevel, []);
         world.Tick(PlayerInput.None with { ChooseBoon = Boon.Damage });
         Face(world.Player, dummy.Position + new Vector3(0f, 1f, 0f));
 
         world.Tick(PlayerInput.None with { Melee = true });
         world.Tick(PlayerInput.None);
 
-        Assert.Equal(Balance.Default.Dummy.MaxHealth - 42, dummy.Health);
+        Assert.Equal(100 - 44, dummy.Health);  // 40 x 1.1
     }
 
     [Fact]
     public void Stamina_regeneration_refills_the_bar_faster()
     {
-        var normal = TicksToRefill(PlayerWith(Boon.StaminaRegen, times: 0));
-        var faster = TicksToRefill(PlayerWith(Boon.StaminaRegen, times: 2));
+        var balance = OfferAll with
+        {
+            Player = OfferAll.Player with { StaminaRechargeTime = 2f, StaminaJumps = 4 },
+            Boons = OfferAll.Boons with { StaminaRegen = 0.25f },
+        };
+        var normal = TicksToRefill(PlayerWith(Boon.StaminaRegen, times: 0, balance: balance));
+        var faster = TicksToRefill(PlayerWith(Boon.StaminaRegen, times: 2, balance: balance));
 
-        // 3 s = 180 ticks; with +10 % from the base: 180 / 1.1 = 163.6 -> 164 ticks.
-        Assert.Equal(180, normal);
-        Assert.Equal(164, faster);
+        // 2 s = 120 ticks; with +50 % from the base: 120 / 1.5 = 80 ticks (not 120 / 1.25^2 = 76.8 -> 77).
+        Assert.Equal(120, normal);
+        Assert.Equal(80, faster);
     }
 
     [Fact]
     public void Experience_brings_more_experience_from_the_base()
     {
-        var player = PlayerWith(Boon.Experience, times: 4);
+        var player = PlayerWith(Boon.Experience, times: 4, balance: OfferAll with
+        {
+            Boons = OfferAll.Boons with { Experience = 0.25f },
+        });
         var events = new List<GameEvent>();
 
-        player.AddExperience(30, events);       // 30 x (1 + 4 x 0.025) = 33
+        player.AddExperience(30, events);       // 30 x (1 + 4 x 0.25) = 60, not 30 x 1.25^4 = 73
 
-        Assert.Contains(new ExperienceGained(player.Id, 33), events);
+        Assert.Contains(new ExperienceGained(player.Id, 60), events);
     }
 
     [Fact]
     public void A_restart_takes_every_boon_away()
     {
-        var world = new GameWorld(LevelParser.Parse("P"), balance: OfferAll);
-        world.Player.AddExperience(225, []);
+        var world = new GameWorld(LevelParser.Parse("P"), balance: RoundCurve);
+        world.Player.AddExperience(300, []);    // 100 + 200: two level ups
         world.Tick(PlayerInput.None with { ChooseBoon = Boon.Health });
         world.Tick(PlayerInput.None with { ChooseBoon = Boon.Damage });
 
         var restarted = world.Restarted().Player;
 
-        Assert.Equal(Balance.Default.Player.MaxHealth, restarted.MaxHealth);
+        Assert.Equal(RoundCurve.Player.MaxHealth, restarted.MaxHealth);
         Assert.All(Pool, boon => Assert.Equal(0, restarted.BoonCount(boon)));
         Assert.Equal(0, restarted.PendingBoons);
     }
@@ -339,10 +375,11 @@ public class BoonTests
     {
         var balance = OfferAll with
         {
-            Boons = OfferAll.Boons with { Health = 30, Damage = 0.5f, Experience = 1f },
+            Player = OfferAll.Player with { MaxHealth = 100 },
+            Boons = OfferAll.Boons with { Health = 30, HealthCap = 1000, Damage = 0.5f, Experience = 1f },
         };
         var player = new Player(LevelParser.Parse("P"), balance: balance);
-        player.AddExperience(100, []);
+        player.AddExperience(balance.Experience.FirstLevel, []);
         player.Choose(Boon.Health, []);
 
         Assert.Equal(130, player.MaxHealth);
@@ -352,14 +389,17 @@ public class BoonTests
     private static IReadOnlyList<Boon> FirstOffer(int seed)
     {
         var world = new GameWorld(LevelParser.Parse("P"), seed);
-        world.Player.AddExperience(100, []);
+        world.Player.AddExperience(FirstLevel, []);
         return world.Player.CurrentOffer.ToList();
     }
 
-    /// <summary>A player who chose <paramref name="boon"/> <paramref name="times"/> times (the whole pool is offered).</summary>
-    private static Player PlayerWith(Boon boon, int times, int damageFirst = 0)
+    /// <summary>
+    /// A player who chose <paramref name="boon"/> <paramref name="times"/> times, with <paramref name="balance"/>
+    /// (<see cref="OfferAll"/> if none is given; the whole pool must be offered).
+    /// </summary>
+    private static Player PlayerWith(Boon boon, int times, int damageFirst = 0, Balance? balance = null)
     {
-        var player = new Player(LevelParser.Parse("P"), balance: OfferAll);
+        var player = new Player(LevelParser.Parse("P"), balance: balance ?? OfferAll);
         if (damageFirst > 0)
         {
             player.TakeDamage(damageFirst, []);
@@ -435,9 +475,7 @@ public class BoonTests
         }
 
         player.AddExperience(player.ExperienceToNextLevel - player.Experience, []);
-        var next = (int)MathF.Round(OfferAll.Experience.FirstLevel * MathF.Pow(OfferAll.Experience.Growth, player.Level),
-            MidpointRounding.AwayFromZero);
-        player.AddExperience(next, []);
+        player.AddExperience(player.ExperienceToNextLevel - player.Experience, []);
         Assert.Equal(2, player.PendingBoons);
 
         Assert.Contains(Boon.Health, player.CurrentOffer);
