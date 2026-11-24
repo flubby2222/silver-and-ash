@@ -53,7 +53,7 @@ Für jede Station gibt es ein Foto mit Schildern (siehe [foto-skript.md](foto-sk
 dotnet run --project src/SilverAndAsh.Game -- --photo course-1-arms --out <leerer Ordner>
 ```
 
-Die Namen sind `course-1-arms`, `course-2-columns`, `course-3-cracked-wall`, `course-4-portcullis`, `course-5-teleporter` und `course-6-boss`. Die Türen auf dem Weg werden vor dem Bild mit **F** geöffnet, wie ein Spieler es täte; das Foto der Arena zeigt sie versiegelt. Die Probenblätter des Issues liegen unter `design/proben/grafik/pruefstrecke/`.
+Die Namen sind `course-1-arms`, `course-2-columns`, `course-3-cracked-wall`, `course-4-portcullis`, `course-5-teleporter` und `course-6-boss`. Die Türen auf dem Weg werden vor dem Bild mit **F** geöffnet, wie ein Spieler es täte; das Foto der Arena zeigt sie versiegelt. Die Probenblätter des Issues liegen unter `design/proben/grafik/pruefstrecke/`. Jedes Foto zeigt, wofür seine Station da ist, und ihr Schild (Issue #722); wo die Kamera steht, steht als Tabelleneintrag (`Shot`) in `CourseScenes.cs`. Die Bilder der Stationen 1, 4, 5 und 6 entstehen erst, wenn der Name des Levels verblasst ist (215 Ticks); in den Stationen 2 und 3 liefe sonst der wache Ghul bis vor die Kamera, dort bleibt ein schwacher Rest des Namens. Vorher/Nachher: `design/proben/grafik/stationsfotos-722/`.
 
 ## Tests
 
