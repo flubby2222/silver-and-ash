@@ -366,4 +366,25 @@ public class BossPortalTests
 
         static int Offset(JsonElement element) => element.TryGetProperty("byteOffset", out var offset) ? offset.GetInt32() : 0;
     }
+
+    // Issue #695: whether the stone stands in a door is a rule of the level, no longer the question whether its model fits.
+    [Theory]
+    [InlineData(DoorKind.Boss, 2, true)]
+    [InlineData(DoorKind.Boss, 1, false)]
+    [InlineData(DoorKind.Boss, 3, false)]
+    [InlineData(DoorKind.Normal, 2, false)]
+    [InlineData(DoorKind.Normal, 1, false)]
+    [InlineData(DoorKind.Locked, 2, false)]
+    [InlineData(DoorKind.Cracked, 2, false)]
+    public void The_portal_stands_only_in_a_boss_door_as_wide_as_it(DoorKind kind, int cells, bool expected)
+    {
+        Assert.Equal(expected, BossPortalShape.StandsIn(kind, cells));
+    }
+
+    [Fact]
+    public void The_portal_is_as_many_cells_wide_as_its_stone()
+    {
+        Assert.Equal(2, BossPortalShape.CellsWide);
+        Assert.Equal(2f * BossPortalShape.HalfWidth, BossPortalShape.CellsWide * Level.CellSize);
+    }
 }

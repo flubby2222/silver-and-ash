@@ -36,6 +36,17 @@ public static class BossPortalShape
     /// <summary>Half the width of the portal (and of the two door cells): it fills 2 m to either side of the passage.</summary>
     public const float HalfWidth = 2f;
 
+    /// <summary>How many door cells side by side the portal fills: its width, 4 m, in cells (issue #568).</summary>
+    public const int CellsWide = (int)(2f * HalfWidth / Level.CellSize);
+
+    /// <summary>
+    /// Whether the stone portal stands in a door of <paramref name="kind"/> that is <paramref name="cells"/> cells wide
+    /// (issue #695, the rule of issue #598): only in a boss door exactly as wide as the portal. A boss door of one cell
+    /// (the showroom, a hand-made level) would let the stone stick into the walls beside it - it has no portal, and the
+    /// picture draws the placeholder there.
+    /// </summary>
+    public static bool StandsIn(DoorKind kind, int cells) => kind == DoorKind.Boss && cells == CellsWide;
+
     /// <summary>From the door plane to the wall face on either side - half a cell.</summary>
     public const float HalfDepth = Level.CellSize / 2f;
 

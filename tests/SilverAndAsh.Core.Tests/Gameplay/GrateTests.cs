@@ -33,7 +33,7 @@ public class GrateTests
     private static List<(int X, int Z)> Rows(int from, int to) =>
         Enumerable.Range(from, to - from + 1).SelectMany(z => new[] { (1, z), (2, z), (3, z) }).ToList();
 
-    private static GameWorld World(bool grates = true, string map = Map, RoomKind arena = RoomKind.Combat)
+    private static GameWorld World(bool grates = true, string map = Map, RoomKind arena = RoomKind.Combat, Balance? balance = null)
     {
         PlacedRoom[] rooms =
         [
@@ -46,7 +46,7 @@ public class GrateTests
             new(2, 1, 0, 1, RoomSide.South) { HasGrate = grates },
             new(2, 6, 1, 2, RoomSide.South) { HasGrate = grates },
         ];
-        return new GameWorld(LevelParser.Parse(map), 1, Balance.Default, doors, rooms);
+        return new GameWorld(LevelParser.Parse(map), 1, balance ?? Balance.Default, doors, rooms);
     }
 
     private static List<GameEvent> Run(GameWorld world, PlayerInput input, int ticks, Func<bool>? until = null)
@@ -650,5 +650,55 @@ public class GrateTests
         Assert.False(Below(door.GrateHeight));
         Assert.True(door.IsBarred);
         Assert.False(door.CanInteract);
+    }
+
+    // Issue #695: how long a grate falls and rises and when it frees its door is a rule with its values in balance.json -
+    // a world built from that file follows them tick by tick, whatever they are.
+    [Fact]
+    public void A_grate_falls_and_rises_over_the_ticks_of_balance_json()
+    {
+        var balance = BalanceFile.Load(RepositoryFiles.Find("assets/balance.json")).Balance;
+        var grates = balance.Grates;
+        var world = World(balance: balance);
+        Enter(world);
+        var door = world.Doors[DoorA];
+
+        // Tick 1 of the fall went with the sealing; it lasts FallTicks, then the grate lies still on the floor.
+        var falling = 1;
+        while (door.GrateHeight > 0f || falling < grates.FallTicks)
+        {
+            Assert.True(door.IsBarred, $"fall tick {falling}");
+            Assert.True(falling < grates.FallTicks, $"still falling after {falling} ticks");
+            world.Tick(PlayerInput.None);
+            falling++;
+            Assert.Equal(GrateTravel.Height(falling, GrateMotion.Fall, grates), door.GrateHeight);
+        }
+
+        Assert.Equal(grates.FallTicks, falling);
+        world.Tick(PlayerInput.None);
+        Assert.Equal(0f, door.GrateHeight);
+
+        KillEverything(world);
+        world.Tick(PlayerInput.None);
+        Assert.True(world.Rooms[1].IsCleared);
+
+        // The lift: barred until the spike tips hang at the block height of the file, fully up after LiftTicks.
+        var rising = 0;
+        var freeAt = -1;
+        while (door.GrateHeight < GrateTravel.OpenHeight)
+        {
+            Assert.True(rising < grates.LiftTicks, $"still rising after {rising} ticks");
+            world.Tick(PlayerInput.None);
+            rising++;
+            Assert.Equal(GrateTravel.Height(rising, GrateMotion.Lift, grates), door.GrateHeight);
+            if (freeAt < 0 && !door.IsBarred)
+            {
+                freeAt = rising;
+            }
+        }
+
+        Assert.Equal(grates.LiftTicks, rising);
+        Assert.True(GrateTravel.Height(freeAt, GrateMotion.Lift, grates) >= grates.BlockHeight, $"free at lift tick {freeAt}");
+        Assert.True(GrateTravel.Height(freeAt - 1, GrateMotion.Lift, grates) < grates.BlockHeight, $"free only at lift tick {freeAt}");
     }
 }

@@ -564,7 +564,7 @@ public sealed record DoorsBalance
 
 /// <summary>
 /// Portcullises (issue #540): ticks (60 a second) a grate takes to fall shut and to rise fully open. The fall keeps its
-/// shape for any length: two jerks, then the drop and a short bounce (see <see cref="Presentation.GratePose"/>).
+/// shape for any length: two jerks, then the drop and a short bounce (see <see cref="GrateTravel"/>).
 /// </summary>
 public sealed record GratesBalance
 {
@@ -577,7 +577,7 @@ public sealed record GratesBalance
     /// <summary>
     /// Metres above the floor (issue #558): a rising grate keeps its door blocked until its spike tips hang higher than
     /// this. (A falling one blocks from the tick its arena seals - nobody escapes.) The height comes from
-    /// <see cref="Presentation.GratePose.Height"/>, the same number the picture uses.
+    /// <see cref="GrateTravel.Height"/>, the same number the picture uses.
     /// </summary>
     public float BlockHeight { get; init; } = 1.85f;
 }
