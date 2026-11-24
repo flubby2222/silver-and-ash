@@ -86,6 +86,25 @@ public class DoorClearanceTests
     }
 
     [Fact]
+    public void The_doors_of_a_room_are_every_cell_of_its_doors_the_second_cell_of_the_boss_door_too()
+    {
+        // Issue #583: the boss door over (3, 0) and (4, 0) counts with both cells, not only with its first one. The door
+        // at (7, 3) also belongs to the room, the one at (9, 9) does not.
+        var room = new PlacedRoom(1, RoomKind.Antechamber, "room", 0, 1, 7, 6, 1, Room, [], []);
+        LevelDoor[] doors =
+        [
+            new(3, 0, 0, 1, RoomSide.North, DoorKind.Boss) { MoreCells = [(4, 0)] },
+            new(7, 3, 1, 2, RoomSide.East),
+            new(9, 9, 2, 3, RoomSide.North),
+        ];
+
+        var roomDoors = DoorClearance.OfRoom(room, doors);
+
+        Assert.Equal([(3, 0), (4, 0), (7, 3)], roomDoors.Select(door => door.Cell));
+        Assert.All(roomDoors.Take(2), door => Assert.Equal(new Vector2(0f, 1f), door.Inward));
+    }
+
+    [Fact]
     public void A_door_needs_floor_to_look_into()
     {
         Assert.Throws<ArgumentException>(() => DoorClearance.Of((0, 0), []));

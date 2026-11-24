@@ -140,6 +140,39 @@ public class TeleporterPlacementTests
     }
 
     [Fact]
+    public void The_boss_gate_teleporter_keeps_two_cells_from_both_cells_of_the_boss_door()
+    {
+        // Issue #583: the distance rule counts every cell of the boss door, not only its first one. The antechamber is
+        // called a combat room (the rule "nearest to the boss door") and keeps two floor cells only: one two cells from
+        // the first door cell but next to the second, and one farther off that keeps clear of both. Only that one is
+        // allowed. The level keeps only its boss door, so no other door decides.
+        Assert.All(Levels.Value, built =>
+        {
+            var (antechamber, door) = BossGate(built);
+            Assert.Equal(2, door.Cells.Count);
+            var first = door.Cells[0];
+            var along = (X: door.Cells[1].X - first.X, Z: door.Cells[1].Z - first.Z);
+            var inward = (X: along.Z, Z: along.X);
+            if (!antechamber.FloorCells.Contains((first.X + inward.X, first.Z + inward.Z)))
+            {
+                inward = (-inward.X, -inward.Z);
+            }
+
+            Assert.Contains((first.X + inward.X, first.Z + inward.Z), antechamber.FloorCells);
+            var nextToSecond = (first.X + (2 * along.X) + inward.X, first.Z + (2 * along.Z) + inward.Z);
+            var clearOfBoth = (first.X + (3 * along.X) + (3 * inward.X), first.Z + (3 * along.Z) + (3 * inward.Z));
+            var rooms = built.Rooms.Select(r => r.Index == antechamber.Index
+                ? r with { Kind = RoomKind.Combat, FloorCells = [nextToSecond, clearOfBoth], ChestSlots = [] }
+                : r).ToList();
+
+            var level = TeleporterPlacement.Place(built with { Rooms = rooms, Doors = [door], Teleporters = null });
+
+            var gate = level.Teleporters!.Single(teleporter => teleporter.Site == TeleporterSite.BossGate);
+            Assert.Equal(clearOfBoth, (gate.X, gate.Z));
+        });
+    }
+
+    [Fact]
     public void Placing_teleporters_changes_nothing_else_of_the_level()
     {
         // No random number is used: the rooms, enemies and chests of a seed stay exactly as they were.

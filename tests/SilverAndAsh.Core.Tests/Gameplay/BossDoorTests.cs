@@ -353,4 +353,56 @@ public class BossDoorTests
 
         Assert.Contains("2/-1", error.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_door_with_a_gap_between_its_cells_is_refused()
+    {
+        // Error branch (issue #583): (2, 1) and (4, 1) are both walkable, but the wall at (3, 1) lies between them.
+        var gap = Map.Replace("##..##", "##.#.#", StringComparison.Ordinal);
+
+        var error = Assert.Throws<ArgumentException>(() => World(gap, [(4, 1)]));
+
+        Assert.Contains("2/1, 4/1", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_door_cell_along_the_passage_is_refused()
+    {
+        // Error branch (issue #583): (2, 2) is walkable floor of the boss room, but behind (2, 1), not beside it.
+        var error = Assert.Throws<ArgumentException>(() => World(moreCells: [(2, 2)]));
+
+        Assert.Contains("2/1, 2/2", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_door_cell_beside_but_out_of_the_wall_is_refused()
+    {
+        // Error branch (review of PR #701): (3, 2) lies one step along the wall from (2, 1), so there is no gap - but
+        // one row deeper, in the boss room, not in the south wall. Only "in one wall" refuses it.
+        var error = Assert.Throws<ArgumentException>(() => World(moreCells: [(3, 2)]));
+
+        Assert.Contains("2/1, 3/2", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_cell_of_an_east_door_out_of_its_column_is_refused()
+    {
+        // The same for the other direction: an east door lies in one column. (2, 2) is one step along it from (1, 1),
+        // but in the next column. Built as a door alone, since the world of this class has its doors in south walls.
+        var level = LevelParser.Parse("P..\n...\n...");
+        var plan = new LevelDoor(1, 1, 0, 1, RoomSide.East, DoorKind.Boss) { MoreCells = [(2, 2)] };
+
+        var error = Assert.Throws<ArgumentException>(() => new Door(0, plan, level));
+
+        Assert.Contains("1/1, 2/2", error.Message, StringComparison.Ordinal);
+        Assert.Contains("East wall", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_door_with_a_cell_twice_is_refused()
+    {
+        var error = Assert.Throws<ArgumentException>(() => World(moreCells: [(2, 1)]));
+
+        Assert.Contains("2/1, 2/1", error.Message, StringComparison.Ordinal);
+    }
 }
