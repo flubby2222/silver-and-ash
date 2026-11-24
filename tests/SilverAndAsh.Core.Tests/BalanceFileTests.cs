@@ -148,6 +148,7 @@ public class BalanceFileTests
     [InlineData("blunderbuss", "range")]
     [InlineData("blade", "cooldown")]
     [InlineData("player", "maxHealth")]
+    [InlineData("player", "maxSpeed")]
     [InlineData("player", "jumpDuration")]
     [InlineData("bat", "spitInterval")]
     [InlineData("player", "staminaJumps")]
