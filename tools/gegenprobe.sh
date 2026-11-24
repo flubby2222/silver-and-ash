@@ -60,7 +60,7 @@ while [ $# -gt 0 ]; do
         --bot) bot=1; shift ;;
         --project) project="${2:?--project needs a path}"; shift 2 ;;
         --name) name="${2:?--name needs a text}"; shift 2 ;;
-        -h|--help) sed -n '2,46p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,47p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         --) shift; break ;;
         -*) echo "gegenprobe: unknown option $1 (see --help)" >&2; exit 2 ;;
         *) break ;;

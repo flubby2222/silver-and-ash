@@ -128,9 +128,8 @@ internal sealed record PortalSite(Door Door, BossPortal Portal, RoomState Boss, 
 /// </summary>
 internal static class DoorSlam
 {
-    // Where the push leaves a body: this far past the door's box (GameWorld.OnThreshold: its radius and a gap of 1 cm),
+    // Where the push leaves a body: its radius and GameWorld.ThresholdGap past the door's box (GameWorld.OnThreshold),
     // give or take a little for rounding.
-    private const float PushGap = 0.01f;
     private const float PushTolerance = 0.002f;
 
     // A running body starts this far before the door's box (on the antechamber side) and is let go so that it is in the
@@ -350,8 +349,8 @@ internal static class DoorSlam
     {
         var beyond = site.BeyondDoor(Position(play, enemy));
         return !report.Check(
-            MathF.Abs(beyond - (body.Radius + PushGap)) > PushTolerance,
-            string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{where}: not in the doorway at the slam - {beyond:0.000} m past the door's box, a pushed body stands {body.Radius + PushGap:0.000} m past it"));
+            MathF.Abs(beyond - (body.Radius + GameWorld.ThresholdGap)) > PushTolerance,
+            string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{where}: not in the doorway at the slam - {beyond:0.000} m past the door's box, a pushed body stands {body.Radius + GameWorld.ThresholdGap:0.000} m past it"));
     }
 
     // A fresh world with the door open, the player walked in and the boss room sealed; the enemy that plays the body

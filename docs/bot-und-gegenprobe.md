@@ -25,7 +25,7 @@ Aufbau: `<modus> [--seeds VON..BIS] [--repo ORDNER]`. Ohne `--seeds` laufen die 
 | `arena` | Für jede Tür eines Kampfraums: hineingehen, das Gitter muss fallen und der Raum versiegeln; vier Fluchtversuche (sofort, sofort mit Sprint, nach 6 Ticks mit Sprint, nach 14 Ticks) müssen drinnen enden; Raum leeren, die Gitter gehen einmal hoch, hinausgehen. Zwei Kampfräume nebeneinander nacheinander. Die Bosstür hat kein Gitter: Sie schwingt zu und muss spätestens ab `doors.bossShutTick` (Balancing) sperren; der Spieler läuft sofort zurück und darf nicht in den Vorraum kommen (#566, #567). | etwa 2 min |
 | `death` | Tod in jeder versiegelten Arena und im Bosskampf, danach Neustart: keine Tür verriegelt, kein Raum versiegelt, die Arena versiegelt beim Betreten wieder (#560, #578); nach dem Bosskampf ist der Vorraum frisch und ein zweiter Lauf erreicht den Boss wieder. | etwa 30 s |
 | `boss` | Der ganze Weg: Vorraum, Boss-Tor-Teleporter freischalten und hin- und herreisen, Bosstür mit F öffnen, Bossraum versiegelt, die Bosstür sperrt spätestens ab `doors.bossShutTick`, Gorm besiegen, Treppe hinauf, gewonnen. | etwa 5 s |
-| `slam` | Die Bosstür schlägt zu, während ein Körper in ihrem Durchgang steht (#629): nacheinander ein Spieler, ein Ghul, eine Fledermaus und Gorm, jeweils an jeder Stelle quer zum Durchgang alle 5 cm. Die Tiefe längs des Durchgangs ist die erste freie Stelle; wo der Körper nirgends frei steht, zählt der Bot die Stelle als übersprungen. Der Körper wird jeden Tick neu an seinen Platz gestellt, bis die Tür sperrt; danach darf er nicht im Stein des Portals stecken. Dass er im Tick des Zuschlagens wirklich in der Türbox stand, prüft der Bot daran, wohin die Tür ihn geschoben hat: genau Radius + 1 cm hinter ihre Box (`GameWorld.OnThreshold`), sonst ein Befund „not in the doorway at the slam“ (#647). **Mit Schwung** (#647): Spieler, Ghul und Fledermaus starten alle 10 cm quer zum Durchgang 0,6 m vor der Türbox; der Spieler läuft los, Ghul und Fledermaus (vorher in ihrer Arena geweckt) fliegt ein aufgeladener Keulenschlag hinein. Ein Probelauf misst, wann der Körper im Durchgang ist und wann die Tür sperrt; der echte Lauf lässt ihn so spät los, dass er im Tick des Zuschlagens im Durchgang ist. Gorm läuft nicht mit Schwung hinein (kein Rückstoß, und seine eigenen Schritte hingen vom Starttick ab) – eine bekannte Lücke. | etwa 1,5 min |
+| `slam` | Die Bosstür schlägt zu, während ein Körper in ihrem Durchgang steht (#629): nacheinander ein Spieler, ein Ghul, eine Fledermaus und Gorm, jeweils an jeder Stelle quer zum Durchgang alle 5 cm. Die Tiefe längs des Durchgangs ist die erste freie Stelle; wo der Körper nirgends frei steht, zählt der Bot die Stelle als übersprungen. Der Körper wird jeden Tick neu an seinen Platz gestellt, bis die Tür sperrt; danach darf er nicht im Stein des Portals stecken. Dass er im Tick des Zuschlagens wirklich in der Türbox stand, prüft der Bot daran, wohin die Tür ihn geschoben hat: genau Radius + `GameWorld.ThresholdGap` (1 cm) hinter ihre Box (`GameWorld.OnThreshold`), sonst ein Befund „not in the doorway at the slam“ (#647). **Mit Schwung** (#647): Spieler, Ghul und Fledermaus starten alle 10 cm quer zum Durchgang 0,6 m vor der Türbox; der Spieler läuft los, Ghul und Fledermaus (vorher in ihrer Arena geweckt) fliegt ein aufgeladener Keulenschlag hinein. Ein Probelauf misst, wann der Körper im Durchgang ist und wann die Tür sperrt; der echte Lauf lässt ihn so spät los, dass er im Tick des Zuschlagens im Durchgang ist. Gorm läuft nicht mit Schwung hinein (kein Rückstoß, und seine eigenen Schritte hingen vom Starttick ab) – eine bekannte Lücke. | etwa 1,5 min |
 | `bat` | Eine wache Fledermaus am Bossportal (#627, #629): an jeder freien Stelle eines Rasters vor und hinter dem Portal in acht Richtungen weggeschlagen; um einen Spieler herum geflogen, der an vier Stellen im Portal steht; tot auf einen Sockel des Portals fallen gelassen, bis sie verschwunden ist. | etwa 25 s |
 | `seeds` | Baut jede Ebene zweimal und vergleicht sie (gleicher Seed muss gleiche Ebene geben) und zählt, wie viele Versuche der Generator brauchte. | etwa 3 s; 1 000 Seeds etwa 100 s |
 | `all` | alle sechs nacheinander | etwa 5 min |
@@ -194,19 +194,22 @@ Das Skript baut `tools/SilverAndAsh.BotRun` (mit dem Core) in Release und starte
 
 **Nach jeder Änderung neu bauen**, bevor man mit `--no-build` startet – auch nach dem Zurücksetzen und nach einem fehlgeschlagenen Build (etwa einer Probe, die nicht kompiliert). Sonst läuft die alte DLL und meldet fälschlich Exit-Code `0`.
 
-Belegte Proben für #647, jeweils mit `--bot`, alle gefangen (Exit-Code `0`):
+Belegte Proben für #647, jeweils mit `--bot`, alle gefangen (Exit-Code `0`). Die Suchtexte kommen in ihrer Datei genau einmal vor und lassen sich so übernehmen:
 
-| Datei, Änderung | Bot | Befunde |
-|---|---|---|
-| `BossPortalRuns.cs`, Raster stehend `Steps(-1.95f, 1.95f, 0.05f)` → `0.1f` | `slam --seeds 1` | Untergrenze: Spieler 8, Ghul 7, Fledermaus 11 je Seite |
-| `BossPortalRuns.cs`, Raster mit Schwung `Steps(-1.9f, 1.9f, 0.1f)` → `0.2f` | `slam --seeds 1` | Untergrenze: Spieler 5, Ghul 7, Fledermaus 9 je Seite |
-| `BossPortalRuns.cs`, Schläge `Steps(-2.6f, 2.6f, 0.4f)` → `0.8f` | `bat --seeds 1` | Untergrenze: 21 und 15 statt 27 |
-| `BossPortalRuns.cs`, stehender Körper 2 m vor seinem Platz (`site.At(across, along - 2f)`) | `slam --seeds 1` | „not in the doorway at the slam“ |
-| `BossPortalRuns.cs`, Körper mit Schwung 20 Ticks zu spät losgelassen (`… ?? shut) + 20`) | `slam --seeds 1` | „not in the doorway at the slam“ |
-| `Play.cs`, Messhöhen doppelt so weit (`* 0.8f` → `* 1.6f`) | `slam --seeds 1` | „the stone check misses the block 3.075..3.200“ (Kämpfer) und weitere |
-| `Play.cs`, Messhöhen ohne 1 cm Abstand zu den Füßen | `bat --seeds 1` | 4 × „dead bat in the stone“ auf dem Sockel |
+| Datei, was | `<suchen>` → `<ersetzen>` | Bot | Befunde |
+|---|---|---|---|
+| `tools/SilverAndAsh.BotRun/BossPortalRuns.cs`, Raster stehend halb so fein | `PortalSite.Steps(-1.95f, 1.95f, 0.05f)` → `PortalSite.Steps(-1.95f, 1.95f, 0.1f)` | `slam --seeds 1` | Untergrenze: Spieler 8, Ghul 7, Fledermaus 11 je Seite |
+| `BossPortalRuns.cs`, Raster mit Schwung halb so fein | `PortalSite.Steps(-1.9f, 1.9f, 0.1f)` → `PortalSite.Steps(-1.9f, 1.9f, 0.2f)` | `slam --seeds 1` | Untergrenze: Spieler 5, Ghul 7, Fledermaus 9 je Seite |
+| `BossPortalRuns.cs`, Schläge halb so fein | `PortalSite.Steps(-2.6f, 2.6f, 0.4f)` → `PortalSite.Steps(-2.6f, 2.6f, 0.8f)` | `bat --seeds 1` | Untergrenze: 21 und 15 statt 27 |
+| `BossPortalRuns.cs`, stehender Körper 2 m vor seinem Platz | `var at = body.Place(play.World.Level, site.At(across, along));` → `var at = body.Place(play.World.Level, site.At(across, along - 2f));` | `slam --seeds 1` | „not in the doorway at the slam“ |
+| `BossPortalRuns.cs`, Körper mit Schwung 20 Ticks zu spät losgelassen | `var hold = shut - (inDoorway ?? shut);` → `var hold = shut - (inDoorway ?? shut) + 20;` | `slam --seeds 1` | „not in the doorway at the slam“ |
+| `src/SilverAndAsh.Core/Gameplay/GameWorld.cs`, die Tür schiebt 1 cm zu weit | `const float Gap = ThresholdGap;` → `const float Gap = ThresholdGap * 2f;` | `slam --seeds 1` | „not in the doorway at the slam“ |
+| `tools/SilverAndAsh.BotRun/Play.cs`, Messhöhen doppelt so weit | `block.Top - block.Bottom) * 0.8f;` → `block.Top - block.Bottom) * 1.6f;` | `slam --seeds 1` | „the stone check misses the block 3.075..3.200“ (Kämpfer) und weitere |
+| `Play.cs`, Messhöhen ohne 1 cm Abstand zu den Füßen | `var y = body.Position.Y + PortalStoneInset + up;` → `var y = body.Position.Y + up;` | `bat --seeds 1` | 4 × „dead bat in the stone“ auf dem Sockel |
 
-Dazu ohne `--bot`: `BodySizes.Bat.StepHeight` von unendlich auf `0.4f` macht 3 von 140 Tests mit Filter `Bat` rot (`BossPortalNeighbourTests`).
+Den Abstand selbst (`GameWorld.ThresholdGap`) liest der Bot aus dem Core: Wird er absichtlich geändert, bleibt der Bot still; nur eine Tür, die anders schiebt als dieser Wert sagt, ist ein Befund.
+
+Dazu ohne `--bot`: `BodySizes.Bat.StepHeight` von unendlich auf `0.4f` macht 4 von 137 Tests mit Filter `Bat` rot (`BossPortalNeighbourTests`).
 
 Belegte Proben für `slam` (#629), jeweils `slam --seeds 1`:
 
