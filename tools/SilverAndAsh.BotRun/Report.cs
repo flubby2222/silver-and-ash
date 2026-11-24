@@ -60,29 +60,73 @@ internal sealed class Report
     /// </summary>
     public Places Tally(string context, string skipped, int minPerSide = 1) => new(this, context, skipped, minPerSide);
 
+    /// <summary>
+    /// A tally of the places a mode skips for one known reason, counted as "<paramref name="skipped"/> (skipped)", whose
+    /// number is measured (issue #688): <see cref="Exactly.Verify"/> makes it a finding unless exactly
+    /// <paramref name="perSide"/> places on each side of the middle and none in the middle were skipped so. A filter that
+    /// swallows more places (or fewer) than it did is seen, not hidden among other skipped places.
+    /// </summary>
+    public Exactly Expect(string context, string skipped, int perSide) => new(this, context, skipped, perSide);
+
     public sealed class Places(Report report, string context, string skipped, int minPerSide)
     {
-        private int _below;
-        private int _above;
+        private readonly Sides _played = new();
 
         /// <summary>A place <paramref name="across"/> metres beside the middle was played (the middle itself counts for neither side).</summary>
-        public void Played(float across)
-        {
-            if (across < -0.01f)
-            {
-                _below++;
-            }
-            else if (across > 0.01f)
-            {
-                _above++;
-            }
-        }
+        public void Played(float across) => _played.Add(across);
 
         public void Skipped() => report.Count($"{skipped} (skipped)");
 
         public void Verify() => report.Check(
-            _below < minPerSide || _above < minPerSide,
-            $"{context}: fewer than {minPerSide} place(s) played on a side of the middle ({_below} and {_above}), the rest skipped as \"{skipped}\" - the mode checks (almost) nothing");
+            _played.Below < minPerSide || _played.Above < minPerSide,
+            $"{context}: fewer than {minPerSide} place(s) played on a side of the middle ({_played.Below} and {_played.Above}), the rest skipped as \"{skipped}\" - the mode checks (almost) nothing");
+    }
+
+    public sealed class Exactly(Report report, string context, string skipped, int perSide)
+    {
+        private readonly Sides _skipped = new();
+
+        /// <summary>A place <paramref name="across"/> metres beside the middle was skipped for this reason.</summary>
+        public void Skipped(float across)
+        {
+            report.Count($"{skipped} (skipped)");
+            _skipped.Add(across);
+        }
+
+        public void Verify()
+        {
+            // The count line stands there even at 0, so the number can be read and compared (issue #688).
+            report._counts.TryAdd($"{report._section}: {skipped} (skipped)", 0);
+            report.Check(
+                _skipped.Below != perSide || _skipped.Above != perSide || _skipped.Middle != 0,
+                $"{context}: {_skipped.Below}, {_skipped.Middle} and {_skipped.Above} place(s) below, in and above the middle skipped as \"{skipped}\", measured {perSide}, 0 and {perSide} - the reason skips other places than measured");
+        }
+    }
+
+    // Places counted by their side of the middle; within 1 cm of it they count as the middle.
+    private sealed class Sides
+    {
+        public int Below { get; private set; }
+
+        public int Middle { get; private set; }
+
+        public int Above { get; private set; }
+
+        public void Add(float across)
+        {
+            if (across < -0.01f)
+            {
+                Below++;
+            }
+            else if (across > 0.01f)
+            {
+                Above++;
+            }
+            else
+            {
+                Middle++;
+            }
+        }
     }
 
     public void Print(string mode, int from, int to)
