@@ -71,6 +71,19 @@ public sealed record LevelDoor(int X, int Z, int RoomA, int RoomB, RoomSide Side
 
     /// <summary>All cells of the door: (<see cref="X"/>, <see cref="Z"/>) first, then <see cref="MoreCells"/>.</summary>
     public IReadOnlyList<(int X, int Z)> Cells => [(X, Z), .. MoreCells];
+
+    /// <summary>
+    /// Equal if every property is equal - <see cref="MoreCells"/> by its cells, not by the list they sit in (issue #583),
+    /// so two generations with the same seed give equal doors. A new property belongs in here and in
+    /// <see cref="GetHashCode"/>.
+    /// </summary>
+    public bool Equals(LevelDoor? other) =>
+        other is not null
+        && (X, Z, RoomA, RoomB, Side, Kind, HasGrate) == (other.X, other.Z, other.RoomA, other.RoomB, other.Side, other.Kind, other.HasGrate)
+        && MoreCells.SequenceEqual(other.MoreCells);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(X, Z, RoomA, RoomB, Side, Kind, HasGrate, MoreCells.Count);
 }
 
 /// <summary>
