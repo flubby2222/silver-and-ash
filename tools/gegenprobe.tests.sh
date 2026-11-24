@@ -59,13 +59,27 @@ check 'count'                      0 '3'                    'a a a'           'a
 # number into "won", holds the lock <hold> seconds and lets it go. Its exit code is the one of lock_take.
 lockfile="$(cd "$(dirname "$0")" && pwd)/gegenprobe-lock.sh"
 contender() {
-    local hold="$1" pause="$2"
-    GEGENPROBE_TEST_PAUSE_BEFORE_TAKEOVER="$pause" bash -c '
+    local hold="$1"
+    bash -c '
         . "$1" || exit 9
         lock_take "$2" || exit $?
         echo $$ >> "$3"
         sleep "$4"
         lock_release' contender "$lockfile" "$work/lock" "$work/won" "$hold" 2>>"$work/lock-err"
+}
+
+# One of two runs that meet in the gap of the takeover (issue #657: they wait for each other by files, not by fixed
+# times). Between finding the stale lock and taking it over it makes <found> (if given) and waits for <wait>. If it
+# gets the lock, it writes its number into "won", makes "holds" and keeps the lock until "release" is there.
+racer() {
+    local found="$1" wait="$2"
+    GEGENPROBE_TEST_FOUND_STALE="$found" GEGENPROBE_TEST_WAIT_BEFORE_TAKEOVER="$wait" bash -c '
+        . "$1" || exit 9
+        lock_take "$2" || exit $?
+        echo $$ >> "$3"
+        : > "$4"
+        lock_test_wait_for "$5"
+        lock_release' racer "$lockfile" "$work/lock" "$work/won" "$work/holds" "$work/release" 2>>"$work/lock-err"
 }
 
 # A process number nobody has any more: a run that has ended.
@@ -86,7 +100,7 @@ expect() {
     fi
 }
 fresh_lock() {
-    rm -rf -- "$work/lock" "$work/lock".* "$work/won" "$work/lock-err"
+    rm -rf -- "$work/lock" "$work/lock".* "$work/won" "$work/lock-err" "$work/found" "$work/holds" "$work/release"
     : > "$work/won"
     : > "$work/lock-err"
 }
@@ -95,46 +109,47 @@ no_lock_left() { [ -z "$(ls -d -- "$work/lock" "$work/lock".* 2>/dev/null)" ]; }
 stale_lock() { mkdir -- "$work/lock" && echo "$dead" > "$work/lock/pid"; }
 
 fresh_lock
-contender 0 ''
+contender 0
 expect 'lock: free lock is taken'           [ $? = 0 ]
 expect 'lock: free lock, one winner'        winners 1
 expect 'lock: let go after the run'         no_lock_left
 
 fresh_lock
 mkdir -- "$work/lock" && echo $$ > "$work/lock/pid"
-contender 0 ''
+contender 0
 expect 'lock: running owner, exit 2'        [ $? = 2 ]
 expect 'lock: running owner, no winner'     winners 0
 expect 'lock: running owner keeps it'       [ "$(cat "$work/lock/pid")" = $$ ]
 
 fresh_lock
 mkdir -- "$work/lock"
-contender 0 ''
+contender 0
 expect 'lock: without a number, exit 2'     [ $? = 2 ]
 expect 'lock: without a number, kept'       [ -d "$work/lock" ]
 
 fresh_lock
 stale_lock
-contender 0 ''
+contender 0
 expect 'lock: stale lock is taken over'     [ $? = 0 ]
 expect 'lock: stale lock, one winner'       winners 1
 expect 'lock: stale lock, says so'          grep -q "removing the stale lock of run $dead" "$work/lock-err"
 expect 'lock: stale lock, nothing left'     no_lock_left
 
-# Two runs find the same stale lock. The first takes it over after 1 s and holds it for 4 s; the second goes on only
-# after 2.5 s - while the first is holding its fresh lock. Exactly one may win, and the lock of the first must stay.
+# Two runs find the same stale lock. The first takes it over only once the second has found it too; the second goes on
+# only once the first holds its fresh lock. Exactly one may win, and the lock of the first must stay: it is checked
+# after the second has ended and before the first lets go.
 fresh_lock
 stale_lock
-contender 4 1 &
+racer '' "$work/found" &
 first=$!
-contender 0 2.5 &
+racer "$work/found" "$work/holds" &
 second=$!
-sleep 3.2
-expect 'lock: race, the first holds it'     [ "$(cat "$work/lock/pid" 2>/dev/null)" = "$(head -n 1 "$work/won")" ]
-wait "$first"
-first_exit=$?
 wait "$second"
 second_exit=$?
+expect 'lock: race, the first holds it'     [ "$(cat "$work/lock/pid" 2>/dev/null)" = "$(head -n 1 "$work/won")" ]
+: > "$work/release"
+wait "$first"
+first_exit=$?
 expect 'lock: race, first run wins'         [ "$first_exit" = 0 ]
 expect 'lock: race, second run exit 2'      [ "$second_exit" = 2 ]
 expect 'lock: race, exactly one winner'     winners 1
@@ -152,7 +167,7 @@ expect 'lock: release keeps a foreign lock' [ $? = 0 ]
 
 # The whole run (issue #651) in a small repository of its own, with a stand-in for dotnet: it waits a moment, then
 # writes a result file whose one test is red while probe.txt holds "broken", and builds nothing while it holds
-# "nocompile". As the bot (--bot, issue #647) it answers "build" (fails on "nocompile") and "run": a finding (exit 1)
+# "nocompile"; while it holds "aborted", the test process crashes (issue #657). As the bot (--bot, issue #647) it answers "build" (fails on "nocompile") and "run": a finding (exit 1)
 # while probe.txt holds "broken" or the bot arguments say "found", exit 2 while probe.txt or the arguments say "crash".
 gegenprobe="$(cd "$(dirname "$0")" && pwd)/gegenprobe.sh"
 repo="$work/repo"
@@ -197,9 +212,16 @@ outcome=Passed
 grep -q broken probe.txt && outcome=Failed
 failed=0
 [ "$outcome" = Failed ] && failed=1
+# STANDIN_TOTAL tests (default 1); while probe.txt holds "aborted", the test process crashes and one test fewer ran
+# (issue #657) - with the default none, as dotnet test writes total="0" after a stack overflow.
+total="${STANDIN_TOTAL:-1}"
+if grep -q aborted probe.txt; then
+    total=$((total - 1))
+    echo "The active test run was aborted. Reason: Test host process crashed : Stack overflow."
+fi
 mkdir -p -- "$results"
-printf '<TestRun><Counters total="1" failed="%s" /><UnitTestResult testName="Probe.Test" outcome="%s" /></TestRun>\n' \
-    "$failed" "$outcome" > "$results/results.trx"
+printf '<TestRun><Counters total="%s" failed="%s" /><UnitTestResult testName="Probe.Test" outcome="%s" /></TestRun>\n' \
+    "$total" "$failed" "$outcome" > "$results/results.trx"
 STANDIN
 chmod +x "$work/stand-in/dotnet"
 lock_of_repo="$repo/.git/gegenprobe.lock"
@@ -221,6 +243,34 @@ expect 'run: no compile, exit 3'            [ $? = 3 ]
 expect 'run: no compile, file back'         probe_back
 expect 'run: no compile, no false claim'    lacks 'still holds the changed code'
 expect 'run: no compile, says so'           grep -q 'the change did not compile' "$work/lock-err"
+# Exit code 3 also comes when only the copying or the test project failed, with the change built (issue #657).
+expect 'run: no compile, names every cause' grep -q 'a built file could not be copied' "$work/lock-err"
+expect 'run: no compile, says to build'     grep -q 'build again before running anything with --no-build' "$work/lock-err"
+
+# A test process that crashes with the change (endless recursion) leaves a result file with fewer tests than the
+# control run, with the default of the stand-in none at all: that is no "SURVIVED" (issue #657).
+run_out() { grep -q "$1" "$work/run-out"; }
+not_in_run_out() { ! run_out "$1"; }
+: > "$work/lock-err"
+run_probe aborted > "$work/run-out" 2>"$work/lock-err"
+expect 'run: aborted, exit 4'               [ $? = 4 ]
+expect 'run: aborted, says so'              run_out 'ABORTED - only 0 of 1 test(s) ran with the change'
+expect 'run: aborted, not survived'         not_in_run_out SURVIVED
+expect 'run: aborted, shows the crash'      grep -q 'Test host process crashed' "$work/lock-err"
+expect 'run: aborted, file back'            probe_back
+expect 'run: aborted, lock gone'            [ ! -e "$lock_of_repo" ]
+expect 'run: aborted, says to build again'  grep -q 'still holds the changed code' "$work/lock-err"
+
+: > "$work/lock-err"
+( export STANDIN_TOTAL=3; run_probe aborted ) > "$work/run-out" 2>"$work/lock-err"
+expect 'run: fewer than control, exit 4'    [ $? = 4 ]
+expect 'run: fewer than control, says so'   run_out 'ABORTED - only 2 of 3 test(s) ran'
+
+: > "$work/lock-err"
+( export STANDIN_TOTAL=3; run_probe 'aborted broken' ) > "$work/run-out" 2>"$work/lock-err"
+expect 'run: aborted with red, exit 4'      [ $? = 4 ]
+expect 'run: aborted with red, names it'    run_out 'Probe.Test'
+expect 'run: aborted with red, file back'   probe_back
 
 # The output closed early (2>&1 | head, as in the test of PR #648): head stops after the line of the control run, so
 # the result line and the messages of the clean-up meet a closed pipe while the file is changed. The run must still
