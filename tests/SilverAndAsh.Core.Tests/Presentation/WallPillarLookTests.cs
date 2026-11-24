@@ -147,7 +147,7 @@ public class WallPillarLookTests
     public void A_missing_pillar_falls_back_to_variant_a_then_to_none(
         TextureVariant wanted, bool wantedLoaded, bool variantALoaded, TextureVariant? expected)
     {
-        Assert.Equal(expected, WallPillarLook.Pick(wanted, wantedLoaded, variantALoaded));
+        Assert.Equal(expected, WallVariantChoice.Pick(wanted, wantedLoaded, variantALoaded));
     }
 
     [Fact]

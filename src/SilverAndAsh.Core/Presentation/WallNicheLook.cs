@@ -302,13 +302,6 @@ public static class WallNicheLook
         return (level.CellCenter(x, z) - (facing * (Level.CellSize / 2f)), facing, size);
     }
 
-    /// <summary>
-    /// The file to draw a niche from: the one of <paramref name="wanted"/> (the variant of the wall behind it) if it was
-    /// loaded, else the one of variant A, else none - then the niche is not drawn, the wall stays bare.
-    /// </summary>
-    public static TextureVariant? Pick(TextureVariant wanted, bool wantedLoaded, bool variantALoaded) =>
-        WallPillarLook.Pick(wanted, wantedLoaded, variantALoaded);
-
     // The direction the niche looks (away from the wall into the cell) and the direction along the wall.
     private static (Vector3 Facing, Vector3 Along) Axes(RoomSide wall) => wall switch
     {

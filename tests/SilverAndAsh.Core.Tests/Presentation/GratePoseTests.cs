@@ -272,7 +272,7 @@ public class GratePoseTests
     public void A_missing_guide_ring_falls_back_to_variant_a_then_to_none(
         TextureVariant wanted, bool wantedLoaded, bool variantALoaded, TextureVariant? expected)
     {
-        Assert.Equal(expected, GratePose.Pick(wanted, wantedLoaded, variantALoaded));
+        Assert.Equal(expected, WallVariantChoice.Pick(wanted, wantedLoaded, variantALoaded));
     }
 
     [Fact]

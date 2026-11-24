@@ -16,11 +16,11 @@ internal sealed class CeilingArchView : IDisposable
     // The arch is 2.25 m across and 3.64 m high; from its middle at half height a little more than 2 m.
     private const float BoundingRadius = 2.2f;
 
-    private readonly Dictionary<TextureVariant, TexturedModel> _models;
+    private readonly WallVariantModels<ValueTuple> _models;
     private readonly Matrix4x4[] _turns = new Matrix4x4[CeilingArchLook.Parts.Count];
     private readonly Matrix4x4[] _frames = new Matrix4x4[CeilingArchLook.Parts.Count];
 
-    private CeilingArchView(Dictionary<TextureVariant, TexturedModel> models)
+    private CeilingArchView(WallVariantModels<ValueTuple> models)
     {
         _models = models;
     }
@@ -29,20 +29,8 @@ internal sealed class CeilingArchView : IDisposable
     /// Loads the arch of every wall variant from <paramref name="directory"/> (<see cref="CeilingArchLook.FileName"/>).
     /// A missing or broken one: a warning in the log and the fallback for it. Needs the window.
     /// </summary>
-    public static CeilingArchView Load(string directory, FileLog? log)
-    {
-        var models = new Dictionary<TextureVariant, TexturedModel>();
-        foreach (var variant in new[] { TextureVariant.A, TextureVariant.B, TextureVariant.C })
-        {
-            var path = Path.Combine(directory, CeilingArchLook.FileName(variant));
-            if (TexturedModel.TryLoad(path, CeilingArchLook.Parts, log) is { } model)
-            {
-                models[variant] = model;
-            }
-        }
-
-        return new CeilingArchView(models);
-    }
+    public static CeilingArchView Load(string directory, FileLog? log) =>
+        new(WallVariantModels.Load(directory, CeilingArchLook.FileName, CeilingArchLook.Parts, log));
 
     /// <summary>
     /// Draws every arch of <paramref name="arches"/> that <paramref name="view"/> may see. <paramref name="textures"/>:
@@ -54,7 +42,7 @@ internal sealed class CeilingArchView : IDisposable
         foreach (var arch in arches)
         {
             var middle = arch.Position + new Vector3(0f, CeilingArchLook.CeilingHeight / 2f, 0f);
-            if (!view.MaySee(middle, BoundingRadius) || Model(textures.Resolve(SurfaceKind.Wall, arch.Variant)) is not { } model)
+            if (!view.MaySee(middle, BoundingRadius) || _models.Pick(textures.Resolve(SurfaceKind.Wall, arch.Variant)) is not { } model)
             {
                 continue;
             }
@@ -66,17 +54,5 @@ internal sealed class CeilingArchView : IDisposable
         }
     }
 
-    public void Dispose()
-    {
-        foreach (var model in _models.Values)
-        {
-            model.Dispose();
-        }
-    }
-
-    private TexturedModel? Model(TextureVariant wanted)
-    {
-        var pick = CeilingArchLook.Pick(wanted, _models.ContainsKey(wanted), _models.ContainsKey(TextureVariant.A));
-        return pick is { } variant ? _models[variant] : null;
-    }
+    public void Dispose() => _models.Dispose();
 }

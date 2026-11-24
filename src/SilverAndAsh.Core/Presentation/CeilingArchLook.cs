@@ -70,13 +70,6 @@ public static class CeilingArchLook
         return (level.CellCenter(x, z), facing);
     }
 
-    /// <summary>
-    /// The file to draw an arch from: the one of <paramref name="wanted"/> (the variant of the walls it stands on) if it
-    /// was loaded, else the one of variant A, else none - then the arch is not drawn.
-    /// </summary>
-    public static TextureVariant? Pick(TextureVariant wanted, bool wantedLoaded, bool variantALoaded) =>
-        WallPillarLook.Pick(wanted, wantedLoaded, variantALoaded);
-
     // The direction of the corridor through (x, z): walls west and east -> along z, walls north and south -> along x.
     private static Vector3? Along(Level level, int x, int z)
     {
