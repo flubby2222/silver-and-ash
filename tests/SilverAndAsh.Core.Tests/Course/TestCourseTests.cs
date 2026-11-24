@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Course;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Course;
@@ -323,6 +324,84 @@ public class TestCourseTests
         Assert.NotEqual(Vector2.Zero, far.Plan.Facing);
         Assert.NotNull(run.World.Well);
         Assert.Contains(CellOf(run.World.Well.Position), run.Course.Stations[4].FloorCells);
+    }
+
+    [Fact]
+    public void The_travel_choices_carry_the_names_of_the_stations_as_their_signs_do()
+    {
+        // Issue #722: the second teleporter stands at the fifth station, not before a boss door - not "Boss Gate".
+        var run = new CourseRun(Seed);
+        var far = run.World.Teleporters.Single(teleporter => teleporter.Plan.Site == TeleporterSite.BossGate);
+        run.WalkToStation(4);
+        run.WalkTo(run.World.Level.CellCenter(far.Plan.X, far.Plan.Z));
+
+        var names = run.World.TravelChoices(run.World.Player).Select(TravelLayout.Name).ToList();
+
+        Assert.Equal(2, names.Count);
+        Assert.All(names, name => Assert.Contains(name, run.Course.Labels.Select(label => label.Text)));
+        Assert.DoesNotContain(TeleporterLook.PlaceName(TeleporterSite.BossGate), names);
+    }
+
+    [Fact]
+    public void A_station_whose_room_touches_another_without_a_wall_is_refused()
+    {
+        // Two antechambers close together: the second great hall starts in the column right after the first one ends.
+        var stations = new[]
+        {
+            new CourseStation("Gap A", RoomKind.Start, 5, _ => { }),
+            new CourseStation("Boss A", RoomKind.Antechamber, Antechamber.Width, room => room.BossRoomSouth()),
+            new CourseStation("Gap B", RoomKind.Start, 8, _ => { }),
+            new CourseStation("Boss B", RoomKind.Antechamber, Antechamber.Width, room => room.BossRoomSouth()),
+        };
+
+        var error = Assert.Throws<InvalidOperationException>(() => TestCourse.Build(Seed, Balance.Default, stations));
+
+        Assert.Contains("touches", error.Message);
+        Assert.Contains("Boss B", error.Message);
+    }
+
+    [Theory]
+    [InlineData(4, 4, true)]    // over the corner: (3, 3) and (4, 4) touch diagonally
+    [InlineData(4, 1, true)]    // side by side: column 3 and column 4
+    [InlineData(5, 1, false)]   // one column of wall between them
+    [InlineData(5, 5, false)]   // one cell of wall over the corner
+    public void Two_rooms_need_a_wall_between_them_even_over_the_corner(int x0, int z0, bool touches)
+    {
+        var course = new CourseBuilder();
+        course.AddRoom(RoomKind.Start, "First", 1, 1, 3, 3, 0);
+
+        var second = Record.Exception(() => course.AddRoom(RoomKind.Start, "Second", x0, z0, x0 + 2, z0 + 2, 1));
+
+        Assert.Equal(touches, second is InvalidOperationException { Message: var message } && message.Contains("touches"));
+        Assert.Equal(touches ? 1 : 2, course.Rooms.Count);
+    }
+
+    /// <summary>
+    /// The second room on every side of the first (review of PR #728): a check that looks at only half of the eight
+    /// neighbours - only to the left, only above - lets one side through. The first room's floor is 5 .. 7 both ways.
+    /// </summary>
+    [Theory]
+    [InlineData(2, 5, true)]    // left: column 4 and column 5
+    [InlineData(8, 5, true)]    // right: column 7 and column 8
+    [InlineData(5, 2, true)]    // above: row 4 and row 5
+    [InlineData(5, 8, true)]    // below: row 7 and row 8
+    [InlineData(2, 2, true)]    // over the upper left corner: (4, 4) and (5, 5)
+    [InlineData(8, 2, true)]    // over the upper right corner: (8, 4) and (7, 5)
+    [InlineData(2, 8, true)]    // over the lower left corner: (4, 8) and (5, 7)
+    [InlineData(8, 8, true)]    // over the lower right corner: (7, 7) and (8, 8)
+    [InlineData(1, 5, false)]   // left, one column of wall between them
+    [InlineData(5, 1, false)]   // above, one row of wall between them
+    [InlineData(1, 1, false)]   // upper left, one cell of wall over the corner
+    [InlineData(9, 1, false)]   // upper right, one cell of wall over the corner
+    public void Two_rooms_need_a_wall_between_them_on_every_side(int x0, int z0, bool touches)
+    {
+        var course = new CourseBuilder();
+        course.AddRoom(RoomKind.Start, "First", 5, 5, 7, 7, 0);
+
+        var second = Record.Exception(() => course.AddRoom(RoomKind.Start, "Second", x0, z0, x0 + 2, z0 + 2, 1));
+
+        Assert.Equal(touches, second is InvalidOperationException { Message: var message } && message.Contains("touches"));
+        Assert.Equal(touches ? 1 : 2, course.Rooms.Count);
     }
 
     [Fact]

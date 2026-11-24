@@ -80,11 +80,14 @@ public sealed class CourseRoom
     /// <summary>An item lying in that cell, to be taken with F.</summary>
     public void Item(ItemKind kind, int step, int row) => _course.Items.Add(new ExhibitItem(kind, OnFloor(step, row)));
 
-    /// <summary>A teleporter in that cell marking <paramref name="site"/>, its show side along <paramref name="facing"/> (zero: not turned).</summary>
+    /// <summary>
+    /// A teleporter in that cell marking <paramref name="site"/>, its show side along <paramref name="facing"/> (zero: not
+    /// turned). The travel choice names it after the station, as its sign does (issue #722) - not after the site.
+    /// </summary>
     public void Teleporter(int step, int row, TeleporterSite site, Vector2 facing = default)
     {
         var (x, z) = Cell(step, row);
-        _course.Teleporters.Add(new TeleporterPlan(x, z, Index, site) { Facing = facing });
+        _course.Teleporters.Add(new TeleporterPlan(x, z, Index, site) { Facing = facing, Name = Owner });
     }
 
     /// <summary>Sirius' Relief in the middle of that cell - the only one of the course.</summary>

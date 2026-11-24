@@ -336,4 +336,15 @@ public sealed class RunStatisticsTests : IDisposable
 
         Assert.False(RunLog.AppendRun(Path.Combine(blocker, "runs.log"), world, "line"));
     }
+
+    [Fact]
+    public void Outside_the_core_a_run_reaches_the_log_only_through_AppendRun()
+    {
+        // Issue #722: the game must not write a line around the test-world rule of AppendRun.
+        var open = typeof(RunLog).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(method => method.DeclaringType == typeof(RunLog))
+            .Select(method => method.Name);
+
+        Assert.Equal(["AppendRun"], open);
+    }
 }

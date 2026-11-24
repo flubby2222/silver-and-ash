@@ -6,11 +6,14 @@ namespace SilverAndAsh.Core.Course;
 /// <summary>
 /// Collects what the stations of the test course put down - floor and door cells, rooms, doors, enemies, columns,
 /// finds, teleporters, the well - and makes a level of it. Every cell is claimed once: a station that runs into another
-/// one is refused at once.
+/// one is refused at once, and so is a room whose floor touches another room's without a wall between them.
 /// </summary>
 internal sealed class CourseBuilder
 {
     private readonly Dictionary<(int X, int Z), (Cell Cell, string Owner)> _cells = [];
+
+    // The floor cells of the rooms added so far, with the room's name.
+    private readonly Dictionary<(int X, int Z), string> _roomOf = [];
 
     public List<PlacedRoom> Rooms { get; } = [];
 
@@ -54,6 +57,12 @@ internal sealed class CourseBuilder
                 Claim((x, z), floor, name);
                 cells.Add((x, z));
             }
+        }
+
+        RefuseTouching(cells, name);
+        foreach (var cell in cells)
+        {
+            _roomOf[cell] = name;
         }
 
         // Like a placed template, the room's box includes its ring of wall.
@@ -103,6 +112,26 @@ internal sealed class CourseBuilder
         if (!_cells.TryAdd(cell, (content, owner)))
         {
             throw new InvalidOperationException($"The test course: '{owner}' runs into '{_cells[cell].Owner}' at cell {cell}.");
+        }
+    }
+
+    // Issue #722: two rooms must have their ring of wall between them - floor that touches the floor of another room
+    // (side by side or corner to corner) would join them without a door. Doors are put in afterwards, into that wall.
+    private void RefuseTouching(IReadOnlyList<(int X, int Z)> cells, string owner)
+    {
+        foreach (var (x, z) in cells)
+        {
+            for (var dz = -1; dz <= 1; dz++)
+            {
+                for (var dx = -1; dx <= 1; dx++)
+                {
+                    if (_roomOf.TryGetValue((x + dx, z + dz), out var other))
+                    {
+                        throw new InvalidOperationException(
+                            $"The test course: '{owner}' touches '{other}' at cell {(x, z)} - there must be a wall between two rooms.");
+                    }
+                }
+            }
         }
     }
 }
