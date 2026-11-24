@@ -12,9 +12,9 @@ Nach dem Titelbildschirm stehst du am Westende des Wegs und blickst nach Osten. 
 
 **Nur in der Debug-Version** (`dotnet run` baut Debug). Wie der Musterraum ist die Prüfstrecke ein Werkzeug für die Entwicklung. Die Release-Version meldet „works only in the debug version“.
 
-**Der Spieler stirbt nicht:** Das Leben fällt nie unter 1 (`Player.CannotDie`). Jeder Treffer wird trotzdem gezeigt und gespielt, auch der Klang. Wer alle Waffen sehen will, hat sie von Anfang an (wie im Musterraum).
+**Kein Spieler stirbt:** Das Leben fällt nie unter 1. Das ist eine Regel der Welt (`GameWorld.PlayersCannotDie`), die jeder Spieler bei jedem Treffer abfragt (`Player.CannotDie`); auch ein später dazukommender Spieler hält sich daran (Issue #722, [ADR 0003](entscheidungen/0003-online-coop-offenhalten.md)). Jeder Treffer wird trotzdem gezeigt und gespielt, auch der Klang. Wer alle Waffen sehen will, hat sie von Anfang an (wie im Musterraum). **Folge:** Was vor dem Tod bewahrt, etwa das *Ashen Heart*, greift hier nie, weil es keinen Tod gibt; seine Wirkung lässt sich auf der Strecke nicht prüfen.
 
-**Kein Eintrag in `runs.log`:** Wer auf der Strecke Gorm besiegt und die Treppe hinaufsteigt, sieht den Siegbildschirm wie im Spiel. Die Welt ist aber eine Testwelt (`GameWorld.IsTestWorld`, wie jeder Musterraum), und `RunLog.AppendRun` schreibt für sie keine Zeile. Die Balancing-Runde wertet `runs.log` aus; ein unsterblicher, voll bewaffneter Lauf darf dort nicht stehen.
+**Kein Eintrag in `runs.log`:** Wer auf der Strecke Gorm besiegt und die Treppe hinaufsteigt, sieht den Siegbildschirm wie im Spiel. Die Welt ist aber eine Testwelt (`GameWorld.IsTestWorld`, wie jeder Musterraum), und `RunLog.AppendRun` schreibt für sie keine Zeile. Die Balancing-Runde wertet `runs.log` aus; ein unsterblicher, voll bewaffneter Lauf darf dort nicht stehen. Außerhalb von `Core` führt kein anderer Weg ins Protokoll: `RunLog.Append` ist `internal` (Issue #722).
 
 | Taste | Wirkung |
 |---|---|
@@ -32,16 +32,16 @@ Nach dem Titelbildschirm stehst du am Westende des Wegs und blickst nach Osten. 
 |---|---|---|---|
 | 1 | **Arms** | Start | Alle Waffen in einer Reihe an der Nordwand, die Gegenstände *Leech* und *Ashen Heart* an der Südwand, je mit `[F]`-Hinweis; der Teleporter des Starts auf dem Weg |
 | 2 | **Columns** | Start | Zwei Säulen links und rechts des Wegs, Silber neben einer, dahinter ein wacher Ghul |
-| 3 | **Cracked wall** | Start | Rissige Wand in der Mitte der Nordwand, dahinter die geheime Kammer mit Truhe. **So geht sie auf:** dicht vor die Wand treten, sie ansehen, die linke Maustaste halten, bis die Silberklinge voll aufgeladen ist und zittert, dann loslassen. Nur ein voll aufgeladener Nahkampfhieb aus Klingenreichweite bricht sie auf; **F**, normale Hiebe und Schüsse tun nichts |
+| 3 | **Cracked wall** | Start | Rissige Wand in der Mitte der Nordwand, dahinter die geheime Kammer mit Truhe. **So geht sie auf:** dicht vor die Wand treten, sie ansehen, die linke Maustaste halten, bis die Nahkampfwaffe voll aufgeladen ist und zittert, dann loslassen. Jeder voll aufgeladene Nahkampfhieb aus Reichweite bricht sie auf, mit der Silberklinge wie mit der Keule; **F**, normale Hiebe und Schüsse tun nichts |
 | 4 | **Portcullis** | Arena | Betritt ein Spieler sie, fallen die Gitter; ein Ghul und eine Fledermaus kommen bei der Säule heraus |
 | 5 | **Teleporter** | Start | Ein zweiter Teleporter (zum Eingang gedreht) und der Brunnen „Sirius' Relief“ neben dem Weg |
 | 6 | **Boss** | Vorraum | Silber und eine Blutphiole vor dem Bossportal, dahinter der Bossraum mit Gorm |
 
-**Eine neue Station** ist ein Eintrag in `TestCourse.Stations` (`src/SilverAndAsh.Core/Course/TestCourse.cs`): Name, Raumart, Breite in Zellen und eine Methode, die sie einrichtet (`CourseRoom.Ghoul`, `Column`, `Weapon`, `Teleporter`, `Well`, `SecretRoomNorth`, `BossRoomSouth` …). Tür und Schild entstehen von selbst. Säulen prüft dieselbe Regel wie in den erzeugten Levels (`ColumnPlacement.Check`); passt eine nicht, bricht der Aufbau mit einer Meldung ab, statt sie still wegzulassen.
+**Eine neue Station** ist ein Eintrag in `TestCourse.Stations` (`src/SilverAndAsh.Core/Course/TestCourse.cs`): Name, Raumart, Breite in Zellen und eine Methode, die sie einrichtet (`CourseRoom.Ghoul`, `Column`, `Weapon`, `Teleporter`, `Well`, `SecretRoomNorth`, `BossRoomSouth` …). Tür und Schild entstehen von selbst. Säulen prüft dieselbe Regel wie in den erzeugten Levels (`ColumnPlacement.Check`); passt eine nicht, bricht der Aufbau mit einer Meldung ab, statt sie still wegzulassen. Ebenso bricht er ab, wenn sich zwei Räume überschneiden oder ihre Böden ohne Wand dazwischen aneinanderstoßen, auch über Eck (`CourseBuilder`, Issue #722).
 
 ### Abweichungen vom Spiel
 
-- **Teleporter:** Der zweite Teleporter (Station 5) trägt den Ort `BossGate`, weil das Spiel nur Start und Bosstor als Orte kennt. So gibt es zwei Teleporter, zwischen denen man reisen kann.
+- **Teleporter:** Der zweite Teleporter (Station 5) trägt den Ort `BossGate`, weil das Spiel nur Start und Bosstor als Orte kennt. So gibt es zwei Teleporter, zwischen denen man reisen kann. Im Reisefenster heißen beide nach ihrer Station, wie auf dem Schild („1 - Arms“, „5 - Teleporter“), nicht nach dem Ort (`TeleporterPlan.Name`, Issue #722).
 - **Zerbrechende Säulen:** Säulen zerbrechen nur durch Gorms Angriff. Die Säulen in Station 2 und 4 bleiben stehen; das Zerbrechen ist im Bossraum (Station 6) zu sehen, wo das Spiel selbst Säulen stellt.
 - **Vampir-Waffe:** Eine Waffe mit der Eigenschaft *Vampiric* gibt es (noch) nicht als Fund. Station 1 zeigt stattdessen die beiden Gegenstände der Stufe *Vampiric*: *Leech* (heilt um einen Teil des Schadens) und *Ashen Heart* (bewahrt einmal vor dem Tod).
 

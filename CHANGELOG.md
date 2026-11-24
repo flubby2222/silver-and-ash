@@ -11,6 +11,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 
 ### Geändert
 - **Der Brunnen heißt „Sirius' Relief“:** Am Brunnen steht jetzt „[F] Use Sirius' Relief“ statt „Use Well of Sirius“. Regeln, Modell und Ort bleiben gleich. Foto: `--photo well-hint` (#716)
+- **Prüfstrecke, Nachträge:** Im Reisefenster heißen die beiden Teleporter der Strecke wie ihre Stationen („1 - Arms“, „5 - Teleporter“) statt „Boss Gate“. „Kein Spieler stirbt“ ist jetzt eine Regel der Welt, die auch für später beitretende Spieler gilt. Der Aufbau lehnt Räume ab, die sich ohne Wand berühren. Die Doku zu Station 3 nennt jeden voll aufgeladenen Nahkampfhieb, auch die Keule (#722)
 
 ### Behoben
 - **Türrahmen ohne ragende Rechtecke:** An normalen und verschlossenen Türen standen die hellen Kämpfer- und Sockelplatten vor der Wand und ragten wie lose Klötze in die Öffnung. Sie sitzen jetzt bündig im Pfeiler. Neue Regel in der Art Bible: Kein Bauteil ragt ohne erkennbaren Zweck in eine Öffnung (#715)

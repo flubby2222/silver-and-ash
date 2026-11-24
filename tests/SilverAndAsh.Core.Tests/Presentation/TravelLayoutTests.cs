@@ -79,6 +79,20 @@ public class TravelLayoutTests
         Assert.Equal(mark, TravelLayout.MarkOf(new TravelChoice(Three[0], state), selected));
     }
 
+    [Fact]
+    public void A_destination_is_named_after_its_place_unless_its_teleporter_has_a_name_of_its_own()
+    {
+        // Issue #722: the test course names its teleporters after their stations; a generated level gives no name.
+        var named = new GameWorld(
+            LevelParser.Parse("#####\n#.P.#\n#...#\n#####"),
+            1,
+            Balance.Default,
+            teleporters: [new(1, 2, 0, TeleporterSite.BossGate) { Name = "5 - Teleporter" }]).Teleporters[0];
+
+        Assert.Equal(TeleporterLook.PlaceName(TeleporterSite.BossGate), TravelLayout.Name(new TravelChoice(Three[1], TravelState.Ready)));
+        Assert.Equal("5 - Teleporter", TravelLayout.Name(new TravelChoice(named, TravelState.Ready)));
+    }
+
     [Theory]
     [MemberData(nameof(Windows))]
     public void Every_mark_lies_in_the_map_and_the_mouse_finds_it(int windowWidth, int windowHeight)

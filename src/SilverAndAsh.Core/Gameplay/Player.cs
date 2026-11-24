@@ -11,6 +11,7 @@ public sealed partial class Player
     private Level _level;
     private readonly Func<IEnumerable<CylinderBody>> _bodies;
     private readonly Func<IEnumerable<BoxBody>> _boxes;
+    private readonly Func<bool> _cannotDie;
     private readonly PlayerBalance _player;
 
     /// <summary>
@@ -19,11 +20,12 @@ public sealed partial class Player
     /// (chests) they cannot walk through but can jump onto; both asked anew every tick.
     /// <paramref name="balance"/> sets health, speeds, stamina and weapons (the standard values if none is given).
     /// <paramref name="random"/> is the world's random generator - it draws the boons a level up offers (online co-op
-    /// rule 3). Without one (a player alone in a test) it uses one started from 0.
+    /// rule 3). Without one (a player alone in a test) it uses one started from 0. <paramref name="cannotDie"/> is the
+    /// world's rule for <see cref="CannotDie"/>, asked at every hit (none: the player can die).
     /// </summary>
     public Player(
         Level level, Func<IEnumerable<CylinderBody>>? bodies = null, Balance? balance = null, Random? random = null,
-        Func<IEnumerable<BoxBody>>? boxes = null)
+        Func<IEnumerable<BoxBody>>? boxes = null, Func<bool>? cannotDie = null)
     {
         ArgumentNullException.ThrowIfNull(level);
         balance ??= Balance.Default;
@@ -31,6 +33,7 @@ public sealed partial class Player
         _level = level;
         _bodies = bodies ?? (() => []);
         _boxes = boxes ?? (() => []);
+        _cannotDie = cannotDie ?? (() => false);
         _player = balance.Player;
         _experience = balance.Experience;
         _boons = balance.Boons;
@@ -391,9 +394,15 @@ public sealed partial class Player
 
     /// <summary>
     /// True on the test course (issue #718): damage still hits and is reported, but health never falls below 1, so a
-    /// player walks every station to the end. False in a normal game.
+    /// player walks every station to the end. False in a normal game. It is the world's rule
+    /// (<see cref="GameWorld.PlayersCannotDie"/>), asked at every hit, so a player who joins later follows it too
+    /// (issue #722); a player alone in a test can be given it with <c>init</c>.
     /// </summary>
-    public bool CannotDie { get; set; }
+    public bool CannotDie
+    {
+        get => _cannotDie();
+        init => _cannotDie = () => value;
+    }
 
     /// <summary>Takes <paramref name="damage"/> (never below 0) and reports it into <paramref name="events"/>.</summary>
     public void TakeDamage(int damage, ICollection<GameEvent> events)

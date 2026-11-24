@@ -43,6 +43,28 @@ public class PlayerDeathTests
         Assert.Equal([new PlayerHit(player.Id, health - 10), new PlayerHit(player.Id, 9), new PlayerHit(player.Id, 0)], events);
     }
 
+    /// <summary>
+    /// Issue #722: "cannot die" is a rule of the world, asked at every hit - not a mark set on the players there at the
+    /// start - so a player the world makes later follows it, too.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Whether_a_player_can_die_is_a_rule_of_the_world(bool cannotDie)
+    {
+        var world = new GameWorld(LevelParser.Parse("P\n.\n.")) { PlayersCannotDie = cannotDie };
+        var player = world.Player;
+
+        player.TakeDamage(player.MaxHealth, []);
+        player.TakeDamage(player.MaxHealth, []);
+        world.Tick(PlayerInput.None);
+
+        Assert.Equal(cannotDie, player.CannotDie);
+        Assert.Equal(!cannotDie, player.IsDead);
+        Assert.Equal(cannotDie ? 1 : 0, player.Health);
+        Assert.Equal(!cannotDie, world.IsLost);
+    }
+
     [Fact]
     public void A_dead_player_no_longer_moves_looks_or_attacks()
     {

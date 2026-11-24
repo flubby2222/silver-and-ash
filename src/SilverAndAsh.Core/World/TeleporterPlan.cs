@@ -27,4 +27,10 @@ public sealed record TeleporterPlan(int X, int Z, int Room, TeleporterSite Site)
     /// is turned, towards the middle of the room (issue #565).
     /// </summary>
     public Vector2 Facing { get; init; }
+
+    /// <summary>
+    /// A name of its own for the travel choice, or null for the name of its <see cref="Site"/> (every generated level).
+    /// The test course names each teleporter after its station (issue #722), so the second one is not called "Boss Gate".
+    /// </summary>
+    public string? Name { get; init; }
 }

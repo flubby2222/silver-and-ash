@@ -151,8 +151,11 @@ public sealed record RunSummary(
 /// </summary>
 public static class RunLog
 {
-    /// <summary>Adds <paramref name="line"/> at the end of the file (created with its folder if needed). False if that failed.</summary>
-    public static bool Append(string path, string line)
+    /// <summary>
+    /// Adds <paramref name="line"/> at the end of the file (created with its folder if needed). False if that failed.
+    /// Not public: the game writes a run only through <see cref="AppendRun"/>, which leaves test worlds out (issue #722).
+    /// </summary>
+    internal static bool Append(string path, string line)
     {
         try
         {

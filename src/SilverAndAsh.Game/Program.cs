@@ -59,6 +59,7 @@ using (log)
     int? look = null;
     WindowSize? window = null;
     PhotoRequest? photos = null;
+    var onCourse = false;
     try
     {
         var options = LaunchOptions.Parse(args);
@@ -121,6 +122,7 @@ using (log)
         {
             newWorld = TestCourse.NewWorld;
             nextWorld = TestCourse.NextWorld;
+            onCourse = true;
             log?.Info($"Test course: {TestCourse.Stations.Count} stations.");
         }
 
@@ -257,7 +259,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look), window);
+            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look), window, onCourse);
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -271,9 +273,10 @@ using (log)
 
 // newWorld builds a world from a seed and balancing values; nextWorld the one after a run ended (new layout on level 0).
 // look: how the 3D world is drawn - the standard variant 2 (issue #237) unless --look chose another (debug version, issue #234).
+// onCourse: the worlds are the test course (--course), which shows a sign over each station (issue #722).
 static void RunGame(
     Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
-    PhotoRequest? photos, LookVariant look, WindowSize? window)
+    PhotoRequest? photos, LookVariant look, WindowSize? window, bool onCourse)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted. The bench (--bench) draws as
     // fast as it can: no VSync, and no frame rate limit is set anywhere.
@@ -386,11 +389,11 @@ static void RunGame(
         IReadOnlyList<ShowroomLabel>? courseSigns = null;
         var showroomLabelsShown = true;
 
-        // The labels the world in hand shows - or null for a run, which has none. The test worlds are the showroom and
-        // the test course.
+        // The labels the world in hand shows - or null for a run, which has none. The course's signs go by the launch
+        // option, not by IsTestWorld: a test world is not always the course (issue #722).
         IReadOnlyList<ShowroomLabel>? LabelsOf(GameWorld world) =>
             world.IsShowroom ? showroomLabels ??= ShowroomLayout.Build().Labels
-            : world.IsTestWorld ? courseSigns ??= TestCourse.Build(world.Seed, world.Balance).Labels
+            : onCourse ? courseSigns ??= TestCourse.Build(world.Seed, world.Balance).Labels
             : null;
         var lastCamera = default(Camera3D);
 
