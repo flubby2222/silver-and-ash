@@ -110,17 +110,32 @@ public class BossPortalNeighbourTests
         Assert.True(held * 10 <= touching, $"ticks its height was held at the column: {held} of {touching}");
     }
 
-    [Theory]
-    [InlineData(2)]
-    [InlineData(6)]
-    [InlineData(9)]
-    [InlineData(12)]
-    public void A_bat_rising_below_the_impost_stops_under_it_and_circles_on(int seed)
+    [Fact]
+    public void A_bat_rising_below_the_impost_stops_under_it_and_circles_on()
     {
         // The player stands on the left plinth at the wall, 1.3 m beside the middle - right below the impost (x 8.28-9 m,
         // 0.125 m out of the wall at 3.075-3.2 m). Whenever the bat screeches, he steps back off the plinth and jumps
         // back onto it, so the bat dives past him and rises again at the wall, below the impost: there it must stop
         // climbing before its body reaches the stone - and circle on from there instead of hanging in the air rising.
+        // Whether a bat's climb ends right below the impost depends on its random circling, so not a few fixed seeds
+        // but the first 24 (issue #642): every one keeps out of the stone and never rises longer than a second at a time,
+        // and at least four of them really are stopped below the impost - as many as the fixed seeds before; the test
+        // would prove nothing otherwise (8 of 24 when it was written, half of that leaves room for other balancing).
+        var stopped = new List<int>();
+        for (var seed = 1; seed <= 24; seed++)
+        {
+            if (RiseBelowTheImpost(seed))
+            {
+                stopped.Add(seed);
+            }
+        }
+
+        Assert.True(stopped.Count >= 4,$"bats stopped below the impost: seeds {string.Join(", ", stopped)}");
+    }
+
+    // One run of the test above with the bat of that seed; true if it was stopped below the impost at least once.
+    private static bool RiseBelowTheImpost(int seed)
+    {
         var world = World(seed, withBat: true);
         var bat = Assert.Single(world.Bats);
         var wall = DoorPlaneZ - BossPortalShape.HalfDepth;
@@ -140,7 +155,7 @@ public class BossPortalNeighbourTests
 
             Assert.False(
                 BossPortalStoneTests.InStone(world.Level, bat.Position, BodySizes.Bat.Radius, BodySizes.Bat.Height),
-                $"tick {tick}: {bat.State} at {bat.Position}");
+                $"seed {seed}, tick {tick}: {bat.State} at {bat.Position}");
             if (before.State == BatState.Rising && bat.State == BatState.Circling && bat.Position.Y < before.Y + 1e-4f)
             {
                 held++;
@@ -151,10 +166,8 @@ public class BossPortalNeighbourTests
             before = (bat.State, bat.Position.Y);
         }
 
-        // It really was stopped below the impost at least once - the test would prove nothing otherwise - and never rose
-        // longer than a second at a time.
-        Assert.True(held >= 1, "the bat was never stopped below the impost");
-        Assert.True(longestRise < Second, $"the bat rose {longestRise} ticks at a time");
+        Assert.True(longestRise < Second, $"seed {seed}: the bat rose {longestRise} ticks at a time");
+        return held >= 1;
     }
 
     [Fact]

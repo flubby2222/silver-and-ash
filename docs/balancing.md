@@ -100,6 +100,14 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 24.11.2026 (#635, ohne Wertänderung)
+
+**Anlass:** Issue #635: Der Abstand, in dem Gorms Blutfläschchen vor ihm fällt, stand fest im Code und steht jetzt in `balance.json`. Der Wert bleibt gleich; nachgetragen mit #642.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `gorm.vialDistance` | 1,2 m (im Code) | 1,2 m | So weit vor ihm fällt das Fläschchen bei seinem Tod. Steht dort Stein, eine Säule, eine Wand oder die Treppe im Weg, wird der Platz um ihn herum gedreht, bis er frei ist. |
+
 ### Zwischenschritt – 20.11.2026 (#490, vorläufig)
 
 **Anlass:** Issue #490: Gegner standen seitlich neben der Tür und waren beim Eintreten nicht zu sehen. Urteil des Menschen: Nach vorne reicht der bisherige Türabstand, zu den Seiten nicht.

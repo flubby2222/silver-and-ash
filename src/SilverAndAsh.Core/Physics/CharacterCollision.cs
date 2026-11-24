@@ -407,6 +407,11 @@ public static class CharacterCollision
         var top = float.NegativeInfinity;
         foreach (var portal in level.Portals)
         {
+            if (!Reaches(portal, position, radius))
+            {
+                continue;
+            }
+
             foreach (var (min, max, blockTop) in portal.Tops(position.Y + stepHeight))
             {
                 if (RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out _) > Epsilon)
@@ -430,6 +435,11 @@ public static class CharacterCollision
         var bottom = float.PositiveInfinity;
         foreach (var portal in level.Portals)
         {
+            if (!Reaches(portal, position, radius))
+            {
+                continue;
+            }
+
             foreach (var (min, max, blockBottom) in portal.Bottoms(position.Y + height - HeadTouch))
             {
                 if (RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out _) > Epsilon)
@@ -441,6 +451,15 @@ public static class CharacterCollision
 
         return bottom;
     }
+
+    /// <summary>
+    /// True if the circle can overlap the ground plan of any block of <paramref name="portal"/>: its middle lies at most
+    /// a radius from the box around all of its stone (on the ground plane; the height does not matter here). A body
+    /// further off meets none of its blocks, so <see cref="MoveVertically"/> does not go through them all every tick
+    /// (issue #642).
+    /// </summary>
+    private static bool Reaches(BossPortal portal, Vector3 position, float radius) =>
+        portal.IsNear(position with { Y = portal.Floor }, radius);
 
     /// <summary>
     /// How far (metres) a head may reach past the bottom of the portal's stone and still only touch it: the rounding of
