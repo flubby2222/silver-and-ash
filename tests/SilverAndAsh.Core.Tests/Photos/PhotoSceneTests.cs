@@ -155,7 +155,31 @@ public class PhotoSceneTests
             .Where(line => line >= recorded.Length || line >= now.Length || recorded[line] != now[line])
             .Select(line => $"line {line + 1}:\n  recorded: {(line < recorded.Length ? recorded[line] : "(none)")}\n  now:      {(line < now.Length ? now[line] : "(none)")}")
             .ToList();
-        Assert.True(differences.Count == 0, $"photo-scenes.txt differs from PhotoScenes.All:\n{string.Join("\n", differences)}");
+        Assert.True(differences.Count == 0, $"photo-scenes.txt differs from PhotoScenes.All:\n{FirstDifferences(differences)}");
+    }
+
+    // Issue #678: one line missing in the middle shifts every line after it; the first differences say what happened,
+    // the rest is only counted.
+    private const int ShownDifferences = 5;
+
+    private static string FirstDifferences(IReadOnlyList<string> differences)
+    {
+        var shown = string.Join("\n", differences.Take(ShownDifferences));
+        return differences.Count > ShownDifferences ? $"{shown}\n... and {differences.Count - ShownDifferences} more" : shown;
+    }
+
+    [Fact]
+    public void The_recording_message_shows_the_first_differences_in_full_and_counts_the_rest()
+    {
+        var differences = Enumerable.Range(1, ShownDifferences + 3).Select(line => $"line {line}:\n  recorded: a\n  now:      b").ToList();
+
+        var message = FirstDifferences(differences);
+
+        Assert.StartsWith(differences[0] + "\n", message, StringComparison.Ordinal);
+        Assert.Contains(differences[ShownDifferences - 1], message, StringComparison.Ordinal);
+        Assert.DoesNotContain(differences[ShownDifferences], message, StringComparison.Ordinal);
+        Assert.EndsWith("\n... and 3 more", message, StringComparison.Ordinal);
+        Assert.Equal(string.Join("\n", differences.Take(2)), FirstDifferences(differences.Take(2).ToList()));
     }
 
     private static string Fingerprint(PhotoScene scene, PhotoStudio studio)
@@ -192,6 +216,37 @@ public class PhotoSceneTests
 
         Assert.InRange(ticks, 1, Math.Max(1, setup.Ticks));
         Assert.False(setup.World.Player.IsDead);
+    }
+
+    public static TheoryData<string> NamesOfScenesWithAStopCondition()
+    {
+        var names = new TheoryData<string>();
+        foreach (var scene in PhotoScenes.All.Where(scene => scene.Build(Studio()).StopWhen is not null))
+        {
+            names.Add(scene.Name);
+        }
+
+        return names;
+    }
+
+    [Fact]
+    public void Some_scenes_have_a_stop_condition()
+    {
+        // Issue #678: guards the theory below - without any such scene it would check nothing and still pass.
+        Assert.NotEmpty(NamesOfScenesWithAStopCondition());
+    }
+
+    [Theory]
+    [MemberData(nameof(NamesOfScenesWithAStopCondition))]
+    public void Every_scene_with_a_stop_condition_stops_before_its_tick_cap(string name)
+    {
+        // Issue #678: a stop condition that never fires lets the scene run to its cap and the photo silently shows
+        // another moment. The scene runs as the game runs it (same studio, Balance.Default, same Run) and must stop early.
+        var setup = Built(name);
+
+        var ran = setup.Run();
+
+        Assert.True(ran < setup.Ticks, $"{name}: the stop condition never fired, all {setup.Ticks} ticks ran");
     }
 
     [Theory]
