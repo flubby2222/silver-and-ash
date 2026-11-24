@@ -75,6 +75,21 @@ public partial class FixedClockSourceTests
         Assert.Single(Uses("var text = $\"time {Raylib.GetTime():0.0} s\";"));
     }
 
+    // Issue #676: two gaps the review of PR #675 found.
+    [Fact]
+    public void The_search_finds_no_GetTime_inside_a_longer_name()
+    {
+        Assert.Empty(Uses("var t = MyGetTime(); var day = GetTimeOfDay();"));
+    }
+
+    [Fact]
+    public void The_search_finds_a_call_of_GetTime_in_the_hole_of_a_raw_interpolated_string()
+    {
+        Assert.Equal(
+            ["1: var text = $$\"\"\"{time} {{Raylib.GetTime():0.0}} s\"\"\";"],
+            Uses("var text = $$\"\"\"{time} {{Raylib.GetTime():0.0}} s\"\"\";"));
+    }
+
     // Every use of GetTime in the code of source (not in its comments or strings), as "line: text of the line".
     private static List<string> Uses(string source)
     {
