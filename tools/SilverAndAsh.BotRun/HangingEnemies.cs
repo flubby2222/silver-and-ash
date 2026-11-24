@@ -287,7 +287,7 @@ internal static class HangingEnemies
             var cell = Play.Cell(at);
             var others = Kinds.SelectMany(kind => kind.All(world)).Where(other => other != enemy && !IsDead(other)).Select(other => Play.Distance(other.Body.Position, at)).DefaultIfEmpty(float.PositiveInfinity).Min();
             report.Finding(string.Create(CultureInfo.InvariantCulture,
-                $"{play.Context} ({where}): {watch.Kind.Name} {enemy.Id} hangs from tick {watch.Since} to {world.Ticks}: moved less than {watch.Kind.Radius:0.00} m for {still} ticks without an attack, state {watch.Kind.State(enemy)}, at ({at.X:0.00}, {at.Y:0.00}, {at.Z:0.00}) cell {cell.X},{cell.Z}, player at ({prey.Position.X:0.00}, {prey.Position.Z:0.00}) {Play.Distance(prey.Position, at):0.00} m away, next enemy {others:0.00} m away"));
+                $"{play.Context} ({where}): {watch.Kind.Name} {enemy.Id} hangs from tick {watch.Since} to {world.Ticks}: moved less than {watch.Kind.Radius:0.00} m for {still} ticks without an attack, state {watch.Kind.State(enemy)}, at ({at.X:0.00}, {at.Y:0.00}, {at.Z:0.00}) cell {cell.X},{cell.Z}, player at ({prey.Position.X:0.00}, {prey.Position.Z:0.00}) {Play.Distance(prey.Position, at):0.00} m away, {(float.IsInfinity(others) ? "no other enemy" : "next enemy " + others.ToString("0.00", CultureInfo.InvariantCulture) + " m away")}"));
         }
     }
 
