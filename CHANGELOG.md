@@ -13,6 +13,9 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 - **Die Wendeltreppe reicht bis zur Decke:** Im 6 m hohen Bossraum stand sie nur 4 m hoch wie ein Podest. Jetzt führt sie mit 20 statt 12 Stufen (Stufenhöhe und Radius wie bisher) bis unter die Decke, die Lampe sitzt oben am Kapitell. Ihre Höhe folgt der Raumhöhe (`Stairs.Height` aus `RoomTemplate.RoomCeilingHeight`); im Musterraum hängt ihr Schild unter der Decke. Fotos: `--photo stairs-4m` und `--photo stairs-10m` (#723)
 - **Der Brunnen heißt „Sirius' Relief“:** Am Brunnen steht jetzt „[F] Use Sirius' Relief“ statt „Use Well of Sirius“. Regeln, Modell und Ort bleiben gleich. Foto: `--photo well-hint` (#716)
 
+### Behoben
+- **Türrahmen ohne ragende Rechtecke:** An normalen und verschlossenen Türen standen die hellen Kämpfer- und Sockelplatten vor der Wand und ragten wie lose Klötze in die Öffnung. Sie sitzen jetzt bündig im Pfeiler. Neue Regel in der Art Bible: Kein Bauteil ragt ohne erkennbaren Zweck in eine Öffnung (#715)
+
 ## [0.12.0] – 2026-11-24 – Portal & Säulen
 
 ### Hinzugefügt
