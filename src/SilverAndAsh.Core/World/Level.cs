@@ -265,11 +265,13 @@ public sealed class Level
     /// <summary>The portal whose stone holds <paramref name="point"/>, or null.</summary>
     public BossPortal? PortalAt(Vector3 point)
     {
-        foreach (var portal in Portals)
+        // A plain loop over the list: every step of a ray asks here, and foreach over the interface would make a new
+        // enumerator each time (issue #642).
+        for (var i = 0; i < Portals.Count; i++)
         {
-            if (portal.Contains(point))
+            if (Portals[i].Contains(point))
             {
-                return portal;
+                return Portals[i];
             }
         }
 
