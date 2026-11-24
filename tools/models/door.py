@@ -166,12 +166,12 @@ def painters(kind):
     return {"planks": planks, "plate": plate, "iron": iron_band, "edge": edge, "lock": lock, "dark": dark, "glass": glass}
 
 
-def palette_rows():
-    """Stein (15 Stufen) und Werkstein (4 Stufen) aus assets/palette/hauptpalette.json."""
+def stein_row():
+    """Stein (15 Stufen) aus assets/palette/hauptpalette.json. Den Werkstein liest nur noch boss_portal.py (Issue #570)."""
     with open(PALETTE, encoding="utf-8") as f:
         data = json.load(f)
-    rows = {r["name"]: np.array(r["farben"], int) for r in data["grund"] + data["akzent"]}
-    return rows["Stein"], rows["Werkstein"]
+    rows = {r["name"]: np.array(r["farben"], int) for r in data["grund"]}
+    return rows["Stein"]
 
 
 def load_tile(name):
@@ -551,10 +551,6 @@ def parts_for(kind):
     raise ValueError(f"door.py baut keine Tuer der Art {kind}")
 
 
-def frame_for(kind):
-    return frame_normal(kind)
-
-
 # --- Risswand (aus Runde 1 unveraendert: eigener Atlas, alles dunkel) -------------------------------------------------
 
 CRACKED_RECTS = {
@@ -638,7 +634,7 @@ def build(kind, rects, painters_, parts):
 def build_frame(kind, variant, stein):
     tex = frame_atlas(variant, stein)
     assert colours_of(tex) <= 32, f"door_frame_{kind}_{variant}: {colours_of(tex)} Farben (hoechstens 32)"
-    write(f"door_frame_{kind}_{variant}", tex, frame_for(kind))
+    write(f"door_frame_{kind}_{variant}", tex, frame_normal(kind))
 
 
 def write_sources():
@@ -655,7 +651,7 @@ def write_sources():
 
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
-    stein, _ = palette_rows()
+    stein = stein_row()
     for kind in PAL:
         build(kind, RECTS, painters(kind), parts_for(kind))
         for variant in WALL_FILES:
