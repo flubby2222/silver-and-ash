@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Course;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Photos;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.Showroom;
 using SilverAndAsh.Core.World;
 
@@ -10,12 +11,12 @@ namespace SilverAndAsh.Core.Tests.Photos;
 /// <summary>
 /// The camera stands of the station photos of the test course (issue #722): each picture shows what its station is for
 /// and its sign. The tests record that without comparing pixels: what is to be in the picture lies in the view cone of
-/// the camera as the game sets it up (70 degrees vertical, 854 x 480) and no wall stands in the line of sight.
+/// the camera as the game sets it up (CameraFrame: its field of view and the shape of a photo's picture) and no wall stands in the line of sight.
 /// </summary>
 public class CourseStationPhotoTests
 {
-    private const float VerticalFovDegrees = 70f;
-    private const float Aspect = 854f / 480f;
+    private const float VerticalFovDegrees = CameraFrame.FieldOfViewDegrees;
+    private static readonly float Aspect = CameraFrame.PhotoAspect;
 
     // How much of the half-picture a point may use: it must lie well inside, not on the edge.
     private const float Margin = 0.9f;
@@ -64,6 +65,19 @@ public class CourseStationPhotoTests
         return Vector3.Dot(d, world.Player.View.FlatRight) / depth / (tanV * Aspect);
     }
 
+    // Where the player's hands begin, down the picture (see DownThePicture): below 60 % of its height.
+    private const float HandsTop = 0.2f;
+
+    /// <summary>Where a point lies down the picture: -1 at the top edge, 0 in the middle, 1 at the bottom edge.</summary>
+    private static float DownThePicture(GameWorld world, Vector3 point)
+    {
+        var d = point - world.Player.EyePosition;
+        var forward = world.Player.View.Forward;
+        var up = Vector3.Cross(world.Player.View.FlatRight, forward);
+        var tanV = MathF.Tan(VerticalFovDegrees * MathF.PI / 360f);
+        return -Vector3.Dot(d, up) / Vector3.Dot(d, forward) / tanV;
+    }
+
     private static void AssertShowsItsSign(GameWorld world, string text)
     {
         var sign = SignOf(text);
@@ -84,6 +98,31 @@ public class CourseStationPhotoTests
         }
 
         AssertShows(world, "the Leech", Course.Finds.Items.First(item => item.Kind == ItemKind.Leech).Position + new Vector3(0f, 0.2f, 0f));
+    }
+
+    [Fact]
+    public void The_second_photo_of_station_1_shows_every_weapon_nearer_than_the_first_and_above_the_hands()
+    {
+        // Issue #736: in the first photo the weapons are small specks. The second stands close to the row; the sign is in
+        // the first (with it, this one would stand as far off).
+        var overview = Taken("course-1-arms").Setup.World;
+        var (setup, ran) = Taken("course-1-arms-row");
+        var world = setup.World;
+
+        Assert.True(ran >= CourseScenes.BannerTicks, "The level's name still covers the picture.");
+        Assert.Equal(5, Course.Finds.Weapons.Count);
+        foreach (var weapon in Course.Finds.Weapons)
+        {
+            var point = weapon.Position + new Vector3(0f, 0.2f, 0f);
+            AssertShows(world, "a weapon", point);
+            Assert.True(
+                Vector3.Distance(world.Player.EyePosition, point) < Vector3.Distance(overview.Player.EyePosition, point) - 1f,
+                $"The weapon at {weapon.Position} is not nearer than in the first photo.");
+            // The hands of the player cover the lower part of the picture.
+            Assert.True(DownThePicture(world, point) < HandsTop, $"The weapon at {weapon.Position} lies behind the hands.");
+        }
+
+        Assert.True(Course.Finds.Weapons.Min(weapon => Vector3.Distance(world.Player.EyePosition, weapon.Position)) < 4f, "The camera is too far from the row.");
     }
 
     [Fact]
@@ -125,6 +164,90 @@ public class CourseStationPhotoTests
         var middle = (crack.BoxMin + crack.BoxMax) / 2f;
         AssertShows(world, "the cracked wall", new Vector3(middle.X, middle.Y, crack.BoxMax.Z + 0.1f));
         Assert.True(Vector3.Distance(world.Player.Position, new Vector3(middle.X, 0f, crack.BoxMax.Z)) < 6f, "The camera is too far from the crack.");
+    }
+
+    [Fact]
+    public void Station_3_looks_at_the_crack_from_near_and_at_a_slant()
+    {
+        // Issue #736: from 5 m straight on, the crack was a thin line. Nearer, and at a slant, its relief shows.
+        var world = Taken("course-3-cracked-wall").Setup.World;
+        var crack = world.Doors.Single(door => door.Kind == DoorKind.Cracked);
+        var face = new Vector3((crack.BoxMin.X + crack.BoxMax.X) / 2f, world.Player.EyePosition.Y, crack.BoxMax.Z);
+
+        var toCrack = face - world.Player.EyePosition;
+        Assert.True(toCrack.Length() < 4f, $"The camera is {toCrack.Length()} m from the crack.");
+        // The wall faces south (+Z): the angle between the line of sight and the wall's normal.
+        var slant = MathF.Acos(Vector3.Dot(Vector3.Normalize(-toCrack), Vector3.UnitZ)) * 180f / MathF.PI;
+        Assert.InRange(slant, 30f, 70f);
+    }
+
+    [Fact]
+    public void The_banner_has_faded_after_the_ticks_the_photos_wait_for_it()
+    {
+        // As the photo counts it down: from its full seconds, one tick's seconds at a time (Program, --photo).
+        var left = LevelNameBanner.Seconds;
+        for (var tick = 0; tick < CourseScenes.BannerTicks; tick++)
+        {
+            left = LevelNameBanner.After(left, SimulationClock.SecondsPerTick);
+        }
+
+        Assert.False(LevelNameBanner.IsShown(left), $"The banner still shows after {CourseScenes.BannerTicks} ticks ({left} s left).");
+    }
+
+    [Fact]
+    public void The_banner_still_shows_a_tick_before_its_seconds_are_up()
+    {
+        // The other side of the countdown: the photos do not wait for nothing.
+        var left = LevelNameBanner.Seconds;
+        for (var tick = 0; tick < SimulationClock.SecondsToTicks(LevelNameBanner.Seconds) - 1; tick++)
+        {
+            left = LevelNameBanner.After(left, SimulationClock.SecondsPerTick);
+        }
+
+        Assert.True(LevelNameBanner.IsShown(left));
+    }
+
+    [Theory]
+    [MemberData(nameof(Shots))]
+    public void A_camera_stand_moves_along_when_a_station_before_it_gets_wider(string name, int index)
+    {
+        // Issue #736: the stands are given from the corner of their station, not in world metres.
+        var shot = ShotNamed(name);
+        var wider = TestCourse.Stations.Select((station, i) => i == 0 ? station with { Width = station.Width + 2 } : station).ToList();
+        var widerCourse = TestCourse.Build(PhotoStudio.Seed, Balance.Default, wider);
+
+        var before = CourseScenes.FeetOf(Course.Stations[index], shot);
+        var after = CourseScenes.FeetOf(widerCourse.Stations[index], shot);
+
+        var moved = index == 0 ? 0f : 2 * Level.CellSize;
+        Assert.Equal(before.X + moved, after.X, 3);
+        Assert.Equal(before.Z, after.Z, 3);
+    }
+
+    public static TheoryData<string, int> Shots() => new()
+    {
+        { nameof(CourseScenes.ArmsShot), 0 },
+        { nameof(CourseScenes.ArmsRowShot), 0 },
+        { nameof(CourseScenes.ColumnsShot), 1 },
+        { nameof(CourseScenes.CrackedWallShot), 2 },
+    };
+
+    private static CourseScenes.Shot ShotNamed(string name) => name switch
+    {
+        nameof(CourseScenes.ArmsShot) => CourseScenes.ArmsShot,
+        nameof(CourseScenes.ArmsRowShot) => CourseScenes.ArmsRowShot,
+        nameof(CourseScenes.ColumnsShot) => CourseScenes.ColumnsShot,
+        _ => CourseScenes.CrackedWallShot,
+    };
+
+    [Fact]
+    public void The_station_photos_stand_where_their_shot_says()
+    {
+        var world = Taken("course-3-cracked-wall").Setup.World;
+        var feet = CourseScenes.FeetOf(Course.Stations[2], CourseScenes.CrackedWallShot);
+
+        Assert.Equal(feet.X, world.Player.Position.X, 3);
+        Assert.Equal(feet.Z, world.Player.Position.Z, 3);
     }
 
     [Fact]
@@ -211,8 +334,9 @@ public class CourseStationPhotoTests
         Assert.Equal(plain.World.Player.EyePosition, barred.World.Player.EyePosition);
         Assert.Equal(plain.World.Player.View.Forward, barred.World.Player.View.Forward);
         Assert.Equal(plainRan, barredRan);
-        Assert.Equal(plain.World.Doors.Single().OpenFraction, barred.World.Doors.Single().OpenFraction);
-        AssertShows(barred.World, "the arch springer", new Vector3((barred.World.Doors.Single().BoxMin.X + barred.World.Doors.Single().BoxMax.X) / 2f, barred.World.Doors.Single().BoxMin.Y, (barred.World.Doors.Single().BoxMin.Z + barred.World.Doors.Single().BoxMax.Z) / 2f) + PhotoScenes.BelowTheArchTarget);
+        var door = barred.World.Doors.Single();
+        Assert.Equal(plain.World.Doors.Single().OpenFraction, door.OpenFraction);
+        AssertShows(barred.World, "the arch springer", new Vector3((door.BoxMin.X + door.BoxMax.X) / 2f, door.BoxMin.Y, (door.BoxMin.Z + door.BoxMax.Z) / 2f) + PhotoScenes.BelowTheArchTarget);
     }
 
     [Fact]

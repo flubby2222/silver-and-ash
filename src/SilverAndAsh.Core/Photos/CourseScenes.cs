@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Course;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Photos;
@@ -14,35 +15,49 @@ namespace SilverAndAsh.Core.Photos;
 /// </summary>
 internal static class CourseScenes
 {
-    /// <summary>
-    /// Ticks until the level's name has faded: the banner shows for 3.5 s (LevelBanner.Duration in the game, which Core
-    /// cannot see), 210 ticks, counted in the photo's own ticks. A picture that must be free of it runs this long.
-    /// </summary>
-    public const int BannerTicks = 215;
+    // A few ticks more than the banner's seconds, so a crumb left by counting down in floats cannot show.
+    private const int BannerMarginTicks = 5;
 
-    // Where the camera stands (feet, metres) and where it looks, in degrees (yaw 0 = towards +Z, 90 = towards +X; pitch
-    // negative = down). Eye height is the player's.
-    internal readonly record struct Shot(float X, float Z, float YawDegrees, float PitchDegrees);
+    /// <summary>
+    /// Ticks until the level's name has faded, counted in the photo's own ticks: the banner's seconds
+    /// (<see cref="LevelNameBanner.Seconds"/>) and a few more. A picture that must be free of it runs this long.
+    /// </summary>
+    public static int BannerTicks { get; } = SimulationClock.SecondsToTicks(LevelNameBanner.Seconds) + BannerMarginTicks;
+
+    // Where the camera stands - its feet, in metres east and south of the north-west corner of the station's floor, so it
+    // moves along when a station before it gets wider - and where it looks, in degrees (yaw 0 = towards +Z, 90 = towards
+    // +X; pitch negative = down). Eye height is the player's.
+    internal readonly record struct Shot(float East, float South, float YawDegrees, float PitchDegrees);
 
     // Station 1: from its south-east corner up to the north-west, so the whole row of weapons on the north wall, the
     // items on the south wall and the sign over the first cell are in view.
-    internal static readonly Shot ArmsShot = new(11.5f, 16f, 230f, -14f);
+    internal static readonly Shot ArmsShot = new(9.5f, 8f, 230f, -14f);
+
+    // Station 1 again, close to the row of weapons (issue #736): from the way, east of the teleporter, down at the row,
+    // all five between the hands. The sign is not in this one: with it, the row would be as far off as in the first.
+    internal static readonly Shot ArmsRowShot = new(6.5f, 4.5f, 190f, -24f);
 
     // Station 2: from the far south-east corner back west, the columns and the silver in front, the ghoul beyond, the sign
     // over the entrance.
-    internal static readonly Shot ColumnsShot = new(27.5f, 17.5f, 245f, -13f);
+    internal static readonly Shot ColumnsShot = new(13.5f, 9.5f, 245f, -13f);
 
-    // Station 3: from the east end of the station, 5 m from the crack in the north wall, with the sign over the first cell.
-    internal static readonly Shot CrackedWallShot = new(39.5f, 11f, 265f, -11f);
+    // Station 3: near the crack in the north wall and at a slant to it (issue #736), the sign over the first cell beyond.
+    internal static readonly Shot CrackedWallShot = new(7.5f, 2f, 262f, -10f);
+
+    /// <summary>Where the feet of a <see cref="Shot"/> stand in <paramref name="station"/>, in world metres.</summary>
+    internal static Vector3 FeetOf(PlacedRoom station, Shot shot) =>
+        new(FirstX(station) * Level.CellSize + shot.East, 0f, station.FloorCells.Min(cell => cell.Z) * Level.CellSize + shot.South);
 
     /// <summary>One scene per station, in the order of <see cref="TestCourse.Stations"/>.</summary>
     public static PhotoScene[] All() =>
     [
         new("course-1-arms", "Station 1 of the test course from its south-east corner: the five weapons along the north wall, the items on the south wall, the start teleporter on the way and the sign (issues #718, #722).",
             studio => Settled(Within(studio, 0, ArmsShot))),
+        new("course-1-arms-row", "Station 1 of the test course close to its row of weapons on the north wall, from the east end of the way to the sign over the first cell (issue #736).",
+            studio => Settled(Within(studio, 0, ArmsRowShot))),
         new("course-2-columns", "Station 2 of the test course from its far corner back to its sign: two columns either side of the way, silver beside one, a ghoul beyond (issues #718, #722).",
             studio => new PhotoSetup(Within(studio, 1, ColumnsShot))),
-        new("course-3-cracked-wall", "Station 3 of the test course from 5 m: the cracked wall in the middle of its north wall and the sign over the first cell (issues #718, #722).",
+        new("course-3-cracked-wall", "Station 3 of the test course close to and at a slant to the cracked wall in the middle of its north wall, the sign over the first cell beyond (issues #718, #722, #736).",
             studio => new PhotoSetup(Within(studio, 2, CrackedWallShot))),
         new("course-4-portcullis", "Station 4 of the test course, sealed: from inside the arena back at the fallen grate and its sign, the bat circling by the column; the player is hurt by then, the enemies attack while the level's name fades (issues #718, #722).",
             SealedArena),
@@ -95,8 +110,8 @@ internal static class CourseScenes
     // The same, the player standing and looking as `shot` says.
     private static GameWorld Within(PhotoStudio studio, int index, Shot shot)
     {
-        var (world, _) = OpenedUpTo(studio, index);
-        world.Player.PlaceAt(new Vector3(shot.X, 0f, shot.Z));
+        var (world, course) = OpenedUpTo(studio, index);
+        world.Player.PlaceAt(FeetOf(course.Stations[index], shot));
         PhotoStudio.Face(world.Player, world.Player.EyePosition + Direction(shot) * 10f);
         return world;
     }

@@ -18,8 +18,8 @@ using SilverAndAsh.Game.Input;
 using SilverAndAsh.Game.Rendering;
 
 // Starting size of the window. It can be resized; the 3D picture keeps its shape (black bars if needed).
-const int WindowWidth = 1280;
-const int WindowHeight = 720;
+const int WindowWidth = CameraFrame.StartWindowWidth;
+const int WindowHeight = CameraFrame.StartWindowHeight;
 
 // Seconds between clearing the boss room and the victory screen.
 const float VictoryScreenDelay = 2f;
@@ -412,7 +412,7 @@ static void RunGame(
         void StartFresh(GameWorld world)
         {
             gameWorld = world;
-            levelNameSeconds = gameWorld.LevelName is null ? 0f : LevelBanner.Duration;
+            levelNameSeconds = gameWorld.LevelName is null ? 0f : LevelNameBanner.Seconds;
             endSummary = null;
             wonSeconds = 0f;
             LogRun(gameWorld, log);
@@ -766,7 +766,7 @@ static void RunGame(
                 }
             }
 
-            levelNameSeconds = MathF.Max(0f, levelNameSeconds - frameSeconds);
+            levelNameSeconds = LevelNameBanner.After(levelNameSeconds, frameSeconds);
             if (!frozen)
             {
                 LevelBanner.Draw(gameWorld.LevelName, levelNameSeconds);
@@ -846,7 +846,7 @@ static void RunGame(
                     ReadEvents();
                     UpdateViews(SimulationClock.SecondsPerTick);
                     seconds += SimulationClock.SecondsPerTick;
-                    levelNameSeconds = MathF.Max(0f, levelNameSeconds - SimulationClock.SecondsPerTick);
+                    levelNameSeconds = LevelNameBanner.After(levelNameSeconds, SimulationClock.SecondsPerTick);
                 });
 
                 // The cursor in the corner, so no box of the inventory is drawn as "under the mouse".
@@ -961,7 +961,7 @@ static void RunGame(
                         ReadEvents();
                         UpdateViews(SimulationClock.SecondsPerTick);
                         seconds += SimulationClock.SecondsPerTick;
-                        levelNameSeconds = MathF.Max(0f, levelNameSeconds - SimulationClock.SecondsPerTick);
+                        levelNameSeconds = LevelNameBanner.After(levelNameSeconds, SimulationClock.SecondsPerTick);
                     });
                 var fps = clip.FramesPerSecond.ToString("0", CultureInfo.InvariantCulture);
                 log?.Info($"Clip '{clip.Name}': {taken.Count} pictures over {taken[^1]} ticks, {fps} per second: {clipFolder}");
