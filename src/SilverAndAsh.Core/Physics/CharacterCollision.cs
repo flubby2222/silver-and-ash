@@ -395,8 +395,40 @@ public static class CharacterCollision
 
     // The ground plans of the portal blocks a body standing at position.Y meets: from a step above its feet to its head
     // (a head that only touches a block's bottom does not meet it: there the block is a ceiling).
-    private static IEnumerable<(Vector2 Min, Vector2 Max)> PortalStoneInTheWay(Level level, Vector3 position, float height, float stepHeight) =>
-        level.Portals.SelectMany(portal => portal.Footprint(position.Y + StepOntoStone(stepHeight), position.Y + height - HeadTouch));
+    private static StoneInTheWay PortalStoneInTheWay(Level level, Vector3 position, float height, float stepHeight) =>
+        new(level.Portals, position.Y + StepOntoStone(stepHeight), position.Y + height - HeadTouch);
+
+    /// <summary>
+    /// The walk of <see cref="PortalStoneInTheWay"/>: portal by portal (by index), the blocks of each its
+    /// <see cref="BossPortal.Footprint"/> picks. A struct that is its own enumerator, without LINQ: <see cref="Move"/>
+    /// asks for it every tick, and a lambda with its enumerators would make new objects each time (issue #653).
+    /// </summary>
+    private struct StoneInTheWay(IReadOnlyList<BossPortal> portals, float from, float to)
+    {
+        private int _portal = -1;
+        private BossPortal.Stones _stones;
+
+        public readonly PortalStone Current => _stones.Current;
+
+        public readonly StoneInTheWay GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            while (_portal < 0 || !_stones.MoveNext())
+            {
+                if (_portal >= portals.Count - 1)
+                {
+                    _portal = portals.Count;
+                    return false;
+                }
+
+                _portal++;
+                _stones = portals[_portal].Footprint(from, to);
+            }
+
+            return true;
+        }
+    }
 
     /// <summary>
     /// The highest top of boss portal stone under the circle that is not above its feet by more than a step - the plinth
@@ -405,18 +437,19 @@ public static class CharacterCollision
     private static float PortalStoneUnder(Level level, Vector3 position, float radius, float stepHeight)
     {
         var top = float.NegativeInfinity;
-        foreach (var portal in level.Portals)
+        for (var i = 0; i < level.Portals.Count; i++)
         {
+            var portal = level.Portals[i];
             if (!Reaches(portal, position, radius))
             {
                 continue;
             }
 
-            foreach (var (min, max, blockTop) in portal.Tops(position.Y + stepHeight))
+            foreach (var stone in portal.Tops(position.Y + stepHeight))
             {
-                if (RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out _) > Epsilon)
+                if (RectanglePenetration(position, radius, stone.Min.X, stone.Min.Y, stone.Max.X, stone.Max.Y, out _) > Epsilon)
                 {
-                    top = MathF.Max(top, blockTop);
+                    top = MathF.Max(top, stone.Top);
                 }
             }
         }
@@ -433,18 +466,19 @@ public static class CharacterCollision
     private static float PortalStoneOver(Level level, Vector3 position, float radius, float height)
     {
         var bottom = float.PositiveInfinity;
-        foreach (var portal in level.Portals)
+        for (var i = 0; i < level.Portals.Count; i++)
         {
+            var portal = level.Portals[i];
             if (!Reaches(portal, position, radius))
             {
                 continue;
             }
 
-            foreach (var (min, max, blockBottom) in portal.Bottoms(position.Y + height - HeadTouch))
+            foreach (var stone in portal.Bottoms(position.Y + height - HeadTouch))
             {
-                if (RectanglePenetration(position, radius, min.X, min.Y, max.X, max.Y, out _) > Epsilon)
+                if (RectanglePenetration(position, radius, stone.Min.X, stone.Min.Y, stone.Max.X, stone.Max.Y, out _) > Epsilon)
                 {
-                    bottom = MathF.Min(bottom, blockBottom);
+                    bottom = MathF.Min(bottom, stone.Bottom);
                 }
             }
         }
