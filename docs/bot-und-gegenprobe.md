@@ -25,14 +25,23 @@ Aufbau: `<modus> [--seeds VON..BIS] [--repo ORDNER]`. Ohne `--seeds` laufen die 
 | `arena` | Für jede Tür eines Kampfraums: hineingehen, das Gitter muss fallen und der Raum versiegeln; vier Fluchtversuche (sofort, sofort mit Sprint, nach 6 Ticks mit Sprint, nach 14 Ticks) müssen drinnen enden; Raum leeren, die Gitter gehen einmal hoch, hinausgehen. Zwei Kampfräume nebeneinander nacheinander. Die Bosstür hat kein Gitter: Sie schwingt zu und muss spätestens ab `doors.bossShutTick` (Balancing) sperren; der Spieler läuft sofort zurück und darf nicht in den Vorraum kommen (#566, #567). | etwa 2 min |
 | `death` | Tod in jeder versiegelten Arena und im Bosskampf, danach Neustart: keine Tür verriegelt, kein Raum versiegelt, die Arena versiegelt beim Betreten wieder (#560, #578); nach dem Bosskampf ist der Vorraum frisch und ein zweiter Lauf erreicht den Boss wieder. | etwa 30 s |
 | `boss` | Der ganze Weg: Vorraum, Boss-Tor-Teleporter freischalten und hin- und herreisen, Bosstür mit F öffnen, Bossraum versiegelt, die Bosstür sperrt spätestens ab `doors.bossShutTick`, Gorm besiegen, Treppe hinauf, gewonnen. | etwa 5 s |
-| `slam` | Die Bosstür schlägt zu, während ein Körper in ihrem Durchgang steht (#629): nacheinander ein Spieler, ein Ghul, eine Fledermaus und Gorm, jeweils an jeder Stelle quer zum Durchgang alle 5 cm. Die Tiefe längs des Durchgangs ist die erste freie Stelle; wo der Körper nirgends frei steht, zählt der Bot die Stelle als übersprungen. Der Körper wird jeden Tick neu an seinen Platz gestellt, bis die Tür sperrt; danach darf er nicht im Stein des Portals stecken. Ein Körper, der im Tick des Zuschlagens mit Schwung in den Durchgang läuft, ist damit nicht abgedeckt. | etwa 25 s |
+| `slam` | Die Bosstür schlägt zu, während ein Körper in ihrem Durchgang steht (#629): nacheinander ein Spieler, ein Ghul, eine Fledermaus und Gorm, jeweils an jeder Stelle quer zum Durchgang alle 5 cm. Die Tiefe längs des Durchgangs ist die erste freie Stelle; wo der Körper nirgends frei steht, zählt der Bot die Stelle als übersprungen. Der Körper wird jeden Tick neu an seinen Platz gestellt, bis die Tür sperrt; danach darf er nicht im Stein des Portals stecken. Dass er im Tick des Zuschlagens wirklich in der Türbox stand, prüft der Bot daran, wohin die Tür ihn geschoben hat: genau Radius + `GameWorld.ThresholdGap` (1 cm) hinter ihre Box (`GameWorld.OnThreshold`), sonst ein Befund „not in the doorway at the slam“ (#647). **Mit Schwung** (#647): Spieler, Ghul und Fledermaus starten alle 10 cm quer zum Durchgang 0,6 m vor der Türbox; der Spieler läuft los, Ghul und Fledermaus (vorher in ihrer Arena geweckt) fliegt ein aufgeladener Keulenschlag hinein. Ein Probelauf misst, wann der Körper im Durchgang ist und wann die Tür sperrt; der echte Lauf lässt ihn so spät los, dass er im Tick des Zuschlagens im Durchgang ist. Gorm läuft nicht mit Schwung hinein (kein Rückstoß, und seine eigenen Schritte hingen vom Starttick ab) – eine bekannte Lücke. | etwa 1,5 min |
 | `bat` | Eine wache Fledermaus am Bossportal (#627, #629): an jeder freien Stelle eines Rasters vor und hinter dem Portal in acht Richtungen weggeschlagen; um einen Spieler herum geflogen, der an vier Stellen im Portal steht; tot auf einen Sockel des Portals fallen gelassen, bis sie verschwunden ist. | etwa 25 s |
 | `seeds` | Baut jede Ebene zweimal und vergleicht sie (gleicher Seed muss gleiche Ebene geben) und zählt, wie viele Versuche der Generator brauchte. | etwa 3 s; 1 000 Seeds etwa 100 s |
-| `all` | alle sechs nacheinander | etwa 3–4 min |
+| `all` | alle sechs nacheinander | etwa 5 min |
 
-Nebenbei prüft der Bot nach **jedem Tick**, dass weder ein Spieler noch ein Gegner (Ghul, Fledermaus, Gorm) in einer geschlossenen Tür oder im Stein eines Bossportals steckt und kein Spieler in einer festen Zelle. Für den Stein prüft er bei jedem Körper die Achse und 24 Punkte 5 mm innerhalb seines Rands (für jeden Körper gleich, auch für Gorm), alle 10 cm von den Füßen bis zum Kopf (`BossPortal.Contains`); ein Körper, der den Stein nur berührt, ist kein Befund. Auch eine tote Fledermaus zählt, solange sie noch fällt oder liegt.
+Nebenbei prüft der Bot nach **jedem Tick**, dass weder ein Spieler noch ein Gegner (Ghul, Fledermaus, Gorm) in einer geschlossenen Tür oder im Stein eines Bossportals steckt und kein Spieler in einer festen Zelle. Für den Stein prüft er bei jedem Körper die Achse und 24 Punkte 5 mm innerhalb seines Rands (für jeden Körper gleich, auch für Gorm), in Höhen von den Füßen bis zum Kopf (`BossPortal.Contains`); ein Körper, der den Stein nur berührt, ist kein Befund. Der Abstand der Höhen folgt aus `BossPortalShape.Blocks`: vier Fünftel des dünnsten Blocks (heute der Kämpfer, 0,125 m, also 0,1 m). `slam` und `bat` prüfen zu Beginn selbst, dass für keine ihrer Körperhöhen ein Block zwischen zwei Messhöhen durchrutscht („the stone check misses the block …“, #647) – bekommt das Portal einen dünneren Block, rücken die Höhen von selbst enger. Auch eine tote Fledermaus zählt, solange sie noch fällt oder liegt.
 
-**Übersprungene Plätze:** `slam` und `bat` lassen Plätze aus, an denen der Körper nicht frei stehen kann, und zählen sie als „… (skipped)“. Jeder solche Zähler hat einen Gegenzähler der gespielten Plätze (`Report.Tally`): Wird je Seed und Körperart (bei `bat` je Teil) auf einer Seite der Portalmitte kein einziger Platz gespielt, ist das ein Befund („fewer than 1 place(s) played on a side of the middle“). So endet ein Modus, der nach einer Änderung am Portal nichts mehr prüft, nicht still mit „0 finding(s)“.
+**Übersprungene Plätze:** `slam` und `bat` lassen Plätze aus, an denen der Körper nicht frei stehen kann, und zählen sie als „… (skipped)“. Jeder solche Zähler hat einen Gegenzähler der gespielten Plätze (`Report.Tally`): Werden je Seed und Körperart (bei `bat` je Teil) auf einer Seite der Portalmitte weniger Plätze gespielt als die Untergrenze, ist das ein Befund („fewer than N place(s) played on a side of the middle“). So endet ein Modus, der nach einer Änderung am Portal nichts mehr prüft, nicht still mit „0 finding(s)“, und ein halb so feines Raster fällt auf. Die Untergrenzen sind gemessen (#647): drei Viertel dessen, was die Seeds 1–6 heute je Seite spielen (aufgerundet).
+
+| Modus, Teil | heute je Seed und Seite (Seeds 1–6) | Untergrenze |
+|---|---|---|
+| `slam` stehend: Spieler / Ghul / Fledermaus / Gorm | 16 / 14 / 21 / 3 | 12 / 10 / 15 / 2 |
+| `slam` mit Schwung: Spieler / Ghul / Fledermaus | 9 / 13 / 17 | 7 / 10 / 13 |
+| `bat` Schläge | 36 | 27 |
+| `bat` tote Fledermaus | 2 | 2 |
+
+Ändert sich das Portal so, dass weniger Plätze frei sind, die Zähler neu messen und die Untergrenzen im selben PR anpassen (`DoorSlam.Bodies`, `PortalBat` in `tools/SilverAndAsh.BotRun/BossPortalRuns.cs`).
 
 **Ein neuer Modus ist eine Zeile** in der Tabelle `modes` oben in `Program.cs` (Name, eine Zeile Hilfe, was er je Seed spielt), kein weiterer Zweig. Hilfe, Aufruf-Prüfung und `all` lesen dieselbe Tabelle.
 
@@ -113,6 +122,7 @@ Aufbau: `tools/gegenprobe.sh [optionen] <datei> <suchen> <ersetzen> <testfilter>
   Den Ersetzungsschritt erledigt `tools/gegenprobe-replace.pl`. Der Selbsttest `tools/gegenprobe.tests.sh` (Git Bash, ohne dotnet, wenige Sekunden) prüft ihn an kleinen Dateien: wörtlicher Modus, `$1`, `${1}`, `$0`, `\n`, `\$`, `\\`, nicht getroffene und fehlende Gruppe, `--all`, CRLF. Nach jeder Änderung an einem der beiden Skripte laufen lassen; Exit-Code `0` heißt alles bestanden.
 - `<testfilter>` ist ein Klassen- oder Testnamen-Teil (wird zu `FullyQualifiedName~<filter>`) oder ein vollständiger Filter für `dotnet test`, wenn er `=`, `~`, `|`, `&` oder `!` enthält.
 - `--project <pfad>` wählt ein anderes Testprojekt (Standard `tests/SilverAndAsh.Core.Tests`), `--name <text>` den Namen in der Ausgabe, `--help` zeigt die Hilfe.
+- `--bot` prüft mit einem Bot-Lauf statt mit Tests (#647); das vierte Feld sind dann die Argumente des Bots, siehe [Den Bot gegenprüfen](#den-bot-gegenprüfen).
 
 Was man kaputt macht: nicht nur eine Bedingung entfernen (`&& player.IsDead` anhängen, einen Aufruf streichen), sondern auch einen Schwellwert abschwächen, etwa `>= x` zu `>= 0` oder eine Grenze auf einen offensichtlich falschen Wert. Ein Test, der nur „die Regel gibt es“ prüft, bleibt dabei grün; erst wenn er auch beim abgeschwächten Schwellwert rot wird, prüft er die Grenze selbst. Prüft ein Test eine Eigenschaft nur an Nachbarzellen (etwa die Decke vor und hinter einer Tür), nimmt die Gegenprobe die Zellen selbst aus (Issue #603: `!doorCells.Contains((cell.X, cell.Z)) &&` in die Auswahl der Zellen). Jede neue Toleranz oder Rundungsgrenze im Code wird mit Wert 0 und einmal mit verschobener Grenze gegengeprüft (etwa der Rand, ab dem ein Strahl kurze Schritte macht: `IsNear(point, StepLength)` zu `IsNear(point, 0f)`, Issue #642).
 
@@ -169,13 +179,37 @@ Eine überlebende Gegenprobe ist erst dann eine **Lücke**, wenn sie auch mit ei
 
 ### Pflichtfall bei Kollisionsregeln
 
-Ändert ein PR eine Kollisionsregel (was einen Körper aufhält, hinauf- oder hinunterlässt), braucht er einen Test **für jede Körperart mit ihrer echten Stufenhöhe**: gehende Körper (Spieler, Ghul, Gorm) mit `BodySizes.Player.StepHeight` (0,4 m; `CharacterCollision` nimmt sie als Vorgabe), fliegende (Fledermaus) mit unendlicher Stufenhöhe. Ein Test nur mit dem Spieler reicht nicht: In PR #623 hing es an `CharacterCollision.StepOntoStone`, ob eine Fledermaus mit ihrer unendlichen Stufenhöhe auf den Stein des Portals steigt; ein Test nur mit der Stufenhöhe des Spielers sieht diesen Zweig nie. Die Stufenhöhe der Gehenden nicht als Zahl in den Test schreiben, sondern aus `BodySizes.Player.StepHeight` holen. Die der Fledermaus (`Bat.FlyingStepHeight`) ist im Core `private`; bis sie öffentlich ist (Folge-Issue), schreiben Tests und Bot `float.PositiveInfinity` hin.
+Ändert ein PR eine Kollisionsregel (was einen Körper aufhält, hinauf- oder hinunterlässt), braucht er einen Test **für jede Körperart mit ihrer echten Stufenhöhe**: gehende Körper (Spieler, Ghul, Gorm) mit `BodySizes.Player.StepHeight` (0,4 m; `CharacterCollision` nimmt sie als Vorgabe), fliegende (Fledermaus) mit unendlicher Stufenhöhe. Ein Test nur mit dem Spieler reicht nicht: In PR #623 hing es an `CharacterCollision.StepOntoStone`, ob eine Fledermaus mit ihrer unendlichen Stufenhöhe auf den Stein des Portals steigt; ein Test nur mit der Stufenhöhe des Spielers sieht diesen Zweig nie. Die Stufenhöhe nicht als Zahl in den Test schreiben, sondern aus `BodySizes` holen: `BodySizes.Player.StepHeight` für die Gehenden, `BodySizes.Bat.StepHeight` (unendlich) für die Fledermaus (#647).
 
 ### Den Bot gegenprüfen
 
-Den Bot kann man genauso gegenprüfen: eine Spielregel im Core kaputt machen, den passenden Modus laufen lassen, er muss `FINDING`-Zeilen und Exit-Code `1` liefern. Danach die Datei mit `git restore <datei>` zurücksetzen.
+Den Bot kann man genauso gegenprüfen: eine Spielregel im Core (oder eine Stelle im Bot selbst) kaputt machen, den passenden Modus laufen lassen, er muss `FINDING`-Zeilen und Exit-Code `1` liefern. Das erledigt `tools/gegenprobe.sh --bot` (#647) mit demselben Schutz wie bei Tests (Sperre, sauberer Arbeitsordner, bytegleiches Zurücksetzen); das vierte Feld sind die Argumente des Bots:
+
+```
+tools/gegenprobe.sh --bot tools/SilverAndAsh.BotRun/BossPortalRuns.cs \
+  'PortalSite.Steps(-1.95f, 1.95f, 0.05f)' 'PortalSite.Steps(-1.95f, 1.95f, 0.1f)' 'slam --seeds 1'
+```
+
+Das Skript baut `tools/SilverAndAsh.BotRun` (mit dem Core) in Release und startet den Bot. Der Kontrolllauf muss ohne Befund enden, sonst Exit-Code `2`. Mit der Änderung heißt ein Befund „CAUGHT“ (Exit-Code `0`, die ersten zehn `FINDING`-Zeilen), keiner „SURVIVED“ (Exit-Code `1`). Endet der Bot selbst mit Exit-Code `2` (falscher Aufruf, Werkzeug passt nicht zum Core), endet auch das Skript mit `2`; kompiliert die Änderung nicht, mit `3`. Die Argumente werden an Leerzeichen getrennt, Anführungszeichen darin gibt es nicht.
 
 **Nach jeder Änderung neu bauen**, bevor man mit `--no-build` startet – auch nach dem Zurücksetzen und nach einem fehlgeschlagenen Build (etwa einer Probe, die nicht kompiliert). Sonst läuft die alte DLL und meldet fälschlich Exit-Code `0`.
+
+Belegte Proben für #647, jeweils mit `--bot`, alle gefangen (Exit-Code `0`). Die Suchtexte kommen in ihrer Datei genau einmal vor und lassen sich so übernehmen:
+
+| Datei, was | `<suchen>` → `<ersetzen>` | Bot | Befunde |
+|---|---|---|---|
+| `tools/SilverAndAsh.BotRun/BossPortalRuns.cs`, Raster stehend halb so fein | `PortalSite.Steps(-1.95f, 1.95f, 0.05f)` → `PortalSite.Steps(-1.95f, 1.95f, 0.1f)` | `slam --seeds 1` | Untergrenze: Spieler 8, Ghul 7, Fledermaus 11 je Seite |
+| `BossPortalRuns.cs`, Raster mit Schwung halb so fein | `PortalSite.Steps(-1.9f, 1.9f, 0.1f)` → `PortalSite.Steps(-1.9f, 1.9f, 0.2f)` | `slam --seeds 1` | Untergrenze: Spieler 5, Ghul 7, Fledermaus 9 je Seite |
+| `BossPortalRuns.cs`, Schläge halb so fein | `PortalSite.Steps(-2.6f, 2.6f, 0.4f)` → `PortalSite.Steps(-2.6f, 2.6f, 0.8f)` | `bat --seeds 1` | Untergrenze: 21 und 15 statt 27 |
+| `BossPortalRuns.cs`, stehender Körper 2 m vor seinem Platz | `var at = body.Place(play.World.Level, site.At(across, along));` → `var at = body.Place(play.World.Level, site.At(across, along - 2f));` | `slam --seeds 1` | „not in the doorway at the slam“ |
+| `BossPortalRuns.cs`, Körper mit Schwung 20 Ticks zu spät losgelassen | `var hold = shut - (inDoorway ?? shut);` → `var hold = shut - (inDoorway ?? shut) + 20;` | `slam --seeds 1` | „not in the doorway at the slam“ |
+| `src/SilverAndAsh.Core/Gameplay/GameWorld.cs`, die Tür schiebt 1 cm zu weit | `const float Gap = ThresholdGap;` → `const float Gap = ThresholdGap * 2f;` | `slam --seeds 1` | „not in the doorway at the slam“ |
+| `tools/SilverAndAsh.BotRun/Play.cs`, Messhöhen doppelt so weit | `block.Top - block.Bottom) * 0.8f;` → `block.Top - block.Bottom) * 1.6f;` | `slam --seeds 1` | „the stone check misses the block 3.075..3.200“ (Kämpfer) und weitere |
+| `Play.cs`, Messhöhen ohne 1 cm Abstand zu den Füßen | `var y = body.Position.Y + PortalStoneInset + up;` → `var y = body.Position.Y + up;` | `bat --seeds 1` | 4 × „dead bat in the stone“ auf dem Sockel |
+
+Den Abstand selbst (`GameWorld.ThresholdGap`) liest der Bot aus dem Core: Wird er absichtlich geändert, bleibt der Bot still; nur eine Tür, die anders schiebt als dieser Wert sagt, ist ein Befund.
+
+Dazu ohne `--bot`: `BodySizes.Bat.StepHeight` von unendlich auf `0.4f` macht 4 von 137 Tests mit Filter `Bat` rot (`BossPortalNeighbourTests`).
 
 Belegte Proben für `slam` (#629), jeweils `slam --seeds 1`:
 
@@ -184,4 +218,4 @@ Belegte Proben für `slam` (#629), jeweils `slam --seeds 1`:
 | In `PushedAcross`: `return portal.PushedAcross(across, radius);` → `_ = portal;` (das Portal wird nicht beachtet) | Exit `1`, 2 Befunde „player in the stone of the boss portal“ |
 | In `PushOutOf`, Zweig der Gegner: `enemy.PlaceAt(PushedInto(…, enemy.Body.Radius));` → `enemy.PlaceAt(PushedInto(…, enemy.Body.Radius) + new Vector3(0.6f, 0f, 0.6f));` | Exit `1`, „in the stone of the boss portal“: Gorm 7, Ghul 13, Fledermaus 15; dazu Ghule und Fledermäuse in der sperrenden Tür |
 
-Überlebt die Probe, zuerst das Raster prüfen: Ein Fehler, der nur an einer schmalen Stelle auftritt (etwa am Rand eines Bogens, #629), fängt der Bot nur, wenn sein Raster bis dorthin reicht. `slam` geht deshalb quer zum Durchgang alle 5 cm und nimmt die erste freie Tiefe, statt feste Punkte abzulaufen.
+Überlebt die Probe, zuerst das Raster prüfen: Ein Fehler, der nur an einer schmalen Stelle auftritt (etwa am Rand eines Bogens, #629), fängt der Bot nur, wenn sein Raster bis dorthin reicht. `slam` geht deshalb quer zum Durchgang alle 5 cm und nimmt die erste freie Tiefe, statt feste Punkte abzulaufen. Dass das Raster fein genug bleibt, sichern die Untergrenzen (siehe *Übersprungene Plätze*).

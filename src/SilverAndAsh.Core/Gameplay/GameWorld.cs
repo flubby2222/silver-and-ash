@@ -1062,11 +1062,17 @@ public sealed class GameWorld
             : Math.Clamp(across, door.BoxMin.Z + radius, door.BoxMax.Z - radius);
     }
 
+    /// <summary>
+    /// A shutting door pushes a body in its doorway out so far that this gap (metres) lies between the body and the
+    /// door's box along the passage (as the bot checks, issue #647).
+    /// </summary>
+    public const float ThresholdGap = 0.01f;
+
     // Just out of the door cell along the passage, on the arena's side; across the passage it stays where it was - as a
     // wall stops a body, which slides along it (issue #567: past the edge of the doorway the threshold goes on as wall).
     private static Vector3 OnThreshold(RoomState arena, Door door, Vector3 at, float radius)
     {
-        const float Gap = 0.01f;
+        const float Gap = ThresholdGap;
         var towardsB = door.Side is RoomSide.South or RoomSide.East;
         var high = (door.RoomB == arena.Index) == towardsB;
         return PassesAlongZ(door)
