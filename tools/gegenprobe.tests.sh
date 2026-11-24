@@ -54,6 +54,10 @@ check 'regex: missing group'       2 'gegenprobe: <replace> uses $2, but <search
 check 'crlf stays'                 0 "$(printf 'x\r\nc\r\n')" "$(printf 'x\r\ny\r\n')" 'y' 'c'
 # Counting.
 check 'count'                      0 '3'                    'a a a'           'a' '' --count
+# Counting with --regex counts matches, not groups (issue #676): one match with two groups is 1, not 2.
+check 'regex count: two groups'    0 '1'                    'ab cd'           '(a)(b)' '' --regex --count
+check 'regex count: groups twice'  0 '2'                    'ab ab'           '(a)(b)' '' --regex --count
+check 'regex count: group unset'   0 '1'                    'ac'              'a(b)?(c)' '' --regex --count
 
 # The lock (tools/gegenprobe-lock.sh, issue #639). A contender is a run of its own: it takes the lock, writes its
 # number into "won", holds the lock <hold> seconds and lets it go. Its exit code is the one of lock_take.
