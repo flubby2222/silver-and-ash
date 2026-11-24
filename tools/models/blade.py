@@ -96,9 +96,12 @@ PAINTERS.update(_arm.design_painters(_arm.DESIGN))
 def build_sword():
     part = Part("sword", (0, 0, 0), UV)
     # Griff mit Lederwicklung, Knauf, Parierstange mit eingerollten Enden.
-    part.loft(tube([C(0, 0, -0.064), C(0, 0, -0.032), C(0, 0, 0.0)],
+    # Griff und Knauf stecken ganz in der geschlossenen Manschette (Issue #637): Der Knauf reichte bis z = -0,076 und
+    # schaute im vollen Schlag unten links aus dem Aermel; jetzt endet er bei -0,054 (Datei: -0,097), wo die Manschette
+    # ihn noch rundum einschliesst. Sichtbar ist davon ohnehin nichts, der Griff liegt hinter der Manschettenoeffnung.
+    part.loft(tube([C(0, 0, -0.042), C(0, 0, -0.021), C(0, 0, 0.0)],
                    [(0.0095, 0.0095, 0.0095), (0.0105, 0.0105, 0.0105), (0.0095, 0.0095, 0.0095)], 8), "grip")
-    part.loft(tube([C(0, 0, -0.076), C(0, 0, -0.072), C(0, 0, -0.064)],
+    part.loft(tube([C(0, 0, -0.054), C(0, 0, -0.050), C(0, 0, -0.042)],
                    [(0.009, 0.009, 0.009), (0.015, 0.015, 0.015), (0.011, 0.011, 0.011)], 8), "silver")
     part.box((-0.028, -0.005, -0.004), (0.028, 0.006, 0.008), "silver")
     for s in (-1, 1):

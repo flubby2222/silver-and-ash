@@ -115,10 +115,12 @@ def head_radius(t):
 def build_club():
     part = Part("club", (0, 0, 0), UV)
     # Griff mit Lederwicklung, Knauf am Ende (8 Seiten), Holzkopf.
-    gz = [-0.058, -0.030, 0.0, 0.050]
+    # Griff und Knauf stecken ganz in der geschlossenen Manschette (Issue #637): Der Knauf reichte bis z = -0,074 und
+    # schaute im vollen Schlag unten links aus dem Aermel; jetzt endet er bei -0,056 (Datei: -0,101).
+    gz = [-0.040, -0.020, 0.0, 0.050]
     gr = [0.0105, 0.0098, 0.0102, 0.0112]
     part.loft(tube([C(0, 0, z) for z in gz], [(r, r, r) for r in gr], 8), "grip")
-    kz = [-0.074, -0.068, -0.062, -0.056]
+    kz = [-0.056, -0.050, -0.044, -0.038]
     kr = [0.0085, 0.0138, 0.0140, 0.0105]
     part.loft(tube([C(0, 0, z) for z in kz], [(r, r, r) for r in kr], 8), "wood")
     centres = [BASE + AXIS * t for t in HEAD_T]
