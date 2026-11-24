@@ -3,6 +3,7 @@
 Liest die Modelle aus einem Ordner (Umgebungsvariable T714_MODELS, sonst assets/models) und schreibt PNG nach T714_OUT.
 Blickwinkel: oben (von oben in die Oeffnung), schraeg (von vorn), fuss (nah am Fuss des Pfostens).
 T714_KINDS waehlt die Tuerarten (normal, locked, boss; Standard: alle drei).
+T714_VIEWS=unten,unten-steil waehlt Blickwinkel. T714_GUIDE=1 stellt den Fuehrungsring des Fallgitters dazu (Tuer mit Gitter, Door.HasGrate), T714_OPEN=70 oeffnet die Fluegel.
 Aufruf (aus dem Wurzelverzeichnis):
     T714_OUT=<ordner> "D:\\Program Files\\Blender Foundation\\Blender 5.3\\blender.exe" --background --python design/proben/grafik/tuerrahmen-715/fotos.py
 Nur Bilder; nichts wird ins Spiel uebernommen.
@@ -23,6 +24,7 @@ MODELS = os.environ.get("T714_MODELS", os.path.join(ROOT, "assets", "models"))
 OPEN = float(os.environ.get("T714_OPEN", "0"))
 OUT = os.environ.get("T714_OUT", os.path.join(HERE, "out"))
 KINDS = os.environ.get("T714_KINDS", "normal,locked,boss").split(",")
+GUIDE = os.environ.get("T714_GUIDE", "0") == "1"      # Fuehrungsring des Fallgitters (portcullis_guide_a) dazustellen (Tuer mit Gitter)
 BG = np.array((30, 26, 34), float)
 SIZE = (854, 480)
 
@@ -59,6 +61,8 @@ def scene(kind):
                    @ mathutils.Matrix.Translation(-pivot))
             o.matrix_world = rot @ o.matrix_world
     objs += load(os.path.join(MODELS, "door_frame_%s_a.glb" % kind))
+    if GUIDE and kind != "boss":                 # Arenatuer: Rahmen UND Ring an derselben Stelle (Door.HasGrate), wie im Spiel
+        objs += load(os.path.join(MODELS, "portcullis_guide_a.glb"))
     # Wand links und rechts (z -1..1) und Boden aus der Wand-Kachel des Rahmen-Atlas
     img = bpy.data.images.load(os.path.join(MODELS, "door_frame_%s_a.png" % kind))
     coll = bpy.context.scene.collection
@@ -97,6 +101,7 @@ def shot(loc, tgt, fov):
 
 VIEWS = {
     "unten": ((0.0, 1.2, 1.6), (0.0, 3.0, 0.0), 75),
+    "unten-steil": ((0.0, 1.0, 0.6), (0.0, 3.3, 0.0), 80),
     "bogen-vorn": ((0.0, 2.4, 3.0), (0.0, 2.9, 0.0), 45),
     "bogen-schraeg": ((1.6, 1.4, 1.8), (-0.3, 3.0, 0.0), 70),
     "schraeg": ((3.2, 1.7, 4.5), (0.0, 1.5, 0.0), 55),
@@ -109,6 +114,8 @@ def main():
         print("KIND", kind)
         scene(kind)
         for name, (loc, tgt, fov) in VIEWS.items():
+            if os.environ.get("T714_VIEWS") and name not in os.environ["T714_VIEWS"].split(","):
+                continue
             if kind == "boss":
                 loc = tuple(c * 1.8 for c in loc)
                 tgt = tuple(c * 1.8 for c in tgt)
