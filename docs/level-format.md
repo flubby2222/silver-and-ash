@@ -89,10 +89,10 @@ dotnet run --project src/SilverAndAsh.Game -- --room assets/rooms/combat/l-hall.
 Das **Foto vom Eingang** (nur Debug-Version, siehe [foto-skript.md](foto-skript.md)) zeigt das erste Bild im Türplatz und heißt nach der Vorlage, hier `room-combat-l-hall.png`:
 
 ```
-dotnet run --project src/SilverAndAsh.Game -- --room assets/rooms/combat/l-hall.txt --photo entrance --out fotos-1
+dotnet run --project src/SilverAndAsh.Game -- --room assets/rooms/combat/l-hall.txt --photo entrance --out D:\fotos\lauf-1
 ```
 
-Der Ordner von `--out` muss leer oder neu sein; für den nächsten Lauf also einen neuen Ordner nehmen (`fotos-2` …).
+Der Ordner von `--out` muss leer oder neu sein; für den nächsten Lauf also einen neuen Ordner außerhalb des Repositorys nehmen (`lauf-2` …).
 
 Die beiden `--` trennen die Optionen für `dotnet` von denen für das Spiel. Erlaubt sind Namen aus Kleinbuchstaben, Ziffern und `-`. `--level generated` ist dasselbe wie gar kein `--level`.
 

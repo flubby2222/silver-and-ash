@@ -63,10 +63,10 @@ Einschränkung: Es gibt nur einen Gorm je Welt; ein zweiter `EnemyPiece` mit `Sh
 Je Teil gibt es eine Foto-Szene mit genau diesem Aufbau (siehe [foto-skript.md](foto-skript.md)):
 
 ```powershell
-dotnet run --project src/SilverAndAsh.Game -- --photo showroom-a-corridor --out fotos-1
+dotnet run --project src/SilverAndAsh.Game -- --photo showroom-a-corridor --out D:\fotos\lauf-1
 ```
 
-Der Ordner von `--out` muss leer oder neu sein; jeder weitere Lauf bekommt einen neuen Ordner (`fotos-2` …).
+Der Ordner von `--out` muss leer oder neu sein; jeder weitere Lauf bekommt einen neuen Ordner außerhalb des Repositorys (`lauf-2` …).
 
 Szenen: `showroom-a-corridor`, `showroom-a-room`, `showroom-b-corridor`, `showroom-b-room`, `showroom-c-corridor`, `showroom-c-room`. Der Blick geht vom Westende des südlichen Laufwegs schräg auf die Nordwand; weit entfernte Stücke liegen – wie im Spiel – im Dunkeln. Das Armbrust-Skelett hat eigene Szenen von vorn: `crossbow-skeleton-rest-4m`, `crossbow-skeleton-announce-4m` und `crossbow-skeleton-announce-2m`. Die Wandpfeiler zeigen `wall-pillar-a-corridor` bis `wall-pillar-c-room` (je Wandvariante und Höhe), die Deckenbögen `ceiling-arch-a` bis `ceiling-arch-c` (je Wandvariante, von der Mündung auf den nächsten Bogen) und `ceiling-arch-sequence` (die Folge der drei Bögen in Variante A), die Wandnischen `wall-niche-a-corridor` bis `wall-niche-c-room` (je Wandvariante und Größe, aus 3 m vor der zweiten Nische des Teils), die tiefen Nischen `wall-niche-deep-a-corridor` bis `wall-niche-deep-c-room` und mit Bord `wall-niche-shelf-a-corridor` bis `wall-niche-shelf-c-room` (aus 3 m vor der ersten tiefen Nische ihrer Fassung), die Füllungen in Wandvariante A `wall-niche-bottles`, `wall-niche-bottles-shelf`, `wall-niche-candles` und `wall-niche-skulls` (aus 2 m von vorn) sowie jede mit `-askew` (schräg aus 0,9 m vor und 1,4 m neben der Nische, zeigt die Tiefe der Tasche), das Fallgitter von Abschnitt A `portcullis-closed-room` bis `portcullis-open-far` (zu, halb gehoben und offen; aus 3 m im Raum, aus der Kammer und aus 6 m), die Säulen `column-corridor` und `column-room` (aus 4 m vor der Säule, leicht seitlich), die Stufen der zerbrechenden Säule `column-intact-6m` bis `column-broken-10m` (aus 6 m bzw. 10 m). Für ein bestimmtes Stück aus der Nähe baut `ShowroomLayout.NewWorldAt(x, z, blickziel)` eine Welt mit dem Spieler an einer Zelle.
 
