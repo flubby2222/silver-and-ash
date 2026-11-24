@@ -22,6 +22,8 @@
 #   --bot            check with a bot run (tools/SilverAndAsh.BotRun, issue #647) instead of tests: the control run
 #                    must end without findings, the change is caught if the bot reports a finding; the output names
 #                    the exit code of the bot (1 with findings) besides the one of this script (issue #660)
+#   --message        when caught, also show the message of the first red test as listed (issue #682), at most
+#                    30 lines, paths shortened; tests only - with --bot it stops with exit code 2
 #
 # Every new option or way out of this script gets a case in its self-test tools/gegenprobe.tests.sh (issue #660).
 # Log lines it shows (build errors, the end of an aborted run) have their absolute paths shortened to ".../<name>", so
@@ -59,6 +61,7 @@ set -u
 all=0
 regex=0
 bot=0
+message=0
 project="tests/SilverAndAsh.Core.Tests"
 name=""
 while [ $# -gt 0 ]; do
@@ -66,6 +69,7 @@ while [ $# -gt 0 ]; do
         --all) all=1; shift ;;
         --regex) regex=1; shift ;;
         --bot) bot=1; shift ;;
+        --message) message=1; shift ;;
         --project) project="${2:?--project needs a path}"; shift 2 ;;
         --name) name="${2:?--name needs a text}"; shift 2 ;;
         -h|--help) sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -77,6 +81,10 @@ done
 
 if [ $# -ne 4 ]; then
     echo "gegenprobe: need <file> <search> <replace> <test filter> (see --help)" >&2
+    exit 2
+fi
+if [ "$message" = 1 ] && [ "$bot" = 1 ]; then
+    echo "gegenprobe: --message shows the message of a red test - the bot has none, its findings are shown anyway" >&2
     exit 2
 fi
 
@@ -97,6 +105,7 @@ root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "gegenprobe: not i
 cd "$root" || exit 2
 
 work=""
+last_trx=""
 bot_exit=""
 changed=0
 built_changed=0
@@ -231,7 +240,42 @@ run_tests() {
     red="$(perl -ne 'while (/<UnitTestResult\b[^>]*>/g) { my $t = $&; print "$1\n" if $t =~ /outcome="Failed"/ && $t =~ /testName="([^"]*)"/ }' "$trx" | sort)"
     total="${total:-0}"
     failed="${failed:-0}"
+    last_trx="$trx"
     return 0
+}
+
+# With --message (issue #682): the message of the first red test as listed in $red, read from the result file of the
+# last run, XML signs decoded, paths shortened, at most 30 lines.
+show_message() {
+    local first
+    first="$(echo "$red" | head -n 1)"
+    echo "   message of the first red test ($first):"
+    GEGENPROBE_FIRST_RED="$first" perl -0777 -ne '
+        while (/<UnitTestResult\b([^>]*?)(?:\/>|>(.*?)<\/UnitTestResult>)/gs) {
+            my ($attributes, $body) = ($1, $2 // "");
+            next unless $attributes =~ /\boutcome="Failed"/ && $attributes =~ /\btestName="([^"]*)"/;
+            next unless $1 eq $ENV{GEGENPROBE_FIRST_RED};
+            my ($text) = $body =~ /<ErrorInfo>.*?<Message>(.*?)<\/Message>/s;
+            last unless defined $text;
+            $text =~ s/&#x([0-9A-Fa-f]+);/chr(hex($1))/ge;
+            $text =~ s/&#([0-9]+);/chr($1)/ge;
+            $text =~ s/&lt;/</g; $text =~ s/&gt;/>/g; $text =~ s/&quot;/"/g; $text =~ s/&apos;/\x27/g;
+            $text =~ s/&amp;/&/g;
+            $text =~ s/\r\n?/\n/g;
+            print $text, "\n";
+            last;
+        }' "$last_trx" > "$work/message"
+    if [ ! -s "$work/message" ]; then
+        echo "     (the result file holds no message for it)"
+        return
+    fi
+    local lines
+    lines="$(wc -l < "$work/message" | tr -d ' ')"
+    # Indented with perl, not sed: sed in Git Bash drops a CR on its own, so the line ends would differ by platform.
+    head -n 30 "$work/message" | shorten_paths | perl -pe 's/^/     /'
+    if [ "$lines" -gt 30 ]; then
+        echo "     ... and $((lines - 30)) more line(s)"
+    fi
 }
 
 # With --bot: builds the bot and runs it with the arguments in $filter (word by word); sets total (1: the run),
@@ -302,6 +346,7 @@ report_tests() {
     fi
     echo "   result: CAUGHT - $failed of $total test(s) red:"
     echo "$red" | sed 's/^/     /'
+    [ "$message" = 1 ] && show_message
     exit 0
 }
 

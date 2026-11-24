@@ -251,9 +251,29 @@ if grep -q crashmany probe.txt; then
     echo "   at Probe.Test()"
 fi
 grep -q fewer probe.txt && total=$((total - 1))
+# The message of a red test (--message, issue #682) as dotnet writes it: XML signs escaped (&amp;amp; must become
+# &amp;, not &), line ends as &#xD;&#xA; and as a real CRLF, a path in it. "nomessage": none at all (a short tag);
+# "longmessage": 35 lines; "tworeds": a second red test that stands first in the file but not in the sorted list.
+error="$(printf '%s\r\n%s' 'Probe: value is &quot;broken&quot; &lt;not good&gt; &amp;amp; red&#xD;&#xA;second line in C:\Work\Folder\Probe.cs:line 3' 'third line')"
+grep -q longmessage probe.txt && error="$(seq -s '&#xA;' 1 35)"
+# "lines30" and "lines31": exactly on the cut at 30 lines and one beyond it (review of PR #692).
+grep -q lines30 probe.txt && error="$(seq -s '&#xA;' 1 30)"
+grep -q lines31 probe.txt && error="$(seq -s '&#xA;' 1 31)"
+result() {
+    if [ -z "$3" ]; then
+        printf '<UnitTestResult testName="%s" outcome="%s" />' "$1" "$2"
+    else
+        printf '<UnitTestResult testName="%s" outcome="%s"><Output><ErrorInfo><Message>%s</Message><StackTrace>   at %s()</StackTrace></ErrorInfo></Output></UnitTestResult>' "$1" "$2" "$3" "$1"
+    fi
+}
+body="$(result Probe.Test "$outcome" "$([ "$outcome" = Failed ] && ! grep -q nomessage probe.txt && printf '%s' "$error")")"
+if grep -q tworeds probe.txt; then
+    total=$((total + 1))
+    failed=$((failed + 1))
+    body="$(result Probe.Zeta Failed 'the message of Probe.Zeta')$body"
+fi
 mkdir -p -- "$results"
-printf '<TestRun><Counters total="%s" failed="%s" /><UnitTestResult testName="Probe.Test" outcome="%s" /></TestRun>\n' \
-    "$total" "$failed" "$outcome" > "$results/results.trx"
+printf '<TestRun><Counters total="%s" failed="%s" />%s</TestRun>\n' "$total" "$failed" "$body" > "$results/results.trx"
 # The path of the result file as dotnet writes it on Windows, with STANDIN_UNIX_PATH=1 as Git Bash writes it.
 shown="$(cygpath -w "$results" 2>/dev/null || echo "$results")"
 if [ "${STANDIN_UNIX_PATH:-0}" = 1 ]; then
@@ -374,6 +394,72 @@ run_probe broken 2>&1 | head -n 4 > /dev/null
 expect 'run: | head, file back'             probe_back
 expect 'run: | head, lock gone'             [ ! -e "$lock_of_repo" ]
 expect 'run: | head, working folder clean'  [ -z "$(git -C "$repo" status --porcelain)" ]
+
+# --message (issue #682): when caught, the message of the first red test as listed, decoded, paths shortened.
+run_message_probe() { ( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" --message probe.txt good "$1" Probe ); }
+# perl, not awk or sed: those drop a CR in Git Bash, and "no CR left" would then never fail.
+message_lines() { perl -ne 'print if $on; $on = 1 if /message of the first red test/' "$work/run-out"; }
+message_has() { message_lines | grep -q -F -- "$1"; }
+# A message line that begins with $1 (plain words, no regex signs) right after the indent.
+message_line_starts() { message_lines | grep -q -- "^     $1"; }
+: > "$work/lock-err"
+run_message_probe broken > "$work/run-out" 2>"$work/lock-err"
+expect 'message: caught, exit 0'            [ $? = 0 ]
+expect 'message: caught, names the test'    run_out 'message of the first red test (Probe.Test):'
+expect 'message: caught, signs decoded'     message_has 'Probe: value is "broken" <not good> &amp; red'
+expect 'message: caught, &#xA; is a line'   message_line_starts 'second line in'
+expect 'message: caught, CRLF is a line'    [ "$(message_lines | tail -n 1)" = '     third line' ]
+expect 'message: caught, no CR left'        [ -z "$(message_lines | tr -d -c '\r')" ]
+expect 'message: caught, path shortened'    message_has '...\Probe.cs:line 3'
+expect 'message: caught, no folder shown'   not_in_run_out 'Work\\Folder'
+expect 'message: caught, file back'         probe_back
+expect 'message: caught, lock gone'         [ ! -e "$lock_of_repo" ]
+
+: > "$work/lock-err"
+run_probe broken > "$work/run-out" 2>"$work/lock-err"
+expect 'message: not asked, not shown'      not_in_run_out 'message of the first red test'
+
+: > "$work/lock-err"
+run_message_probe 'broken tworeds' > "$work/run-out" 2>"$work/lock-err"
+expect 'message: two red, exit 0'           [ $? = 0 ]
+expect 'message: two red, first as listed'  run_out 'message of the first red test (Probe.Test):'
+expect 'message: two red, its message'      message_has 'value is "broken"'
+expect 'message: two red, not the other'    not_in_run_out 'the message of Probe.Zeta'
+
+: > "$work/lock-err"
+run_message_probe 'broken longmessage' > "$work/run-out" 2>"$work/lock-err"
+expect 'message: long, exit 0'              [ $? = 0 ]
+expect 'message: long, thirty lines'        [ "$(message_lines | grep -c -E '^ +[0-9]+$')" = 30 ]
+expect 'message: long, counts the rest'     [ "$(message_lines | tail -n 1)" = '     ... and 5 more line(s)' ]
+
+# The cut itself: exactly 30 lines show all and add nothing, 31 count the one beyond.
+: > "$work/lock-err"
+run_message_probe 'broken lines30' > "$work/run-out" 2>"$work/lock-err"
+expect 'message: 30 lines, exit 0'          [ $? = 0 ]
+expect 'message: 30 lines, all shown'       [ "$(message_lines | grep -c -E '^ +[0-9]+$')" = 30 ]
+expect 'message: 30 lines, nothing counted' not_in_run_out 'more line(s)'
+: > "$work/lock-err"
+run_message_probe 'broken lines31' > "$work/run-out" 2>"$work/lock-err"
+expect 'message: 31 lines, exit 0'          [ $? = 0 ]
+expect 'message: 31 lines, thirty shown'    [ "$(message_lines | grep -c -E '^ +[0-9]+$')" = 30 ]
+expect 'message: 31 lines, counts one'      [ "$(message_lines | tail -n 1)" = '     ... and 1 more line(s)' ]
+
+: > "$work/lock-err"
+run_message_probe 'broken nomessage' > "$work/run-out" 2>"$work/lock-err"
+expect 'message: none, exit 0'              [ $? = 0 ]
+expect 'message: none, says so'             run_out '(the result file holds no message for it)'
+
+: > "$work/lock-err"
+run_message_probe fine > "$work/run-out" 2>"$work/lock-err"
+expect 'message: survived, exit 1'          [ $? = 1 ]
+expect 'message: survived, nothing shown'   not_in_run_out 'message of the first red test'
+
+: > "$work/lock-err"
+( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" --message --bot probe.txt good broken 'probe --seeds 1' ) \
+    > "$work/run-out" 2>"$work/lock-err"
+expect 'message: with --bot, exit 2'        [ $? = 2 ]
+expect 'message: with --bot, says so'       grep -q -e '--message shows the message of a red test' "$work/lock-err"
+expect 'message: with --bot, file back'     probe_back
 
 # The same with --bot (issue #647): one case per way out of run_bot and check.
 run_bot_probe() { ( cd "$repo" && PATH="$work/stand-in:$PATH" bash "$gegenprobe" --bot probe.txt good "$1" "$2" ); }
