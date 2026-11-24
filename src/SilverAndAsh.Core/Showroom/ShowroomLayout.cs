@@ -65,7 +65,7 @@ public sealed record ShowroomSection(int Index, TextureVariant Variant, int Corr
 /// passage along the bottom of the band lies a hall with a free-standing column under each ceiling height (issue #539). Built
 /// from <see cref="ShowroomPieces.All"/> with a fixed rule - the same list always gives the same showroom.
 /// </summary>
-public sealed class ShowroomLayout
+public sealed partial class ShowroomLayout
 {
     /// <summary>Name shown briefly at the start.</summary>
     public const string Name = "THE SHOWROOM";
@@ -134,9 +134,13 @@ public sealed class ShowroomLayout
     public IReadOnlyList<PlacedPiece> Placed { get; }
 
     /// <summary>
-    /// Builds the showroom of <paramref name="pieces"/> (<see cref="ShowroomPieces.All"/> if null).
+    /// Builds the showroom of <paramref name="pieces"/> (<see cref="ShowroomPieces.All"/> if null): first the grid of
+    /// the sections, passages, doors and closets, then every piece where it stands (<see cref="Placers"/>), then the
+    /// building blocks in their order (<see cref="Fixtures"/>).
     /// </summary>
-    /// <exception cref="ArgumentException">If the list has more than one Gorm (a world has at most one).</exception>
+    /// <exception cref="ArgumentException">
+    /// If the list has more than one Gorm (a world has at most one) or a piece no entry of <see cref="Placers"/> takes.
+    /// </exception>
     public static ShowroomLayout Build(IReadOnlyList<ShowroomPiece>? pieces = null)
     {
         pieces ??= ShowroomPieces.All;
@@ -145,211 +149,165 @@ public sealed class ShowroomLayout
             throw new ArgumentException("The showroom can show at most one Gorm.", nameof(pieces));
         }
 
-        var wallPieces = pieces.OfType<WallPiece>().ToList();
-        var floorPieces = pieces.Where(piece => piece is not WallPiece).ToList();
-        var perRoom = (floorPieces.Count + Variants.Length - 1) / Variants.Length;
-
-        // Each part is as long as the corridor needs for its doors and the room for its share of the floor pieces, with
-        // a walkway at each end.
-        var length = Math.Max(Math.Max(WallStep * wallPieces.Count, (FloorStep * perRoom) + 1), 6);
-        var east = BandX + (2 * length) - 1;
-        var bottom = Variants.Length * SectionRows;
-        var width = east + PassageWidth + 2;
-        var depth = bottom + PassageWidth + HallRows + 1;
-
-        var cells = new Cell[width, depth];
-        for (var x = 0; x < width; x++)
+        var draft = new Draft(pieces);
+        draft.CarveSections();
+        draft.CarvePassages();
+        draft.PlaceWallPieces();
+        draft.CarvePortcullisClosets();
+        draft.PlaceFloorPieces();
+        foreach (var place in draft.Placed)
         {
-            for (var z = 0; z < depth; z++)
+            draft.Labels.Add(PlacerOf(place.Piece, nameof(pieces))(draft, place));
+        }
+
+        draft.LayKeys();
+        foreach (var fixture in Fixtures)
+        {
+            fixture(draft);
+        }
+
+        return draft.Finish();
+    }
+
+    /// <summary>
+    /// Kind of piece -> how it stands in the showroom: what it adds to the draft and the label it gets. The first entry
+    /// whose kind the piece is takes it. A new kind of piece is one more entry here.
+    /// </summary>
+    private static readonly (Type Kind, Func<Draft, PlacedPiece, ShowroomLabel> Place)[] Placers =
+    [
+        // A door's label hangs on the wall above it, on the side of the walkway.
+        (typeof(WallPiece), static (_, place) => new ShowroomLabel(
+            place.Piece.Label, new Vector3((place.X + 0.5f) * Level.CellSize, 3.1f, ((place.Z + 1) * Level.CellSize) + 0.3f))),
+        Placer<ChestPiece>(static (draft, chest, place) => AddChest(draft.Chests, place.X, place.Z, place.Section, chest.Tier)),
+        Placer<StairsPiece>(static (draft, _, place) => SetStairs(draft, draft.At(place))),
+        Placer<EnemyPiece>(static (_, enemy, _) => EnemyKindOf(enemy.Enemy).LabelHeight),
+        Placer<CrossbowSkeletonPiece>(static (draft, skeleton, place) =>
+            AddSkeleton(draft.Skeletons, new ExhibitCrossbowSkeleton(skeleton.Stance, draft.At(place), Vector3.UnitZ))),
+        Placer<CryptWardenPiece>(static (draft, warden, place) =>
+            AddWarden(draft.Wardens, new ExhibitCryptWarden(warden.Stance, draft.At(place), Vector3.UnitZ))),
+        Placer<WeaponPiece>(static (draft, weapon, place) => Add(draft.Weapons, new ExhibitWeapon(weapon.Weapon, draft.At(place)))),
+        Placer<ItemPiece>(static (draft, item, place) => Add(draft.Items, new ExhibitItem(item.Item, draft.At(place)))),
+        Placer<LootPiece>(static (draft, pile, place) => Add(draft.Loot, new ExhibitLoot(pile.Loot, pile.Amount, draft.At(place)))),
+        Placer<ConsumablePiece>(static (draft, consumable, place) =>
+            Add(draft.Consumables, new ExhibitConsumable(consumable.Consumable, draft.At(place)))),
+    ];
+
+    /// <summary>
+    /// The building blocks of the showroom beyond its pieces, in the order they add their exhibits and labels: the labels
+    /// of the parts, wall pillars, ceiling arches, wall niches, portcullises, deep niches, the hall's columns and the
+    /// breaking column. A new building block is one more entry here.
+    /// </summary>
+    private static readonly Action<Draft>[] Fixtures =
+    [
+        AddPartLabels,
+        AddWallPillars,
+        AddCeilingArches,
+        AddWallNiches,
+        AddPortcullises,
+        AddDeepWallNiches,
+        AddColumns,
+        AddBreakingColumns,
+    ];
+
+    /// <summary>
+    /// Kind of enemy -> its slot in the level (ghouls, bats, bosses) and the height of its label. An enemy missing here
+    /// stands as the last one, the boss.
+    /// </summary>
+    private static readonly (ShowroomEnemy Enemy, int Slot, float LabelHeight)[] EnemyKinds =
+    [
+        (ShowroomEnemy.Ghoul, 0, BodySizes.Ghoul.Height + 0.5f),
+        (ShowroomEnemy.Bat, 1, BodySizes.Bat.HoverHeight + 1f),
+        (ShowroomEnemy.Gorm, 2, BodySizes.Gorm.Height + 0.6f),
+    ];
+
+    private static (ShowroomEnemy Enemy, int Slot, float LabelHeight) EnemyKindOf(ShowroomEnemy enemy)
+    {
+        foreach (var kind in EnemyKinds)
+        {
+            if (kind.Enemy == enemy)
             {
-                cells[x, z] = Cell.Wall;
+                return kind;
             }
         }
 
-        var lookOfCell = new Dictionary<(int X, int Z), int>();
-        void Carve(int x0, int z0, int x1, int z1, float ceiling, int? look)
+        return EnemyKinds[^1];
+    }
+
+    // The entry of Placers for pieces of kind T: `place` adds it to the draft and gives the height of its label above its cell.
+    private static (Type Kind, Func<Draft, PlacedPiece, ShowroomLabel> Place) Placer<T>(Func<Draft, T, PlacedPiece, float> place)
+        where T : ShowroomPiece =>
+        (typeof(T), (draft, placed) => new ShowroomLabel(placed.Piece.Label, draft.Above(placed.X, placed.Z, place(draft, (T)placed.Piece, placed))));
+
+    // The entry of Placers that takes `piece`; `parameter` names the list it came in.
+    private static Func<Draft, PlacedPiece, ShowroomLabel> PlacerOf(ShowroomPiece piece, string parameter)
+    {
+        foreach (var (kind, place) in Placers)
         {
-            for (var x = x0; x <= x1; x++)
+            if (kind.IsInstanceOfType(piece))
             {
-                for (var z = z0; z <= z1; z++)
-                {
-                    cells[x, z] = Cell.Floor with { CeilingHeight = ceiling };
-                    if (look is { } section)
-                    {
-                        lookOfCell[(x, z)] = section;
-                    }
-                }
+                return place;
             }
         }
 
-        var sections = new List<ShowroomSection>();
-        for (var index = 0; index < Variants.Length; index++)
-        {
-            var top = index * SectionRows;
-            var section = new ShowroomSection(
-                index, Variants[index], BandX, BandX + length, length, top + DoorRowOffset, top + DoorRowOffset + 1, top + DoorRowOffset + FloorRows);
-            sections.Add(section);
-            foreach (var part in Enum.GetValues<ShowroomPart>())
-            {
-                var start = section.StartOf(part);
-                Carve(start, section.NorthRow, start + length - 1, section.SouthRowOf(part), ShowroomSection.CeilingOf(part), index);
-            }
+        throw new ArgumentException($"The showroom cannot place {piece.GetType().Name}.", parameter);
+    }
 
-            Carve(section.ArchCorridorX, section.ArchCorridorRow, section.RoomX - 1, section.ArchCorridorRow, Cell.DefaultCeilingHeight, index);
-        }
-
-        // The passages that join the sections into a loop: A's west end to the way back, A to B in the east, B to C in
-        // the west, C in the east down to the way back along the south and up the west side. Walls stand between.
-        var a = sections[0];
-        var b = sections[1];
-        var c = sections[2];
-        var corridor = Cell.DefaultCeilingHeight;
-        Carve(1, a.NorthRow, BandX - 1, a.SouthRow, corridor, null);
-        Carve(1, a.NorthRow, PassageWidth, bottom + PassageWidth - 1, corridor, null);
-        Carve(1, bottom, east + PassageWidth, bottom + PassageWidth - 1, corridor, null);
-        Carve(east + 1, a.NorthRow, east + PassageWidth, b.SouthRow, corridor, null);
-        Carve(BandX - PassageWidth, b.NorthRow, BandX - 1, c.SouthRow, corridor, null);
-        Carve(east + 1, c.NorthRow, east + PassageWidth, bottom + PassageWidth - 1, corridor, null);
-        foreach (var part in Enum.GetValues<ShowroomPart>())
-        {
-            var (x0, z0, x1, z1) = HallOf(part, bottom);
-            Carve(x0, z0, x1, z1, ShowroomSection.CeilingOf(part), null);
-        }
-
-        var doors = new List<LevelDoor>();
-        var placed = new List<PlacedPiece>();
-        var labels = new List<ShowroomLabel>();
-        var keys = new List<(int X, int Z)>();
-        var closets = 0;
-        foreach (var section in sections)
-        {
-            var start = section.CorridorX;
-            for (var slot = 0; slot < wallPieces.Count; slot++)
-            {
-                var piece = wallPieces[slot];
-                var x = start + 2 + (WallStep * slot);
-                var z = section.DoorRow;
-                Carve(x, z, x, z, Cell.DefaultCeilingHeight, section.Index);
-                Carve(x - 1, z - DoorRowOffset + ClosetRow, x + 1, z - 1, Cell.DefaultCeilingHeight, section.Index);
-                doors.Add(new LevelDoor(x, z, section.Index * 2, (Variants.Length * 2) + closets++, RoomSide.North, piece.Kind));
-                placed.Add(new PlacedPiece(piece, x, z, section.Index, ShowroomPart.Corridor));
-                if (piece.Kind == DoorKind.Locked)
-                {
-                    keys.Add((x + 1, section.NorthRow));
-                }
-            }
-        }
-
-        foreach (var (x0, z0, x1, z1, section) in PortcullisCarvings(sections))
-        {
-            Carve(x0, z0, x1, z1, Cell.DefaultCeilingHeight, section);
-        }
-
-        // Floor pieces take turns between the room parts of the sections, in the middle row, west to east.
-        var ghouls = new List<(int X, int Z)>();
-        var bats = new List<(int X, int Z)>();
-        var bosses = new List<(int X, int Z)>();
-        var floorPlaces = floorPieces.Select((piece, index) =>
-        {
-            var section = sections[index % sections.Count];
-            var x = section.RoomX + 2 + (FloorStep * (index / sections.Count));
-            return new PlacedPiece(piece, x, section.MiddleRowOf(ShowroomPart.Room), section.Index, ShowroomPart.Room);
-        }).ToList();
-        placed.AddRange(floorPlaces);
-        foreach (var place in floorPlaces)
-        {
-            if (place.Piece is EnemyPiece enemy)
-            {
-                (enemy.Enemy switch { ShowroomEnemy.Ghoul => ghouls, ShowroomEnemy.Bat => bats, _ => bosses }).Add((place.X, place.Z));
-            }
-        }
-
-        var startSection = sections[0];
-        var level = new Level(cells, startSection.CorridorX + 1, startSection.MiddleRowOf(ShowroomPart.Corridor), null, ghouls, bats, bosses);
-
-        Vector3 Above(int x, int z, float height) => level.CellCenter(x, z) + new Vector3(0f, height, 0f);
-
-        var chests = new List<ChestPlan>();
-        Vector3? stairs = null;
-        var loot = new List<ExhibitLoot>();
-        var consumables = new List<ExhibitConsumable>();
-        var weapons = new List<ExhibitWeapon>();
-        var items = new List<ExhibitItem>();
-        var skeletons = new List<ExhibitCrossbowSkeleton>();
-        var wardens = new List<ExhibitCryptWarden>();
-        foreach (var place in placed)
-        {
-            var (x, z) = (place.X, place.Z);
-            var labelHeight = place.Piece switch
-            {
-                WallPiece => 0f,
-                ChestPiece chest => AddChest(chests, x, z, place.Section, chest.Tier),
-                StairsPiece => SetStairs(ref stairs, level.CellCenter(x, z)),
-                EnemyPiece { Enemy: ShowroomEnemy.Ghoul } => BodySizes.Ghoul.Height + 0.5f,
-                EnemyPiece { Enemy: ShowroomEnemy.Bat } => BodySizes.Bat.HoverHeight + 1f,
-                EnemyPiece => BodySizes.Gorm.Height + 0.6f,
-                CrossbowSkeletonPiece skeleton => AddSkeleton(skeletons, new ExhibitCrossbowSkeleton(skeleton.Stance, level.CellCenter(x, z), Vector3.UnitZ)),
-                CryptWardenPiece warden => AddWarden(wardens, new ExhibitCryptWarden(warden.Stance, level.CellCenter(x, z), Vector3.UnitZ)),
-                WeaponPiece weapon => Add(weapons, new ExhibitWeapon(weapon.Weapon, level.CellCenter(x, z))),
-                ItemPiece item => Add(items, new ExhibitItem(item.Item, level.CellCenter(x, z))),
-                LootPiece pile => Add(loot, new ExhibitLoot(pile.Loot, pile.Amount, level.CellCenter(x, z))),
-                ConsumablePiece consumable => Add(consumables, new ExhibitConsumable(consumable.Consumable, level.CellCenter(x, z))),
-                _ => throw new ArgumentException($"The showroom cannot place {place.Piece.GetType().Name}.", nameof(pieces)),
-            };
-
-            // A door's label hangs on the wall above it, on the side of the walkway.
-            labels.Add(place.Piece is WallPiece
-                ? new ShowroomLabel(place.Piece.Label, new Vector3((x + 0.5f) * Level.CellSize, 3.1f, ((z + 1) * Level.CellSize) + 0.3f))
-                : new ShowroomLabel(place.Piece.Label, Above(x, z, labelHeight)));
-        }
-
-        foreach (var (x, z) in keys)
-        {
-            loot.Add(new ExhibitLoot(LootKind.Key, 1, level.CellCenter(x, z)));
-            labels.Add(new ShowroomLabel("Key", Above(x, z, 0.9f)));
-        }
-
-        foreach (var section in sections)
+    private static void AddPartLabels(Draft draft)
+    {
+        foreach (var section in draft.Sections)
         {
             foreach (var part in Enum.GetValues<ShowroomPart>())
             {
                 var text = part == ShowroomPart.Corridor ? "corridor 3.5 m" : "room 6 m";
-                labels.Add(new ShowroomLabel($"Wall {section.Variant} - {text}", Above(section.StartOf(part), section.MiddleRowOf(part), 2.6f)));
+                draft.Labels.Add(new ShowroomLabel($"Wall {section.Variant} - {text}", draft.Above(section.StartOf(part), section.MiddleRowOf(part), 2.6f)));
             }
         }
+    }
 
-        var pillars = WallPillars(level, sections, wallPieces.Count);
-        labels.AddRange(PillarLabels(sections, pillars));
-        var arches = CeilingArches(level, sections);
-        labels.AddRange(sections.Select(section => new ShowroomLabel(ArchLabel, Above(section.RoomX - 1, section.ArchCorridorRow, 2.6f))));
-        var niches = WallNiches(level, sections);
-        labels.AddRange(NicheLabels(niches));
-        var portcullises = Portcullises(level, sections);
-        labels.AddRange(PortcullisLabels(portcullises));
-        var deepNiches = DeepWallNiches(level, sections);
-        niches.AddRange(deepNiches.Select(deep => deep.Niche));
-        labels.AddRange(DeepNicheLabels(deepNiches));
-        labels.AddRange(FillingLabels(deepNiches));
-        level = level.WithWallCutouts(deepNiches.Select(deep => deep.Cutout));
-        level = level.WithColumns(Enum.GetValues<ShowroomPart>().Select(part => ColumnOf(part, bottom)));
-        labels.AddRange(Enum.GetValues<ShowroomPart>().Select(part => ColumnLabelOf(part, bottom)));
-        var columnStages = BreakingColumns(bottom);
-        labels.AddRange(columnStages.Select(BreakingColumnLabel));
+    private static void AddWallPillars(Draft draft)
+    {
+        draft.Pillars = WallPillars(draft.Level, draft.Sections, draft.WallPieces.Count);
+        draft.Labels.AddRange(PillarLabels(draft.Sections, draft.Pillars));
+    }
 
-        var looks = Variants.Select(variant => new RoomLook(variant, variant, variant)).ToList();
-        return new ShowroomLayout(
-            level, doors, chests, SurfaceVariants.Of(looks, lookOfCell),
-            new ShowroomExhibits(stairs, loot, consumables, weapons, items)
-            {
-                CrossbowSkeletons = skeletons,
-                CryptWardens = wardens,
-                WallPillars = [.. pillars.Select(pillar => pillar.Pillar)],
-                CeilingArches = arches,
-                WallNiches = niches,
-                Portcullises = portcullises,
-                Columns = columnStages,
-            },
-            labels, sections, placed);
+    private static void AddCeilingArches(Draft draft)
+    {
+        draft.Arches = CeilingArches(draft.Level, draft.Sections);
+        draft.Labels.AddRange(draft.Sections.Select(section => new ShowroomLabel(ArchLabel, draft.Above(section.RoomX - 1, section.ArchCorridorRow, 2.6f))));
+    }
+
+    private static void AddWallNiches(Draft draft)
+    {
+        draft.Niches.AddRange(WallNiches(draft.Level, draft.Sections));
+        draft.Labels.AddRange(NicheLabels(draft.Niches));
+    }
+
+    private static void AddPortcullises(Draft draft)
+    {
+        draft.Portcullises = Portcullises(draft.Level, draft.Sections);
+        draft.Labels.AddRange(PortcullisLabels(draft.Portcullises));
+    }
+
+    // The deep niches join the flat ones and cut their holes into the level's walls.
+    private static void AddDeepWallNiches(Draft draft)
+    {
+        var deepNiches = DeepWallNiches(draft.Level, draft.Sections);
+        draft.Niches.AddRange(deepNiches.Select(deep => deep.Niche));
+        draft.Labels.AddRange(DeepNicheLabels(deepNiches));
+        draft.Labels.AddRange(FillingLabels(deepNiches));
+        draft.Change(level => level.WithWallCutouts(deepNiches.Select(deep => deep.Cutout)));
+    }
+
+    private static void AddColumns(Draft draft)
+    {
+        draft.Change(level => level.WithColumns(Enum.GetValues<ShowroomPart>().Select(part => ColumnOf(part, draft.Bottom))));
+        draft.Labels.AddRange(Enum.GetValues<ShowroomPart>().Select(part => ColumnLabelOf(part, draft.Bottom)));
+    }
+
+    private static void AddBreakingColumns(Draft draft)
+    {
+        draft.Columns = BreakingColumns(draft.Bottom);
+        draft.Labels.AddRange(draft.Columns.Select(BreakingColumnLabel));
     }
 
     // The column hall (issue #539): south of the passage along the bottom of the band and open to it along its whole
@@ -737,9 +695,9 @@ public sealed class ShowroomLayout
         return Chest.Height + 0.5f;
     }
 
-    private static float SetStairs(ref Vector3? stairs, Vector3 position)
+    private static float SetStairs(Draft draft, Vector3 position)
     {
-        stairs = position;
+        draft.Stairs = position;
         return Stairs.Height - 0.4f;                                        // the staircase reaches the ceiling: its label hangs just under it
     }
 

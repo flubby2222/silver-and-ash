@@ -781,6 +781,18 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void A_piece_no_placer_takes_is_refused_by_name()
+    {
+        // Issue #588: a kind of piece without its entry in ShowroomLayout.Placers is not dropped silently.
+        var refused = Assert.Throws<ArgumentException>(() => ShowroomLayout.Build([.. ShowroomPieces.All, new UnknownPiece()]));
+
+        Assert.Equal("pieces", refused.ParamName);
+        Assert.Contains(nameof(UnknownPiece), refused.Message, StringComparison.Ordinal);
+    }
+
+    private sealed record UnknownPiece() : ShowroomPiece("Unknown");
+
+    [Fact]
     public void The_player_has_every_weapon()
     {
         var player = Layout.NewWorld().Player;
