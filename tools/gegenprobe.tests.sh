@@ -256,6 +256,9 @@ grep -q fewer probe.txt && total=$((total - 1))
 # "longmessage": 35 lines; "tworeds": a second red test that stands first in the file but not in the sorted list.
 error="$(printf '%s\r\n%s' 'Probe: value is &quot;broken&quot; &lt;not good&gt; &amp;amp; red&#xD;&#xA;second line in C:\Work\Folder\Probe.cs:line 3' 'third line')"
 grep -q longmessage probe.txt && error="$(seq -s '&#xA;' 1 35)"
+# "lines30" and "lines31": exactly on the cut at 30 lines and one beyond it (review of PR #692).
+grep -q lines30 probe.txt && error="$(seq -s '&#xA;' 1 30)"
+grep -q lines31 probe.txt && error="$(seq -s '&#xA;' 1 31)"
 result() {
     if [ -z "$3" ]; then
         printf '<UnitTestResult testName="%s" outcome="%s" />' "$1" "$2"
@@ -428,6 +431,18 @@ run_message_probe 'broken longmessage' > "$work/run-out" 2>"$work/lock-err"
 expect 'message: long, exit 0'              [ $? = 0 ]
 expect 'message: long, thirty lines'        [ "$(message_lines | grep -c -E '^ +[0-9]+$')" = 30 ]
 expect 'message: long, counts the rest'     [ "$(message_lines | tail -n 1)" = '     ... and 5 more line(s)' ]
+
+# The cut itself: exactly 30 lines show all and add nothing, 31 count the one beyond.
+: > "$work/lock-err"
+run_message_probe 'broken lines30' > "$work/run-out" 2>"$work/lock-err"
+expect 'message: 30 lines, exit 0'          [ $? = 0 ]
+expect 'message: 30 lines, all shown'       [ "$(message_lines | grep -c -E '^ +[0-9]+$')" = 30 ]
+expect 'message: 30 lines, nothing counted' not_in_run_out 'more line(s)'
+: > "$work/lock-err"
+run_message_probe 'broken lines31' > "$work/run-out" 2>"$work/lock-err"
+expect 'message: 31 lines, exit 0'          [ $? = 0 ]
+expect 'message: 31 lines, thirty shown'    [ "$(message_lines | grep -c -E '^ +[0-9]+$')" = 30 ]
+expect 'message: 31 lines, counts one'      [ "$(message_lines | tail -n 1)" = '     ... and 1 more line(s)' ]
 
 : > "$work/lock-err"
 run_message_probe 'broken nomessage' > "$work/run-out" 2>"$work/lock-err"
