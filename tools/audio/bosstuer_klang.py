@@ -15,8 +15,10 @@ Daneben schreibt es die Begleitdatei bosstuer-ticks.json (Issue 668) mit den Tic
 (Anschlag, Dauer des Oeffnens). Ein Test vergleicht sie mit Balance.Default: Aendert eine Balancing-Runde bossShutTick
 oder bossOpenTime, wird er rot, bis die Klaenge mit den neuen Ticks neu gebaut und abgehoert sind. Derselbe Test liest
 ANSCHLAG_TICK und OEFFNEN_TICKS aus diesem Skript (Issue 680, Zeilen "NAME = Zahl" am Zeilenanfang, je genau einmal):
-Eine von Hand angeglichene Begleitdatei macht ihn nicht gruen. Fehlt die Begleitdatei oder ist sie kaputt, endet
---pruefen mit Exit 1 und einer Meldung; ohne --pruefen schreibt das Skript sie neu.
+Eine von Hand angeglichene Begleitdatei macht ihn nicht gruen. Jede weitere Zuweisung am Zeilenanfang, die einen der
+beiden Namen bindet (berechnet, als Tupel oder mit "+="), macht ihn rot (Issue 684): Die Ticks werden nur dort gesetzt.
+Fehlt die Begleitdatei oder ist sie kaputt, endet --pruefen mit Exit 1 und einer Meldung; ohne --pruefen schreibt das
+Skript sie neu. Steht an ihrer Stelle ein Ordner, enden beide Aufrufe mit Exit 1 und einer Meldung und schreiben nichts.
 
     python tools/audio/bosstuer_klang.py           # schreibt assets/audio/bosstuer-*.wav und bosstuer-ticks.json
     python tools/audio/bosstuer_klang.py --pruefen # baut neu und vergleicht mit assets/audio
@@ -64,11 +66,24 @@ class BegleitdateiFehler(Exception):
     """Die Begleitdatei fehlt oder ist kaputt (Issue 680); die Meldung sagt, was zu tun ist."""
 
 
+def ordner_statt_begleitdatei():
+    """Steht an der Stelle der Begleitdatei ein Ordner (Issue 684), die Meldung dazu, sonst None. Neu schreiben hilft
+    dann nicht: Das Skript loescht keinen Ordner, das muss jemand von Hand tun."""
+    if not os.path.isdir(os.path.join(ZIEL, TICKS)):
+        return None
+    return (f"assets/audio/{TICKS} ist ein Ordner, keine Datei. Den Ordner entfernen oder umbenennen, dann "
+            "python tools/audio/bosstuer_klang.py laufen lassen (schreibt die Datei neu).")
+
+
 def ticks_lesen():
-    """Die Begleitdatei in assets/audio als dict. Fehlt sie oder ist sie kein JSON-Objekt: BegleitdateiFehler."""
+    """Die Begleitdatei in assets/audio als dict. Fehlt sie, ist sie ein Ordner oder kein JSON-Objekt:
+    BegleitdateiFehler."""
     pfad = os.path.join(ZIEL, TICKS)
     name = f"assets/audio/{TICKS}"
     neu_bauen = "python tools/audio/bosstuer_klang.py schreibt sie neu"
+    ordner = ordner_statt_begleitdatei()
+    if ordner:
+        raise BegleitdateiFehler(ordner)
     if not os.path.exists(pfad):
         raise BegleitdateiFehler(f"{name} fehlt ({neu_bauen}).")
     try:
@@ -150,6 +165,11 @@ def main():
             return 1
         print(f"{TICKS} passt zu den Ticks des Skripts:", passt)
         return 1 if schlecht or not passt else 0
+    ordner = ordner_statt_begleitdatei()
+    if ordner:
+        # Vor dem ersten Schreiben pruefen: sonst stuenden neue WAV-Dateien neben einer Begleitdatei, die fehlt.
+        print("FEHLER:", ordner, file=sys.stderr)
+        return 1
     for spiel, (_, daten) in neu.items():
         with open(os.path.join(ZIEL, spiel), "wb") as f:
             f.write(daten)
