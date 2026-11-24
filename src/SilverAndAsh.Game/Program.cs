@@ -140,6 +140,12 @@ using (log)
             {
                 var folder = Path.GetFullPath(options.PhotoFolder ?? Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SilverAndAsh", "photos"));
+                if (options.PhotoFolder is not null)
+                {
+                    // No pictures of an earlier run next to the new ones (issue #639).
+                    PhotoFolder.EnsureEmpty(folder);
+                }
+
                 var compare = photo == LaunchOptions.ComparePhotos;
                 var scenes = photo == LaunchOptions.AllPhotos ? PhotoScenes.All
                     : compare ? PhotoScenes.LookComparison
@@ -721,7 +727,7 @@ static void RunGame(
             {
                 // The travel hint only where F offers nothing, so the two never share the line.
                 var target = gameWorld.InteractionTarget(player);
-                InteractionPrompt.Draw(target, player);
+                InteractionPrompt.Draw(target, player, seconds);
                 if (target is null && gameWorld.TeleporterUnder(player) is not null)
                 {
                     TravelWindow.DrawHint();
@@ -736,7 +742,7 @@ static void RunGame(
 
             if (!frozen && !boonOpen && player.Menu.Page == PlayerMenuPage.Map)
             {
-                MapView.Draw(gameWorld, player, (float)Raylib.GetTime());
+                MapView.Draw(gameWorld, player, seconds);
             }
 
             if (player.IsInventoryOpen && !frozen)
