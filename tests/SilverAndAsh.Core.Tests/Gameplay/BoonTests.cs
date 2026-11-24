@@ -128,7 +128,9 @@ public class BoonTests
             world.Tick(Forward);
         }
 
-        Assert.True(player.Position.Z > playerAt.Z + 0.5f, "The player did not walk.");
+        var walked = player.Position.Z - playerAt.Z;
+        var least = LeastWalk(world.Balance, Second / 2);
+        Assert.True(walked > least, $"The player did not walk: {walked:0.00} m, at least {least:0.00} m.");
         Assert.NotEqual(ghoulAt, ghoul.Position);
         Assert.Equal(1, player.PendingBoons);
     }
@@ -179,13 +181,31 @@ public class BoonTests
         player.AddExperience(FirstLevel, []);
         var start = player.Position;
 
-        world.Tick(PlayerInput.None with { ChooseBoon = Boon.Damage });
+        // Whatever the balance and the seed offer (issue #664): the first boon on offer, and the choice must succeed.
+        var boon = player.CurrentOffer[0];
+        world.Tick(PlayerInput.None with { ChooseBoon = boon });
+        Assert.Equal(0, player.PendingBoons);
+        Assert.Equal(1, player.BoonCount(boon));
         for (var tick = 0; tick < Second / 4; tick++)
         {
             world.Tick(Forward);
         }
 
-        Assert.True(player.Position.Z > start.Z + 0.5f, "The player did not walk after choosing.");
+        var walked = player.Position.Z - start.Z;
+        var least = LeastWalk(world.Balance, Second / 4);
+        Assert.True(walked > least, $"The player did not walk after choosing: {walked:0.00} m, at least {least:0.00} m.");
+    }
+
+    /// <summary>
+    /// Half the way a player covers walking from a standstill for <paramref name="ticks"/> ticks with
+    /// <paramref name="balance"/> (issue #664): speeding up evenly to the top speed, then at the top speed.
+    /// </summary>
+    private static float LeastWalk(Balance balance, int ticks)
+    {
+        var seconds = ticks * SimulationClock.SecondsPerTick;
+        var walking = balance.Player;
+        Assert.True(seconds > walking.AccelerationTime, "The player is still speeding up - the case would prove nothing.");
+        return walking.MaxSpeed * (seconds - (walking.AccelerationTime / 2f)) / 2f;
     }
 
     [Fact]

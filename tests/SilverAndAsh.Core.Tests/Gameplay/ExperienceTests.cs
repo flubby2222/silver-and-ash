@@ -139,9 +139,9 @@ public class ExperienceTests
     }
 
     [Fact]
-    public void Each_level_needs_growth_times_the_last_rounded()
+    public void Each_level_needs_the_first_times_growth_to_the_power_of_the_level_rounded()
     {
-        // 10, 15, 22.5 -> 23, 33.75 -> 34: every level x 1.5, rounded.
+        // 10 x 1.5^level: 10, 15, 22.5 -> 23, 33.75 -> 34, rounded - not from the rounded last level (23 x 1.5 = 34.5 -> 35).
         var player = new Player(LevelParser.Parse("P"), balance: Curve);
 
         player.AddExperience(10, []);
