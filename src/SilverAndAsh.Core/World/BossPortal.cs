@@ -1,4 +1,5 @@
 using System.Numerics;
+using SilverAndAsh.Core.Physics;
 
 namespace SilverAndAsh.Core.World;
 
@@ -196,7 +197,7 @@ public static class BossPortalShape
 /// walking (<see cref="Physics.CharacterCollision"/>), sight and shots (<see cref="Physics.LineOfSight.IsInsideGeometry"/>)
 /// and way-finding (<see cref="Pathfinder"/>) stop at its stone, at every height; the door's cells stay open.
 /// </summary>
-public readonly record struct BossPortal(float X, float Z, float Floor, bool PassesAlongZ)
+public readonly record struct BossPortal(float X, float Z, float Floor, bool PassesAlongZ) : ISolid
 {
     /// <summary>The middle of the passage on the ground plane (X, Z).</summary>
     public Vector2 Middle => new(X, Z);
@@ -225,6 +226,23 @@ public readonly record struct BossPortal(float X, float Z, float Floor, bool Pas
     /// to <paramref name="to"/> (world heights).
     /// </summary>
     public Stones Footprint(float from, float to) => new(this, Pick.InTheWay, from, to);
+
+    /// <summary>
+    /// Pushes a body out of its stone - the jambs beside the opening, the plinths and buttresses in front of the walls -
+    /// like walls, with sliding, block by block (issue #598). A block whose top is at most a step above the feet does not
+    /// stop it, nor does one above its head (the same rule as for boxes).
+    /// </summary>
+    public bool PushOut(ref Vector3 position, ref Vector3 velocity, float radius, float height, float stepHeight)
+    {
+        var pushedOut = false;
+        var (from, to) = CharacterCollision.StoneInTheWayHeights(position, height, stepHeight);
+        foreach (var (min, max) in Footprint(from, to))
+        {
+            pushedOut |= CharacterCollision.PushOutOfRectangle(ref position, ref velocity, radius, min, max);
+        }
+
+        return pushedOut;
+    }
 
     /// <summary>
     /// The blocks (as in <see cref="Footprint"/>) whose top lies at most at <paramref name="height"/>: what a falling body
