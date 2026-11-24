@@ -1268,151 +1268,23 @@ public sealed class GameWorld
         DropEquipment(LootPool.Draw(tier, mayRise: false), Balance.Gorm.ExtraSilver, equipmentPlace);
     }
 
-    /// <summary>How far behind Gorm his equipment lies (metres) - less than his body's radius, so never in a wall.</summary>
-    public const float GormEquipmentDistance = BodySizes.Gorm.Radius * 0.7f;
+    /// <summary>How far behind Gorm his equipment lies (metres); see <see cref="BossLootPlacement.GormEquipmentDistance"/>.</summary>
+    public const float GormEquipmentDistance = BossLootPlacement.GormEquipmentDistance;
 
-    /// <summary>
-    /// The gap (metres) between the box of Gorm's piece and the box of the staircase, when he died next to where it
-    /// rises. With it, F never finds the stairs nearer than the piece for a player looking at it from outside.
-    /// </summary>
-    public const float StairsClearance = 0.1f;
+    /// <summary>Gap between Gorm's piece and the staircase's box; see <see cref="BossLootPlacement.StairsClearance"/>.</summary>
+    public const float StairsClearance = BossLootPlacement.StairsClearance;
 
-    // Interaction picks the nearest box a player looks at, and inside the staircase's box that is the stairs (issue
-    // #338). So a piece whose box would touch the staircase's box moves out: away from the stairs' middle (straight
-    // behind Gorm if he died right on it), just far enough, and only onto the boss room's own floor at Gorm's height -
-    // every corner of its box on such a cell, so never in a wall. If no direction fits (a room too small), it stays.
-    private Vector3 OutsideTheStairs(Vector3 place, Vector3 gormPosition, Vector3 behind)
-    {
-        if (_rooms.FirstOrDefault(room => room.Kind == RoomKind.Boss) is not { } boss)
-        {
-            return place;
-        }
+    /// <summary>Gap between Gorm's loot and a standing column; see <see cref="BossLootPlacement.ColumnClearance"/>.</summary>
+    public const float ColumnClearance = BossLootPlacement.ColumnClearance;
 
-        var (stairsX, stairsZ) = Stairs.CellIn(boss.Cells);
-        var stairs = Level.CellCenter(stairsX, stairsZ);
-        var reach = Stairs.Radius + EquipmentDrop.BoxRadius + StairsClearance;
-        if (MathF.Max(MathF.Abs(place.X - stairs.X), MathF.Abs(place.Z - stairs.Z)) >= reach)
-        {
-            return place;
-        }
+    // The boss room's cells for BossLootPlacement, or null in a level without a boss room.
+    private IReadOnlySet<(int X, int Z)>? BossCells => _rooms.FirstOrDefault(room => room.Kind == RoomKind.Boss)?.Cells;
 
-        var away = new Vector2(place.X - stairs.X, place.Z - stairs.Z);
-        if (away.LengthSquared() < 1e-6f)
-        {
-            away = new Vector2(behind.X, behind.Z);
-        }
+    private Vector3 OutsideTheStairs(Vector3 place, Vector3 gormPosition, Vector3 behind) =>
+        BossLootPlacement.OutsideTheStairs(Level, BossCells, place, gormPosition, behind);
 
-        var start = MathF.Atan2(away.X, away.Y);
-        for (var step = 0; step < 16; step++)
-        {
-            // 0, +22.5°, -22.5°, +45°, ... - the nearest directions to "away" first.
-            var angle = start + ((step + 1) / 2 * (step % 2 == 1 ? 1 : -1) * MathF.PI / 8f);
-            var direction = new Vector2(MathF.Sin(angle), MathF.Cos(angle));
-            var distance = reach / MathF.Max(MathF.Abs(direction.X), MathF.Abs(direction.Y));
-            var candidate = new Vector3(stairs.X + (direction.X * distance), gormPosition.Y, stairs.Z + (direction.Y * distance));
-            if (OnFloorOf(boss, candidate, EquipmentDrop.BoxRadius, gormPosition.Y))
-            {
-                return candidate;
-            }
-        }
-
-        return place;
-    }
-
-    /// <summary>
-    /// The gap (metres) between a piece of Gorm's loot and a standing column (issue #608): a piece never touches one, so
-    /// a player walking round the column reaches it and F finds it.
-    /// </summary>
-    public const float ColumnClearance = 0.1f;
-
-    // A piece of Gorm's loot (a square of half-width halfWidth) must lie where it can be taken: on open floor at his
-    // height, clear of every standing column and of the staircase (issue #608). Where it would not, it turns round him
-    // at the same distance - the nearest directions first - to the first place that is free. His own body kept the
-    // ground under him clear, so turning stays close to where he fell. If no direction is free, the piece stays where
-    // it would have lain, even in a column (in generated boss rooms this never happened: review of PR #613).
-    private Vector3 FreePlace(Vector3 place, float halfWidth, Vector3 gormPosition)
-    {
-        if (IsFreeFor(place, halfWidth, gormPosition.Y))
-        {
-            return place;
-        }
-
-        var offset = new Vector2(place.X - gormPosition.X, place.Z - gormPosition.Z);
-        var distance = offset.Length();
-        if (distance < 1e-4f)
-        {
-            return place;
-        }
-
-        var start = MathF.Atan2(offset.X, offset.Y);
-        for (var step = 1; step < 16; step++)
-        {
-            // +22.5°, -22.5°, +45°, ... - the nearest directions to where it should have lain first.
-            var angle = start + ((step + 1) / 2 * (step % 2 == 1 ? 1 : -1) * MathF.PI / 8f);
-            var candidate = new Vector3(
-                gormPosition.X + (MathF.Sin(angle) * distance), place.Y, gormPosition.Z + (MathF.Cos(angle) * distance));
-            if (IsFreeFor(candidate, halfWidth, gormPosition.Y))
-            {
-                return candidate;
-            }
-        }
-
-        return place;
-    }
-
-    // True if a square of half-width halfWidth around position lies on open floor at floorHeight (in the boss room, if
-    // there is one), keeps ColumnClearance from every standing column and does not reach the staircase's box.
-    private bool IsFreeFor(Vector3 position, float halfWidth, float floorHeight)
-    {
-        var flat = new Vector2(position.X, position.Z);
-        foreach (var column in Level.Columns)
-        {
-            var nearest = Vector2.Clamp(column.Centre, flat - new Vector2(halfWidth), flat + new Vector2(halfWidth));
-            if (Vector2.Distance(nearest, column.Centre) < Column.Radius + ColumnClearance)
-            {
-                return false;
-            }
-        }
-
-        if (InPortalStone(flat, halfWidth))
-        {
-            return false;
-        }
-
-        if (_rooms.FirstOrDefault(room => room.Kind == RoomKind.Boss) is not { } boss)
-        {
-            return OnFloorOf(null, position, halfWidth, floorHeight);
-        }
-
-        var (stairsX, stairsZ) = Stairs.CellIn(boss.Cells);
-        var stairs = Level.CellCenter(stairsX, stairsZ);
-        var reach = Stairs.Radius + halfWidth + StairsClearance;
-        return MathF.Max(MathF.Abs(position.X - stairs.X), MathF.Abs(position.Z - stairs.Z)) >= reach
-            && OnFloorOf(boss, position, halfWidth, floorHeight);
-    }
-
-    // True if the square of half-width halfWidth around flat reaches into the stone of a boss door's portal: loot there
-    // would lie in the jamb or on the plinth (issue #627).
-    private bool InPortalStone(Vector2 flat, float halfWidth) =>
-        Level.Portals.Any(portal => portal.Covers(flat, halfWidth));
-
-    // True if every corner of the square of half-width radius around position lies on an open cell whose floor is at
-    // floorHeight - a cell of the room, or in a level without a boss room (room null) any cell of the level.
-    private bool OnFloorOf(RoomState? room, Vector3 position, float radius, float floorHeight)
-    {
-        foreach (var (dx, dz) in new[] { (-1f, -1f), (-1f, 1f), (1f, -1f), (1f, 1f) })
-        {
-            var cell = Level.ToGrid(position.X + (dx * radius), position.Z + (dz * radius));
-            var inside = room?.Cells.Contains(cell) ?? Level.IsInside(cell.X, cell.Z);
-            if (!inside || Level[cell.X, cell.Z].IsSolid
-                || MathF.Abs(Level[cell.X, cell.Z].FloorHeight - floorHeight) > 0.01f)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
+    private Vector3 FreePlace(Vector3 place, float halfWidth, Vector3 gormPosition) =>
+        BossLootPlacement.FreePlace(Level, BossCells, place, halfWidth, gormPosition);
 
     /// <summary>
     /// With <paramref name="chance"/>, drops a pile worth between <paramref name="min"/> and <paramref name="max"/>
