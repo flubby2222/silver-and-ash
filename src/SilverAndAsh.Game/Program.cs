@@ -747,7 +747,7 @@ static void RunGame(
 
             if (player.IsInventoryOpen && !frozen)
             {
-                InventoryWindow.Draw(gameWorld, player);
+                InventoryWindow.Draw(gameWorld, player, seconds);
             }
             else if (boonOpen && !frozen)
             {

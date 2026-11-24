@@ -25,7 +25,7 @@ internal sealed class TravelWindow
 
     // The cursor appears in the middle of the window when it opens; see BoonWindow.ClickDelaySeconds.
     private const float ClickDelaySeconds = BoonWindow.ClickDelaySeconds;
-    private const double DoubleClickSeconds = 0.4;
+    private const float DoubleClickSeconds = 0.4f;
 
     private static readonly Color Veil = new(8, 6, 12, 150);
     private static readonly Color MapGround = new(14, 12, 18, 220);
@@ -42,7 +42,7 @@ internal sealed class TravelWindow
     private TravelLayout? _layout;
     private float _openSeconds;
     private int? _lastClicked;
-    private double _lastClickTime = double.NegativeInfinity;
+    private float _lastClickTime = float.NegativeInfinity;
 
     /// <summary>True while the window is open.</summary>
     public bool IsOpen { get; private set; }
@@ -211,7 +211,8 @@ internal sealed class TravelWindow
             return false;
         }
 
-        var now = Raylib.GetTime();
+        // The window's own clock (seconds since it opened), not the time since the game window opened (issue #651).
+        var now = _openSeconds;
         var twice = target == _lastClicked && now - _lastClickTime <= DoubleClickSeconds;
         Selected = TravelCursor.Click(choices, Selected, target);
         _lastClicked = target;
