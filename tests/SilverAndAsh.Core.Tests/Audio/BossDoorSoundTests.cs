@@ -160,10 +160,13 @@ public class BossDoorSoundTests
             + "it, run tools/models/checksums.py and have the sounds listened to again (audio bible, rule 13).");
     }
 
+    // The operator in front of "=" in an augmented assignment ("+=", "//=", ...).
+    private const string AugmentingOperator = @"(?://|\*\*|<<|>>|[-+*/%@&|^])";
+
     // An assignment at the start of a line (not indented, not a comment): the targets left of the first "=" that is not
-    // part of "==", "<=", ">=" or "!=", with an augmenting operator ("+=", "//=", ...) or an annotation (": int") allowed.
+    // part of "==", "<=", ">=" or "!=", with an augmenting operator or an annotation (": int") allowed.
     private static readonly Regex Assignment = new(
-        @"^(?<targets>[A-Za-z_(\[*][\w \t,()\[\]*.:]*?)[ \t]*(?://|\*\*|<<|>>|[-+*/%@&|^])?=(?!=)",
+        $@"^(?<targets>[A-Za-z_(\[*][\w \t,()\[\]*.:]*?)[ \t]*{AugmentingOperator}?=(?!=)",
         RegexOptions.Multiline);
 
     // The value of a constant "NAME = 123" at the start of a line of the script. Issue #684: every assignment at the start
@@ -172,10 +175,20 @@ public class BossDoorSoundTests
     private static int ScriptConstant(string script, string name)
     {
         var binds = new Regex($@"(?<![\w.]){name}(?!\w)");
-        var bindings = Assignment.Matches(script)
-            .Where(m => binds.IsMatch(m.Groups["targets"].Value))
-            .Select(m => script[m.Index..].Split('\n')[0].TrimEnd('\r'))
-            .ToList();
+        // Right of the first "=" of such a line the name is bound again by a chain ("X = NAME = 70") or a second
+        // statement ("X = 30; NAME = 70") - "=" or ";" in front of it - and by a walrus anywhere ("X = (NAME := 70)").
+        // A keyword argument ("f(NAME=3)") or a comparison ("NAME <= 3") binds nothing.
+        var chained = new Regex($@"(?<=(?:^|[=;])[ \t]*){name}[ \t]*{AugmentingOperator}?=(?!=)");
+        var walrus = new Regex($@"(?<![\w.]){name}[ \t]*:=");
+        var bindings = new List<string>();
+        foreach (Match m in Assignment.Matches(script))
+        {
+            var assignment = script[m.Index..].Split('\n')[0].TrimEnd('\r');
+            var rest = assignment[m.Length..];
+            var count = (binds.IsMatch(m.Groups["targets"].Value) ? 1 : 0) + chained.Count(rest) + walrus.Count(rest);
+            bindings.AddRange(Enumerable.Repeat(assignment, count));
+        }
+
         Assert.True(
             bindings.Count == 1,
             $"{Script} must set {name} exactly once at the start of a line, as \"{name} = <ticks>\", but binds it "
@@ -252,6 +265,55 @@ public class BossDoorSoundTests
                 () => ScriptConstant($"ANSCHLAG_TICK = 78\n{augmented}\n", "ANSCHLAG_TICK"));
             Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    public void A_tick_constant_bound_again_further_right_in_a_chained_assignment_is_reported_not_read()
+    {
+        foreach (var chain in new[] { "ENDE_TICK = ANSCHLAG_TICK = 70", "A = B = ANSCHLAG_TICK = 70", "ENDE_TICK=ANSCHLAG_TICK=70" })
+        {
+            var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+                () => ScriptConstant($"ANSCHLAG_TICK = 78\r\nOEFFNEN_TICKS = 132\r\n{chain}\r\n", "ANSCHLAG_TICK"));
+            Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
+            Assert.Contains(chain, error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_tick_constant_bound_again_by_a_walrus_right_of_an_assignment_is_reported_not_read()
+    {
+        foreach (var walrus in new[] { "ENDE_TICK = (ANSCHLAG_TICK := 70)", "ENDE_TICK = bauen(1, (ANSCHLAG_TICK:=70))" })
+        {
+            var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+                () => ScriptConstant($"ANSCHLAG_TICK = 78\r\nOEFFNEN_TICKS = 132\r\n{walrus}\r\n", "ANSCHLAG_TICK"));
+            Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
+            Assert.Contains(walrus, error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_tick_constant_bound_again_in_a_second_statement_after_a_semicolon_is_reported_not_read()
+    {
+        foreach (var statements in new[] { "ANLAUF_TICKS = 30; ANSCHLAG_TICK = 70", "ANLAUF_TICKS = 30;ANSCHLAG_TICK -= 8" })
+        {
+            var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+                () => ScriptConstant($"ANSCHLAG_TICK = 78\n{statements}\n", "ANSCHLAG_TICK"));
+            Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Keyword_arguments_comparisons_and_comments_right_of_an_assignment_are_not_taken_for_a_rebinding()
+    {
+        // The other side of the chained, walrus and semicolon checks: right of an assignment these only read the name.
+        const string script = "ANSCHLAG_TICK = 78\r\n"
+            + "ENDE = bauen(ANSCHLAG_TICK=3, tick = ANSCHLAG_TICK)\r\n"
+            + "OK = ANSCHLAG_TICK == 78 or ANSCHLAG_TICK <= 99 or ANSCHLAG_TICK >= 1 or ANSCHLAG_TICK != 0\r\n"
+            + "LETZTER = ANSCHLAG_TICK  # ANSCHLAG_TICK = 70 stand hier frueher\r\n"
+            + "r2.WERT = r2.ANSCHLAG_TICK = 70\r\n"
+            + "LANG = ANSCHLAG_TICKS = 70\r\n";
+
+        Assert.Equal(78, ScriptConstant(script, "ANSCHLAG_TICK"));
     }
 
     [Fact]
