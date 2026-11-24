@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Numerics;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using SilverAndAsh.Core.Audio;
@@ -163,30 +164,21 @@ public class BossDoorSoundTests
     // The operator in front of "=" in an augmented assignment ("+=", "//=", ...).
     private const string AugmentingOperator = @"(?://|\*\*|<<|>>|[-+*/%@&|^])";
 
-    // An assignment at the start of a line (not indented, not a comment): the targets left of the first "=" that is not
-    // part of "==", "<=", ">=" or "!=", with an augmenting operator or an annotation (": int") allowed.
-    private static readonly Regex Assignment = new(
-        $@"^(?<targets>[A-Za-z_(\[*][\w \t,()\[\]*.:]*?)[ \t]*{AugmentingOperator}?=(?!=)",
-        RegexOptions.Multiline);
+    // The "=" of an assignment, plain or augmented - not the one in "==", "<=", ">=", "!=" or ":=".
+    private static readonly Regex AssignmentOperator = new($@"(?<![=!<>:]){AugmentingOperator}?=(?!=)");
 
-    // The value of a constant "NAME = 123" at the start of a line of the script. Issue #684: every assignment at the start
-    // of a line that binds the name counts - also computed ("NAME = NAME - 8"), as a tuple ("NAME, OTHER = 70, 120") or
-    // augmented ("NAME += 8") - so a later rebinding cannot leave the test reading a number the script no longer uses.
+    private static readonly Regex StatementSeparator = new(";");
+
+    // The value of a constant "NAME = 123" at the start of a line of the script. Issue #684: every binding of the name in
+    // a line at the start of the script's lines counts - also computed ("NAME = NAME - 8"), as a tuple ("NAME, OTHER = 70,
+    // 120"), augmented ("NAME += 8"), further right in a chain ("X = (NAME) = 70"), after ";" or by a walrus - so a later
+    // rebinding cannot leave the test reading a number the script no longer uses.
     private static int ScriptConstant(string script, string name)
     {
-        var binds = new Regex($@"(?<![\w.]){name}(?!\w)");
-        // Right of the first "=" of such a line the name is bound again by a chain ("X = NAME = 70") or a second
-        // statement ("X = 30; NAME = 70") - "=" or ";" in front of it - and by a walrus anywhere ("X = (NAME := 70)").
-        // A keyword argument ("f(NAME=3)") or a comparison ("NAME <= 3") binds nothing.
-        var chained = new Regex($@"(?<=(?:^|[=;])[ \t]*){name}[ \t]*{AugmentingOperator}?=(?!=)");
-        var walrus = new Regex($@"(?<![\w.]){name}[ \t]*:=");
         var bindings = new List<string>();
-        foreach (Match m in Assignment.Matches(script))
+        foreach (var scriptLine in script.Split('\n').Select(l => l.TrimEnd('\r')))
         {
-            var assignment = script[m.Index..].Split('\n')[0].TrimEnd('\r');
-            var rest = assignment[m.Length..];
-            var count = (binds.IsMatch(m.Groups["targets"].Value) ? 1 : 0) + chained.Count(rest) + walrus.Count(rest);
-            bindings.AddRange(Enumerable.Repeat(assignment, count));
+            bindings.AddRange(Enumerable.Repeat(scriptLine, BindingsIn(scriptLine, name)));
         }
 
         Assert.True(
@@ -201,6 +193,82 @@ public class BossDoorSoundTests
             $"{Script} sets {name} in \"{line}\", which is not a plain number of ticks. Write it as {name} = <ticks> "
             + "(a whole number, a comment behind it is fine) so the test can read it without running Python.");
         return int.Parse(value.Groups[1].Value, CultureInfo.InvariantCulture);
+    }
+
+    // How often a line binds the name: in a target list of one of its statements, or by a walrus anywhere. An indented
+    // line belongs to a block (a function's own names) and counts nothing.
+    private static int BindingsIn(string line, string name)
+    {
+        if (line.Length == 0 || char.IsWhiteSpace(line[0]))
+        {
+            return 0;
+        }
+
+        var code = CodeOnly(line);
+        var binds = new Regex($@"(?<![\w.]){name}(?!\w)");
+        var walrus = new Regex($@"(?<![\w.]){name}[ \t]*:=");
+        var inTargets = SplitAtTopLevel(code, StatementSeparator).SelectMany(TargetLists).Count(binds.IsMatch);
+        return inTargets + walrus.Count(code);
+    }
+
+    // Every piece of a statement left of a top-level assignment "=" is a target list: "A = (B) = C, D = 70" has three.
+    // An "=" inside brackets is a keyword argument or default ("f(NAME=3)") and binds nothing.
+    private static IEnumerable<string> TargetLists(string statement) =>
+        SplitAtTopLevel(statement, AssignmentOperator).SkipLast(1);
+
+    // The code split at each separator outside brackets.
+    private static List<string> SplitAtTopLevel(string code, Regex separator)
+    {
+        var pieces = new List<string>();
+        var start = 0;
+        foreach (Match m in separator.Matches(code))
+        {
+            if (BracketDepth(code, m.Index) == 0)
+            {
+                pieces.Add(code[start..m.Index]);
+                start = m.Index + m.Length;
+            }
+        }
+
+        pieces.Add(code[start..]);
+        return pieces;
+    }
+
+    private static int BracketDepth(string code, int index) =>
+        code[..index].Count(c => c is '(' or '[' or '{') - code[..index].Count(c => c is ')' or ']' or '}');
+
+    // The line as code only: the text inside strings blanked out and a comment cut off, so neither can bind a name.
+    private static string CodeOnly(string line)
+    {
+        var code = new StringBuilder(line.Length);
+        char? quote = null;
+        for (var i = 0; i < line.Length; i++)
+        {
+            var c = line[i];
+            if (quote is null && c == '#')
+            {
+                break;
+            }
+
+            if (quote is null)
+            {
+                quote = c is '"' or '\'' ? c : null;
+                code.Append(c);
+            }
+            else if (c == quote)
+            {
+                quote = null;
+                code.Append(c);
+            }
+            else
+            {
+                // An escaped character ("\"") stays inside the string.
+                code.Append(c == '\\' && i + 1 < line.Length ? "  " : " ");
+                i += c == '\\' ? 1 : 0;
+            }
+        }
+
+        return code.ToString();
     }
 
     [Fact]
@@ -300,6 +368,58 @@ public class BossDoorSoundTests
                 () => ScriptConstant($"ANSCHLAG_TICK = 78\n{statements}\n", "ANSCHLAG_TICK"));
             Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    public void A_tick_constant_bound_again_in_a_tuple_in_the_middle_of_a_chain_is_reported_not_read()
+    {
+        foreach (var chain in new[] { "ENDE_TICK = ANSCHLAG_TICK, X_TICK = 70, 1", "ENDE_TICK = X_TICK, ANSCHLAG_TICK = 70, 1" })
+        {
+            var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+                () => ScriptConstant($"ANSCHLAG_TICK = 78\r\nOEFFNEN_TICKS = 132\r\n{chain}\r\n", "ANSCHLAG_TICK"));
+            Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
+            Assert.Contains(chain, error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_tick_constant_bound_again_in_brackets_in_the_middle_of_a_chain_is_reported_not_read()
+    {
+        foreach (var chain in new[] { "ENDE_TICK = (ANSCHLAG_TICK) = 70", "ENDE_TICK = [X_TICK, ANSCHLAG_TICK] = 70, 1" })
+        {
+            var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+                () => ScriptConstant($"ANSCHLAG_TICK = 78\r\nOEFFNEN_TICKS = 132\r\n{chain}\r\n", "ANSCHLAG_TICK"));
+            Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
+            Assert.Contains(chain, error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_tick_constant_bound_again_in_a_tuple_or_annotation_after_a_semicolon_is_reported_not_read()
+    {
+        foreach (var statements in new[]
+        {
+            "X_TICK = 1; A_TICK, ANSCHLAG_TICK = 1, 2",
+            "X_TICK = 1; (ANSCHLAG_TICK) = 70",
+            "X_TICK = 1; ANSCHLAG_TICK: int = 70",
+        })
+        {
+            var error = Assert.ThrowsAny<Xunit.Sdk.XunitException>(
+                () => ScriptConstant($"ANSCHLAG_TICK = 78\n{statements}\n", "ANSCHLAG_TICK"));
+            Assert.Contains("binds it 2 times", error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Text_in_strings_and_keyword_arguments_at_the_start_of_a_line_are_not_taken_for_a_rebinding()
+    {
+        // The other side of splitting at ";" and "=": only code outside strings and brackets binds a name.
+        const string script = "ANSCHLAG_TICK = 78\r\n"
+            + "HINWEIS = \"a; ANSCHLAG_TICK = 70\" + 'ANSCHLAG_TICK := 1' + \"\\\"; ANSCHLAG_TICK = 2\"\r\n"
+            + "bauen(ANSCHLAG_TICK=3, werte=[ANSCHLAG_TICK, 1])\r\n"
+            + "def f(ANSCHLAG_TICK=3): return ANSCHLAG_TICK\r\n";
+
+        Assert.Equal(78, ScriptConstant(script, "ANSCHLAG_TICK"));
     }
 
     [Fact]
