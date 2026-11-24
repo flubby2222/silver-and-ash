@@ -7,7 +7,8 @@ namespace SilverAndAsh.Core.Tests.Presentation;
 /// two photos of the same scene are the same picture (issue #651). <c>Raylib.GetTime()</c> - the time since the game
 /// window opened - would break that, but only where a moving effect is in the picture: the pulse of a Vampiric weapon
 /// in the inventory, which no weapon has yet. No photo would notice it coming back, and the game has no tests of its
-/// own, so this reads its source: no file of the game calls <c>GetTime</c>, also not as <c>using static Raylib</c>.
+/// own, so this reads its source: no file of the game takes <c>GetTime</c>, also not as <c>using static Raylib</c> or
+/// as a method group (<c>Raylib.GetTime;</c>). Comments and strings are no code (issue #672, <see cref="CSharpStringLiterals.CodeOf"/>).
 /// </summary>
 public partial class FixedClockSourceTests
 {
@@ -23,9 +24,7 @@ public partial class FixedClockSourceTests
         Assert.Contains(files, file => file.EndsWith("InventoryWindow.cs", StringComparison.Ordinal));
 
         var calls = files
-            .SelectMany(file => File.ReadLines(file).Select((line, index) => (file, line, number: index + 1)))
-            .Where(entry => GetTimeCall().IsMatch(WithoutLineComment(entry.line)))
-            .Select(entry => $"{Path.GetRelativePath(game, entry.file)}:{entry.number}: {entry.line.Trim()}")
+            .SelectMany(file => Uses(File.ReadAllText(file)).Select(use => $"{Path.GetRelativePath(game, file)}:{use}"))
             .ToList();
 
         Assert.True(calls.Count == 0,
@@ -40,17 +39,54 @@ public partial class FixedClockSourceTests
     [InlineData("var started = System.Diagnostics.Stopwatch.GetTimestamp();", false)]
     [InlineData("var dt = Raylib.GetFrameTime();", false)]
     [InlineData("var x = 1; // not Raylib.GetTime()", false)]
-    public void The_search_finds_a_call_of_GetTime_and_nothing_else(string line, bool found)
+    public void The_search_finds_a_call_of_GetTime_and_nothing_else(string source, bool found)
     {
-        Assert.Equal(found, GetTimeCall().IsMatch(WithoutLineComment(line)));
+        Assert.Equal(found, Uses(source).Count > 0);
     }
 
-    private static string WithoutLineComment(string line)
+    // Issue #672: the cases a search line by line, cut at the first "//", got wrong.
+    [Fact]
+    public void The_search_finds_GetTime_as_a_method_group_without_parentheses()
     {
-        var comment = line.IndexOf("//", StringComparison.Ordinal);
-        return comment < 0 ? line : line[..comment];
+        Assert.Equal(["1: Func<double> clock = Raylib.GetTime;"], Uses("Func<double> clock = Raylib.GetTime;"));
     }
 
-    [GeneratedRegex(@"\bGetTime\s*\(")]
-    private static partial Regex GetTimeCall();
+    [Fact]
+    public void The_search_finds_a_call_of_GetTime_behind_a_string_with_two_slashes()
+    {
+        Assert.Equal(["1: var url = \"https://example.org\"; var t = Raylib.GetTime();"], Uses("var url = \"https://example.org\"; var t = Raylib.GetTime();"));
+    }
+
+    [Fact]
+    public void The_search_finds_no_GetTime_in_a_block_comment()
+    {
+        Assert.Empty(Uses("/* the clock used to be\n   Raylib.GetTime() */\nvar x = 1; /* GetTime( */"));
+    }
+
+    [Fact]
+    public void The_search_finds_no_GetTime_in_a_string()
+    {
+        Assert.Empty(Uses("var hint = \"never call GetTime() here\"; var raw = \"\"\"GetTime(\"\"\"; var at = @\"C:\\GetTime(\";"));
+    }
+
+    [Fact]
+    public void The_search_finds_a_call_of_GetTime_in_the_hole_of_an_interpolated_string()
+    {
+        Assert.Single(Uses("var text = $\"time {Raylib.GetTime():0.0} s\";"));
+    }
+
+    // Every use of GetTime in the code of source (not in its comments or strings), as "line: text of the line".
+    private static List<string> Uses(string source)
+    {
+        var code = CSharpStringLiterals.CodeOf(source);
+        var lines = source.Split('\n');
+        return GetTimeName().Matches(code)
+            .Select(match => code.AsSpan(0, match.Index).Count('\n'))
+            .Distinct()
+            .Select(line => $"{line + 1}: {lines[line].Trim()}")
+            .ToList();
+    }
+
+    [GeneratedRegex(@"\bGetTime\b")]
+    private static partial Regex GetTimeName();
 }
