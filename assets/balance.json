@@ -380,6 +380,9 @@
       "gormStaggerSeconds": 0.2,        // s Gorm staggers instead: he stops walking, his wind-ups go on; not above seconds
       "gormImmuneSeconds": 5            // s after his stagger in which a new stun does nothing; at most 60
     },
+    "leech": {                          // heals the player who dealt the hit, at once, no duration (issue #510)
+      "share": 0.025                    // share of the hit's damage that comes back as health (0.025 = 2.5 %); fractions are saved up; at most 1
+    },
     "weaponShare": 0.3,                 // share of found weapons with a status effect (0.3 = 30 %); 0 = none; at most 1
     "weaponHitChance": {                // chance per hit that a weapon's effect takes hold, by tier; 0 = never; at most 1
       "worn": 0.1,

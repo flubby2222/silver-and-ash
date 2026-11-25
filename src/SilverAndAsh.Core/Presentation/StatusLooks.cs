@@ -11,7 +11,7 @@ public readonly record struct StatusLook(StatusKind Kind, string Ramp, (byte R, 
 
 /// <summary>
 /// The looks of every status effect, one entry per kind (issue #506). A new kind is one more entry here - with its
-/// colour and whether it shows a timer (Leech will come with <c>ShowsTimer: false</c>). Placeholders until the trial
+/// colour and whether it shows a timer (Leech with <c>ShowsTimer: false</c>). Placeholders until the trial
 /// piece of the effects decides: every colour a step of the main palette, each effect a hue of its own (violet mark,
 /// warm flame, cold frost), never red (red on an enemy belongs to the eyes announcing a blow). A test checks the colours
 /// against the palette file.
@@ -35,6 +35,12 @@ public static class StatusLooks
         // Stun: Eisen 6 (163, 175, 187), the silver-grey of variant A of the effects trial piece (issue #509). Close to the
         // frost of Grave Chill in colour - the effects trial piece tells them apart by shape (sparks circling over the head).
         new(StatusKind.Stun, EffectColours.Iron, (163, 175, 187), ShowsTimer: true),
+
+        // Leech (issue #510): acts on the player at once and never sits on an enemy, so today nothing draws this look.
+        // Violet belongs to Leech (effects trial piece, issue #616, version b1), but the ramp "Violett" is not in the main
+        // palette yet; until it is, Werkstein 2 (195, 182, 188) - a step of the palette's most violet ramp, one step below
+        // the mark - stands in (provisional). No timer: Leech has no duration.
+        new(StatusKind.Leech, EffectColours.Ashlar, (195, 182, 188), ShowsTimer: false),
     ];
 
     /// <summary>The look of <paramref name="kind"/> in <paramref name="looks"/>; a kind without one is an error of the table.</summary>

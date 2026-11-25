@@ -20,7 +20,7 @@ namespace SilverAndAsh.Core.Gameplay;
 public sealed class WeaponEffects
 {
     /// <summary>The effects a found weapon can carry. A new effect is one more entry here (and in <see cref="Names"/>).</summary>
-    public static ReadOnlyCollection<StatusKind> Choosable { get; } = Array.AsReadOnly([StatusKind.Marked, StatusKind.CleansingFlame, StatusKind.GraveChill, StatusKind.Stun]);
+    public static ReadOnlyCollection<StatusKind> Choosable { get; } = Array.AsReadOnly([StatusKind.Marked, StatusKind.CleansingFlame, StatusKind.GraveChill, StatusKind.Stun, StatusKind.Leech]);
 
     /// <summary>The name of every effect as the game shows it.</summary>
     private static readonly FrozenDictionary<StatusKind, string> Names = new Dictionary<StatusKind, string>
@@ -32,7 +32,14 @@ public sealed class WeaponEffects
         // Short for Grave Chill (issue #508, provisional), for the same reason: "Grave Chill" breaks the pickup toast's frame.
         [StatusKind.GraveChill] = "Chill",
         [StatusKind.Stun] = "Stun",
+        [StatusKind.Leech] = "Leech",
     }.ToFrozenDictionary();
+
+    /// <summary>
+    /// The effects that act on the player who hit, not on the enemy (issue #510): they never sit on an enemy, and the hit
+    /// that kills an enemy sets them off too.
+    /// </summary>
+    private static readonly FrozenSet<StatusKind> OnTheAttacker = new[] { StatusKind.Leech }.ToFrozenSet();
 
     private readonly StatusEffectsBalance _values;
     private readonly FrozenSet<WeaponKind> _startingWeapons;
@@ -89,6 +96,9 @@ public sealed class WeaponEffects
 
         return _hitRandom.NextDouble() < _values.WeaponHitChance.Of(Weapons.Info(kind).Tier) ? effect : null;
     }
+
+    /// <summary>True if <paramref name="kind"/> acts on the player who hit instead of on the enemy (Leech, issue #510).</summary>
+    public static bool ActsOnTheAttacker(StatusKind kind) => OnTheAttacker.Contains(kind);
 
     /// <summary>The name of <paramref name="kind"/> as the game shows it ("Marked").</summary>
     public static string NameOf(StatusKind kind) => Names[kind];
