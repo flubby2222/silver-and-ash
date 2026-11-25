@@ -43,8 +43,11 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `ghoul-marked-4m`, `ghoul-marked-late` | einen markierten Ghul aus 4 m: gleich nach dem Markieren (Schimmer und „3.0s“ über dem Kopf) bzw. mit noch 0,4 s Markierung, während er näher kommt (Issue #506) |
 | `ghoul-burning-4m` | einen Ghul aus 4 m, gleich nachdem eine Cleansing Flame ihn erfasst hat: weißgoldener Schimmer und „2.0s“ über dem Kopf (Issue #507) |
 | `ghoul-chilled-4m` | einen Ghul aus 4 m, gleich nachdem ein Grave Chill ihn erfasst hat: frostblauer Schimmer (Stoff 7) und „2.0s“ über dem Kopf (Issue #508) |
-| `ghoul-stunned-4m` | einen Ghul aus 4 m, gleich nachdem ein Stun ihn erfasst hat: silbergrauer Schimmer (Eisen 6) und „0.5s“ über dem Kopf (Issue #509) |
+| `ghoul-stunned-4m`, `ghoul-stunned-10m` | einen Ghul aus 4 m bzw. 10 m, gleich nachdem ein Stun ihn erfasst hat: drei Plus-Funken kreisen über dem Kopf, „0.5s“ darüber (Issues #509, #778) |
 | `ghouls-chilled-stunned` | zwei Ghule nebeneinander aus 6 m, der eine gerade gekühlt („2.0s“), der andere gerade betäubt („0.5s“) – zum Vergleich, ob sich beide Effekte unterscheiden lassen (Issue #509) |
+| `ghouls-chilled-stunned-4m`, `ghouls-chilled-stunned-10m`, `ghouls-burning-stunned-4m`, `ghouls-marked-stunned-4m` | zwei Ghule nebeneinander, links betäubt, rechts gekühlt, brennend bzw. markiert – unterscheidet man die Funken von den anderen Effekten an der Form? (Issue #778) |
+| `ghoul-chilled-and-stunned-4m` | einen Ghul aus 4 m, gekühlt und betäubt zugleich: Frost am Körper, Funken über dem Kopf, beide Restzeiten (Issue #778) |
+| `bat-stunned-4m`, `gorm-stunned`, `gorm-stunned-windup` | eine betäubte Fledermaus in der Luft; Gorm betäubt aus 8 m, einmal ruhig, einmal beim Ausholen zum Kettenschwung, das weiterläuft (Issue #778) |
 | `bat-screech` | eine Fledermaus beim Kreischen, der Ankündigung des Sturzflugs (Hälfte der Kreischzeit) |
 | `bat-dive` | eine Fledermaus im Sturzflug auf den Spieler |
 | `pistol-recoil` | die Pistole gleich nach dem Schuss: hochgerissen, Hahn gefallen, Mündungsfeuer |

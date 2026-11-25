@@ -173,8 +173,30 @@ public sealed record Balance
     /// <summary>Skills: how a player earns the points to learn them (issue #502).</summary>
     public SkillsBalance Skills { get; init; } = new();
 
+    /// <summary>What the passive items do (decision record 0008, issue #195).</summary>
+    public ItemsBalance Items { get; init; } = new();
+
     /// <summary>Seconds between the death of all players and the restart of the level.</summary>
     public float RestartDelay { get; init; } = 2f;
+}
+
+/// <summary>
+/// What the passive items do (decision record 0008, issue #195). An item works for the player who carries it, from the
+/// moment it is taken; the rules are in <see cref="Gameplay.ItemEffects"/>.
+/// </summary>
+public sealed record ItemsBalance
+{
+    /// <summary>Hunter's Boots: how much faster a player walks (0.1 = 10 % more top speed, on the ground and in the air).</summary>
+    public float HuntersBootsSpeed { get; init; } = 0.1f;
+
+    /// <summary>Iron Flask: how much more a blood vial heals (0.5 = 50 % more, rounded to whole health).</summary>
+    public float IronFlaskHeal { get; init; } = 0.5f;
+
+    /// <summary>Silver Rosary: health every kill gives back to the player who made it.</summary>
+    public int SilverRosaryHeal { get; init; } = 3;
+
+    /// <summary>Quickdraw Holster: how much shorter a reload of a ranged weapon takes (0.3 = 30 % less time). Below 1.</summary>
+    public float QuickdrawHolsterReload { get; init; } = 0.3f;
 }
 
 /// <summary>Skills (skills draft, section 1): a skill point every so many levels.</summary>

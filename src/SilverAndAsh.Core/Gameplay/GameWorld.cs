@@ -1442,7 +1442,7 @@ public sealed class GameWorld
         switch (pickup.Kind)
         {
             case ConsumableKind.BloodVial:
-                player.Heal(Balance.BloodVial.Heal, _events);
+                player.Heal(player.VialHeal(Balance.BloodVial.Heal), _events);
                 break;
             case ConsumableKind.ConsecratedAmmo:
                 player.Consecrate(Balance.ConsecratedAmmo.Duration);
@@ -1840,6 +1840,12 @@ public sealed class GameWorld
         if (wasAlive && experience > 0)
         {
             attacker.AddExperience(experience, _events);
+        }
+
+        // Every kill of an enemy - Gorm, too - heals the one who made it if he carries the Silver Rosary (issue #195).
+        if (wasAlive && target is IEnemy { IsDead: true })
+        {
+            attacker.HealByKill(_events);
         }
 
         return counted;

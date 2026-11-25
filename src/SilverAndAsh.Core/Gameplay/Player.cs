@@ -390,8 +390,8 @@ public sealed partial class Player
     /// <summary>The most health the player can have.</summary>
     public int MaxHealth => _player.MaxHealth + BonusMaxHealth;
 
-    /// <summary>Top walking speed on the ground in m/s (for drawing, e.g. how much the weapons bob).</summary>
-    public float WalkSpeed => _player.MaxSpeed;
+    /// <summary>Top walking speed on the ground in m/s - faster with Hunter's Boots (issue #195). Also for drawing, e.g. how much the weapons bob.</summary>
+    public float WalkSpeed => _player.MaxSpeed * ItemEffects.SpeedFactor(_items, _balance.Items);
 
     /// <summary>True at 0 health: the player can no longer move, look around or attack.</summary>
     public bool IsDead => Health == 0;
@@ -1075,7 +1075,7 @@ public sealed partial class Player
         var ranged = Ranged;
         if (reloadPressed || (shootPressed && ranged.Magazine.Rounds == 0))
         {
-            if (ranged.Magazine.StartReload())
+            if (ranged.Magazine.StartReload(ReloadTicks(ranged.Magazine)))
             {
                 _events.Add(new ReloadStarted(Id) { Place = Position });
             }
@@ -1187,7 +1187,7 @@ public sealed partial class Player
     private float TopSpeed(bool grounded)
     {
         var air = grounded || IsExhausted ? 1f : _player.AirSpeedMultiplier;
-        return _player.MaxSpeed * air * SpeedFactor;
+        return WalkSpeed * air * SpeedFactor;
     }
 
     // 1 normally, e.g. 1.2 with the perfect jump bonus or 0.8 when exhausted.

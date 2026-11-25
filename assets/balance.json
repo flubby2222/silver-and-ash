@@ -412,5 +412,12 @@
 
   "skills": {                           // skill points to learn skills with (issue #502)
     "levelsPerPoint": 3                 // a point on every level that is a multiple of this (3: levels 3, 6, 9 ...); at most 20
+  },
+
+  "items": {                            // passive items, for the player who carries them (issue #195); 0 = no effect
+    "huntersBootsSpeed": 0.1,           // Hunter's Boots: 10 % more top speed (ground and air)
+    "ironFlaskHeal": 0.5,               // Iron Flask: a blood vial heals 50 % more (rounded to whole health)
+    "silverRosaryHeal": 3,              // Silver Rosary: health back for every kill
+    "quickdrawHolsterReload": 0.3       // Quickdraw Holster: a reload takes 30 % less time; below 1
   }
 }

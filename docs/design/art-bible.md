@@ -231,6 +231,18 @@ Regel für die Grabeskälte an einem Gegner, im Spiel seit Issue #775 (gewählt 
 
 Die Probe liegt im Branch `feat/statuseffekte-probe-616`, Ordner `design/proben/grafik/statuseffekte-616/`.
 
+### Funken von Stun (Issue #778, nach Probe #616 Variante A)
+
+Regel für die Betäubung an einem Gegner, im Spiel seit Issue #778 (abgenommen als „Stun A“):
+
+- **Form statt Farbe:** drei Plus-Funken kreisen **über dem Kopf**, nie auf dem Körper und nie am Boden. Damit unterscheidet sich Stun von Grave Chill (Flecken auf dem Körper, Scheibe am Boden) und von Flamme und Markierung (kreisende Punkte um den Körper) durch Form und Ort, obwohl Eisen 6 und Stoff 7 fast gleich hell sind.
+- **Funke:** ein Plus, das zum Betrachter zeigt. Die Mitte ist Eisen 7 (198, 205, 210), die vier Arme sind Eisen 6 (163, 175, 187). Beim Ghul ist ein Arm 7,5 cm lang und 3 cm dick, wie in der Probe. Bei 4 m ist ein Funke etwa 6 Pixel breit, bei 10 m etwa 3 Pixel.
+- **Ring:** waagerecht, über der Mitte des Kopfes (beim Ghul 0,33 m vor den Füßen, weil sein Kopf vorne hängt), 0,10 m über dem Scheitel, Radius 0,30 m beim Ghul. Ring und Abstand wachsen mit dem Körperradius wie die Frostscheibe: bei Gorm 0,675 m Radius und 0,225 m über dem Kopf. Der Ring ist nie breiter als der Körperradius. Die Funken wachsen mit Gorm mit, werden bei der kleineren Fledermaus aber nicht kleiner als beim Ghul.
+- **Bewegung:** eine Umdrehung je Sekunde, die drei Funken ein Drittel auseinander. Das ist vorläufig, weil die Probe ein Standbild ist.
+- **Kein Körperton:** Stun tönt den Körper nicht. Beim gleichzeitigen Grave Chill bleibt der Kälteton.
+- **Restzeit über den Funken:** Hat ein Gegner Stun, steht die Restzeit so weit höher, wie die Funken über den Kopf reichen. Das ist vorläufig: In der Probe teilen sich Funken und Zahl den Platz, im Spiel verdeckte die Zahl einen Funken. Ohne Stun steht sie wie bisher.
+- **Unbeleuchtet, aber im Nebel**, wie der Frost. **Kein Verlauf:** Die Funken sind vom ersten bis zum letzten Tick der Betäubung da und mit ihrem Ende sofort weg. Bei Gorm sind das 0,2 s.
+
 ## Gelernte Regeln
 
 | Nr. | Datum | Stück | Was war falsch | Regel |
