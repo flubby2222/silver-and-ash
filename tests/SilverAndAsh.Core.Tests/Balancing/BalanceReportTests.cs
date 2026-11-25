@@ -98,17 +98,44 @@ public class BalanceReportTests
             Value(figures, BalanceReport.Time, "Walking (min)"), 6);
     }
 
-    [Theory]
-    [InlineData(0, 0)]
-    [InlineData(99, 0)]
-    [InlineData(100, 1)]
-    [InlineData(224, 1)]
-    [InlineData(225, 2)]
-    [InlineData(381, 3)]
-    public void The_level_reached_follows_the_experience_curve(int experience, int level)
+    /// <summary>Level 1 and the levels at and around every threshold of the standard table (9, 10, 11, 19, 20, 21).</summary>
+    public static TheoryData<int> LevelsAroundThresholds()
     {
-        // 100 to level 1, then 125, 156 ... (as the player counts it).
-        Assert.Equal(level, BalanceReport.LevelReached(experience, Balance.Default.Experience));
+        var levels = new TheoryData<int> { 1 };
+        foreach (var row in Balance.Default.Experience.LevelCosts.Skip(1))
+        {
+            levels.Add(row.FromLevel - 1);
+            levels.Add(row.FromLevel);
+            levels.Add(row.FromLevel + 1);
+        }
+
+        return levels;
+    }
+
+    [Theory]
+    [MemberData(nameof(LevelsAroundThresholds))]
+    public void The_level_reached_follows_the_rows_of_the_level_costs(int level)
+    {
+        // Issue #503: the experience for a level is summed up straight from the rows of the standard table - one
+        // point less is one level less.
+        var rows = Balance.Default.Experience.LevelCosts;
+        var needed = Enumerable.Range(0, level).Sum(below => rows.Last(row => row.FromLevel <= below).Cost);
+
+        Assert.Equal(level, BalanceReport.LevelReached(needed, Balance.Default.Experience));
+        Assert.Equal(level - 1, BalanceReport.LevelReached(needed - 1, Balance.Default.Experience));
+    }
+
+    [Fact]
+    public void The_report_counts_levels_exactly_as_a_player_climbs_them()
+    {
+        // One rule for game and report (issue #503): any amount of experience leads a fresh player to the same level.
+        for (var experience = 0; experience <= 20000; experience += 37)
+        {
+            var player = new Player(LevelParser.Parse("P"));
+            player.AddExperience(experience, []);
+
+            Assert.Equal(player.Level, BalanceReport.LevelReached(experience, Balance.Default.Experience));
+        }
     }
 
     [Fact]
