@@ -54,5 +54,10 @@ public static class EffectColours
         ("impact spark", Brass, ImpactSpark),
         ("impact mark", Stone, ImpactMark),
         .. StatusLooks.All.Select(look => ($"status {look.Kind}", look.Ramp, look.Colour)),
+
+        // The frost of Grave Chill on the body and the floor (issue #775).
+        ("frost rime", Cloth, FrostLook.Rime),
+        ("frost cold", Cloth, FrostLook.Cold),
+        ("frost dark rime", Cloth, FrostLook.DarkRime),
     ];
 }

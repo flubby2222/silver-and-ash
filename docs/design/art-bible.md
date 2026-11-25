@@ -216,6 +216,21 @@ Regel für den Schuss einer Fernwaffe in der Ich-Sicht (Pistole; für Rifle und 
 
 Die Probe liegt in `design/proben/effekte/muendungsfeuer/`.
 
+### Frost von Grave Chill (Issue #775, nach Probe #616 Variante A)
+
+Regel für die Grabeskälte an einem Gegner, im Spiel seit Issue #775 (gewählt am 2026-11-23 als „Chill A“):
+
+- **Körper:** um 40 % zur Kälte (Stoff 6) getönt. Ein Treffer-Blitz und das rote Aufglühen vor einem Angriff gehen vor; das Glühen von Gorms Keule und Haken bleibt sichtbar.
+- **Reifflecken:** 14 Würfel von 3 cm in Reif hell (Stoff 7) auf der Seite, die zum Betrachter zeigt, immer dieselbe Verteilung.
+- **Bodenscheibe:** ein Kreis flach auf dem Boden unter dem Gegner. Seine Größe richtet sich nach dem Körper: Der Radius ist 1,55-mal der Körperradius (0,62 m beim Ghul wie in der Probe, 1,4 m bei Gorm, 0,54 m bei der Fledermaus). Grund ist das Urteil der Leitung vom 2026-11-25, vorläufig: Bei fest 0,62 m verschwand die Scheibe zwischen Gorms Beinen. Den Rand bildet ab 85 % des Radius Reif hell. Innen liegt ein Punktmuster aus Stoff 6 und Stoff 5, je zur Hälfte. Bei einer Fledermaus liegt die Scheibe auf dem Boden unter ihr, nicht an ihr.
+- **Unbeleuchtet, aber im Nebel:** Flecken und Scheibe hellt die Laterne nicht auf und dunkelt sie nicht ab; nur der Nebel deckt sie zu.
+- **Kein Verlauf:** Der Frost sieht im ersten und im letzten Tick gleich aus und ist mit dem Ende des Effekts sofort weg.
+- **Farben nur aus Stoff:** kein Violett (das gehört Leech), kein Rot.
+- **Ausnahme vom Punktmuster in der Textur:** Das Muster der Scheibe ist am Bildpixel festgemacht, wie die Körnung, und wandert deshalb nicht mit. Es ist die einzige Ausnahme von „Dithering in der Textur: keines“ (vorläufig, die Probe zeichnet es so; Urteil der Leitung offen).
+- **Neue Formen** (etwa Stun) kommen als eigener Eintrag in die Tabelle der Formen (`StatusForm` in `StatusLooks`, Zeichnung in `StatusView`), nicht als Zweig in der Frost-Zeichnung.
+
+Die Probe liegt im Branch `feat/statuseffekte-probe-616`, Ordner `design/proben/grafik/statuseffekte-616/`.
+
 ## Gelernte Regeln
 
 | Nr. | Datum | Stück | Was war falsch | Regel |

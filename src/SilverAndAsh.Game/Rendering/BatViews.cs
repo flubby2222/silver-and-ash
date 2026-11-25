@@ -106,11 +106,12 @@ internal sealed class ModelBatView(TexturedModel model, LevelShader shader) : IB
         BatPose.Turns(angles, _turns);
         model.Rig.Pose(_turns, figure, _frames);
 
-        // Before a spit it glows up red - the warning, a tint in code (the model has no red). A hit flash wins.
+        // Before a spit it glows up red - the warning, a tint in code (the model has no red). A hit flash wins; the
+        // tint of a status (the frost of Grave Chill, issue #775) gives way to both.
         var glow = state.IsDead ? 0f : bat.SpitWindUpProgress;
         var (tint, amount) = state.Flash > 0f ? (FlashColor, state.Flash)
             : glow > 0f ? (GlowColor, 0.25f + 0.65f * glow)
-            : (FlashColor, 0f);
+            : StatusView.Tint(StatusLooks.TintOf(bat));
         if (amount > 0f)
         {
             shader.SetFlash(tint, amount);

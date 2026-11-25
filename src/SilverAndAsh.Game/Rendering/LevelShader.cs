@@ -15,6 +15,7 @@ internal sealed class LevelShader : IDisposable
     private readonly int _flashLocation;
     private readonly int _glowLocation;
     private readonly int _seeThroughLocation;
+    private readonly int _patternLocation;
 
     public LevelShader(string shaderDirectory)
     {
@@ -34,8 +35,10 @@ internal sealed class LevelShader : IDisposable
         _flashLocation = Raylib.GetShaderLocation(Shader, "flash");
         _glowLocation = Raylib.GetShaderLocation(Shader, "glow");
         _seeThroughLocation = Raylib.GetShaderLocation(Shader, "seeThrough");
+        _patternLocation = Raylib.GetShaderLocation(Shader, "pattern");
         SetFloat("glow", 0f);
         SetInt("seeThrough", 0);
+        Raylib.SetShaderValue(Shader, _patternLocation, Vector4.Zero, ShaderUniformDataType.Vec4);
 
         // These values do not change while playing - set them once.
         SetFloat("fogStart", LookSettings.FogStart);
@@ -102,6 +105,19 @@ internal sealed class LevelShader : IDisposable
         // As with the flash: triangles collected before must not get the new value.
         Rlgl.DrawRenderBatchActive();
         Raylib.SetShaderValue(Shader, _glowLocation, Math.Clamp(amount, 0f, 1f), ShaderUniformDataType.Float);
+    }
+
+    /// <summary>
+    /// Lets what is drawn next show a dot pattern of two colours (issue #775): where the 4 x 4 pattern of the small picture
+    /// lies below <paramref name="share"/> (0..1, 0 = no pattern), the surface takes <paramref name="color"/>, unshaded;
+    /// elsewhere its own colour. Pinned to the pixels of the picture, like the pattern of the picture variants.
+    /// </summary>
+    public void SetPattern(Color color, float share)
+    {
+        // As with the flash: triangles collected before must not get the new value.
+        Rlgl.DrawRenderBatchActive();
+        var value = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, Math.Clamp(share, 0f, 1f));
+        Raylib.SetShaderValue(Shader, _patternLocation, value, ShaderUniformDataType.Vec4);
     }
 
     /// <summary>

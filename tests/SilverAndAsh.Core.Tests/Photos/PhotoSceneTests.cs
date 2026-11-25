@@ -138,6 +138,13 @@ public class PhotoSceneTests
             "showroom-stairs", "course-boss-stairs", "showroom-boss-door",
             "ghoul-marked-4m", "ghoul-marked-late", "ghoul-burning-4m", "ghoul-chilled-4m",
             "ghoul-stunned-4m", "ghouls-chilled-stunned",
+            "ghoul-chilled-10m",
+            "ghoul-chilled-late",
+            "ghoul-chill-ended",
+            "ghouls-chilled-burning",
+            "ghouls-chilled-marked",
+            "bat-chilled-4m",
+            "gorm-chilled",
             "axe-rest", "axe-swing-04", "axe-swing-end", "axe-charged-release", "showroom-axe", "hud-axe", "course-1-axe",
         ];
 
