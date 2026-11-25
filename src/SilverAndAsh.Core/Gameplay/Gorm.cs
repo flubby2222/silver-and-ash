@@ -273,13 +273,13 @@ public sealed class Gorm : IEnemy
         return onHeadHeight && forward > 0f && side <= BodySizes.Gorm.HeadWidth / 2f ? HitZone.BossHead : HitZone.Body;
     }
 
-    public void TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
+    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
         ArgumentNullException.ThrowIfNull(events);
         if (IsDead)
         {
-            return;
+            return 0;
         }
 
         // The club is stuck: every hit counts double (or what the balancing says).
@@ -301,7 +301,7 @@ public sealed class Gorm : IEnemy
             LyingHook = null;
             _stones.Clear();
             events.Add(new GormDied(Id) { Place = Position });
-            return;
+            return taken;
         }
 
         // Half his health gone: he breaks off whatever he is doing and roars - once.
@@ -316,6 +316,8 @@ public sealed class Gorm : IEnemy
             Begin(GormState.Roaring, _gorm.RoarTime);
             events.Add(new GormRoared(Id) { Place = Position });
         }
+
+        return taken;
     }
 
     /// <summary>

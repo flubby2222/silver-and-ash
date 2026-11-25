@@ -27,6 +27,9 @@ public interface ITarget
     /// <summary>Which zone a hit at <paramref name="point"/> (on the body's surface) belongs to.</summary>
     HitZone ZoneAt(Vector3 point);
 
-    /// <summary>Takes <paramref name="damage"/> and reports what happened into <paramref name="events"/>.</summary>
-    void TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false);
+    /// <summary>
+    /// Takes <paramref name="damage"/> and reports what happened into <paramref name="events"/>. Returns the damage its hit
+    /// event reports (issue #510: what Leech takes its share of) - 0 if it ignored the hit.
+    /// </summary>
+    int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false);
 }

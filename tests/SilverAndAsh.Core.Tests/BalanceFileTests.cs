@@ -221,6 +221,8 @@ public class BalanceFileTests
     [InlineData("""{ "statusEffects": { "graveChill": { "slow": 1.5 } } }""", "statusEffects.graveChill.slow")]
     [InlineData("""{ "statusEffects": { "stun": { "seconds": 5.5 } } }""", "statusEffects.stun.seconds")]
     [InlineData("""{ "statusEffects": { "stun": { "gormImmuneSeconds": 61 } } }""", "statusEffects.stun.gormImmuneSeconds")]
+    [InlineData("""{ "statusEffects": { "leech": { "share": 1.01 } } }""", "statusEffects.leech.share")]
+    [InlineData("""{ "statusEffects": { "leech": { "share": 3 } } }""", "statusEffects.leech.share")]
     [InlineData("""{ "skills": { "levelsPerPoint": 21 } }""", "skills.levelsPerPoint")]
     [InlineData("""{ "statusEffects": { "weaponShare": 1.5 } }""", "statusEffects.weaponShare")]
     [InlineData("""{ "statusEffects": { "weaponHitChance": { "worn": 1.1 } } }""", "statusEffects.weaponHitChance.worn")]
@@ -571,6 +573,31 @@ public class BalanceFileTests
         var result = BalanceFile.Parse(json);
 
         Assert.Equal(new StunBalance { Seconds = (float)seconds, GormStaggerSeconds = (float)stagger, GormImmuneSeconds = (float)immune }, result.Balance.StatusEffects.Stun);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Theory]
+    [InlineData("0")]       // a Leech that heals nothing
+    [InlineData("-0.1")]    // one that would hurt the attacker
+    public void A_leech_share_of_zero_or_below_falls_back_to_its_standard(string value)
+    {
+        // Issue #510.
+        var result = BalanceFile.Parse($$"""{ "statusEffects": { "leech": { "share": {{value}} } } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains("statusEffects.leech.share"));
+    }
+
+    [Theory]
+    [InlineData(0.01)]
+    [InlineData(0.1)]
+    [InlineData(1)]         // all the damage back as health: the edge, still allowed
+    public void A_leech_share_within_its_limits_is_read(double share)
+    {
+        var json = string.Create(CultureInfo.InvariantCulture, $$"""{ "statusEffects": { "leech": { "share": {{share}} } } }""");
+        var result = BalanceFile.Parse(json);
+
+        Assert.Equal(new LeechBalance { Share = (float)share }, result.Balance.StatusEffects.Leech);
         Assert.Empty(result.Warnings);
     }
 

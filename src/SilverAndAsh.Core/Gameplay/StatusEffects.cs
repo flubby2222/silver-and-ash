@@ -14,6 +14,12 @@ public enum StatusKind
 
     /// <summary>Stun: the enemy stands still and attacks no more while it lasts; Gorm only staggers (issue #509, <see cref="Gameplay.Stun"/>).</summary>
     Stun,
+
+    /// <summary>
+    /// Leech: a share of a hit's damage heals the player who dealt it, at once (issue #510, <see cref="Gameplay.Leech"/>).
+    /// It acts on that player, never sits on an enemy and has no duration.
+    /// </summary>
+    Leech,
 }
 
 /// <summary>
