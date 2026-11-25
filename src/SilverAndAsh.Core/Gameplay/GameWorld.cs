@@ -1774,14 +1774,14 @@ public sealed class GameWorld
         });
         var wasAlive = target.IsHittable;
         var eventsBefore = _events.Count;
-        target.TakeDamage(result.Amount, _events, result.IsCritical);
+        var taken = target.TakeDamage(result.Amount, _events, result.IsCritical);
 
         // The target's own hit event does not say what hit it; this one does (issue #267: the blade sound only for the
         // blade). Only if the hit counted - a target that ignores it (already down) reports nothing.
         var counted = _events.Count > eventsBefore;
         if (counted)
         {
-            dealt = result.Amount;
+            dealt = taken;
             _events.Insert(eventsBefore + 1, new TargetHitBy(target.Id, attacker.Id, hit.Weapon));
         }
 
@@ -1812,12 +1812,13 @@ public sealed class GameWorld
     /// <summary>
     /// Puts a status effect of <paramref name="kind"/> from <paramref name="source"/> on <paramref name="enemy"/> for its
     /// duration from the balance values (issue #504), refreshing one that already lasts. A dead enemy takes none; then
-    /// this returns false - as for an enemy immune to the kind (issue #509: Gorm after a stun); neither reports anything.
+    /// this returns false - as for an enemy immune to the kind (issue #509: Gorm after a stun) or a kind that acts on the
+    /// attacker (issue #510: Leech); none of them reports anything.
     /// Weapons with an effect set it off through here (issue #505); tests may call it directly.
     /// </summary>
     internal bool ApplyStatus(IEnemy enemy, StatusKind kind, Player source)
     {
-        if (enemy.IsDead)
+        if (enemy.IsDead || WeaponEffects.ActsOnTheAttacker(kind))   // Leech (issue #510) is no state on the enemy
         {
             return false;
         }

@@ -51,13 +51,13 @@ public sealed class TrainingDummy : ITarget
     /// Takes <paramref name="damage"/>. Reports <see cref="DummyHit"/> and, at 0 health, <see cref="DummyKnockedDown"/>
     /// into <paramref name="events"/>. A dummy that is already down ignores hits.
     /// </summary>
-    public void TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
+    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
         ArgumentNullException.ThrowIfNull(events);
         if (IsDown)
         {
-            return;
+            return 0;
         }
 
         Health = Math.Max(0, Health - damage);
@@ -68,6 +68,8 @@ public sealed class TrainingDummy : ITarget
             _downTicksLeft = _downTicks;
             events.Add(new DummyKnockedDown(Id));
         }
+
+        return damage;
     }
 
     /// <summary>Which zone a hit at <paramref name="point"/> (on the body's surface) belongs to.</summary>

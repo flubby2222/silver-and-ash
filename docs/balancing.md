@@ -112,6 +112,8 @@ Ergebnis hier eintragen, neueste Runde oben.
 
 Der Wert muss größer als 0 sein; liegt er außerhalb, warnt der Lader und nimmt den Standardwert.
 
+**Welcher Schaden zählt (vorläufig):** der, den das Treffer-Ereignis des Gegners meldet. Gegen Gorm mit festsitzender Keule ist das der verdoppelte Schaden. Beim tödlichen Treffer meldet der Ghul heute den ganzen Schaden, Fledermaus und Gorm nur das restliche Leben – Leech zählt jeweils das. Die Meldungen anzugleichen ist eine eigene Aufgabe.
+
 **Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Wie bei #507 bis #509 rechnet der Report keine Statuseffekte ein, und kein Bot-Modus zählt sie.
 
 **Offen:** Ein Lauf im Spiel steht aus. Leech greift nur, wenn der Treffer den Effekt auslöst (Chance der Seltenheit, 10 bis 25 %); ob das zusammen mit 2,5 % spürbar ist, urteilt der Mensch im Spieltest.

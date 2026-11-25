@@ -47,17 +47,37 @@ public class LeechTests
     /// </summary>
     private static GameWorld WorldWithLeech(WeaponKind weapon, Balance balance, string map = Corridor)
     {
+        var world = FoundWithLeech(weapon, seed => new GameWorld(LevelParser.Parse(map), seed, balance));
+        world.Player.Equip(0, weapon);
+        Face(world.Player, Torso(world.Ghouls[0].Position));
+        return world;
+    }
+
+    /// <summary>The first world <paramref name="make"/> builds (seeds from 1 on) in which a find of <paramref name="weapon"/> rolls Leech.</summary>
+    private static GameWorld FoundWithLeech(WeaponKind weapon, Func<int, GameWorld> make)
+    {
         for (var seed = 1; ; seed++)
         {
             Assert.True(seed < 200, $"No seed gives a {weapon} with Leech.");
-            var world = new GameWorld(LevelParser.Parse(map), seed, balance);
+            var world = make(seed);
             if (world.WeaponEffects.RollFind(weapon) is StatusKind.Leech)
             {
-                world.Player.Equip(0, weapon);
-                Face(world.Player, Torso(world.Ghouls[0].Position));
                 return world;
             }
         }
+    }
+
+    /// <summary>
+    /// Checks one tick's heal of <paramref name="player"/>: what was saved before plus the share of <paramref name="damage"/>
+    /// (the damage the hit event reported), whole points healed and reported, the fraction saved.
+    /// </summary>
+    private static void AssertHealedFor(Player player, int healthBefore, decimal savedBefore, int damage, IEnumerable<GameEvent> events)
+    {
+        var health = savedBefore + (damage * Share);
+        var whole = (int)decimal.Floor(health);
+        Assert.Equal(whole, HealedIn(events));
+        Assert.Equal(healthBefore + whole, player.Health);
+        Assert.Equal(health - whole, player.LeechSaved);
     }
 
     /// <summary>
@@ -234,6 +254,133 @@ public class LeechTests
         Assert.True(shots.Sum(DamageIn) > 0, "No shot hit - the test would prove nothing.");
         Assert.Equal(before, player.Health);
         Assert.Equal(0m, player.LeechSaved);
+    }
+
+    [Fact]
+    public void A_club_swing_heals_by_the_damage_it_dealt()
+    {
+        var world = FoundWithLeech(WeaponKind.Club, seed => new GameWorld(LevelParser.Parse("P\nG"), seed, Always));
+        var player = world.Player;
+        player.EquipMelee(WeaponKind.Club);
+        Face(player, Torso(world.Ghouls[0].Position));
+        player.TakeDamage(player.MaxHealth / 2, []);
+        var before = player.Health;
+
+        world.Tick(PlayerInput.None with { Melee = true });
+        var events = world.Events.ToList();
+        events.AddRange(Run(world, PlayerInput.None, SimulationClock.TicksPerSecond, () => world.Events.Any(e => e is GhoulHit)));
+
+        var damage = DamageIn(events);
+        Assert.True(damage * Share >= 1m, "The swing gives no whole point - the test would prove nothing.");
+        AssertHealedFor(player, before, 0m, damage, events);
+    }
+
+    // --- Leech counts what the enemy's hit event reports (provisional: the reports are not aligned between the kinds) ---
+
+    /// <summary>Gorm's hall with a player who survives his attacks and a rifle with Leech in ranged place 0.</summary>
+    private static GameWorld GormHallWithLeech(Balance balance)
+    {
+        var world = FoundWithLeech(WeaponKind.Rifle, seed => GormHallWorld(seed: seed, balance: balance));
+        world.Player.Equip(0, WeaponKind.Rifle);
+        EnterGormHall(world);
+        world.Player.TakeDamage(world.Player.MaxHealth / 2, []);
+        return world;
+    }
+
+    /// <summary>Every hit sets its effect off, the player survives Gorm.</summary>
+    private static readonly Balance AlwaysTough = Always with { Player = Tough.Player };
+
+    /// <summary>Turns the player to Gorm's body, fires the rifle once and returns that tick's events.</summary>
+    private static List<GameEvent> ShootGorm(GameWorld world)
+    {
+        var gorm = world.Gorm!;
+        Face(world.Player, gorm.Position + new Vector3(0f, BodySizes.Gorm.Height * 0.4f, 0f));
+        world.Tick(Shoot);
+        var events = world.Events.ToList();
+        Assert.Contains(events, e => e is GormHit);
+        return events;
+    }
+
+    [Fact]
+    public void A_hit_on_gorm_heals_by_the_damage_his_hit_reports()
+    {
+        var world = GormHallWithLeech(AlwaysTough);
+        var player = world.Player;
+        Assert.NotEqual(GormState.Stuck, world.Gorm!.State);
+        var (before, saved) = (player.Health, player.LeechSaved);
+
+        var events = ShootGorm(world);
+
+        var damage = events.OfType<GormHit>().Sum(hit => hit.Damage);
+        Assert.True(damage * Share >= 1m, "The shot gives no whole point - the test would prove nothing.");
+        AssertHealedFor(player, before, saved, damage, events);
+    }
+
+    [Fact]
+    public void A_hit_on_gorm_with_his_club_stuck_heals_by_the_raised_damage_his_hit_reports()
+    {
+        // The shock wave reaches nobody: after every hammer blow the club sticks.
+        var balance = AlwaysTough with { Gorm = AlwaysTough.Gorm with { ShockwaveRadius = 1f } };
+        var world = GormHallWithLeech(balance);
+        var player = world.Player;
+        var gorm = world.Gorm!;
+        Assert.True(RunUntil(world, PlayerInput.None, 60 * SimulationClock.TicksPerSecond, _ => gorm.State == GormState.Stuck), "His club never stuck.");
+        var (before, saved) = (player.Health, player.LeechSaved);
+
+        var events = ShootGorm(world);
+
+        // The stuck club raises the damage after the world has worked it out: only his report knows the real amount.
+        var damage = events.OfType<GormHit>().Sum(hit => hit.Damage);
+        var unraised = (int)MathF.Round(damage / balance.Gorm.StuckDamageMultiplier, MidpointRounding.AwayFromZero);
+        Assert.True(
+            decimal.Floor(saved + (damage * Share)) != decimal.Floor(saved + (unraised * Share)),
+            "The raised damage heals as much as the plain one - the test would prove nothing.");
+        AssertHealedFor(player, before, saved, damage, events);
+    }
+
+    [Fact]
+    public void The_hit_that_kills_a_bat_heals_by_the_health_it_had_left()
+    {
+        // A bat has less health than a rifle shot deals: its hit reports only what it had left, and Leech counts that.
+        var world = FoundWithLeech(WeaponKind.Rifle, seed => new GameWorld(LevelParser.Parse(BatRoom), seed, AlwaysTough));
+        var player = world.Player;
+        player.Equip(0, WeaponKind.Rifle);
+        player.TakeDamage(player.MaxHealth / 2, []);
+        var bat = world.Bats[0];
+        var (before, saved) = (player.Health, player.LeechSaved);
+
+        Face(player, bat.Centre);
+        world.Tick(Shoot);
+        var events = world.Events.ToList();
+
+        Assert.True(bat.IsDead, "The shot did not kill the bat - the test would prove nothing.");
+        var damage = events.OfType<BatHit>().Sum(hit => hit.Damage);
+        Assert.True(damage < Balance.Default.Rifle.Damage, "The bat's hit reports the whole shot - the test would prove nothing.");
+        Assert.True(
+            decimal.Floor(damage * Share) != decimal.Floor(Balance.Default.Rifle.Damage * Share),
+            "The whole shot heals as much as what the bat had left - the test would prove nothing.");
+        AssertHealedFor(player, before, saved, damage, events);
+    }
+
+    /// <summary>A 16 x 10 m room, the bat 14 m from the player.</summary>
+    private static readonly string BatRoom = string.Join('\n',
+        "........",
+        "........",
+        "P......B",
+        "........",
+        "........");
+
+    [Fact]
+    public void Leech_put_on_an_enemy_directly_takes_no_hold_and_reports_nothing()
+    {
+        // Leech acts on the attacker; it never sits on an enemy - not even when asked for directly.
+        var world = new GameWorld(LevelParser.Parse(Corridor), 1, Always);
+        var ghoul = world.Ghouls[0];
+
+        Assert.False(world.ApplyStatus(ghoul, StatusKind.Leech, world.Player));
+
+        Assert.False(ghoul.Status.Has(StatusKind.Leech));
+        Assert.DoesNotContain(world.Events, e => e is StatusApplied);
     }
 
     // --- The player alone: what one player cannot show in the world yet ---
