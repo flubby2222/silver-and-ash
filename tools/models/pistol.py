@@ -162,11 +162,13 @@ def build_stock():
 def build_barrel():
     part = Part("barrel", (0, 0, 0), UV, parent="stock")
     pts = [C(0, 0.007, 0.02), C(0, 0.007, 0.09), C(0, 0.007, 0.152)]
+    # Seit #416 rundum geschlossen (Regel 21): Lauf und Silberring enden mit ebenen Kappen. Der Lauf endet bei 0,152
+    # im Ring (0,147 bis 0,158), der Ring traegt vorn die Bohrung.
     part.loft(tube(pts, [(0.0088, 0.0088, 0.0088), (0.0078, 0.0078, 0.0078), (0.0072, 0.0072, 0.0072)], 8),
-              "iron", cap_end=False)
+              "iron", flat_end=True)
     # Muendung: Silberring und dunkle Bohrung.
     part.loft(tube([C(0, 0.007, 0.147), C(0, 0.007, 0.158)], [(0.0092, 0.0092, 0.0092)] * 2, 8), "silver",
-              cap_end=False)
+              flat_end=True)
     part.loft(tube([C(0, 0.007, 0.158), C(0, 0.007, 0.1585)], [(0.0045, 0.0045, 0.0045)] * 2, 8), "bore")
     return part
 
