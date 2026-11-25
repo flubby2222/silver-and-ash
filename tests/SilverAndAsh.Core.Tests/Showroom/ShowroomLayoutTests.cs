@@ -88,16 +88,18 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
-    public void Every_wall_piece_stands_once_per_section_in_the_corridor_part_and_every_other_piece_once()
+    public void Every_wall_piece_stands_once_per_section_in_the_corridor_part_the_boss_door_in_the_room_and_every_other_piece_once()
     {
+        // Issue #599: the boss door is the 6 m portal as in the game, which the corridor's 3.5 m ceiling would cut off.
         foreach (var piece in ShowroomPieces.All)
         {
             var places = Layout.Placed.Where(place => ReferenceEquals(place.Piece, piece)).ToList();
-            if (piece is WallPiece)
+            if (piece is WallPiece wall)
             {
+                var part = wall.Kind == DoorKind.Boss ? ShowroomPart.Room : ShowroomPart.Corridor;
                 Assert.Equal(3, places.Count);
                 Assert.Equal([0, 1, 2], places.Select(place => place.Section).Order());
-                Assert.All(places, place => Assert.Equal(ShowroomPart.Corridor, place.Part));
+                Assert.All(places, place => Assert.Equal(part, place.Part));
             }
             else
             {
@@ -228,15 +230,51 @@ public class ShowroomLayoutTests
             Assert.Equal(section.DoorRow, door.Z);
             Assert.InRange(door.X, section.StartOf(place.Part), section.StartOf(place.Part) + section.Length - 1);
 
-            // Wall either side of the doorway, the closet behind it.
+            // Wall either side of the doorway (over all its cells), the closet behind it.
+            var last = door.Cells.Max(cell => cell.X);
             Assert.True(Layout.Level[door.X - 1, door.Z].IsSolid);
-            Assert.True(Layout.Level[door.X + 1, door.Z].IsSolid);
-            Assert.False(Layout.Level[door.X, door.Z - 1].IsSolid);
-            Assert.Equal(section.Variant, Layout.Surfaces.At(door.X, door.Z - 1, SurfaceKind.Wall));
-            Assert.Equal(section.Variant, Layout.Surfaces.At(door.X, door.Z, SurfaceKind.Wall));
+            Assert.True(Layout.Level[last + 1, door.Z].IsSolid);
+            foreach (var (x, z) in door.Cells)
+            {
+                Assert.Equal(door.Z, z);
+                Assert.False(Layout.Level[x, z].IsSolid);
+                Assert.False(Layout.Level[x, z - 1].IsSolid);
+                Assert.Equal(section.Variant, Layout.Surfaces.At(x, z - 1, SurfaceKind.Wall));
+                Assert.Equal(section.Variant, Layout.Surfaces.At(x, z, SurfaceKind.Wall));
 
-            // As in the game, where every door cell - the boss gate's too - has the corridor ceiling.
-            Assert.Equal(Cell.DefaultCeilingHeight, Layout.Level[door.X, door.Z].CeilingHeight);
+                // As in the game (LevelGenerator.DoorCell): the corridor ceiling, the boss portal's cells 6 m (issue #599).
+                Assert.Equal(LevelGenerator.DoorCell(door.Kind).CeilingHeight, Layout.Level[x, z].CeilingHeight);
+                Assert.Equal(door.Kind == DoorKind.Boss ? RoomTemplate.RoomCeilingHeight : Cell.DefaultCeilingHeight, Layout.Level[x, z].CeilingHeight);
+            }
+        }
+    }
+
+    [Fact]
+    public void The_boss_door_takes_two_cells_as_in_the_game_so_the_portal_stands_in_it()
+    {
+        // Issue #599: one cell wide, the boss door showed the stand-in instead of the portal of #568. Built as
+        // LevelGenerator widens it (the second cell in MoreCells), under 6 m on both sides as between antechamber and
+        // boss room, the closet behind under the same ceiling, so no ceiling cuts into the portal.
+        var bossDoors = Layout.Doors.Where(door => door.Kind == DoorKind.Boss).ToList();
+        Assert.Equal(Layout.Sections.Count, bossDoors.Count);
+        foreach (var door in bossDoors)
+        {
+            Assert.Equal([(door.X, door.Z), (door.X + 1, door.Z)], door.Cells);
+            Assert.True(DoorFrameLook.Fits(door.Kind, door.Cells.Count));
+            Assert.True(BossPortalShape.StandsIn(door.Kind, door.Cells.Count));
+            foreach (var (x, z) in door.Cells)
+            {
+                Assert.Equal(RoomTemplate.RoomCeilingHeight, Layout.Level[x, z - 1].CeilingHeight);
+                Assert.Equal(RoomTemplate.RoomCeilingHeight, Layout.Level[x, z + 1].CeilingHeight);
+            }
+        }
+
+        // The world of the showroom puts the solid portal into every one of them (issue #598), in the middle of its cells.
+        var portals = Layout.NewWorld().Level.Portals;
+        Assert.Equal(bossDoors.Count, portals.Count);
+        foreach (var door in bossDoors)
+        {
+            Assert.Single(portals, portal => portal.X == (door.X + 1) * Level.CellSize && portal.Z == (door.Z + 0.5f) * Level.CellSize);
         }
     }
 
@@ -245,7 +283,8 @@ public class ShowroomLayoutTests
     {
         // The lantern is the only light and the fog starts a few metres out (issue #302): from the middle row of the
         // corridor, every door in its north wall is at most two cells away, and the corridor is narrower than the room.
-        foreach (var place in Layout.Placed.Where(place => place.Piece is WallPiece))
+        // The boss door stands in the room's north wall since issue #599 (as the portcullis does) and is not asked here.
+        foreach (var place in Layout.Placed.Where(place => place.Piece is WallPiece && place.Part == ShowroomPart.Corridor))
         {
             var section = Layout.Sections[place.Section];
             var walkway = Layout.Level.CellCenter(place.X, section.MiddleRowOf(ShowroomPart.Corridor));
@@ -754,8 +793,12 @@ public class ShowroomLayoutTests
     {
         foreach (var place in Layout.Placed)
         {
+            // Over the piece's cell; a door's label over the middle of its cells - the boss door's second (issue #599).
+            var columns = place.Piece is WallPiece
+                ? Layout.Doors.Single(door => door.X == place.X && door.Z == place.Z).Cells.Select(cell => cell.X).ToList()
+                : [place.X];
             Assert.Contains(Layout.Labels, label => label.Text == place.Piece.Label
-                && Level.ToGrid(label.Position.X, label.Position.Z).X == place.X);
+                && Level.ToGrid(label.Position.X, label.Position.Z).X == columns[columns.Count / 2]);
         }
 
         Assert.Equal(6, Layout.Labels.Count(label => label.Text.StartsWith("Wall ", StringComparison.Ordinal)));

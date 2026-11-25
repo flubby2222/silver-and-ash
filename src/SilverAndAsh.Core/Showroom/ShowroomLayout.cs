@@ -21,8 +21,8 @@ public sealed record PlacedPiece(ShowroomPiece Piece, int X, int Z, int Section,
 
 /// <summary>
 /// One section of the tour: walls, floor and ceiling all in <paramref name="Variant"/>. Its band runs west to east -
-/// first the corridor part, then the room part, each <paramref name="Length"/> cells long - with the doors in the north
-/// wall of the corridor part (row <paramref name="DoorRow"/>). The room's floor runs from row <paramref name="NorthRow"/>
+/// first the corridor part, then the room part, each <paramref name="Length"/> cells long - with the doors in their north
+/// wall (row <paramref name="DoorRow"/>), the boss door and the portcullis in the room part's. The room's floor runs from row <paramref name="NorthRow"/>
 /// to <paramref name="SouthRow"/>; the corridor is narrower (see <see cref="SouthRowOf"/>), so the lantern reaches its
 /// doors from every step.
 /// </summary>
@@ -57,9 +57,9 @@ public sealed record ShowroomSection(int Index, TextureVariant Variant, int Corr
 /// <summary>
 /// The showroom (issue #283, docs/musterraum.md): a level that shows every model of the game side by side under game
 /// conditions. A tour of three sections, one per texture variant (A, B, C), each with a part at corridor and at room
-/// height. Every wall piece (doors, cracked wall) stands once per section, in the north wall of the corridor part with a
-/// closet behind - where doors stand in the game too: every door cell of a generated level has the corridor ceiling,
-/// the boss gate's as well. Every other piece stands once, in a row through the middle of the room parts (taking turns
+/// height. Every wall piece (doors, cracked wall) stands once per section with a closet behind, as wide and under the
+/// ceiling of a door cell of its kind in a generated level: in the north wall of the corridor part, the boss portal -
+/// two cells under 6 m - in that of the room part (issue #599). Every other piece stands once, in a row through the middle of the room parts (taking turns
 /// between the sections), where there is room for its height. Wall pillars stand against the north wall of every part
 /// (issue #536); ceiling arches span a corridor one cell wide south of every corridor part (issue #537). South of the
 /// passage along the bottom of the band lies a hall with a free-standing column under each ceiling height (issue #539). Built
@@ -175,9 +175,10 @@ public sealed partial class ShowroomLayout
     /// </summary>
     private static readonly (Type Kind, Func<Draft, PlacedPiece, ShowroomLabel> Place)[] Placers =
     [
-        // A door's label hangs on the wall above it, on the side of the walkway.
+        // A door's label hangs on the wall above it, on the side of the walkway, in the middle of its cells.
         (typeof(WallPiece), static (_, place) => new ShowroomLabel(
-            place.Piece.Label, new Vector3((place.X + 0.5f) * Level.CellSize, 3.1f, ((place.Z + 1) * Level.CellSize) + 0.3f))),
+            place.Piece.Label,
+            new Vector3((place.X + (DoorFrameLook.CellsWide(((WallPiece)place.Piece).Kind) / 2f)) * Level.CellSize, 3.1f, ((place.Z + 1) * Level.CellSize) + 0.3f))),
         Placer<ChestPiece>(static (draft, chest, place) => AddChest(draft.Chests, place.X, place.Z, place.Section, chest.Tier)),
         Placer<StairsPiece>(static (draft, _, place) => SetStairs(draft, draft.At(place))),
         Placer<EnemyPiece>(static (_, enemy, _) => EnemyKindOf(enemy.Enemy).LabelHeight),
@@ -266,7 +267,7 @@ public sealed partial class ShowroomLayout
 
     private static void AddWallPillars(Draft draft)
     {
-        draft.Pillars = WallPillars(draft.Level, draft.Sections, draft.WallPieces.Count);
+        draft.Pillars = WallPillars(draft.Level, draft.Sections, draft.WallPieces.Count(piece => PartOf(piece.Kind) == ShowroomPart.Corridor), draft.Doors);
         draft.Labels.AddRange(PillarLabels(draft.Sections, draft.Pillars));
     }
 
@@ -387,6 +388,40 @@ public sealed partial class ShowroomLayout
         return (section.RoomX + 2 + (WallStep / 2), section.DoorRow);
     }
 
+    /// <summary>
+    /// The part whose north wall a wall piece of <paramref name="kind"/> stands in (issue #599): the first, lowest one
+    /// whose ceiling its frame fits under (<see cref="DoorFrameLook.Height"/>) - doors and cracked wall in the corridor,
+    /// the 6 m boss portal in the room.
+    /// </summary>
+    public static ShowroomPart PartOf(DoorKind kind)
+    {
+        foreach (var part in Enum.GetValues<ShowroomPart>())
+        {
+            if (DoorFrameLook.Height(kind) <= ShowroomSection.CeilingOf(part))
+            {
+                return part;
+            }
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(kind), kind, "No part of the showroom is high enough for this wall piece.");
+    }
+
+    /// <summary>
+    /// Part -> the first (west) column of its wall piece in <c>slot</c> (counted per part, west to east). In the corridor
+    /// one every <see cref="WallStep"/> cells from its third column. In the room east of the portcullis and its two
+    /// pillars, one every <see cref="WallStep"/> cells, a cell west of where a wall pillar would stand: a two-cell door
+    /// then takes that pillar's place, which falls away (<see cref="WallPillars"/>; issue #599). A new part is one more
+    /// entry here.
+    /// </summary>
+    private static readonly (ShowroomPart Part, Func<ShowroomSection, int, int> Column)[] WallSlots =
+    [
+        (ShowroomPart.Corridor, static (section, slot) => section.CorridorX + 2 + (WallStep * slot)),
+        (ShowroomPart.Room, static (section, slot) => section.RoomX + 2 + (WallStep * (slot + 2)) - 1),
+    ];
+
+    private static int WallSlotColumn(ShowroomSection section, ShowroomPart part, int slot) =>
+        WallSlots.First(entry => entry.Part == part).Column(section, slot);
+
     /// <summary>The label above the lintel of every portcullis, on the side of the room.</summary>
     public const string PortcullisLabel = "Portcullis";
 
@@ -423,11 +458,13 @@ public sealed partial class ShowroomLayout
     /// <summary>
     /// The wall pillars (issue #536): against the north wall of every part, in the variant and under the ceiling of
     /// that part. In the corridor one between each two doors, in the room one every <see cref="WallStep"/> cells, keeping
-    /// a cell of bare wall at each end.
+    /// a cell of bare wall at each end. None stands in front of or beside a door cell: where the boss door's two cells
+    /// reach, the pillar falls away (issue #599).
     /// </summary>
     private static List<(int Section, ShowroomPart Part, ExhibitWallPillar Pillar)> WallPillars(
-        Level level, IReadOnlyList<ShowroomSection> sections, int doorCount)
+        Level level, IReadOnlyList<ShowroomSection> sections, int doorCount, IReadOnlyList<LevelDoor> doors)
     {
+        var doorCells = doors.SelectMany(door => door.Cells).ToHashSet();
         var pillars = new List<(int, ShowroomPart, ExhibitWallPillar)>();
         foreach (var section in sections)
         {
@@ -437,7 +474,7 @@ public sealed partial class ShowroomLayout
                 var columns = part == ShowroomPart.Corridor
                     ? Enumerable.Range(0, Math.Max(doorCount - 1, 1)).Select(gap => start + 2 + (WallStep / 2) + (WallStep * gap))
                     : Enumerable.Range(0, ((section.Length - 4) / WallStep) + 1).Select(step => start + 2 + (WallStep * step));
-                foreach (var x in columns)
+                foreach (var x in columns.Where(x => !Enumerable.Range(x - 1, 3).Any(beside => doorCells.Contains((beside, section.DoorRow)))))
                 {
                     var (position, facing) = WallPillarLook.Place(level, x, section.NorthRow, RoomSide.North);
                     pillars.Add((section.Index, part, new ExhibitWallPillar(section.Variant, ShowroomSection.CeilingOf(part), position, facing)));

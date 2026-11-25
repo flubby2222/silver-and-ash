@@ -38,6 +38,7 @@ public static class PhotoScenes
         .. ColumnScenes(),
         .. BreakingColumnScenes(),
         .. ShowroomStairsScenes(),
+        .. ShowroomBossDoorScenes(),
         .. EquipmentScenes(),
         .. CourseScenes.All(),
     ];
@@ -684,6 +685,27 @@ public static class PhotoScenes
             "The spiral staircase in the showroom's hall from 5 m, looking up to its top: the staircase and its label under the 6 m ceiling, nothing through it (issue #727).",
             studio => new PhotoSetup(BeforeShowroomStairs(studio, 5f))),
     ];
+
+    // The boss door of the showroom (issue #599): the first one, from in front of the middle of its cells.
+    private static PhotoScene[] ShowroomBossDoorScenes() =>
+    [
+        new("showroom-boss-door",
+            "The boss door of the showroom's section A from 4.5 m in front of its middle, looking at it 2.5 m up: the portal over two cells with its label (issue #599).",
+            studio => new PhotoSetup(BeforeShowroomBossDoor(studio, 4.5f))),
+    ];
+
+    // A player `metres` m south of the door plane of the showroom's first boss door, in front of the middle of its cells.
+    private static GameWorld BeforeShowroomBossDoor(PhotoStudio studio, float metres)
+    {
+        var layout = ShowroomLayout.Build();
+        var door = layout.Doors.First(door => door.Kind == DoorKind.Boss);
+        var middle = new Vector3(((float)door.Cells.Average(cell => cell.X) + 0.5f) * Level.CellSize, 0f, (door.Z + 0.5f) * Level.CellSize);
+        var target = middle + new Vector3(0f, 2.5f, 0f);
+        var world = layout.NewWorldAt(door.X, door.Z + 1, target, studio.Balance);
+        world.Player.PlaceAt(middle + new Vector3(0f, 0f, metres));
+        PhotoStudio.Face(world.Player, target);
+        return world;
+    }
 
     // A player `metres` m from the showroom's staircase, on the first side (south, north, east, west) with open floor
     // under the same ceiling all the way, looking at it two thirds up.
