@@ -16,6 +16,7 @@ public class MeleeHandleInCuffTests
     [Theory]
     [InlineData(WeaponKind.SilverBlade)]
     [InlineData(WeaponKind.Club)]
+    [InlineData(WeaponKind.HuntersAxe)]
     public void Every_corner_of_the_weapon_behind_the_cuffs_mouth_lies_inside_the_cuff(WeaponKind kind)
     {
         var files = WeaponPose.MeleeModel(kind)!;

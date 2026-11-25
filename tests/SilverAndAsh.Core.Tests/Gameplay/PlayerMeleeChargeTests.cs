@@ -20,7 +20,8 @@ public class PlayerMeleeChargeTests
         var player = RunningPlayer();
 
         player.Tick(Melee);
-        Assert.Empty(player.Events);
+        // The press only says that a charge began (issue #776: the axe's charge sound starts from it); no swing yet.
+        Assert.IsType<MeleeChargeStarted>(Assert.Single(player.Events));
         Assert.True(player.MeleeCharge.IsCharging);
 
         player.Tick(PlayerInput.None);

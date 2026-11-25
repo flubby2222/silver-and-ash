@@ -34,12 +34,14 @@ public class PlayerTickTraceTests
     // Gorm duel changed on purpose in #437: the hook leads its target and locks 12 ticks before the throw. With seed 325
     // the bot stopped after every lock and was never pulled any more, so the duel now runs with seed 311, which pulls
     // and kills the bot before and after #437 (first difference to main: tick 528, a hook that hit now misses).
+    // All three changed on purpose in #776: a press that begins a melee charge now raises MeleeChargeStarted (the axe's
+    // charge sound starts from it). Without that event the traces give the checksums from before, byte for byte.
     // Two parcours seeds: together their bots reach almost every line of the tick (one alone misses a few).
-    private const string GormDuelChecksum = "2B98DA93001979108FDDA97B8F313134A9E23C47A358628B63B0D6D0AD68288E";
+    private const string GormDuelChecksum = "D1BB5B0E0E3DC342938878308A56AF4A448A3CBAEE1D65137E768B864431887A";
 
     [Theory]
-    [InlineData(1, "D9933F5097C3E8FAED875CB10664AA4B31447231594EBCB9647AFC7FE5AADE8A")]
-    [InlineData(4, "B59A6BBEB46D54E81BC6C0E2E2A3F17F3E78CEE118EC607EB8BA3E492D9ECA23")]
+    [InlineData(1, "694C6959093A935003D48E46D1EEBA0EA90BA35854F713A217E3E13A5119FB2A")]
+    [InlineData(4, "C09945C4AA4197B67EC982115F4676619E763F88E4E5D55A51203731409CD534")]
     public void A_bot_run_through_a_parcours_gives_the_same_trace_as_before(int seed, string checksum)
     {
         var trace = ParcoursTrace(seed, ticks: 6000);
