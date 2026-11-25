@@ -102,6 +102,23 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 25.11.2026 (#195, Items Teil 1, vorläufig)
+
+**Anlass:** Issue #195. Die ersten vier Items wirken jetzt. Bisher ließen sie sich finden, taten aber nichts. Die Werte stehen im neuen Abschnitt `items`.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `items.huntersBootsSpeed` | – | 0,1 = +10 % Höchstgeschwindigkeit beim Gehen | Wert aus dem Issue. Die Stiefel gelten am Boden und in der Luft, aber nicht für Dash und Ausweichen (**vorläufig**). |
+| `items.ironFlaskHeal` | – | 0,5 = Blutfläschchen heilen 50 % mehr (30 → 45; halbe Punkte werden aufgerundet) | Wert aus dem Issue |
+| `items.silverRosaryHeal` | – | 3 Leben je Kill | Wert aus dem Issue. Er zählt jeden Gegner, auch Gorm und Kills durch Schaden über Zeit, aber keine Übungspuppe (**vorläufig**). |
+| `items.quickdrawHolsterReload` | – | 0,3 = 30 % weniger Nachladezeit (Pistole 90 → 63 Ticks, Gewehr 150 → 105, Donnerbüchse 108 → 76), höchstens unter 1 | Wert aus dem Issue. „30 % schneller“ heißt hier ×0,7, nicht ÷1,3 (**vorläufig**). |
+
+Jeder Wert darf 0 sein (das Item tut dann nichts), aber nicht negativ. `quickdrawHolsterReload` muss unter 1 bleiben. Sonst warnt der Lader und nimmt den Standardwert. Die Texte der Items im Spiel nennen die Standardwerte fest; ein Test meldet, wenn sie nicht mehr passen.
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Der Balance-Report rechnet die Heilung durch Blutfläschchen ohne die Flasche, und kein Bot-Modus nimmt Items.
+
+**Offen:** Ob die Unterschiede im Spiel spürbar sind, urteilt der Mensch im Spieltest.
+
 ### Zwischenschritt – 25.11.2026 (#510, Leech, vorläufig)
 
 **Anlass:** Issue #510. Fünfter Statuseffekt: Löst ein Treffer *Leech* aus, heilt der Spieler, der getroffen hat, sofort um einen Anteil des Schadens. Keine Dauer, kein Timer, nie über das Höchstleben; Bruchteile sammelt jeder Spieler für sich. Gefundene Waffen würfeln seither gleich wahrscheinlich zwischen den fünf Effekten.

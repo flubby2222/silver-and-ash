@@ -59,6 +59,7 @@ public static class BalanceFile
         "difficulty.spacing", "columns.bossRoomPerSide",
         "statusEffects.weaponShare", "statusEffects.weaponHitChance.worn", "statusEffects.weaponHitChance.forged",
         "statusEffects.weaponHitChance.royal", "statusEffects.weaponHitChance.vampiric",
+        "items.huntersBootsSpeed", "items.ironFlaskHeal", "items.silverRosaryHeal", "items.quickdrawHolsterReload",
     };
 
     /// <summary>
@@ -140,6 +141,7 @@ public static class BalanceFile
     {
         ["player.exhaustedJumpSpeedPenalty"] = 1,
         ["statusEffects.graveChill.slow"] = 1,   // a chill of 100 % would freeze the enemy (issue #508)
+        ["items.quickdrawHolsterReload"] = 1,    // a reload 100 % shorter would take no time at all (issue #195)
     };
 
     /// <summary>Pairs where the first may not be above the second.</summary>
