@@ -44,7 +44,8 @@
     "coneStartBehind": 0.6,             // m the cone's tip lies behind the eyes (wider close up)
     "knockback": 0,                     // m the blade pushes enemies away (0 = not at all) ...
     "chargedKnockback": 0,              // ... and fully charged ...
-    "knockbackTime": 0.25               // ... the push taking this long (s)
+    "knockbackTime": 0.25,              // ... the push (or pull) taking this long (s)
+    "pullTo": 0                         // m in front of the swinger a hit pulls enemies to (0 = no pull; the whip, #202)
   },
 
   "club": {                             // the club (Worn): slower and harder than the blade, knocks ghouls and bats back (not Gorm)
@@ -58,7 +59,8 @@
     "coneStartBehind": 0.6,
     "knockback": 3,                     // m an enemy flies back ...
     "chargedKnockback": 6,              // ... and when fully charged
-    "knockbackTime": 0.25               // s the push takes
+    "knockbackTime": 0.25,              // s the push takes
+    "pullTo": 0
   },
 
   "huntersAxe": {                       // the hunter's axe (Royal, #201): slow, wide, heavy - provisional, balancing round
@@ -72,7 +74,23 @@
     "coneStartBehind": 0.6,
     "knockback": 0,
     "chargedKnockback": 0,
-    "knockbackTime": 0.25
+    "knockbackTime": 0.25,
+    "pullTo": 0
+  },
+
+  "whip": {                             // the whip (Royal, #202): long reach, medium damage, pulls ghouls and bats in (not Gorm) - provisional, balancing round
+    "cooldown": 0.7,
+    "damage": 45,                       // between the blade (40) and the club (50)
+    "chargeTime": 1,
+    "chargeMaxMultiplier": 2,
+    "chargeStaminaSegments": 1,
+    "range": 6,                         // m from the eyes: more than twice the blade
+    "angle": 50,                        // degrees: a narrow lash (blade: 90) - still wide enough for a ghoul at your feet
+    "coneStartBehind": 0.6,
+    "knockback": 0,
+    "chargedKnockback": 0,
+    "knockbackTime": 0.3,               // s the pull takes
+    "pullTo": 1.5                       // m in front of the swinger a hit pulls the enemy to (one already nearer stays put)
   },
 
   "pistol": {

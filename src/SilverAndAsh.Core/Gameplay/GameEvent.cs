@@ -72,6 +72,15 @@ public sealed record MeleeChargeStarted(int PlayerId, WeaponKind Weapon, int Tic
 public sealed record MeleeChargeStalled(int PlayerId) : GameEvent, IPlayerSound;
 
 /// <summary>
+/// A hit of player <paramref name="PlayerId"/> with the melee weapon <paramref name="Weapon"/> (the whip, issue #202)
+/// pulls target <paramref name="TargetId"/> (a ghoul or a bat) <paramref name="Distance"/> metres in towards them. Comes
+/// in the same tick after the target's hit events; <see cref="GameEvent.Place"/> is where the target was when it was
+/// caught, so the pull is heard there. A hit that pulls no one (Gorm, an enemy already close, the edge of a pit right
+/// in front of it) sends none.
+/// </summary>
+public sealed record MeleePulled(int TargetId, int PlayerId, WeaponKind Weapon, float Distance) : GameEvent;
+
+/// <summary>
 /// Player <paramref name="PlayerId"/> fired the ranged weapon <paramref name="Weapon"/> (the pistol unless said
 /// otherwise) from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/> - with consecrated ammunition if
 /// <paramref name="Consecrated"/>. The shooter hears it in the middle, every other player from where it was fired

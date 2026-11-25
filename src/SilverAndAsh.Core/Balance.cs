@@ -40,11 +40,28 @@ public sealed record Balance
         Angle = 150f,
     };
 
+    /// <summary>
+    /// The whip (Royal, decision record 0008, issue #202): reaches more than twice as far as the blade in a narrow cone,
+    /// medium damage, and every hit pulls a ghoul or bat in until it stands <see cref="MeleeBalance.PullTo"/> in front
+    /// of the one who swung it. Provisional values for the next balancing round.
+    /// </summary>
+    public MeleeBalance Whip { get; init; } = new()
+    {
+        Cooldown = 0.7f,
+        Damage = 45,
+        ChargeTime = 1f,
+        Range = 6f,
+        Angle = 50f,
+        KnockbackTime = 0.3f,
+        PullTo = 1.5f,
+    };
+
     /// <summary>The values of melee weapon <paramref name="kind"/>.</summary>
     public MeleeBalance Melee(Gameplay.WeaponKind kind) => kind switch
     {
         Gameplay.WeaponKind.Club => Club,
         Gameplay.WeaponKind.HuntersAxe => HuntersAxe,
+        Gameplay.WeaponKind.Whip => Whip,
         _ => Blade,
     };
 
@@ -884,7 +901,8 @@ public sealed record PlayerBalance
 
 /// <summary>
 /// Balancing values of a melee weapon - the silver blade (<see cref="Balance.Blade"/>), the club
-/// (<see cref="Balance.Club"/>) and the hunter's axe (<see cref="Balance.HuntersAxe"/>) have the same kind of values
+/// (<see cref="Balance.Club"/>), the hunter's axe (<see cref="Balance.HuntersAxe"/>) and the whip
+/// (<see cref="Balance.Whip"/>) have the same kind of values
 /// (decision record 0008).
 /// </summary>
 public sealed record MeleeBalance
@@ -922,8 +940,14 @@ public sealed record MeleeBalance
     /// <summary>... and this far when fully charged (in between: linear).</summary>
     public float ChargedKnockback { get; init; }
 
-    /// <summary>The push takes this long (seconds); meanwhile the enemy does nothing else.</summary>
+    /// <summary>The push (or the pull, <see cref="PullTo"/>) takes this long (seconds); meanwhile the enemy does nothing else.</summary>
     public float KnockbackTime { get; init; } = 0.25f;
+
+    /// <summary>
+    /// A hit pulls ghouls and bats in towards the one who swung (not Gorm) until they stand this far from them,
+    /// measured flat in metres (issue #202, the whip). 0 = the weapon pulls no one. An enemy already nearer stays put.
+    /// </summary>
+    public float PullTo { get; init; }
 }
 
 /// <summary>

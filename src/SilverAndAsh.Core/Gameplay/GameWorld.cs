@@ -1559,7 +1559,8 @@ public sealed class GameWorld
 
     /// <summary>
     /// A swing of <paramref name="attacker"/> hits every target in the weapon's cone (see <see cref="MeleeStrike"/>).
-    /// A heavy weapon (the club) also knocks living ghouls and bats back - further when charged; Gorm stands firm.
+    /// A heavy weapon (the club) also knocks living ghouls and bats back - further when charged; the whip pulls them in
+    /// (<see cref="PullIn"/>); Gorm stands firm.
     /// </summary>
     private void StrikeWithMelee(MeleeSwung swing, Player attacker)
     {
@@ -1578,6 +1579,7 @@ public sealed class GameWorld
                 }
 
                 KnockBack(target, attacker, values, swing.Charge);
+                PullIn(target, attacker, values, swing.Weapon);
             }
         }
 
@@ -1631,6 +1633,40 @@ public sealed class GameWorld
             _ => null,
         };
         knockback?.Start(away, distance, values.KnockbackTime);
+    }
+
+    /// <summary>
+    /// A weapon that pulls (the whip, issue #202: <see cref="MeleeBalance.PullTo"/> above 0) drags a living ghoul or bat
+    /// in towards <paramref name="attacker"/>, over <see cref="MeleeBalance.KnockbackTime"/> - charged or not. Gorm
+    /// stands firm. How far: see <see cref="PullPath"/> (a ghoul stops at the edge of a pit, a bat keeps its height).
+    /// </summary>
+    private void PullIn(ITarget target, Player attacker, MeleeBalance values, WeaponKind weapon)
+    {
+        if (values.PullTo <= 0f)
+        {
+            return;
+        }
+
+        var (knockback, stepHeight, walker) = target switch
+        {
+            Ghoul { IsDead: false } ghoul => (ghoul.Knockback, BodySizes.Player.StepHeight, true),
+            Bat { IsDead: false } bat => (bat.Knockback, BodySizes.Bat.StepHeight, false),
+            _ => ((Knockback?)null, 0f, false),
+        };
+        if (knockback is null)
+        {
+            return;
+        }
+
+        var body = target.Body;
+        var distance = PullPath.Distance(Level, body, stepHeight, walker, attacker.Position, values.PullTo);
+        if (distance <= 0f)
+        {
+            return;
+        }
+
+        knockback.Start(attacker.Position - body.Position, distance, values.KnockbackTime);
+        _events.Add(new MeleePulled(target.Id, attacker.Id, weapon, distance) { Place = body.Position });
     }
 
     /// <summary>

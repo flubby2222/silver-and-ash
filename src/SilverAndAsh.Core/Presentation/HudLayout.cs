@@ -125,6 +125,9 @@ public sealed class HudLayout
 
         // A small rendering of its 3D model (issue #776, tools/hud/hud_axt.py), the size and middle of the club's sign.
         [WeaponKind.HuntersAxe] = "icon_axe",
+
+        // Until the whip has a sign of its own (issue #202, follow-up): the blade's, the nearest slender melee weapon.
+        [WeaponKind.Whip] = "icon_blade",
     }.ToFrozenDictionary();
 
     private static readonly FrozenDictionary<ItemKind, string> ItemIcons = new Dictionary<ItemKind, string>

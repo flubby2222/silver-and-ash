@@ -158,13 +158,14 @@ placed PlacedPiece { Piece = WeaponPiece { Label = Pistol (Worn), Weapon = Pisto
 placed PlacedPiece { Piece = WeaponPiece { Label = Rifle (Forged), Weapon = Rifle }, X = 53, Z = 6, Section = 0, Part = Room }
 placed PlacedPiece { Piece = WeaponPiece { Label = Blunderbuss (Forged), Weapon = Blunderbuss }, X = 53, Z = 16, Section = 1, Part = Room }
 placed PlacedPiece { Piece = WeaponPiece { Label = Hunting Axe (Royal), Weapon = HuntersAxe }, X = 53, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = ItemPiece { Label = Hunter's Boots (Worn), Item = HuntersBoots }, X = 56, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = ItemPiece { Label = Silver Rosary (Forged), Item = SilverRosary }, X = 56, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = ItemPiece { Label = Hunter's Eye (Royal), Item = HuntersEye }, X = 56, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = ItemPiece { Label = Leech (Vampiric), Item = Leech }, X = 59, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = LootPiece { Label = Silver, Loot = Silver, Amount = 10 }, X = 59, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = ConsumablePiece { Label = Blood vial, Consumable = BloodVial }, X = 59, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = ConsumablePiece { Label = Consecrated ammo, Consumable = ConsecratedAmmo }, X = 62, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = WeaponPiece { Label = Whip (Royal), Weapon = Whip }, X = 56, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = ItemPiece { Label = Hunter's Boots (Worn), Item = HuntersBoots }, X = 56, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = ItemPiece { Label = Silver Rosary (Forged), Item = SilverRosary }, X = 56, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = ItemPiece { Label = Hunter's Eye (Royal), Item = HuntersEye }, X = 59, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = ItemPiece { Label = Leech (Vampiric), Item = Leech }, X = 59, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = LootPiece { Label = Silver, Loot = Silver, Amount = 10 }, X = 59, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = ConsumablePiece { Label = Blood vial, Consumable = BloodVial }, X = 62, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = ConsumablePiece { Label = Consecrated ammo, Consumable = ConsecratedAmmo }, X = 62, Z = 16, Section = 1, Part = Room }
 door LevelDoor { X = 10, Z = 3, RoomA = 0, RoomB = 6, Side = North, Kind = Normal, HasGrate = False, MoreCells = [], Cells = [(10, 3)] }
 door LevelDoor { X = 14, Z = 3, RoomA = 0, RoomB = 7, Side = North, Kind = Locked, HasGrate = False, MoreCells = [], Cells = [(14, 3)] }
 door LevelDoor { X = 45, Z = 3, RoomA = 0, RoomB = 8, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(46, 3)], Cells = [(45, 3), (46, 3)] }
@@ -182,22 +183,23 @@ chest ChestPlan { X = 38, Z = 16, Room = 3, Tier = Guard, IsLocked = False, Silv
 chest ChestPlan { X = 38, Z = 26, Room = 5, Tier = King, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
 chest ChestPlan { X = 41, Z = 6, Room = 1, Tier = Vampire, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
 exhibit Stairs (83.0000, 0.0000, 33.0000)
-exhibit Loot ExhibitLoot { Kind = Silver, Amount = 10, Position = (119.0000, 0.0000, 33.0000) }
+exhibit Loot ExhibitLoot { Kind = Silver, Amount = 10, Position = (119.0000, 0.0000, 53.0000) }
 exhibit Loot ExhibitLoot { Kind = Key, Amount = 1, Position = (31.0000, 0.0000, 9.0000) }
 exhibit Loot ExhibitLoot { Kind = Key, Amount = 1, Position = (31.0000, 0.0000, 29.0000) }
 exhibit Loot ExhibitLoot { Kind = Key, Amount = 1, Position = (31.0000, 0.0000, 49.0000) }
-exhibit Consumables ExhibitConsumable { Kind = BloodVial, Position = (119.0000, 0.0000, 53.0000) }
-exhibit Consumables ExhibitConsumable { Kind = ConsecratedAmmo, Position = (125.0000, 0.0000, 13.0000) }
+exhibit Consumables ExhibitConsumable { Kind = BloodVial, Position = (125.0000, 0.0000, 13.0000) }
+exhibit Consumables ExhibitConsumable { Kind = ConsecratedAmmo, Position = (125.0000, 0.0000, 33.0000) }
 exhibit Weapons ExhibitWeapon { Kind = SilverBlade, Position = (101.0000, 0.0000, 13.0000) }
 exhibit Weapons ExhibitWeapon { Kind = Club, Position = (101.0000, 0.0000, 33.0000) }
 exhibit Weapons ExhibitWeapon { Kind = Pistol, Position = (101.0000, 0.0000, 53.0000) }
 exhibit Weapons ExhibitWeapon { Kind = Rifle, Position = (107.0000, 0.0000, 13.0000) }
 exhibit Weapons ExhibitWeapon { Kind = Blunderbuss, Position = (107.0000, 0.0000, 33.0000) }
 exhibit Weapons ExhibitWeapon { Kind = HuntersAxe, Position = (107.0000, 0.0000, 53.0000) }
-exhibit Items ExhibitItem { Kind = HuntersBoots, Position = (113.0000, 0.0000, 13.0000) }
-exhibit Items ExhibitItem { Kind = SilverRosary, Position = (113.0000, 0.0000, 33.0000) }
-exhibit Items ExhibitItem { Kind = HuntersEye, Position = (113.0000, 0.0000, 53.0000) }
-exhibit Items ExhibitItem { Kind = Leech, Position = (119.0000, 0.0000, 13.0000) }
+exhibit Weapons ExhibitWeapon { Kind = Whip, Position = (113.0000, 0.0000, 13.0000) }
+exhibit Items ExhibitItem { Kind = HuntersBoots, Position = (113.0000, 0.0000, 33.0000) }
+exhibit Items ExhibitItem { Kind = SilverRosary, Position = (113.0000, 0.0000, 53.0000) }
+exhibit Items ExhibitItem { Kind = HuntersEye, Position = (119.0000, 0.0000, 13.0000) }
+exhibit Items ExhibitItem { Kind = Leech, Position = (119.0000, 0.0000, 33.0000) }
 exhibit CrossbowSkeletons ExhibitCrossbowSkeleton { Stance = Rest, Position = (89.0000, 0.0000, 53.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit CrossbowSkeletons ExhibitCrossbowSkeleton { Stance = Announce, Position = (95.0000, 0.0000, 13.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit CryptWardens ExhibitCryptWarden { Stance = Rest, Position = (95.0000, 0.0000, 33.0000), Facing = (0.0000, 0.0000, 1.0000) }
@@ -351,13 +353,14 @@ label ShowroomLabel { Text = Pistol (Worn), Position = (101.0000, 0.9000, 53.000
 label ShowroomLabel { Text = Rifle (Forged), Position = (107.0000, 0.9000, 13.0000) }
 label ShowroomLabel { Text = Blunderbuss (Forged), Position = (107.0000, 0.9000, 33.0000) }
 label ShowroomLabel { Text = Hunting Axe (Royal), Position = (107.0000, 0.9000, 53.0000) }
-label ShowroomLabel { Text = Hunter's Boots (Worn), Position = (113.0000, 0.9000, 13.0000) }
-label ShowroomLabel { Text = Silver Rosary (Forged), Position = (113.0000, 0.9000, 33.0000) }
-label ShowroomLabel { Text = Hunter's Eye (Royal), Position = (113.0000, 0.9000, 53.0000) }
-label ShowroomLabel { Text = Leech (Vampiric), Position = (119.0000, 0.9000, 13.0000) }
-label ShowroomLabel { Text = Silver, Position = (119.0000, 0.9000, 33.0000) }
-label ShowroomLabel { Text = Blood vial, Position = (119.0000, 0.9000, 53.0000) }
-label ShowroomLabel { Text = Consecrated ammo, Position = (125.0000, 0.9000, 13.0000) }
+label ShowroomLabel { Text = Whip (Royal), Position = (113.0000, 0.9000, 13.0000) }
+label ShowroomLabel { Text = Hunter's Boots (Worn), Position = (113.0000, 0.9000, 33.0000) }
+label ShowroomLabel { Text = Silver Rosary (Forged), Position = (113.0000, 0.9000, 53.0000) }
+label ShowroomLabel { Text = Hunter's Eye (Royal), Position = (119.0000, 0.9000, 13.0000) }
+label ShowroomLabel { Text = Leech (Vampiric), Position = (119.0000, 0.9000, 33.0000) }
+label ShowroomLabel { Text = Silver, Position = (119.0000, 0.9000, 53.0000) }
+label ShowroomLabel { Text = Blood vial, Position = (125.0000, 0.9000, 13.0000) }
+label ShowroomLabel { Text = Consecrated ammo, Position = (125.0000, 0.9000, 33.0000) }
 label ShowroomLabel { Text = Key, Position = (31.0000, 0.9000, 9.0000) }
 label ShowroomLabel { Text = Key, Position = (31.0000, 0.9000, 29.0000) }
 label ShowroomLabel { Text = Key, Position = (31.0000, 0.9000, 49.0000) }

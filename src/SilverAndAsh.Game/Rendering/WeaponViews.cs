@@ -242,12 +242,35 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
             return;
         }
 
+        if (_melee == WeaponKind.Whip)
+        {
+            DrawWhipBoxes(hand);
+            return;
+        }
+
         // Handle, guard and the long silver blade pointing forward and a little up.
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.03f) * hand, new Vector3(0.022f, 0.022f, 0.07f), Wood);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.01f) * hand, new Vector3(0.055f, 0.012f, 0.012f), DarkSilver);
         ShadedBox.Draw(
             Matrix4x4.CreateRotationX(Deg(-25f)) * Matrix4x4.CreateTranslation(0f, 0.035f, 0.08f) * hand,
             new Vector3(0.016f, 0.005f, 0.15f), Silver);
+    }
+
+    // The whip until its model is in (issue #202): a short wooden grip with an iron cap, and the dark lash hanging from
+    // it in three ever thinner pieces, each bending further down.
+    private static void DrawWhipBoxes(Matrix4x4 hand)
+    {
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.01f) * hand, new Vector3(0.024f, 0.024f, 0.1f), Wood);
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.065f) * hand, new Vector3(0.028f, 0.028f, 0.012f), DarkSilver);
+        var lash = Matrix4x4.CreateTranslation(0f, 0f, 0.04f) * hand;
+        var thickness = 0.014f;
+        for (var piece = 0; piece < 3; piece++)
+        {
+            lash = Matrix4x4.CreateRotationX(Deg(18f)) * lash;
+            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.05f) * lash, new Vector3(thickness, thickness, 0.1f), Iron);
+            lash = Matrix4x4.CreateTranslation(0f, 0f, 0.1f) * lash;
+            thickness *= 0.7f;
+        }
     }
 
     private void DrawPistol(Matrix4x4 motion, Matrix4x4 modelMotion)
