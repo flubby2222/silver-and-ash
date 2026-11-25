@@ -1,5 +1,7 @@
 """Blatt zu Issue #765: das heutige Modell und die drei Entwuerfe a, b, c im Spiel (Foto-Modus, 854 x 480, halbe Groesse).
 
+Der Erzeuger der Entwuerfe (treppe_neu.py) liegt auf dem Branch feat/wendeltreppe-probe-765.
+
 Spalten: aus 4 m (stairs-4m), aus 10 m (stairs-10m), von unten nach oben (showroom-stairs), rechts ein Ausschnitt der 4-m-Aufnahme
 in voller Aufloesung. Die Fotos entstehen mit dem Spiel (Debug, je Szene ein leerer Ordner, nie `--photo all`), wobei die
 Probe-GLB nur in einer Kopie von main ausserhalb des Repositorys unter stairs_spiral_a/b/c.glb lag (mit angepasster models.sha256 dieser Kopie).

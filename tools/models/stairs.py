@@ -20,7 +20,7 @@ RoomTemplate.RoomCeilingHeight entsprechen (ein Test prueft es).
 
 Je Wandvariante v eine Datei stairs_spiral_<v>.glb mit zwei Knoten, beide fest und ohne Eltern:
   stairs   der Stein: Wandkachel der Variante auf den Seiten, Bodenkachel derselben Variante auf allen nach oben zeigenden
-           Flaechen, Werkstein am Kapitell.
+           Flaechen, Werkstein am Kapitell, dazu das Eisengelaender (Reihe Eisen, dunkle Stufen) aus der Eisenflaeche des Atlas.
   glow     die Lampe oben (Messing/Gold, Verlauf von dunkel nach hell); das Spiel laesst nur sie pulsieren.
   Alle Koerper sind rundum geschlossen: jede Kante gehoert zu genau zwei Dreiecken (tools/models/check_closed.py); gestapelte
   Koerper teilen keine Ecken, sondern sind ein Ringstapel (tube).

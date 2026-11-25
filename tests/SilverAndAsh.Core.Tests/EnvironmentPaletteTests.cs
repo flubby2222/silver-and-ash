@@ -6,7 +6,7 @@ namespace SilverAndAsh.Core.Tests;
 /// Issue #280: the environment (every PNG in assets/textures, cracked wall, door frames, secret-room wall door) is painted with the colours
 /// of the palette row Stein only, and the frame of the boss gate may add the row Werkstein (art bible, colour rule 6).
 /// Issue #543: the door leaves keep the wood, iron and brass they have today, listed here as the named rows "Tür"; the spiral
-/// stairs use Stein, Werkstein and the brass of their lamp (Messing/Gold).
+/// stairs use Stein, Werkstein, the brass of their lamp (Messing/Gold) and the dark steps of the row Eisen for their railing (issue #765).
 /// Issue #540: the portcullis is painted with the neutral iron K2 (row "Gitter Eisen"), its guide ring with the wall tile.
 /// </summary>
 public class EnvironmentPaletteTests
