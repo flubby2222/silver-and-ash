@@ -6,7 +6,7 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// The designer's weapon models in the hands (issue #249): the pistol and the melee weapons with a model
-/// (<see cref="WeaponPose.MeleeModel"/>: the silver blade and the club, issue #403), each with its sleeve (cuff and
+/// (<see cref="WeaponPose.MeleeModel"/>: the silver blade, the club and the hunter's axe, issues #403, #776), each with its sleeve (cuff and
 /// forearm, issue #265). A weapon is drawn as a model only if both its files loaded - otherwise the placeholder boxes,
 /// so a weapon never floats without a sleeve or a sleeve without a weapon.
 /// </summary>

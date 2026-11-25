@@ -210,11 +210,15 @@ internal sealed class ModelGhoulView(TexturedModel model, LevelShader shader) : 
 
         model.Rig.Pose(_turns, figure, _frames);
 
-        if (state.Flash > 0f)
+        // A hit flashes over the tint of a status (the frost of Grave Chill, issue #775).
+        var (colour, amount) = state.Flash > 0f
+            ? (state.FlashColor, state.Flash)
+            : StatusView.Tint(StatusLooks.TintOf(ghoul));
+        if (amount > 0f)
         {
-            shader.SetFlash(state.FlashColor, state.Flash);
+            shader.SetFlash(colour, amount);
             model.Draw(_frames);
-            shader.SetFlash(state.FlashColor, 0f);
+            shader.SetFlash(colour, 0f);
         }
         else
         {

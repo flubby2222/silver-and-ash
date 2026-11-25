@@ -58,6 +58,7 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
 
     private float _flash;
     private bool _flashIsCritical;
+    private (Color Colour, float Amount) _body;   // what lies on his body this frame: the hit flash or a status tint
     private bool _dead;
     private float _fall;
     private float _stridePhase;
@@ -115,11 +116,15 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
         GormPose.Turns(_joints, _turns);
         model.Rig.Pose(_turns, figure, _frames);
 
-        // A hit flash tints everything and wins over the glow of the club and the hook.
+        // A hit flash tints everything and wins over the glow of the club and the hook. Without one the tint of a status
+        // (the frost of Grave Chill, issue #775) lies on him - but the glows of club and hook still show through it.
         var flashing = _flash > 0f;
-        if (flashing)
+        _body = flashing
+            ? (_flashIsCritical ? CriticalFlashColor : FlashColor, _flash)
+            : StatusView.Tint(StatusLooks.TintOf(gorm));
+        if (_body.Amount > 0f)
         {
-            shader.SetFlash(_flashIsCritical ? CriticalFlashColor : FlashColor, _flash);
+            shader.SetFlash(_body.Colour, _body.Amount);
         }
 
         // Phase 2 changes the texture of his body, head and jaw: the red marks.
@@ -132,7 +137,7 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
                 var pulse = MathF.Sin(_time * 8f);
                 shader.SetFlash(Glow, 0.3f + (0.35f * pulse * pulse));
                 model.DrawPart(part, _frames[part]);
-                shader.SetFlash(Glow, 0f);
+                shader.SetFlash(_body.Colour, _body.Amount);
                 continue;
             }
 
@@ -142,9 +147,9 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
         var hookGlows = !flashing && !dead && gorm is { State: GormState.WindingUp, Attack: GormAttack.Throw };
         DrawChain(gorm, motion, dead, hookGlows);
 
-        if (flashing)
+        if (_body.Amount > 0f)
         {
-            shader.SetFlash(FlashColor, 0f);
+            shader.SetFlash(_body.Colour, 0f);
         }
     }
 
@@ -267,7 +272,7 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
             var pulse = MathF.Sin(_time * 12f);
             shader.SetFlash(Warning, 0.4f + (0.5f * pulse * pulse));
             model.DrawPart(HookIndex, hook);
-            shader.SetFlash(Warning, 0f);
+            shader.SetFlash(_body.Colour, _body.Amount);
         }
         else
         {

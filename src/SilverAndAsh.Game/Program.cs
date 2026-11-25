@@ -350,6 +350,9 @@ static void RunGame(
 
         // Which sound the events of a tick ask for (issue #267). Its random choice of variants starts from the world's seed.
         var soundCues = new SoundCues(gameWorld.Seed);
+
+        // Stop cues for the charge sounds of a replaced world (StartFresh), played with the next frame (issue #776).
+        IReadOnlyList<SoundCue> oldCharges = [];
         IDummyView dummyView = new PlaceholderDummyView();
         // Ghouls: the designer's model once it is loaded (after the shader, below), the placeholder until then - and for
         // good if the model is missing or broken.
@@ -442,6 +445,9 @@ static void RunGame(
             wonSeconds = 0f;
             LogRun(gameWorld, log);
             player = gameWorld.Player;
+
+            // A charge sound of the old run must not ring on into the new one (issue #776): stopped with the next frame.
+            oldCharges = [.. oldCharges, .. soundCues.StopCharges()];
             soundCues = new SoundCues(gameWorld.Seed);
             dummyView = new PlaceholderDummyView();
             ghoulView = newGhoulView();
@@ -704,7 +710,7 @@ static void RunGame(
 
             // The status effects on the enemies (issue #506): the shimmer here, the timers over the picture below.
             var statuses = EnemyStatusReadout.Of(gameWorld);
-            StatusView.DrawShimmer(statuses, gameWorld.Ticks);
+            StatusView.DrawShimmer(statuses, gameWorld.Ticks, eye, levelShader);
 
             projectileView.Draw(gameWorld.Projectiles, alpha);
             pickupView.Draw(gameWorld.Pickups, alpha);
@@ -1434,6 +1440,8 @@ static void RunGame(
             // 2. Simulation: as many fixed ticks as fit into the real time of the last frame.
             //    A chosen bonus is kept until a tick has taken it - not every frame has a tick.
             var ticks = accumulator.Advance(Raylib.GetFrameTime());
+            sounds.Play(oldCharges);
+            oldCharges = [];
             for (var i = 0; i < ticks; i++)
             {
                 gameWorld.Tick(playerInput with
@@ -1451,10 +1459,13 @@ static void RunGame(
                 wheelSteps = 0;
                 ReadEvents();
                 // Heard by this player (issue #491): from the side it comes from, quieter with distance; far-off wing
-                // beats stay silent (issue #297).
-                sounds.Play(soundCues.For(
-                    gameWorld.Events, soundPacks.Current, SoundListener.Of(player), gameWorld.Balance.Hearing));
+                // beats stay silent (issue #297). On the world's clock: a paused tick moves no sound plan (issue #776).
+                sounds.Play(soundCues.For(gameWorld, soundPacks.Current, SoundListener.Of(player)));
             }
+
+            // While the world stands still, a charge sound stands still with it, so its thump still falls on the full
+            // charge (issue #776).
+            sounds.Hold(soundCues.PlayingChargeFiles, frozen);
 
             // Dead long enough, or won a moment ago: the end screen with the numbers of the run. They also go into
             // the local run log (one line) and the technical log. The world hands its summary out only once, so

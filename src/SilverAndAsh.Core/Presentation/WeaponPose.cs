@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 
@@ -23,6 +24,7 @@ public static class WeaponPose
     public const string Flash = "flash";
     public const string Sword = "sword";
     public const string Club = "club";
+    public const string Axe = "axe";
 
     /// <summary>The cuff of a sleeve with the short piece of sleeve behind it: hangs rigidly on the weapon.</summary>
     public const string Cuff = "arm_cuff";
@@ -101,16 +103,27 @@ public static class WeaponPose
     /// <summary>The club is one part as well (assets/models/club.glb, issue #403).</summary>
     public static IReadOnlyList<RigPart> ClubParts { get; } = [new(Club, null)];
 
+    /// <summary>The hunter's axe is one part, too (assets/models/hunters_axe.glb, issue #776).</summary>
+    public static IReadOnlyList<RigPart> AxeParts { get; } = [new(Axe, null)];
+
     /// <summary>
-    /// The model files of a melee weapon held like the blade - its pose, swing and sleeve (issue #403): the silver blade
-    /// and the club. Null: the weapon has no model and is drawn as placeholder boxes.
+    /// The model files of a melee weapon held like the blade - its pose, swing and sleeve (issue #403): one entry per
+    /// weapon. The club and the hunter's axe are held in the club's sleeve and bent at the grip (<see cref="ClubBend"/>,
+    /// issue #776: the probes of issue #201 hold the axe like that).
     /// </summary>
-    public static MeleeModelFiles? MeleeModel(WeaponKind kind) => kind switch
-    {
-        WeaponKind.SilverBlade => new("blade.glb", "blade_hand.glb", BladeParts),
-        WeaponKind.Club => new("club.glb", "club_hand.glb", ClubParts),
-        _ => null,
-    };
+    private static readonly ImmutableDictionary<WeaponKind, MeleeModelFiles> MeleeModels =
+        new Dictionary<WeaponKind, MeleeModelFiles>
+        {
+            [WeaponKind.SilverBlade] = new("blade.glb", "blade_hand.glb", BladeParts),
+            [WeaponKind.Club] = new("club.glb", "club_hand.glb", ClubParts) { BendsAtGrip = true },
+            [WeaponKind.HuntersAxe] = new("hunters_axe.glb", "club_hand.glb", AxeParts) { BendsAtGrip = true, Scale = 0.95f, SwingShareOfCooldown = 0.7f },
+        }.ToImmutableDictionary();
+
+    /// <summary>
+    /// The model files of <paramref name="kind"/> (<see cref="MeleeModels"/>). Null: the weapon has no model and is
+    /// drawn as placeholder boxes.
+    /// </summary>
+    public static MeleeModelFiles? MeleeModel(WeaponKind kind) => MeleeModels.GetValueOrDefault(kind);
 
     /// <summary>
     /// A hand file (pistol_hand.glb, blade_hand.glb) is a sleeve in two parts, both drawn on the frame of the stock or
@@ -317,8 +330,17 @@ public static class WeaponPose
             left * (ClubBendRestOutwardDegrees + ((ClubBendWindUpOutwardDegrees - ClubBendRestOutwardDegrees) * windUp)));
     }
 
-    /// <summary>How long a melee swing takes (seconds), from its start until <c>swing</c> reaches 1.</summary>
-    public const float SwingSeconds = 0.28f;
+    /// <summary>How long a melee swing takes (seconds) unless its entry follows the cooldown: the blade's and the club's.</summary>
+    public const float FixedSwingSeconds = 0.28f;
+
+    /// <summary>
+    /// How long a melee swing of <paramref name="kind"/> takes (seconds), from its start until <c>swing</c> reaches 1:
+    /// a share (<see cref="MeleeModelFiles.SwingShareOfCooldown"/>, issue #776: the axe) of
+    /// <paramref name="cooldownSeconds"/>, the weapon's cooldown from balance.json - or <see cref="FixedSwingSeconds"/>
+    /// for a weapon whose entry has no share.
+    /// </summary>
+    public static float SwingSeconds(WeaponKind kind, float cooldownSeconds) =>
+        MeleeModel(kind)?.SwingShareOfCooldown is { } share ? share * cooldownSeconds : FixedSwingSeconds;
 
     /// <summary>How quickly the wind-up follows its target (per second, as the other soft movements of the hands).</summary>
     public const float WindUpCatchUp = 6f;
@@ -345,10 +367,15 @@ public static class WeaponPose
 
     /// <summary>
     /// How a melee weapon is bent against its sleeve (file space, before the pose of <see cref="Blade"/>; the sleeve
-    /// itself is not bent): the club at the grip (<see cref="ClubBend"/>), the blade not at all.
+    /// itself is not bent): a weapon whose entry says so (<see cref="MeleeModelFiles.BendsAtGrip"/>, the club and the
+    /// hunter's axe) at the grip (<see cref="ClubBend"/>), the blade not at all. First the model is scaled around its
+    /// grip by its entry's <see cref="MeleeModelFiles.Scale"/> (the axe, so its head stays within <see cref="Reach"/>).
     /// </summary>
-    public static Matrix4x4 MeleeBend(WeaponKind kind, float swing, float windUp) =>
-        kind == WeaponKind.Club ? ClubBend(swing, windUp) : Matrix4x4.Identity;
+    public static Matrix4x4 MeleeBend(WeaponKind kind, float swing, float windUp) => MeleeModel(kind) switch
+    {
+        null => Matrix4x4.Identity,
+        var files => Matrix4x4.CreateScale(files.Scale) * (files.BendsAtGrip ? ClubBend(swing, windUp) : Matrix4x4.Identity),
+    };
 
     /// <summary>
     /// The turn of the blade's forearm around its pivot (file space, for <see cref="Rig.Pose"/>) in the pose
@@ -413,4 +440,20 @@ public static class WeaponPose
 }
 
 /// <summary>A melee weapon's model files (in assets/models): the weapon with its <paramref name="Parts"/> and its sleeve.</summary>
-public sealed record MeleeModelFiles(string Weapon, string Hand, IReadOnlyList<RigPart> Parts);
+public sealed record MeleeModelFiles(string Weapon, string Hand, IReadOnlyList<RigPart> Parts)
+{
+    /// <summary>True if the weapon is bent at the grip against its sleeve (<see cref="WeaponPose.ClubBend"/>), like the club.</summary>
+    public bool BendsAtGrip { get; init; }
+
+    /// <summary>
+    /// How much the weapon is scaled around its grip as drawn (1: as in the file). The hunter's axe is longer than the
+    /// club; scaled a little it stays within <see cref="WeaponPose.Reach"/> in every phase of the club's swing (issue #776).
+    /// </summary>
+    public float Scale { get; init; } = 1f;
+
+    /// <summary>
+    /// Which share of the weapon's cooldown its swing takes on screen (<see cref="WeaponPose.SwingSeconds"/>); null: the
+    /// fixed <see cref="WeaponPose.FixedSwingSeconds"/>. The axe's 0.7 makes the heavy weapon swing slower (issue #776).
+    /// </summary>
+    public float? SwingShareOfCooldown { get; init; }
+}

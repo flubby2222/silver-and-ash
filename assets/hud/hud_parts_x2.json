@@ -2,7 +2,7 @@
  "image": "hud_parts_x2.png",
  "scale": 2,
  "width": 1024,
- "height": 548,
+ "height": 585,
  "designWidth": 1708,
  "designHeight": 960,
  "notes": [
@@ -832,6 +832,26 @@
     30
    ],
    "source": "tools/hud/hud_lebensbalken.py"
+  },
+  {
+   "name": "icon_axe",
+   "x": 0,
+   "y": 549,
+   "w": 58,
+   "h": 36,
+   "layoutX": 1389,
+   "layoutY": 907,
+   "source": "tools/hud/hud_axt.py"
+  },
+  {
+   "name": "icon_axe_active",
+   "x": 59,
+   "y": 549,
+   "w": 58,
+   "h": 36,
+   "layoutX": 1389,
+   "layoutY": 907,
+   "source": "tools/hud/hud_axt.py"
   }
  ]
 }

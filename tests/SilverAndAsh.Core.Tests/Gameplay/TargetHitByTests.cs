@@ -20,7 +20,8 @@ public class TargetHitByTests
 
         var hit = events.FindIndex(e => e is DummyHit);
         Assert.True(hit >= 0);
-        Assert.Equal(new TargetHitBy(0, world.Player.Id, Weapon.Blade), events[hit + 1]);
+        // Hard: the target is the wooden dummy (issue #776, the axe's hard hit sound).
+        Assert.Equal(new TargetHitBy(0, world.Player.Id, Weapon.Blade) { Hard = true }, events[hit + 1]);
     }
 
     [Fact]
@@ -32,7 +33,7 @@ public class TargetHitByTests
         var events = Swing(world);
 
         Assert.Contains(events, e => e is DummyHit);
-        Assert.Contains(new TargetHitBy(0, world.Player.Id, Weapon.Club), events);
+        Assert.Contains(new TargetHitBy(0, world.Player.Id, Weapon.Club) { Hard = true }, events);
         Assert.DoesNotContain(events, e => e is TargetHitBy { Weapon: Weapon.Blade });
     }
 
@@ -44,7 +45,7 @@ public class TargetHitByTests
         world.Tick(PlayerInput.None with { Shoot = true });
 
         Assert.Contains(world.Events, e => e is DummyHit);
-        Assert.Contains(new TargetHitBy(0, world.Player.Id, Weapon.Pistol), world.Events);
+        Assert.Contains(new TargetHitBy(0, world.Player.Id, Weapon.Pistol) { Hard = true }, world.Events);
     }
 
     [Fact]
