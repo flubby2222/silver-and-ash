@@ -61,7 +61,7 @@ public class StairsBudgetAndViewTests
         // radius it uses is a constant of StairsLook (issue #750); a literal like 0.35f next to them is a second set that
         // drifts from the first.
         var source = File.ReadAllText(RepositoryFiles.Find("src/SilverAndAsh.Game/Rendering/StairsView.cs"));
-        var code = Regex.Replace(source, @"//.*|/\*.*?\*/", string.Empty, RegexOptions.Singleline);
+        var code = Regex.Replace(Regex.Replace(source, @"/\*.*?\*/", string.Empty, RegexOptions.Singleline), "//.*", string.Empty);
 
         var literals = Regex.Matches(code, @"(?<![\w.])\d+\.\d+f?\b").Select(match => match.Value).ToList();
 
