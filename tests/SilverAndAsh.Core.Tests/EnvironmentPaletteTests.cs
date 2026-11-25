@@ -6,7 +6,7 @@ namespace SilverAndAsh.Core.Tests;
 /// Issue #280: the environment (every PNG in assets/textures, cracked wall, door frames, secret-room wall door) is painted with the colours
 /// of the palette row Stein only, and the frame of the boss gate may add the row Werkstein (art bible, colour rule 6).
 /// Issue #543: the door leaves keep the wood, iron and brass they have today, listed here as the named rows "Tür"; the spiral
-/// stairs use Stein, Werkstein and the brass of their lamp (Messing/Gold).
+/// stairs use Stein, Werkstein, the brass of their lamp (Messing/Gold) and the dark steps of the row Eisen for their railing (issue #765).
 /// Issue #540: the portcullis is painted with the neutral iron K2 (row "Gitter Eisen"), its guide ring with the wall tile.
 /// </summary>
 public class EnvironmentPaletteTests
@@ -36,7 +36,7 @@ public class EnvironmentPaletteTests
     /// <summary>The door leaves (with their head panels): only the colours of the rows "Tür" below.</summary>
     private static readonly string[] DoorLeafModels = ["door_normal", "door_locked", "door_boss"];
 
-    /// <summary>The spiral stairs: Stein for wall and steps, Werkstein for the edges, Messing/Gold for the lamp.</summary>
+    /// <summary>The spiral stairs: Stein for wall and steps, Werkstein for the edges, Messing/Gold for the lamp, Eisen for the railing.</summary>
     private static readonly string[] StairsModels = ["stairs_spiral_a", "stairs_spiral_b", "stairs_spiral_c"];
 
     /// <summary>The portcullis (issue #540): only the neutral iron row "Gitter Eisen" below.</summary>
@@ -219,21 +219,42 @@ public class EnvironmentPaletteTests
 
     [Theory]
     [MemberData(nameof(Stairs))]
-    public void The_spiral_stairs_have_only_Stein_Werkstein_and_Messing(string name)
+    public void The_spiral_stairs_have_only_Stein_Werkstein_Messing_and_Eisen(string name)
     {
         var palette = RepositoryFiles.Find(PalettePath);
-        var werkstein = RowColors(palette, "akzent", "Werkstein");
-        var brass = RowColors(palette, "akzent", "Messing/Gold");
-        var allowed = StoneColors(palette);
-        allowed.UnionWith(werkstein);
-        allowed.UnionWith(brass);
-        allowed.Add(UnusedField);
         var file = RepositoryFiles.Find($"assets/models/{name}.png");
 
-        var foreign = ForeignColors(file, allowed);
-        Assert.True(foreign.Count == 0, $"{name}.png has {foreign.Count} colours outside Stein, Werkstein and Messing/Gold, e.g. {Show(foreign.FirstOrDefault())}.");
-        AssertUsesRow(file, werkstein, "Werkstein");
-        AssertUsesRow(file, brass, "Messing/Gold");
+        var foreign = ForeignColors(file, StairsColors(palette));
+        Assert.True(foreign.Count == 0, $"{name}.png has {foreign.Count} colours outside Stein, Werkstein, Messing/Gold and Eisen, e.g. {Show(foreign.FirstOrDefault())}.");
+        AssertUsesRow(file, RowColors(palette, "akzent", "Werkstein"), "Werkstein");
+        AssertUsesRow(file, RowColors(palette, "akzent", "Messing/Gold"), "Messing/Gold");
+        AssertUsesRow(file, RowColors(palette, "akzent", "Eisen"), "Eisen");
+    }
+
+    [Fact]
+    public void A_blood_red_pixel_in_a_spiral_stairs_atlas_makes_the_check_fail()
+    {
+        // Counter-proof: one pixel painted with a colour of the main palette that the stairs do not use (Blutrot).
+        var palette = RepositoryFiles.Find(PalettePath);
+        var (_, _, rgba) = TestPng.Read(RepositoryFiles.Find("assets/models/stairs_spiral_b.png"));
+        Assert.Empty(ForeignColors(rgba, StairsColors(palette)));
+
+        var blood = RowColors(palette, "akzent", "Blutrot").First();
+        var changed = (byte[])rgba.Clone();
+        (changed[0], changed[1], changed[2]) = blood;
+
+        Assert.Equal([blood], ForeignColors(changed, StairsColors(palette)));
+    }
+
+    // The railing of the stairs (issue #765) is iron of the main palette's row Eisen, not the portcullis's K2.
+    private static HashSet<(byte R, byte G, byte B)> StairsColors(string palette)
+    {
+        var allowed = StoneColors(palette);
+        allowed.UnionWith(RowColors(palette, "akzent", "Werkstein"));
+        allowed.UnionWith(RowColors(palette, "akzent", "Messing/Gold"));
+        allowed.UnionWith(RowColors(palette, "akzent", "Eisen"));
+        allowed.Add(UnusedField);
+        return allowed;
     }
 
     [Fact]
