@@ -9,8 +9,9 @@ namespace SilverAndAsh.Core;
 /// <param name="LevelName">Name of the level file in assets/levels/ without ".txt", or <see cref="GeneratedLevelName"/>.</param>
 /// <param name="Seed">Seed chosen with <c>--seed</c>, or null for a new one every game.</param>
 /// <param name="Give">
-/// Weapons to start every run with, chosen with <c>--give club</c> (as often as wanted) - for trying weapons out
-/// before they can be found. The game honours it only in its debug version.
+/// Weapons and items to start every run with, chosen with <c>--give club</c> or <c>--give leech</c> (as often as wanted,
+/// see <see cref="GiveOptions"/>) - for trying them out before they can be found. The game honours it only in its debug
+/// version.
 /// </param>
 /// <param name="Photo">
 /// <c>--photo &lt;scene&gt;</c>: take the picture of this photo scene (or <see cref="AllPhotos"/>, or <see cref="ListPhotos"/>
@@ -46,7 +47,7 @@ namespace SilverAndAsh.Core;
 /// with the real rules (issue #718, docs/pruefstrecke.md). Only in the debug version (see <see cref="CourseOptions"/>).
 /// </param>
 public sealed partial record LaunchOptions(
-    string LevelName, int? Seed = null, IReadOnlyList<Gameplay.WeaponKind>? Give = null, string? Photo = null, string? PhotoFolder = null,
+    string LevelName, int? Seed = null, IReadOnlyList<Gameplay.Equipment>? Give = null, string? Photo = null, string? PhotoFolder = null,
     int? Look = null, string? Bench = null, string? Clip = null, bool Showroom = false, WindowSize? Window = null,
     RoomOptions? Room = null, bool Course = false)
 {
@@ -88,7 +89,7 @@ public sealed partial record LaunchOptions(
         (args, var course) = CourseOptions.Extract(args);
         var levelName = DefaultLevelName;
         int? seed = null;
-        var give = new List<Gameplay.WeaponKind>();
+        var give = new List<Gameplay.Equipment>();
         string? photo = null;
         string? photoFolder = null;
         int? look = null;
@@ -143,19 +144,12 @@ public sealed partial record LaunchOptions(
                     break;
 
                 case "--give":
-                    var known = string.Join(", ", Enum.GetNames<Gameplay.WeaponKind>()).ToLowerInvariant();
                     if (i + 1 >= args.Count)
                     {
-                        throw new ArgumentException($"'--give' needs a weapon, e.g. '--give club'. Known: {known}.");
+                        throw new ArgumentException($"'--give' needs a weapon, e.g. '--give club'. Known: {GiveOptions.Known}.");
                     }
 
-                    var name = args[++i];
-                    if (!Enum.TryParse<Gameplay.WeaponKind>(name, ignoreCase: true, out var weapon) || int.TryParse(name, out _))
-                    {
-                        throw new ArgumentException($"Unknown weapon '{name}'. Known: {known}.");
-                    }
-
-                    give.Add(weapon);
+                    give.Add(GiveOptions.Find(args[++i]));
                     break;
 
                 case "--photo":
@@ -231,7 +225,7 @@ public sealed partial record LaunchOptions(
 
                 default:
                     throw new ArgumentException(
-                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom, --course, --window <width>x<height>, --room <file>, --no-enemies, --smoke (alone).");
+                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon or item>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom, --course, --window <width>x<height>, --room <file>, --no-enemies, --smoke (alone).");
             }
         }
 

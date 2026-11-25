@@ -77,14 +77,14 @@ using (log)
         log?.Info(start.Description);
 
 #if DEBUG
-        // Test option: --give club - every run (and restart) starts with these weapons, to try them before they can
-        // be found. Only in the debug version.
+        // Test option: --give club or --give leech - every run (and restart) starts with these weapons and items, to try
+        // them before they can be found (GiveOptions in Core). Only in the debug version.
         if (options.Give is { Count: > 0 } give)
         {
             var plainNew = newWorld;
             var plainNext = nextWorld;
-            newWorld = (worldSeed, balance) => WithGivenWeapons(plainNew(worldSeed, balance), give);
-            nextWorld = world => WithGivenWeapons(plainNext(world), give);
+            newWorld = (worldSeed, balance) => GiveOptions.GiveTo(plainNew(worldSeed, balance), give);
+            nextWorld = world => GiveOptions.GiveTo(plainNext(world), give);
             log?.Info($"Every run starts with: {string.Join(", ", give)}.");
         }
 
@@ -1570,35 +1570,6 @@ static void DrawFrameRate(bool fps)
         Raylib.DrawFPS(20, Raylib.GetScreenHeight() / 2);
     }
 }
-
-#if DEBUG
-// Test option --give: a melee weapon goes into the hand (the one before into the bag), a ranged one into the first free
-// place, or into the bag when all are taken. Only in the debug version, like the option itself.
-static GameWorld WithGivenWeapons(GameWorld world, IReadOnlyList<WeaponKind> give)
-{
-    foreach (var kind in give)
-    {
-        if (Weapons.Info(kind).Hand == WeaponHand.Melee)
-        {
-            world.Player.Stow(world.Player.Melee);
-            world.Player.EquipMelee(kind);
-            continue;
-        }
-
-        var free = world.Player.RangedSlots.ToList().FindIndex(weapon => weapon is null);
-        if (free >= 0)
-        {
-            world.Player.Equip(free, kind);
-        }
-        else
-        {
-            world.Player.Stow(kind);
-        }
-    }
-
-    return world;
-}
-#endif
 
 // Reads the balancing file; every problem with it goes into the log as a warning.
 static void LogRun(GameWorld world, FileLog? log) =>
