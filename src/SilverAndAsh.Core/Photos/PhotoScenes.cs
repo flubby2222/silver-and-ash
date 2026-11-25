@@ -232,6 +232,25 @@ public static class PhotoScenes
             studio => ChargedClubSwing(studio)),
         new("showroom-club", "The club in hand before the club (Worn) lying in the showroom (issue #403).",
             studio => new PhotoSetup(ClubInHand(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.Club })))),
+        new("axe-rest", "The hunter's axe in hand at rest: no end of the haft below the sleeve (issue #776).",
+            studio => new PhotoSetup(AxeInHand(studio.Arena('G', 10)))),
+        new("axe-swing-04", "A quick axe swing at 0.4 of its way, where it hits (issue #776).",
+            studio => new PhotoSetup(AxeInHand(studio.Arena('G', 10)))
+            {
+                // The axe swings in 0.7 of its cooldown (34 frames): 14 frames after the release it is at 0.4.
+                Ticks = 15,
+                Input = tick => PlayerInput.None with { Melee = tick == 0 },
+            }),
+        new("axe-swing-end", "A quick axe swing at its end, just before it swings back (issue #776).",
+            studio => new PhotoSetup(AxeInHand(studio.Arena('G', 10)))
+            {
+                Ticks = 35,
+                Input = tick => PlayerInput.None with { Melee = tick == 0 },
+            }),
+        new("axe-charged-release", "A fully charged axe swing let go, at 0.4 of its way (issue #776).",
+            studio => ChargedSwing(AxeInHand(studio.Arena('G', 10)), 14)),
+        new("showroom-axe", "The hunter's axe in hand before the Hunting Axe (Royal) lying in the showroom (issue #776).",
+            studio => new PhotoSetup(AxeInHand(BeforeEquipment(studio, piece => piece is WeaponPiece { Weapon: WeaponKind.HuntersAxe })))),
     ];
 
     // A bat in a bare hall, near, far, screeching and diving.
@@ -322,6 +341,8 @@ public static class PhotoScenes
     [
         new("hud-weapons", "The HUD with every weapon place taken: club in hand, pistol, rifle and blunderbuss.",
             studio => new PhotoSetup(AllWeapons(studio.StartRun()))),
+        new("hud-axe", "Like hud-weapons, but the hunter's axe in hand: its icon, a small picture of the model (issue #776).",
+            studio => new PhotoSetup(AxeInHand(AllWeapons(studio.StartRun())))),
         new("hud-rifle", "Like hud-weapons, but the rifle chosen (2): a placeholder next to the club (issue #249).",
             studio => new PhotoSetup(AllWeapons(studio.StartRun()))
             {
@@ -1085,9 +1106,11 @@ public static class PhotoScenes
 
     // The club held until fully charged, then let go; stops at the height of the swing, as many ticks after it
     // started as the quick swing in club-swing-full.
-    private static PhotoSetup ChargedClubSwing(PhotoStudio studio)
+    private static PhotoSetup ChargedClubSwing(PhotoStudio studio) => ChargedSwing(ClubInHand(studio.Arena('G', 10)), 7);
+
+    // Charges fully, lets go and stops `framesAfter` ticks after the swing.
+    private static PhotoSetup ChargedSwing(GameWorld world, int framesAfter)
     {
-        var world = ClubInHand(studio.Arena('G', 10));
         var released = false;
         return new PhotoSetup(world)
         {
@@ -1097,7 +1120,7 @@ public static class PhotoScenes
                 released |= world.Player.MeleeCharge is { IsCharging: true, Fraction: >= 1f };
                 return PlayerInput.None with { Melee = !released };
             },
-            StopWhen = TicksAfter<MeleeSwung>(7),
+            StopWhen = TicksAfter<MeleeSwung>(framesAfter),
         };
     }
 
@@ -1222,6 +1245,12 @@ public static class PhotoScenes
     private static GameWorld ClubInHand(GameWorld world)
     {
         world.Player.EquipMelee(WeaponKind.Club);
+        return world;
+    }
+
+    private static GameWorld AxeInHand(GameWorld world)
+    {
+        world.Player.EquipMelee(WeaponKind.HuntersAxe);
         return world;
     }
 

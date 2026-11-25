@@ -1760,7 +1760,7 @@ public sealed class GameWorld
         var counted = _events.Count > eventsBefore;
         if (counted)
         {
-            _events.Insert(eventsBefore + 1, new TargetHitBy(target.Id, attacker.Id, hit.Weapon));
+            _events.Insert(eventsBefore + 1, new TargetHitBy(target.Id, attacker.Id, hit.Weapon) { Hard = target is TrainingDummy });
         }
 
         // A sleeping enemy that is hit wakes up - together with its whole room (the room is not sealed by that). Since

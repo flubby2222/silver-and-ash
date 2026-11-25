@@ -1018,6 +1018,7 @@ public sealed partial class Player
         if (pressed && MeleeCooldown.IsReady)
         {
             MeleeCharge.Start();
+            _events.Add(new MeleeChargeStarted(Id, Melee, MeleeCharge.FullTicks) { Place = EyePosition });
         }
         else if (MeleeCharge.IsCharging && held)
         {

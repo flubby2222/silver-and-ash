@@ -137,9 +137,20 @@ public class PhotoSceneTests
             "course-1-arms", "course-1-arms-row", "course-2-columns", "course-3-cracked-wall", "course-4-portcullis", "course-5-teleporter", "course-6-boss",
             "showroom-stairs", "course-boss-stairs", "showroom-boss-door",
             "ghoul-marked-4m", "ghoul-marked-late", "ghoul-burning-4m", "ghoul-chilled-4m",
+            "axe-rest", "axe-swing-04", "axe-swing-end", "axe-charged-release", "showroom-axe", "hud-axe", "course-1-axe",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
+    }
+
+    [Fact]
+    public void The_axe_swing_photos_stop_at_four_tenths_and_at_the_end_of_the_axe_swing()
+    {
+        // Issue #776: pressed on tick 0, released on tick 1; each later tick is one frame of the swing.
+        var swingFrames = WeaponPose.SwingSeconds(WeaponKind.HuntersAxe, Balance.Default.HuntersAxe.Cooldown) * SimulationClock.TicksPerSecond;
+
+        Assert.InRange((Built("axe-swing-04").Ticks - 1) / swingFrames, 0.38f, 0.43f);
+        Assert.True(Built("axe-swing-end").Ticks - 1 >= swingFrames, "axe-swing-end must show the swing at its end.");
     }
 
     [Fact]

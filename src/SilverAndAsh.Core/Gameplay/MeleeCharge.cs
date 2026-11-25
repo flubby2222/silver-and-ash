@@ -26,6 +26,9 @@ public sealed class MeleeCharge
         _segments = balance.ChargeStaminaSegments;
     }
 
+    /// <summary>Ticks of holding from the start until the charge is full (<see cref="MeleeBalance.ChargeTime"/>).</summary>
+    public int FullTicks => _fullTicks;
+
     /// <summary>True while the button is held and the blade is being charged.</summary>
     public bool IsCharging { get; private set; }
 

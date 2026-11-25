@@ -121,7 +121,8 @@ internal sealed class SoundPlayer : IDisposable
     /// <summary>
     /// Plays <paramref name="cues"/> (the sounds of one tick), each at its volume and to its side (issue #491). raylib's
     /// pan runs from -1 (only the left speaker) to 1 (only the right), like <see cref="SoundCue.Pan"/> - measured with
-    /// raylib 6 under Raylib-cs 8.1.0. A cue whose file is not loaded is left out.
+    /// raylib 6 under Raylib-cs 8.1.0. A cue whose file is not loaded is left out; a cue with <see cref="SoundCue.Stop"/>
+    /// stops its file (issue #776).
     /// <para>
     /// One sound per file: a sound that starts again while it still plays begins anew at the new place. A source that
     /// moves while its sound plays is heard where it was when the sound began.
@@ -132,7 +133,11 @@ internal sealed class SoundPlayer : IDisposable
         ArgumentNullException.ThrowIfNull(cues);
         foreach (var cue in cues)
         {
-            if (_sounds.TryGetValue(cue.File, out var sound))
+            if (_sounds.TryGetValue(cue.File, out var sound) && cue.Stop)
+            {
+                Raylib.StopSound(sound);
+            }
+            else if (_sounds.TryGetValue(cue.File, out sound))
             {
                 Raylib.SetSoundVolume(sound, cue.Volume * _effects);
                 Raylib.SetSoundPan(sound, cue.Pan);

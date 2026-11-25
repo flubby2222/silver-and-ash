@@ -27,8 +27,8 @@ internal interface IWeaponView
 
 /// <summary>
 /// The weapons in the hands: the silver blade in the left hand, the pistol in the right. Both are the designer's models
-/// with their hands (<see cref="WeaponModels"/>, issue #249); the club is a model held and swung like the blade (issue
-/// #403). Rifle and blunderbuss - and a weapon whose model is missing - are placeholder boxes without a hand.
+/// with their hands (<see cref="WeaponModels"/>, issue #249); the club and the hunter's axe are models held and swung
+/// like the blade (issues #403, #776). Rifle and blunderbuss - and a weapon whose model is missing - are placeholder boxes without a hand.
 /// Movement by code, all of it soft so the player seems to glide through the world: a slow, gentle bob while walking,
 /// hands that trail behind when looking around or walking sideways ("weapon sway"), a dip with the landing nod,
 /// a swing of the blade, recoil and a muzzle flash for the pistol. Models and boxes move the same way.
@@ -43,7 +43,6 @@ internal interface IWeaponView
 /// </summary>
 internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shader = null) : IWeaponView
 {
-    private const float SwingSeconds = WeaponPose.SwingSeconds;
     private const float RecoilSeconds = 0.18f;
     private const float FlashSeconds = 0.06f;
 
@@ -75,6 +74,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
     private static readonly Vector3 PistolHand = new(0.095f, -0.08f, 0.18f);
 
     private float _swing = 1f;      // 0 = swing starts, 1 = finished
+    private float _swingSeconds = WeaponPose.FixedSwingSeconds; // the melee weapon's (the axe's from its cooldown)
     private float _windUp;          // 0 = blade at rest, 1 = fully drawn back for a charged swing
     private bool _fullyCharged;
     private float _time;
@@ -121,7 +121,9 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
     public void Update(float frameSeconds, Player player)
     {
         ArgumentNullException.ThrowIfNull(player);
-        _swing = MathF.Min(1f, _swing + frameSeconds / SwingSeconds);
+        // The heavy axe's swing takes a share of its cooldown (issue #776); blade and club keep their fixed time.
+        _swingSeconds = WeaponPose.SwingSeconds(player.Melee, player.MeleeCooldown.DurationTicks * SimulationClock.SecondsPerTick);
+        _swing = MathF.Min(1f, _swing + frameSeconds / _swingSeconds);
         _recoil = MathF.Min(1f, _recoil + frameSeconds / RecoilSeconds);
         _flash = MathF.Max(0f, _flash - frameSeconds / FlashSeconds);
         _consecrated = player.IsConsecrated;
@@ -214,7 +216,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
 
         if (models is not null && models.TryGetMelee(_melee, out var blade, out var bladeHand))
         {
-            // The sleeve hangs on the grip; the club alone bends in the cuff (issue #417).
+            // The sleeve hangs on the grip; the club and the axe bend in the cuff (issues #417, #776).
             var grip = WeaponPose.Blade(t, _windUp, tremble) * modelMotion;
             DrawOnePart(blade, WeaponPose.MeleeBend(_melee, t, _windUp) * grip);
             DrawSleeve(bladeHand, grip, WeaponPose.BladeForearm(t, _windUp, tremble, bladeHand.Rig.Pivots[1]));
@@ -240,29 +242,12 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
             return;
         }
 
-        if (_melee == WeaponKind.HuntersAxe)
-        {
-            DrawAxeBoxes(hand);
-            return;
-        }
-
         // Handle, guard and the long silver blade pointing forward and a little up.
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.03f) * hand, new Vector3(0.022f, 0.022f, 0.07f), Wood);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.01f) * hand, new Vector3(0.055f, 0.012f, 0.012f), DarkSilver);
         ShadedBox.Draw(
             Matrix4x4.CreateRotationX(Deg(-25f)) * Matrix4x4.CreateTranslation(0f, 0.035f, 0.08f) * hand,
             new Vector3(0.016f, 0.005f, 0.15f), Silver);
-    }
-
-    // The hunter's axe until its model is in (issue #201): a long wooden haft, a broad iron head to the right and a
-    // short spike on top.
-    private static void DrawAxeBoxes(Matrix4x4 hand)
-    {
-        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.03f) * hand, new Vector3(0.022f, 0.022f, 0.2f), Wood);
-        var head = Matrix4x4.CreateRotationX(Deg(-25f)) * Matrix4x4.CreateTranslation(0f, 0.03f, 0.12f) * hand;
-        ShadedBox.Draw(Matrix4x4.CreateTranslation(0.035f, 0f, 0f) * head, new Vector3(0.06f, 0.012f, 0.07f), Iron);
-        ShadedBox.Draw(Matrix4x4.CreateTranslation(0.068f, 0f, 0f) * head, new Vector3(0.008f, 0.014f, 0.09f), DarkSilver);
-        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.05f) * head, new Vector3(0.014f, 0.014f, 0.04f), DarkSilver);
     }
 
     private void DrawPistol(Matrix4x4 motion, Matrix4x4 modelMotion)
