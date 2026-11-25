@@ -17,6 +17,9 @@ public enum Weapon
 
     /// <summary>The hunter's axe (issue #201).</summary>
     HuntersAxe,
+
+    /// <summary>The whip (issue #202).</summary>
+    Whip,
 }
 
 /// <summary>Where a body was hit.</summary>
@@ -99,6 +102,7 @@ public sealed class DamageRules
         rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
         rules.Add(new ChargeBonus(balance.Club.ChargeMaxMultiplier, Weapon.Club));
         rules.Add(new ChargeBonus(balance.HuntersAxe.ChargeMaxMultiplier, Weapon.HuntersAxe));
+        rules.Add(new ChargeBonus(balance.Whip.ChargeMaxMultiplier, Weapon.Whip));
         rules.Add(new DamageBoonBonus(balance.Boons.Damage));
         rules.Add(new MarkedBonus(balance.StatusEffects.Marked.Bonus));
         return rules;

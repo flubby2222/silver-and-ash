@@ -40,6 +40,12 @@ public enum WeaponKind
     /// "Hunting Axe" - "Hunter's Axe" is 2 pixels too wide for the equipment box and the pickup toast (provisional).
     /// </summary>
     HuntersAxe,
+
+    /// <summary>
+    /// The whip (Royal, issue #202): long reach, medium damage, and it pulls ghouls and bats in towards the one who
+    /// swings it (Gorm stands firm).
+    /// </summary>
+    Whip,
 }
 
 /// <summary>What a weapon is: its name (shown in the game), its hand and its tier.</summary>
@@ -57,6 +63,7 @@ public static class Weapons
         WeaponKind.Rifle => new("Rifle", WeaponHand.Ranged, ItemTier.Forged),
         WeaponKind.Blunderbuss => new("Blunderbuss", WeaponHand.Ranged, ItemTier.Forged),
         WeaponKind.HuntersAxe => new("Hunting Axe", WeaponHand.Melee, ItemTier.Royal),
+        WeaponKind.Whip => new("Whip", WeaponHand.Melee, ItemTier.Royal),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
 
@@ -69,6 +76,7 @@ public static class Weapons
         WeaponKind.Rifle => Weapon.Rifle,
         WeaponKind.Blunderbuss => Weapon.Blunderbuss,
         WeaponKind.HuntersAxe => Weapon.HuntersAxe,
+        WeaponKind.Whip => Weapon.Whip,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
 }
