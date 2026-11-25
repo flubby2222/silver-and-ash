@@ -15,12 +15,12 @@ public class ExperienceTests
     };
 
     /// <summary>
-    /// A round level curve of its own (issue #586): 10 for the first level, then half as much again each time -
-    /// 10, 15, 22.5 -> 23, 33.75 -> 34. Half points round up (22.5 -> 23, not to the even 22).
+    /// A round level curve of its own (issue #586, as a table since #503): 10 for the first level, 15 for the second
+    /// and the third, 34 from the fourth on.
     /// </summary>
     private static readonly Balance Curve = Balance.Default with
     {
-        Experience = new ExperienceBalance { FirstLevel = 10, Growth = 1.5f },
+        Experience = new ExperienceBalance { LevelCosts = [new(0, 10), new(1, 15), new(3, 34)] },
     };
 
     [Fact]
@@ -30,7 +30,7 @@ public class ExperienceTests
 
         Assert.Equal(0, player.Level);
         Assert.Equal(0, player.Experience);
-        Assert.Equal(Balance.Default.Experience.FirstLevel, player.ExperienceToNextLevel);
+        Assert.Equal(Balance.Default.Experience.LevelCosts[0].Cost, player.ExperienceToNextLevel);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class ExperienceTests
         Assert.Equal(1, player.PendingBoons);
         Assert.Equal(new LevelUp(player.Id, 1), Assert.Single(events.OfType<LevelUp>()));
         Assert.Equal(0, player.Experience);
-        Assert.Equal(15, player.ExperienceToNextLevel);     // 10 x 1.5
+        Assert.Equal(15, player.ExperienceToNextLevel);     // the row from level 1 on
     }
 
     [Fact]
@@ -139,9 +139,9 @@ public class ExperienceTests
     }
 
     [Fact]
-    public void Each_level_needs_the_first_times_growth_to_the_power_of_the_level_rounded()
+    public void Each_level_needs_the_cost_of_the_row_it_falls_in()
     {
-        // 10 x 1.5^level: 10, 15, 22.5 -> 23, 33.75 -> 34, rounded - not from the rounded last level (23 x 1.5 = 34.5 -> 35).
+        // Issue #503 (before: 10 x 1.5^level, rounded): 10, then 15 for levels 1 and 2 alike, then 34 from level 3 on.
         var player = new Player(LevelParser.Parse("P"), balance: Curve);
 
         player.AddExperience(10, []);
@@ -150,11 +150,15 @@ public class ExperienceTests
 
         player.AddExperience(15, []);
         Assert.Equal(2, player.Level);
-        Assert.Equal(23, player.ExperienceToNextLevel);
+        Assert.Equal(15, player.ExperienceToNextLevel);
 
-        player.AddExperience(23, []);
+        player.AddExperience(15, []);
         Assert.Equal(3, player.Level);
         Assert.Equal(34, player.ExperienceToNextLevel);
+
+        player.AddExperience(34, []);
+        Assert.Equal(4, player.Level);
+        Assert.Equal(34, player.ExperienceToNextLevel);     // the last row holds on
     }
 
     [Fact]
@@ -199,12 +203,27 @@ public class ExperienceTests
         // The balancing file refuses such values, but code could still set them.
         var player = new Player(LevelParser.Parse("P"), balance: Balance.Default with
         {
-            Experience = new ExperienceBalance { FirstLevel = 0 },
+            Experience = new ExperienceBalance { LevelCosts = [new(0, 0)] },
         });
 
         player.AddExperience(10, []);
 
         Assert.Equal(0, player.Level);
+    }
+
+    [Fact]
+    public void Without_any_row_no_level_is_climbed()
+    {
+        // Issue #503: an empty table (refused by the balancing file, possible in code) costs nothing - and stops there.
+        var player = new Player(LevelParser.Parse("P"), balance: Balance.Default with
+        {
+            Experience = new ExperienceBalance { LevelCosts = [] },
+        });
+
+        player.AddExperience(10, []);
+
+        Assert.Equal(0, player.Level);
+        Assert.Equal(0, player.ExperienceToNextLevel);
     }
 
     [Fact]
@@ -237,13 +256,13 @@ public class ExperienceTests
     {
         var balance = Frail with
         {
-            Experience = new ExperienceBalance { Ghoul = 70, Bat = 5, FirstLevel = 60, Growth = 1.5f },
+            Experience = new ExperienceBalance { Ghoul = 70, Bat = 5, LevelCosts = [new(0, 60), new(1, 90)] },
         };
         var world = new GameWorld(LevelParser.Parse("P\n.\nG"), balance: balance);
 
         Shoot(world, world.Ghouls[0].Position + new Vector3(0f, 0.5f, 0f));
 
-        // 70 experience: level 1 needs 60, then 10 are left of the 90 (60 x 1.5) for level 2.
+        // 70 experience: level 1 needs 60, then 10 are left of the 90 (the second row) for level 2.
         Assert.Equal(1, world.Player.Level);
         Assert.Equal(10, world.Player.Experience);
         Assert.Equal(90, world.Player.ExperienceToNextLevel);
@@ -278,7 +297,7 @@ public class ExperienceTests
         // Issue #375: the first level costs exactly one ghoul here, so the kill gives one skill point.
         var balance = Frail with
         {
-            Experience = Frail.Experience with { FirstLevel = Frail.Experience.Ghoul },
+            Experience = Frail.Experience with { LevelCosts = [new(0, Frail.Experience.Ghoul)] },
         };
         var world = new GameWorld(LevelParser.Parse("P\n.\nG"), balance: balance);
 
@@ -291,6 +310,70 @@ public class ExperienceTests
             world.Tick(PlayerInput.None);
             Assert.DoesNotContain(world.Events, e => e is LevelUp);
         }
+    }
+
+    /// <summary>Every threshold of the standard table after the first row (issue #503: from 10 and from 20 on).</summary>
+    public static TheoryData<int> Thresholds() => new(Enumerable.Range(1, Balance.Default.Experience.LevelCosts.Count - 1));
+
+    [Theory]
+    [MemberData(nameof(Thresholds))]
+    public void A_threshold_raises_the_cost_from_its_level_on_and_not_before(int row)
+    {
+        // Issue #503 with the standard table: 9 -> 10 still costs the old row, 10 -> 11 and 11 -> 12 the new one
+        // (and the same at 19, 20, 21). The experience to get there is summed up straight from the rows.
+        var rows = Balance.Default.Experience.LevelCosts;
+        var threshold = rows[row].FromLevel;
+        var player = new Player(LevelParser.Parse("P"));
+        player.AddExperience(ExperienceForLevel(threshold - 1), []);
+        Assert.Equal(threshold - 1, player.Level);
+        Assert.Equal(rows[row - 1].Cost, player.ExperienceToNextLevel);
+
+        player.AddExperience(rows[row - 1].Cost, []);
+        Assert.Equal(threshold, player.Level);
+        Assert.Equal(0, player.Experience);
+        Assert.Equal(rows[row].Cost, player.ExperienceToNextLevel);
+
+        player.AddExperience(rows[row].Cost - 1, []);
+        Assert.Equal(threshold, player.Level);      // one point short of the new cost
+
+        player.AddExperience(1, []);
+        Assert.Equal(threshold + 1, player.Level);
+        Assert.Equal(rows[row].Cost, player.ExperienceToNextLevel);
+    }
+
+    [Fact]
+    public void One_kill_in_the_tick_climbs_several_levels_across_a_threshold()
+    {
+        // Issue #503: two levels before the first threshold, a ghoul worth two levels of the old row, one of the new
+        // and half a new level more - shot in the tick, it brings all three level ups, and the rest counts on.
+        var rows = Balance.Default.Experience.LevelCosts;
+        var threshold = rows[1].FromLevel;
+        var leftOver = rows[1].Cost / 2;
+        var balance = Frail with
+        {
+            Experience = Frail.Experience with { Ghoul = 2 * rows[0].Cost + rows[1].Cost + leftOver },
+        };
+        var world = new GameWorld(LevelParser.Parse("P\n.\nG"), balance: balance);
+        var player = world.Player;
+        player.AddExperience(ExperienceForLevel(threshold - 2), []);
+        Assert.Equal(threshold - 2, player.Level);
+
+        Shoot(world, world.Ghouls[0].Position + new Vector3(0f, 0.5f, 0f));
+
+        Assert.True(world.Ghouls[0].IsDead);
+        Assert.Equal(
+            [new LevelUp(player.Id, threshold - 1), new LevelUp(player.Id, threshold), new LevelUp(player.Id, threshold + 1)],
+            world.Events.OfType<LevelUp>());
+        Assert.Equal(threshold + 1, player.Level);
+        Assert.Equal(leftOver, player.Experience);
+        Assert.Equal(rows[1].Cost, player.ExperienceToNextLevel);
+    }
+
+    /// <summary>Experience from level 0 to <paramref name="level"/>, summed up straight from the rows of the standard table.</summary>
+    private static int ExperienceForLevel(int level)
+    {
+        var rows = Balance.Default.Experience.LevelCosts;
+        return Enumerable.Range(0, level).Sum(below => rows.Last(row => row.FromLevel <= below).Cost);
     }
 
     private static void Shoot(GameWorld world, Vector3 point)

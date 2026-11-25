@@ -196,6 +196,7 @@ public static class BalanceFile
         balance ??= new Balance();
         CheckValues(balance, new Balance(), string.Empty, warnings);
         CheckRanges(balance, warnings);
+        CheckLevelCosts(balance.Experience, warnings);
         return new(balance, warnings);
     }
 
@@ -215,6 +216,25 @@ public static class BalanceFile
             {
                 ReportUnknownNames(entry.Value, property.PropertyType, path + ".", warnings);
             }
+            else if (IsTable(property.PropertyType) && entry.Value.ValueKind == JsonValueKind.Array)
+            {
+                ReportUnknownNamesInRows(entry.Value, property.PropertyType.GetGenericArguments()[0], path, warnings);
+            }
+        }
+    }
+
+    /// <summary>Warns about every unknown name in the rows of a table (e.g. <c>experience.levelCosts[1].cots</c>).</summary>
+    private static void ReportUnknownNamesInRows(JsonElement table, Type rowType, string path, List<string> warnings)
+    {
+        var index = 0;
+        foreach (var row in table.EnumerateArray())
+        {
+            if (row.ValueKind == JsonValueKind.Object)
+            {
+                ReportUnknownNames(row, rowType, $"{path}[{index}].", warnings);
+            }
+
+            index++;
         }
     }
 
@@ -238,6 +258,12 @@ public static class BalanceFile
                     CheckValues(section, standard!, path + ".", warnings);
                 }
 
+                continue;
+            }
+
+            // Tables have rules of their own (CheckLevelCosts).
+            if (IsTable(property.PropertyType))
+            {
                 continue;
             }
 
@@ -307,6 +333,51 @@ public static class BalanceFile
             }
         }
     }
+
+    /// <summary>
+    /// The level costs (issue #503) must start at level 0, rise from row to row and cost something in every row -
+    /// otherwise the whole table goes back to its standard (half a table would leave levels without a cost).
+    /// </summary>
+    private static void CheckLevelCosts(ExperienceBalance experience, List<string> warnings)
+    {
+        var problem = LevelCostsProblem(experience.LevelCosts);
+        if (problem is null)
+        {
+            return;
+        }
+
+        warnings.Add($"'experience.levelCosts' {problem} - using the standard table.");
+        typeof(ExperienceBalance).GetProperty(nameof(ExperienceBalance.LevelCosts))!.SetValue(experience, Balance.Default.Experience.LevelCosts);
+    }
+
+    /// <summary>What is wrong with the level costs, or null if nothing.</summary>
+    private static string? LevelCostsProblem(IReadOnlyList<LevelCost>? costs)
+    {
+        if (costs is null || costs.Count == 0)
+        {
+            return "is empty";
+        }
+
+        if (costs.Any(row => row is null))
+        {
+            return "has an empty row";
+        }
+
+        if (costs[0].FromLevel != 0)
+        {
+            return "must start at level 0";
+        }
+
+        if (costs.Zip(costs.Skip(1)).Any(pair => pair.Second.FromLevel <= pair.First.FromLevel))
+        {
+            return "must rise from row to row";
+        }
+
+        return costs.Any(row => row.Cost <= 0) ? "must cost above 0 in every row" : null;
+    }
+
+    /// <summary>A table of rows in a section (so far only <see cref="ExperienceBalance.LevelCosts"/>).</summary>
+    private static bool IsTable(Type type) => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>);
 
     /// <summary>The values that can be set (derived ones like gravity cannot).</summary>
     private static IEnumerable<PropertyInfo> SettableProperties(Type type) =>

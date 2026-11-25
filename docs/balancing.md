@@ -23,7 +23,7 @@ Zum **Ausprobieren** die Kopie neben dem Spiel ändern. Ein Wert, der **bleiben*
   "dummy":  { ... },
   "ghoul":  { "speed": 4.5, ... },
   "bat":    { ... },
-  "experience": { "ghoul": 30, "bat": 20, "firstLevel": 100, "growth": 1.25 },
+  "experience": { "ghoul": 30, "bat": 20, "levelCosts": [ { "fromLevel": 0, "cost": 270 }, { "fromLevel": 10, "cost": 540 }, ... ] },
   "boons":  { "offered": 3, "staminaRegen": 0.05, "health": 5, "damage": 0.05, "experience": 0.025 },
   "drops":  { "ghoulChance": 0.3, "batChance": 0.15, "consecratedAmmoShare": 0.3 },   // 0 = nie, 1 = immer
   "silver": { "ghoulChance": 0.5, "batChance": 0.5, "ghoulMin": 1, "ghoulMax": 3, "batMin": 1, "batMax": 3 },   // Chance und Silber pro Kill
@@ -101,6 +101,27 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreiben keine Zeile in `runs.log`. Ältere Vorschau-Läufe lassen sich dort nicht sicher erkennen, weil eine Zeile weder Raum noch Startart nennt; einen Hinweis gibt höchstens die Raumzahl (`rooms 0/0`, `0/1` oder `1/1` statt der Kampfräume einer ganzen Ebene 0, wie sie aber auch ein Lauf mit `--level` zeigt).
 
 Ergebnis hier eintragen, neueste Runde oben.
+
+### Zwischenschritt – 25.11.2026 (#503, Erfahrungskurve B)
+
+**Anlass:** Issue #503. Der Mensch hat am 20.11.2026 Variante B der Erfahrungskurve gewählt (Skills-Entwurf, Abschnitt 7, #104 Runde 5): Jede Stufe kostet gleich viel, ab Schwellen mehr. Bisher stieg jede Stufe um den Faktor 1,25.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `experience.firstLevel` / `experience.growth` | 100 / 1,25 (100, 125, 156, 195 …) | entfällt | ersetzt durch die Tabelle darunter |
+| `experience.levelCosts` | – | ab Stufe 0: 270, ab 10: 540, ab 20: 1080 | Entscheidung des Menschen (Variante B). Eine Zeile gilt ab ihrer Stufe bis zur nächsten Zeile. |
+
+Spiel (`Player.ExperienceToNextLevel`) und Report (`BalanceReport.LevelReached`) rechnen mit derselben Methode `ExperienceBalance.CostFrom`.
+
+**Report (500 Ebenen), `main` gegen diesen Stand:** Nur eine Zeile ändert sich.
+
+| Kennzahl | vorher | nachher |
+|---|---|---|
+| Player level reached | 8,65 (8 bis 9) | 9,33 (7 bis 10) |
+
+**Begründung:** Das liegt bei der Erwartung des Entwurfs (im Schnitt etwa Stufe 9, 7 bis 10). Bei einem Skillpunkt je drei Stufen bleiben es am Ende der Katakomben 2 oder 3 Punkte. Die Streuung ist größer als vorher, weil jede Stufe bis 10 gleich viel kostet: Mehr Erfahrung in einer Ebene bremst nicht mehr durch steigende Kosten. Der erste Aufstieg kommt nach 270 statt 100 Erfahrung (etwa 10 statt 4 Kills), der erste Skillpunkt nach 810 statt 381 (etwa 29 statt 14 Kills). Die Schwellen bei 10 und 20 erreicht in den Katakomben kaum jemand; für spätere Ebenen sind sie neu abzugleichen (Entwurf: sonst 8 Punkte nach Ebene 3).
+
+**Offen:** Ein Lauf im Spiel steht aus; `runs.log` enthält nur Läufe mit der alten Kurve.
 
 ### Runde 4 – 24.11.2026 (QC-Runde vor dem Spieltest zu 0.12.0, ohne Wertänderung)
 
@@ -348,6 +369,7 @@ Das Spiel startet **immer**. Was nicht passt, landet als Warnung im Log (`%LOCAL
 | Negativ, oder 0, wo 0 das Spiel kaputt machen würde (z. B. Abklingzeit 0) | Standardwert für diesen Wert |
 | Über einer Grenze (Sprung höher als der Raum, Winkel über 180° …) | Standardwert für diesen Wert |
 | Minimum größer als Maximum (z. B. `circleRadiusMin` > `circleRadiusMax`) | Standardwerte für beide |
+| Tabelle `experience.levelCosts` leer, beginnt nicht bei Stufe 0, steigt nicht von Zeile zu Zeile oder hat eine Zeile mit Kosten 0 oder weniger | die ganze Standardtabelle |
 
 ## Standardwerte dauerhaft ändern
 
