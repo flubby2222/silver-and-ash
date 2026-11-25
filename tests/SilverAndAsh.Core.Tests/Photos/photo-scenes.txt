@@ -63,6 +63,8 @@ ghoul-burning-4m | ticks 1 menu None ----- | A ghoul 4 m away, just set alight b
 ghoul-chilled-4m | ticks 1 menu None ----- | A ghoul 4 m away, just chilled by a Grave Chill: the frost - its body tinted cold, rime flecks on it, a disc of rime on the floor - and its time left above its head (issues #508, #775).
 ghoul-chilled-10m | ticks 1 menu None ----- | A chilled ghoul 10 m away: can the frost still be told at a distance? (issue #775)
 ghoul-chilled-late | ticks 600 menu None ----S | A chilled ghoul coming closer, 0.1 s of its chill left: the frost looks the same to its last tick (issue #775).
+ghoul-chilled-windup | ticks 600 menu None ----S | A ghoul rearing up for a blow, halfway through, just chilled: the rime flecks stay on its raised torso and head, none beside it (issue #785).
+ghoul-chilled-step | ticks 1 menu None ----- | A chilled ghoul 4 m away on the edge of a step of 0.25 m, its middle out over the lower floor: the disc of rime lies on both floors, cut at the edge - it neither floats nor sinks in (issue #785).
 ghoul-chill-ended | ticks 600 menu None ----S | The same ghoul the tick its chill has run out: no frost left (issue #775).
 ghoul-stunned-4m | ticks 1 menu None ----- | A ghoul 4 m away, just stunned: three silver-grey sparks circling above its head, its time left above them (issues #509, #778).
 ghoul-stunned-10m | ticks 1 menu None ----- | A stunned ghoul 10 m away: can the sparks still be told at a distance? (issue #778)
@@ -98,6 +100,7 @@ bat-screech | ticks 1200 menu None ----S | A bat screeching, the warning before 
 bat-dive | ticks 1200 menu None ----S | A bat diving at the player, within 4 m of its feet (issue #249).
 gorm | ticks 1 menu None ----- | Gorm, the Chained, 6 m away in his boss room.
 gorm-chilled | ticks 1 menu None ----- | Gorm 8 m away, just chilled by a Grave Chill: his body tinted cold, rime flecks on him, the disc of rime at his feet; in a hall as high as his boss room (issue #775).
+gorm-chilled-step | ticks 1 menu None ----- | Chilled Gorm 8 m away on the edge of a step of 0.25 m, his middle out over the lower floor: his disc of rime lies on both floors, cut at the edge; in a hall as high as his boss room (issue #785).
 gorm-stunned | ticks 1 menu None ----- | Gorm 8 m away, just stunned - he staggers for a moment: three sparks circling above his head; in a hall as high as his boss room (issue #778).
 gorm-stunned-windup | ticks 3000 menu None ----S | Gorm stunned while he whirls his chain above his head, the warning before the swing, which goes on: the sparks above his head next to the chain; in a hall as high as his boss room (issue #778).
 gorm-swing-windup | ticks 3000 menu None ----S | Gorm whirling his chain above his head, the warning before the swing, the chain out to his right; in a hall as high as his boss room (issues #249, #254).

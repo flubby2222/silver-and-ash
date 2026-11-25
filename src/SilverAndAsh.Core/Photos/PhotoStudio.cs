@@ -196,9 +196,32 @@ public sealed class PhotoStudio
     /// lies at <paramref name="ceiling"/> (default: as high as a corridor; Gorm's boss room: <see cref="RoomTemplate.RoomCeilingHeight"/>).
     /// The floor shows texture <paramref name="floor"/> (default A, like every hand-made level); walls and ceiling stay A.
     /// </summary>
-    public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight, TextureVariant floor = TextureVariant.A)
+    public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight, TextureVariant floor = TextureVariant.A) =>
+        ArenaOf(HallText(metres, x => x == HallWidth / 2 ? figure : null), ceiling, floor);
+
+    /// <summary>
+    /// The bare hall of <see cref="Arena"/>, with a step (issue #785): every column beyond the figure's (larger x) is a
+    /// platform of 0.25 m. The figure stands on the step's edge, its middle <paramref name="overhang"/> metres out over the
+    /// lower floor - where it still stands on the step - and the player looks at it.
+    /// </summary>
+    public GameWorld ArenaAtStep(char figure, int metres, float overhang, float ceiling = Cell.DefaultCeilingHeight)
     {
-        var level = LevelParser.Parse(HallText(metres, x => x == HallWidth / 2 ? figure : null));
+        var text = HallText(metres, x => x == HallWidth / 2 ? figure : null);
+        var stepped = string.Join('\n', text.Split('\n').Select(row =>
+            new string(row.Select((symbol, x) => x > HallWidth / 2 && symbol == '.' ? '1' : symbol).ToArray())));
+        var world = ArenaOf(stepped, ceiling, TextureVariant.A);
+
+        var enemy = world.Enemies.Single();
+        var edge = ((HallWidth / 2) + 1) * Level.CellSize;
+        var step = world.Level[(HallWidth / 2) + 1, Level.ToGrid(0f, enemy.Body.Position.Z).Z].FloorHeight;
+        enemy.PlaceAt(new Vector3(edge - overhang, step, enemy.Body.Position.Z));
+        Face(world.Player, Middle(enemy.Body));
+        return world;
+    }
+
+    private GameWorld ArenaOf(string text, float ceiling, TextureVariant floor)
+    {
+        var level = LevelParser.Parse(text);
         if (ceiling != Cell.DefaultCeilingHeight)
         {
             level = level.WithCells(

@@ -148,6 +148,7 @@ public class PhotoSceneTests
             "ghoul-stunned-10m", "ghouls-chilled-stunned-4m", "ghouls-chilled-stunned-10m", "ghouls-burning-stunned-4m",
             "ghouls-marked-stunned-4m", "ghoul-chilled-and-stunned-4m", "bat-stunned-4m", "gorm-stunned", "gorm-stunned-windup",
             "axe-rest", "axe-swing-04", "axe-swing-end", "axe-charged-release", "showroom-axe", "hud-axe", "course-1-axe",
+            "ghoul-chilled-windup", "ghoul-chilled-step", "gorm-chilled-step",
             "whip-rest", "whip-swing-out", "whip-swing-hit", "whip-swing-back", "whip-charging", "whip-charged-release",
             "showroom-whip", "hud-whip", "course-1-whip",
         ];

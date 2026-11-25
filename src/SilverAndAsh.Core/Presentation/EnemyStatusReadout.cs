@@ -35,10 +35,21 @@ public sealed record EnemyStatusReadout(int EnemyId, Vector3 Feet, float Height,
     public float TimerLift { get; init; }
 
     /// <summary>
-    /// The height of the floor below the enemy, in metres (issue #775: the disc of frost lies on it) - below its feet for
-    /// a bat in the air, at its feet for one that walks.
+    /// The height of the floor below the enemy, in metres (issue #775) - below its feet for a bat in the air, at its feet
+    /// for one that walks, also at a step (issue #785, <see cref="FrostDisc.FloorBelow"/>).
     /// </summary>
     public float Floor { get; init; }
+
+    /// <summary>
+    /// The rods of its body the rime flecks sit on (issue #785, <see cref="FrostCore"/>); none: the middle of its body
+    /// (<see cref="FrostCore.Middle"/>).
+    /// </summary>
+    public IReadOnlyList<FrostCore> Cores { get; init; } = [];
+
+    /// <summary>
+    /// The disc of frost laid onto the floors below it (issue #785, <see cref="FrostDisc"/>); null without Grave Chill.
+    /// </summary>
+    public FrostDisc? Disc { get; init; }
 
     /// <summary>
     /// Where the head sits across from the feet, level (issue #778): the middle of the highest of the shot bodies - a
@@ -84,11 +95,15 @@ public sealed record EnemyStatusReadout(int EnemyId, Vector3 Feet, float Height,
             var body = enemy.Body;
             var head = enemy.ShotBodies.MaxBy(shot => shot.Position.Y + shot.Height);
             var top = head.Position.Y + head.Height - body.Position.Y;
+            var floor = FrostDisc.FloorBelow(world.Level, body);
+            var frost = lines.Any(line => line.Form == StatusForm.Frost);
             readouts.Add(new EnemyStatusReadout(enemy.Id, enemy.ShownPosition, top, body.Radius, lines)
             {
-                Floor = world.Level.CellAt(enemy.Body.Position).FloorHeight,
+                Floor = floor,
                 HeadOffset = (head.Position - body.Position) with { Y = 0f },
                 TimerLift = StunLook.TimerLiftFor(lines, body.Radius),
+                Cores = FrostCore.Of(enemy),
+                Disc = frost ? FrostDisc.Of(world.Level, enemy.ShownPosition, FrostLook.DiscRadiusFor(body.Radius), floor) : null,
             });
         }
 

@@ -157,6 +157,15 @@ public static class PhotoScenes
                 Ticks = 600,
                 StopWhen = world => world.Ghouls[0].Status.Get(StatusKind.GraveChill) is not { TicksLeft: > 6 },
             }),
+        new("ghoul-chilled-windup", "A ghoul rearing up for a blow, halfway through, just chilled: the rime flecks stay on its raised torso and head, none beside it (issue #785).",
+            studio => new PhotoSetup(studio.Arena('G', 4))
+            {
+                Ticks = 600,
+                // The chill goes on the moment of ghoul-windup, as a weapon would put it on; the picture is taken at once.
+                StopWhen = world => world.Ghouls[0] is { State: GhoulState.WindingUp, WindUpProgress: >= 0.5f } && Chilled(world) is not null,
+            }),
+        new("ghoul-chilled-step", "A chilled ghoul 4 m away on the edge of a step of 0.25 m, its middle out over the lower floor: the disc of rime lies on both floors, cut at the edge - it neither floats nor sinks in (issue #785).",
+            studio => new PhotoSetup(Chilled(studio.ArenaAtStep('G', 4, 0.25f)))),
         new("ghoul-chill-ended", "The same ghoul the tick its chill has run out: no frost left (issue #775).",
             studio => new PhotoSetup(Chilled(studio.Arena('G', 10)))
             {
@@ -359,6 +368,8 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeGorm(6f))),
         new("gorm-chilled", "Gorm 8 m away, just chilled by a Grave Chill: his body tinted cold, rime flecks on him, the disc of rime at his feet; in a hall as high as his boss room (issue #775).",
             studio => new PhotoSetup(ChilledGorm(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight)))),
+        new("gorm-chilled-step", "Chilled Gorm 8 m away on the edge of a step of 0.25 m, his middle out over the lower floor: his disc of rime lies on both floors, cut at the edge; in a hall as high as his boss room (issue #785).",
+            studio => new PhotoSetup(ChilledGorm(studio.ArenaAtStep('T', 8, 0.5f, RoomTemplate.RoomCeilingHeight)))),
         new("gorm-stunned", "Gorm 8 m away, just stunned - he staggers for a moment: three sparks circling above his head; in a hall as high as his boss room (issue #778).",
             studio => new PhotoSetup(StunnedGorm(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight)))),
         new("gorm-stunned-windup", "Gorm stunned while he whirls his chain above his head, the warning before the swing, which goes on: the sparks above his head next to the chain; in a hall as high as his boss room (issue #778).",

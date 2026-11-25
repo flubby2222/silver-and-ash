@@ -186,6 +186,9 @@ public class FrostLookTests
             });
     }
 
+    // Issue #785: this test checked the old rule - a fleck one body radius in front of the middle, level - which is what
+    // put flecks beside the ghoul. It now checks the new rule: seen from the eye, every fleck lies over a rod of the body
+    // and in front of it (more cases in FrostFleckTests).
     [Fact]
     public void The_flecks_sit_on_the_side_facing_the_eye_within_the_body()
     {
@@ -193,16 +196,13 @@ public class FrostLookTests
         world.Tick(PlayerInput.None);
         var readout = Assert.Single(EnemyStatusReadout.Of(world));
 
-        foreach (var eye in new[] { world.Player.Position, readout.Feet + new Vector3(5f, 1.7f, 0f) })
+        foreach (var eye in new[] { world.Player.EyePosition, readout.Feet + new Vector3(5f, 1.7f, 0f) })
         {
-            var toEye = Vector3.Normalize((eye - readout.Feet) with { Y = 0f });
             foreach (var fleck in FrostLook.Flecks)
             {
                 var at = FrostLook.FleckAt(fleck, readout, eye);
-                var flat = (at - readout.Feet) with { Y = 0f };
 
-                Assert.Equal(readout.Radius, Vector3.Dot(flat, toEye), 4);              // in front of the middle
-                Assert.True(MathF.Abs(fleck.Across) <= 1f);                              // not beside the body
+                FrostFleckTests.AssertOverARod(readout, eye, at);
                 Assert.InRange(at.Y, readout.Feet.Y, readout.Feet.Y + readout.Height);  // between feet and head
             }
         }
@@ -212,6 +212,11 @@ public class FrostLookTests
     public void The_flecks_lie_apart_and_between_feet_and_head()
     {
         Assert.Equal(FrostLook.Flecks.Count, FrostLook.Flecks.Distinct().Count());
-        Assert.All(FrostLook.Flecks, fleck => Assert.InRange(fleck.Up, 0f, 1f));
+        Assert.All(FrostLook.Flecks, fleck =>
+        {
+            Assert.InRange(fleck.Along, 0f, 1f);    // between the ends of its rod, which lie between feet and head
+            Assert.InRange(fleck.Across, -1f, 1f);  // on the rod, not beside it
+            Assert.InRange(fleck.Pick, 0f, 0.99999f);
+        });
     }
 }
