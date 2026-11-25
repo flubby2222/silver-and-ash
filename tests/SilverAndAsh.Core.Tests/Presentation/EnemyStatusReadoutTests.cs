@@ -240,6 +240,17 @@ public class EnemyStatusReadoutTests
         Assert.True(look.ShowsTimer);
     }
 
+    [Fact]
+    public void The_stun_shimmers_in_silver_grey_and_shows_its_time_left()
+    {
+        // Issue #509: Eisen 6 of the main palette, the silver-grey of variant A of the effects trial piece.
+        var look = StatusLooks.Of(StatusKind.Stun, StatusLooks.All);
+
+        Assert.Equal(EffectColours.Iron, look.Ramp);
+        Assert.Equal(((byte)163, (byte)175, (byte)187), look.Colour);
+        Assert.True(look.ShowsTimer);
+    }
+
     // As in ArenaTests: a combat room whose ghoul waits in the floor until the room seals.
     private static GameWorld HiddenGhoulWorld()
     {

@@ -122,6 +122,8 @@ public static class BalanceFile
         ["statusEffects.cleansingFlame.damagePerSecond"] = 100,
         ["statusEffects.cleansingFlame.tickSeconds"] = 5,
         ["statusEffects.graveChill.seconds"] = 30,
+        ["statusEffects.stun.seconds"] = 5,
+        ["statusEffects.stun.gormImmuneSeconds"] = 60,
         ["statusEffects.weaponShare"] = 1,
         ["statusEffects.weaponHitChance.worn"] = 1,
         ["statusEffects.weaponHitChance.forged"] = 1,
@@ -159,6 +161,7 @@ public static class BalanceFile
         ("chests.vampire", "silverMin", "silverMax"),
         ("hearing", "nearDistance", "range"),
         ("statusEffects.cleansingFlame", "tickSeconds", "seconds"),   // at least one pulse while it burns
+        ("statusEffects.stun", "gormStaggerSeconds", "seconds"),      // the boss never stands longer than a ghoul (issue #509)
     ];
 
     /// <summary>Reads the file at <paramref name="path"/>. A missing or unreadable file gives the standard values.</summary>

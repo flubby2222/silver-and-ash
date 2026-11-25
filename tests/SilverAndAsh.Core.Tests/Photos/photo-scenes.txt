@@ -61,6 +61,8 @@ ghoul-marked-4m | ticks 1 menu None ----- | A marked ghoul 4 m away, just marked
 ghoul-marked-late | ticks 600 menu None ----S | A marked ghoul coming closer, 0.4 s of its mark left (issue #506).
 ghoul-burning-4m | ticks 1 menu None ----- | A ghoul 4 m away, just set alight by a Cleansing Flame: the white-gold shimmer round it, its time left above its head (issue #507).
 ghoul-chilled-4m | ticks 1 menu None ----- | A ghoul 4 m away, just chilled by a Grave Chill: the frost-blue shimmer round it, its time left above its head (issue #508).
+ghoul-stunned-4m | ticks 1 menu None ----- | A ghoul 4 m away, just stunned: the silver-grey shimmer round it, its time left above its head (issue #509).
+ghouls-chilled-stunned | ticks 1 menu None ----- | Two ghouls side by side 6 m away, one just chilled (2.0s), the other just stunned (0.5s): can the two effects be told apart? (issue #509)
 pistol-recoil | ticks 2 menu None ---I- | The pistol right after a shot: kicked up, hammer down, muzzle flash (issue #249).
 bullet-impact-wall | ticks 2 menu None ---I- | A pistol shot into the wall 3 m away, 2 ticks later: the spark of the impact still shows (issue #609).
 blade-charged | ticks 600 menu None ---IS | The silver blade fully charged, drawn back and trembling (issue #249).
