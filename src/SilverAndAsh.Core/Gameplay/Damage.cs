@@ -8,6 +8,12 @@ public enum Weapon
     Club,
     Rifle,
     Blunderbuss,
+
+    /// <summary>
+    /// Not a weapon in hand: the pulses of a Cleansing Flame (issue #507). Its damage counts for the player who set the
+    /// flame off; no zone bonus and no charge apply to it.
+    /// </summary>
+    CleansingFlame,
 }
 
 /// <summary>Where a body was hit.</summary>

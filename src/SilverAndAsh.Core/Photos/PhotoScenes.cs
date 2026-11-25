@@ -144,12 +144,30 @@ public static class PhotoScenes
                 Ticks = 600,
                 StopWhen = world => world.Ghouls[0].Status.Get(StatusKind.Marked) is not { TicksLeft: > 24 },
             }),
+        new("ghoul-burning-4m", "A ghoul 4 m away, just set alight by a Cleansing Flame: the white-gold shimmer round it, its time left above its head (issue #507).",
+            studio => new PhotoSetup(Burning(studio.Arena('G', 4)))),
+        new("ghoul-chilled-4m", "A ghoul 4 m away, just chilled by a Grave Chill: the frost-blue shimmer round it, its time left above its head (issue #508).",
+            studio => new PhotoSetup(Chilled(studio.Arena('G', 4)))),
     ];
 
     // The first ghoul of the world marked by a player, as a skill would (issue #506).
     private static GameWorld Marked(GameWorld world)
     {
         world.ApplyStatus(world.Ghouls[0], StatusKind.Marked, world.Player);
+        return world;
+    }
+
+    // The first ghoul of the world set alight by a player's Cleansing Flame, as a weapon would (issue #507).
+    private static GameWorld Burning(GameWorld world)
+    {
+        world.ApplyStatus(world.Ghouls[0], StatusKind.CleansingFlame, world.Player);
+        return world;
+    }
+
+    // The first ghoul of the world chilled by a player's Grave Chill, as a weapon would (issue #508).
+    private static GameWorld Chilled(GameWorld world)
+    {
+        world.ApplyStatus(world.Ghouls[0], StatusKind.GraveChill, world.Player);
         return world;
     }
 

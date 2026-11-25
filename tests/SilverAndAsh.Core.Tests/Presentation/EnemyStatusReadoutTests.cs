@@ -17,10 +17,12 @@ public class EnemyStatusReadoutTests
 
     private const string Corridor = "P\n.\n.\n.\nG";
 
-    // Kinds the game does not have yet, for order and limit: the table of looks is passed in, the kinds are cast.
-    private static readonly StatusKind Second = (StatusKind)1;
-    private static readonly StatusKind Third = (StatusKind)2;
-    private static readonly StatusKind Fourth = (StatusKind)3;
+    // Kinds the game does not have yet, for order and limit: the table of looks is passed in, the kinds are cast - after
+    // the last kind the game has, so a new kind of the game never turns one of them into a real one (issue #507).
+    private static readonly StatusKind LastOfTheGame = Enum.GetValues<StatusKind>().Max();
+    private static readonly StatusKind Second = LastOfTheGame + 1;
+    private static readonly StatusKind Third = LastOfTheGame + 2;
+    private static readonly StatusKind Fourth = LastOfTheGame + 3;
 
     private static readonly IReadOnlyList<StatusLook> FourLooks =
     [
@@ -225,6 +227,17 @@ public class EnemyStatusReadoutTests
     public void The_mark_shows_its_time_left()
     {
         Assert.True(StatusLooks.Of(StatusKind.Marked, StatusLooks.All).ShowsTimer);
+    }
+
+    [Fact]
+    public void The_chill_shimmers_in_light_frost_and_shows_its_time_left()
+    {
+        // Issue #508: Stoff 7 of the main palette, the light frost of variant A of the effects trial piece (#616).
+        var look = StatusLooks.Of(StatusKind.GraveChill, StatusLooks.All);
+
+        Assert.Equal(EffectColours.Cloth, look.Ramp);
+        Assert.Equal(((byte)168, (byte)181, (byte)199), look.Colour);
+        Assert.True(look.ShowsTimer);
     }
 
     // As in ArenaTests: a combat room whose ghoul waits in the floor until the room seals.

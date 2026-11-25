@@ -1,7 +1,7 @@
 """Prueft musik-*.ogg gegen den technischen Rahmen und die Regeln der Klangwelt (nur Standardbibliothek und ffmpeg).
 
 Aufruf: python musik_pruefen.py <ordner mit den OGG-Dateien>
-Je Datei: Laenge (60-90 s), Spitze (<= -1 dBFS), Mittel (Katakomben: Ziel aus musik_erzeugen.py +- 0,5 dB), Lautheit (LUFS), Naht der dekodierten Datei (Sprung vom letzten zum ersten
+Je Datei: Laenge (60-90 s; Bosskampf und Haendler 40 s, Issue #552), Spitze (<= -1 dBFS), Mittel (Katakomben: Ziel aus musik_erzeugen.py, Bosskampf und Haendler: Ziel aus musik_boss_haendler.py, je +- 0,5 dB), Lautheit (LUFS), Naht der dekodierten Datei (Sprung vom letzten zum ersten
 Sample gegenueber dem 99,9-%-Abstand zweier Nachbar-Samples, je Kanal), Pegel je Band und Abstand der Mitte (300-3 000 Hz) zum
 Gesamtpegel (Ziel Katakomben: mindestens 15 dB), Energie je Tonklasse (Anteil ausserhalb von e-Moll).
 """
@@ -18,11 +18,16 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from synth import svf  # noqa: E402
 from musik_erzeugen import PIECES  # noqa: E402
+import musik_boss_haendler as BH  # noqa: E402
 
 SR = 44100
 # Mittel der Katakomben-Musik muss das Ziel aus musik_erzeugen.py treffen (Issue #427: +10 dB). Das Hauptmenue-Stueck
 # erreicht sein Ziel nicht (Verstaerkung auf 1 begrenzt, Spitze aus der Mischung mit Herzschlag) und wird hier nicht geprueft.
 LEVEL = {PIECES["katakomben"]["name"] + ".ogg": PIECES["katakomben"]["target_mean"]}
+# Bosskampf und Haendler (Issue #552): gleiches Ziel wie die Katakomben, aber 40-s-Schleifen statt 60-90 s.
+LEVEL.update({name + ".ogg": BH.TARGET_MEAN_DB for name, _, _ in BH.STUECKE.values()})
+LENGTH = {name + ".ogg": (39.5, 40.5) for name, _, _ in BH.STUECKE.values()}
+LENGTH_DEFAULT = (60, 90)
 LEVEL_TOL = 0.5
 SCALE = {4, 6, 7, 9, 11, 0, 2}
 PC = ["C", "Cis", "D", "Es", "E", "F", "Fis", "G", "As", "A", "B", "H"]
@@ -96,7 +101,8 @@ def main():
         ch = chroma(mono)
         out = sum(ch[i] for i in range(12) if i not in SCALE)
         top = max(range(12), key=lambda i: ch[i])
-        ok &= 60 <= n / SR <= 90 and mx <= -1.0
+        shortest, longest = LENGTH.get(p.name, LENGTH_DEFAULT)
+        ok &= shortest <= n / SR <= longest and mx <= -1.0
         target = LEVEL.get(p.name)
         if target is not None:
             ok &= abs(mean - target) <= LEVEL_TOL

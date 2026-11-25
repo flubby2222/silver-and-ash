@@ -102,6 +102,39 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 25.11.2026 (#508, Grave Chill, vorläufig)
+
+**Anlass:** Issue #508. Dritter Statuseffekt nach *Marked* und *Cleansing Flame*: Grave Chill verlangsamt Laufen und Fliegen eines Gegners (Ghul kriechen, Fledermaus kreisen und steigen, Gorm gehen, auch in Phase 2). Ankündigungen, Angriffe und der Sturzflug der Fledermaus behalten ihre Länge. Gefundene Waffen würfeln seither gleich wahrscheinlich zwischen den drei Effekten.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `statusEffects.graveChill.slow` | – | 0,2 (unter 1, **vorläufig**) | Wert aus dem Issue: Der Gegner bewegt sich mit 80 % seiner Geschwindigkeit. Unter 1, damit er nie stillsteht. |
+| `statusEffects.graveChill.seconds` | – | 2 s (höchstens 30) | Wert aus dem Issue, gleich lang wie die Cleansing Flame. Erneutes Auslösen verlängert auf die volle Dauer, stapelt nicht. |
+
+Liegt ein Wert außerhalb, warnt der Lader und nimmt den Standardwert.
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Wie bei #507 rechnet der Report keine Statuseffekte ein, und kein Bot-Modus zählt sie; ein Vergleich würde nur zeigen, dass Türen, Wege und Stillstand gleich bleiben.
+
+**Offen:** Ein Lauf im Spiel steht aus. Ob 20 % Verlangsamung spürbar sind, urteilt der Mensch im Spieltest.
+
+### Zwischenschritt – 25.11.2026 (#507, Cleansing Flame, vorläufig)
+
+**Anlass:** Issue #507. Zweiter Statuseffekt nach *Marked*: Die Cleansing Flame brennt einen Gegner in Pulsen. Gefundene Waffen würfeln seither zwischen *Marked* und *Cleansing Flame*.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `statusEffects.cleansingFlame.seconds` | – | 2 s (höchstens 30) | Wert aus dem Issue. Erneutes Auslösen verlängert auf die volle Dauer, stapelt nicht. |
+| `statusEffects.cleansingFlame.damagePerSecond` | – | 5 (höchstens 100, **vorläufig**) | Wert aus dem Issue: 10 Schaden über die ganze Dauer, ein Viertel eines Klingenschlags. |
+| `statusEffects.cleansingFlame.tickSeconds` | – | 0,5 s (höchstens 5, nie länger als `seconds`, **vorläufig**) | Wert aus dem Issue: 4 Pulse mit 2, 3, 2 und 3 Schaden. Die Pulse runden ganzzahlig; die Summe ist genau `damagePerSecond × seconds`, weil die Flamme auf einem Puls enden muss (Regel darunter). |
+
+**Regel:** Die Dauer muss ein ganzes Vielfaches des Pulses sein, gerechnet in Ticks, wie das Spiel sie erzeugt (Sekunden × 60, gerundet; ein Puls kürzer als ein Tick zählt als ein Tick). Sonst brennten die Ticks nach dem letzten Puls umsonst: 2 s mit Puls 0,75 s gäben 7 statt 10 Schaden. Der Lader warnt dann und nimmt für `seconds` und `tickSeconds` die Standardwerte, ebenso, wenn `tickSeconds` länger als `seconds` ist. Beispiele, die gelten: 2 s mit 0,5 s, 0,25 s oder 0,3333 s (20 Ticks); 1 s mit 0,001 s (jeder Tick ein Puls). Die Summe ist dann genau `damagePerSecond × seconds` (ist das keine ganze Zahl, abgerundet). Die Höchstwerte 100 und 5 sind geschätzt, nicht gemessen.
+
+**Report (500 Ebenen), `main` gegen diesen Stand:** zeilengleich bis auf die Laufzeit des Reports. Der Report rechnet Statuseffekte nicht ein; die Cleansing Flame ändert dort nichts.
+
+**Bot-Läufe (`all`, Seeds 1 bis 6), `main` gegen diesen Stand:** Ausgabe zeilengleich (alle Zähler gleich), auf beiden Seiten 0 Befunde, Exit-Code 0. Kein Bot-Modus zählt Statuseffekte; dass die Flamme in seinen Läufen gar nicht vorkommt, ist damit nicht belegt, nur dass sie nichts an Türen, Wegen und Stillstand ändert.
+
+**Offen:** Ein Lauf im Spiel steht aus. Ob 10 Schaden je Flamme spürbar sind, urteilt der Mensch im Spieltest.
+
 ### Zwischenschritt – 25.11.2026 (#503, Erfahrungskurve B)
 
 **Anlass:** Issue #503. Der Mensch hat am 20.11.2026 Variante B der Erfahrungskurve gewählt (Skills-Entwurf, Abschnitt 7, #104 Runde 5): Jede Stufe kostet gleich viel, ab Schwellen mehr. Bisher stieg jede Stufe um den Faktor 1,25.

@@ -214,6 +214,11 @@ public class BalanceFileTests
     [InlineData("""{ "grates": { "blockHeight": 3.5 } }""", "grates.blockHeight")]
     [InlineData("""{ "statusEffects": { "marked": { "bonus": 1.5 } } }""", "statusEffects.marked.bonus")]
     [InlineData("""{ "statusEffects": { "marked": { "seconds": 31 } } }""", "statusEffects.marked.seconds")]
+    [InlineData("""{ "statusEffects": { "cleansingFlame": { "seconds": 31 } } }""", "statusEffects.cleansingFlame.seconds")]
+    [InlineData("""{ "statusEffects": { "cleansingFlame": { "damagePerSecond": 101 } } }""", "statusEffects.cleansingFlame.damagePerSecond")]
+    [InlineData("""{ "statusEffects": { "graveChill": { "seconds": 31 } } }""", "statusEffects.graveChill.seconds")]
+    [InlineData("""{ "statusEffects": { "graveChill": { "slow": 1 } } }""", "statusEffects.graveChill.slow")]
+    [InlineData("""{ "statusEffects": { "graveChill": { "slow": 1.5 } } }""", "statusEffects.graveChill.slow")]
     [InlineData("""{ "skills": { "levelsPerPoint": 21 } }""", "skills.levelsPerPoint")]
     [InlineData("""{ "statusEffects": { "weaponShare": 1.5 } }""", "statusEffects.weaponShare")]
     [InlineData("""{ "statusEffects": { "weaponHitChance": { "worn": 1.1 } } }""", "statusEffects.weaponHitChance.worn")]
@@ -458,6 +463,108 @@ public class BalanceFileTests
 
         Assert.Equal(Balance.Default.Club, result.Balance.Club);
         Assert.Contains(result.Warnings, w => w.Contains("club.knockback") && w.Contains("club.chargedKnockback"));
+    }
+
+    [Fact]
+    public void A_flame_pulse_longer_than_the_flame_falls_back_to_both_standards()
+    {
+        // Issue #507: a flame shorter than one pulse would burn without ever dealing damage.
+        var result = BalanceFile.Parse("""{ "statusEffects": { "cleansingFlame": { "seconds": 1, "tickSeconds": 1.5 } } }""");
+
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame, result.Balance.StatusEffects.CleansingFlame);
+        Assert.Contains(result.Warnings, w => w.Contains("statusEffects.cleansingFlame.tickSeconds") && w.Contains("statusEffects.cleansingFlame.seconds"));
+    }
+
+    [Fact]
+    public void A_flame_pulse_above_its_limit_falls_back_to_its_standard_alone()
+    {
+        // Seconds long enough that the pulse stays shorter than the flame: only the limit of the pulse is at fault.
+        var result = BalanceFile.Parse("""{ "statusEffects": { "cleansingFlame": { "seconds": 10, "tickSeconds": 6 } } }""");
+
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame.TickSeconds, result.Balance.StatusEffects.CleansingFlame.TickSeconds);
+        Assert.Equal(10f, result.Balance.StatusEffects.CleansingFlame.Seconds);
+        Assert.Contains(result.Warnings, w => w.Contains("statusEffects.cleansingFlame.tickSeconds"));
+        Assert.DoesNotContain(result.Warnings, w => w.Contains("statusEffects.cleansingFlame.seconds"));
+    }
+
+    [Theory]
+    [InlineData("seconds")]
+    [InlineData("damagePerSecond")]
+    [InlineData("tickSeconds")]
+    public void A_flame_value_of_zero_falls_back_to_its_standard(string name)
+    {
+        var result = BalanceFile.Parse($$"""{ "statusEffects": { "cleansingFlame": { "{{name}}": 0 } } }""");
+
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame, result.Balance.StatusEffects.CleansingFlame);
+        Assert.Contains(result.Warnings, w => w.Contains($"statusEffects.cleansingFlame.{name}"));
+    }
+
+    [Fact]
+    public void Flame_values_within_their_limits_are_read()
+    {
+        var result = BalanceFile.Parse("""{ "statusEffects": { "cleansingFlame": { "seconds": 4, "damagePerSecond": 8, "tickSeconds": 0.25 } } }""");
+
+        Assert.Equal(new CleansingFlameBalance { Seconds = 4f, DamagePerSecond = 8f, TickSeconds = 0.25f }, result.Balance.StatusEffects.CleansingFlame);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Theory]
+    [InlineData("slow", "0")]       // a chill that slows nothing
+    [InlineData("slow", "-0.2")]    // one that would speed the enemy up
+    [InlineData("seconds", "0")]
+    [InlineData("seconds", "-2")]
+    public void A_chill_value_of_zero_or_below_falls_back_to_its_standard(string name, string value)
+    {
+        // Issue #508.
+        var result = BalanceFile.Parse($$"""{ "statusEffects": { "graveChill": { "{{name}}": {{value}} } } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains($"statusEffects.graveChill.{name}"));
+    }
+
+    [Fact]
+    public void Chill_values_within_their_limits_are_read()
+    {
+        var result = BalanceFile.Parse("""{ "statusEffects": { "graveChill": { "slow": 0.5, "seconds": 4 } } }""");
+
+        Assert.Equal(new GraveChillBalance { Slow = 0.5f, Seconds = 4f }, result.Balance.StatusEffects.GraveChill);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Theory]
+    [InlineData(2.0, 0.75)]   // 120 ticks, pulse 45: two pulses, 30 ticks burn for nothing
+    [InlineData(2.0, 0.3)]    // 120 ticks, pulse 18
+    [InlineData(1.0, 0.4)]    // 60 ticks, pulse 24
+    [InlineData(3.0, 0.7)]    // 180 ticks, pulse 42
+    public void A_flame_that_is_not_a_whole_number_of_pulses_falls_back_to_both_standards(double seconds, double tickSeconds)
+    {
+        // Issue #507 (review of PR #769): the ticks after the last pulse would burn for nothing - damage would be lost.
+        var json = FormattableString.Invariant($$"""{ "statusEffects": { "cleansingFlame": { "seconds": {{seconds}}, "damagePerSecond": 7, "tickSeconds": {{tickSeconds}} } } }""");
+
+        var result = BalanceFile.Parse(json);
+
+        var flame = result.Balance.StatusEffects.CleansingFlame;
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame.Seconds, flame.Seconds);
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame.TickSeconds, flame.TickSeconds);
+        Assert.Equal(7f, flame.DamagePerSecond);
+        var warning = Assert.Single(result.Warnings);
+        Assert.Contains("statusEffects.cleansingFlame.seconds", warning);
+        Assert.Contains("statusEffects.cleansingFlame.tickSeconds", warning);
+    }
+
+    [Theory]
+    [InlineData(1.0, 0.3333)]   // in seconds not a whole number of pulses, in ticks 60 = 3 x 20
+    [InlineData(1.004, 0.5)]    // 60.24 ticks round to 60 = 2 x 30
+    [InlineData(1.0, 0.001)]    // a pulse shorter than a tick is one tick: every tick a pulse
+    public void A_flame_is_measured_in_the_ticks_the_game_runs_not_in_seconds(double seconds, double tickSeconds)
+    {
+        var json = FormattableString.Invariant($$"""{ "statusEffects": { "cleansingFlame": { "seconds": {{seconds}}, "tickSeconds": {{tickSeconds}} } } }""");
+
+        var result = BalanceFile.Parse(json);
+
+        Assert.Empty(result.Warnings);
+        Assert.Equal((float)seconds, result.Balance.StatusEffects.CleansingFlame.Seconds);
+        Assert.Equal((float)tickSeconds, result.Balance.StatusEffects.CleansingFlame.TickSeconds);
     }
 
     [Fact]

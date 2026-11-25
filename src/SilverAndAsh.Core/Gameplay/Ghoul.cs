@@ -28,6 +28,7 @@ public enum GhoulState
 public sealed class Ghoul : IEnemy
 {
     private readonly GhoulBalance _ghoul;
+    private readonly GraveChillBalance _chill;
     private readonly float _gravity;
     private readonly int _corpseTicks;
     private readonly int _windUpTicks;
@@ -56,6 +57,7 @@ public sealed class Ghoul : IEnemy
 
         balance ??= Balance.Default;
         _ghoul = balance.Ghoul;
+        _chill = balance.StatusEffects.GraveChill;
         _gravity = balance.Player.Gravity;
         _corpseTicks = SimulationClock.SecondsToTicks(_ghoul.CorpseTime);
         _windUpTicks = SimulationClock.SecondsToTicks(_ghoul.WindUpTime);
@@ -362,7 +364,7 @@ public sealed class Ghoul : IEnemy
         }
 
         FaceTowards(ColumnDetour.Around(level, Position, point, BodySizes.Ghoul.Radius));
-        Move(level, Facing * _ghoul.Speed, obstacles);
+        Move(level, Facing * (_ghoul.Speed * GraveChill.Pace(Status, _chill)), obstacles);
     }
 
     private void Stand(Level level, IReadOnlyList<CylinderBody> obstacles) => Move(level, Vector3.Zero, obstacles);

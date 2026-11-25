@@ -37,6 +37,7 @@ public sealed class Bat : IEnemy
     private const float HalfHeight = BodySizes.Bat.Height / 2f;
 
     private readonly BatBalance _bat;
+    private readonly GraveChillBalance _chill;
     private readonly float _gravity;
     private readonly int _corpseTicks;
     private readonly int _spitTicks;
@@ -98,6 +99,7 @@ public sealed class Bat : IEnemy
 
         balance ??= Balance.Default;
         _bat = balance.Bat;
+        _chill = balance.StatusEffects.GraveChill;
         _gravity = balance.Player.Gravity;
         _corpseTicks = SimulationClock.SecondsToTicks(_bat.CorpseTime);
         _spitTicks = SimulationClock.SecondsToTicks(_bat.SpitInterval);
@@ -285,12 +287,14 @@ public sealed class Bat : IEnemy
 
     /// <summary>
     /// One tick of rising after a dive, up to its circling height. Stone of a boss portal overhead (the impost) ends the
-    /// climb early: it circles on from where it is and climbs once it is clear of the stone (issue #627).
+    /// climb early: it circles on from where it is and climbs once it is clear of the stone (issue #627). A chill
+    /// (issue #508) slows the climb; the dive before it is an attack and keeps its speed.
     /// </summary>
     private void Rise(Level level)
     {
         var height = CircleHeight(level);
-        var climbed = ClimbClearOfStone(level, MathF.Min(height, Position.Y + _bat.ClimbSpeed * SimulationClock.SecondsPerTick));
+        var climb = _bat.ClimbSpeed * GraveChill.Pace(Status, _chill) * SimulationClock.SecondsPerTick;
+        var climbed = ClimbClearOfStone(level, MathF.Min(height, Position.Y + climb));
         if (Position.Y >= height || !climbed)
         {
             State = BatState.Circling;
@@ -461,6 +465,10 @@ public sealed class Bat : IEnemy
             velocity = Vector3.Normalize(velocity) * _bat.FlySpeed;
         }
 
+        // A chill (issue #508) slows its flight - round the target as well as up and down.
+        var pace = GraveChill.Pace(Status, _chill);
+        velocity *= pace;
+
         var (position, slid) = CharacterCollision.Move(
             level, Position, velocity, BodySizes.Bat.Radius, SimulationClock.SecondsPerTick, BodySizes.Bat.Height, BodySizes.Bat.StepHeight);
 
@@ -475,7 +483,7 @@ public sealed class Bat : IEnemy
         // Up and down: a slow wave between the lowest and the highest circling height.
         _bobTick++;
         var height = CircleHeight(level);
-        var maxClimb = _bat.ClimbSpeed * SimulationClock.SecondsPerTick;
+        var maxClimb = _bat.ClimbSpeed * pace * SimulationClock.SecondsPerTick;
         Position = position;
         ClimbClearOfStone(level, Position.Y + Math.Clamp(height - Position.Y, -maxClimb, maxClimb));
     }

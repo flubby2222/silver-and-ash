@@ -41,6 +41,8 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `ghoul-4m`, `ghoul-10m`, `bat-4m`, `bat-10m` | einen Ghul bzw. eine Fledermaus in einer leeren Halle aus 4 m bzw. 10 m |
 | `ghoul-windup` | einen Ghul beim Ausholen (Hälfte der Ausholzeit) |
 | `ghoul-marked-4m`, `ghoul-marked-late` | einen markierten Ghul aus 4 m: gleich nach dem Markieren (Schimmer und „3.0s“ über dem Kopf) bzw. mit noch 0,4 s Markierung, während er näher kommt (Issue #506) |
+| `ghoul-burning-4m` | einen Ghul aus 4 m, gleich nachdem eine Cleansing Flame ihn erfasst hat: weißgoldener Schimmer und „2.0s“ über dem Kopf (Issue #507) |
+| `ghoul-chilled-4m` | einen Ghul aus 4 m, gleich nachdem ein Grave Chill ihn erfasst hat: frostblauer Schimmer (Stoff 7) und „2.0s“ über dem Kopf (Issue #508) |
 | `bat-screech` | eine Fledermaus beim Kreischen, der Ankündigung des Sturzflugs (Hälfte der Kreischzeit) |
 | `bat-dive` | eine Fledermaus im Sturzflug auf den Spieler |
 | `pistol-recoil` | die Pistole gleich nach dem Schuss: hochgerissen, Hahn gefallen, Mündungsfeuer |
