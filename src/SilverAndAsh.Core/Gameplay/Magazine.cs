@@ -8,6 +8,7 @@ public sealed class Magazine
 {
     private readonly int _reloadTicks;
     private int _reloadTicksLeft;
+    private int _reloadLength;
 
     /// <summary>A full magazine of <paramref name="size"/> rounds that takes <paramref name="reloadSeconds"/> to reload.</summary>
     public Magazine(int size, float reloadSeconds)
@@ -25,11 +26,14 @@ public sealed class Magazine
     /// <summary>Rounds left in it.</summary>
     public int Rounds { get; private set; }
 
+    /// <summary>Ticks a reload takes as the weapon's balance values say (an item may shorten it, issue #195).</summary>
+    public int ReloadTicks => _reloadTicks;
+
     /// <summary>True while it is being reloaded - no shot meanwhile.</summary>
     public bool IsReloading => _reloadTicksLeft > 0;
 
     /// <summary>How far the reload has come: 0 at its start, 1 when done (0 while not reloading).</summary>
-    public float ReloadProgress => IsReloading ? 1f - ((float)_reloadTicksLeft / _reloadTicks) : 0f;
+    public float ReloadProgress => IsReloading ? 1f - ((float)_reloadTicksLeft / _reloadLength) : 0f;
 
     /// <summary>Takes one round for a shot - false (and nothing happens) if it is empty or being reloaded.</summary>
     public bool TryTake()
@@ -44,14 +48,22 @@ public sealed class Magazine
     }
 
     /// <summary>Starts reloading - false if it is full already or reloading anyway.</summary>
-    public bool StartReload()
+    public bool StartReload() => StartReload(_reloadTicks);
+
+    /// <summary>
+    /// Starts a reload that takes <paramref name="ticks"/> instead of <see cref="ReloadTicks"/> (the Quickdraw Holster,
+    /// issue #195) - false if it is full already or reloading anyway. A reload under way keeps its length.
+    /// </summary>
+    public bool StartReload(int ticks)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ticks);
         if (IsReloading || Rounds == Size)
         {
             return false;
         }
 
-        _reloadTicksLeft = _reloadTicks;
+        _reloadTicksLeft = ticks;
+        _reloadLength = ticks;
         return true;
     }
 

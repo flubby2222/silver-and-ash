@@ -1,8 +1,9 @@
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// Every item of the game (decision record 0008): passive, for the whole run, no place needed. For now they are
-/// placeholders - they can be found, but do nothing yet; their effects come with issues #195 and #196.
+/// Every item of the game (decision record 0008): passive, for the whole run, no place needed. The first four work
+/// (issue #195, rules in <see cref="ItemEffects"/>); the others can be found, but do nothing yet - their effects come
+/// with issue #196.
 /// </summary>
 public enum ItemKind
 {
@@ -19,7 +20,10 @@ public enum ItemKind
 /// <summary>What an item is: its name and the line telling its effect (both shown in the game), and its tier.</summary>
 public readonly record struct ItemInfo(string Name, ItemTier Tier, string Effect);
 
-/// <summary>The fixed facts about each item. Its numbers (how much faster, how much healing ...) will be in balance.json.</summary>
+/// <summary>
+/// The fixed facts about each item. Its numbers (how much faster, how much healing ...) are in balance.json
+/// (<see cref="ItemsBalance"/>); the effect lines name the standard values.
+/// </summary>
 public static class Items
 {
     /// <summary>The facts about <paramref name="kind"/>.</summary>
