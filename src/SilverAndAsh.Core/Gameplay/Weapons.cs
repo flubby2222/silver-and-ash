@@ -34,6 +34,12 @@ public enum WeaponKind
     Club,
     Rifle,
     Blunderbuss,
+
+    /// <summary>
+    /// The hunter's axe (Royal, issue #201): slow, a wide swing that hits several enemies, heavy damage. Shown as
+    /// "Hunting Axe" - "Hunter's Axe" is 2 pixels too wide for the equipment box and the pickup toast (provisional).
+    /// </summary>
+    HuntersAxe,
 }
 
 /// <summary>What a weapon is: its name (shown in the game), its hand and its tier.</summary>
@@ -50,6 +56,19 @@ public static class Weapons
         WeaponKind.Club => new("Club", WeaponHand.Melee, ItemTier.Worn),
         WeaponKind.Rifle => new("Rifle", WeaponHand.Ranged, ItemTier.Forged),
         WeaponKind.Blunderbuss => new("Blunderbuss", WeaponHand.Ranged, ItemTier.Forged),
+        WeaponKind.HuntersAxe => new("Hunting Axe", WeaponHand.Melee, ItemTier.Royal),
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
+    };
+
+    /// <summary>How the damage rules tell <paramref name="kind"/> apart (one table for every hit and the character sheet).</summary>
+    public static Weapon ForDamage(WeaponKind kind) => kind switch
+    {
+        WeaponKind.SilverBlade => Weapon.Blade,
+        WeaponKind.Club => Weapon.Club,
+        WeaponKind.Pistol => Weapon.Pistol,
+        WeaponKind.Rifle => Weapon.Rifle,
+        WeaponKind.Blunderbuss => Weapon.Blunderbuss,
+        WeaponKind.HuntersAxe => Weapon.HuntersAxe,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
 }

@@ -31,11 +31,11 @@ internal static class CourseScenes
 
     // Station 1: from its south-east corner up to the north-west, so the whole row of weapons on the north wall, the
     // items on the south wall and the sign over the first cell are in view.
-    internal static readonly Shot ArmsShot = new(9.5f, 8f, 230f, -14f);
+    internal static readonly Shot ArmsShot = new(11.5f, 8f, 232f, -14f);
 
-    // Station 1 again, close to the row of weapons (issue #736): from the way, east of the teleporter, down at the row,
-    // all five between the hands. The sign is not in this one: with it, the row would be as far off as in the first.
-    internal static readonly Shot ArmsRowShot = new(6.5f, 4.5f, 190f, -24f);
+    // Station 1 again, close to the row of weapons (issue #736): from the east end of the way, down at the row, every
+    // weapon between the hands. The sign is not in this one: with it, the row would be as far off as in the first.
+    internal static readonly Shot ArmsRowShot = new(11f, 4.5f, 214f, -22f);
 
     // Station 2: from the far south-east corner back west, the columns and the silver in front, the ghoul beyond, the sign
     // over the entrance.
@@ -51,7 +51,7 @@ internal static class CourseScenes
     /// <summary>One scene per station, in the order of <see cref="TestCourse.Stations"/>.</summary>
     public static PhotoScene[] All() =>
     [
-        new("course-1-arms", "Station 1 of the test course from its south-east corner: the five weapons along the north wall, the items on the south wall, the start teleporter on the way and the sign (issues #718, #722).",
+        new("course-1-arms", "Station 1 of the test course from its south-east corner: every weapon along the north wall, the items on the south wall, the start teleporter on the way and the sign (issues #718, #722).",
             studio => Settled(Within(studio, 0, ArmsShot))),
         new("course-1-arms-row", "Station 1 of the test course close to its row of weapons on the north wall, from the east end of the way to the sign over the first cell (issue #736).",
             studio => Settled(Within(studio, 0, ArmsRowShot))),

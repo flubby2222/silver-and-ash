@@ -240,12 +240,29 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
             return;
         }
 
+        if (_melee == WeaponKind.HuntersAxe)
+        {
+            DrawAxeBoxes(hand);
+            return;
+        }
+
         // Handle, guard and the long silver blade pointing forward and a little up.
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.03f) * hand, new Vector3(0.022f, 0.022f, 0.07f), Wood);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.01f) * hand, new Vector3(0.055f, 0.012f, 0.012f), DarkSilver);
         ShadedBox.Draw(
             Matrix4x4.CreateRotationX(Deg(-25f)) * Matrix4x4.CreateTranslation(0f, 0.035f, 0.08f) * hand,
             new Vector3(0.016f, 0.005f, 0.15f), Silver);
+    }
+
+    // The hunter's axe until its model is in (issue #201): a long wooden haft, a broad iron head to the right and a
+    // short spike on top.
+    private static void DrawAxeBoxes(Matrix4x4 hand)
+    {
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.03f) * hand, new Vector3(0.022f, 0.022f, 0.2f), Wood);
+        var head = Matrix4x4.CreateRotationX(Deg(-25f)) * Matrix4x4.CreateTranslation(0f, 0.03f, 0.12f) * hand;
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0.035f, 0f, 0f) * head, new Vector3(0.06f, 0.012f, 0.07f), Iron);
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0.068f, 0f, 0f) * head, new Vector3(0.008f, 0.014f, 0.09f), DarkSilver);
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.05f) * head, new Vector3(0.014f, 0.014f, 0.04f), DarkSilver);
     }
 
     private void DrawPistol(Matrix4x4 motion, Matrix4x4 modelMotion)
