@@ -222,7 +222,7 @@ Regel für die Grabeskälte an einem Gegner, im Spiel seit Issue #775 (gewählt 
 
 - **Körper:** um 40 % zur Kälte (Stoff 6) getönt. Ein Treffer-Blitz und das rote Aufglühen vor einem Angriff gehen vor; das Glühen von Gorms Keule und Haken bleibt sichtbar.
 - **Reifflecken:** 14 Würfel von 3 cm in Reif hell (Stoff 7) auf der Seite, die zum Betrachter zeigt, immer dieselbe Verteilung.
-- **Bodenscheibe:** ein Kreis von 0,62 m Radius flach auf dem Boden unter dem Gegner. Den Rand bildet ab 85 % des Radius Reif hell. Innen liegt ein Punktmuster aus Stoff 6 und Stoff 5, je zur Hälfte. Bei einer Fledermaus liegt die Scheibe auf dem Boden unter ihr, nicht an ihr.
+- **Bodenscheibe:** ein Kreis flach auf dem Boden unter dem Gegner. Seine Größe richtet sich nach dem Körper: Der Radius ist 1,55-mal der Körperradius (0,62 m beim Ghul wie in der Probe, 1,4 m bei Gorm, 0,54 m bei der Fledermaus). Grund ist das Urteil der Leitung vom 2026-11-25, vorläufig: Bei fest 0,62 m verschwand die Scheibe zwischen Gorms Beinen. Den Rand bildet ab 85 % des Radius Reif hell. Innen liegt ein Punktmuster aus Stoff 6 und Stoff 5, je zur Hälfte. Bei einer Fledermaus liegt die Scheibe auf dem Boden unter ihr, nicht an ihr.
 - **Unbeleuchtet, aber im Nebel:** Flecken und Scheibe hellt die Laterne nicht auf und dunkelt sie nicht ab; nur der Nebel deckt sie zu.
 - **Kein Verlauf:** Der Frost sieht im ersten und im letzten Tick gleich aus und ist mit dem Ende des Effekts sofort weg.
 - **Farben nur aus Stoff:** kein Violett (das gehört Leech), kein Rot.
