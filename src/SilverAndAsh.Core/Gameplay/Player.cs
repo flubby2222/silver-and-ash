@@ -186,8 +186,11 @@ public sealed partial class Player
     /// <summary>Pays for jumps and dashes.</summary>
     public Stamina Stamina { get; }
 
-    /// <summary>Number of this player (0 for now; with online co-op every player gets their own).</summary>
-    public int Id { get; }
+    /// <summary>
+    /// Number of this player (0 for now; with online co-op every player gets their own). Until then only tests set
+    /// another one, to see that a player's number - not a fixed 0 - reaches what it causes (issue #505).
+    /// </summary>
+    public int Id { get; internal set; }
 
     /// <summary>Health of the player.</summary>
     public int Health { get; private set; }

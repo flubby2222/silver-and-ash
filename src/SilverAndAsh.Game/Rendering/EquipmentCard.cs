@@ -31,6 +31,9 @@ internal sealed class EquipmentCard
     private static readonly Color VampireEdge = new(120, 0, 14, 255);
 
     private Equipment? _piece;
+
+    // The piece's name with its status effect, if it carries one (issue #505: "Club - Marked").
+    private string _name = string.Empty;
     private float _seconds;
     private float _flash;
     private float _time;
@@ -44,6 +47,7 @@ internal sealed class EquipmentCard
         }
 
         _piece = taken.Piece;
+        _name = taken.Label;
         _seconds = 0f;
         _flash = taken.Tier == ItemTier.Vampiric ? 1f : 0f;
     }
@@ -85,7 +89,7 @@ internal sealed class EquipmentCard
         DrawFrame(piece.Tier, tier, left, top, height, fade);
 
         var y = top + Padding;
-        PixelText.Draw(piece.Name, left + Padding, y, NameSize, Faded(Readable(tier), fade));
+        PixelText.Draw(_name, left + Padding, y, NameSize, Faded(Readable(tier), fade));
         y += NameSize + 6;
         PixelText.Draw(TierLine(piece), left + Padding, y, TierSize, Faded(Note, fade));
         y += TierSize + 10;
