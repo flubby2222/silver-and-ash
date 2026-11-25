@@ -123,6 +123,13 @@ public sealed class SoundPack
         // Falling is "1 - without chain", rising "2 - smoother". Iron slides on stone; nothing here is operated.
         [SoundKind.GrateFalling] = ["fallgitter-fallen.wav"],
         [SoundKind.GrateRising] = ["fallgitter-heben.wav"],
+
+        // Issue #776: the hunter's axe, from the listening test of issue #201 (tools/audio/axtklang.py). Swing "C air
+        // pressure", hit "C wet", hard hit "B haft rebounds" (round 1), charge "B fist blow" (round 2).
+        [SoundKind.AxeSwing] = ["axt-hieb.wav"],
+        [SoundKind.AxeHit] = ["axt-treffer-fleisch.wav"],
+        [SoundKind.AxeHardHit] = ["axt-treffer-hart.wav"],
+        [SoundKind.AxeCharge] = ["axt-aufladen.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>

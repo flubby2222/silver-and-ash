@@ -138,6 +138,27 @@ public class HudLayoutTests
         Assert.DoesNotContain(picture.Parts, part => part.Name == "icon_blade");
     }
 
+    [Fact]
+    public void The_axe_shows_its_own_sign_in_the_middle_of_the_melee_frame()
+    {
+        // Issue #776: no longer the club's sign, but the small rendering of the axe model, lit while it is chosen.
+        var picture = Arrange(Busy() with
+        {
+            Weapons = [new(WeaponKind.HuntersAxe, null, false, false), .. Busy().Weapons.Skip(1)],
+        });
+        var lit = Arrange(Busy() with
+        {
+            Weapons = [new(WeaponKind.HuntersAxe, null, false, true), .. Busy().Weapons.Skip(1).Select(weapon => weapon with { IsSelected = false })],
+        });
+
+        Assert.Equal("icon_axe", HudLayout.IconOf(WeaponKind.HuntersAxe));
+        var axe = Layout.Bounds(Single(picture, "icon_axe"));
+        var ground = Layout.BodyOf(Single(picture, "frame_weapon_0")).Inset(HudLayout.Rim);
+        AssertCentredIn(ground, axe);
+        Assert.DoesNotContain(picture.Parts, part => part.Name.StartsWith("icon_club", StringComparison.Ordinal));
+        Single(lit, "icon_axe_active");
+    }
+
     [Theory]
     [InlineData(854, 854, 480)]
     [InlineData(768, 768, 480)]

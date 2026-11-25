@@ -58,6 +58,20 @@ public sealed record MeleeSwung(
     : GameEvent, IPlayerSound;
 
 /// <summary>
+/// Player <paramref name="PlayerId"/> began charging the melee weapon <paramref name="Weapon"/> (pressed the button while
+/// it was ready); held on, it is fully charged <paramref name="TicksToFull"/> ticks later (issue #776). The swing that
+/// ends the charge is <see cref="MeleeSwung"/>; dying ends it without one (<see cref="PlayerDied"/>).
+/// </summary>
+public sealed record MeleeChargeStarted(int PlayerId, WeaponKind Weapon, int TicksToFull) : GameEvent, IPlayerSound;
+
+/// <summary>
+/// The charge of player <paramref name="PlayerId"/> stopped short of full: the stamina could not pay for the next bit
+/// (<see cref="MeleeCharge.IsStalled"/>). It holds where it is until the button is let go, so it never becomes full in
+/// this hold - the charge sound must not say "full" (issue #776).
+/// </summary>
+public sealed record MeleeChargeStalled(int PlayerId) : GameEvent, IPlayerSound;
+
+/// <summary>
 /// Player <paramref name="PlayerId"/> fired the ranged weapon <paramref name="Weapon"/> (the pistol unless said
 /// otherwise) from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/> - with consecrated ammunition if
 /// <paramref name="Consecrated"/>. The shooter hears it in the middle, every other player from where it was fired
@@ -99,7 +113,11 @@ public sealed record DummyHit(int DummyId, int Damage, bool Critical = false) : 
 /// (<see cref="DummyHit"/>, <see cref="GhoulHit"/>, <see cref="BatHit"/>, <see cref="GormHit"/>), which says how much
 /// damage it took but not what with - the blade sound must not play for a pistol hit.
 /// </summary>
-public sealed record TargetHitBy(int TargetId, int PlayerId, Weapon Weapon) : GameEvent;
+public sealed record TargetHitBy(int TargetId, int PlayerId, Weapon Weapon) : GameEvent
+{
+    /// <summary>True if the target is no creature but something hard - the wooden training dummy (issue #776: the axe sounds different on it).</summary>
+    public bool Hard { get; init; }
+}
 
 /// <summary>Ghoul <paramref name="GhoulId"/> took <paramref name="Damage"/>; <paramref name="Critical"/> for a headshot.</summary>
 public sealed record GhoulHit(int GhoulId, int Damage, bool Critical = false) : GameEvent;

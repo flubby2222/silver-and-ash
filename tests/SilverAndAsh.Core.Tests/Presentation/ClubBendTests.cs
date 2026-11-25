@@ -63,10 +63,14 @@ public class ClubBendTests
     }
 
     [Fact]
-    public void Only_the_club_bends_the_blade_stays_straight()
+    public void Club_and_axe_bend_at_the_grip_the_blade_stays_straight()
     {
         Assert.Equal(Matrix4x4.Identity, WeaponPose.MeleeBend(WeaponKind.SilverBlade, 0.3f, 0.5f));
         Assert.Equal(WeaponPose.ClubBend(0.3f, 0.5f), WeaponPose.MeleeBend(WeaponKind.Club, 0.3f, 0.5f));
+
+        // The axe is scaled around its grip first (its entry's Scale), then bent like the club.
+        var axeScale = WeaponPose.MeleeModel(WeaponKind.HuntersAxe)!.Scale;
+        Assert.Equal(Matrix4x4.CreateScale(axeScale) * WeaponPose.ClubBend(0.3f, 0.5f), WeaponPose.MeleeBend(WeaponKind.HuntersAxe, 0.3f, 0.5f));
     }
 
     [Fact]
@@ -79,13 +83,16 @@ public class ClubBendTests
         Assert.True(Inside(WeaponPose.ClubBendPivot, Cuff), "The pivot should lie inside the cuff.");
     }
 
-    [Fact]
-    public void Everything_drawn_of_the_bent_club_stays_within_reach_of_the_eyes()
+    [Theory]
+    [InlineData(WeaponKind.Club)]
+    [InlineData(WeaponKind.HuntersAxe)] // issue #776: held and bent like the club
+    public void Everything_drawn_of_the_bent_weapon_stays_within_reach_of_the_eyes(WeaponKind kind)
     {
+        var file = WeaponPose.MeleeModel(kind)!.Weapon;
         foreach (var (swing, windUp, tremble, name) in Poses())
         {
-            var pose = WeaponPose.ClubBend(swing, windUp) * WeaponPose.Blade(swing, windUp, tremble);
-            WeaponPoseTests.AssertWithinReach("club.glb", pose, _ => Matrix4x4.Identity);
+            var pose = WeaponPose.MeleeBend(kind, swing, windUp) * WeaponPose.Blade(swing, windUp, tremble);
+            WeaponPoseTests.AssertWithinReach(file, pose, _ => Matrix4x4.Identity);
         }
     }
 
@@ -102,16 +109,20 @@ public class ClubBendTests
         }
     }
 
-    [Fact]
-    public void The_near_plane_cuts_the_bent_club_open_nowhere_within_the_picture()
+    [Theory]
+    [InlineData(WeaponKind.Club)]
+    [InlineData(WeaponKind.HuntersAxe)]
+    public void The_near_plane_cuts_the_bent_weapon_open_nowhere_within_the_picture(WeaponKind kind)
     {
         // The end of the handle may come closer than the near plane, but only beside the picture, where nobody sees the
         // cut (as for the sleeves in WeaponPoseTests).
+        var files = WeaponPose.MeleeModel(kind)!;
+        var weapon = TrianglesInFile(files.Weapon, files.Parts[0].Name);
         var shrink = Matrix4x4.CreateScale(WeaponPose.ShrinkTowardsEye);
         foreach (var (swing, windUp, tremble, name) in Poses())
         {
-            var frame = WeaponPose.ClubBend(swing, windUp) * WeaponPose.Blade(swing, windUp, tremble) * shrink;
-            foreach (var triangle in ClubTriangles)
+            var frame = WeaponPose.MeleeBend(kind, swing, windUp) * WeaponPose.Blade(swing, windUp, tremble) * shrink;
+            foreach (var triangle in weapon)
             {
                 var placed = triangle.Select(corner => Vector3.Transform(corner, frame)).ToArray();
                 foreach (var (from, to) in placed.Zip(placed.Skip(1).Append(placed[0])))
@@ -123,7 +134,7 @@ public class ClubBendTests
 
                     var cut = Vector3.Lerp(from, to, (WeaponPose.NearPlane - from.Z) / (to.Z - from.Z));
                     var inside = MathF.Abs(cut.X) <= cut.Z * WeaponPoseTests.HalfWidth && MathF.Abs(cut.Y) <= cut.Z * WeaponPoseTests.HalfHeight;
-                    Assert.False(inside, $"{name}: the near plane cuts the club open within the picture at {cut}.");
+                    Assert.False(inside, $"{kind}, {name}: the near plane cuts the weapon open within the picture at {cut}.");
                 }
             }
         }
@@ -157,7 +168,7 @@ public class ClubBendTests
         var hitWindUps = new List<float>();
         while (swing < 1f)
         {
-            swing = MathF.Min(1f, swing + (frameSeconds / WeaponPose.SwingSeconds));
+            swing = MathF.Min(1f, swing + (frameSeconds / WeaponPose.SwingSeconds(WeaponKind.Club, Balance.Default.Club.Cooldown)));
             windUp = WeaponPose.WindUpStep(windUp, 0f, frameSeconds);
             var t = WeaponPose.SwingCurve(swing);
             var (pitch, outward) = WeaponPose.ClubBendDegrees(t, windUp);
@@ -292,11 +303,11 @@ public class ClubBendTests
     private static readonly Vector3[] ClubCorners =
         WeaponPoseTests.Triangles("club.glb").Single(part => part.Name == WeaponPose.Club).Corners;
 
-    private static readonly Vector3[][] ClubTriangles = ClubTrianglesInFile();
+    private static readonly Vector3[][] ClubTriangles = TrianglesInFile("club.glb", WeaponPose.Club);
 
-    private static Vector3[][] ClubTrianglesInFile()
+    private static Vector3[][] TrianglesInFile(string file, string name)
     {
-        var (_, _, corners, triangles) = WeaponPoseTests.Triangles("club.glb").Single(part => part.Name == WeaponPose.Club);
+        var (_, _, corners, triangles) = WeaponPoseTests.Triangles(file).Single(part => part.Name == name);
         return Enumerable.Range(0, triangles.Length / 3)
             .Select(first => new[] { corners[triangles[3 * first]], corners[triangles[(3 * first) + 1]], corners[triangles[(3 * first) + 2]] })
             .ToArray();
