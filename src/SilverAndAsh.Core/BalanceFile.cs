@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core;
@@ -117,6 +118,9 @@ public static class BalanceFile
         ["grates.blockHeight"] = GrateTravel.OpenHeight,
         ["statusEffects.marked.bonus"] = 1,
         ["statusEffects.marked.seconds"] = 30,
+        ["statusEffects.cleansingFlame.seconds"] = 30,
+        ["statusEffects.cleansingFlame.damagePerSecond"] = 100,
+        ["statusEffects.cleansingFlame.tickSeconds"] = 5,
         ["statusEffects.weaponShare"] = 1,
         ["statusEffects.weaponHitChance.worn"] = 1,
         ["statusEffects.weaponHitChance.forged"] = 1,
@@ -152,6 +156,7 @@ public static class BalanceFile
         ("chests.king", "silverMin", "silverMax"),
         ("chests.vampire", "silverMin", "silverMax"),
         ("hearing", "nearDistance", "range"),
+        ("statusEffects.cleansingFlame", "tickSeconds", "seconds"),   // at least one pulse while it burns
     ];
 
     /// <summary>Reads the file at <paramref name="path"/>. A missing or unreadable file gives the standard values.</summary>
@@ -197,6 +202,7 @@ public static class BalanceFile
         CheckValues(balance, new Balance(), string.Empty, warnings);
         CheckRanges(balance, warnings);
         CheckLevelCosts(balance.Experience, warnings);
+        CheckFlameEndsOnAPulse(balance.StatusEffects.CleansingFlame, warnings);
         return new(balance, warnings);
     }
 
@@ -332,6 +338,22 @@ public static class BalanceFile
                 max.SetValue(section, max.GetValue(standard));
             }
         }
+    }
+
+    /// <summary>
+    /// A Cleansing Flame must last a whole number of pulses, counted in ticks as the game runs (issue #507). Otherwise
+    /// the ticks after the last pulse burn for nothing and damage is lost: both go back to their standards.
+    /// </summary>
+    private static void CheckFlameEndsOnAPulse(CleansingFlameBalance flame, List<string> warnings)
+    {
+        if (CleansingFlame.EndsOnAPulse(flame))
+        {
+            return;
+        }
+
+        warnings.Add($"'statusEffects.cleansingFlame.seconds' ({CleansingFlame.DurationTicks(flame)} ticks) is not a whole number of 'statusEffects.cleansingFlame.tickSeconds' ({CleansingFlame.PulseTicks(flame)} ticks) - using the standards for both.");
+        typeof(CleansingFlameBalance).GetProperty(nameof(CleansingFlameBalance.Seconds))!.SetValue(flame, Balance.Default.StatusEffects.CleansingFlame.Seconds);
+        typeof(CleansingFlameBalance).GetProperty(nameof(CleansingFlameBalance.TickSeconds))!.SetValue(flame, Balance.Default.StatusEffects.CleansingFlame.TickSeconds);
     }
 
     /// <summary>
