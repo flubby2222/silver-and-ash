@@ -231,7 +231,7 @@ public sealed partial record LaunchOptions(
 
                 default:
                     throw new ArgumentException(
-                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom, --course, --window <width>x<height>, --room <file>, --no-enemies.");
+                        $"Unknown option '{args[i]}'. Known: --level <name>, --seed <number>, --give <weapon>, --photo <scene>, --bench <scene>, --clip <scene>, --out <folder>, --look <1-4>, --showroom, --course, --window <width>x<height>, --room <file>, --no-enemies, --smoke (alone).");
             }
         }
 

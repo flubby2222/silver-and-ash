@@ -62,7 +62,9 @@ using (log)
     var startOnTitle = true;
     try
     {
-        var options = LaunchOptions.Parse(args);
+        // --smoke goes alone (issue #329); read apart from the other options, like --course.
+        var (others, smoke) = SmokeCheck.Extract(args);
+        var options = LaunchOptions.Parse(others);
         seed = options.Seed;
 
         // What is played - level 0, a level file, or with --room assets/rooms/combat/l-hall.txt one room template on its
@@ -190,7 +192,22 @@ using (log)
                 RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), Compare: false, Bench: true);
             log?.Info($"Bench mode: scene '{bench}', {PhotoRequest.WarmUpFrames} frames to warm up, {PhotoRequest.MeasuredFrames} measured.");
         }
+
+        // Test option: --smoke draws every photo scene once in a hidden window and fails if one throws or a picture is a
+        // single colour (issue #329, docs/foto-skript.md). Only in the debug version, like --photo.
+        if (smoke)
+        {
+            photos = new PhotoRequest(
+                PhotoScenes.All, Folder: string.Empty,
+                RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), Compare: false) { Smoke = true };
+            log?.Info($"Smoke test: {PhotoScenes.All.Count} photo scenes in a hidden window.");
+        }
 #else
+        if (smoke)
+        {
+            throw new ArgumentException($"'{SmokeCheck.Option}' works only in the debug version (dotnet run).");
+        }
+
         if (options.Showroom)
         {
             throw new ArgumentException("'--showroom' works only in the debug version (dotnet run).");
@@ -264,8 +281,29 @@ static void RunGame(
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted. The bench (--bench) draws as
     // fast as it can: no VSync, and no frame rate limit is set anywhere.
-    Raylib.SetConfigFlags(photos is { Bench: true } ? ConfigFlags.ResizableWindow : ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow);
+    // The smoke test (--smoke, issue #329) draws into a hidden window, also without VSync: nobody watches it. Raylib's own
+    // lines only from warnings on, so its result stays readable.
+    if (photos is { Smoke: true })
+    {
+        Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
+    }
+
+    Raylib.SetConfigFlags(photos switch
+    {
+        { Smoke: true } => ConfigFlags.HiddenWindow,
+        { Bench: true } => ConfigFlags.ResizableWindow,
+        _ => ConfigFlags.VSyncHint | ConfigFlags.ResizableWindow,
+    });
     Raylib.InitWindow(window?.Width ?? WindowWidth, window?.Height ?? WindowHeight, "Silver & Ash");
+    if (photos is { Smoke: true } && !Raylib.IsWindowReady())
+    {
+        // E.g. a machine without a graphics card: Windows' own OpenGL stops at 1.1, Raylib needs 3.3.
+        Console.Error.WriteLine("SMOKE could not open the hidden window (OpenGL 3.3 needed) - no scene was drawn.");
+        log?.Error("Smoke test: the hidden window could not be opened.");
+        Environment.ExitCode = SmokeCheck.NoWindowExitCode;
+        return;
+    }
+
     BringWindowOnScreen(log);
     WeaponDepthPass.SetWorldClipPlanes();
 
@@ -813,10 +851,24 @@ static void RunGame(
         if (photos is not null)
         {
             var studio = new PhotoStudio(photos.Templates, balance);
-            if (!photos.Bench)
+            if (!photos.Bench && !photos.Smoke)
             {
                 Directory.CreateDirectory(photos.Folder);
             }
+            // Smoke test (--smoke, issue #329): every scene once, as a photo would take it, but only judged, not saved.
+            if (photos.Smoke)
+            {
+                var summary = SmokeCheck.Summarise([.. photos.Scenes.Select(SmokeScene)]);
+                foreach (var line in summary.Lines)
+                {
+                    Console.WriteLine(line);
+                    log?.Info($"Smoke test: {line}");
+                }
+
+                Environment.ExitCode = summary.ExitCode;
+                return;
+            }
+
             IReadOnlyList<LookVariant> looks = photos.Compare ? LookVariants.All : [look];
             foreach (var (variant, scene) in looks.SelectMany(variant => photos.Scenes.Select(scene => (variant, scene))))
             {
@@ -828,25 +880,7 @@ static void RunGame(
                 }
 
                 var suffix = photos.Compare ? $"-look{look.Number}" : string.Empty;
-                var setup = scene.Build(studio);
-                StartScene(setup);
-                if (setup.IsModelProbe)
-                {
-                    // The single target of the model probe: the loaded model, as in the game.
-                    ghoulView = newGhoulView();
-                }
-
-                // One frame per tick: views and banners age exactly as in a game running at 60 frames per second.
-                var ticks = setup.Run(afterTick: () =>
-                {
-                    ReadEvents();
-                    UpdateViews(SimulationClock.SecondsPerTick);
-                    seconds += SimulationClock.SecondsPerTick;
-                    levelNameSeconds = LevelNameBanner.After(levelNameSeconds, SimulationClock.SecondsPerTick);
-                });
-
-                // The cursor in the corner, so no box of the inventory is drawn as "under the mouse".
-                Raylib.SetMousePosition(0, 0);
+                var (setup, ticks) = PlayScene(scene);
                 if (photos.Bench)
                 {
                     // The simulation stands still; every frame is drawn in full, as in the game: world, then screen.
@@ -884,6 +918,54 @@ static void RunGame(
                 picture.SaveAs(picturePath);
                 log?.Info($"Photo '{scene.Name}' after {ticks} ticks: {picturePath}, {screenPath}");
                 Console.WriteLine($"{scene.Name}: {picturePath} ({ticks} ticks)");
+            }
+
+            // Builds a photo scene and ticks it to its moment, one frame per tick: views and banners age exactly as in a
+            // game running at 60 frames per second. Then the cursor goes into the corner, so no box of the inventory is
+            // drawn as "under the mouse".
+            (PhotoSetup Setup, int Ticks) PlayScene(PhotoScene scene)
+            {
+                var setup = scene.Build(studio);
+                StartScene(setup);
+                if (setup.IsModelProbe)
+                {
+                    // The single target of the model probe: the loaded model, as in the game.
+                    ghoulView = newGhoulView();
+                }
+
+                var ticks = setup.Run(afterTick: () =>
+                {
+                    ReadEvents();
+                    UpdateViews(SimulationClock.SecondsPerTick);
+                    seconds += SimulationClock.SecondsPerTick;
+                    levelNameSeconds = LevelNameBanner.After(levelNameSeconds, SimulationClock.SecondsPerTick);
+                });
+                Raylib.SetMousePosition(0, 0);
+                return (setup, ticks);
+            }
+
+            // One scene of the smoke test: drawn like a photo, then both pictures judged (SmokeCheck). An exception of the
+            // scene is its failure; the run goes on with the next scene.
+            SmokeOutcome SmokeScene(PhotoScene scene)
+            {
+                try
+                {
+                    var (setup, _) = PlayScene(scene);
+                    DrawWorld(alpha: 1f, SimulationClock.SecondsPerTick);
+                    Raylib.BeginDrawing();
+                    DrawPhotoScreen(setup);
+                    Rlgl.DrawRenderBatchActive();
+                    var screen = Raylib.LoadImageFromScreen();
+                    var screenPixels = ImagePixels.Rgba(screen);
+                    Raylib.UnloadImage(screen);
+                    Raylib.EndDrawing();
+                    return new SmokeOutcome(scene.Name, SmokeCheck.Judge(picture.Pixels(), screenPixels));
+                }
+                catch (Exception exception)
+                {
+                    log?.Error($"Smoke test: scene '{scene.Name}' threw.", exception);
+                    return new SmokeOutcome(scene.Name, SmokeCheck.Crashed(exception));
+                }
             }
 
             // A photo's screen: the game's, or a menu over it (issue #349) - drawn by the same code as in the game.
@@ -1576,6 +1658,12 @@ internal sealed record PhotoRequest(
 {
     /// <summary>The motion scenes to film (--clip, issue #286), after the photo scenes; usually there are only these.</summary>
     public IReadOnlyList<MotionScene> Clips { get; init; } = [];
+
+    /// <summary>
+    /// Smoke test (--smoke, issue #329): draw every scene once in a hidden window, save nothing, and end with an exit code
+    /// that says whether a scene threw or a picture was a single colour (see <see cref="SmokeCheck"/>).
+    /// </summary>
+    public bool Smoke { get; init; }
 
     /// <summary>Frames drawn before measuring (shaders, textures and caches settle).</summary>
     public const int WarmUpFrames = 100;

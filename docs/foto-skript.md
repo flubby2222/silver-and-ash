@@ -242,3 +242,20 @@ dotnet run --project src/SilverAndAsh.Game -- --bench room-combat
 - Wie `--photo` geht `--bench` nur in der Debug-Version. Die Zahlen gelten also für den Debug-Build und sind nur untereinander vergleichbar, nicht mit der Release-Version.
 
 **Vorher/Nachher im selben Build:** Für den Vergleich mit dem Stand vor einer neuen Textur oder einem neuen Modell benennst du die Datei im Ausgabeordner (`src/SilverAndAsh.Game/bin/Debug/net10.0/assets/…`) um. Dann greift der Rückfall: Die Fläche wird einfarbig gezeichnet bzw. der Platzhalter erscheint. Miss jede Szene mehrmals, denn einzelne Läufe streuen um etwa ±1 ms. Die Grafikkarte steht im Konsolen-Text von raylib (`Renderer:`).
+
+## Rauchtest (`--smoke`)
+
+Prüft in einem Zug, ob das Spiel jede Foto-Szene zeichnen kann (Issue #329). Die Szenen-Liste ist dieselbe wie bei `--photo all` (`PhotoScenes.All`).
+
+```
+dotnet build src/SilverAndAsh.Game
+dotnet run --no-build --project src/SilverAndAsh.Game -- --smoke
+```
+
+- Das Fenster bleibt **versteckt**. Gespeichert wird nichts. Lokal dauert ein Lauf etwa 17 s.
+- Jede Szene wird aufgebaut wie beim Foto und einmal gezeichnet. Eine Szene **scheitert**, wenn sie eine Ausnahme wirft oder wenn das 3D-Bild oder das Fensterbild nur eine einzige Farbe hat. Verglichen werden dabei Rot, Grün und Blau, der Alphawert zählt nicht.
+- Ausgabe: je gescheiterter Szene eine Zeile `FAILED <szene>: <grund>`, am Ende `SMOKE <n> scene(s) drawn, <f> failed.`
+- Exit-Code `0` heißt: alle Szenen in Ordnung. `1` heißt: mindestens eine Szene gescheitert oder gar keine gezeichnet. `2` heißt: Das versteckte Fenster ließ sich nicht öffnen, etwa weil OpenGL 3.3 fehlt.
+- `--smoke` steht **allein**, ohne andere Optionen. Es geht nur in der Debug-Version, wie `--photo`.
+- Das Spiel ist eine `WinExe`. Ruft man die exe in PowerShell direkt auf, kehrt der Aufruf sofort zurück, ohne Ausgabe und ohne Exit-Code. Ausgabe und Exit-Code bekommt man nur mit `dotnet run` (wie oben) oder wenn man die Ausgabe in eine Pipe leitet, z. B. `…\SilverAndAsh.Game.exe --smoke | Out-Host`. Das ist auch für einen späteren CI-Schritt wichtig.
+- Die Entscheidung „einfarbig“ und die Auswertung (Zeilen und Exit-Code) stehen ohne Raylib in [`SmokeCheck`](../src/SilverAndAsh.Core/Photos/SmokeCheck.cs) im Core und sind dort getestet.
