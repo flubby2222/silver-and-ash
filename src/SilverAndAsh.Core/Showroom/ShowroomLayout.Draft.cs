@@ -154,21 +154,35 @@ public sealed partial class ShowroomLayout
             }
         }
 
-        /// <summary>Every wall piece once per section in the north wall of its corridor part, a closet behind; a key before each locked door.</summary>
+        /// <summary>
+        /// Every wall piece once per section in the north wall of the part it stands in (<see cref="PartOf"/>), a closet
+        /// behind; a key before each locked door. A door is as many cells wide as in the game
+        /// (<see cref="DoorFrameLook.CellsWide"/>, the further cells as <see cref="LevelDoor.MoreCells"/>, as
+        /// <c>LevelGenerator</c> widens the boss door), its cells and closet under the ceiling of a door cell of its kind
+        /// (<see cref="LevelGenerator.DoorCell"/>) - so the boss door is the portal over two 6 m cells (issue #599).
+        /// </summary>
         public void PlaceWallPieces()
         {
             var closets = 0;
             foreach (var section in Sections)
             {
-                for (var slot = 0; slot < WallPieces.Count; slot++)
+                var slots = new Dictionary<ShowroomPart, int>();
+                foreach (var piece in WallPieces)
                 {
-                    var piece = WallPieces[slot];
-                    var x = section.CorridorX + 2 + (WallStep * slot);
+                    var part = PartOf(piece.Kind);
+                    var slot = slots.GetValueOrDefault(part);
+                    slots[part] = slot + 1;
+                    var x = WallSlotColumn(section, part, slot);
                     var z = section.DoorRow;
-                    Carve(x, z, x, z, Cell.DefaultCeilingHeight, section.Index);
-                    Carve(x - 1, z - DoorRowOffset + ClosetRow, x + 1, z - 1, Cell.DefaultCeilingHeight, section.Index);
-                    Doors.Add(new LevelDoor(x, z, section.Index * 2, (Variants.Length * 2) + closets++, RoomSide.North, piece.Kind));
-                    Placed.Add(new PlacedPiece(piece, x, z, section.Index, ShowroomPart.Corridor));
+                    var wide = DoorFrameLook.CellsWide(piece.Kind);
+                    var ceiling = LevelGenerator.DoorCell(piece.Kind).CeilingHeight;
+                    Carve(x, z, x + wide - 1, z, ceiling, section.Index);
+                    Carve(x - 1, z - DoorRowOffset + ClosetRow, x + wide, z - 1, ceiling, section.Index);
+                    Doors.Add(new LevelDoor(x, z, section.Index * 2, (Variants.Length * 2) + closets++, RoomSide.North, piece.Kind)
+                    {
+                        MoreCells = [.. Enumerable.Range(x + 1, wide - 1).Select(more => (more, z))],
+                    });
+                    Placed.Add(new PlacedPiece(piece, x, z, section.Index, part));
                     if (piece.Kind == DoorKind.Locked)
                     {
                         keys.Add((x + 1, section.NorthRow));

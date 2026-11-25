@@ -39,9 +39,9 @@ level WallCutouts WallCutout { X = 53, Z = 28, Side = South, From = 0.0000, To =
 level Columns Column { X = 25.0000, Z = 71.0000, Centre = (25.0000, 71.0000) }
 level Columns Column { X = 35.0000, Z = 71.0000, Centre = (35.0000, 71.0000) }
 cells  0 ##############################################################
-cells  1 #########ccc#ccc#ccc#ccc############ccc#######################
-cells  2 #########ccc#ccc#ccc#ccc############ccc#######################
-cells  3 ##########c###c###c###c##############c########################
+cells  1 #########ccc#ccc#ccc################ccc##RRRR#################
+cells  2 #########ccc#ccc#ccc################ccc##RRRR#################
+cells  3 ##########c###c###c##################c####RR##################
 cells  4 #ccccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells  5 #ccccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells  6 #ccccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
@@ -49,9 +49,9 @@ cells  7 #ccccccc#########################RRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells  8 #ccccccc#ccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells  9 #ccc######################################################ccc#
 cells 10 #ccc######################################################ccc#
-cells 11 #ccc#####ccc#ccc#ccc#ccc############ccc###################ccc#
-cells 12 #ccc#####ccc#ccc#ccc#ccc############ccc###################ccc#
-cells 13 #ccc######c###c###c###c##############c####################ccc#
+cells 11 #ccc#####ccc#ccc#ccc################ccc##RRRR#############ccc#
+cells 12 #ccc#####ccc#ccc#ccc################ccc##RRRR#############ccc#
+cells 13 #ccc######c###c###c##################c####RR##############ccc#
 cells 14 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells 15 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells 16 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
@@ -59,9 +59,9 @@ cells 17 #ccc#ccc#########################RRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells 18 #ccc#ccc#ccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells 19 #ccc#ccc######################################################
 cells 20 #ccc#ccc######################################################
-cells 21 #ccc#ccc#ccc#ccc#ccc#ccc############ccc#######################
-cells 22 #ccc#ccc#ccc#ccc#ccc#ccc############ccc#######################
-cells 23 #ccc#ccc##c###c###c###c##############c########################
+cells 21 #ccc#ccc#ccc#ccc#ccc################ccc##RRRR#################
+cells 22 #ccc#ccc#ccc#ccc#ccc################ccc##RRRR#################
+cells 23 #ccc#ccc##c###c###c##################c####RR##################
 cells 24 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells 25 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
 cells 26 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
@@ -91,9 +91,9 @@ looks  7 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 looks  8 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 looks  9 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 looks 10 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 11 AAAAAAAAABBBABBBABBBABBBAAAAAAAAAAAABBBAAAAAAAAAAAAAAAAAAAAAAA
-looks 12 AAAAAAAAABBBABBBABBBABBBAAAAAAAAAAAABBBAAAAAAAAAAAAAAAAAAAAAAA
-looks 13 AAAAAAAAAABAAABAAABAAABAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA
+looks 11 AAAAAAAAABBBABBBABBBAAAAAAAAAAAAAAAABBBAABBBBAAAAAAAAAAAAAAAAA
+looks 12 AAAAAAAAABBBABBBABBBAAAAAAAAAAAAAAAABBBAABBBBAAAAAAAAAAAAAAAAA
+looks 13 AAAAAAAAAABAAABAAABAAAAAAAAAAAAAAAAAABAAAABBAAAAAAAAAAAAAAAAAA
 looks 14 AAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
 looks 15 AAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
 looks 16 AAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
@@ -101,9 +101,9 @@ looks 17 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBAAAA
 looks 18 AAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
 looks 19 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 looks 20 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 21 AAAAAAAAACCCACCCACCCACCCAAAAAAAAAAAACCCAAAAAAAAAAAAAAAAAAAAAAA
-looks 22 AAAAAAAAACCCACCCACCCACCCAAAAAAAAAAAACCCAAAAAAAAAAAAAAAAAAAAAAA
-looks 23 AAAAAAAAAACAAACAAACAAACAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAA
+looks 21 AAAAAAAAACCCACCCACCCAAAAAAAAAAAAAAAACCCAACCCCAAAAAAAAAAAAAAAAA
+looks 22 AAAAAAAAACCCACCCACCCAAAAAAAAAAAAAAAACCCAACCCCAAAAAAAAAAAAAAAAA
+looks 23 AAAAAAAAAACAAACAAACAAAAAAAAAAAAAAAAAACAAAACCAAAAAAAAAAAAAAAAAA
 looks 24 AAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
 looks 25 AAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
 looks 26 AAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
@@ -124,16 +124,16 @@ section ShowroomSection { Index = 1, Variant = B, CorridorX = 8, RoomX = 33, Len
 section ShowroomSection { Index = 2, Variant = C, CorridorX = 8, RoomX = 33, Length = 25, DoorRow = 23, NorthRow = 24, SouthRow = 28, ArchCorridorRow = 28, ArchCorridorX = 9 }
 placed PlacedPiece { Piece = WallPiece { Label = Wooden door, Kind = Normal }, X = 10, Z = 3, Section = 0, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Locked door, Kind = Locked }, X = 14, Z = 3, Section = 0, Part = Corridor }
-placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 18, Z = 3, Section = 0, Part = Corridor }
-placed PlacedPiece { Piece = WallPiece { Label = Cracked wall, Kind = Cracked }, X = 22, Z = 3, Section = 0, Part = Corridor }
+placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 42, Z = 3, Section = 0, Part = Room }
+placed PlacedPiece { Piece = WallPiece { Label = Cracked wall, Kind = Cracked }, X = 18, Z = 3, Section = 0, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Wooden door, Kind = Normal }, X = 10, Z = 13, Section = 1, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Locked door, Kind = Locked }, X = 14, Z = 13, Section = 1, Part = Corridor }
-placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 18, Z = 13, Section = 1, Part = Corridor }
-placed PlacedPiece { Piece = WallPiece { Label = Cracked wall, Kind = Cracked }, X = 22, Z = 13, Section = 1, Part = Corridor }
+placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 42, Z = 13, Section = 1, Part = Room }
+placed PlacedPiece { Piece = WallPiece { Label = Cracked wall, Kind = Cracked }, X = 18, Z = 13, Section = 1, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Wooden door, Kind = Normal }, X = 10, Z = 23, Section = 2, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Locked door, Kind = Locked }, X = 14, Z = 23, Section = 2, Part = Corridor }
-placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 18, Z = 23, Section = 2, Part = Corridor }
-placed PlacedPiece { Piece = WallPiece { Label = Cracked wall, Kind = Cracked }, X = 22, Z = 23, Section = 2, Part = Corridor }
+placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 42, Z = 23, Section = 2, Part = Room }
+placed PlacedPiece { Piece = WallPiece { Label = Cracked wall, Kind = Cracked }, X = 18, Z = 23, Section = 2, Part = Corridor }
 placed PlacedPiece { Piece = ChestPiece { Label = Beggar chest, Tier = Beggar }, X = 35, Z = 6, Section = 0, Part = Room }
 placed PlacedPiece { Piece = ChestPiece { Label = Guard chest, Tier = Guard }, X = 35, Z = 16, Section = 1, Part = Room }
 placed PlacedPiece { Piece = ChestPiece { Label = King chest, Tier = King }, X = 35, Z = 26, Section = 2, Part = Room }
@@ -160,16 +160,16 @@ placed PlacedPiece { Piece = ConsumablePiece { Label = Blood vial, Consumable = 
 placed PlacedPiece { Piece = ConsumablePiece { Label = Consecrated ammo, Consumable = ConsecratedAmmo }, X = 56, Z = 26, Section = 2, Part = Room }
 door LevelDoor { X = 10, Z = 3, RoomA = 0, RoomB = 6, Side = North, Kind = Normal, HasGrate = False, MoreCells = [], Cells = [(10, 3)] }
 door LevelDoor { X = 14, Z = 3, RoomA = 0, RoomB = 7, Side = North, Kind = Locked, HasGrate = False, MoreCells = [], Cells = [(14, 3)] }
-door LevelDoor { X = 18, Z = 3, RoomA = 0, RoomB = 8, Side = North, Kind = Boss, HasGrate = False, MoreCells = [], Cells = [(18, 3)] }
-door LevelDoor { X = 22, Z = 3, RoomA = 0, RoomB = 9, Side = North, Kind = Cracked, HasGrate = False, MoreCells = [], Cells = [(22, 3)] }
+door LevelDoor { X = 42, Z = 3, RoomA = 0, RoomB = 8, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(43, 3)], Cells = [(42, 3), (43, 3)] }
+door LevelDoor { X = 18, Z = 3, RoomA = 0, RoomB = 9, Side = North, Kind = Cracked, HasGrate = False, MoreCells = [], Cells = [(18, 3)] }
 door LevelDoor { X = 10, Z = 13, RoomA = 2, RoomB = 10, Side = North, Kind = Normal, HasGrate = False, MoreCells = [], Cells = [(10, 13)] }
 door LevelDoor { X = 14, Z = 13, RoomA = 2, RoomB = 11, Side = North, Kind = Locked, HasGrate = False, MoreCells = [], Cells = [(14, 13)] }
-door LevelDoor { X = 18, Z = 13, RoomA = 2, RoomB = 12, Side = North, Kind = Boss, HasGrate = False, MoreCells = [], Cells = [(18, 13)] }
-door LevelDoor { X = 22, Z = 13, RoomA = 2, RoomB = 13, Side = North, Kind = Cracked, HasGrate = False, MoreCells = [], Cells = [(22, 13)] }
+door LevelDoor { X = 42, Z = 13, RoomA = 2, RoomB = 12, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(43, 13)], Cells = [(42, 13), (43, 13)] }
+door LevelDoor { X = 18, Z = 13, RoomA = 2, RoomB = 13, Side = North, Kind = Cracked, HasGrate = False, MoreCells = [], Cells = [(18, 13)] }
 door LevelDoor { X = 10, Z = 23, RoomA = 4, RoomB = 14, Side = North, Kind = Normal, HasGrate = False, MoreCells = [], Cells = [(10, 23)] }
 door LevelDoor { X = 14, Z = 23, RoomA = 4, RoomB = 15, Side = North, Kind = Locked, HasGrate = False, MoreCells = [], Cells = [(14, 23)] }
-door LevelDoor { X = 18, Z = 23, RoomA = 4, RoomB = 16, Side = North, Kind = Boss, HasGrate = False, MoreCells = [], Cells = [(18, 23)] }
-door LevelDoor { X = 22, Z = 23, RoomA = 4, RoomB = 17, Side = North, Kind = Cracked, HasGrate = False, MoreCells = [], Cells = [(22, 23)] }
+door LevelDoor { X = 42, Z = 23, RoomA = 4, RoomB = 16, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(43, 23)], Cells = [(42, 23), (43, 23)] }
+door LevelDoor { X = 18, Z = 23, RoomA = 4, RoomB = 17, Side = North, Kind = Cracked, HasGrate = False, MoreCells = [], Cells = [(18, 23)] }
 chest ChestPlan { X = 35, Z = 6, Room = 1, Tier = Beggar, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
 chest ChestPlan { X = 35, Z = 16, Room = 3, Tier = Guard, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
 chest ChestPlan { X = 35, Z = 26, Room = 5, Tier = King, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
@@ -196,28 +196,22 @@ exhibit CryptWardens ExhibitCryptWarden { Stance = Rest, Position = (89.0000, 0.
 exhibit CryptWardens ExhibitCryptWarden { Stance = Announce, Position = (89.0000, 0.0000, 53.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 3.5000, Position = (25.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 3.5000, Position = (33.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 3.5000, Position = (41.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (71.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (79.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (87.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (95.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (103.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (111.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 3.5000, Position = (25.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 3.5000, Position = (33.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 3.5000, Position = (41.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (71.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (79.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (87.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (95.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (103.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (111.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 3.5000, Position = (25.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 3.5000, Position = (33.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 3.5000, Position = (41.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (71.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (79.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (87.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (95.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (103.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (111.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
@@ -306,16 +300,16 @@ exhibit Columns ExhibitColumn { Stage = Broken, Position = (39.0000, 0.0000, 75.
 exhibit Columns ExhibitColumn { Stage = Falling, Position = (35.0000, 0.0000, 67.0000), Yaw = 0.3491 }
 label ShowroomLabel { Text = Wooden door, Position = (21.0000, 3.1000, 8.3000) }
 label ShowroomLabel { Text = Locked door, Position = (29.0000, 3.1000, 8.3000) }
-label ShowroomLabel { Text = Boss door, Position = (37.0000, 3.1000, 8.3000) }
-label ShowroomLabel { Text = Cracked wall, Position = (45.0000, 3.1000, 8.3000) }
+label ShowroomLabel { Text = Boss door, Position = (86.0000, 3.1000, 8.3000) }
+label ShowroomLabel { Text = Cracked wall, Position = (37.0000, 3.1000, 8.3000) }
 label ShowroomLabel { Text = Wooden door, Position = (21.0000, 3.1000, 28.3000) }
 label ShowroomLabel { Text = Locked door, Position = (29.0000, 3.1000, 28.3000) }
-label ShowroomLabel { Text = Boss door, Position = (37.0000, 3.1000, 28.3000) }
-label ShowroomLabel { Text = Cracked wall, Position = (45.0000, 3.1000, 28.3000) }
+label ShowroomLabel { Text = Boss door, Position = (86.0000, 3.1000, 28.3000) }
+label ShowroomLabel { Text = Cracked wall, Position = (37.0000, 3.1000, 28.3000) }
 label ShowroomLabel { Text = Wooden door, Position = (21.0000, 3.1000, 48.3000) }
 label ShowroomLabel { Text = Locked door, Position = (29.0000, 3.1000, 48.3000) }
-label ShowroomLabel { Text = Boss door, Position = (37.0000, 3.1000, 48.3000) }
-label ShowroomLabel { Text = Cracked wall, Position = (45.0000, 3.1000, 48.3000) }
+label ShowroomLabel { Text = Boss door, Position = (86.0000, 3.1000, 48.3000) }
+label ShowroomLabel { Text = Cracked wall, Position = (37.0000, 3.1000, 48.3000) }
 label ShowroomLabel { Text = Beggar chest, Position = (71.0000, 1.2000, 13.0000) }
 label ShowroomLabel { Text = Guard chest, Position = (71.0000, 1.2000, 33.0000) }
 label ShowroomLabel { Text = King chest, Position = (71.0000, 1.2000, 53.0000) }

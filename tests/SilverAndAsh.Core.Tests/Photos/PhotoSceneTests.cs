@@ -135,7 +135,7 @@ public class PhotoSceneTests
             "boss-portal-barred", "boss-portal-gorm",
             "bullet-impact-wall",
             "course-1-arms", "course-1-arms-row", "course-2-columns", "course-3-cracked-wall", "course-4-portcullis", "course-5-teleporter", "course-6-boss",
-            "showroom-stairs", "course-boss-stairs",
+            "showroom-stairs", "course-boss-stairs", "showroom-boss-door",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
