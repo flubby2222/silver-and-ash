@@ -64,6 +64,8 @@ Die eigenen Wörter des Projekts, je einmal festgelegt. Wer in Issues, Pull Requ
 | **Seed** | Die Startzahl des Zufalls. Sie liegt im Spielzustand, damit ein Durchlauf wiederholbar ist. |
 | **Zelle** | Ein Feld im Raster eines Levels, mit Boden- und Deckenhöhe ([level-format.md](level-format.md)). |
 | **Brunnen** („Sirius' Relief“, im Code *WellOfSirius*) | Der dreistufige Steinbrunnen, der in einem ruhigen Raum je Ebene stehen kann; man benutzt ihn mit F. Bis #716 hieß er im Spiel „Well of Sirius“; Klassen, Ereignis und Modelldateien tragen noch den alten Namen. |
+| **Statuseffekt** (im Code *StatusKind*) | Ein Zustand, den ein Gegner eine Weile trägt, z. B. *Marked* (nimmt mehr Schaden) oder *Cleansing Flame* (brennt in Schadenspulsen). Erneutes Auslösen verlängert ihn, stapelt ihn nicht. Gefundene Waffen können einen tragen. |
+| **Puls** | Ein einzelner Schadensschlag eines Effekts über Zeit; die Cleansing Flame pulst alle `tickSeconds`. Nicht zu verwechseln mit dem Tick der Simulation. |
 | **Balancing-Werte** | Die Zahlen des Spiels (Schaden, Kosten, Zeiten) in `assets/balance.json`. Tests rechnen mit `Balance.Default`. |
 
 ## Release und Qualität

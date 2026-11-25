@@ -22,6 +22,10 @@ public static class StatusLooks
     [
         // Marked: Werkstein 3 (209, 193, 200), the lightest step of the main palette with a violet hue (provisional).
         new(StatusKind.Marked, EffectColours.Ashlar, (209, 193, 200), ShowsTimer: true),
+
+        // Cleansing Flame: Messing/Gold 7 (238, 228, 160), white gold - the brightest warm step, well away from the gold of
+        // the Royal tier (Messing/Gold 5) and from red (provisional, issue #507).
+        new(StatusKind.CleansingFlame, EffectColours.Brass, (238, 228, 160), ShowsTimer: true),
     ];
 
     /// <summary>The look of <paramref name="kind"/> in <paramref name="looks"/>; a kind without one is an error of the table.</summary>

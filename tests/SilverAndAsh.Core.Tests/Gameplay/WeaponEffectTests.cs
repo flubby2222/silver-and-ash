@@ -36,13 +36,30 @@ public class WeaponEffectTests
         Ghoul = Balance.Default.Ghoul with { Speed = 0f, MaxHealth = 100_000 },
     };
 
-    /// <summary>A world of <paramref name="map"/> whose player holds a found <paramref name="weapon"/> in ranged place 0.</summary>
+    /// <summary>
+    /// A world of <paramref name="map"/> whose player holds a found <paramref name="weapon"/> in ranged place 0 that
+    /// carries Marked: the first seed from <paramref name="seed"/> on whose find rolls Marked. Since there is a second
+    /// effect (issue #507), which one a seed rolls is chance - the tests of the mark must not hang on it.
+    /// </summary>
     private static GameWorld WorldWithFound(WeaponKind weapon, Balance balance, string map = LongCorridor, int seed = 1)
     {
-        var world = new GameWorld(LevelParser.Parse(map), seed, balance);
-        world.WeaponEffects.RollFind(weapon);
+        var world = WorldThatFindsMarked(weapon, balance, map, seed);
         world.Player.Equip(0, weapon);
         return world;
+    }
+
+    /// <summary>A world of <paramref name="map"/> in which <paramref name="weapon"/> has just been found with Marked (the first such seed from <paramref name="seed"/> on).</summary>
+    private static GameWorld WorldThatFindsMarked(WeaponKind weapon, Balance balance, string map, int seed = 1)
+    {
+        for (var tries = 0; ; seed++, tries++)
+        {
+            Assert.True(tries < 100, $"No seed gives a {weapon} with Marked.");
+            var world = new GameWorld(LevelParser.Parse(map), seed, balance);
+            if (world.WeaponEffects.RollFind(weapon) is StatusKind.Marked)
+            {
+                return world;
+            }
+        }
     }
 
     private static int RifleDamage => Balance.Default.Rifle.Damage;
@@ -75,6 +92,34 @@ public class WeaponEffectTests
         // Found again (dropped and laid down once more): the same weapon, the same effect - no new roll.
         Assert.Equal(club, effects.RollFind(WeaponKind.Club));
         Assert.Null(effects.Of(WeaponKind.Rifle));   // not found yet
+    }
+
+    [Fact]
+    public void A_weapon_found_again_never_rolls_anew()
+    {
+        // Issue #507: with two effects to choose from, a new roll for a weapon found again would often change its
+        // effect - over many seeds and finds it must never happen. Both effects must turn up, or the test proves nothing.
+        var seen = new HashSet<StatusKind>();
+        for (var seed = 1; seed <= 40; seed++)
+        {
+            var effects = new WeaponEffects(seed, Effects with { WeaponShare = 1f }, StartingWeapons);
+            var first = effects.RollFind(WeaponKind.Club);
+            seen.Add(Assert.IsType<StatusKind>(first));
+            for (var again = 0; again < 10; again++)
+            {
+                Assert.Equal(first, effects.RollFind(WeaponKind.Club));
+                Assert.Equal(first, effects.Of(WeaponKind.Club));
+            }
+        }
+
+        Assert.Equal(WeaponEffects.Choosable.ToHashSet(), seen);
+    }
+
+    [Fact]
+    public void Weapons_can_carry_Marked_and_Cleansing_Flame_each_with_a_name()
+    {
+        Assert.Equal([StatusKind.Marked, StatusKind.CleansingFlame], WeaponEffects.Choosable);
+        Assert.All(WeaponEffects.Choosable, effect => Assert.False(string.IsNullOrWhiteSpace(WeaponEffects.NameOf(effect))));
     }
 
     [Fact]
@@ -303,10 +348,14 @@ public class WeaponEffectTests
     }
 
     [Fact]
-    public void A_blunderbuss_shot_marks_each_enemy_it_hits()
+    public void A_blunderbuss_shot_puts_its_effect_on_each_enemy_it_hits()
     {
         // Two ghouls side by side, 10 m away: there the cone is wide enough for pellets to hit both.
-        var world = WorldWithFound(WeaponKind.Blunderbuss, Always(1f), "#P.#\n#..#\n#..#\n#..#\n#..#\n#GG#");
+        // Whichever effect seed 1 gives the blunderbuss: the test counts the enemies it is put on, not its kind (the pellets
+        // of seed 1 hit both ghouls; another seed would scatter them differently).
+        var world = new GameWorld(LevelParser.Parse("#P.#\n#..#\n#..#\n#..#\n#..#\n#GG#"), 1, Always(1f));
+        Assert.NotNull(world.WeaponEffects.RollFind(WeaponKind.Blunderbuss));
+        world.Player.Equip(0, WeaponKind.Blunderbuss);
         Face(world.Player, Torso((world.Ghouls[0].Position + world.Ghouls[1].Position) / 2f));
 
         world.Tick(Shoot);
@@ -321,8 +370,7 @@ public class WeaponEffectTests
     public void A_club_swing_marks_the_enemy_it_strikes()
     {
         var balance = Always(1f);
-        var world = new GameWorld(LevelParser.Parse("P\nG"), 1, balance);
-        world.WeaponEffects.RollFind(WeaponKind.Club);
+        var world = WorldThatFindsMarked(WeaponKind.Club, balance, "P\nG");
         world.Player.EquipMelee(WeaponKind.Club);
         var ghoul = world.Ghouls[0];
         Face(world.Player, Torso(ghoul.Position));
@@ -413,15 +461,15 @@ public class WeaponEffectTests
         WalkUpAndOpen(world);
         var dropped = Assert.Single(world.Events.OfType<EquipmentDropped>());
         var weapon = Assert.IsType<WeaponKind>(dropped.Piece.Weapon);
-        Assert.Equal(StatusKind.Marked, world.WeaponEffects.Of(weapon));
+        var effect = Assert.IsType<StatusKind>(world.WeaponEffects.Of(weapon));   // the share is 1: it carries one
 
         RunTicks(world, PlayerInput.None, SimulationClock.TicksPerSecond);
         Face(world.Player, world.EquipmentDrops[0].Position);
         world.Tick(PlayerInput.None with { Interact = true });
 
         var taken = Assert.Single(world.Events.OfType<EquipmentTaken>());
-        Assert.Equal(StatusKind.Marked, taken.Effect);
-        Assert.Equal($"{dropped.Piece.Name} - Marked", taken.Label);
+        Assert.Equal(effect, taken.Effect);
+        Assert.Equal($"{dropped.Piece.Name} - {WeaponEffects.NameOf(effect)}", taken.Label);
     }
 
     private static void WalkUpAndOpen(GameWorld world)

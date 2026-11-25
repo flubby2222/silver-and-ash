@@ -17,10 +17,12 @@ public class EnemyStatusReadoutTests
 
     private const string Corridor = "P\n.\n.\n.\nG";
 
-    // Kinds the game does not have yet, for order and limit: the table of looks is passed in, the kinds are cast.
-    private static readonly StatusKind Second = (StatusKind)1;
-    private static readonly StatusKind Third = (StatusKind)2;
-    private static readonly StatusKind Fourth = (StatusKind)3;
+    // Kinds the game does not have yet, for order and limit: the table of looks is passed in, the kinds are cast - after
+    // the last kind the game has, so a new kind of the game never turns one of them into a real one (issue #507).
+    private static readonly StatusKind LastOfTheGame = Enum.GetValues<StatusKind>().Max();
+    private static readonly StatusKind Second = LastOfTheGame + 1;
+    private static readonly StatusKind Third = LastOfTheGame + 2;
+    private static readonly StatusKind Fourth = LastOfTheGame + 3;
 
     private static readonly IReadOnlyList<StatusLook> FourLooks =
     [

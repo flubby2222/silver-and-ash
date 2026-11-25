@@ -1799,6 +1799,7 @@ public sealed class GameWorld
     private int StatusTicks(StatusKind kind) => kind switch
     {
         StatusKind.Marked => Math.Max(1, SimulationClock.SecondsToTicks(Balance.StatusEffects.Marked.Seconds)),
+        StatusKind.CleansingFlame => CleansingFlame.DurationTicks(Balance.StatusEffects.CleansingFlame),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown status effect."),
     };
 
@@ -1811,7 +1812,29 @@ public sealed class GameWorld
     {
         foreach (var enemy in Enemies)
         {
+            BurnWithCleansingFlame(enemy);
             enemy.Status.Tick(enemy.Id, _events);
+        }
+    }
+
+    /// <summary>
+    /// Issue #507: an enemy that carries a Cleansing Flame takes its pulse of damage on this tick of the flame (none
+    /// between the pulses), through <see cref="Damage"/> like a hit - so a kill counts for the player who set the flame
+    /// off (online co-op: a player, by number). A dead enemy burns no more; a flame whose player is no longer in the game
+    /// does no damage.
+    /// </summary>
+    private void BurnWithCleansingFlame(IEnemy enemy)
+    {
+        if (enemy.IsDead || enemy.Status.Get(StatusKind.CleansingFlame) is not { } flame)
+        {
+            return;
+        }
+
+        var amount = CleansingFlame.DamageOnTick(enemy.Status.AgeOf(StatusKind.CleansingFlame) + 1, Balance.StatusEffects.CleansingFlame);
+        var source = Players.FirstOrDefault(player => player.Id == flame.SourcePlayerId);
+        if (amount > 0 && source is not null)
+        {
+            Damage(enemy, new Hit(Weapon.CleansingFlame, HitZone.Body, amount), source);
         }
     }
 

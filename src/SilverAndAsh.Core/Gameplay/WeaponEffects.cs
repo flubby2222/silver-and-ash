@@ -20,12 +20,15 @@ namespace SilverAndAsh.Core.Gameplay;
 public sealed class WeaponEffects
 {
     /// <summary>The effects a found weapon can carry. A new effect is one more entry here (and in <see cref="Names"/>).</summary>
-    public static ReadOnlyCollection<StatusKind> Choosable { get; } = Array.AsReadOnly([StatusKind.Marked]);
+    public static ReadOnlyCollection<StatusKind> Choosable { get; } = Array.AsReadOnly([StatusKind.Marked, StatusKind.CleansingFlame]);
 
     /// <summary>The name of every effect as the game shows it.</summary>
     private static readonly FrozenDictionary<StatusKind, string> Names = new Dictionary<StatusKind, string>
     {
         [StatusKind.Marked] = "Marked",
+        // Short for Cleansing Flame (issue #507, provisional): the full name does not fit the pickup toast's frame and the
+        // inventory box behind a weapon's name ("Silver Blade - Cleansing Flame").
+        [StatusKind.CleansingFlame] = "Flame",
     }.ToFrozenDictionary();
 
     private readonly StatusEffectsBalance _values;
