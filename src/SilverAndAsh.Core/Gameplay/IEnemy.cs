@@ -28,6 +28,12 @@ internal interface IEnemy : ITarget
     /// <summary>The status effects it carries (issue #504); the world counts them down every tick.</summary>
     StatusEffects Status { get; }
 
+    /// <summary>
+    /// Where it is drawn (issue #506: the status display follows it): sunk into the floor or the ceiling while it is
+    /// hidden or coming out; an enemy that never hides (Gorm) is drawn where it is.
+    /// </summary>
+    Vector3 ShownPosition { get; }
+
     /// <summary>Puts it somewhere else at once, without walking there.</summary>
     void PlaceAt(Vector3 position);
 }
