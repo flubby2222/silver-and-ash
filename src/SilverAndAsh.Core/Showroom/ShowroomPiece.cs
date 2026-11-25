@@ -88,6 +88,7 @@ public static class ShowroomPieces
         new WeaponPiece("Rifle (Forged)", WeaponKind.Rifle),
         new WeaponPiece("Blunderbuss (Forged)", WeaponKind.Blunderbuss),
         new WeaponPiece("Hunting Axe (Royal)", WeaponKind.HuntersAxe),
+        new WeaponPiece("Whip (Royal)", WeaponKind.Whip),
         new ItemPiece("Hunter's Boots (Worn)", ItemKind.HuntersBoots),
         new ItemPiece("Silver Rosary (Forged)", ItemKind.SilverRosary),
         new ItemPiece("Hunter's Eye (Royal)", ItemKind.HuntersEye),

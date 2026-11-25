@@ -102,6 +102,27 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 25.11.2026 (#202, Peitsche, vorläufig)
+
+**Anlass:** Issue #202, Teil 1 (Regeln). Neue Nahkampfwaffe der Stufe Royal: weit, mittlerer Schaden, zieht Ghule und Fledermäuse heran (Gorm nicht), aufladbar; voll aufgeladen bricht sie rissige Wände. Neuer Block `whip`, neuer Wert `pullTo` in allen Nahkampf-Blöcken.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `whip.cooldown` | – | 0,7 s (**vorläufig**) | langsamer als die Klinge (0,4), etwas schneller als die Axt (0,8) |
+| `whip.damage` | – | 45 (**vorläufig**) | „mittel“ aus dem Issue: zwischen Klinge (40) und Keule (50) |
+| `whip.chargeTime` / `chargeMaxMultiplier` / `chargeStaminaSegments` | – | 1 s / 2 / 1 (**vorläufig**) | wie die Keule; voll aufgeladen bricht sie rissige Wände |
+| `whip.range` | – | 6 m (**vorläufig**) | „etwa 6 m“ aus dem Issue, mehr als doppelt so weit wie die Klinge (2,5) |
+| `whip.angle` | – | 50° (**vorläufig**) | ein schmaler Hieb. 30° verfehlte einen Ghul direkt vor den Füßen (der Kegel misst von 0,6 m hinter den Augen), 50° trifft ihn |
+| `whip.knockbackTime` | – | 0,3 s (**vorläufig**) | so lange dauert das Heranziehen |
+| `whip.pullTo` | – | 1,5 m (**vorläufig**) | der Gegner landet knapp außerhalb der Klinge vor dem Spieler; wer schon näher steht, bleibt stehen |
+| `blade.pullTo`, `club.pullTo`, `huntersAxe.pullTo` | – | 0 | 0 = zieht nicht |
+
+`pullTo` darf 0 sein, aber nicht negativ; `whip.angle` höchstens 180. Außerhalb warnt der Lader und nimmt den Standardwert.
+
+**Vorläufig festgelegt:** Aufgeladen zieht die Peitsche gleich weit wie unaufgeladen. Betäubte und herabstoßende Gegner werden mitgezogen. Fledermäuse werden waagrecht gezogen und behalten ihre Höhe. Ein Ghul bleibt an einer Grubenkante und vor einer Stufe über 0,4 m stehen; eine Wand dazwischen schirmt ihn ab.
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen; die Peitsche liegt noch in keiner Kiste und bei keinem Gegner (Teil 2: Modell, Klang, HUD).
+
 ### Zwischenschritt – 25.11.2026 (#510, Leech, vorläufig)
 
 **Anlass:** Issue #510. Fünfter Statuseffekt: Löst ein Treffer *Leech* aus, heilt der Spieler, der getroffen hat, sofort um einen Anteil des Schadens. Keine Dauer, kein Timer, nie über das Höchstleben; Bruchteile sammelt jeder Spieler für sich. Gefundene Waffen würfeln seither gleich wahrscheinlich zwischen den fünf Effekten.

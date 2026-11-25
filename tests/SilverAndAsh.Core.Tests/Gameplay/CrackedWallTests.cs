@@ -171,6 +171,32 @@ public class CrackedWallTests
     }
 
     [Fact]
+    public void A_fully_charged_whip_breaks_it_from_out_of_the_blades_reach()
+    {
+        // Issue #202: the wall is 3 m away - out of the blade's reach (see the next tests), inside the whip's own.
+        var world = World(far: true);
+        world.Player.EquipMelee(WeaponKind.Whip);
+
+        var events = Swing(world, SimulationClock.SecondsToTicks(Balance.Default.Whip.ChargeTime) + 5);
+
+        Assert.True(world.Doors[0].IsOpen);
+        Assert.Contains(new WallBroken(world.Doors[0].Id, world.Player.Id), events);
+    }
+
+    [Fact]
+    public void A_half_charged_whip_leaves_it_whole()
+    {
+        var world = World(far: true);
+        world.Player.EquipMelee(WeaponKind.Whip);
+
+        var events = Swing(world, SimulationClock.SecondsToTicks(Balance.Default.Whip.ChargeTime) / 2);
+
+        Assert.Contains(events, e => e is MeleeSwung { Weapon: WeaponKind.Whip });
+        Assert.False(world.Doors[0].IsOpen);
+        Assert.DoesNotContain(events, e => e is WallBroken);
+    }
+
+    [Fact]
     public void A_charged_strike_out_of_the_blades_reach_does_nothing()
     {
         var world = World(far: true);
