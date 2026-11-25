@@ -9,7 +9,7 @@ namespace SilverAndAsh.Game.Rendering;
 /// <summary>
 /// The status display on an enemy (issue #506): per effect its shape on the body (<see cref="StatusForm"/>) - a shimmer
 /// of small glowing motes in the effect's colour circling the body until a trial piece decides, the frost of Grave Chill
-/// (issue #775) - and the time left of each effect as a small number above the head. What is shown comes from
+/// (issue #775), the sparks of a stun above the head (issue #778) - and the time left of each effect as a small number above the head. What is shown comes from
 /// <see cref="EnemyStatusReadout"/>; here it is only drawn. The tint of the body itself is drawn by the enemy's view
 /// (<see cref="StatusLooks.TintOf(SilverAndAsh.Core.Gameplay.Ghoul)"/>, <see cref="Tint"/>).
 /// </summary>
@@ -35,6 +35,7 @@ internal static class StatusView
     {
         [StatusForm.Motes] = DrawMotes,
         [StatusForm.Frost] = DrawFrost,
+        [StatusForm.Sparks] = DrawSparks,
     };
 
     /// <summary>
@@ -91,6 +92,30 @@ internal static class StatusView
         foreach (var fleck in FrostLook.Flecks)
         {
             ShadedBox.DrawGlowing(Matrix4x4.CreateTranslation(FrostLook.FleckAt(fleck, readout, scene.Eye)), size, rime);
+        }
+
+        scene.Shader.SetGlow(0f);
+    }
+
+    // The sparks of a stun (issue #778, variant A of the trial piece #616): unlit like the frost, three plus shapes facing
+    // the eye above the head - four arms in Eisen 6 round a middle in Eisen 7 (apart, so no two boxes fight for a pixel).
+    private static void DrawSparks(EnemyStatusReadout readout, StatusLine line, int ring, Scene scene)
+    {
+        scene.Shader.SetGlow(1f);
+        var arms = Colour(StunLook.Arms);
+        var middle = Colour(StunLook.Centre);
+        foreach (var spark in StunLook.SparksOf(readout, scene.Ticks, scene.Eye))
+        {
+            var turn = Matrix4x4.CreateRotationY(MathF.Atan2(-spark.Across.Z, spark.Across.X));
+            var thick = spark.Thickness;
+            var reach = (thick / 2f) + (spark.ArmLength / 2f);
+            var crosswise = new Vector3(spark.ArmLength, thick, thick);
+            var upright = new Vector3(thick, spark.ArmLength, thick);
+            ShadedBox.DrawGlowing(turn * Matrix4x4.CreateTranslation(spark.Centre + (spark.Across * reach)), crosswise, arms);
+            ShadedBox.DrawGlowing(turn * Matrix4x4.CreateTranslation(spark.Centre - (spark.Across * reach)), crosswise, arms);
+            ShadedBox.DrawGlowing(turn * Matrix4x4.CreateTranslation(spark.Centre + new Vector3(0f, reach, 0f)), upright, arms);
+            ShadedBox.DrawGlowing(turn * Matrix4x4.CreateTranslation(spark.Centre - new Vector3(0f, reach, 0f)), upright, arms);
+            ShadedBox.DrawGlowing(turn * Matrix4x4.CreateTranslation(spark.Centre), new Vector3(thick), middle);
         }
 
         scene.Shader.SetGlow(0f);

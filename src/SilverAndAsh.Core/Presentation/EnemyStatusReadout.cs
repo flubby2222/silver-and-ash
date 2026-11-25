@@ -22,14 +22,32 @@ public sealed record EnemyStatusReadout(int EnemyId, Vector3 Feet, float Height,
     /// <summary>At most this many effects stand one under the other above an enemy.</summary>
     public const int MaxLines = 3;
 
-    /// <summary>The point just above the head where the lowest line of the timers sits.</summary>
-    public Vector3 Anchor => Feet + new Vector3(0f, Height + 0.05f, 0f);
+    /// <summary>
+    /// The point just above the head where the lowest line of the timers sits - above the sparks of a stun, if any
+    /// (<see cref="TimerLift"/>), so the two do not cover each other (issue #778).
+    /// </summary>
+    public Vector3 Anchor => Feet + new Vector3(0f, Height + 0.05f + TimerLift, 0f);
+
+    /// <summary>
+    /// How much higher the timers stand than just above the head, in metres (issue #778): as high as the sparks of a stun
+    /// reach (<see cref="StunLook.TimerLiftFor"/>), 0 without them.
+    /// </summary>
+    public float TimerLift { get; init; }
 
     /// <summary>
     /// The height of the floor below the enemy, in metres (issue #775: the disc of frost lies on it) - below its feet for
     /// a bat in the air, at its feet for one that walks.
     /// </summary>
     public float Floor { get; init; }
+
+    /// <summary>
+    /// Where the head sits across from the feet, level (issue #778): the middle of the highest of the shot bodies - a
+    /// ghoul's head hangs forward of its feet; on an enemy shot as a whole (bat, Gorm) none.
+    /// </summary>
+    public Vector3 HeadOffset { get; init; }
+
+    /// <summary>The top of the head (issue #778): above the middle of the head, at <see cref="Height"/> above the feet.</summary>
+    public Vector3 Crown => Feet + HeadOffset + new Vector3(0f, Height, 0f);
 
     /// <summary>
     /// Radius of the disc of frost on the floor, in metres - after the size of the enemy's body
@@ -64,10 +82,13 @@ public sealed record EnemyStatusReadout(int EnemyId, Vector3 Feet, float Height,
 
             // The head is where the shot bodies end (a ghoul's head sits lower than its body for walking).
             var body = enemy.Body;
-            var top = enemy.ShotBodies.Max(shot => shot.Position.Y + shot.Height) - body.Position.Y;
+            var head = enemy.ShotBodies.MaxBy(shot => shot.Position.Y + shot.Height);
+            var top = head.Position.Y + head.Height - body.Position.Y;
             readouts.Add(new EnemyStatusReadout(enemy.Id, enemy.ShownPosition, top, body.Radius, lines)
             {
                 Floor = world.Level.CellAt(enemy.Body.Position).FloorHeight,
+                HeadOffset = (head.Position - body.Position) with { Y = 0f },
+                TimerLift = StunLook.TimerLiftFor(lines, body.Radius),
             });
         }
 

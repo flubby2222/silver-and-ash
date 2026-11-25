@@ -177,7 +177,8 @@ public class FrostLookTests
     public void Every_other_look_keeps_the_motes_and_no_tint()
     {
         Assert.All(
-            StatusLooks.All.Where(look => look.Kind != StatusKind.GraveChill),
+            // Stun has its own shape since issue #778 (StunLookTests): no tint, but sparks instead of motes.
+            StatusLooks.All.Where(look => look.Kind is not StatusKind.GraveChill and not StatusKind.Stun),
             look =>
             {
                 Assert.Equal(StatusForm.Motes, look.Form);

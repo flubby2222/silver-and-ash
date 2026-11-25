@@ -145,6 +145,8 @@ public class PhotoSceneTests
             "ghouls-chilled-marked",
             "bat-chilled-4m",
             "gorm-chilled",
+            "ghoul-stunned-10m", "ghouls-chilled-stunned-4m", "ghouls-chilled-stunned-10m", "ghouls-burning-stunned-4m",
+            "ghouls-marked-stunned-4m", "ghoul-chilled-and-stunned-4m", "bat-stunned-4m", "gorm-stunned", "gorm-stunned-windup",
             "axe-rest", "axe-swing-04", "axe-swing-end", "axe-charged-release", "showroom-axe", "hud-axe", "course-1-axe",
         ];
 
