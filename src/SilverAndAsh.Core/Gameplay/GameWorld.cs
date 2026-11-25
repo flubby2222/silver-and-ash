@@ -1566,6 +1566,7 @@ public sealed class GameWorld
     {
         var values = Balance.Melee(swing.Weapon);
         BreakWalls(swing, attacker, values);
+        ShatterBolts(swing, attacker, values);
 
         var struck = new StruckTargets();
         foreach (var target in Targets.Where(target => target.IsHittable).ToList())
@@ -1584,6 +1585,30 @@ public sealed class GameWorld
         }
 
         SetOffWeaponEffect(struck, swing.Weapon, attacker);
+    }
+
+    /// <summary>
+    /// Blade Parry (issue #196): a swing of <paramref name="attacker"/>, who carries the item, shatters every blood bolt
+    /// in its weapon's cone - as it would hit a body there (<see cref="MeleeStrike"/>; the ball counts as a body as tall
+    /// and wide as itself). A shattered bolt does no more damage; it is gone at the end of this tick's
+    /// <see cref="MoveProjectiles"/>. Without the item a swing passes through bolts as before.
+    /// </summary>
+    private void ShatterBolts(MeleeSwung swing, Player attacker, MeleeBalance values)
+    {
+        if (!ItemEffects.ShattersBolts(attacker.Items))
+        {
+            return;
+        }
+
+        foreach (var bolt in _projectiles.Where(bolt => !bolt.IsGone))
+        {
+            var ball = new CylinderBody(bolt.Position - new Vector3(0f, bolt.Radius, 0f), bolt.Radius, 2f * bolt.Radius);
+            if (MeleeStrike.Hits(Level, swing.Origin, swing.Direction, ball, values))
+            {
+                bolt.IsGone = true;
+                _events.Add(new ProjectileParried(bolt.Id, attacker.Id, bolt.Position));
+            }
+        }
     }
 
     /// <summary>
@@ -1807,6 +1832,7 @@ public sealed class GameWorld
         {
             DamageBoons = attacker.BoonCount(Boon.Damage),
             TargetStatus = (target as IEnemy)?.Status,
+            AttackerItems = attacker.Items,
         });
         var wasAlive = target.IsHittable;
         var eventsBefore = _events.Count;
@@ -1846,6 +1872,13 @@ public sealed class GameWorld
         if (wasAlive && target is IEnemy { IsDead: true })
         {
             attacker.HealByKill(_events);
+        }
+
+        // The item Leech (issue #196) heals by every hit on an enemy with the damage it really dealt - a dummy, like for
+        // the weapon effect Leech, gives nothing.
+        if (counted && target is IEnemy)
+        {
+            attacker.HealByLeechItem(dealt, _events);
         }
 
         return counted;
@@ -1928,6 +1961,18 @@ public sealed class GameWorld
         if (amount > 0 && source is not null)
         {
             Damage(enemy, new Hit(Weapon.CleansingFlame, HitZone.Body, amount), source, out _);
+        }
+    }
+
+    /// <summary>
+    /// Every Ashen Heart that broke in this tick (issue #196) goes back into the loot pool: it is the one item that can be
+    /// found again (decision record 0008).
+    /// </summary>
+    private void PutBackBrokenHearts()
+    {
+        foreach (var _ in _events.OfType<AshenHeartBroke>().ToList())
+        {
+            LootPool.PutBack(Equipment.Of(ItemKind.AshenHeart));
         }
     }
 
@@ -2050,6 +2095,7 @@ public sealed class GameWorld
         TickDoors();
         _stairs?.Tick();
         TickStatusEffects();
+        PutBackBrokenHearts();
         ClearRooms();
 
         // The clock of the run stops with victory or defeat; this tick still counts.

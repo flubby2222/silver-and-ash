@@ -102,6 +102,23 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 26.11.2026 (#196, Items Teil 2, vorläufig)
+
+**Anlass:** Issue #196. Die zweiten vier Items wirken jetzt. Die Werte stehen im Abschnitt `items`.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `items.huntersEyeHeadshot` | – | 0,5 = Kopftreffer +50 % | Wert aus dem Issue. Er multipliziert zusätzlich zum Kopfbonus der Waffe und gilt auch an Gorms Kopf (**vorläufig**). |
+| `items.leech.share` | – | 0,05 = 5 % des Schadens heilen | Wert aus dem Issue. Gleicher Weg wie der Waffeneffekt Leech (2,5 %); Bruchteile sammeln sich gemeinsam. Jeder gezählte Treffer heilt, auch Brennpulse und jede Kugel der Donnerbüchse (**vorläufig**). |
+| `items.ashenHeartHealth` | – | 30 Leben nach der Rettung | Wert aus dem Issue, höchstens das Höchstleben |
+| Blade Parry | – | kein Wert | Der Hieb zerschlägt jeden Blutbolzen im Kegel der Waffe (Reichweite und Winkel der Waffe). |
+
+`huntersEyeHeadshot` und `leech.share` dürfen 0 sein, aber nicht negativ; `leech.share` höchstens 1. `ashenHeartHealth` muss mindestens 1 sein. Sonst warnt der Lader und nimmt den Standardwert.
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Kein Bot-Modus nimmt Items.
+
+**Offen:** Ob 30 Leben nach der Rettung zu viel sind (es kann mehr sein, als der Spieler vor dem Treffer hatte), urteilt der Mensch im Spieltest.
+
 ### Zwischenschritt – 25.11.2026 (#202, Peitsche, vorläufig)
 
 **Anlass:** Issue #202, Teil 1 (Regeln). Neue Nahkampfwaffe der Stufe Royal: weit, mittlerer Schaden, zieht Ghule und Fledermäuse heran (Gorm nicht), aufladbar; voll aufgeladen bricht sie rissige Wände. Neuer Block `whip`, neuer Wert `pullTo` in allen Nahkampf-Blöcken.
