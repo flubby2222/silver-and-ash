@@ -193,7 +193,7 @@ equipment-royal | ticks 1 menu None ----- | Hunter's Eye (Royal) lying in the sh
 equipment-vampiric | ticks 1 menu None ----- | Leech (Vampiric) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
 equipment-taken-royal | ticks 45 menu None ---I- | Hunter's Eye (Royal) just taken with F: its card on the left, framed in gold (issue #317).
 equipment-taken-vampiric | ticks 15 menu None ---I- | The Leech (Vampiric) just taken with F: its card and the short blood-red glow from the edges (issue #317).
-course-1-arms | ticks 215 menu None ----- | Station 1 of the test course from its south-east corner: the five weapons along the north wall, the items on the south wall, the start teleporter on the way and the sign (issues #718, #722).
+course-1-arms | ticks 215 menu None ----- | Station 1 of the test course from its south-east corner: every weapon along the north wall, the items on the south wall, the start teleporter on the way and the sign (issues #718, #722).
 course-1-arms-row | ticks 215 menu None ----- | Station 1 of the test course close to its row of weapons on the north wall, from the east end of the way to the sign over the first cell (issue #736).
 course-2-columns | ticks 1 menu None ----- | Station 2 of the test course from its far corner back to its sign: two columns either side of the way, silver beside one, a ghoul beyond (issues #718, #722).
 course-3-cracked-wall | ticks 1 menu None ----- | Station 3 of the test course close to and at a slant to the cracked wall in the middle of its north wall, the sign over the first cell beyond (issues #718, #722, #736).

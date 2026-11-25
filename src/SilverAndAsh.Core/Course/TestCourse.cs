@@ -29,7 +29,7 @@ public static class TestCourse
     /// </summary>
     public static IReadOnlyList<CourseStation> Stations { get; } =
     [
-        new("Arms", RoomKind.Start, 5, Arms),
+        new("Arms", RoomKind.Start, Math.Max(5, Enum.GetValues<WeaponKind>().Length), Arms), // one cell per weapon in its row
         new("Columns", RoomKind.Start, 7, Columns),
         new("Cracked wall", RoomKind.Start, 5, room => room.SecretRoomNorth()),
         new("Portcullis", RoomKind.Combat, 7, Portcullis),

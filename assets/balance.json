@@ -61,6 +61,20 @@
     "knockbackTime": 0.25               // s the push takes
   },
 
+  "huntersAxe": {                       // the hunter's axe (Royal, #201): slow, wide, heavy - provisional, balancing round
+    "cooldown": 0.8,                    // s between swings (about half the blade's pace)
+    "damage": 80,                       // about twice the blade
+    "chargeTime": 1.2,
+    "chargeMaxMultiplier": 2,
+    "chargeStaminaSegments": 1,
+    "range": 2.5,
+    "angle": 150,                       // degrees: a wide sweep that hits several enemies (blade: 90)
+    "coneStartBehind": 0.6,
+    "knockback": 0,
+    "chargedKnockback": 0,
+    "knockbackTime": 0.25
+  },
+
   "pistol": {
     "damage": 35,
     "headshotMultiplier": 3,            // 300 % on the head

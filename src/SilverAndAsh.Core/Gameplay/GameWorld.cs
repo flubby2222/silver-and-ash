@@ -1572,8 +1572,7 @@ public sealed class GameWorld
             if (MeleeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, values))
             {
                 // A melee weapon hits the whole body at once - it has no hit zone (and so no headshot bonus).
-                var weapon = swing.Weapon == WeaponKind.Club ? Weapon.Club : Weapon.Blade;
-                if (Damage(target, new Hit(weapon, HitZone.Body, values.Damage, swing.Charge), attacker))
+                if (Damage(target, new Hit(Weapons.ForDamage(swing.Weapon), HitZone.Body, values.Damage, swing.Charge), attacker))
                 {
                     struck.Add(target);
                 }
