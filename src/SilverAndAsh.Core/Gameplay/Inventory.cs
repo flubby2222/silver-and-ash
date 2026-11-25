@@ -44,7 +44,7 @@ public sealed partial class Player
 
     /// <summary>
     /// The items this player has found, in the order taken (decision record 0008): passive for the whole run, no place
-    /// needed. Placeholders for now - their effects come with #195 and #196.
+    /// needed. Their effects work for this player from the moment taken (<see cref="ItemEffects"/>, #195); some still come with #196.
     /// </summary>
     public IReadOnlyList<ItemKind> Items => _items;
 
