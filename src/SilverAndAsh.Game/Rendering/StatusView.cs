@@ -20,7 +20,6 @@ internal static class StatusView
     private const float RingGap = 0.1f;          // the ring circles this far outside the body
     private const float TurnPerTick = 0.05f;     // radians: about half a turn per second
     private const int LineGap = 1;               // pixels between two timers
-    private const int DiscSegments = 32;         // corners of the frost disc: round at 4 m (about 50 pixels across)
     private const float DiscLift = 0.015f;       // the disc lies this far above the floor, so the floor does not cover it
     private static readonly Color Shadow = new(10, 8, 12, 255);
 
@@ -85,7 +84,10 @@ internal static class StatusView
     private static void DrawFrost(EnemyStatusReadout readout, StatusLine line, int ring, Scene scene)
     {
         scene.Shader.SetGlow(1f);
-        DrawFrostDisc(readout.Feet with { Y = readout.Floor + DiscLift }, readout.DiscRadius, scene.Shader);
+        if (readout.Disc is { } disc)
+        {
+            DrawFrostDisc(disc, scene.Shader);
+        }
 
         var size = new Vector3(FrostLook.FleckSize);
         var rime = Colour(FrostLook.Rime);
@@ -121,51 +123,32 @@ internal static class StatusView
         scene.Shader.SetGlow(0f);
     }
 
-    // The disc: inside the rim the dot pattern of the cold and the dark rime, the rim in light rime. Flat triangles,
-    // counter-clockwise seen from above (the side the graphics card draws).
-    private static void DrawFrostDisc(Vector3 centre, float radius, LevelShader shader)
+    // The disc as Core lays it onto the floors (FrostDisc, issue #785): inside the rim the dot pattern of the cold and
+    // the dark rime, the rim in light rime; lifted a little so the floor does not cover it.
+    private static void DrawFrostDisc(FrostDisc disc, LevelShader shader)
     {
-        var inner = radius * FrostLook.RimStart;
-        var outer = radius;
-
         shader.SetPattern(Colour(FrostLook.Cold), FrostLook.ColdShare);
         var dark = Colour(FrostLook.DarkRime);
-        Rlgl.Begin(DrawMode.Triangles);
-        Rlgl.Color4ub(dark.R, dark.G, dark.B, dark.A);
-        for (var segment = 0; segment < DiscSegments; segment++)
-        {
-            Vertex(centre);
-            Vertex(Around(centre, inner, segment + 1));
-            Vertex(Around(centre, inner, segment));
-        }
-
-        Rlgl.End();
+        Triangles(disc.Inside, dark);
         shader.SetPattern(dark, 0f);
+        Triangles(disc.Rim, Colour(FrostLook.Rime));
+    }
 
-        var rim = Colour(FrostLook.Rime);
+    private static void Triangles(IReadOnlyList<DiscTriangle> triangles, Color colour)
+    {
         Rlgl.Begin(DrawMode.Triangles);
-        Rlgl.Color4ub(rim.R, rim.G, rim.B, rim.A);
-        for (var segment = 0; segment < DiscSegments; segment++)
+        Rlgl.Color4ub(colour.R, colour.G, colour.B, colour.A);
+        foreach (var triangle in triangles)
         {
-            Vertex(Around(centre, outer, segment));
-            Vertex(Around(centre, inner, segment));
-            Vertex(Around(centre, outer, segment + 1));
-
-            Vertex(Around(centre, inner, segment));
-            Vertex(Around(centre, inner, segment + 1));
-            Vertex(Around(centre, outer, segment + 1));
+            Vertex(triangle.A);
+            Vertex(triangle.B);
+            Vertex(triangle.C);
         }
 
         Rlgl.End();
     }
 
-    private static Vector3 Around(Vector3 centre, float radius, int segment)
-    {
-        var angle = segment * MathF.Tau / DiscSegments;
-        return centre + new Vector3(MathF.Cos(angle) * radius, 0f, MathF.Sin(angle) * radius);
-    }
-
-    private static void Vertex(Vector3 at) => Rlgl.Vertex3f(at.X, at.Y, at.Z);
+    private static void Vertex(Vector3 at) => Rlgl.Vertex3f(at.X, at.Y + DiscLift, at.Z);
 
     private static Color Colour((byte R, byte G, byte B) colour) => new(colour.R, colour.G, colour.B, (byte)255);
 
