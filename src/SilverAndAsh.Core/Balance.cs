@@ -136,8 +136,28 @@ public sealed record Balance
     /// <summary>How many enemies the rooms get, depending on how far they are from the start.</summary>
     public DifficultyBalance Difficulty { get; init; } = new();
 
+    /// <summary>Status effects that enemies carry for a while (issue #504).</summary>
+    public StatusEffectsBalance StatusEffects { get; init; } = new();
+
     /// <summary>Seconds between the death of all players and the restart of the level.</summary>
     public float RestartDelay { get; init; } = 2f;
+}
+
+/// <summary>Status effects that enemies carry for a while (issue #504): one section per kind.</summary>
+public sealed record StatusEffectsBalance
+{
+    /// <summary>Marked: the enemy takes more damage from every hit.</summary>
+    public MarkedBalance Marked { get; init; } = new();
+}
+
+/// <summary>Marked (skills draft, section 4): more damage from every hit, for a few seconds.</summary>
+public sealed record MarkedBalance
+{
+    /// <summary>How much more damage a marked enemy takes from every hit (0.125 = 12.5 %).</summary>
+    public float Bonus { get; init; } = 0.125f;
+
+    /// <summary>Seconds a fresh mark lasts.</summary>
+    public float Seconds { get; init; } = 3f;
 }
 
 /// <summary>Experience: what a kill is worth and how much each level needs.</summary>

@@ -342,5 +342,11 @@
     "damage": 20,
     "radius": 0.15,                     // m
     "lifeTime": 5                       // s until it disappears
+  },
+  "statusEffects": {                    // effects that enemies carry for a while (issue #504)
+    "marked": {
+      "bonus": 0.125,                   // more damage from every hit (0.125 = 12.5 %); at most 1
+      "seconds": 3                      // s a fresh mark lasts; a shorter one never cuts a longer one short; at most 30
+    }
   }
 }

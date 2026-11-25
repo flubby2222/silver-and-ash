@@ -170,6 +170,9 @@ public sealed class Gorm : IEnemy
 
     bool IEnemy.IsOut => true;
 
+    /// <summary>The status effects he carries (issue #504), e.g. Marked - on him with their full effect.</summary>
+    public StatusEffects Status { get; } = new();
+
     /// <summary>His movement in metres per second.</summary>
     public Vector3 Velocity { get; private set; }
 
