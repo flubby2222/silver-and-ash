@@ -71,6 +71,20 @@ internal sealed class LowResolutionTarget : IDisposable
         Raylib.UnloadImage(image);
     }
 
+    /// <summary>The small picture's pixels as RGBA bytes (smoke test, issue #329). Upside down - for a check of its colours that does not matter.</summary>
+    public byte[] Pixels()
+    {
+        var image = Raylib.LoadImageFromTexture(_texture.Texture);
+        try
+        {
+            return ImagePixels.Rgba(image);
+        }
+        finally
+        {
+            Raylib.UnloadImage(image);
+        }
+    }
+
     public void Dispose() => Raylib.UnloadRenderTexture(_texture);
 
     // A minimised window has no size: then the picture keeps its width (or, at the start, takes the standard shape).
