@@ -158,6 +158,40 @@ public sealed record StatusEffectsBalance
 {
     /// <summary>Marked: the enemy takes more damage from every hit.</summary>
     public MarkedBalance Marked { get; init; } = new();
+
+    /// <summary>Share of found weapons that carry a status effect (skills draft, section 5: 0.3 = 30 %, the same for every tier).</summary>
+    public float WeaponShare { get; init; } = 0.3f;
+
+    /// <summary>Chance per hit that a weapon's status effect takes hold, by the weapon's tier.</summary>
+    public WeaponHitChanceBalance WeaponHitChance { get; init; } = new();
+}
+
+/// <summary>
+/// Chance per hit that a weapon's status effect takes hold (skills draft, section 5).
+/// Rarer weapons trigger more often; the share of weapons with an effect is the same for every tier.
+/// </summary>
+public sealed record WeaponHitChanceBalance
+{
+    /// <summary>Chance for a Worn weapon (0.1 = 10 %).</summary>
+    public float Worn { get; init; } = 0.1f;
+
+    /// <summary>Chance for a Forged weapon.</summary>
+    public float Forged { get; init; } = 0.15f;
+
+    /// <summary>Chance for a Royal weapon.</summary>
+    public float Royal { get; init; } = 0.2f;
+
+    /// <summary>Chance for a Vampiric weapon.</summary>
+    public float Vampiric { get; init; } = 0.25f;
+
+    /// <summary>The chance for a weapon of <paramref name="tier"/>.</summary>
+    public float Of(Gameplay.ItemTier tier) => tier switch
+    {
+        Gameplay.ItemTier.Forged => Forged,
+        Gameplay.ItemTier.Royal => Royal,
+        Gameplay.ItemTier.Vampiric => Vampiric,
+        _ => Worn,
+    };
 }
 
 /// <summary>Marked (skills draft, section 4): more damage from every hit, for a few seconds.</summary>

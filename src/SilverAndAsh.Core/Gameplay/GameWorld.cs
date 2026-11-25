@@ -131,7 +131,11 @@ public sealed class GameWorld
 
         // The equipment still to be found, shared by all players. What they start with is not in it (no doubles).
         // It rolls with its own generator, so having it changes no other roll of the world.
-        LootPool = new LootPool(seed, Balance.Loot, [Equipment.Of(Player.Melee), .. Player.RangedSlots.OfType<RangedWeapon>().Select(weapon => Equipment.Of(weapon.Kind))]);
+        WeaponKind[] startingWeapons = [Player.Melee, .. Player.RangedSlots.OfType<RangedWeapon>().Select(weapon => weapon.Kind)];
+        LootPool = new LootPool(seed, Balance.Loot, startingWeapons.Select(Equipment.Of));
+
+        // Issue #505: which found weapon carries a status effect. Its own generators, so no other roll moves.
+        WeaponEffects = new WeaponEffects(seed, Balance.StatusEffects, startingWeapons);
 
         _chestPlan = chests ?? [];
         _chests = _chestPlan.Select((plan, index) => new Chest(index, plan, level)).ToList();
@@ -297,6 +301,12 @@ public sealed class GameWorld
     /// world, not one per player. Chests and the boss will draw from it (#318).
     /// </summary>
     public LootPool LootPool { get; }
+
+    /// <summary>
+    /// Which found weapons carry a status effect, and the rolls whether a hit sets it off (issue #505) - one for the
+    /// whole world, like <see cref="LootPool"/>.
+    /// </summary>
+    public WeaponEffects WeaponEffects { get; }
 
     /// <summary>Name of the level, shown briefly at the start (e.g. "THE CATACOMBS"), or null for hand-made levels.</summary>
     public string? LevelName { get; init; }
@@ -745,7 +755,10 @@ public sealed class GameWorld
         }
 
         _equipmentDrops.Remove(drop);
-        _events.Add(new EquipmentTaken(drop.Id, taker.Id, drop.Piece, drop.Position));
+        _events.Add(new EquipmentTaken(drop.Id, taker.Id, drop.Piece, drop.Position)
+        {
+            Effect = drop.Piece.Weapon is { } kind ? WeaponEffects.Of(kind) : null,
+        });
     }
 
     // The contents jump out towards the opener and fall to the floor in front of the chest - still in its cell, so
@@ -800,6 +813,11 @@ public sealed class GameWorld
             }
 
             return;
+        }
+
+        if (piece.Weapon is { } found)
+        {
+            WeaponEffects.RollFind(found);
         }
 
         EquipmentDrop drop = piece.Weapon is { } weapon
@@ -1538,14 +1556,38 @@ public sealed class GameWorld
         var values = Balance.Melee(swing.Weapon);
         BreakWalls(swing, attacker, values);
 
+        var struck = new List<ITarget>();
         foreach (var target in Targets.Where(target => target.IsHittable).ToList())
         {
             if (MeleeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, values))
             {
                 // A melee weapon hits the whole body at once - it has no hit zone (and so no headshot bonus).
                 var weapon = swing.Weapon == WeaponKind.Club ? Weapon.Club : Weapon.Blade;
-                Damage(target, new Hit(weapon, HitZone.Body, values.Damage, swing.Charge), attacker);
+                if (Damage(target, new Hit(weapon, HitZone.Body, values.Damage, swing.Charge), attacker))
+                {
+                    struck.Add(target);
+                }
+
                 KnockBack(target, attacker, values, swing.Charge);
+            }
+        }
+
+        SetOffWeaponEffect(struck, swing.Weapon, attacker);
+    }
+
+    /// <summary>
+    /// After a whole swing or shot of <paramref name="weapon"/>: every enemy in <paramref name="struck"/> that still
+    /// lives may catch the weapon's status effect (issue #505), with <paramref name="attacker"/> as its source. Each one
+    /// rolls once - also when several pellets of one blunderbuss shot hit it. Coming after the hits, the effect never
+    /// raises the damage of the hit that set it off; it counts from the next hit on, in this tick or a later one.
+    /// </summary>
+    private void SetOffWeaponEffect(IReadOnlyList<ITarget> struck, WeaponKind weapon, Player attacker)
+    {
+        foreach (var enemy in struck.OfType<IEnemy>().Where(enemy => !enemy.IsDead))
+        {
+            if (WeaponEffects.RollHit(weapon) is { } effect)
+            {
+                ApplyStatus(enemy, effect, attacker);
             }
         }
     }
@@ -1602,10 +1644,14 @@ public sealed class GameWorld
         };
         var forward = Vector3.Normalize(shot.Direction);
 
+        // Every target the shot struck, once - however many pellets hit it (the blunderbuss rule of issue #505).
+        var struck = new List<ITarget>();
         for (var pellet = 0; pellet < values.Pellets; pellet++)
         {
-            FirePellet(shot.Origin, Spread(forward, values.Spread), values, weapon, attacker);
+            FirePellet(shot.Origin, Spread(forward, values.Spread), values, weapon, attacker, struck);
         }
+
+        SetOffWeaponEffect(struck, shot.Weapon, attacker);
     }
 
     /// <summary>
@@ -1637,8 +1683,11 @@ public sealed class GameWorld
             .Select(body => Raycast.AgainstCylinder(origin, direction, body))
             .Min(); // Min of float? skips the nulls, and is null if all are null.
 
-    /// <summary>One bullet (or pellet) along <paramref name="direction"/>: hits up to 1 + pierce targets before the first wall.</summary>
-    private void FirePellet(Vector3 origin, Vector3 direction, RangedBalance values, Weapon weapon, Player attacker)
+    /// <summary>
+    /// One bullet (or pellet) along <paramref name="direction"/>: hits up to 1 + pierce targets before the first wall.
+    /// Every target it really struck goes into <paramref name="struck"/>, if it is not in there already.
+    /// </summary>
+    private void FirePellet(Vector3 origin, Vector3 direction, RangedBalance values, Weapon weapon, Player attacker, List<ITarget> struck)
     {
         var wall = Raycast.AgainstLevel(Level, origin, direction, values.Range);
         var reach = wall?.Distance ?? values.Range;
@@ -1654,7 +1703,10 @@ public sealed class GameWorld
         foreach (var (target, distance) in hits)
         {
             var zone = target.ZoneAt(origin + direction * distance!.Value);
-            Damage(target, new Hit(weapon, zone, values.Damage), attacker);
+            if (Damage(target, new Hit(weapon, zone, values.Damage), attacker) && !struck.Contains(target))
+            {
+                struck.Add(target);
+            }
         }
 
         // Not stopped by enough targets: the bullet ends in the wall.
@@ -1674,14 +1726,15 @@ public sealed class GameWorld
     /// <summary>
     /// Turns a hit of <paramref name="attacker"/> into damage with the world's rules and applies it. If it kills an
     /// enemy, the attacker gets that enemy's experience - only the killing hit counts (online co-op: the one who
-    /// finishes it off, not everyone who hit it).
+    /// finishes it off, not everyone who hit it). Returns whether the hit counted (false in the showroom, or for a
+    /// target that ignores it).
     /// </summary>
-    private void Damage(ITarget target, Hit hit, Player attacker)
+    private bool Damage(ITarget target, Hit hit, Player attacker)
     {
         // The showroom's enemies are exhibits: hits do nothing to them.
         if (IsShowroom)
         {
-            return;
+            return false;
         }
 
         var result = DamageRules.Calculate(hit with
@@ -1695,7 +1748,8 @@ public sealed class GameWorld
 
         // The target's own hit event does not say what hit it; this one does (issue #267: the blade sound only for the
         // blade). Only if the hit counted - a target that ignores it (already down) reports nothing.
-        if (_events.Count > eventsBefore)
+        var counted = _events.Count > eventsBefore;
+        if (counted)
         {
             _events.Insert(eventsBefore + 1, new TargetHitBy(target.Id, attacker.Id, hit.Weapon));
         }
@@ -1720,12 +1774,14 @@ public sealed class GameWorld
         {
             attacker.AddExperience(experience, _events);
         }
+
+        return counted;
     }
 
     /// <summary>
     /// Puts a status effect of <paramref name="kind"/> from <paramref name="source"/> on <paramref name="enemy"/> for its
     /// duration from the balance values (issue #504), refreshing one that already lasts. A dead enemy takes none; then
-    /// this returns false. No weapon or skill sets an effect yet - for now only tests do.
+    /// this returns false. Weapons with an effect set it off through here (issue #505); tests may call it directly.
     /// </summary>
     internal bool ApplyStatus(IEnemy enemy, StatusKind kind, Player source)
     {

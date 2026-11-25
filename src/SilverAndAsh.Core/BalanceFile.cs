@@ -55,6 +55,8 @@ public static class BalanceFile
         "difficulty.budgetNear", "difficulty.budgetFar", "difficulty.budgetBoss",
         "difficulty.ghoulWeightNear", "difficulty.ghoulWeightFar", "difficulty.batWeightNear", "difficulty.batWeightFar",
         "difficulty.spacing", "columns.bossRoomPerSide",
+        "statusEffects.weaponShare", "statusEffects.weaponHitChance.worn", "statusEffects.weaponHitChance.forged",
+        "statusEffects.weaponHitChance.royal", "statusEffects.weaponHitChance.vampiric",
     };
 
     /// <summary>
@@ -115,6 +117,11 @@ public static class BalanceFile
         ["grates.blockHeight"] = GrateTravel.OpenHeight,
         ["statusEffects.marked.bonus"] = 1,
         ["statusEffects.marked.seconds"] = 30,
+        ["statusEffects.weaponShare"] = 1,
+        ["statusEffects.weaponHitChance.worn"] = 1,
+        ["statusEffects.weaponHitChance.forged"] = 1,
+        ["statusEffects.weaponHitChance.royal"] = 1,
+        ["statusEffects.weaponHitChance.vampiric"] = 1,
         ["skills.levelsPerPoint"] = 20,
     };
 

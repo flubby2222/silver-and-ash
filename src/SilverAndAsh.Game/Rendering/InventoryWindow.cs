@@ -68,17 +68,17 @@ internal static class InventoryWindow
         var divider = page.Divider;
         Raylib.DrawRectangle((int)divider.X, (int)divider.Y, (int)divider.Width, (int)divider.Height, Empty);
 
-        DrawBox(page, new InventoryClick(InventoryPlace.Melee, 0), "LMB", Weapons.Info(player.Melee), selected: true, hovered, seconds);
+        var effects = world.WeaponEffects;
+        DrawBox(page, new InventoryClick(InventoryPlace.Melee, 0), "LMB", player.Melee, effects, selected: true, hovered, seconds);
         for (var slot = 0; slot < Player.RangedSlotCount; slot++)
         {
             var key = string.Create(CultureInfo.InvariantCulture, $"{slot + 1}");
-            DrawBox(page, new InventoryClick(InventoryPlace.Ranged, slot), key, player.RangedSlots[slot]?.Info, slot == player.SelectedSlot, hovered, seconds);
+            DrawBox(page, new InventoryClick(InventoryPlace.Ranged, slot), key, player.RangedSlots[slot]?.Kind, effects, slot == player.SelectedSlot, hovered, seconds);
         }
 
         for (var index = 0; index < Player.InventorySlotCount; index++)
         {
-            WeaponInfo? info = player.Bag[index] is { } kind ? Weapons.Info(kind) : null;
-            DrawBox(page, new InventoryClick(InventoryPlace.Bag, index), string.Empty, info, selected: false, hovered, seconds);
+            DrawBox(page, new InventoryClick(InventoryPlace.Bag, index), string.Empty, player.Bag[index], effects, selected: false, hovered, seconds);
         }
 
         if (hovered is { Place: InventoryPlace.Ranged } && player.RangedSlots.Count(weapon => weapon is not null) == 1
@@ -90,13 +90,14 @@ internal static class InventoryWindow
         MenuArt.End();
     }
 
-    private static void DrawBox(EquipmentPage page, InventoryClick place, string key, WeaponInfo? weapon, bool selected, InventoryClick? hovered, float seconds)
+    private static void DrawBox(
+        EquipmentPage page, InventoryClick place, string key, WeaponKind? weapon, WeaponEffects effects, bool selected, InventoryClick? hovered, float seconds)
     {
         var box = BoxAt(page, place);
         var rect = new Rectangle(box.X, box.Y, box.Width, box.Height);
         var isHovered = hovered is { } h && h.Place == place.Place && h.Index == place.Index;
         Raylib.DrawRectangleRec(rect, isHovered ? BoxHovered : Box);
-        if (weapon is not { } info)
+        if (weapon is not { } held)
         {
             Raylib.DrawRectangleLinesEx(rect, 1f, Empty);
             var empty = MenuArt.Layout.Box(box, key, null, null);
@@ -105,10 +106,13 @@ internal static class InventoryWindow
             return;
         }
 
+        var info = Weapons.Info(held);
         var frame = TierColours.Of(info.Tier, seconds);
         Raylib.DrawRectangleLinesEx(rect, selected || isHovered ? 2f : 1f, frame);
         var kind = $"{(info.Hand == WeaponHand.Melee ? "Melee" : "Ranged")} - {info.Tier}";
-        var texts = MenuArt.Layout.Box(box, key, info.Name, kind);
+
+        // Issue #505: a weapon with a status effect shows it after its name ("Club - Marked").
+        var texts = MenuArt.Layout.Box(box, key, WeaponEffects.Label(info.Name, effects.Of(held)), kind);
         MenuArt.DrawText(texts.Key);
         MenuArt.DrawText(texts.Name with { Color = selected ? MenuTextColor.Selected : MenuTextColor.Main });
         MenuArt.DrawText(texts.Kind!.Value, frame);

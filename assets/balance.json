@@ -347,6 +347,13 @@
     "marked": {
       "bonus": 0.125,                   // more damage from every hit (0.125 = 12.5 %); at most 1
       "seconds": 3                      // s a fresh mark lasts; a shorter one never cuts a longer one short; at most 30
+    },
+    "weaponShare": 0.3,                 // share of found weapons with a status effect (0.3 = 30 %); 0 = none; at most 1
+    "weaponHitChance": {                // chance per hit that a weapon's effect takes hold, by tier; 0 = never; at most 1
+      "worn": 0.1,
+      "forged": 0.15,
+      "royal": 0.2,
+      "vampiric": 0.25
     }
   },
 
