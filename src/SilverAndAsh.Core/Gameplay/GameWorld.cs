@@ -1536,7 +1536,7 @@ public sealed class GameWorld
 
     // Every enemy of every kind, once (issue #572): a new kind of enemy goes here, and with it into the rooms and out of
     // doorways that shut.
-    private IEnumerable<IEnemy> Enemies => _ghouls.Cast<IEnemy>().Concat(_bats).Concat(_gorm is null ? [] : [_gorm]);
+    internal IEnumerable<IEnemy> Enemies => _ghouls.Cast<IEnemy>().Concat(_bats).Concat(_gorm is null ? [] : [_gorm]);
 
     /// <summary>
     /// The rules that turn a hit into damage (headshots, later items, ...). Part of the world, not static:
