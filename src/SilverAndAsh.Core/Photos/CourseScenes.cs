@@ -74,6 +74,10 @@ internal static class CourseScenes
             StairsAfterVictory),
     ];
 
+    /// <summary>Like course-1-arms-row, with what <paramref name="inHand"/> puts in a player's hand (issue #786: the whip).</summary>
+    internal static PhotoSetup ArmsRowWith(PhotoStudio studio, Func<GameWorld, GameWorld> inHand) =>
+        Settled(inHand(Within(studio, 0, ArmsRowShot)));
+
     // The picture is taken after the level's name has faded, so it covers nothing.
     private static PhotoSetup Settled(GameWorld world) => new(world) { Ticks = BannerTicks };
 

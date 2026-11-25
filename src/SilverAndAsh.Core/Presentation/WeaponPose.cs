@@ -109,7 +109,8 @@ public static class WeaponPose
     /// <summary>
     /// The model files of a melee weapon held like the blade - its pose, swing and sleeve (issue #403): one entry per
     /// weapon. The club and the hunter's axe are held in the club's sleeve and bent at the grip (<see cref="ClubBend"/>,
-    /// issue #776: the probes of issue #201 hold the axe like that).
+    /// issue #776: the probes of issue #201 hold the axe like that). The whip as well, with a second file for the strike
+    /// (<see cref="WhipPose"/>, issue #786).
     /// </summary>
     private static readonly ImmutableDictionary<WeaponKind, MeleeModelFiles> MeleeModels =
         new Dictionary<WeaponKind, MeleeModelFiles>
@@ -117,6 +118,10 @@ public static class WeaponPose
             [WeaponKind.SilverBlade] = new("blade.glb", "blade_hand.glb", BladeParts),
             [WeaponKind.Club] = new("club.glb", "club_hand.glb", ClubParts) { BendsAtGrip = true },
             [WeaponKind.HuntersAxe] = new("hunters_axe.glb", "club_hand.glb", AxeParts) { BendsAtGrip = true, Scale = 0.95f, SwingShareOfCooldown = 0.7f },
+            [WeaponKind.Whip] = new("whip_rest.glb", "club_hand.glb", WhipPose.Parts)
+            {
+                BendsAtGrip = true, Scale = WhipPose.Scale, SwingShareOfCooldown = WhipPose.SwingShareOfCooldown, StrikeWeapon = "whip_strike.glb",
+            },
         }.ToImmutableDictionary();
 
     /// <summary>
@@ -367,9 +372,10 @@ public static class WeaponPose
 
     /// <summary>
     /// How a melee weapon is bent against its sleeve (file space, before the pose of <see cref="Blade"/>; the sleeve
-    /// itself is not bent): a weapon whose entry says so (<see cref="MeleeModelFiles.BendsAtGrip"/>, the club and the
-    /// hunter's axe) at the grip (<see cref="ClubBend"/>), the blade not at all. First the model is scaled around its
-    /// grip by its entry's <see cref="MeleeModelFiles.Scale"/> (the axe, so its head stays within <see cref="Reach"/>).
+    /// itself is not bent): a weapon whose entry says so (<see cref="MeleeModelFiles.BendsAtGrip"/>, the club, the
+    /// hunter's axe and the whip) at the grip (<see cref="ClubBend"/>), the blade not at all. First the model is scaled
+    /// around its grip by its entry's <see cref="MeleeModelFiles.Scale"/> (the axe, so its head stays within
+    /// <see cref="Reach"/>; the whip, <see cref="WhipPose.Scale"/>).
     /// </summary>
     public static Matrix4x4 MeleeBend(WeaponKind kind, float swing, float windUp) => MeleeModel(kind) switch
     {
@@ -456,4 +462,10 @@ public sealed record MeleeModelFiles(string Weapon, string Hand, IReadOnlyList<R
     /// fixed <see cref="WeaponPose.FixedSwingSeconds"/>. The axe's 0.7 makes the heavy weapon swing slower (issue #776).
     /// </summary>
     public float? SwingShareOfCooldown { get; init; }
+
+    /// <summary>
+    /// A second file of the weapon with the same <see cref="Parts"/>, drawn while it strikes (<see cref="WhipPose"/>: the
+    /// whip's straight lash, issue #786); null: the weapon has one file.
+    /// </summary>
+    public string? StrikeWeapon { get; init; }
 }

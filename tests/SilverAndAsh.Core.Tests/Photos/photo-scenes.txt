@@ -224,3 +224,12 @@ course-4-portcullis | ticks 215 menu None ----- | Station 4 of the test course, 
 course-5-teleporter | ticks 215 menu None ----- | Station 5 of the test course from its north-east corner back to its sign: the teleporter turned towards the way in, Sirius' Relief beside the way (issue #718).
 course-6-boss | ticks 215 menu None ----- | Station 6 of the test course from its north-east corner: the antechamber, silver and a blood vial before the boss portal (issue #718).
 course-boss-stairs | ticks 600 menu None ----S | The boss room of the test course after the victory: Gorm dead, the spiral staircase risen in its middle and its lamp lit, from 6 m towards the portal, up to under the 6 m ceiling, the level's name faded (issues #727, #722).
+whip-rest | ticks 1 menu None ----- | The whip in hand at rest: the handle in the sleeve, the short loop of the lash hanging from the hand (issue #786).
+whip-swing-out | ticks 7 menu None ---I- | A quick whip swing at 0.16 of its way: the lash rolling out from the hand (issue #786).
+whip-swing-hit | ticks 16 menu None ---I- | A quick whip swing at 0.4 of its way, where it hits: the lash straight out to the dummy 6 m away (issue #786).
+whip-swing-back | ticks 22 menu None ---I- | A quick whip swing at 0.56 of its way: the lash sagging towards the floor on the way back (issue #786).
+whip-charging | ticks 40 menu None ---I- | The whip held charging for two thirds of a second: its loop whirling around the handle (issue #786).
+whip-charged-release | ticks 600 menu None ---IS | A fully charged whip swing let go, at 0.4 of its way (issue #786).
+showroom-whip | ticks 1 menu None ----- | The whip in hand before the Whip (Royal) lying in the showroom (issue #786).
+hud-whip | ticks 1 menu None ----- | Like hud-weapons, but the whip in hand: its icon, a small picture of the model with its loop (issue #786).
+course-1-whip | ticks 215 menu None ----- | Like course-1-arms-row, the whip in hand: its model in the light of the test course (issue #786).
