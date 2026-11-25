@@ -375,6 +375,11 @@
       "slow": 0.2,                      // share of speed lost (0.2 = 20 % slower); below 1
       "seconds": 2                      // s a fresh chill lasts; a refresh never slows harder; at most 30
     },
+    "stun": {                           // a stunned enemy stands still and attacks no more; a ghoul's wind-up breaks off (issue #509)
+      "seconds": 0.5,                   // s a fresh stun lasts on a ghoul or a bat; at most 5
+      "gormStaggerSeconds": 0.2,        // s Gorm staggers instead: he stops walking, his wind-ups go on; not above seconds
+      "gormImmuneSeconds": 5            // s after his stagger in which a new stun does nothing; at most 60
+    },
     "weaponShare": 0.3,                 // share of found weapons with a status effect (0.3 = 30 %); 0 = none; at most 1
     "weaponHitChance": {                // chance per hit that a weapon's effect takes hold, by tier; 0 = never; at most 1
       "worn": 0.1,

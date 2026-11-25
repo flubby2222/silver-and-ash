@@ -395,6 +395,150 @@ public class GlbSceneTests
         Assert.Equal("Unknown component type 5124.", message);
     }
 
+    [Fact]
+    public void A_buffer_in_another_file_is_refused_with_its_reason()
+    {
+        var message = Refusal(root => root["buffers"]![0]!["uri"] = "missing.bin");
+
+        Assert.Equal("The buffer lies in another file - the game only reads data inside the .glb.", message);
+    }
+
+    [Fact]
+    public void A_buffer_longer_than_the_binary_chunk_is_refused_with_both_lengths()
+    {
+        var message = Refusal(root => root["buffers"]![0]!["byteLength"] = DataLength + 4);
+
+        Assert.Equal($"The buffer claims {DataLength + 4} bytes, the binary chunk has {DataLength}.", message);
+    }
+
+    [Fact]
+    public void A_buffer_in_a_file_without_binary_chunk_is_refused_with_an_empty_chunk()
+    {
+        // Without a binary chunk there is no data at all: the buffer is measured against 0 bytes, not left unchecked.
+        var refused = Assert.Throws<InvalidDataException>(() => GlbScene.Read(Glb(TwoParts, dataLength: null)));
+
+        Assert.Equal($"The buffer claims {DataLength} bytes, the binary chunk has 0.", refused.Message);
+    }
+
+    [Fact]
+    public void An_accessor_without_data_is_refused_with_its_reason()
+    {
+        var message = Refusal(root => root["accessors"]![3]!.AsObject().Remove("bufferView"));
+
+        Assert.Equal("An accessor has no data in the file.", message);
+    }
+
+    [Fact]
+    public void An_accessor_with_more_corners_than_its_view_holds_is_refused_with_the_bytes_it_needs()
+    {
+        // 34 corners of 12 bytes need 408 bytes, the view holds 396 (33 corners).
+        var message = Refusal(root => root["accessors"]![1]!["count"] = 34);
+
+        Assert.Equal("An accessor needs 408 bytes, its buffer view has 396.", message);
+    }
+
+    // A description that leaves out a value the checks need: the reader names the file as broken instead of
+    // letting the KeyNotFoundException of System.Text.Json escape.
+    [Theory]
+    [InlineData("buffers", 0, "byteLength")]
+    [InlineData("bufferViews", 2, "byteLength")]
+    [InlineData("bufferViews", 2, "buffer")]
+    [InlineData("accessors", 2, "count")]
+    [InlineData("accessors", 2, "componentType")]
+    [InlineData("accessors", 2, "type")]
+    public void A_missing_value_is_refused_as_a_broken_description(string list, int index, string value)
+    {
+        var refused = BrokenDescription(root => root[list]![index]!.AsObject().Remove(value));
+
+        Assert.IsType<KeyNotFoundException>(refused.InnerException);
+    }
+
+    [Fact]
+    public void A_file_without_accessors_is_refused_as_a_broken_description()
+    {
+        var refused = BrokenDescription(root => root.AsObject().Remove("accessors"));
+
+        Assert.IsType<KeyNotFoundException>(refused.InnerException);
+    }
+
+    // A value of the wrong kind (text instead of a number, a number instead of an object or a list).
+    [Theory]
+    [InlineData("buffers", 0, "byteLength", "2508")]
+    [InlineData("bufferViews", 1, "byteOffset", "1032")]
+    [InlineData("bufferViews", 1, "byteLength", "396")]
+    [InlineData("bufferViews", 1, "buffer", "0")]
+    [InlineData("bufferViews", 1, "byteStride", "12")]
+    [InlineData("accessors", 1, "bufferView", "1")]
+    [InlineData("accessors", 1, "byteOffset", "0")]
+    [InlineData("accessors", 1, "count", "33")]
+    [InlineData("accessors", 1, "componentType", "5126")]
+    public void A_number_written_as_text_is_refused_as_a_broken_description(string list, int index, string value, string text)
+    {
+        var refused = BrokenDescription(root => root[list]![index]![value] = text);
+
+        Assert.IsType<InvalidOperationException>(refused.InnerException);
+    }
+
+    [Fact]
+    public void An_accessor_type_written_as_a_number_is_refused_as_a_broken_description()
+    {
+        var refused = BrokenDescription(root => root["accessors"]![1]!["type"] = 3);
+
+        Assert.IsType<InvalidOperationException>(refused.InnerException);
+    }
+
+    [Fact]
+    public void A_buffer_that_is_no_object_is_refused_as_a_broken_description()
+    {
+        var refused = BrokenDescription(root => root["buffers"]![0] = DataLength);
+
+        Assert.IsType<InvalidOperationException>(refused.InnerException);
+    }
+
+    [Fact]
+    public void A_buffer_view_that_is_no_object_is_refused_as_a_broken_description()
+    {
+        var refused = BrokenDescription(root => root["bufferViews"]![3] = 216);
+
+        Assert.IsType<InvalidOperationException>(refused.InnerException);
+    }
+
+    [Fact]
+    public void Accessors_that_are_no_list_are_refused_as_a_broken_description()
+    {
+        var refused = BrokenDescription(root => root["accessors"] = new JsonObject());
+
+        Assert.IsType<InvalidOperationException>(refused.InnerException);
+    }
+
+    // Numbers that are no whole numbers, or too large for the reader: System.Text.Json throws a FormatException.
+    [Theory]
+    [InlineData("buffers", 0, "byteLength", "2508.5")]
+    [InlineData("buffers", 0, "byteLength", "1e30")]
+    [InlineData("bufferViews", 1, "byteOffset", "1032.5")]
+    [InlineData("bufferViews", 1, "buffer", "0.5")]
+    [InlineData("accessors", 1, "bufferView", "4294967297")]
+    [InlineData("accessors", 1, "count", "33.5")]
+    [InlineData("accessors", 1, "componentType", "5126.5")]
+    public void A_number_that_is_no_whole_number_is_refused_as_a_broken_description(string list, int index, string value, string number)
+    {
+        var refused = BrokenDescription(root => root[list]![index]![value] = JsonNode.Parse(number));
+
+        Assert.IsType<FormatException>(refused.InnerException);
+    }
+
+    // The refusal of the two-part file after the given change to its description, when the change breaks the
+    // description itself (a value missing or of the wrong kind) rather than the data it points to.
+    private static InvalidDataException BrokenDescription(Action<JsonNode> edit)
+    {
+        var root = JsonNode.Parse(TwoParts)!;
+        edit(root);
+        var glb = Glb(root.ToJsonString());
+        var refused = Assert.Throws<InvalidDataException>(() => GlbScene.Read(glb));
+        Assert.StartsWith("The .glb description is broken: ", refused.Message, StringComparison.Ordinal);
+        return refused;
+    }
+
     // The two-part file with a fifth buffer view (64 bytes from the start of the buffer, no offset given) and a fifth
     // accessor of one element on it.
     private static byte[] WithExtraAccessor(string type, int componentType, int stride)

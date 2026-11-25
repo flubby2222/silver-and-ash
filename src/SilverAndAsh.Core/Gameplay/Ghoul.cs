@@ -209,6 +209,12 @@ public sealed class Ghoul : IEnemy
             return;
         }
 
+        if (Stun.Holds(Status))
+        {
+            BeStunned(level, obstacles);
+            return;
+        }
+
         if (_target is { IsDead: true })
         {
             // Its prey is dead: back to lurking (with online co-op it would look for the next player).
@@ -280,6 +286,21 @@ public sealed class Ghoul : IEnemy
                 State = GhoulState.Chasing;
                 goto case GhoulState.Chasing;
         }
+    }
+
+    /// <summary>
+    /// One tick stunned (issue #509): it stands still and does nothing else. A blow it is drawing back for breaks off -
+    /// no blow comes; once the stun is over it chases again. Its other timers wait.
+    /// </summary>
+    private void BeStunned(Level level, IReadOnlyList<CylinderBody> obstacles)
+    {
+        if (State == GhoulState.WindingUp)
+        {
+            State = GhoulState.Chasing;
+            _stateTicksLeft = 0;
+        }
+
+        Stand(level, obstacles);
     }
 
     /// <summary>A player it can see: closer than its sight range and nothing in between (from eye to eye).</summary>

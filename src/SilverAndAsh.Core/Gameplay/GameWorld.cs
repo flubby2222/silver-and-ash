@@ -1790,7 +1790,8 @@ public sealed class GameWorld
     /// <summary>
     /// Puts a status effect of <paramref name="kind"/> from <paramref name="source"/> on <paramref name="enemy"/> for its
     /// duration from the balance values (issue #504), refreshing one that already lasts. A dead enemy takes none; then
-    /// this returns false. Weapons with an effect set it off through here (issue #505); tests may call it directly.
+    /// this returns false - as for an enemy immune to the kind (issue #509: Gorm after a stun); neither reports anything.
+    /// Weapons with an effect set it off through here (issue #505); tests may call it directly.
     /// </summary>
     internal bool ApplyStatus(IEnemy enemy, StatusKind kind, Player source)
     {
@@ -1799,10 +1800,26 @@ public sealed class GameWorld
             return false;
         }
 
-        enemy.Status.Apply(kind, StatusTicks(kind), source.Id);
+        var ticks = StatusTicksOn(enemy, kind);
+        if (ticks == 0)
+        {
+            return false;
+        }
+
+        enemy.Status.Apply(kind, ticks, source.Id);
         _events.Add(new StatusApplied(enemy.Id, kind, source.Id));
         return true;
     }
+
+    /// <summary>
+    /// How many ticks a fresh effect of <paramref name="kind"/> lasts on <paramref name="enemy"/>: the same for every
+    /// enemy, but for the cases in this table; 0 if it does not take hold.
+    /// </summary>
+    private int StatusTicksOn(IEnemy enemy, StatusKind kind) => (enemy, kind) switch
+    {
+        (Gorm _, StatusKind.Stun) => Stun.LandOnGorm(enemy.Status, Balance.StatusEffects.Stun),
+        _ => StatusTicks(kind),
+    };
 
     /// <summary>How many ticks a fresh effect of <paramref name="kind"/> lasts (at least one).</summary>
     private int StatusTicks(StatusKind kind) => kind switch
@@ -1810,6 +1827,7 @@ public sealed class GameWorld
         StatusKind.Marked => Math.Max(1, SimulationClock.SecondsToTicks(Balance.StatusEffects.Marked.Seconds)),
         StatusKind.CleansingFlame => CleansingFlame.DurationTicks(Balance.StatusEffects.CleansingFlame),
         StatusKind.GraveChill => GraveChill.DurationTicks(Balance.StatusEffects.GraveChill),
+        StatusKind.Stun => Stun.DurationTicks(Balance.StatusEffects.Stun),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown status effect."),
     };
 

@@ -20,7 +20,7 @@ namespace SilverAndAsh.Core.Gameplay;
 public sealed class WeaponEffects
 {
     /// <summary>The effects a found weapon can carry. A new effect is one more entry here (and in <see cref="Names"/>).</summary>
-    public static ReadOnlyCollection<StatusKind> Choosable { get; } = Array.AsReadOnly([StatusKind.Marked, StatusKind.CleansingFlame, StatusKind.GraveChill]);
+    public static ReadOnlyCollection<StatusKind> Choosable { get; } = Array.AsReadOnly([StatusKind.Marked, StatusKind.CleansingFlame, StatusKind.GraveChill, StatusKind.Stun]);
 
     /// <summary>The name of every effect as the game shows it.</summary>
     private static readonly FrozenDictionary<StatusKind, string> Names = new Dictionary<StatusKind, string>
@@ -31,6 +31,7 @@ public sealed class WeaponEffects
         [StatusKind.CleansingFlame] = "Flame",
         // Short for Grave Chill (issue #508, provisional), for the same reason: "Grave Chill" breaks the pickup toast's frame.
         [StatusKind.GraveChill] = "Chill",
+        [StatusKind.Stun] = "Stun",
     }.ToFrozenDictionary();
 
     private readonly StatusEffectsBalance _values;

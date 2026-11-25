@@ -148,7 +148,18 @@ public static class PhotoScenes
             studio => new PhotoSetup(Burning(studio.Arena('G', 4)))),
         new("ghoul-chilled-4m", "A ghoul 4 m away, just chilled by a Grave Chill: the frost-blue shimmer round it, its time left above its head (issue #508).",
             studio => new PhotoSetup(Chilled(studio.Arena('G', 4)))),
+        new("ghoul-stunned-4m", "A ghoul 4 m away, just stunned: the silver-grey shimmer round it, its time left above its head (issue #509).",
+            studio => new PhotoSetup(Stunned(studio.Arena('G', 4), 0))),
+        new("ghouls-chilled-stunned", "Two ghouls side by side 6 m away, one just chilled (2.0s), the other just stunned (0.5s): can the two effects be told apart? (issue #509)",
+            studio => new PhotoSetup(Stunned(Chilled(studio.ArenaPair('G', 6)), 1))),
     ];
+
+    // Ghoul number index of the world stunned by a player, as a weapon would (issue #509).
+    private static GameWorld Stunned(GameWorld world, int index)
+    {
+        world.ApplyStatus(world.Ghouls[index], StatusKind.Stun, world.Player);
+        return world;
+    }
 
     // The first ghoul of the world marked by a player, as a skill would (issue #506).
     private static GameWorld Marked(GameWorld world)

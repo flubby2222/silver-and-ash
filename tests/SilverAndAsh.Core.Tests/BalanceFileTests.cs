@@ -219,6 +219,8 @@ public class BalanceFileTests
     [InlineData("""{ "statusEffects": { "graveChill": { "seconds": 31 } } }""", "statusEffects.graveChill.seconds")]
     [InlineData("""{ "statusEffects": { "graveChill": { "slow": 1 } } }""", "statusEffects.graveChill.slow")]
     [InlineData("""{ "statusEffects": { "graveChill": { "slow": 1.5 } } }""", "statusEffects.graveChill.slow")]
+    [InlineData("""{ "statusEffects": { "stun": { "seconds": 5.5 } } }""", "statusEffects.stun.seconds")]
+    [InlineData("""{ "statusEffects": { "stun": { "gormImmuneSeconds": 61 } } }""", "statusEffects.stun.gormImmuneSeconds")]
     [InlineData("""{ "skills": { "levelsPerPoint": 21 } }""", "skills.levelsPerPoint")]
     [InlineData("""{ "statusEffects": { "weaponShare": 1.5 } }""", "statusEffects.weaponShare")]
     [InlineData("""{ "statusEffects": { "weaponHitChance": { "worn": 1.1 } } }""", "statusEffects.weaponHitChance.worn")]
@@ -528,6 +530,47 @@ public class BalanceFileTests
         var result = BalanceFile.Parse("""{ "statusEffects": { "graveChill": { "slow": 0.5, "seconds": 4 } } }""");
 
         Assert.Equal(new GraveChillBalance { Slow = 0.5f, Seconds = 4f }, result.Balance.StatusEffects.GraveChill);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Theory]
+    [InlineData("seconds", "0")]
+    [InlineData("seconds", "-0.5")]
+    [InlineData("gormStaggerSeconds", "0")]
+    [InlineData("gormStaggerSeconds", "-0.2")]
+    [InlineData("gormImmuneSeconds", "0")]   // Gorm stunned again and again, without a break
+    [InlineData("gormImmuneSeconds", "-5")]
+    public void A_stun_value_of_zero_or_below_falls_back_to_its_standard(string name, string value)
+    {
+        // Issue #509.
+        var result = BalanceFile.Parse($$"""{ "statusEffects": { "stun": { "{{name}}": {{value}} } } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains($"statusEffects.stun.{name}"));
+    }
+
+    [Fact]
+    public void A_gorm_stagger_longer_than_a_stun_falls_back_to_both_standards()
+    {
+        // Issue #509: the boss never stands longer than a ghoul.
+        var result = BalanceFile.Parse("""{ "statusEffects": { "stun": { "seconds": 0.3, "gormStaggerSeconds": 0.4 } } }""");
+
+        Assert.Equal(Balance.Default.StatusEffects.Stun, result.Balance.StatusEffects.Stun);
+        Assert.Contains(result.Warnings, w => w.Contains("statusEffects.stun.gormStaggerSeconds"));
+    }
+
+    [Theory]
+    [InlineData(0.3, 0.3, 1)]     // the stagger as long as a stun: the edge, still allowed
+    [InlineData(5, 0.2, 60)]      // every limit at its edge
+    [InlineData(1, 0.5, 2)]
+    public void Stun_values_within_their_limits_are_read(double seconds, double stagger, double immune)
+    {
+        var json = string.Create(
+            CultureInfo.InvariantCulture,
+            $$"""{ "statusEffects": { "stun": { "seconds": {{seconds}}, "gormStaggerSeconds": {{stagger}}, "gormImmuneSeconds": {{immune}} } } }""");
+        var result = BalanceFile.Parse(json);
+
+        Assert.Equal(new StunBalance { Seconds = (float)seconds, GormStaggerSeconds = (float)stagger, GormImmuneSeconds = (float)immune }, result.Balance.StatusEffects.Stun);
         Assert.Empty(result.Warnings);
     }
 

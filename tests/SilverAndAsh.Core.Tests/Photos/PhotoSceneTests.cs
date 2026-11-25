@@ -137,6 +137,7 @@ public class PhotoSceneTests
             "course-1-arms", "course-1-arms-row", "course-2-columns", "course-3-cracked-wall", "course-4-portcullis", "course-5-teleporter", "course-6-boss",
             "showroom-stairs", "course-boss-stairs", "showroom-boss-door",
             "ghoul-marked-4m", "ghoul-marked-late", "ghoul-burning-4m", "ghoul-chilled-4m",
+            "ghoul-stunned-4m", "ghouls-chilled-stunned",
             "axe-rest", "axe-swing-04", "axe-swing-end", "axe-charged-release", "showroom-axe", "hud-axe", "course-1-axe",
         ];
 
