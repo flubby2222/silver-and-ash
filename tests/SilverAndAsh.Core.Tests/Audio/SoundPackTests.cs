@@ -81,6 +81,10 @@ public class SoundPackTests
         // Issue #569: the boss door swinging shut and swinging open.
         { new DoorSwingStarted(0, Closing: true), SoundKind.BossDoorClosing, ["bosstuer-schliessen.wav"] },
         { new DoorSwingStarted(0, Closing: false), SoundKind.BossDoorOpening, ["bosstuer-oeffnen.wav"] },
+
+        // Issue #558: the portcullis falling shut and rising.
+        { new GrateStarted(0, Falling: true), SoundKind.GrateFalling, ["fallgitter-fallen.wav"] },
+        { new GrateStarted(0, Falling: false), SoundKind.GrateRising, ["fallgitter-heben.wav"] },
     };
 
     private static readonly Column Pillar = Column.AtCell(3, 6);

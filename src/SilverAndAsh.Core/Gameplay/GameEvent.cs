@@ -228,8 +228,8 @@ public sealed record WaveEmerged(int RoomIndex, int Wave, IReadOnlyList<int> Ene
 
 /// <summary>
 /// The portcullis of door <paramref name="DoorId"/> starts to move (issue #558): down when <paramref name="Falling"/>,
-/// else up. One event per door; <see cref="GameEvent.Place"/> is the middle of the door's cell. No sound yet - a new
-/// kind of sound needs a listening test first.
+/// else up. One event per door; <see cref="GameEvent.Place"/> is the middle of the door's cell. Heard from there (issue
+/// #558): iron sliding on stone, falling or rising.
 /// </summary>
 public sealed record GrateStarted(int DoorId, bool Falling) : GameEvent;
 

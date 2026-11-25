@@ -186,6 +186,19 @@ public enum SoundKind
     /// (<see cref="DoorOpened"/>) when a player opens the boss door.
     /// </summary>
     BossDoorOpening,
+
+    /// <summary>
+    /// A portcullis falls shut at an arena door (issue #558): iron slides rough on stone, stalls twice (ticks 12 and 26),
+    /// lands dull at tick 47 and settles - no chain. Take "1 - without chain" of round 2 of the listening test of
+    /// issue #540, 63 ticks (<see cref="GratesBalance.FallTicks"/>).
+    /// </summary>
+    GrateFalling,
+
+    /// <summary>
+    /// A portcullis rises at an arena door (issue #558): the same sliding, upwards and evenly, a soft dull knock at the end
+    /// (tick 126, <see cref="GratesBalance.LiftTicks"/>). Take "2 - smoother" of round 2 of the listening test of issue #540.
+    /// </summary>
+    GrateRising,
 }
 
 /// <summary>
@@ -335,7 +348,7 @@ public static class SoundBoard
     /// the throw and the hook's hit, a hit on his body or head, his roar and his death (issue #298); taking equipment,
     /// a Vampiric piece with a sound of its own (issue #317); a skill point from a level up (issue #375); the events
     /// of <see cref="KindsByEventType"/> - a blow on a column by its stage and the column's break (issue #605), the boss
-    /// door swinging shut or open (issue #569).
+    /// door swinging shut or open (issue #569), a portcullis falling or rising (issue #558).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -401,6 +414,8 @@ public static class SoundBoard
             [typeof(ColumnBroke)] = _ => SoundKind.ColumnBroke,
             [typeof(DoorSwingStarted)] = gameEvent =>
                 ((DoorSwingStarted)gameEvent).Closing ? SoundKind.BossDoorClosing : SoundKind.BossDoorOpening,
+            [typeof(GrateStarted)] = gameEvent =>
+                ((GrateStarted)gameEvent).Falling ? SoundKind.GrateFalling : SoundKind.GrateRising,
         }.ToImmutableDictionary();
 
     /// <summary>

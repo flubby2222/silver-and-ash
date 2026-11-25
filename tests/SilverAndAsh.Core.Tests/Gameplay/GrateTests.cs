@@ -23,18 +23,18 @@ public class GrateTests
     // The same, but the player starts in the corridor (row 7), right behind door B.
     private const string FromTheCorridor = "#...#\n##.##\n#...#\n#...#\n#.G.#\n#...#\n##.##\n#.P.#\n#...#";
 
-    private const int DoorA = 0;
+    internal const int DoorA = 0;
     private const int DoorB = 1;
 
     private static readonly GratesBalance Grates = Balance.Default.Grates;
-    private static readonly PlayerInput Forward = new(new Vector2(0f, 1f), Vector2.Zero, false);
+    internal static readonly PlayerInput Forward = new(new Vector2(0f, 1f), Vector2.Zero, false);
     private static readonly PlayerInput Back = new(new Vector2(0f, -1f), Vector2.Zero, false);
-    private static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
+    internal static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
 
     private static List<(int X, int Z)> Rows(int from, int to) =>
         Enumerable.Range(from, to - from + 1).SelectMany(z => new[] { (1, z), (2, z), (3, z) }).ToList();
 
-    private static GameWorld World(bool grates = true, string map = Map, RoomKind arena = RoomKind.Combat, Balance? balance = null)
+    internal static GameWorld World(bool grates = true, string map = Map, RoomKind arena = RoomKind.Combat, Balance? balance = null)
     {
         PlacedRoom[] rooms =
         [
@@ -69,7 +69,7 @@ public class GrateTests
         }
     }
 
-    private static Vector3 Middle(Door door) => (door.BoxMin + door.BoxMax) / 2f;
+    internal static Vector3 Middle(Door door) => (door.BoxMin + door.BoxMax) / 2f;
 
     [Fact]
     public void A_grate_shuts_its_door_in_the_tick_the_room_seals_while_it_still_falls()

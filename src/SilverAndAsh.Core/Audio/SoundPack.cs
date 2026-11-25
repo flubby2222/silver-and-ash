@@ -118,6 +118,11 @@ public sealed class SoundPack
         // Closing is take 2 (strong rumble, long echo) with the slam 78 ticks in, opening take 1 (fine rubble).
         [SoundKind.BossDoorClosing] = ["bosstuer-schliessen.wav"],
         [SoundKind.BossDoorOpening] = ["bosstuer-oeffnen.wav"],
+
+        // Issue #558: the portcullis, from round 2 of its listening test in issue #540 (tools/audio/fallgitterklang.py).
+        // Falling is "1 - without chain", rising "2 - smoother". Iron slides on stone; nothing here is operated.
+        [SoundKind.GrateFalling] = ["fallgitter-fallen.wav"],
+        [SoundKind.GrateRising] = ["fallgitter-heben.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>
