@@ -466,6 +466,9 @@ public class HudLayoutTests
     {
         // Issue #502: on the shortest life bar the skill points may reach further right than it - the boss frame, on the
         // line of the life frame and as deep as the experience bar, must not run into them.
+        // This only states the contract: it does not guard the Math.Max line in HudLayout.ArrangeLevel. The boss frame
+        // stands centred and on every canvas width of today lies right of the text anyway, so without that line it
+        // would stay green as well.
         var canvas = HudCanvas.For(pictureWidth);
         var picture = Arrange(Busy() with { MaxLife = Balance.Default.Player.MaxHealth }, canvas: canvas);
 

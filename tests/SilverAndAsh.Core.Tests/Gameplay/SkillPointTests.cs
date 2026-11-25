@@ -29,13 +29,16 @@ public class SkillPointTests
     public void Killing_ghouls_in_the_tick_until_the_level_of_the_first_point_gives_exactly_that_point()
     {
         // The real way (issue #502): shoot ghoul after ghoul through GameWorld.Tick, choose every boon on offer, until the
-        // level that brings the first point. The experience and the step are the standard ones.
-        const int Ghouls = 21;
+        // level that brings the first point. The experience and the step are the standard ones; the row holds enough
+        // ghouls for that level by the standard curve, with a reserve of a third and at least three more.
+        var experiencePerGhoul = Balance.Default.Experience.Ghoul;
+        var neededGhouls = (ExperienceForLevel(Step) + experiencePerGhoul - 1) / experiencePerGhoul;
+        var ghouls = neededGhouls + Math.Max(3, neededGhouls / 3);
         var world = new GameWorld(LevelParser.Parse(string.Join('\n',
-            "#" + new string('G', Ghouls) + "#",
-            "#" + new string('.', Ghouls) + "#",
-            "#" + new string('.', Ghouls) + "#",
-            "#" + new string('.', Ghouls / 2) + "P" + new string('.', Ghouls / 2) + "#")), balance: StillFrail);
+            "#" + new string('G', ghouls) + "#",
+            "#" + new string('.', ghouls) + "#",
+            "#" + new string('.', ghouls) + "#",
+            "#" + new string('.', ghouls / 2) + "P" + new string('.', ghouls - ghouls / 2 - 1) + "#")), balance: StillFrail);
         var player = world.Player;
         var gained = new List<SkillPointGained>();
         var levelsSeen = new List<int>();
@@ -49,7 +52,7 @@ public class SkillPointTests
 
         Assert.Equal(Step, player.Level);
         Assert.Equal(Enumerable.Range(1, Step), levelsSeen);
-        Assert.Equal(Step / Step, player.SkillPoints);
+        Assert.Equal(1, player.SkillPoints);
         Assert.Equal([new SkillPointGained(player.Id, 1)], gained);
     }
 
