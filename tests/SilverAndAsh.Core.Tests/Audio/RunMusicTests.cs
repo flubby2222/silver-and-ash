@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Audio;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.World;
 using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Audio;
@@ -100,24 +101,50 @@ public class RunMusicTests
     [Fact]
     public void A_player_dying_in_the_boss_fight_ends_the_music_on_the_end_screen_and_the_next_run_starts_with_the_level_s()
     {
-        var world = GormHallWorld(balance: Tough);
+        // A player of normal health walks up to Gorm and lets him strike until the player dies - as in the game.
+        var world = GormHallWorld();
         var music = new RunMusic();
         Play(world, music, PressF, 1);
         Play(world, music, Forward, 3 * Second, until: () => world.Rooms[1].IsSealed);
+        Assert.True(world.Rooms[1].IsSealed, "The boss room never sealed - the test would prove nothing.");
 
-        world.Player.TakeDamage(world.Player.MaxHealth, []);
-        var events = Play(world, music, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.RestartDelay) + 1);
+        var events = Play(world, music, Forward, 120 * Second, until: () => world.Player.IsDead);
+        Assert.Contains(events, e => e is PlayerHit);
+        Assert.Single(events, e => e is PlayerDied);
+        events.AddRange(Play(world, music, PlayerInput.None, SimulationClock.SecondsToTicks(Balance.Default.RestartDelay) + 1));
 
         // Dying ends no boss fight - the boss lives. Until the end screen comes, the boss music goes on.
+        Assert.False(world.Gorm!.IsDead);
         Assert.True(world.ShouldRestart);
         Assert.DoesNotContain(events, e => e is BossFightEnded);
         Assert.Equal(RunPart.BossFight, music.PartIn(world));
         Assert.Equal(new MusicWish(MusicTrack.None, false), Wish(music, world, runOver: true));
 
         // The game starts the next run in a new world (as Program does after the end screen).
-        var next = GormHallWorld(balance: Tough);
+        var next = GormHallWorld();
         Assert.Equal(RunPart.Level, music.PartIn(next));
         Assert.Equal(new MusicWish(MusicTrack.Catacombs, false), Wish(music, next));
+    }
+
+    [Fact]
+    public void Clearing_an_ordinary_combat_room_ends_no_boss_fight()
+    {
+        var world = CombatRoomWorld();
+        var music = new RunMusic();
+        Play(world, music, PressF, 1);
+        Play(world, music, Forward, 3 * Second, until: () => world.Rooms[1].IsSealed);
+        Assert.True(world.Rooms[1].IsSealed, "The combat room never sealed - the test would prove nothing.");
+
+        foreach (var target in world.Targets.ToList())
+        {
+            target.TakeDamage(10_000, []);
+        }
+
+        var events = Play(world, music, PlayerInput.None, Second);
+
+        Assert.Contains(new RoomCleared(1), events);
+        Assert.DoesNotContain(events, e => e is BossFightStarted or BossFightEnded);
+        Assert.Equal(RunPart.Level, music.PartIn(world));
     }
 
     [Fact]
@@ -239,6 +266,19 @@ public class RunMusicTests
         Assert.Single(fadeIn, frame => frame.Mix.Start);
         Assert.All(fadeIn, frame => Assert.Equal(to, frame.Mix.Track));
         Assert.Equal(SoundBoard.MusicVolume(to), fadeIn[^1].Mix.Volume, 4);
+    }
+
+    // Room 0 (start) in row 0, a door in row 1, room 1 (an ordinary combat room with one ghoul) in rows 2-5.
+    private static GameWorld CombatRoomWorld()
+    {
+        var cells = Enumerable.Range(2, 4).SelectMany(z => new[] { (1, z), (2, z), (3, z) }).ToList();
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "start", 0, 0, 5, 1, 0, [(1, 0), (2, 0), (3, 0)], [], []),
+            new(1, RoomKind.Combat, "arena", 0, 2, 5, 4, 1, cells, [(2, 4)], []),
+        ];
+        LevelDoor[] doors = [new(2, 1, 0, 1, RoomSide.South)];
+        return new GameWorld(LevelParser.Parse("#.P.#\n##.##\n#...#\n#...#\n#.G.#\n#...#"), 1, Balance.Default, doors, rooms);
     }
 
     private static MusicWish Wish(RunMusic music, GameWorld world, bool runOver = false) =>
