@@ -127,6 +127,54 @@ public class WeaponEffectTests
         }
     }
 
+    [Theory]
+    [InlineData(0f, 1f)]
+    [InlineData(1f, 0f)]
+    public void A_hit_rolls_with_the_chance_of_the_weapon_s_own_tier(float worn, float forged)
+    {
+        // The club is Worn, the rifle Forged: each must roll with its own tier's chance, not with one for all.
+        Assert.Equal(ItemTier.Worn, Weapons.Info(WeaponKind.Club).Tier);
+        Assert.Equal(ItemTier.Forged, Weapons.Info(WeaponKind.Rifle).Tier);
+        var effects = new WeaponEffects(
+            3, Effects with { WeaponShare = 1f, WeaponHitChance = new WeaponHitChanceBalance { Worn = worn, Forged = forged } }, StartingWeapons);
+        effects.RollFind(WeaponKind.Club);
+        effects.RollFind(WeaponKind.Rifle);
+
+        for (var hit = 0; hit < 1000; hit++)
+        {
+            Assert.Equal(worn == 1f ? StatusKind.Marked : null, effects.RollHit(WeaponKind.Club));
+            Assert.Equal(forged == 1f ? StatusKind.Marked : null, effects.RollHit(WeaponKind.Rifle));
+        }
+    }
+
+    [Fact]
+    public void Rolling_hits_never_shifts_what_later_finds_carry()
+    {
+        // Two runs with the same seed; in one, the weapons found so far are fired between the finds. The finds roll
+        // with a generator of their own, so both runs find the same effects.
+        var values = Effects with { WeaponShare = 0.5f, WeaponHitChance = new WeaponHitChanceBalance { Worn = 0.5f, Forged = 0.5f } };
+        WeaponKind[] found = [WeaponKind.Club, WeaponKind.Rifle, WeaponKind.Blunderbuss];
+        var hitsRolled = 0;
+        for (var seed = 1; seed <= 50; seed++)
+        {
+            var quiet = new WeaponEffects(seed, values, StartingWeapons);
+            var busy = new WeaponEffects(seed, values, StartingWeapons);
+            foreach (var kind in found)
+            {
+                Assert.Equal(quiet.RollFind(kind), busy.RollFind(kind));
+                foreach (var held in found.Where(held => busy.Of(held) is not null))
+                {
+                    for (var hit = 0; hit < 5; hit++, hitsRolled++)
+                    {
+                        busy.RollHit(held);
+                    }
+                }
+            }
+        }
+
+        Assert.True(hitsRolled > 0, "No weapon carried an effect - the test would prove nothing.");
+    }
+
     [Fact]
     public void A_weapon_without_an_effect_never_sets_one_off()
     {
@@ -266,7 +314,7 @@ public class WeaponEffectTests
         var hitGhouls = world.Events.OfType<GhoulHit>().Select(hit => hit.GhoulId).Distinct().Order().ToList();
         var marked = world.Events.OfType<StatusApplied>().Select(applied => applied.TargetId).Order().ToList();
         Assert.True(hitGhouls.Count == 2, "The pellets did not hit both ghouls - the test would prove nothing.");
-        Assert.Equal(hitGhouls, marked);   // each once, though several pellets hit each
+        Assert.Equal(hitGhouls, marked);   // each hit ghoul is marked, once (several pellets on one: see the test above)
     }
 
     [Fact]
