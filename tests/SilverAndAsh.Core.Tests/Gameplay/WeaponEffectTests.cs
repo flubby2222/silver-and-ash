@@ -348,7 +348,7 @@ public class WeaponEffectTests
     }
 
     [Fact]
-    public void A_blunderbuss_shot_marks_each_enemy_it_hits()
+    public void A_blunderbuss_shot_puts_its_effect_on_each_enemy_it_hits()
     {
         // Two ghouls side by side, 10 m away: there the cone is wide enough for pellets to hit both.
         // Whichever effect seed 1 gives the blunderbuss: the test counts the enemies it is put on, not its kind (the pellets

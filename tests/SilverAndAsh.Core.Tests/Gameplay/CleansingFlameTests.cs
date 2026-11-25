@@ -73,6 +73,29 @@ public class CleansingFlameTests
         Assert.Equal(expected, WholeFlame);
     }
 
+    [Theory]
+    [InlineData(2.0, 5.0, 0.5)]      // the standard: 4 pulses, 2 + 3 + 2 + 3
+    [InlineData(2.0, 5.0, 0.25)]     // 8 pulses of 1.25
+    [InlineData(3.0, 4.0, 0.75)]     // 4 pulses of 3
+    [InlineData(1.5, 6.0, 0.5)]      // 3 pulses of 3
+    [InlineData(2.0, 5.0, 0.3333)]   // pulse of 20 ticks: 6 pulses of 1.67
+    [InlineData(1.0, 60.0, 0.001)]   // a pulse shorter than a tick: 60 pulses of 1
+    public void A_flame_the_balancing_file_accepts_deals_exactly_its_damage_per_second_times_its_seconds(double seconds, double perSecond, double tickSeconds)
+    {
+        // Issue #507 (review of PR #769): the file only lets through flames that end on a pulse, so nothing is lost.
+        var json = FormattableString.Invariant($$"""{ "statusEffects": { "cleansingFlame": { "seconds": {{seconds}}, "damagePerSecond": {{perSecond}}, "tickSeconds": {{tickSeconds}} } } }""");
+        var read = BalanceFile.Parse(json);
+        Assert.Empty(read.Warnings);
+        var flame = read.Balance.StatusEffects.CleansingFlame;
+        var world = new GameWorld(LevelParser.Parse(Corridor), balance: StillGhoul() with { StatusEffects = read.Balance.StatusEffects });
+        world.ApplyStatus(world.Ghouls[0], StatusKind.CleansingFlame, world.Player);
+
+        var hits = Hits(world, 2 * CleansingFlame.DurationTicks(flame));
+
+        Assert.Equal((int)Math.Round(perSecond * seconds), hits.Sum(hit => hit.Hit.Damage));
+        Assert.Equal(CleansingFlame.DurationTicks(flame) / CleansingFlame.PulseTicks(flame), hits.Count);
+    }
+
     [Fact]
     public void Every_pulse_is_reported_as_a_hit_of_the_flame_by_the_player_who_set_it_off()
     {

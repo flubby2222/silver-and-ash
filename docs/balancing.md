@@ -110,9 +110,9 @@ Ergebnis hier eintragen, neueste Runde oben.
 |---|---|---|---|
 | `statusEffects.cleansingFlame.seconds` | – | 2 s (höchstens 30) | Wert aus dem Issue. Erneutes Auslösen verlängert auf die volle Dauer, stapelt nicht. |
 | `statusEffects.cleansingFlame.damagePerSecond` | – | 5 (höchstens 100, **vorläufig**) | Wert aus dem Issue: 10 Schaden über die ganze Dauer, ein Viertel eines Klingenschlags. |
-| `statusEffects.cleansingFlame.tickSeconds` | – | 0,5 s (höchstens 5, nie länger als `seconds`, **vorläufig**) | Wert aus dem Issue: 4 Pulse mit 2, 3, 2 und 3 Schaden. Die Pulse runden ganzzahlig und verlieren in der Summe nichts. |
+| `statusEffects.cleansingFlame.tickSeconds` | – | 0,5 s (höchstens 5, nie länger als `seconds`, **vorläufig**) | Wert aus dem Issue: 4 Pulse mit 2, 3, 2 und 3 Schaden. Die Pulse runden ganzzahlig; die Summe ist genau `damagePerSecond × seconds`, weil die Flamme auf einem Puls enden muss (Regel darunter). |
 
-Ist `tickSeconds` länger als `seconds`, nimmt der Lader für beide den Standard. Die Höchstwerte 100 und 5 sind geschätzt, nicht gemessen.
+**Regel:** Die Dauer muss ein ganzes Vielfaches des Pulses sein, gerechnet in Ticks, wie das Spiel sie erzeugt (Sekunden × 60, gerundet; ein Puls kürzer als ein Tick zählt als ein Tick). Sonst brennten die Ticks nach dem letzten Puls umsonst: 2 s mit Puls 0,75 s gäben 7 statt 10 Schaden. Der Lader warnt dann und nimmt für `seconds` und `tickSeconds` die Standardwerte, ebenso, wenn `tickSeconds` länger als `seconds` ist. Beispiele, die gelten: 2 s mit 0,5 s, 0,25 s oder 0,3333 s (20 Ticks); 1 s mit 0,001 s (jeder Tick ein Puls). Die Summe ist dann genau `damagePerSecond × seconds` (ist das keine ganze Zahl, abgerundet). Die Höchstwerte 100 und 5 sind geschätzt, nicht gemessen.
 
 **Report (500 Ebenen), `main` gegen diesen Stand:** zeilengleich bis auf die Laufzeit des Reports. Der Report rechnet Statuseffekte nicht ein; die Cleansing Flame ändert dort nichts.
 

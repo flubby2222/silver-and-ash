@@ -1799,7 +1799,7 @@ public sealed class GameWorld
     private int StatusTicks(StatusKind kind) => kind switch
     {
         StatusKind.Marked => Math.Max(1, SimulationClock.SecondsToTicks(Balance.StatusEffects.Marked.Seconds)),
-        StatusKind.CleansingFlame => Math.Max(1, SimulationClock.SecondsToTicks(Balance.StatusEffects.CleansingFlame.Seconds)),
+        StatusKind.CleansingFlame => CleansingFlame.DurationTicks(Balance.StatusEffects.CleansingFlame),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown status effect."),
     };
 

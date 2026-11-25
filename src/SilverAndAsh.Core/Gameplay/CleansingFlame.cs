@@ -13,6 +13,20 @@ public static class CleansingFlame
         return Math.Max(1, SimulationClock.SecondsToTicks(values.TickSeconds));
     }
 
+    /// <summary>Ticks a flame burns from being set alight (at least one).</summary>
+    public static int DurationTicks(CleansingFlameBalance values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        return Math.Max(1, SimulationClock.SecondsToTicks(values.Seconds));
+    }
+
+    /// <summary>
+    /// True if the flame ends on a pulse: its ticks are a whole number of pulses. Otherwise the ticks after the last
+    /// pulse would burn for nothing and the flame would deal less than its damage per second times its seconds -
+    /// the balancing file refuses such values (issue #507). Counted in ticks, as the game runs, not in seconds.
+    /// </summary>
+    public static bool EndsOnAPulse(CleansingFlameBalance values) => DurationTicks(values) % PulseTicks(values) == 0;
+
     /// <summary>
     /// The damage on tick <paramref name="tickOfFlame"/> of a flame (1 = the tick it was put on, as its first tick
     /// counted): 0 between the pulses, on every pulse its share. Pulses that do not come out even take turns: the

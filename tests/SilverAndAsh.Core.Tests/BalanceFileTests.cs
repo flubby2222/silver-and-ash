@@ -505,6 +505,42 @@ public class BalanceFileTests
         Assert.Empty(result.Warnings);
     }
 
+    [Theory]
+    [InlineData(2.0, 0.75)]   // 120 ticks, pulse 45: two pulses, 30 ticks burn for nothing
+    [InlineData(2.0, 0.3)]    // 120 ticks, pulse 18
+    [InlineData(1.0, 0.4)]    // 60 ticks, pulse 24
+    [InlineData(3.0, 0.7)]    // 180 ticks, pulse 42
+    public void A_flame_that_is_not_a_whole_number_of_pulses_falls_back_to_both_standards(double seconds, double tickSeconds)
+    {
+        // Issue #507 (review of PR #769): the ticks after the last pulse would burn for nothing - damage would be lost.
+        var json = FormattableString.Invariant($$"""{ "statusEffects": { "cleansingFlame": { "seconds": {{seconds}}, "damagePerSecond": 7, "tickSeconds": {{tickSeconds}} } } }""");
+
+        var result = BalanceFile.Parse(json);
+
+        var flame = result.Balance.StatusEffects.CleansingFlame;
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame.Seconds, flame.Seconds);
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame.TickSeconds, flame.TickSeconds);
+        Assert.Equal(7f, flame.DamagePerSecond);
+        var warning = Assert.Single(result.Warnings);
+        Assert.Contains("statusEffects.cleansingFlame.seconds", warning);
+        Assert.Contains("statusEffects.cleansingFlame.tickSeconds", warning);
+    }
+
+    [Theory]
+    [InlineData(1.0, 0.3333)]   // in seconds not a whole number of pulses, in ticks 60 = 3 x 20
+    [InlineData(1.004, 0.5)]    // 60.24 ticks round to 60 = 2 x 30
+    [InlineData(1.0, 0.001)]    // a pulse shorter than a tick is one tick: every tick a pulse
+    public void A_flame_is_measured_in_the_ticks_the_game_runs_not_in_seconds(double seconds, double tickSeconds)
+    {
+        var json = FormattableString.Invariant($$"""{ "statusEffects": { "cleansingFlame": { "seconds": {{seconds}}, "tickSeconds": {{tickSeconds}} } } }""");
+
+        var result = BalanceFile.Parse(json);
+
+        Assert.Empty(result.Warnings);
+        Assert.Equal((float)seconds, result.Balance.StatusEffects.CleansingFlame.Seconds);
+        Assert.Equal((float)tickSeconds, result.Balance.StatusEffects.CleansingFlame.TickSeconds);
+    }
+
     [Fact]
     public void A_melee_weapon_may_have_no_knockback()
     {
