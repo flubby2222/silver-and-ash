@@ -332,6 +332,12 @@ public sealed record GormStepped(int GormId) : GameEvent;
 /// <summary>A player entered the boss room while Gorm lives: the boss fight begins (his health bar shows).</summary>
 public sealed record BossFightStarted : GameEvent;
 
+/// <summary>
+/// The sealed boss room was cleared - its boss is dead: the boss fight is over (issue #552, the music goes back to the
+/// level's own). A boss room entered with its boss already dead started no fight and ends none.
+/// </summary>
+public sealed record BossFightEnded : GameEvent;
+
 /// <summary>The spiral staircase starts rising in the middle of the boss room.</summary>
 public sealed record StairsRose : GameEvent;
 

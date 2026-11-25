@@ -230,6 +230,12 @@ public static class SoundBoard
     /// <summary>The music of the catacombs, a seamless loop of 64 s - sparser and quieter, so the sounds stand above it.</summary>
     public const string CatacombsMusic = "musik-katakomben.ogg";
 
+    /// <summary>The music of the boss fight, a loop of 40 s ("b - Basspuls" from the listening test of issue #548).</summary>
+    public const string BossFightMusic = "musik-boss.ogg";
+
+    /// <summary>The music of the merchant's room, a loop of 40 s ("b - Chor-Atem" from the listening test of issue #548).</summary>
+    public const string MerchantMusic = "musik-haendler.ogg";
+
     /// <summary>Volume of everything the game plays (the designer's suggestion).</summary>
     public const float MasterVolume = 0.7f;
 
@@ -238,6 +244,12 @@ public static class SoundBoard
 
     /// <summary>Volume of the catacomb music (before <see cref="MasterVolume"/>); the file itself is about as loud as the title file (-22.5 LUFS, raised by 10 dB in issue #427).</summary>
     public const float CatacombsMusicVolume = 1f;
+
+    /// <summary>Volume of the boss fight music (before <see cref="MasterVolume"/>); the file has the catacombs' mean level (issue #427's yardstick).</summary>
+    public const float BossFightMusicVolume = 1f;
+
+    /// <summary>Volume of the merchant's music (before <see cref="MasterVolume"/>); the file has the catacombs' mean level (issue #427's yardstick).</summary>
+    public const float MerchantMusicVolume = 1f;
 
     /// <summary>Seconds a piece of music takes to fade out before the next one starts.</summary>
     public const float MusicFadeOutSeconds = 1.5f;
@@ -302,6 +314,8 @@ public static class SoundBoard
         MusicTrack.None => null,
         MusicTrack.Title => TitleMusic,
         MusicTrack.Catacombs => CatacombsMusic,
+        MusicTrack.BossFight => BossFightMusic,
+        MusicTrack.Merchant => MerchantMusic,
         _ => throw new ArgumentOutOfRangeException(nameof(track), track, "No file for this track."),
     };
 
@@ -311,6 +325,8 @@ public static class SoundBoard
         MusicTrack.None => 0f,
         MusicTrack.Title => TitleMusicVolume,
         MusicTrack.Catacombs => CatacombsMusicVolume,
+        MusicTrack.BossFight => BossFightMusicVolume,
+        MusicTrack.Merchant => MerchantMusicVolume,
         _ => throw new ArgumentOutOfRangeException(nameof(track), track, "No volume for this track."),
     };
 
@@ -325,18 +341,26 @@ public static class SoundBoard
         [.. SoundFiles, .. SoundPack.Pack1WithoutEvent, .. MusicTracks.Select(track => MusicFile(track)!), Ambience];
 
     /// <summary>
-    /// Which music <paramref name="situation"/> asks for (issue #271): the title theme on the title screen; the catacomb
-    /// music while a run is played, held where it is while the Esc menu holds the world; none on the end screen - the
-    /// run is over, the silence marks it, and the title theme belongs to the title.
+    /// Which music <paramref name="situation"/> asks for (issue #271): the title theme on the title screen; while a run is
+    /// played the piece of its part (<see cref="TrackFor"/>, issue #552), held where it is while the Esc menu holds the
+    /// world; none on the end screen - the run is over, the silence marks it, and the title theme belongs to the title.
     /// <para>
-    /// More pieces for parts of a run (a boss fight, the merchant) come in as a value of <see cref="MusicTrack"/>, a field
-    /// of <see cref="MusicSituation"/> and one line here before the catacombs.
+    /// More parts of a run come in as a value of <see cref="RunPart"/> and one line in <see cref="TrackFor"/>.
     /// </para>
     /// </summary>
     public static MusicWish MusicFor(MusicSituation situation) =>
         situation.OnTitle ? new MusicWish(MusicTrack.Title, false)
         : situation.RunOver ? new MusicWish(MusicTrack.None, false)
-        : new MusicWish(MusicTrack.Catacombs, situation.Paused);
+        : new MusicWish(TrackFor(situation.Part), situation.Paused);
+
+    /// <summary>The piece that <paramref name="part"/> of a run plays (issue #552).</summary>
+    public static MusicTrack TrackFor(RunPart part) => part switch
+    {
+        RunPart.Level => MusicTrack.Catacombs,
+        RunPart.BossFight => MusicTrack.BossFight,
+        RunPart.Merchant => MusicTrack.Merchant,
+        _ => throw new ArgumentOutOfRangeException(nameof(part), part, "No music for this part of a run."),
+    };
 
     /// <summary>
     /// Which sound <paramref name="gameEvent"/> asks for, or null for none: a pistol shot (consecrated or not), reloading,
