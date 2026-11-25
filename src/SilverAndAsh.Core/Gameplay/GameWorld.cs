@@ -981,7 +981,17 @@ public sealed class GameWorld
             _events.Add(new RoomCleared(room.Index));
             MaybeDropKeyIn(room);
             RaiseChestsIn(room);
+            EndBossFightIn(room);
             RaiseStairsIfBoss(room);
+        }
+    }
+
+    // A sealed boss room that is cleared ends the boss fight (issue #552) - only here, where the fight was on.
+    private void EndBossFightIn(RoomState room)
+    {
+        if (room.Kind == RoomKind.Boss)
+        {
+            _events.Add(new BossFightEnded());
         }
     }
 
