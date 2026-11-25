@@ -65,6 +65,13 @@ public sealed record MeleeSwung(
 public sealed record MeleeChargeStarted(int PlayerId, WeaponKind Weapon, int TicksToFull) : GameEvent, IPlayerSound;
 
 /// <summary>
+/// The charge of player <paramref name="PlayerId"/> stopped short of full: the stamina could not pay for the next bit
+/// (<see cref="MeleeCharge.IsStalled"/>). It holds where it is until the button is let go, so it never becomes full in
+/// this hold - the charge sound must not say "full" (issue #776).
+/// </summary>
+public sealed record MeleeChargeStalled(int PlayerId) : GameEvent, IPlayerSound;
+
+/// <summary>
 /// Player <paramref name="PlayerId"/> fired the ranged weapon <paramref name="Weapon"/> (the pistol unless said
 /// otherwise) from <paramref name="Origin"/> (the eyes) in <paramref name="Direction"/> - with consecrated ammunition if
 /// <paramref name="Consecrated"/>. The shooter hears it in the middle, every other player from where it was fired

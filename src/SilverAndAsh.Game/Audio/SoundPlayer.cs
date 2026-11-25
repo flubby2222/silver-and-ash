@@ -27,6 +27,9 @@ internal sealed class SoundPlayer : IDisposable
     private MusicTrack _playing = MusicTrack.None;
     private bool _paused;
 
+    // The sounds held while the world stands still (Hold).
+    private readonly List<Sound> _heldSounds = [];
+
     // The player's volumes from the settings (issue #349), each 0 to 1.
     private float _master = 1f;
     private float _effects = 1f;
@@ -143,6 +146,36 @@ internal sealed class SoundPlayer : IDisposable
                 Raylib.SetSoundPan(sound, cue.Pan);
                 Raylib.PlaySound(sound);
             }
+        }
+    }
+
+    /// <summary>
+    /// Once per drawn frame: while <paramref name="held"/> (the world stands still - menu, lost focus), the sounds of
+    /// <paramref name="files"/> that play are held where they are, and go on from there when the world does (issue #776:
+    /// a charge sound whose thump must fall on the full charge). A file that stopped meanwhile stays silent.
+    /// </summary>
+    public void Hold(IReadOnlyList<string> files, bool held)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        if (held && _heldSounds.Count == 0)
+        {
+            foreach (var file in files)
+            {
+                if (_sounds.TryGetValue(file, out var sound) && Raylib.IsSoundPlaying(sound))
+                {
+                    Raylib.PauseSound(sound);
+                    _heldSounds.Add(sound);
+                }
+            }
+        }
+        else if (!held && _heldSounds.Count > 0)
+        {
+            foreach (var sound in _heldSounds)
+            {
+                Raylib.ResumeSound(sound);
+            }
+
+            _heldSounds.Clear();
         }
     }
 

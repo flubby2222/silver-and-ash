@@ -1048,13 +1048,24 @@ public sealed partial class Player
         }
         else if (MeleeCharge.IsCharging && held)
         {
-            MeleeCharge.Tick(Stamina);
+            ChargeOn();
         }
         else if (MeleeCharge.IsCharging)
         {
             var charge = MeleeCharge.Release();
             MeleeCooldown.TryUse();
             _events.Add(new MeleeSwung(Id, EyePosition, View.Forward, charge, Melee) { Place = EyePosition });
+        }
+    }
+
+    /// <summary>One more tick of holding the charge; tells when it stalls (the stamina ran out before it was full).</summary>
+    private void ChargeOn()
+    {
+        var wasStalled = MeleeCharge.IsStalled;
+        MeleeCharge.Tick(Stamina);
+        if (MeleeCharge.IsStalled && !wasStalled)
+        {
+            _events.Add(new MeleeChargeStalled(Id) { Place = EyePosition });
         }
     }
 

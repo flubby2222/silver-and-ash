@@ -74,7 +74,7 @@ def main():
     p = load_probe()
     with tempfile.TemporaryDirectory() as folder:
         check = os.path.join(folder, "axt-c3-schartig.glb")
-        export(p, "axe_c3", os.path.join(tempfile.gettempdir(), "axe2_c3.png"), check)
+        export(p, "axe_c3", os.path.join(folder, "axe2_c3.png"), check)
         approved = os.path.join(PROBE, "axt-c3-schartig.glb")
         if sha256(check) != sha256(approved):
             raise SystemExit("FEHLER: C3 weicht von der abgenommenen Probe runde-2/axt-c3-schartig.glb ab")

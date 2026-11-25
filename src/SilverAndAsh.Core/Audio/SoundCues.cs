@@ -591,7 +591,8 @@ public sealed class SoundCues
     // The last pick of each set of files, keyed by the files themselves: kinds sharing them share it, too.
     private readonly Dictionary<string, int> _lastVariant = new(StringComparer.Ordinal);
 
-    // Ticks seen so far (one call of For with events per tick) and the tick each kind with a minimum gap last played.
+    // The tick of the last call (the world's clock, or one more per call of For with events) and the tick each kind
+    // with a minimum gap last played.
     private long _tick;
     private readonly Dictionary<SoundKind, long> _lastPlayedTick = [];
 
@@ -609,7 +610,7 @@ public sealed class SoundCues
     public IReadOnlyList<SoundCue> For(IEnumerable<GameEvent> events, SoundPack pack, Vector3? listener = null)
     {
         ArgumentNullException.ThrowIfNull(events);
-        return Cues(events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener)), pack, _ => SoundMix.Centre);
+        return Cues(events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener)), pack, _ => SoundMix.Centre, _tick + 1);
     }
 
     /// <summary>
@@ -624,17 +625,60 @@ public sealed class SoundCues
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(hearing);
+        return Placed(events, pack, listener, hearing, _tick + 1);
+    }
+
+    /// <summary>
+    /// The placed sounds (<see cref="For(IEnumerable{GameEvent}, SoundPack, SoundListener, HearingBalance)"/>) of the
+    /// last tick of <paramref name="world"/>, on the world's own clock (<see cref="GameWorld.Ticks"/>): a paused tick does
+    /// not move it, so a planned charge sound neither starts in the pause nor runs out its plan there, and its stop on
+    /// a release after the pause still comes (issue #776). A call without a new world tick plays nothing.
+    /// </summary>
+    public IReadOnlyList<SoundCue> For(GameWorld world, SoundPack pack, SoundListener listener)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        return world.Ticks == _tick ? [] : Placed(world.Events, pack, listener, world.Balance.Hearing, world.Ticks);
+    }
+
+    /// <summary>
+    /// The charge sounds that play and have not yet reached their end mark (issue #776): the game holds them while the
+    /// world stands still (menu, lost focus), so their thump still falls on the full charge.
+    /// </summary>
+    public IReadOnlyList<string> PlayingChargeFiles =>
+        _charges.Values.Where(charge => charge.File is not null).Select(charge => charge.File!).ToList();
+
+    /// <summary>Stops every charge sound that plays (a new run replaces the world it belonged to) and forgets the plans.</summary>
+    public IReadOnlyList<SoundCue> StopCharges()
+    {
+        var cues = new List<SoundCue>();
+        foreach (var playerId in _charges.Keys.ToList())
+        {
+            EndCharge(playerId, cues);
+        }
+
+        return cues;
+    }
+
+    private List<SoundCue> Placed(
+        IEnumerable<GameEvent> events, SoundPack pack, SoundListener listener, HearingBalance hearing, long tick)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        ArgumentNullException.ThrowIfNull(hearing);
         return Cues(
             events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener.Ears)),
             pack,
-            gameEvent => Hearing.MixFor(gameEvent, listener, hearing));
+            gameEvent => Hearing.MixFor(gameEvent, listener, hearing),
+            tick);
     }
 
-    /// <summary>The cues for <paramref name="events"/> (already filtered by earshot), each kind with the loudest of its <paramref name="mixFor"/>.</summary>
-    private List<SoundCue> Cues(IEnumerable<GameEvent> events, SoundPack pack, Func<GameEvent, SoundMix> mixFor)
+    /// <summary>
+    /// The cues for <paramref name="events"/> (already filtered by earshot) of tick <paramref name="now"/>, each kind
+    /// with the loudest of its <paramref name="mixFor"/>.
+    /// </summary>
+    private List<SoundCue> Cues(IEnumerable<GameEvent> events, SoundPack pack, Func<GameEvent, SoundMix> mixFor, long now)
     {
         ArgumentNullException.ThrowIfNull(pack);
-        _tick++;
+        _tick = now;
         var mixes = new Dictionary<SoundKind, SoundMix>();
         var kinds = new List<SoundKind>();
         var tick = events.ToList();
@@ -698,7 +742,8 @@ public sealed class SoundCues
     /// <summary>
     /// The charge sounds (<see cref="SoundBoard.ChargeKinds"/>, issue #776): a <see cref="MeleeChargeStarted"/> plans
     /// the sound so that its end mark (<see cref="SoundBoard.ChargeMarkSeconds"/>, the thump) falls on the tick the charge
-    /// is full. A release (<see cref="MeleeSwung"/>) or death (<see cref="PlayerDied"/>) before that drops a planned
+    /// is full. A release (<see cref="MeleeSwung"/>), a stall (<see cref="MeleeChargeStalled"/>: the stamina ran out, the
+    /// charge will not become full) or death (<see cref="PlayerDied"/>) before that drops a planned
     /// sound that has not started yet - a short tap stays silent - and stops one that is playing (a cue with
     /// <see cref="SoundCue.Stop"/>); after the mark the tail rings on.
     /// </summary>
@@ -714,6 +759,10 @@ public sealed class SoundCues
                     break;
                 case MeleeSwung swung:
                     EndCharge(swung.PlayerId, cues);
+                    break;
+                case MeleeChargeStalled stalled:
+                    // The charge stays short of full in this hold: no thump may say "full".
+                    EndCharge(stalled.PlayerId, cues);
                     break;
                 case PlayerDied died:
                     EndCharge(died.PlayerId, cues);

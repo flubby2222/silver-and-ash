@@ -37,11 +37,11 @@ public class PlayerTickTraceTests
     // All three changed on purpose in #776: a press that begins a melee charge now raises MeleeChargeStarted (the axe's
     // charge sound starts from it). Without that event the traces give the checksums from before, byte for byte.
     // Two parcours seeds: together their bots reach almost every line of the tick (one alone misses a few).
-    private const string GormDuelChecksum = "5F8AF86D8BA0658319D40AECE2E164DCB0342FFCAD7752B33EB50984387F3518";
+    private const string GormDuelChecksum = "D1BB5B0E0E3DC342938878308A56AF4A448A3CBAEE1D65137E768B864431887A";
 
     [Theory]
-    [InlineData(1, "514EF35BD6D93BD58600C99BC7F88D80725D2AB06839F8F07E9E3FC70303D52A")]
-    [InlineData(4, "7487B848AF1774E8CE4E9E10E455B4ED643E9AC49DAFBE0827E10A2F9A741AA5")]
+    [InlineData(1, "694C6959093A935003D48E46D1EEBA0EA90BA35854F713A217E3E13A5119FB2A")]
+    [InlineData(4, "C09945C4AA4197B67EC982115F4676619E763F88E4E5D55A51203731409CD534")]
     public void A_bot_run_through_a_parcours_gives_the_same_trace_as_before(int seed, string checksum)
     {
         var trace = ParcoursTrace(seed, ticks: 6000);

@@ -211,6 +211,143 @@ public class AxeSoundTests
         Assert.Equal([cues.Count - 2], TicksWith(cues, StopsCharge));
     }
 
+    // ---- Pause and stall (review of PR #781) ------------------------------------------------------------------------
+
+    /// <summary>
+    /// Runs <paramref name="world"/> as the game does: every input is one tick, paused or not, and after each the sounds
+    /// of the world (<see cref="SoundCues.For(GameWorld, SoundPack, SoundListener)"/>).
+    /// </summary>
+    private static List<IReadOnlyList<SoundCue>> PlayWorld(GameWorld world, IEnumerable<PlayerInput> inputs)
+    {
+        var sounds = new SoundCues(world.Seed);
+        var cues = new List<IReadOnlyList<SoundCue>>();
+        foreach (var input in inputs)
+        {
+            world.Tick(input);
+            cues.Add(sounds.For(world, Pack1, SoundListener.Of(world.Player)));
+        }
+
+        return cues;
+    }
+
+    private static IEnumerable<PlayerInput> Paused(int ticks) =>
+        Enumerable.Repeat(Melee with { Paused = true }, ticks);
+
+    [Fact]
+    public void The_charge_sound_waits_through_a_pause_and_still_stops_on_an_early_release_after_it()
+    {
+        // Pressed, paused long before the planned start, held on, paused again while the sound plays, let go before the
+        // thump: the start counts only world ticks, the pauses stay silent and the release still stops the sound.
+        var pause = 3 * AxeFull;
+        var before = AxeFull - Lead - 5;
+        var playing = 10;
+        var inputs = Hold(before, 0).Concat(Paused(pause)).Concat(Hold(playing, 0)).Concat(Paused(pause)).Concat(Hold(0, 3));
+        var cues = PlayWorld(With(WeaponKind.HuntersAxe), inputs);
+
+        var startTick = before + pause + 5;
+        var releaseTick = before + pause + playing + pause;
+        Assert.Equal([startTick], TicksWith(cues, StartsCharge));
+        Assert.Equal([releaseTick], TicksWith(cues, StopsCharge));
+        Assert.All(Enumerable.Range(before, pause).Concat(Enumerable.Range(before + pause + playing, pause)), tick => Assert.Empty(cues[tick]));
+    }
+
+    [Fact]
+    public void Held_on_through_a_pause_the_thump_still_falls_on_the_full_charge()
+    {
+        var world = With(WeaponKind.HuntersAxe);
+        var inputs = Hold(AxeFull - Lead + 3, 0).Concat(Paused(2 * AxeFull)).Concat(Hold(Lead, 0));
+        var sounds = new SoundCues(world.Seed);
+        int? started = null;
+        long? startedAt = null;
+        long? fullAt = null;
+        var heldInPause = new List<int>();
+        var tick = 0;
+        foreach (var input in inputs)
+        {
+            world.Tick(input);
+            var cues = sounds.For(world, Pack1, SoundListener.Of(world.Player));
+            started ??= cues.Any(StartsCharge) ? tick : null;
+            startedAt ??= cues.Any(StartsCharge) ? world.Ticks : null;
+            fullAt ??= world.Player.MeleeCharge.IsFull ? world.Ticks : null;
+            if (input.Paused)
+            {
+                heldInPause.Add(sounds.PlayingChargeFiles.Count);
+            }
+
+            tick++;
+        }
+
+        // The sound started before the pause and is still before its thump all through it: the game holds it there.
+        Assert.Equal(AxeFull - Lead, started);
+        Assert.All(heldInPause, count => Assert.Equal(1, count));
+        Assert.True(world.Player.MeleeCharge.IsFull);
+        Assert.Equal(fullAt, startedAt + Lead);
+    }
+
+    [Fact]
+    public void With_empty_stamina_holding_the_axe_plays_no_charge_sound()
+    {
+        var world = With(WeaponKind.HuntersAxe);
+        var stamina = world.Player.Stamina;
+        while (stamina.TryPayPart(1))
+        {
+        }
+
+        var events = new List<GameEvent>();
+        var sounds = new SoundCues(world.Seed);
+        var cues = new List<IReadOnlyList<SoundCue>>();
+        for (var tick = 0; tick < 2 * AxeFull; tick++)
+        {
+            world.Tick(Melee);
+            events.AddRange(world.Events);
+            cues.Add(sounds.For(world, Pack1, SoundListener.Of(world.Player)));
+        }
+
+        Assert.True(world.Player.MeleeCharge.IsStalled);
+        Assert.False(world.Player.MeleeCharge.IsFull);
+        Assert.Single(events.OfType<MeleeChargeStalled>());
+        Assert.Empty(TicksWith(cues, cue => cue.Kind == SoundKind.AxeCharge));
+    }
+
+    [Fact]
+    public void A_stall_while_the_charge_sound_plays_stops_it_before_the_thump()
+    {
+        var sounds = new SoundCues(1);
+        var cues = new List<IReadOnlyList<SoundCue>> { sounds.For([new MeleeChargeStarted(0, WeaponKind.HuntersAxe, AxeFull)], Pack1) };
+        for (var tick = 1; tick <= AxeFull - Lead + 2; tick++)
+        {
+            cues.Add(sounds.For([], Pack1));
+        }
+
+        cues.Add(sounds.For([new MeleeChargeStalled(0)], Pack1));
+        for (var tick = 0; tick < Lead; tick++)
+        {
+            cues.Add(sounds.For([], Pack1));
+        }
+
+        Assert.Single(TicksWith(cues, StartsCharge));
+        Assert.Equal([AxeFull - Lead + 3], TicksWith(cues, StopsCharge));
+        Assert.Empty(sounds.PlayingChargeFiles);
+    }
+
+    [Fact]
+    public void A_new_run_stops_the_charge_sound_of_the_old_one()
+    {
+        var sounds = new SoundCues(1);
+        sounds.For([new MeleeChargeStarted(0, WeaponKind.HuntersAxe, AxeFull)], Pack1);
+        IReadOnlyList<SoundCue> started = [];
+        for (var tick = 1; tick <= AxeFull - Lead && started.Count == 0; tick++)
+        {
+            started = sounds.For([], Pack1);
+        }
+
+        var stops = sounds.StopCharges();
+
+        Assert.Equal(Assert.Single(started, StartsCharge).File, Assert.Single(stops, StopsCharge).File);
+        Assert.Empty(sounds.PlayingChargeFiles);
+        Assert.Empty(sounds.StopCharges());
+    }
+
     [Fact]
     public void Another_players_death_leaves_the_charge_sound_alone()
     {
