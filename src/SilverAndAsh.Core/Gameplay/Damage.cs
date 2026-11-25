@@ -23,9 +23,11 @@ public enum HitZone
 /// <summary>
 /// Everything about one hit that decides its damage: which weapon, which zone, its base damage, - for a charged
 /// blade - how far it was charged (0 = not at all, 1 = fully), and how often the attacker chose
-/// <see cref="Boon.Damage"/>.
+/// <see cref="Boon.Damage"/>. <paramref name="TargetStatus"/>: the status effects the target carries (issue #504; none
+/// for a target that cannot carry any, like a training dummy).
 /// </summary>
-public sealed record Hit(Weapon Weapon, HitZone Zone, int BaseDamage, float Charge = 0f, int DamageBoons = 0);
+public sealed record Hit(
+    Weapon Weapon, HitZone Zone, int BaseDamage, float Charge = 0f, int DamageBoons = 0, StatusEffects? TargetStatus = null);
 
 /// <summary>The damage a hit really does, and whether it counts as a critical hit (shown differently).</summary>
 public readonly record struct DamageResult(int Amount, bool IsCritical);
@@ -52,6 +54,17 @@ public sealed record ZoneBonus(Weapon Weapon, HitZone Zone, float Factor) : IDam
 }
 
 /// <summary>
+/// Marked (issue #504): a marked target takes <paramref name="Bonus"/> more damage from every hit (0.125 = 12.5 %),
+/// whatever the weapon and the zone. Not critical by itself.
+/// </summary>
+public sealed record MarkedBonus(float Bonus) : IDamageRule
+{
+    public bool IsCritical => false;
+
+    public float Multiplier(Hit hit) => hit.TargetStatus?.Has(StatusKind.Marked) == true ? 1f + Bonus : 1f;
+}
+
+/// <summary>
 /// The list of damage rules that apply in a game. Damage = base damage x all multipliers, rounded.
 /// Part of the game state (not static), so every game - and later every player - can have its own rules.
 /// </summary>
@@ -61,7 +74,7 @@ public sealed class DamageRules
 
     /// <summary>
     /// The rules of a normal game: headshots with the pistol do triple damage, a charged blade up to double, every
-    /// chosen Damage boon a bit more - with the values from <paramref name="balance"/> (the standard values if none
+    /// chosen Damage boon a bit more, a marked target a bit more - with the values from <paramref name="balance"/> (the standard values if none
     /// is given).
     /// </summary>
     public static DamageRules Standard(Balance? balance = null)
@@ -77,6 +90,7 @@ public sealed class DamageRules
         rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
         rules.Add(new ChargeBonus(balance.Club.ChargeMaxMultiplier, Weapon.Club));
         rules.Add(new DamageBoonBonus(balance.Boons.Damage));
+        rules.Add(new MarkedBonus(balance.StatusEffects.Marked.Bonus));
         return rules;
     }
 

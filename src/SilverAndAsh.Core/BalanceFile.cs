@@ -70,7 +70,10 @@ public static class BalanceFile
         ["difficulty.sideDoorDistance"] = Level.CellSize,
     };
 
-    /// <summary>Highest sensible values. A jump may at most bring the head up to the ceiling.</summary>
+    /// <summary>
+    /// Highest sensible values. A jump may at most bring the head up to the ceiling. A mark at most doubles the damage
+    /// and lasts at most half a minute (issue #504).
+    /// </summary>
     private static readonly Dictionary<string, double> Maximum = new(StringComparer.OrdinalIgnoreCase)
     {
         ["player.airControl"] = 1,
@@ -110,6 +113,8 @@ public static class BalanceFile
         ["hearing.maxPan"] = 1,
         ["difficulty.doorConeAngle"] = 90,
         ["grates.blockHeight"] = GrateTravel.OpenHeight,
+        ["statusEffects.marked.bonus"] = 1,
+        ["statusEffects.marked.seconds"] = 30,
     };
 
     /// <summary>Values that must stay below a limit (a penalty of 100 % would mean standing still).</summary>

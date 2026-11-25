@@ -25,6 +25,9 @@ internal interface IEnemy : ITarget
     /// </summary>
     bool IsOut { get; }
 
+    /// <summary>The status effects it carries (issue #504); the world counts them down every tick.</summary>
+    StatusEffects Status { get; }
+
     /// <summary>Puts it somewhere else at once, without walking there.</summary>
     void PlaceAt(Vector3 position);
 }
