@@ -661,6 +661,29 @@ public class MenuLayoutTests
     }
 
     [Fact]
+    public void Every_weapon_name_with_a_status_effect_fits_its_box()
+    {
+        // Issue #505: the inventory shows the effect after the name ("Blunderbuss - Marked"), written smaller if needed.
+        var box = Layout.Equipment(MenuCanvas.For(854, 480), 0).Hands[0];
+        foreach (var kind in AllWeapons)
+        {
+            var info = Weapons.Info(kind);
+            foreach (var effect in WeaponEffects.Choosable)
+            {
+                var texts = Layout.Box(box, "LMB", WeaponEffects.Label(info.Name, effect), $"{info.Hand} - {ItemTier.Vampiric}");
+
+                foreach (var text in new[] { texts.Key, texts.Name, texts.Kind!.Value })
+                {
+                    Assert.True(box.Encloses(Layout.Bounds(text)), $"'{text.Text}' leaves its box");
+                }
+
+                Assert.False(Layout.Bounds(texts.Key).Overlaps(Layout.Bounds(texts.Name)));
+                Assert.False(Layout.Bounds(texts.Name).Overlaps(Layout.Bounds(texts.Kind!.Value)));
+            }
+        }
+    }
+
+    [Fact]
     public void A_name_too_long_for_the_box_is_written_smaller()
     {
         var box = new MenuRect(0, 0, MenuLayout.BoxWidth, MenuLayout.BoxHeight);

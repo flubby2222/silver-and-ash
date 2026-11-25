@@ -272,7 +272,22 @@ public class HudReadoutTests
     public void Every_consumable_has_a_toast_name()
     {
         Assert.All(Enum.GetValues<ConsumableKind>(), kind => Assert.False(string.IsNullOrWhiteSpace(PickupToast.NameOf(kind))));
-        Assert.Equal(Equipment.All.Count + Enum.GetValues<ConsumableKind>().Length + 1, PickupToast.AllTexts().Distinct().Count());
+        // Issue #505: every weapon also with every effect it could carry ("Picked up Club - Marked").
+        var weaponsWithEffect = Equipment.All.Count(piece => piece.IsWeapon) * WeaponEffects.Choosable.Count;
+        Assert.Equal(weaponsWithEffect, PickupToast.EffectLabels().Distinct().Count());
+        Assert.Equal(
+            Equipment.All.Count + weaponsWithEffect + Enum.GetValues<ConsumableKind>().Length + 1,
+            PickupToast.AllTexts().Distinct().Count());
+    }
+
+    [Fact]
+    public void The_toast_names_the_status_effect_a_weapon_carries()
+    {
+        var club = Equipment.Of(WeaponKind.Club);
+
+        Assert.Equal("Picked up Club - Marked", PickupToast.TextFor(new EquipmentTaken(1, 0, club, Vector3.Zero) { Effect = StatusKind.Marked }, 0));
+        Assert.Equal("Picked up Club", PickupToast.TextFor(new EquipmentTaken(1, 0, club, Vector3.Zero), 0));
+        Assert.Contains("Picked up Club - Marked", PickupToast.AllTexts());
     }
 
     private static void Enter(GameWorld world)

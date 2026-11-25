@@ -14,7 +14,7 @@ public static class PickupToast
     /// </summary>
     public static string? TextFor(GameEvent gameEvent, int playerId) => gameEvent switch
     {
-        EquipmentTaken taken when taken.PlayerId == playerId => Picked(taken.Piece.Name),
+        EquipmentTaken taken when taken.PlayerId == playerId => Picked(taken.Label),
         PickupTaken taken when taken.PlayerId == playerId => Picked(NameOf(taken.Kind)),
         KeyTaken taken when taken.PlayerId == playerId => Picked("a Key"),
         _ => null,
@@ -23,6 +23,7 @@ public static class PickupToast
     /// <summary>Every text the toast can show - for the test that each fits its frame.</summary>
     public static IEnumerable<string> AllTexts() =>
         Equipment.All.Select(piece => Picked(piece.Name))
+            .Concat(EffectLabels().Select(Picked))
             .Concat(Enum.GetValues<ConsumableKind>().Select(kind => Picked(NameOf(kind))))
             .Append(Picked("a Key"));
 
@@ -33,6 +34,14 @@ public static class PickupToast
         ConsumableKind.ConsecratedAmmo => "Consecrated Ammo",
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown consumable."),
     };
+
+    /// <summary>
+    /// The name of every weapon with every effect it could carry ("Club - Marked", issue #505) - the starting weapons
+    /// too, though they never carry one, so the list does not depend on what a run starts with.
+    /// </summary>
+    public static IEnumerable<string> EffectLabels() =>
+        Equipment.All.Where(piece => piece.IsWeapon)
+            .SelectMany(piece => WeaponEffects.Choosable.Select(effect => WeaponEffects.Label(piece.Name, effect)));
 
     private static string Picked(string name) => $"Picked up {name}";
 }
