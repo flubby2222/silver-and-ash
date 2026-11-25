@@ -85,13 +85,13 @@ public class CourseStationPhotoTests
     }
 
     [Fact]
-    public void Station_1_shows_its_sign_the_five_weapons_and_an_item()
+    public void Station_1_shows_its_sign_every_weapon_and_an_item()
     {
         var (setup, _) = Taken("course-1-arms");
         var world = setup.World;
 
         AssertShowsItsSign(world, "1 - Arms");
-        Assert.Equal(5, Course.Finds.Weapons.Count);
+        Assert.Equal(Enum.GetValues<WeaponKind>().Length, Course.Finds.Weapons.Count);
         foreach (var weapon in Course.Finds.Weapons)
         {
             AssertShows(world, "a weapon", weapon.Position + new Vector3(0f, 0.2f, 0f));
@@ -110,7 +110,7 @@ public class CourseStationPhotoTests
         var world = setup.World;
 
         Assert.True(ran >= CourseScenes.BannerTicks, "The level's name still covers the picture.");
-        Assert.Equal(5, Course.Finds.Weapons.Count);
+        Assert.Equal(Enum.GetValues<WeaponKind>().Length, Course.Finds.Weapons.Count);
         foreach (var weapon in Course.Finds.Weapons)
         {
             var point = weapon.Position + new Vector3(0f, 0.2f, 0f);

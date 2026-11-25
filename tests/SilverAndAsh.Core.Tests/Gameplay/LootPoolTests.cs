@@ -123,15 +123,19 @@ public class LootPoolTests
     [Fact]
     public void A_higher_tier_roll_into_a_used_up_tier_falls_back_to_the_chests_own_tier()
     {
-        // Review of #319: only the two Royal items are left; a King's Chest (Royal) that rolls "one tier higher" finds
+        // Review of #319: only the Royal pieces are left; a King's Chest (Royal) that rolls "one tier higher" finds
         // Vampiric empty - it must still give a Royal piece, not nothing (extra silver).
         var always = Values with { HigherTierChance = 1f };
+        var royalPieces = Equipment.All.Count(piece => piece.Tier == ItemTier.Royal);
         for (var seed = 0; seed < 50; seed++)
         {
             var onlyRoyal = new LootPool(seed, always, Equipment.All.Where(piece => piece.Tier != ItemTier.Royal));
 
-            Assert.Equal(ItemTier.Royal, onlyRoyal.Draw(ItemTier.Royal)?.Tier);
-            Assert.Equal(ItemTier.Royal, onlyRoyal.Draw(ItemTier.Royal)?.Tier);
+            for (var draw = 0; draw < royalPieces; draw++)
+            {
+                Assert.Equal(ItemTier.Royal, onlyRoyal.Draw(ItemTier.Royal)?.Tier);
+            }
+
             Assert.Null(onlyRoyal.Draw(ItemTier.Royal));
         }
     }

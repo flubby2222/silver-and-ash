@@ -46,6 +46,7 @@ public static class BalanceFile
         "player.landingDipPerSpeed", "player.landingDipMax", "player.landingTiltPerMetre", "player.dodgeStaminaSegments",
         "blade.damage", "blade.chargeStaminaSegments", "blade.coneStartBehind", "blade.knockback", "blade.chargedKnockback",
         "club.damage", "club.chargeStaminaSegments", "club.coneStartBehind", "club.knockback", "club.chargedKnockback",
+        "huntersAxe.damage", "huntersAxe.chargeStaminaSegments", "huntersAxe.coneStartBehind", "huntersAxe.knockback", "huntersAxe.chargedKnockback",
         "pistol.damage", "pistol.pierce", "rifle.damage", "rifle.pierce", "pistol.spread", "rifle.spread", "blunderbuss.damage", "blunderbuss.pierce", "blunderbuss.spread", "ghoul.attackDamage", "bat.biteDamage", "bat.spitAimBelowEyes", "bloodBolt.damage",
         "drops.ghoulChance", "drops.batChance", "drops.consecratedAmmoShare", "bloodVial.heal",
         "keys.roomChance", "keys.enemyChance", "loot.higherTierChance", "loot.itemShare", "chests.combatRoomChance", "chests.treasureChestsMin", "chests.treasureChestsMax",
@@ -83,6 +84,7 @@ public static class BalanceFile
         ["player.jumpHeight"] = Cell.DefaultCeilingHeight - BodySizes.Player.Height,
         ["blade.angle"] = 180,
         ["club.angle"] = 180,
+        ["huntersAxe.angle"] = 180,
         ["pistol.spread"] = 90,
         ["rifle.spread"] = 90,
         ["blunderbuss.spread"] = 90,
@@ -142,6 +144,7 @@ public static class BalanceFile
     [
         ("blade", "knockback", "chargedKnockback"),
         ("club", "knockback", "chargedKnockback"),
+        ("huntersAxe", "knockback", "chargedKnockback"),
         ("bat", "circleRadiusMin", "circleRadiusMax"),
         ("bat", "turnRoundMin", "turnRoundMax"),
         ("bat", "circleHeightMin", "circleHeightMax"),

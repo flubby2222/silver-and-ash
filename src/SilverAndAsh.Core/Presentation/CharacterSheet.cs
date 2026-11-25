@@ -24,8 +24,8 @@ public static class CharacterSheet
         ArgumentNullException.ThrowIfNull(player);
         var melee = world.Balance.Melee(player.Melee);
         var ranged = world.Balance.Ranged(player.Ranged.Kind);
-        var meleeDamage = Damage(world, player, DamageWeapon(player.Melee), melee.Damage);
-        var rangedDamage = Damage(world, player, DamageWeapon(player.Ranged.Kind), ranged.Damage);
+        var meleeDamage = Damage(world, player, Weapons.ForDamage(player.Melee), melee.Damage);
+        var rangedDamage = Damage(world, player, Weapons.ForDamage(player.Ranged.Kind), ranged.Damage);
         var perShot = ranged.Pellets > 1 ? Text($"{rangedDamage} x {ranged.Pellets}") : Text($"{rangedDamage}");
 
         return
@@ -60,16 +60,6 @@ public static class CharacterSheet
     // One body hit, uncharged, with the player's damage boons - through the same rules as a real hit.
     private static int Damage(GameWorld world, Player player, Weapon weapon, int baseDamage) =>
         world.DamageRules.Calculate(new Hit(weapon, HitZone.Body, baseDamage, DamageBoons: player.BoonCount(Boon.Damage))).Amount;
-
-    private static Weapon DamageWeapon(WeaponKind kind) => kind switch
-    {
-        WeaponKind.SilverBlade => Weapon.Blade,
-        WeaponKind.Club => Weapon.Club,
-        WeaponKind.Pistol => Weapon.Pistol,
-        WeaponKind.Rifle => Weapon.Rifle,
-        WeaponKind.Blunderbuss => Weapon.Blunderbuss,
-        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
-    };
 
     // In bars, as the HUD draws it (one bar = one jump or dash): rounded down to a tenth, so "1" never shows while a
     // jump cannot be paid yet - e.g. "2.4 / 5 bars".

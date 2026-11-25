@@ -122,6 +122,9 @@ public sealed class HudLayout
         [WeaponKind.Club] = "icon_club",
         [WeaponKind.Rifle] = "icon_rifle",
         [WeaponKind.Blunderbuss] = "icon_blunder",
+
+        // Until the axe has a sign of its own (issue #201, follow-up): the club's, the nearest heavy melee weapon.
+        [WeaponKind.HuntersAxe] = "icon_club",
     }.ToFrozenDictionary();
 
     private static readonly FrozenDictionary<ItemKind, string> ItemIcons = new Dictionary<ItemKind, string>

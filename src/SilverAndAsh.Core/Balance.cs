@@ -27,10 +27,24 @@ public sealed record Balance
         ChargedKnockback = 6f,
     };
 
+    /// <summary>
+    /// The hunter's axe (Royal, decision record 0008, issue #201): about half as quick as the blade, about twice its
+    /// damage, a much wider cone that hits several enemies at once. Provisional values for the next balancing round.
+    /// </summary>
+    public MeleeBalance HuntersAxe { get; init; } = new()
+    {
+        Cooldown = 0.8f,
+        Damage = 80,
+        ChargeTime = 1.2f,
+        Range = 2.5f,
+        Angle = 150f,
+    };
+
     /// <summary>The values of melee weapon <paramref name="kind"/>.</summary>
     public MeleeBalance Melee(Gameplay.WeaponKind kind) => kind switch
     {
         Gameplay.WeaponKind.Club => Club,
+        Gameplay.WeaponKind.HuntersAxe => HuntersAxe,
         _ => Blade,
     };
 
@@ -814,8 +828,9 @@ public sealed record PlayerBalance
 }
 
 /// <summary>
-/// Balancing values of a melee weapon - the silver blade (<see cref="Balance.Blade"/>) and the club
-/// (<see cref="Balance.Club"/>) have the same kind of values (decision record 0008).
+/// Balancing values of a melee weapon - the silver blade (<see cref="Balance.Blade"/>), the club
+/// (<see cref="Balance.Club"/>) and the hunter's axe (<see cref="Balance.HuntersAxe"/>) have the same kind of values
+/// (decision record 0008).
 /// </summary>
 public sealed record MeleeBalance
 {
