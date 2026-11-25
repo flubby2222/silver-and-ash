@@ -214,6 +214,8 @@ public class BalanceFileTests
     [InlineData("""{ "grates": { "blockHeight": 3.5 } }""", "grates.blockHeight")]
     [InlineData("""{ "statusEffects": { "marked": { "bonus": 1.5 } } }""", "statusEffects.marked.bonus")]
     [InlineData("""{ "statusEffects": { "marked": { "seconds": 31 } } }""", "statusEffects.marked.seconds")]
+    [InlineData("""{ "statusEffects": { "cleansingFlame": { "seconds": 31 } } }""", "statusEffects.cleansingFlame.seconds")]
+    [InlineData("""{ "statusEffects": { "cleansingFlame": { "damagePerSecond": 101 } } }""", "statusEffects.cleansingFlame.damagePerSecond")]
     [InlineData("""{ "skills": { "levelsPerPoint": 21 } }""", "skills.levelsPerPoint")]
     [InlineData("""{ "statusEffects": { "weaponShare": 1.5 } }""", "statusEffects.weaponShare")]
     [InlineData("""{ "statusEffects": { "weaponHitChance": { "worn": 1.1 } } }""", "statusEffects.weaponHitChance.worn")]
@@ -458,6 +460,49 @@ public class BalanceFileTests
 
         Assert.Equal(Balance.Default.Club, result.Balance.Club);
         Assert.Contains(result.Warnings, w => w.Contains("club.knockback") && w.Contains("club.chargedKnockback"));
+    }
+
+    [Fact]
+    public void A_flame_pulse_longer_than_the_flame_falls_back_to_both_standards()
+    {
+        // Issue #507: a flame shorter than one pulse would burn without ever dealing damage.
+        var result = BalanceFile.Parse("""{ "statusEffects": { "cleansingFlame": { "seconds": 1, "tickSeconds": 1.5 } } }""");
+
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame, result.Balance.StatusEffects.CleansingFlame);
+        Assert.Contains(result.Warnings, w => w.Contains("statusEffects.cleansingFlame.tickSeconds") && w.Contains("statusEffects.cleansingFlame.seconds"));
+    }
+
+    [Fact]
+    public void A_flame_pulse_above_its_limit_falls_back_to_its_standard_alone()
+    {
+        // Seconds long enough that the pulse stays shorter than the flame: only the limit of the pulse is at fault.
+        var result = BalanceFile.Parse("""{ "statusEffects": { "cleansingFlame": { "seconds": 10, "tickSeconds": 6 } } }""");
+
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame.TickSeconds, result.Balance.StatusEffects.CleansingFlame.TickSeconds);
+        Assert.Equal(10f, result.Balance.StatusEffects.CleansingFlame.Seconds);
+        Assert.Contains(result.Warnings, w => w.Contains("statusEffects.cleansingFlame.tickSeconds"));
+        Assert.DoesNotContain(result.Warnings, w => w.Contains("statusEffects.cleansingFlame.seconds"));
+    }
+
+    [Theory]
+    [InlineData("seconds")]
+    [InlineData("damagePerSecond")]
+    [InlineData("tickSeconds")]
+    public void A_flame_value_of_zero_falls_back_to_its_standard(string name)
+    {
+        var result = BalanceFile.Parse($$"""{ "statusEffects": { "cleansingFlame": { "{{name}}": 0 } } }""");
+
+        Assert.Equal(Balance.Default.StatusEffects.CleansingFlame, result.Balance.StatusEffects.CleansingFlame);
+        Assert.Contains(result.Warnings, w => w.Contains($"statusEffects.cleansingFlame.{name}"));
+    }
+
+    [Fact]
+    public void Flame_values_within_their_limits_are_read()
+    {
+        var result = BalanceFile.Parse("""{ "statusEffects": { "cleansingFlame": { "seconds": 4, "damagePerSecond": 8, "tickSeconds": 0.25 } } }""");
+
+        Assert.Equal(new CleansingFlameBalance { Seconds = 4f, DamagePerSecond = 8f, TickSeconds = 0.25f }, result.Balance.StatusEffects.CleansingFlame);
+        Assert.Empty(result.Warnings);
     }
 
     [Fact]

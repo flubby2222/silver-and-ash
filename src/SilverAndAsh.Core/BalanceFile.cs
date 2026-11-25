@@ -117,6 +117,9 @@ public static class BalanceFile
         ["grates.blockHeight"] = GrateTravel.OpenHeight,
         ["statusEffects.marked.bonus"] = 1,
         ["statusEffects.marked.seconds"] = 30,
+        ["statusEffects.cleansingFlame.seconds"] = 30,
+        ["statusEffects.cleansingFlame.damagePerSecond"] = 100,
+        ["statusEffects.cleansingFlame.tickSeconds"] = 5,
         ["statusEffects.weaponShare"] = 1,
         ["statusEffects.weaponHitChance.worn"] = 1,
         ["statusEffects.weaponHitChance.forged"] = 1,
@@ -152,6 +155,7 @@ public static class BalanceFile
         ("chests.king", "silverMin", "silverMax"),
         ("chests.vampire", "silverMin", "silverMax"),
         ("hearing", "nearDistance", "range"),
+        ("statusEffects.cleansingFlame", "tickSeconds", "seconds"),   // at least one pulse while it burns
     ];
 
     /// <summary>Reads the file at <paramref name="path"/>. A missing or unreadable file gives the standard values.</summary>

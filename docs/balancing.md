@@ -102,6 +102,24 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 25.11.2026 (#507, Cleansing Flame, vorläufig)
+
+**Anlass:** Issue #507. Zweiter Statuseffekt nach *Marked*: Die Cleansing Flame brennt einen Gegner in Pulsen. Gefundene Waffen würfeln seither zwischen *Marked* und *Cleansing Flame*.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `statusEffects.cleansingFlame.seconds` | – | 2 s (höchstens 30) | Wert aus dem Issue. Erneutes Auslösen verlängert auf die volle Dauer, stapelt nicht. |
+| `statusEffects.cleansingFlame.damagePerSecond` | – | 5 (höchstens 100, **vorläufig**) | Wert aus dem Issue: 10 Schaden über die ganze Dauer, ein Viertel eines Klingenschlags. |
+| `statusEffects.cleansingFlame.tickSeconds` | – | 0,5 s (höchstens 5, nie länger als `seconds`, **vorläufig**) | Wert aus dem Issue: 4 Pulse mit 2, 3, 2 und 3 Schaden. Die Pulse runden ganzzahlig und verlieren in der Summe nichts. |
+
+Ist `tickSeconds` länger als `seconds`, nimmt der Lader für beide den Standard. Die Höchstwerte 100 und 5 sind geschätzt, nicht gemessen.
+
+**Report (500 Ebenen), `main` gegen diesen Stand:** zeilengleich bis auf die Laufzeit des Reports. Der Report rechnet Statuseffekte nicht ein; die Cleansing Flame ändert dort nichts.
+
+**Bot-Läufe (`all`, Seeds 1 bis 6), `main` gegen diesen Stand:** Ausgabe zeilengleich (alle Zähler gleich), auf beiden Seiten 0 Befunde, Exit-Code 0. Kein Bot-Modus zählt Statuseffekte; dass die Flamme in seinen Läufen gar nicht vorkommt, ist damit nicht belegt, nur dass sie nichts an Türen, Wegen und Stillstand ändert.
+
+**Offen:** Ein Lauf im Spiel steht aus. Ob 10 Schaden je Flamme spürbar sind, urteilt der Mensch im Spieltest.
+
 ### Zwischenschritt – 25.11.2026 (#503, Erfahrungskurve B)
 
 **Anlass:** Issue #503. Der Mensch hat am 20.11.2026 Variante B der Erfahrungskurve gewählt (Skills-Entwurf, Abschnitt 7, #104 Runde 5): Jede Stufe kostet gleich viel, ab Schwellen mehr. Bisher stieg jede Stufe um den Faktor 1,25.

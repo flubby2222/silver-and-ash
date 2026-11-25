@@ -159,6 +159,9 @@ public sealed record StatusEffectsBalance
     /// <summary>Marked: the enemy takes more damage from every hit.</summary>
     public MarkedBalance Marked { get; init; } = new();
 
+    /// <summary>Cleansing Flame (issue #507): damage over time in pulses.</summary>
+    public CleansingFlameBalance CleansingFlame { get; init; } = new();
+
     /// <summary>Share of found weapons that carry a status effect (skills draft, section 5: 0.3 = 30 %, the same for every tier).</summary>
     public float WeaponShare { get; init; } = 0.3f;
 
@@ -202,6 +205,22 @@ public sealed record MarkedBalance
 
     /// <summary>Seconds a fresh mark lasts.</summary>
     public float Seconds { get; init; } = 3f;
+}
+
+/// <summary>
+/// Cleansing Flame (skills draft, section 4; issue #507): damage over time, dealt in pulses. Refreshing it makes it last
+/// longer, never burn harder.
+/// </summary>
+public sealed record CleansingFlameBalance
+{
+    /// <summary>Seconds a fresh flame lasts.</summary>
+    public float Seconds { get; init; } = 2f;
+
+    /// <summary>Damage per second while it burns, spread over the pulses.</summary>
+    public float DamagePerSecond { get; init; } = 5f;
+
+    /// <summary>Seconds between two pulses of damage (0.5: two pulses per second).</summary>
+    public float TickSeconds { get; init; } = 0.5f;
 }
 
 /// <summary>Experience: what a kill is worth and how much each level needs.</summary>

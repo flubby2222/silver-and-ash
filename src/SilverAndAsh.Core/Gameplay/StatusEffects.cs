@@ -5,6 +5,9 @@ public enum StatusKind
 {
     /// <summary>Marked: the enemy takes more damage from every hit while it lasts (<see cref="MarkedBonus"/>).</summary>
     Marked,
+
+    /// <summary>Cleansing Flame: the enemy takes damage in pulses while it burns (issue #507, <see cref="Gameplay.CleansingFlame"/>).</summary>
+    CleansingFlame,
 }
 
 /// <summary>
@@ -21,11 +24,21 @@ public sealed class StatusEffects
 {
     private readonly Dictionary<StatusKind, StatusEffect> _effects = [];
 
+    // Ticks each lasting effect has already counted down since it was put on; a refresh does not reset it (issue #507:
+    // the pulses of a flame keep their beat, so refreshing it often never holds its damage back).
+    private readonly Dictionary<StatusKind, int> _ages = [];
+
     /// <summary>True while an effect of this kind lasts.</summary>
     public bool Has(StatusKind kind) => _effects.ContainsKey(kind);
 
     /// <summary>The effect of this kind, or null if there is none.</summary>
     public StatusEffect? Get(StatusKind kind) => _effects.TryGetValue(kind, out var effect) ? effect : null;
+
+    /// <summary>
+    /// How many ticks the effect of this kind has already counted down since it was put on - a refresh does not reset
+    /// it. 0 for a fresh effect and for one that does not last.
+    /// </summary>
+    public int AgeOf(StatusKind kind) => _ages.GetValueOrDefault(kind);
 
     /// <summary>
     /// Every effect that lasts, in the order of the kinds - the same order on every machine (online co-op). For the
@@ -48,6 +61,7 @@ public sealed class StatusEffects
             return;
         }
 
+        _ages.TryAdd(kind, 0);
         _effects[kind] = new StatusEffect(ticks, sourcePlayerId, synergy);
     }
 
@@ -69,10 +83,12 @@ public sealed class StatusEffects
             if (effect.TicksLeft > 1)
             {
                 _effects[kind] = effect with { TicksLeft = effect.TicksLeft - 1 };
+                _ages[kind]++;
                 continue;
             }
 
             _effects.Remove(kind);
+            _ages.Remove(kind);
             events.Add(new StatusEnded(targetId, kind));
         }
     }
