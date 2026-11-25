@@ -31,6 +31,10 @@ public static class StatusLooks
         // Grave Chill: Stoff 7 (168, 181, 199), the light frost of variant A of the effects trial piece (issue #616) - the
         // coldest light step of the palette, a blue-grey well apart from the warm flame and the violet mark (issue #508).
         new(StatusKind.GraveChill, EffectColours.Cloth, (168, 181, 199), ShowsTimer: true),
+
+        // Stun: Eisen 6 (163, 175, 187), the silver-grey of variant A of the effects trial piece (issue #509). Close to the
+        // frost of Grave Chill in colour - the effects trial piece tells them apart by shape (sparks circling over the head).
+        new(StatusKind.Stun, EffectColours.Iron, (163, 175, 187), ShowsTimer: true),
     ];
 
     /// <summary>The look of <paramref name="kind"/> in <paramref name="looks"/>; a kind without one is an error of the table.</summary>

@@ -1,7 +1,7 @@
-level BossPositions (83.0000, 0.0000, 33.0000)
-level BatPositions (83.0000, 0.0000, 13.0000)
-level GhoulPositions (77.0000, 0.0000, 53.0000)
-level Width 62
+level BossPositions (89.0000, 0.0000, 33.0000)
+level BatPositions (89.0000, 0.0000, 13.0000)
+level GhoulPositions (83.0000, 0.0000, 53.0000)
+level Width 68
 level Depth 39
 level PlayerStartX 9
 level PlayerStartZ 5
@@ -11,288 +11,311 @@ level WallCutouts WallCutout { X = 16, Z = 6, Side = South, From = 0.0000, To = 
 level WallCutouts WallCutout { X = 20, Z = 6, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 24, Z = 6, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 28, Z = 6, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 37, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 41, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 45, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 49, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 53, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 32, Z = 6, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 40, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 44, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 48, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 52, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 56, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 60, Z = 8, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 12, Z = 16, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 16, Z = 16, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 20, Z = 16, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 24, Z = 16, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 28, Z = 16, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 37, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 41, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 45, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 49, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 53, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 32, Z = 16, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 40, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 44, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 48, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 52, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 56, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 60, Z = 18, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 12, Z = 26, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 16, Z = 26, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 20, Z = 26, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 24, Z = 26, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level WallCutouts WallCutout { X = 28, Z = 26, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 37, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 41, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 45, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 49, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
-level WallCutouts WallCutout { X = 53, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 32, Z = 26, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 40, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 44, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 48, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 52, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 56, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
+level WallCutouts WallCutout { X = 60, Z = 28, Side = South, From = 0.0000, To = 2.0000, Bottom = 0.0000, Top = 3.0000, Behind = (0, 1) }
 level Columns Column { X = 25.0000, Z = 71.0000, Centre = (25.0000, 71.0000) }
 level Columns Column { X = 35.0000, Z = 71.0000, Centre = (35.0000, 71.0000) }
-cells  0 ##############################################################
-cells  1 #########ccc#ccc#ccc################ccc##RRRR#################
-cells  2 #########ccc#ccc#ccc################ccc##RRRR#################
-cells  3 ##########c###c###c##################c####RR##################
-cells  4 #ccccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells  5 #ccccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells  6 #ccccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells  7 #ccccccc#########################RRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells  8 #ccccccc#ccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells  9 #ccc######################################################ccc#
-cells 10 #ccc######################################################ccc#
-cells 11 #ccc#####ccc#ccc#ccc################ccc##RRRR#############ccc#
-cells 12 #ccc#####ccc#ccc#ccc################ccc##RRRR#############ccc#
-cells 13 #ccc######c###c###c##################c####RR##############ccc#
-cells 14 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 15 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 16 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 17 #ccc#ccc#########################RRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 18 #ccc#ccc#ccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 19 #ccc#ccc######################################################
-cells 20 #ccc#ccc######################################################
-cells 21 #ccc#ccc#ccc#ccc#ccc################ccc##RRRR#################
-cells 22 #ccc#ccc#ccc#ccc#ccc################ccc##RRRR#################
-cells 23 #ccc#ccc##c###c###c##################c####RR##################
-cells 24 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 25 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 26 #ccc#ccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 27 #ccc#ccc#########################RRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 28 #ccc#ccc#ccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRccc#
-cells 29 #ccc######################################################ccc#
-cells 30 #cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#
-cells 31 #cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#
-cells 32 #cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#
-cells 33 ##########cccccRRRRR##########################################
-cells 34 ##########cccccRRRRR##########################################
-cells 35 ##########cccccRRRRR##########################################
-cells 36 ##########cccccRRRRR##########################################
-cells 37 ##########cccccRRRRR##########################################
-cells 38 ##############################################################
+cells  0 ####################################################################
+cells  1 #########ccc#ccc#ccc###################ccc##RRRR####################
+cells  2 #########ccc#ccc#ccc###################ccc##RRRR####################
+cells  3 ##########c###c###c#####################c####RR#####################
+cells  4 #cccccccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells  5 #cccccccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells  6 #cccccccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells  7 #ccccccc############################RRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells  8 #ccccccc#cccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells  9 #ccc############################################################ccc#
+cells 10 #ccc############################################################ccc#
+cells 11 #ccc#####ccc#ccc#ccc###################ccc##RRRR################ccc#
+cells 12 #ccc#####ccc#ccc#ccc###################ccc##RRRR################ccc#
+cells 13 #ccc######c###c###c#####################c####RR#################ccc#
+cells 14 #ccc#cccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 15 #ccc#cccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 16 #ccc#cccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 17 #ccc#ccc############################RRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 18 #ccc#ccc#cccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 19 #ccc#ccc############################################################
+cells 20 #ccc#ccc############################################################
+cells 21 #ccc#ccc#ccc#ccc#ccc###################ccc##RRRR####################
+cells 22 #ccc#ccc#ccc#ccc#ccc###################ccc##RRRR####################
+cells 23 #ccc#ccc##c###c###c#####################c####RR#####################
+cells 24 #ccc#cccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 25 #ccc#cccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 26 #ccc#cccccccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 27 #ccc#ccc############################RRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 28 #ccc#ccc#cccccccccccccccccccccccccccRRRRRRRRRRRRRRRRRRRRRRRRRRRRccc#
+cells 29 #ccc############################################################ccc#
+cells 30 #cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#
+cells 31 #cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#
+cells 32 #cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc#
+cells 33 ##########cccccRRRRR################################################
+cells 34 ##########cccccRRRRR################################################
+cells 35 ##########cccccRRRRR################################################
+cells 36 ##########cccccRRRRR################################################
+cells 37 ##########cccccRRRRR################################################
+cells 38 ####################################################################
 surfaces room RoomLook { Wall = A, Floor = A, Ceiling = A }
 surfaces room RoomLook { Wall = B, Floor = B, Ceiling = B }
 surfaces room RoomLook { Wall = C, Floor = C, Ceiling = C }
-looks  0 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks  1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks  2 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks  3 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks  4 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks  5 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks  6 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks  7 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks  8 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks  9 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 10 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 11 AAAAAAAAABBBABBBABBBAAAAAAAAAAAAAAAABBBAABBBBAAAAAAAAAAAAAAAAA
-looks 12 AAAAAAAAABBBABBBABBBAAAAAAAAAAAAAAAABBBAABBBBAAAAAAAAAAAAAAAAA
-looks 13 AAAAAAAAAABAAABAAABAAAAAAAAAAAAAAAAAABAAAABBAAAAAAAAAAAAAAAAAA
-looks 14 AAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
-looks 15 AAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
-looks 16 AAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
-looks 17 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBAAAA
-looks 18 AAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
-looks 19 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 20 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 21 AAAAAAAAACCCACCCACCCAAAAAAAAAAAAAAAACCCAACCCCAAAAAAAAAAAAAAAAA
-looks 22 AAAAAAAAACCCACCCACCCAAAAAAAAAAAAAAAACCCAACCCCAAAAAAAAAAAAAAAAA
-looks 23 AAAAAAAAAACAAACAAACAAAAAAAAAAAAAAAAAACAAAACCAAAAAAAAAAAAAAAAAA
-looks 24 AAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
-looks 25 AAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
-looks 26 AAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
-looks 27 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCAAAA
-looks 28 AAAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
-looks 29 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 30 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 31 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 32 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 33 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 34 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 35 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 36 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 37 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-looks 38 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-section ShowroomSection { Index = 0, Variant = A, CorridorX = 8, RoomX = 33, Length = 25, DoorRow = 3, NorthRow = 4, SouthRow = 8, ArchCorridorRow = 8, ArchCorridorX = 9 }
-section ShowroomSection { Index = 1, Variant = B, CorridorX = 8, RoomX = 33, Length = 25, DoorRow = 13, NorthRow = 14, SouthRow = 18, ArchCorridorRow = 18, ArchCorridorX = 9 }
-section ShowroomSection { Index = 2, Variant = C, CorridorX = 8, RoomX = 33, Length = 25, DoorRow = 23, NorthRow = 24, SouthRow = 28, ArchCorridorRow = 28, ArchCorridorX = 9 }
+looks  0 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks  1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks  2 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks  3 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks  4 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks  5 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks  6 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks  7 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks  8 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks  9 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 10 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 11 AAAAAAAAABBBABBBABBBAAAAAAAAAAAAAAAAAAABBBAABBBBAAAAAAAAAAAAAAAAAAAA
+looks 12 AAAAAAAAABBBABBBABBBAAAAAAAAAAAAAAAAAAABBBAABBBBAAAAAAAAAAAAAAAAAAAA
+looks 13 AAAAAAAAAABAAABAAABAAAAAAAAAAAAAAAAAAAAABAAAABBAAAAAAAAAAAAAAAAAAAAA
+looks 14 AAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
+looks 15 AAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
+looks 16 AAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
+looks 17 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
+looks 18 AAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBAAAA
+looks 19 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 20 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 21 AAAAAAAAACCCACCCACCCAAAAAAAAAAAAAAAAAAACCCAACCCCAAAAAAAAAAAAAAAAAAAA
+looks 22 AAAAAAAAACCCACCCACCCAAAAAAAAAAAAAAAAAAACCCAACCCCAAAAAAAAAAAAAAAAAAAA
+looks 23 AAAAAAAAAACAAACAAACAAAAAAAAAAAAAAAAAAAAACAAAACCAAAAAAAAAAAAAAAAAAAAA
+looks 24 AAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
+looks 25 AAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
+looks 26 AAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
+looks 27 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
+looks 28 AAAAAAAAACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCAAAA
+looks 29 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 30 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 31 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 32 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 33 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 34 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 35 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 36 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 37 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+looks 38 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+section ShowroomSection { Index = 0, Variant = A, CorridorX = 8, RoomX = 36, Length = 28, DoorRow = 3, NorthRow = 4, SouthRow = 8, ArchCorridorRow = 8, ArchCorridorX = 9 }
+section ShowroomSection { Index = 1, Variant = B, CorridorX = 8, RoomX = 36, Length = 28, DoorRow = 13, NorthRow = 14, SouthRow = 18, ArchCorridorRow = 18, ArchCorridorX = 9 }
+section ShowroomSection { Index = 2, Variant = C, CorridorX = 8, RoomX = 36, Length = 28, DoorRow = 23, NorthRow = 24, SouthRow = 28, ArchCorridorRow = 28, ArchCorridorX = 9 }
 placed PlacedPiece { Piece = WallPiece { Label = Wooden door, Kind = Normal }, X = 10, Z = 3, Section = 0, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Locked door, Kind = Locked }, X = 14, Z = 3, Section = 0, Part = Corridor }
-placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 42, Z = 3, Section = 0, Part = Room }
+placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 45, Z = 3, Section = 0, Part = Room }
 placed PlacedPiece { Piece = WallPiece { Label = Cracked wall, Kind = Cracked }, X = 18, Z = 3, Section = 0, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Wooden door, Kind = Normal }, X = 10, Z = 13, Section = 1, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Locked door, Kind = Locked }, X = 14, Z = 13, Section = 1, Part = Corridor }
-placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 42, Z = 13, Section = 1, Part = Room }
+placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 45, Z = 13, Section = 1, Part = Room }
 placed PlacedPiece { Piece = WallPiece { Label = Cracked wall, Kind = Cracked }, X = 18, Z = 13, Section = 1, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Wooden door, Kind = Normal }, X = 10, Z = 23, Section = 2, Part = Corridor }
 placed PlacedPiece { Piece = WallPiece { Label = Locked door, Kind = Locked }, X = 14, Z = 23, Section = 2, Part = Corridor }
-placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 42, Z = 23, Section = 2, Part = Room }
+placed PlacedPiece { Piece = WallPiece { Label = Boss door, Kind = Boss }, X = 45, Z = 23, Section = 2, Part = Room }
 placed PlacedPiece { Piece = WallPiece { Label = Cracked wall, Kind = Cracked }, X = 18, Z = 23, Section = 2, Part = Corridor }
-placed PlacedPiece { Piece = ChestPiece { Label = Beggar chest, Tier = Beggar }, X = 35, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = ChestPiece { Label = Guard chest, Tier = Guard }, X = 35, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = ChestPiece { Label = King chest, Tier = King }, X = 35, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = ChestPiece { Label = Vampire chest, Tier = Vampire }, X = 38, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = StairsPiece { Label = Spiral stairs }, X = 38, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = EnemyPiece { Label = Ghoul, Enemy = Ghoul }, X = 38, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = EnemyPiece { Label = Bat, Enemy = Bat }, X = 41, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = EnemyPiece { Label = Gorm, Enemy = Gorm }, X = 41, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = CrossbowSkeletonPiece { Label = Crossbow skeleton (rest), Stance = Rest }, X = 41, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = CrossbowSkeletonPiece { Label = Crossbow skeleton (announce), Stance = Announce }, X = 44, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = CryptWardenPiece { Label = Crypt warden (rest), Stance = Rest }, X = 44, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = CryptWardenPiece { Label = Crypt warden (announce), Stance = Announce }, X = 44, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = WeaponPiece { Label = Silver Blade (Worn), Weapon = SilverBlade }, X = 47, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = WeaponPiece { Label = Club (Worn), Weapon = Club }, X = 47, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = WeaponPiece { Label = Pistol (Worn), Weapon = Pistol }, X = 47, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = WeaponPiece { Label = Rifle (Forged), Weapon = Rifle }, X = 50, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = WeaponPiece { Label = Blunderbuss (Forged), Weapon = Blunderbuss }, X = 50, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = ItemPiece { Label = Hunter's Boots (Worn), Item = HuntersBoots }, X = 50, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = ItemPiece { Label = Silver Rosary (Forged), Item = SilverRosary }, X = 53, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = ItemPiece { Label = Hunter's Eye (Royal), Item = HuntersEye }, X = 53, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = ItemPiece { Label = Leech (Vampiric), Item = Leech }, X = 53, Z = 26, Section = 2, Part = Room }
-placed PlacedPiece { Piece = LootPiece { Label = Silver, Loot = Silver, Amount = 10 }, X = 56, Z = 6, Section = 0, Part = Room }
-placed PlacedPiece { Piece = ConsumablePiece { Label = Blood vial, Consumable = BloodVial }, X = 56, Z = 16, Section = 1, Part = Room }
-placed PlacedPiece { Piece = ConsumablePiece { Label = Consecrated ammo, Consumable = ConsecratedAmmo }, X = 56, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = ChestPiece { Label = Beggar chest, Tier = Beggar }, X = 38, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = ChestPiece { Label = Guard chest, Tier = Guard }, X = 38, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = ChestPiece { Label = King chest, Tier = King }, X = 38, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = ChestPiece { Label = Vampire chest, Tier = Vampire }, X = 41, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = StairsPiece { Label = Spiral stairs }, X = 41, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = EnemyPiece { Label = Ghoul, Enemy = Ghoul }, X = 41, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = EnemyPiece { Label = Bat, Enemy = Bat }, X = 44, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = EnemyPiece { Label = Gorm, Enemy = Gorm }, X = 44, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = CrossbowSkeletonPiece { Label = Crossbow skeleton (rest), Stance = Rest }, X = 44, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = CrossbowSkeletonPiece { Label = Crossbow skeleton (announce), Stance = Announce }, X = 47, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = CryptWardenPiece { Label = Crypt warden (rest), Stance = Rest }, X = 47, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = CryptWardenPiece { Label = Crypt warden (announce), Stance = Announce }, X = 47, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = WeaponPiece { Label = Silver Blade (Worn), Weapon = SilverBlade }, X = 50, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = WeaponPiece { Label = Club (Worn), Weapon = Club }, X = 50, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = WeaponPiece { Label = Pistol (Worn), Weapon = Pistol }, X = 50, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = WeaponPiece { Label = Rifle (Forged), Weapon = Rifle }, X = 53, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = WeaponPiece { Label = Blunderbuss (Forged), Weapon = Blunderbuss }, X = 53, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = WeaponPiece { Label = Hunting Axe (Royal), Weapon = HuntersAxe }, X = 53, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = ItemPiece { Label = Hunter's Boots (Worn), Item = HuntersBoots }, X = 56, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = ItemPiece { Label = Silver Rosary (Forged), Item = SilverRosary }, X = 56, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = ItemPiece { Label = Hunter's Eye (Royal), Item = HuntersEye }, X = 56, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = ItemPiece { Label = Leech (Vampiric), Item = Leech }, X = 59, Z = 6, Section = 0, Part = Room }
+placed PlacedPiece { Piece = LootPiece { Label = Silver, Loot = Silver, Amount = 10 }, X = 59, Z = 16, Section = 1, Part = Room }
+placed PlacedPiece { Piece = ConsumablePiece { Label = Blood vial, Consumable = BloodVial }, X = 59, Z = 26, Section = 2, Part = Room }
+placed PlacedPiece { Piece = ConsumablePiece { Label = Consecrated ammo, Consumable = ConsecratedAmmo }, X = 62, Z = 6, Section = 0, Part = Room }
 door LevelDoor { X = 10, Z = 3, RoomA = 0, RoomB = 6, Side = North, Kind = Normal, HasGrate = False, MoreCells = [], Cells = [(10, 3)] }
 door LevelDoor { X = 14, Z = 3, RoomA = 0, RoomB = 7, Side = North, Kind = Locked, HasGrate = False, MoreCells = [], Cells = [(14, 3)] }
-door LevelDoor { X = 42, Z = 3, RoomA = 0, RoomB = 8, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(43, 3)], Cells = [(42, 3), (43, 3)] }
+door LevelDoor { X = 45, Z = 3, RoomA = 0, RoomB = 8, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(46, 3)], Cells = [(45, 3), (46, 3)] }
 door LevelDoor { X = 18, Z = 3, RoomA = 0, RoomB = 9, Side = North, Kind = Cracked, HasGrate = False, MoreCells = [], Cells = [(18, 3)] }
 door LevelDoor { X = 10, Z = 13, RoomA = 2, RoomB = 10, Side = North, Kind = Normal, HasGrate = False, MoreCells = [], Cells = [(10, 13)] }
 door LevelDoor { X = 14, Z = 13, RoomA = 2, RoomB = 11, Side = North, Kind = Locked, HasGrate = False, MoreCells = [], Cells = [(14, 13)] }
-door LevelDoor { X = 42, Z = 13, RoomA = 2, RoomB = 12, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(43, 13)], Cells = [(42, 13), (43, 13)] }
+door LevelDoor { X = 45, Z = 13, RoomA = 2, RoomB = 12, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(46, 13)], Cells = [(45, 13), (46, 13)] }
 door LevelDoor { X = 18, Z = 13, RoomA = 2, RoomB = 13, Side = North, Kind = Cracked, HasGrate = False, MoreCells = [], Cells = [(18, 13)] }
 door LevelDoor { X = 10, Z = 23, RoomA = 4, RoomB = 14, Side = North, Kind = Normal, HasGrate = False, MoreCells = [], Cells = [(10, 23)] }
 door LevelDoor { X = 14, Z = 23, RoomA = 4, RoomB = 15, Side = North, Kind = Locked, HasGrate = False, MoreCells = [], Cells = [(14, 23)] }
-door LevelDoor { X = 42, Z = 23, RoomA = 4, RoomB = 16, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(43, 23)], Cells = [(42, 23), (43, 23)] }
+door LevelDoor { X = 45, Z = 23, RoomA = 4, RoomB = 16, Side = North, Kind = Boss, HasGrate = False, MoreCells = [(46, 23)], Cells = [(45, 23), (46, 23)] }
 door LevelDoor { X = 18, Z = 23, RoomA = 4, RoomB = 17, Side = North, Kind = Cracked, HasGrate = False, MoreCells = [], Cells = [(18, 23)] }
-chest ChestPlan { X = 35, Z = 6, Room = 1, Tier = Beggar, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
-chest ChestPlan { X = 35, Z = 16, Room = 3, Tier = Guard, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
-chest ChestPlan { X = 35, Z = 26, Room = 5, Tier = King, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
-chest ChestPlan { X = 38, Z = 6, Room = 1, Tier = Vampire, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
-exhibit Stairs (77.0000, 0.0000, 33.0000)
-exhibit Loot ExhibitLoot { Kind = Silver, Amount = 10, Position = (113.0000, 0.0000, 13.0000) }
+chest ChestPlan { X = 38, Z = 6, Room = 1, Tier = Beggar, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
+chest ChestPlan { X = 38, Z = 16, Room = 3, Tier = Guard, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
+chest ChestPlan { X = 38, Z = 26, Room = 5, Tier = King, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
+chest ChestPlan { X = 41, Z = 6, Room = 1, Tier = Vampire, IsLocked = False, Silver = 5, HasBloodVial = False, RisesWhenCleared = False, Front = PlusZ }
+exhibit Stairs (83.0000, 0.0000, 33.0000)
+exhibit Loot ExhibitLoot { Kind = Silver, Amount = 10, Position = (119.0000, 0.0000, 33.0000) }
 exhibit Loot ExhibitLoot { Kind = Key, Amount = 1, Position = (31.0000, 0.0000, 9.0000) }
 exhibit Loot ExhibitLoot { Kind = Key, Amount = 1, Position = (31.0000, 0.0000, 29.0000) }
 exhibit Loot ExhibitLoot { Kind = Key, Amount = 1, Position = (31.0000, 0.0000, 49.0000) }
-exhibit Consumables ExhibitConsumable { Kind = BloodVial, Position = (113.0000, 0.0000, 33.0000) }
-exhibit Consumables ExhibitConsumable { Kind = ConsecratedAmmo, Position = (113.0000, 0.0000, 53.0000) }
-exhibit Weapons ExhibitWeapon { Kind = SilverBlade, Position = (95.0000, 0.0000, 13.0000) }
-exhibit Weapons ExhibitWeapon { Kind = Club, Position = (95.0000, 0.0000, 33.0000) }
-exhibit Weapons ExhibitWeapon { Kind = Pistol, Position = (95.0000, 0.0000, 53.0000) }
-exhibit Weapons ExhibitWeapon { Kind = Rifle, Position = (101.0000, 0.0000, 13.0000) }
-exhibit Weapons ExhibitWeapon { Kind = Blunderbuss, Position = (101.0000, 0.0000, 33.0000) }
-exhibit Items ExhibitItem { Kind = HuntersBoots, Position = (101.0000, 0.0000, 53.0000) }
-exhibit Items ExhibitItem { Kind = SilverRosary, Position = (107.0000, 0.0000, 13.0000) }
-exhibit Items ExhibitItem { Kind = HuntersEye, Position = (107.0000, 0.0000, 33.0000) }
-exhibit Items ExhibitItem { Kind = Leech, Position = (107.0000, 0.0000, 53.0000) }
-exhibit CrossbowSkeletons ExhibitCrossbowSkeleton { Stance = Rest, Position = (83.0000, 0.0000, 53.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit CrossbowSkeletons ExhibitCrossbowSkeleton { Stance = Announce, Position = (89.0000, 0.0000, 13.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit CryptWardens ExhibitCryptWarden { Stance = Rest, Position = (89.0000, 0.0000, 33.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit CryptWardens ExhibitCryptWarden { Stance = Announce, Position = (89.0000, 0.0000, 53.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit Consumables ExhibitConsumable { Kind = BloodVial, Position = (119.0000, 0.0000, 53.0000) }
+exhibit Consumables ExhibitConsumable { Kind = ConsecratedAmmo, Position = (125.0000, 0.0000, 13.0000) }
+exhibit Weapons ExhibitWeapon { Kind = SilverBlade, Position = (101.0000, 0.0000, 13.0000) }
+exhibit Weapons ExhibitWeapon { Kind = Club, Position = (101.0000, 0.0000, 33.0000) }
+exhibit Weapons ExhibitWeapon { Kind = Pistol, Position = (101.0000, 0.0000, 53.0000) }
+exhibit Weapons ExhibitWeapon { Kind = Rifle, Position = (107.0000, 0.0000, 13.0000) }
+exhibit Weapons ExhibitWeapon { Kind = Blunderbuss, Position = (107.0000, 0.0000, 33.0000) }
+exhibit Weapons ExhibitWeapon { Kind = HuntersAxe, Position = (107.0000, 0.0000, 53.0000) }
+exhibit Items ExhibitItem { Kind = HuntersBoots, Position = (113.0000, 0.0000, 13.0000) }
+exhibit Items ExhibitItem { Kind = SilverRosary, Position = (113.0000, 0.0000, 33.0000) }
+exhibit Items ExhibitItem { Kind = HuntersEye, Position = (113.0000, 0.0000, 53.0000) }
+exhibit Items ExhibitItem { Kind = Leech, Position = (119.0000, 0.0000, 13.0000) }
+exhibit CrossbowSkeletons ExhibitCrossbowSkeleton { Stance = Rest, Position = (89.0000, 0.0000, 53.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit CrossbowSkeletons ExhibitCrossbowSkeleton { Stance = Announce, Position = (95.0000, 0.0000, 13.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit CryptWardens ExhibitCryptWarden { Stance = Rest, Position = (95.0000, 0.0000, 33.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit CryptWardens ExhibitCryptWarden { Stance = Announce, Position = (95.0000, 0.0000, 53.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 3.5000, Position = (25.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 3.5000, Position = (33.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (71.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (79.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (95.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (103.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (111.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (77.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (85.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (101.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (109.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (117.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = A, CeilingHeight = 6.0000, Position = (125.0000, 0.0000, 8.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 3.5000, Position = (25.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 3.5000, Position = (33.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (71.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (79.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (95.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (103.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (111.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (77.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (85.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (101.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (109.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (117.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = B, CeilingHeight = 6.0000, Position = (125.0000, 0.0000, 28.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 3.5000, Position = (25.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
 exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 3.5000, Position = (33.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (71.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (79.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (95.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (103.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (111.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
-exhibit CeilingArches ExhibitCeilingArch { Variant = A, Position = (61.0000, 0.0000, 17.0000), Facing = (1.0000, 0.0000, 0.0000) }
-exhibit CeilingArches ExhibitCeilingArch { Variant = A, Position = (57.0000, 0.0000, 17.0000), Facing = (1.0000, 0.0000, 0.0000) }
-exhibit CeilingArches ExhibitCeilingArch { Variant = A, Position = (53.0000, 0.0000, 17.0000), Facing = (1.0000, 0.0000, 0.0000) }
-exhibit CeilingArches ExhibitCeilingArch { Variant = B, Position = (61.0000, 0.0000, 37.0000), Facing = (1.0000, 0.0000, 0.0000) }
-exhibit CeilingArches ExhibitCeilingArch { Variant = B, Position = (57.0000, 0.0000, 37.0000), Facing = (1.0000, 0.0000, 0.0000) }
-exhibit CeilingArches ExhibitCeilingArch { Variant = B, Position = (53.0000, 0.0000, 37.0000), Facing = (1.0000, 0.0000, 0.0000) }
-exhibit CeilingArches ExhibitCeilingArch { Variant = C, Position = (61.0000, 0.0000, 57.0000), Facing = (1.0000, 0.0000, 0.0000) }
-exhibit CeilingArches ExhibitCeilingArch { Variant = C, Position = (57.0000, 0.0000, 57.0000), Facing = (1.0000, 0.0000, 0.0000) }
-exhibit CeilingArches ExhibitCeilingArch { Variant = C, Position = (53.0000, 0.0000, 57.0000), Facing = (1.0000, 0.0000, 0.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (77.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (85.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (101.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (109.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (117.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit WallPillars ExhibitWallPillar { Variant = C, CeilingHeight = 6.0000, Position = (125.0000, 0.0000, 48.0000), Facing = (0.0000, 0.0000, 1.0000) }
+exhibit CeilingArches ExhibitCeilingArch { Variant = A, Position = (67.0000, 0.0000, 17.0000), Facing = (1.0000, 0.0000, 0.0000) }
+exhibit CeilingArches ExhibitCeilingArch { Variant = A, Position = (63.0000, 0.0000, 17.0000), Facing = (1.0000, 0.0000, 0.0000) }
+exhibit CeilingArches ExhibitCeilingArch { Variant = A, Position = (59.0000, 0.0000, 17.0000), Facing = (1.0000, 0.0000, 0.0000) }
+exhibit CeilingArches ExhibitCeilingArch { Variant = B, Position = (67.0000, 0.0000, 37.0000), Facing = (1.0000, 0.0000, 0.0000) }
+exhibit CeilingArches ExhibitCeilingArch { Variant = B, Position = (63.0000, 0.0000, 37.0000), Facing = (1.0000, 0.0000, 0.0000) }
+exhibit CeilingArches ExhibitCeilingArch { Variant = B, Position = (59.0000, 0.0000, 37.0000), Facing = (1.0000, 0.0000, 0.0000) }
+exhibit CeilingArches ExhibitCeilingArch { Variant = C, Position = (67.0000, 0.0000, 57.0000), Facing = (1.0000, 0.0000, 0.0000) }
+exhibit CeilingArches ExhibitCeilingArch { Variant = C, Position = (63.0000, 0.0000, 57.0000), Facing = (1.0000, 0.0000, 0.0000) }
+exhibit CeilingArches ExhibitCeilingArch { Variant = C, Position = (59.0000, 0.0000, 57.0000), Facing = (1.0000, 0.0000, 0.0000) }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (21.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (29.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (37.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (45.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (53.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (61.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (71.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (79.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (87.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (95.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (103.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (111.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (69.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (77.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (85.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (93.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (101.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (109.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (117.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (125.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (21.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (29.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (37.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (45.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (53.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (61.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (71.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (79.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (87.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (95.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (103.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (111.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (69.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (77.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (85.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (93.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (101.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (109.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (117.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (125.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (21.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (29.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (37.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (45.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (53.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (61.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (71.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (79.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (87.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (95.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (103.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (111.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (69.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (77.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (85.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (93.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (101.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (109.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (117.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (125.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Flat, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (25.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (33.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Candles }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (41.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = Bottles }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (49.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Skulls }
 exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (57.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (75.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (83.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Bottles }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (91.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = Bottles }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (99.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (107.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Corridor, Position = (65.0000, 0.0000, 14.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (81.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (89.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Bottles }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (97.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = Bottles }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (105.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (113.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = A, Size = Room, Position = (121.0000, 0.0000, 18.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (25.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (33.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Candles }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (41.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = Bottles }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (49.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Skulls }
 exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (57.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (75.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (83.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Bottles }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (91.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = Bottles }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (99.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (107.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Corridor, Position = (65.0000, 0.0000, 34.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (81.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (89.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Bottles }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (97.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = Bottles }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (105.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (113.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = B, Size = Room, Position = (121.0000, 0.0000, 38.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (25.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (33.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Candles }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (41.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = Bottles }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (49.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Skulls }
 exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (57.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (75.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (83.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Bottles }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (91.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = Bottles }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (99.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
-exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (107.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
-exhibit Portcullises ExhibitPortcullis { Variant = A, X = 37, Z = 3, Side = North, Position = (75.0000, 0.0000, 7.0000) }
-exhibit Portcullises ExhibitPortcullis { Variant = B, X = 37, Z = 13, Side = North, Position = (75.0000, 0.0000, 27.0000) }
-exhibit Portcullises ExhibitPortcullis { Variant = C, X = 37, Z = 23, Side = North, Position = (75.0000, 0.0000, 47.0000) }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Corridor, Position = (65.0000, 0.0000, 54.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (81.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (89.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = Bottles }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (97.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = Bottles }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (105.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (113.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = Deep, Filling = None }
+exhibit WallNiches ExhibitWallNiche { Variant = C, Size = Room, Position = (121.0000, 0.0000, 58.0000), Facing = (0.0000, 0.0000, -1.0000), Form = DeepWithShelf, Filling = None }
+exhibit Portcullises ExhibitPortcullis { Variant = A, X = 40, Z = 3, Side = North, Position = (81.0000, 0.0000, 7.0000) }
+exhibit Portcullises ExhibitPortcullis { Variant = B, X = 40, Z = 13, Side = North, Position = (81.0000, 0.0000, 27.0000) }
+exhibit Portcullises ExhibitPortcullis { Variant = C, X = 40, Z = 23, Side = North, Position = (81.0000, 0.0000, 47.0000) }
 exhibit Columns ExhibitColumn { Stage = Intact, Position = (31.0000, 0.0000, 75.0000), Yaw = 1.9199 }
 exhibit Columns ExhibitColumn { Stage = Hit1, Position = (33.0000, 0.0000, 75.0000), Yaw = 1.9199 }
 exhibit Columns ExhibitColumn { Stage = Hit2, Position = (37.0000, 0.0000, 75.0000), Yaw = 1.9199 }
@@ -300,94 +323,95 @@ exhibit Columns ExhibitColumn { Stage = Broken, Position = (39.0000, 0.0000, 75.
 exhibit Columns ExhibitColumn { Stage = Falling, Position = (35.0000, 0.0000, 67.0000), Yaw = 0.3491 }
 label ShowroomLabel { Text = Wooden door, Position = (21.0000, 3.1000, 8.3000) }
 label ShowroomLabel { Text = Locked door, Position = (29.0000, 3.1000, 8.3000) }
-label ShowroomLabel { Text = Boss door, Position = (86.0000, 3.1000, 8.3000) }
+label ShowroomLabel { Text = Boss door, Position = (92.0000, 3.1000, 8.3000) }
 label ShowroomLabel { Text = Cracked wall, Position = (37.0000, 3.1000, 8.3000) }
 label ShowroomLabel { Text = Wooden door, Position = (21.0000, 3.1000, 28.3000) }
 label ShowroomLabel { Text = Locked door, Position = (29.0000, 3.1000, 28.3000) }
-label ShowroomLabel { Text = Boss door, Position = (86.0000, 3.1000, 28.3000) }
+label ShowroomLabel { Text = Boss door, Position = (92.0000, 3.1000, 28.3000) }
 label ShowroomLabel { Text = Cracked wall, Position = (37.0000, 3.1000, 28.3000) }
 label ShowroomLabel { Text = Wooden door, Position = (21.0000, 3.1000, 48.3000) }
 label ShowroomLabel { Text = Locked door, Position = (29.0000, 3.1000, 48.3000) }
-label ShowroomLabel { Text = Boss door, Position = (86.0000, 3.1000, 48.3000) }
+label ShowroomLabel { Text = Boss door, Position = (92.0000, 3.1000, 48.3000) }
 label ShowroomLabel { Text = Cracked wall, Position = (37.0000, 3.1000, 48.3000) }
-label ShowroomLabel { Text = Beggar chest, Position = (71.0000, 1.2000, 13.0000) }
-label ShowroomLabel { Text = Guard chest, Position = (71.0000, 1.2000, 33.0000) }
-label ShowroomLabel { Text = King chest, Position = (71.0000, 1.2000, 53.0000) }
-label ShowroomLabel { Text = Vampire chest, Position = (77.0000, 1.2000, 13.0000) }
-label ShowroomLabel { Text = Spiral stairs, Position = (77.0000, 5.6000, 33.0000) }
-label ShowroomLabel { Text = Ghoul, Position = (77.0000, 1.5000, 53.0000) }
-label ShowroomLabel { Text = Bat, Position = (83.0000, 3.2000, 13.0000) }
-label ShowroomLabel { Text = Gorm, Position = (83.0000, 3.8000, 33.0000) }
-label ShowroomLabel { Text = Crossbow skeleton (rest), Position = (83.0000, 2.3600, 53.0000) }
-label ShowroomLabel { Text = Crossbow skeleton (announce), Position = (89.0000, 2.3600, 13.0000) }
-label ShowroomLabel { Text = Crypt warden (rest), Position = (89.0000, 3.0200, 33.0000) }
-label ShowroomLabel { Text = Crypt warden (announce), Position = (89.0000, 3.0200, 53.0000) }
-label ShowroomLabel { Text = Silver Blade (Worn), Position = (95.0000, 0.9000, 13.0000) }
-label ShowroomLabel { Text = Club (Worn), Position = (95.0000, 0.9000, 33.0000) }
-label ShowroomLabel { Text = Pistol (Worn), Position = (95.0000, 0.9000, 53.0000) }
-label ShowroomLabel { Text = Rifle (Forged), Position = (101.0000, 0.9000, 13.0000) }
-label ShowroomLabel { Text = Blunderbuss (Forged), Position = (101.0000, 0.9000, 33.0000) }
-label ShowroomLabel { Text = Hunter's Boots (Worn), Position = (101.0000, 0.9000, 53.0000) }
-label ShowroomLabel { Text = Silver Rosary (Forged), Position = (107.0000, 0.9000, 13.0000) }
-label ShowroomLabel { Text = Hunter's Eye (Royal), Position = (107.0000, 0.9000, 33.0000) }
-label ShowroomLabel { Text = Leech (Vampiric), Position = (107.0000, 0.9000, 53.0000) }
-label ShowroomLabel { Text = Silver, Position = (113.0000, 0.9000, 13.0000) }
-label ShowroomLabel { Text = Blood vial, Position = (113.0000, 0.9000, 33.0000) }
-label ShowroomLabel { Text = Consecrated ammo, Position = (113.0000, 0.9000, 53.0000) }
+label ShowroomLabel { Text = Beggar chest, Position = (77.0000, 1.2000, 13.0000) }
+label ShowroomLabel { Text = Guard chest, Position = (77.0000, 1.2000, 33.0000) }
+label ShowroomLabel { Text = King chest, Position = (77.0000, 1.2000, 53.0000) }
+label ShowroomLabel { Text = Vampire chest, Position = (83.0000, 1.2000, 13.0000) }
+label ShowroomLabel { Text = Spiral stairs, Position = (83.0000, 5.6000, 33.0000) }
+label ShowroomLabel { Text = Ghoul, Position = (83.0000, 1.5000, 53.0000) }
+label ShowroomLabel { Text = Bat, Position = (89.0000, 3.2000, 13.0000) }
+label ShowroomLabel { Text = Gorm, Position = (89.0000, 3.8000, 33.0000) }
+label ShowroomLabel { Text = Crossbow skeleton (rest), Position = (89.0000, 2.3600, 53.0000) }
+label ShowroomLabel { Text = Crossbow skeleton (announce), Position = (95.0000, 2.3600, 13.0000) }
+label ShowroomLabel { Text = Crypt warden (rest), Position = (95.0000, 3.0200, 33.0000) }
+label ShowroomLabel { Text = Crypt warden (announce), Position = (95.0000, 3.0200, 53.0000) }
+label ShowroomLabel { Text = Silver Blade (Worn), Position = (101.0000, 0.9000, 13.0000) }
+label ShowroomLabel { Text = Club (Worn), Position = (101.0000, 0.9000, 33.0000) }
+label ShowroomLabel { Text = Pistol (Worn), Position = (101.0000, 0.9000, 53.0000) }
+label ShowroomLabel { Text = Rifle (Forged), Position = (107.0000, 0.9000, 13.0000) }
+label ShowroomLabel { Text = Blunderbuss (Forged), Position = (107.0000, 0.9000, 33.0000) }
+label ShowroomLabel { Text = Hunting Axe (Royal), Position = (107.0000, 0.9000, 53.0000) }
+label ShowroomLabel { Text = Hunter's Boots (Worn), Position = (113.0000, 0.9000, 13.0000) }
+label ShowroomLabel { Text = Silver Rosary (Forged), Position = (113.0000, 0.9000, 33.0000) }
+label ShowroomLabel { Text = Hunter's Eye (Royal), Position = (113.0000, 0.9000, 53.0000) }
+label ShowroomLabel { Text = Leech (Vampiric), Position = (119.0000, 0.9000, 13.0000) }
+label ShowroomLabel { Text = Silver, Position = (119.0000, 0.9000, 33.0000) }
+label ShowroomLabel { Text = Blood vial, Position = (119.0000, 0.9000, 53.0000) }
+label ShowroomLabel { Text = Consecrated ammo, Position = (125.0000, 0.9000, 13.0000) }
 label ShowroomLabel { Text = Key, Position = (31.0000, 0.9000, 9.0000) }
 label ShowroomLabel { Text = Key, Position = (31.0000, 0.9000, 29.0000) }
 label ShowroomLabel { Text = Key, Position = (31.0000, 0.9000, 49.0000) }
 label ShowroomLabel { Text = Wall A - corridor 3.5 m, Position = (17.0000, 2.6000, 11.0000) }
-label ShowroomLabel { Text = Wall A - room 6 m, Position = (67.0000, 2.6000, 13.0000) }
+label ShowroomLabel { Text = Wall A - room 6 m, Position = (73.0000, 2.6000, 13.0000) }
 label ShowroomLabel { Text = Wall B - corridor 3.5 m, Position = (17.0000, 2.6000, 31.0000) }
-label ShowroomLabel { Text = Wall B - room 6 m, Position = (67.0000, 2.6000, 33.0000) }
+label ShowroomLabel { Text = Wall B - room 6 m, Position = (73.0000, 2.6000, 33.0000) }
 label ShowroomLabel { Text = Wall C - corridor 3.5 m, Position = (17.0000, 2.6000, 51.0000) }
-label ShowroomLabel { Text = Wall C - room 6 m, Position = (67.0000, 2.6000, 53.0000) }
+label ShowroomLabel { Text = Wall C - room 6 m, Position = (73.0000, 2.6000, 53.0000) }
 label ShowroomLabel { Text = Pillar 3.5 m, Position = (25.0000, 2.4000, 8.6000) }
-label ShowroomLabel { Text = Pillar 6 m, Position = (71.0000, 2.4000, 8.6000) }
+label ShowroomLabel { Text = Pillar 6 m, Position = (77.0000, 2.4000, 8.6000) }
 label ShowroomLabel { Text = Pillar 3.5 m, Position = (25.0000, 2.4000, 28.6000) }
-label ShowroomLabel { Text = Pillar 6 m, Position = (71.0000, 2.4000, 28.6000) }
+label ShowroomLabel { Text = Pillar 6 m, Position = (77.0000, 2.4000, 28.6000) }
 label ShowroomLabel { Text = Pillar 3.5 m, Position = (25.0000, 2.4000, 48.6000) }
-label ShowroomLabel { Text = Pillar 6 m, Position = (71.0000, 2.4000, 48.6000) }
-label ShowroomLabel { Text = Ceiling arch, Position = (65.0000, 2.6000, 17.0000) }
-label ShowroomLabel { Text = Ceiling arch, Position = (65.0000, 2.6000, 37.0000) }
-label ShowroomLabel { Text = Ceiling arch, Position = (65.0000, 2.6000, 57.0000) }
+label ShowroomLabel { Text = Pillar 6 m, Position = (77.0000, 2.4000, 48.6000) }
+label ShowroomLabel { Text = Ceiling arch, Position = (71.0000, 2.6000, 17.0000) }
+label ShowroomLabel { Text = Ceiling arch, Position = (71.0000, 2.6000, 37.0000) }
+label ShowroomLabel { Text = Ceiling arch, Position = (71.0000, 2.6000, 57.0000) }
 label ShowroomLabel { Text = Niche 3.5 m, Position = (21.0000, 2.6000, 13.4000) }
-label ShowroomLabel { Text = Niche 6 m, Position = (71.0000, 2.6000, 17.4000) }
+label ShowroomLabel { Text = Niche 6 m, Position = (77.0000, 2.6000, 17.4000) }
 label ShowroomLabel { Text = Niche 3.5 m, Position = (21.0000, 2.6000, 33.4000) }
-label ShowroomLabel { Text = Niche 6 m, Position = (71.0000, 2.6000, 37.4000) }
+label ShowroomLabel { Text = Niche 6 m, Position = (77.0000, 2.6000, 37.4000) }
 label ShowroomLabel { Text = Niche 3.5 m, Position = (21.0000, 2.6000, 53.4000) }
-label ShowroomLabel { Text = Niche 6 m, Position = (71.0000, 2.6000, 57.4000) }
-label ShowroomLabel { Text = Portcullis, Position = (75.0000, 4.1000, 8.3000) }
-label ShowroomLabel { Text = Portcullis, Position = (75.0000, 4.1000, 28.3000) }
-label ShowroomLabel { Text = Portcullis, Position = (75.0000, 4.1000, 48.3000) }
+label ShowroomLabel { Text = Niche 6 m, Position = (77.0000, 2.6000, 57.4000) }
+label ShowroomLabel { Text = Portcullis, Position = (81.0000, 4.1000, 8.3000) }
+label ShowroomLabel { Text = Portcullis, Position = (81.0000, 4.1000, 28.3000) }
+label ShowroomLabel { Text = Portcullis, Position = (81.0000, 4.1000, 48.3000) }
 label ShowroomLabel { Text = Deep niche, Position = (25.0000, 2.6000, 13.4000) }
 label ShowroomLabel { Text = Deep niche, shelf, Position = (33.0000, 2.6000, 13.4000) }
-label ShowroomLabel { Text = Deep niche, Position = (75.0000, 2.6000, 17.4000) }
-label ShowroomLabel { Text = Deep niche, shelf, Position = (83.0000, 2.6000, 17.4000) }
+label ShowroomLabel { Text = Deep niche, Position = (81.0000, 2.6000, 17.4000) }
+label ShowroomLabel { Text = Deep niche, shelf, Position = (89.0000, 2.6000, 17.4000) }
 label ShowroomLabel { Text = Deep niche, Position = (25.0000, 2.6000, 33.4000) }
 label ShowroomLabel { Text = Deep niche, shelf, Position = (33.0000, 2.6000, 33.4000) }
-label ShowroomLabel { Text = Deep niche, Position = (75.0000, 2.6000, 37.4000) }
-label ShowroomLabel { Text = Deep niche, shelf, Position = (83.0000, 2.6000, 37.4000) }
+label ShowroomLabel { Text = Deep niche, Position = (81.0000, 2.6000, 37.4000) }
+label ShowroomLabel { Text = Deep niche, shelf, Position = (89.0000, 2.6000, 37.4000) }
 label ShowroomLabel { Text = Deep niche, Position = (25.0000, 2.6000, 53.4000) }
 label ShowroomLabel { Text = Deep niche, shelf, Position = (33.0000, 2.6000, 53.4000) }
-label ShowroomLabel { Text = Deep niche, Position = (75.0000, 2.6000, 57.4000) }
-label ShowroomLabel { Text = Deep niche, shelf, Position = (83.0000, 2.6000, 57.4000) }
+label ShowroomLabel { Text = Deep niche, Position = (81.0000, 2.6000, 57.4000) }
+label ShowroomLabel { Text = Deep niche, shelf, Position = (89.0000, 2.6000, 57.4000) }
 label ShowroomLabel { Text = Candles, Position = (33.0000, 0.2500, 13.4000) }
 label ShowroomLabel { Text = Bottles, Position = (41.0000, 0.2500, 13.4000) }
 label ShowroomLabel { Text = Skulls, Position = (49.0000, 0.2500, 13.4000) }
-label ShowroomLabel { Text = Bottles, Position = (83.0000, 0.2500, 17.4000) }
-label ShowroomLabel { Text = Bottles, Position = (91.0000, 0.2500, 17.4000) }
+label ShowroomLabel { Text = Bottles, Position = (89.0000, 0.2500, 17.4000) }
+label ShowroomLabel { Text = Bottles, Position = (97.0000, 0.2500, 17.4000) }
 label ShowroomLabel { Text = Candles, Position = (33.0000, 0.2500, 33.4000) }
 label ShowroomLabel { Text = Bottles, Position = (41.0000, 0.2500, 33.4000) }
 label ShowroomLabel { Text = Skulls, Position = (49.0000, 0.2500, 33.4000) }
-label ShowroomLabel { Text = Bottles, Position = (83.0000, 0.2500, 37.4000) }
-label ShowroomLabel { Text = Bottles, Position = (91.0000, 0.2500, 37.4000) }
+label ShowroomLabel { Text = Bottles, Position = (89.0000, 0.2500, 37.4000) }
+label ShowroomLabel { Text = Bottles, Position = (97.0000, 0.2500, 37.4000) }
 label ShowroomLabel { Text = Candles, Position = (33.0000, 0.2500, 53.4000) }
 label ShowroomLabel { Text = Bottles, Position = (41.0000, 0.2500, 53.4000) }
 label ShowroomLabel { Text = Skulls, Position = (49.0000, 0.2500, 53.4000) }
-label ShowroomLabel { Text = Bottles, Position = (83.0000, 0.2500, 57.4000) }
-label ShowroomLabel { Text = Bottles, Position = (91.0000, 0.2500, 57.4000) }
+label ShowroomLabel { Text = Bottles, Position = (89.0000, 0.2500, 57.4000) }
+label ShowroomLabel { Text = Bottles, Position = (97.0000, 0.2500, 57.4000) }
 label ShowroomLabel { Text = Column 3.5 m, Position = (25.0000, 2.6000, 69.9000) }
 label ShowroomLabel { Text = Column 6 m, Position = (35.0000, 2.6000, 69.9000) }
 label ShowroomLabel { Text = Intact, Position = (31.0000, 2.6000, 73.9000) }

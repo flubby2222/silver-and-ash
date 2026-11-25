@@ -345,7 +345,7 @@ public sealed class Gorm : IEnemy
         switch (State)
         {
             case GormState.Walking:
-                Walk(level, target, obstacles, events);
+                WalkUnlessStaggering(level, target, obstacles, events);
                 break;
 
             case GormState.WindingUp:
@@ -525,6 +525,19 @@ public sealed class Gorm : IEnemy
     // buttresses are no floor (issue #627).
     private static bool InPortalStone(Level level, float x, float z) =>
         level.Portals.Any(portal => portal.Covers(new Vector2(x, z), 0f));
+
+    // Issue #509: a stun only makes him stagger - while it lasts he stands and starts no attack. It reaches him only
+    // here, while he walks: a wind-up, an attack and a pause go on as if nothing had happened.
+    private void WalkUnlessStaggering(Level level, Player? target, IReadOnlyList<CylinderBody> obstacles, ICollection<GameEvent> events)
+    {
+        if (Stun.Holds(Status))
+        {
+            Stand(level, obstacles);
+            return;
+        }
+
+        Walk(level, target, obstacles, events);
+    }
 
     // Walking: close enough for an attack? Otherwise on towards the target (stopping close in front of them).
     private void Walk(Level level, Player? target, IReadOnlyList<CylinderBody> obstacles, ICollection<GameEvent> events)

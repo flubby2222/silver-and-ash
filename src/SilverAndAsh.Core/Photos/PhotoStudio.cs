@@ -198,32 +198,7 @@ public sealed class PhotoStudio
     /// </summary>
     public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight, TextureVariant floor = TextureVariant.A)
     {
-        if (metres <= 0 || metres % (int)Level.CellSize != 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(metres), metres, "The distance must be a positive multiple of the cell size (2 m).");
-        }
-
-        // Room to all sides: the walls stay out of the way of the figure, and the fog shows how far the light reaches.
-        const int Width = 9;
-        const int PlayerRow = 2;
-        var figureRow = PlayerRow + (metres / (int)Level.CellSize);
-        var depth = figureRow + 4;
-        var text = new StringBuilder();
-        for (var z = 0; z < depth; z++)
-        {
-            for (var x = 0; x < Width; x++)
-            {
-                var wall = x == 0 || z == 0 || x == Width - 1 || z == depth - 1;
-                text.Append(wall ? '#'
-                    : x == Width / 2 && z == PlayerRow ? 'P'
-                    : x == Width / 2 && z == figureRow ? figure
-                    : '.');
-            }
-
-            text.Append('\n');
-        }
-
-        var level = LevelParser.Parse(text.ToString());
+        var level = LevelParser.Parse(HallText(metres, x => x == HallWidth / 2 ? figure : null));
         if (ceiling != Cell.DefaultCeilingHeight)
         {
             level = level.WithCells(
@@ -242,6 +217,54 @@ public sealed class PhotoStudio
         var target = world.Targets.Single();
         Face(world.Player, Middle(target.Body));
         return world;
+    }
+
+    /// <summary>
+    /// The bare hall of <see cref="Arena"/> with two figures of <paramref name="figure"/> side by side, 4 m apart (one cell
+    /// left and right of the middle), <paramref name="metres"/> in front of the player, who looks between them - to
+    /// compare two of a kind (issue #509: a chilled and a stunned ghoul).
+    /// </summary>
+    public GameWorld ArenaPair(char figure, int metres)
+    {
+        var level = LevelParser.Parse(HallText(metres, x => Math.Abs(x - (HallWidth / 2)) == 2 ? figure : null));
+        var world = new GameWorld(level, Seed, Balance) { Surfaces = SurfaceVariants.Plain };
+        var middles = world.Targets.Select(target => Middle(target.Body)).ToList();
+        Face(world.Player, (middles[0] + middles[1]) / 2f);
+        return world;
+    }
+
+    // Width of the bare hall of Arena and ArenaPair, in cells.
+    private const int HallWidth = 9;
+
+    // The map of that hall: the player in the middle of row 2, a figure in the row metres in front of them on every
+    // column figureAt gives one for. Room to all sides: the walls stay out of the way of the figures, and the fog shows
+    // how far the light reaches.
+    private static string HallText(int metres, Func<int, char?> figureAt)
+    {
+        if (metres <= 0 || metres % (int)Level.CellSize != 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(metres), metres, "The distance must be a positive multiple of the cell size (2 m).");
+        }
+
+        const int PlayerRow = 2;
+        var figureRow = PlayerRow + (metres / (int)Level.CellSize);
+        var depth = figureRow + 4;
+        var text = new StringBuilder();
+        for (var z = 0; z < depth; z++)
+        {
+            for (var x = 0; x < HallWidth; x++)
+            {
+                var wall = x == 0 || z == 0 || x == HallWidth - 1 || z == depth - 1;
+                text.Append(wall ? '#'
+                    : x == HallWidth / 2 && z == PlayerRow ? 'P'
+                    : z == figureRow && figureAt(x) is { } figure ? figure
+                    : '.');
+            }
+
+            text.Append('\n');
+        }
+
+        return text.ToString();
     }
 
     /// <summary>

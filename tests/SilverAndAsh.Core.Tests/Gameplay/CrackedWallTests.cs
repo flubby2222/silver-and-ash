@@ -147,6 +147,30 @@ public class CrackedWallTests
     }
 
     [Fact]
+    public void A_fully_charged_hunters_axe_breaks_it_too()
+    {
+        var world = World();
+        world.Player.EquipMelee(WeaponKind.HuntersAxe);
+
+        var events = Swing(world, SimulationClock.SecondsToTicks(Balance.Default.HuntersAxe.ChargeTime) + 5);
+
+        Assert.True(world.Doors[0].IsOpen);
+        Assert.Contains(new WallBroken(world.Doors[0].Id, world.Player.Id), events);
+    }
+
+    [Fact]
+    public void A_half_charged_hunters_axe_leaves_it_whole()
+    {
+        var world = World();
+        world.Player.EquipMelee(WeaponKind.HuntersAxe);
+
+        var events = Swing(world, SimulationClock.SecondsToTicks(Balance.Default.HuntersAxe.ChargeTime) / 2);
+
+        Assert.Contains(events, e => e is MeleeSwung);
+        Assert.False(world.Doors[0].IsOpen);
+    }
+
+    [Fact]
     public void A_charged_strike_out_of_the_blades_reach_does_nothing()
     {
         var world = World(far: true);
