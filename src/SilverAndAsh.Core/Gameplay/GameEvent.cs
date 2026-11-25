@@ -169,6 +169,12 @@ public sealed record EquipmentTaken(int DropId, int PlayerId, Equipment Piece, V
 {
     /// <summary>The tier of the piece taken.</summary>
     public ItemTier Tier => Piece.Tier;
+
+    /// <summary>The status effect the weapon carries (issue #505), or null - always null for an item.</summary>
+    public StatusKind? Effect { get; init; }
+
+    /// <summary>The piece's name with its status effect, if it has one ("Club - Marked").</summary>
+    public string Label => WeaponEffects.Label(Piece.Name, Effect);
 }
 
 /// <summary>Player <paramref name="PlayerId"/> gained <paramref name="Amount"/> experience (for a kill).</summary>
@@ -399,6 +405,11 @@ public sealed record BatFlapped(int BatId, Vector3 At) : GameEvent;
 /// <summary>
 /// Player <paramref name="SourcePlayerId"/> put a status effect of <paramref name="Kind"/> on target
 /// <paramref name="TargetId"/> (issue #504) - also when it only refreshed one that already lasted.
+/// <para>
+/// The event names who applied it this time, not who the effect counts for: a shorter refresh keeps the longer
+/// effect and its source. Whoever needs the source (e.g. to credit a kill in co-op) reads <c>Status.Get</c> of the
+/// target, not this event.
+/// </para>
 /// </summary>
 public sealed record StatusApplied(int TargetId, StatusKind Kind, int SourcePlayerId) : GameEvent;
 
