@@ -204,6 +204,65 @@ public class RoomPreviewTests
         Assert.Equal(Seed, next.Seed);
     }
 
+    /// <summary>
+    /// Issue #754: a run in the preview is one room in its lightest line-up - the balancing round must never count it,
+    /// so its end stays out of the run log, for the first world and for the one after it. Only the log changes: the
+    /// player still dies there, sees no course signs and the room is no showroom.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_run_in_the_preview_stays_out_of_the_run_log(bool withEnemies)
+    {
+        var preview = new RoomPreview(Load("combat/l-hall.txt"), withEnemies);
+        var first = preview.NewWorld(Seed, Balance.Default);
+        var folder = Path.Combine(Path.GetTempPath(), $"preview-runs-{Guid.NewGuid():N}");
+        var path = Path.Combine(folder, "runs.log");
+        try
+        {
+            foreach (var world in new[] { first, preview.NextWorld(first) })
+            {
+                var summary = DieInTheRoom(world);
+
+                Assert.True(world.IsTestWorld);
+                Assert.False(world.IsShowroom);
+                Assert.False(world.IsTestCourse);
+                Assert.False(world.PlayersCannotDie);
+                Assert.True(RunLog.AppendRun(path, world, summary.ToLogLine(DateTimeOffset.Now)));
+                Assert.False(File.Exists(path), "The preview wrote a line into the run log.");
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+    }
+
+    // Walks in from the doorway (a combat room seals behind the player), takes a deadly hit and waits, tick by tick, until
+    // the game would show the end screen; then hands out the summary the game writes into the run log.
+    private static RunSummary DieInTheRoom(GameWorld world)
+    {
+        for (var tick = 0; tick < 120; tick++)
+        {
+            world.Tick(PlayerInput.None with { Move = new(0f, 1f) });
+        }
+
+        world.Player.TakeDamage(world.Player.MaxHealth, []);
+        for (var tick = 0; tick < 60 * 60 && !world.ShouldRestart; tick++)
+        {
+            world.Tick(PlayerInput.None);
+        }
+
+        Assert.True(world.ShouldRestart, "The player never died - the test would prove nothing.");
+        var summary = world.TakeEndSummary();
+        Assert.NotNull(summary);
+        Assert.Equal(RunOutcome.Lost, summary.Outcome);
+        return summary;
+    }
+
     [Fact]
     public void The_entrance_photo_is_named_after_the_template()
     {

@@ -172,7 +172,8 @@ public static class RunLog
     /// <summary>
     /// Adds <paramref name="line"/>, the end of a run in <paramref name="world"/>, to the log at <paramref name="path"/> -
     /// unless <paramref name="world"/> is a test world (<see cref="GameWorld.IsTestWorld"/>): a player who cannot die and
-    /// carries every weapon plays no run the balancing round may count, so nothing is written. False only if writing failed.
+    /// carries every weapon, or who plays one room on its own (<see cref="RoomPreview"/>, issue #754), plays no run the
+    /// balancing round may count, so nothing is written. False only if writing failed.
     /// </summary>
     public static bool AppendRun(string path, GameWorld world, string line)
     {

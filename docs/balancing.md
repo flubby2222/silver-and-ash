@@ -98,6 +98,8 @@ Vor jedem Release gibt es eine Balancing-Runde (Regel in `CLAUDE.md`):
 3. Einen ganzen Durchlauf spielen und `runs.log` ansehen.
 4. Nachjustieren.
 
+Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreiben keine Zeile in `runs.log`. Ältere Vorschau-Läufe lassen sich dort nicht sicher erkennen, weil eine Zeile weder Raum noch Startart nennt; einen Hinweis gibt höchstens die Raumzahl (`rooms 0/0`, `0/1` oder `1/1` statt der Kampfräume einer ganzen Ebene 0, wie sie aber auch ein Lauf mit `--level` zeigt).
+
 Ergebnis hier eintragen, neueste Runde oben.
 
 ### Runde 4 – 24.11.2026 (QC-Runde vor dem Spieltest zu 0.12.0, ohne Wertänderung)

@@ -117,12 +117,19 @@ public sealed class RoomPreview
         return ChestPlacement.Place(populated, balance.Chests);
     }
 
-    /// <summary>A world in this preview for <paramref name="seed"/>: a player in the doorway, looking into the room.</summary>
+    /// <summary>
+    /// A world in this preview for <paramref name="seed"/>: a player in the doorway, looking into the room. It is a test
+    /// world (issue #754): one room in its lightest line-up is no run the balancing round may count, so
+    /// <see cref="RunLog.AppendRun"/> leaves it out of the run log. Nothing else changes - the player can still die, and
+    /// no sign of the test course shows.
+    /// </summary>
     public GameWorld NewWorld(int seed, Balance balance)
     {
         var generated = Build(seed, balance);
         var world = new GameWorld(generated.Level, seed, balance, generated.Doors, generated.Rooms, generated.Chests)
         {
+            IsTestWorld = true,
+
             // The doorway looks like the room it opens into, as a door cell does.
             Surfaces = SurfaceVariants.For(generated with { Doors = [new LevelDoor(Entrance.X, Entrance.Z, 0, 0, SideOfRoom)] }),
         };
