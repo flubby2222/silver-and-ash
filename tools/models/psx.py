@@ -49,8 +49,10 @@ class Part:
             loop[self.uv].uv = uv
         return f
 
-    def loft(self, rings, rect, cap_start=True, cap_end=True, closed=False):
-        """Ringe gleicher Eckenzahl verbinden. UV: u rundherum (Ecke 0 = Naht), v entlang. Kappen als Faecher."""
+    def loft(self, rings, rect, cap_start=True, cap_end=True, closed=False, flat_end=False):
+        """Ringe gleicher Eckenzahl verbinden. UV: u rundherum (Ecke 0 = Naht), v entlang. Kappen als Faecher.
+        Die Kappen laufen sonst in eine kleine Spitze aus (ein Viertel des Ringabstands); flat_end=True legt die
+        Spitze der Endkappe in die Ebene des letzten Rings (ebene Kappe, Issue #416: Muendung der Pistole)."""
         u0, v0, u1, v1 = self.rects[rect]
         n = len(rings[0])
         count = len(rings) + (1 if closed else 0)
@@ -74,7 +76,7 @@ class Part:
                 outer = rings[0] if idx == 0 else rings[-1]
                 c_out = sum(outer, V(0, 0, 0)) / n
                 c_in = sum(inner, V(0, 0, 0)) / n
-                pole_game = c_out + (c_out - c_in) * 0.25
+                pole_game = c_out if (flat_end and idx != 0) else c_out + (c_out - c_in) * 0.25
                 pole = self.bm.verts.new(G(pole_game - self.pivot))
                 for k in range(n):
                     faces.append(self._face((ring[k], ring[(k + 1) % n], pole),

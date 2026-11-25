@@ -227,7 +227,7 @@ def build_torso():
     # Eiserner Halsring mit Nieten: rahmt den Kopf von unten.
     ring_c = [V(0, 2.42, 0.3), V(0, 2.5, 0.33), V(0, 2.58, 0.36)]
     p.loft(tube(ring_c, [(0.36, 0.34, 0.32), (0.4, 0.38, 0.36), (0.36, 0.34, 0.32)], 16, ref_up=V(0, 0, -1)),
-           "collar", cap_start=False, cap_end=False)
+           "collar")
     return p
 
 
@@ -301,8 +301,7 @@ def build_arm(s):
     # Handschelle am Handgelenk.
     d = (wr - el).normalized()
     lo.loft(tube([wr - d * 0.08, wr - d * 0.02, wr + d * 0.03],
-                 [(0.21, 0.21, 0.21), (0.22, 0.22, 0.22), (0.21, 0.21, 0.21)], 10, ref_up=V(0, 0, 1)), "iron",
-            cap_start=False, cap_end=False)
+                 [(0.21, 0.21, 0.21), (0.22, 0.22, 0.22), (0.21, 0.21, 0.21)], 10, ref_up=V(0, 0, 1)), "iron")
     # Faust: grosser Block mit Knoecheln, Daumen.
     fist = wr + d * 0.16
     lo.loft(tube([wr, fist, fist + d * 0.14], [(0.16, 0.14, 0.16), (0.19, 0.16, 0.18), (0.16, 0.13, 0.15)], 8,
@@ -329,8 +328,7 @@ def build_club():
                 ref_up=V(1, 0, 0)), "club")
     for t in (0.22, 0.52, 0.8):                          # Eisenbaender
         c = b + axis * t
-        p.loft(tube([c - axis * 0.03, c + axis * 0.03], [(0.255, 0.255, 0.255)] * 2, 10, ref_up=V(1, 0, 0)),
-               "iron", cap_start=False, cap_end=False)
+        p.loft(tube([c - axis * 0.03, c + axis * 0.03], [(0.255, 0.255, 0.255)] * 2, 10, ref_up=V(1, 0, 0)), "iron")
     return p
 
 
