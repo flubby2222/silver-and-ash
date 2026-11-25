@@ -29,6 +29,10 @@ Wandverlauf, v mit der Hoehe) und sind an den Metergrenzen geteilt: die Fugen la
 eine Wand-Textur oder die Palette, passt der Rahmen nicht mehr; ein Test vergleicht door_frame_sources.sha256 mit
 assets/textures/textures.sha256 und schlaegt fehl, bis dieses Skript neu gelaufen ist.
 
+Die Rahmen der Normal- und der Locked-Tuer sind rundum geschlossen (Issue #750): Knoten fuer Knoten kein Rand, keine Kante mit
+mehr als zwei Flaechen (tools/models/check_closed.py, geprueft von einem Test). Die sichtbaren Flaechen bauen stufenportal und
+frame_normal; die Gegenseiten, die an Band, Wand und Boden verdeckt liegen, fuegt close_frame hinzu.
+
 Die Fluegel sind unterhalb des Bogenansatzes rechteckig; darueber traegt jeder seine Haelfte des Kopffelds im Spitzbogen
 (die Eisentuer das ganze). Beim Oeffnen schwingt die Spitze dieses Kopffelds in die Bogenleibung hinein: der Stein verdeckt
 sie, sichtbar bleibt der Fluegel bis zur Leibung. Die Risswand hat nur den Knoten "cracks". Wie das Spiel die Teile bewegt:
@@ -43,7 +47,9 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import bmesh  # noqa: E402
 import bpy  # noqa: E402
+from mathutils import Vector  # noqa: E402
 from psx import (V, G, Part, rects_from_pixels, vnoise, blob, mix, paint_atlas, save_image,  # noqa: E402
                  export_material, export_glb, report_parts)
 
@@ -411,8 +417,8 @@ def plan_prism(part, pts, y0, y1, skip, field, top=True, bottom=False):
 def plate(part, x_in, x_out, y0, y1, sx, sz, field, top=True, bottom=False, back=0.9375):
     """Kaempfer- oder Sockelplatte im Pfostenband, buendig mit der Wandebene (z von `back` bis 1). Sie fuellt nur die Stufe
     zwischen Wandebene und Band; nichts steht vor der Wand (Issue #715: bis dahin ragte sie 1/8 m vor und hing mit ihrer
-    Innenkante frei in der Oeffnung). Offen bleiben Vorderseite, Innenkante, Ober- bzw. Unterseite; Rueck- und Aussenseite
-    liegen an Band und Wand."""
+    Innenkante frei in der Oeffnung). Das Teil ist nur die sichtbare Haut aus Vorderseite, Innenkante und Ober- bzw. Unterseite;
+    Rueck- und Aussenseite des Koerpers (hinter Band und Wand) schliesst close_frame (Issue #750)."""
     pts = [(x_out, 1.0), (x_in, 1.0), (x_in, back), (x_out, back)]
     pts = [(sx * x, sz * z) for x, z in pts]
     plan_prism(part, pts, y0, y1, {2, 3}, field, top, bottom)
@@ -451,8 +457,9 @@ def stufenportal(parts, hw0, R0, spring, zs, z_door, plate_x_in, vertical_reveal
             ro, ri = R0 - width * k, R0 - width * (k + 1)
             arch_ring(part, xc, ro, ri, spring, zs[k], sz, "werk")
             for sx in (1, -1):                                              # Pfostenband des Laufs bis zum Sockel
+                top_y = spring - 0.125                                      # bis an die Unterseite der Kaempferplatte (Issue #750)
                 quad(part, (sx * (hw0 - width * k), SOCKEL, sz * zs[k]), (sx * (hw0 - width * (k + 1)), SOCKEL, sz * zs[k]),
-                     (sx * (hw0 - width * (k + 1)), spring, sz * zs[k]), (sx * (hw0 - width * k), spring, sz * zs[k]), (0, 0, sz), "werk")
+                     (sx * (hw0 - width * (k + 1)), top_y, sz * zs[k]), (sx * (hw0 - width * k), top_y, sz * zs[k]), (0, 0, sz), "werk")
         for k in range(n + 1):
             arc_reveal(part, xc, R0 - width * k, spring, depths[k], depths[k + 1], sz, "stone")
             if vertical_reveals and k >= 1:
@@ -480,10 +487,221 @@ def frame_nodes():
     return Part("portal_front", (0, 0, 0), FRAME_UV), Part("portal_back", (0, 0, 0), FRAME_UV)
 
 
+def flat(part, pts, hint):
+    """Verdeckte Schliessflaeche (Issue #750): ebenes Vieleck, Normale nach `hint`, Textur ueber das ganze Rechteck "stone"
+    gestreckt (ungeteilt, anders als emit; sie liegt im Stein und wird nie gesehen)."""
+    P = [V(*p) for p in pts]
+    n = None
+    for i in range(1, len(P) - 1):
+        c = (P[i] - P[0]).cross(P[i + 1] - P[0])
+        if c.length > 1e-9:
+            n = c
+            break
+    if n is None:
+        raise ValueError(f"flat: Flaeche ohne Ausdehnung {pts}")
+    if n.dot(V(*hint)) < 0:
+        P.reverse()
+        n = -n
+    if len(P) == 3:                                                         # das hoechste Eck zuerst (Hinweis in close_frame)
+        k = max(range(3), key=lambda i: (round(P[i].y, 6), round(abs(P[i].z), 6)))
+        P = P[k:] + P[:k]
+    ax = max(range(3), key=lambda i: abs(n[i]))
+    ua, va = {0: (2, 1), 1: (0, 2), 2: (0, 1)}[ax]
+    lo_u, hi_u = min(p[ua] for p in P), max(p[ua] for p in P)
+    lo_v, hi_v = min(p[va] for p in P), max(p[va] for p in P)
+    u0, v0, u1, v1 = part.rects["stone"]
+    uvs = [(u0 + (u1 - u0) * (p[ua] - lo_u) / max(hi_u - lo_u, 1e-4), v0 + (v1 - v0) * (p[va] - lo_v) / max(hi_v - lo_v, 1e-4))
+           for p in P]
+    part._face([part.bm.verts.new(G(p - part.pivot)) for p in P], uvs)
+
+
+def _ear_clip(P):
+    """Zerlegt ein einfaches Vieleck (2D, gegen den Uhrzeigersinn, Ecken auf einer Geraden erlaubt) in Dreiecke ohne Flaeche null."""
+    idx = list(range(len(P)))
+    tris = []
+
+    def cross(a, b, c):
+        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+    while len(idx) > 3:
+        n = len(idx)
+        for k in range(n):
+            i0, i1, i2 = idx[k - 1], idx[k], idx[(k + 1) % n]
+            a, b, c = P[i0], P[i1], P[i2]
+            if cross(a, b, c) <= 1e-9:
+                continue
+            if any(cross(a, b, P[j]) >= -1e-9 and cross(b, c, P[j]) >= -1e-9 and cross(c, a, P[j]) >= -1e-9
+                   for j in idx if j not in (i0, i1, i2)):
+                continue
+            tris.append((i0, i1, i2))
+            idx.pop(k)
+            break
+        else:
+            raise ValueError("Vieleck nicht zerlegbar")
+    tris.append(tuple(idx))
+    return tris
+
+
+def _triangulate(P, depth):
+    """Zerlegung fuer weld: ein Faecher vom Eck mit der groessten Tiefe `depth` (Abstand zur Tuerebene), wenn das Vieleck
+    konvex ist und der Faecher kein Dreieck mit Flaeche null macht; sonst _ear_clip. Der Faecher legt in jedes Dreieck ein Eck
+    weit weg von der Tuerebene: kein Dreieck liegt dann ganz im schmalen Streifen der Bogenunterseite (|z| < 0,07), den der Test
+    von DoorFrameLook abzaehlt."""
+    n = len(P)
+
+    def cross(a, b, c):
+        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+    sgn = 1 if sum(P[i][0] * P[(i + 1) % n][1] - P[(i + 1) % n][0] * P[i][1] for i in range(n)) > 0 else -1
+    if all(sgn * cross(P[i - 1], P[i], P[(i + 1) % n]) >= -1e-6 for i in range(n)):
+        for hub in sorted(range(n), key=lambda i: (-round(depth[i], 6), i)):
+            tris = [(hub, (hub + k) % n, (hub + k + 1) % n) for k in range(1, n - 1)]
+            if all(sgn * cross(P[a], P[b], P[c]) > 1e-6 for a, b, c in tris):
+                return tris
+    return _ear_clip(P)
+
+
+def weld(part):
+    """T-Ecken schliessen (wie boss_portal.heal): liegt die Ecke einer anderen Flaeche mitten auf einer Kante, wird sie in diese
+    Flaeche eingefuegt (Textur-Koordinate entlang der Kante gemischt). Die so veraenderten Flaechen werden danach selbst in Dreiecke
+    zerlegt, weil die Zerlegung beim Bauen sonst ueber die Ecken auf einer Geraden ein Dreieck mit Flaeche null machen kann, dessen
+    Kanten wieder offen sind. Danach teilen sich beide Flaechen die Kante ohne Luecke."""
+    bm, uvl = part.bm, part.uv
+    # Die Stufe bei y = 2 (Issue #730) ist beim Bauen in zwei Dreiecke zerlegt; die Diagonale wird aufgeloest, sonst bliebe nach dem
+    # Einfuegen der Ecke (a, 2, +-0,07) ein Dreieck ganz im Streifen der Bogenunterseite (|z| < 0,07), den der Test zaehlt.
+    # Blender: z ist oben, y die Tiefe. Die Ecken der beiden Dreiecke liegen noch einzeln (kein Zusammenlegen vor weld).
+    for side in (1, -1):
+        step = [f for f in bm.faces if all(abs(v.co.z - SPRING_N) < 1e-5 and v.co.x * side > 0.86 and abs(v.co.x) < 0.9 and abs(v.co.y) < 0.16 for v in f.verts)]
+        if len(step) != 2:
+            continue
+        corners = {}
+        for f in step:
+            for lp in f.loops:
+                corners.setdefault(tuple(round(c * 1e5) for c in lp.vert.co), (tuple(lp.vert.co), tuple(lp[uvl].uv)))
+        if len(corners) != 4:
+            continue
+        nrm = step[0].normal.copy()
+        cen = sum((Vector(c) for c, _ in corners.values()), Vector()) / 4
+        ring = sorted(corners.values(), key=lambda cu: math.atan2(cu[0][1] - cen.y, cu[0][0] - cen.x))
+        for f in step:
+            bm.faces.remove(f)
+        nf = bm.faces.new([bm.verts.new(Vector(c)) for c, _ in ring])
+        if nf.normal.dot(nrm) < 0:
+            nf.normal_flip()
+        for lp in nf.loops:
+            lp[uvl].uv = corners[tuple(round(c * 1e5) for c in lp.vert.co)][1]
+    seen = {}
+    for v in bm.verts:
+        seen.setdefault(tuple(round(c * 1e5) for c in v.co), tuple(v.co))
+    pts = np.array(list(seen.values()), float)
+    todo = []
+    for f in list(bm.faces):
+        loops = list(f.loops)
+        n = len(loops)
+        out, changed = [], False
+        for i, lp in enumerate(loops):
+            a, b = np.array(lp.vert.co), np.array(loops[(i + 1) % n].vert.co)
+            ua, ub = np.array(lp[uvl].uv), np.array(loops[(i + 1) % n][uvl].uv)
+            out.append((tuple(a), tuple(ua)))
+            ab = b - a
+            L2 = float(ab @ ab)
+            if L2 < 1e-12:
+                continue
+            t = ((pts - a) @ ab) / L2
+            d = np.linalg.norm(pts - (a + np.outer(t, ab)), axis=1)
+            sel = np.where((t > 1e-6) & (t < 1 - 1e-6) & (d < 2e-5))[0]
+            for j in sel[np.argsort(t[sel])]:
+                out.append((tuple(pts[j]), tuple(ua + (ub - ua) * t[j])))
+                changed = True
+        if changed:
+            todo.append((f, out))
+    for f, out in todo:
+        co = np.array([c for c, _ in out], float)
+        nrm = np.zeros(3)
+        for i in range(len(co)):                                              # Newell
+            u, w = co[i], co[(i + 1) % len(co)]
+            nrm += np.array([(u[1] - w[1]) * (u[2] + w[2]), (u[2] - w[2]) * (u[0] + w[0]), (u[0] - w[0]) * (u[1] + w[1])])
+        ax = int(np.argmax(np.abs(nrm)))
+        ua_, va_ = [(1, 2), (2, 0), (0, 1)][ax]
+        sgn = 1.0 if nrm[ax] > 0 else -1.0
+        flat2 = [(c[ua_] * sgn, c[va_]) for c in co]
+        for i0, i1, i2 in _triangulate(flat2, [abs(c[1]) for c in co]):    # Blender: y ist die Tiefe
+            verts = [bm.verts.new(Vector(out[i][0])) for i in (i0, i1, i2)]
+            nf = bm.faces.new(verts)
+            for loop, i in zip(nf.loops, (i0, i1, i2)):
+                loop[uvl].uv = out[i][1]
+        bm.faces.remove(f)
+    bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=2e-5)
+    loose = [v for v in bm.verts if not v.link_faces]
+    if loose:
+        bmesh.ops.delete(bm, geom=loose, context="VERTS")
+
+
+def close_frame(front, back, kind):
+    """Schliesst jeden Knoten rundum (Issue #750, Art-Bible Regel 21): die verdeckten Flaechen im Stein (Rueckseite des Pfostens,
+    Dach ueber dem Bogen, Seite an der Zellkante x = +-1, Oberseite, Boden des Pfostens) und die wenigen sichtbaren hinter dem
+    Pfostenband (Decke, Rueck- und Innenseite einer 2 cm dicken Leiste). Alles in den Achsen der +x-Haelfte der Vorderseite
+    geschrieben und auf die vier Viertel gespiegelt. Das Dach ueber dem Bogen ist ein Kegel zur Ecke (1, 3,5, zp) statt einer
+    ebenen Wand bei z = 0: eine ebene Flaeche dort gaebe Dreiecke im Streifen der Bogenunterseite, die der Test von DoorFrameLook
+    ausschliesst."""
+    post = POST_N if kind == "normal" else POST_L
+    zp = 0.1 if kind == "normal" else 0.15
+    p, a, b, top = 1.0 - post, ARCH_FOOT, 0.9375, H
+    lip = b - 0.02
+    arc = arc_pts(1.0 - 1.5625, 1.4375, SPRING_N)
+    ring = [(1.0, SPRING_N)] + ([(p, SPRING_N)] if p > a else [])
+    for q, r in zip(arc, arc[1:]):
+        ring.append(q)
+        if (q[1] - 3.0) * (r[1] - 3.0) < 0:                                 # Teilung der Leibung bei y = 3 (Metergrenze von emit)
+            t = (3.0 - q[1]) / (r[1] - q[1])
+            ring.append((q[0] + t * (r[0] - q[0]), 3.0))
+    ring.append(arc[-1])
+    hub = (1.0, top, zp)
+    roof = [(x, y, 0.0) for x, y in ring] + [(0.0, top, zp)]
+    # (Eckpunkte, Normale nach aussen, Art): "flat" = verdeckt; sonst emit mit diesem Rechteck
+    faces = [([hub, roof[i], roof[i + 1]], (0, 1, -1), "flat") for i in range(len(roof) - 1)]
+    faces += [
+        ([(0, top, zp), (1, top, zp), (1, top, 1), (0, top, 1)], (0, 1, 0), "flat"),
+        ([(p, 0, 0), (1, 0, 0), (1, 2, 0), (p, 2, 0)], (0, 0, -1), "flat"),
+        ([(p, 0, 0), (1, 0, 0), (1, 0, zp), (p, 0, zp)], (0, -1, 0), "flat"),
+        ([(1, 0, 0), (1, 0, zp), (1, 2, zp), (1, 2, 0)], (1, 0, 0), "flat"),
+        ([(1, 2, 0), (1, 2, zp), (1, top, zp)], (1, 0, 0), "flat"),
+        ([(a, 2, zp), (1, 2, zp), (1, 2, lip), (a, 2, lip)], (0, -1, 0), "stone"),
+        ([(a, 0, lip), (1, 0, lip), (1, 2, lip), (a, 2, lip)], (0, 0, -1), "werk"),
+        ([(a, 0, lip), (a, 0, b), (a, 2, b), (a, 2, lip)], (-1, 0, 0), "werk"),
+        ([(1, 0, lip), (1, 0, b), (1, 2, b), (1, 2, lip)], (1, 0, 0), "flat"),
+        ([(a, 0, lip), (1, 0, lip), (1, 0, 1), (a, 0, 1)], (0, -1, 0), "flat"),
+        ([(a, 2, b), (1, 2, b), (1, 2, 1), (a, 2, 1)], (0, 1, 0), "werk"),
+        ([(1, 0, b), (1, SOCKEL, b), (1, SOCKEL, 1), (1, 0, 1)], (1, 0, 0), "flat"),
+        # Seite x = 1 ueber der Leiste: zwei Faecher, damit keine Kante entlang der Spitze y = 2 der Leibung (z b..1) laeuft
+        ([(1, top, zp), (1, 2, zp), (1, 2, lip)], (1, 0, 0), "flat"),
+        ([(1, top, zp), (1, 2, lip), (1, 2, b)], (1, 0, 0), "flat"),
+        ([(1, top, zp), (1, 2, b), (1, top, b)], (1, 0, 0), "flat"),
+        ([(1, 1.875, b), (1, 1.875, 1), (1, 2, 1)], (1, 0, 0), "flat"),
+        ([(1, 1.875, b), (1, 2, 1), (1, 3, 1)], (1, 0, 0), "flat"),
+        ([(1, 1.875, b), (1, 3, 1), (1, top, 1)], (1, 0, 0), "flat"),
+        ([(1, 1.875, b), (1, top, 1), (1, 2, b)], (1, 0, 0), "flat"),
+        ([(1, top, 1), (1, top, b), (1, 2, b)], (1, 0, 0), "flat"),
+    ]
+    if p < a:                                                               # Locked: freie Oberseite des Pfostens neben dem Bogenansatz
+        faces.append(([(p, 2, 0), (a, 2, 0), (a, 2, zp), (p, 2, zp)], (0, 1, 0), "stone"))
+    for sz, part in ((1, front), (-1, back)):
+        for sx in (1, -1):
+            for pts, hint, how in faces:
+                q = [(sx * x, y, sz * z) for x, y, z in pts]
+                h = (sx * hint[0], hint[1], sz * hint[2])
+                if how == "flat":
+                    flat(part, q, h)
+                else:
+                    emit(part, q, h, how)
+        weld(part)
+
+
 def frame_normal(kind):
     """Ein Lauf 0,125 breit, 1/16 hinter der Wandebene; Steinpfosten an der Scharnierseite (hinter dem Pfostenband). Steht der
     Pfosten weiter aussen als der Bogenansatz (Normal: 0,895 statt 0,875), schliesst eine Flaeche nach unten die Stufe
-    zwischen beiden bei y = 2 (Issue #730): ohne sie war dort ein 2 cm breiter Schlitz nach oben offen."""
+    zwischen beiden bei y = 2 (Issue #730): ohne sie war dort ein 2 cm breiter Schlitz nach oben offen. Jeder Knoten ist
+    rundum geschlossen (Issue #750, close_frame): die Pfosten und die Kaempferplatten sind Koerper, nicht nur ihre Vorderseiten."""
     front, back = frame_nodes()
     stufenportal((front, back), 1.0, 1.5625, SPRING_N, [0.9375], 0.07, 0.875, False, core_reveal=True)
     post = POST_N if kind == "normal" else POST_L
@@ -497,6 +715,7 @@ def frame_normal(kind):
             ledge = sorted((sx * ARCH_FOOT, sx * (1.0 - post)))
             box_faces(front, (ledge[0], SPRING_N, 0), (ledge[1], SPRING_N, zp), "stone", ["-y"])
             box_faces(back, (ledge[0], SPRING_N, -zp), (ledge[1], SPRING_N, 0), "stone", ["-y"])
+    close_frame(front, back, kind)
     return [front, back]
 
 
