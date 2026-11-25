@@ -131,6 +131,23 @@ public class BalanceFileTests
     }
 
     [Fact]
+    public void Weapons_may_carry_no_status_effect_and_never_trigger_one()
+    {
+        var result = BalanceFile.Parse("""
+            { "statusEffects": { "weaponShare": 0,
+              "weaponHitChance": { "worn": 0, "forged": 0, "royal": 0, "vampiric": 0 } } }
+            """);
+
+        var effects = result.Balance.StatusEffects;
+        Assert.Equal(0f, effects.WeaponShare);
+        Assert.Equal(0f, effects.WeaponHitChance.Worn);
+        Assert.Equal(0f, effects.WeaponHitChance.Forged);
+        Assert.Equal(0f, effects.WeaponHitChance.Royal);
+        Assert.Equal(0f, effects.WeaponHitChance.Vampiric);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
     public void A_ranged_weapon_may_pierce_nothing_and_shoot_straight()
     {
         var result = BalanceFile.Parse("""{ "pistol": { "pierce": 0, "spread": 0 }, "rifle": { "pierce": 0 }, "blunderbuss": { "pierce": 0, "spread": 0 } }""");
@@ -199,6 +216,11 @@ public class BalanceFileTests
     [InlineData("""{ "statusEffects": { "marked": { "bonus": 1.5 } } }""", "statusEffects.marked.bonus")]
     [InlineData("""{ "statusEffects": { "marked": { "seconds": 31 } } }""", "statusEffects.marked.seconds")]
     [InlineData("""{ "skills": { "levelsPerPoint": 21 } }""", "skills.levelsPerPoint")]
+    [InlineData("""{ "statusEffects": { "weaponShare": 1.5 } }""", "statusEffects.weaponShare")]
+    [InlineData("""{ "statusEffects": { "weaponHitChance": { "worn": 1.1 } } }""", "statusEffects.weaponHitChance.worn")]
+    [InlineData("""{ "statusEffects": { "weaponHitChance": { "forged": 2 } } }""", "statusEffects.weaponHitChance.forged")]
+    [InlineData("""{ "statusEffects": { "weaponHitChance": { "royal": 1.5 } } }""", "statusEffects.weaponHitChance.royal")]
+    [InlineData("""{ "statusEffects": { "weaponHitChance": { "vampiric": 3 } } }""", "statusEffects.weaponHitChance.vampiric")]
     public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);
