@@ -229,6 +229,17 @@ public class EnemyStatusReadoutTests
         Assert.True(StatusLooks.Of(StatusKind.Marked, StatusLooks.All).ShowsTimer);
     }
 
+    [Fact]
+    public void The_chill_shimmers_in_light_frost_and_shows_its_time_left()
+    {
+        // Issue #508: Stoff 7 of the main palette, the light frost of variant A of the effects trial piece (#616).
+        var look = StatusLooks.Of(StatusKind.GraveChill, StatusLooks.All);
+
+        Assert.Equal(EffectColours.Cloth, look.Ramp);
+        Assert.Equal(((byte)168, (byte)181, (byte)199), look.Colour);
+        Assert.True(look.ShowsTimer);
+    }
+
     // As in ArenaTests: a combat room whose ghoul waits in the floor until the room seals.
     private static GameWorld HiddenGhoulWorld()
     {

@@ -12,8 +12,9 @@ public readonly record struct StatusLook(StatusKind Kind, string Ramp, (byte R, 
 /// <summary>
 /// The looks of every status effect, one entry per kind (issue #506). A new kind is one more entry here - with its
 /// colour and whether it shows a timer (Leech will come with <c>ShowsTimer: false</c>). Placeholders until the trial
-/// piece of the effects decides: every colour a step of the main palette, the row of the effects violet, never red (red
-/// on an enemy belongs to the eyes announcing a blow). A test checks the colours against the palette file.
+/// piece of the effects decides: every colour a step of the main palette, each effect a hue of its own (violet mark,
+/// warm flame, cold frost), never red (red on an enemy belongs to the eyes announcing a blow). A test checks the colours
+/// against the palette file.
 /// </summary>
 public static class StatusLooks
 {

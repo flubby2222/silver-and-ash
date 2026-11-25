@@ -173,6 +173,27 @@ public class GraveChillTests
         Assert.Equal(SimulationClock.SecondsToTicks(Chill.Seconds), ChillTicks);
     }
 
+    [Fact]
+    public void A_chill_lasts_the_seconds_of_the_world_s_own_values()
+    {
+        // Not the standard seconds: the world must take the length from its own balance.
+        var longer = Tough with
+        {
+            StatusEffects = Tough.StatusEffects with { GraveChill = Chill with { Seconds = Chill.Seconds + 1f } },
+        };
+        var ticks = SimulationClock.SecondsToTicks(longer.StatusEffects.GraveChill.Seconds);
+        Assert.NotEqual(ChillTicks, ticks);
+
+        var world = new GameWorld(LevelParser.Parse(GhoulCorridor), balance: longer);
+        var ghoul = world.Ghouls[0];
+        world.ApplyStatus(ghoul, StatusKind.GraveChill, world.Player);
+
+        Run(world, PlayerInput.None, ticks - 1);
+        Assert.True(ghoul.Status.Has(StatusKind.GraveChill));
+        var events = Run(world, PlayerInput.None, 1);
+        Assert.Contains(new StatusEnded(ghoul.Id, StatusKind.GraveChill), events);
+    }
+
     // --- Ghoul ---
 
     [Fact]
@@ -255,7 +276,184 @@ public class GraveChillTests
         Assert.Equal(Balance.Default.Bat.FlySpeed * Dt, firstFree, 0.0001f);
     }
 
+    [Fact]
+    public void A_chilled_bat_climbs_and_sinks_slower_while_it_circles()
+    {
+        // It starts hovering away from its circling height: on its first tick it climbs or sinks as fast as it may.
+        static float FirstClimb(bool chilled)
+        {
+            var world = World(BatRoom);
+            var bat = world.Bats[0];
+            if (chilled)
+            {
+                world.ApplyStatus(bat, StatusKind.GraveChill, world.Player);
+            }
+
+            var before = bat.Position.Y;
+            world.Tick(PlayerInput.None);
+            Assert.Equal(BatState.Circling, bat.State);
+            return MathF.Abs(bat.Position.Y - before);
+        }
+
+        Assert.Equal(Balance.Default.Bat.ClimbSpeed * Dt, FirstClimb(chilled: false), 0.00001f);
+        Assert.Equal(Balance.Default.Bat.ClimbSpeed * Pace * Dt, FirstClimb(chilled: true), 0.00001f);
+    }
+
+    [Fact]
+    public void A_chilled_bat_rises_slower_after_its_dive()
+    {
+        // The same run up to the end of the dive; then the chill comes, and the first tick of rising is measured.
+        float FirstRise(bool chilled)
+        {
+            var world = new GameWorld(LevelParser.Parse(BatRoom), balance: Tough);
+            var bat = world.Bats[0];
+            Assert.True(RunUntil(world, PlayerInput.None, 8 * Second, _ => bat.State == BatState.Rising), "It never dived.");
+            if (chilled)
+            {
+                world.ApplyStatus(bat, StatusKind.GraveChill, world.Player);
+            }
+
+            var before = bat.Position.Y;
+            world.Tick(PlayerInput.None);
+            Assert.Equal(BatState.Rising, bat.State);
+            return bat.Position.Y - before;
+        }
+
+        Assert.Equal(Balance.Default.Bat.ClimbSpeed * Dt, FirstRise(chilled: false), 0.00001f);
+        Assert.Equal(Balance.Default.Bat.ClimbSpeed * Pace * Dt, FirstRise(chilled: true), 0.00001f);
+    }
+
+    [Fact]
+    public void A_chilled_bat_dives_as_fast_and_as_long_as_one_without()
+    {
+        // The same run up to the screech; from there on the chill is laid on anew before every tick, till the dive is over.
+        static List<Vector3> Dive(bool chilled)
+        {
+            var world = new GameWorld(LevelParser.Parse(BatRoom), balance: Tough);
+            var bat = world.Bats[0];
+            Assert.True(RunUntil(world, PlayerInput.None, 8 * Second, w => w.Events.Any(e => e is BatScreeched)), "It never screeched.");
+
+            var path = new List<Vector3> { bat.Position };
+            for (var tick = 0; tick < 3 * Second; tick++)
+            {
+                if (chilled)
+                {
+                    world.ApplyStatus(bat, StatusKind.GraveChill, world.Player);
+                }
+
+                var wasDiving = bat.State == BatState.Diving;
+                world.Tick(PlayerInput.None);
+                path.Add(bat.Position);
+                if (wasDiving && bat.State != BatState.Diving)
+                {
+                    Assert.Equal(chilled, bat.Status.Has(StatusKind.GraveChill));
+                    return path;
+                }
+            }
+
+            throw new Xunit.Sdk.XunitException("Its dive never ended.");
+        }
+
+        var free = Dive(chilled: false);
+        Assert.Equal(free, Dive(chilled: true));
+
+        // Every step of the dive but the last (which may stop short at its goal) is a full one.
+        var steps = free.Zip(free.Skip(1), Vector3.Distance).Where(step => step > 0f).ToList();
+        Assert.True(steps.Count > 2, "The dive was too short to prove anything.");
+        Assert.All(steps.SkipLast(1), step => Assert.Equal(Balance.Default.Bat.DiveSpeed * Dt, step, 0.0001f));
+    }
+
     // --- Gorm ---
+
+    /// <summary>A Gorm hall with the player inside and Gorm just through his roar into phase 2.</summary>
+    private static GameWorld GormInPhase2(Balance balance)
+    {
+        var world = GormHallWorld(balance: balance);
+        EnterGormHall(world);
+        var gorm = world.Gorm!;
+        gorm.TakeDamage(gorm.MaxHealth - (int)MathF.Floor(gorm.MaxHealth * balance.Gorm.Phase2Health), new List<GameEvent>());
+        Assert.True(gorm.IsInPhase2);
+        Assert.True(RunUntil(world, PlayerInput.None, 10 * Second, _ => gorm.State != GormState.Roaring), "He never stopped roaring.");
+        return world;
+    }
+
+    /// <summary>
+    /// What Gorm does tick by tick in phase 2 from his next wind-up on - chilled anew before every tick from that wind-up
+    /// on if <paramref name="chilled"/> - until <paramref name="done"/> holds or <paramref name="maxTicks"/> are over.
+    /// </summary>
+    private static List<(GormState State, Vector3 Position, (Vector3 Origin, float Radius)? Shockwave, Vector3? Hook)> Phase2Attacks(
+        Balance balance, bool chilled, Func<Gorm, bool> done, int maxTicks)
+    {
+        var world = GormInPhase2(balance);
+        var gorm = world.Gorm!;
+        if (gorm.State != GormState.WindingUp)
+        {
+            Assert.True(RunUntil(world, PlayerInput.None, 10 * Second, w => w.Events.Any(e => e is GormWindUp)), "He never wound up.");
+        }
+
+        var trace = new List<(GormState, Vector3, (Vector3, float)?, Vector3?)>();
+        for (var tick = 0; tick < maxTicks && !done(gorm); tick++)
+        {
+            if (chilled)
+            {
+                world.ApplyStatus(gorm, StatusKind.GraveChill, world.Player);
+            }
+
+            world.Tick(PlayerInput.None);
+            trace.Add((gorm.State, gorm.Position, gorm.Shockwave, gorm.Hook));
+        }
+
+        Assert.Equal(chilled, gorm.Status.Has(StatusKind.GraveChill));
+        return trace;
+    }
+
+    [Fact]
+    public void A_chilled_gorm_in_phase_2_walks_slower_by_the_slow()
+    {
+        var ticks = Second / 2;
+        var free = GormInPhase2(NoAttacks);
+        var cold = GormInPhase2(NoAttacks);
+
+        var freeWay = Way(free, free.Gorm!, ticks, chilled: false);
+        var coldWay = Way(cold, cold.Gorm!, ticks, chilled: true);
+
+        Assert.Equal(Balance.Default.Gorm.Speed * Balance.Default.Gorm.Phase2SpeedUp * Dt * ticks, freeWay, 0.001f);
+        Assert.Equal(freeWay * Pace, coldWay, 0.001f);
+    }
+
+    [Fact]
+    public void A_chilled_gorm_in_phase_2_slams_and_swings_as_one_without()
+    {
+        // The player always in his near range: he never walks, only hammers and swings, one after the other.
+        var near = Tough with { Gorm = Tough.Gorm with { NearRange = 100f } };
+
+        var free = Phase2Attacks(near, chilled: false, _ => false, 8 * Second);
+        var cold = Phase2Attacks(near, chilled: true, _ => false, 8 * Second);
+
+        Assert.Contains(free, step => step.Shockwave is not null);
+        Assert.Contains(free, step => step.State == GormState.Swinging);
+        Assert.Equal(free, cold);
+    }
+
+    [Fact]
+    public void A_chilled_gorm_in_phase_2_throws_his_hook_as_one_without()
+    {
+        // The player only ever in his far range: his next attack is a throw.
+        var far = Tough with { Gorm = Tough.Gorm with { NearRange = 0f, FarRange = 100f } };
+        var thrown = false;
+        bool Back(Gorm gorm)
+        {
+            thrown |= gorm.State == GormState.Throwing;
+            return thrown && gorm.State != GormState.Throwing;
+        }
+
+        var free = Phase2Attacks(far, chilled: false, Back, 8 * Second);
+        thrown = false;
+        var cold = Phase2Attacks(far, chilled: true, Back, 8 * Second);
+
+        Assert.Contains(free, step => step.Hook is not null);
+        Assert.Equal(free, cold);
+    }
 
     [Fact]
     public void A_chilled_gorm_walks_slower_by_the_slow()
