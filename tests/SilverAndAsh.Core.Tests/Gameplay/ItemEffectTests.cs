@@ -130,9 +130,11 @@ public class ItemEffectTests
     [Fact]
     public void The_flask_rounds_half_a_point_up()
     {
+        // 3 * 1.5 = 4.5: half up gives 5, rounding to even would give 4. (The standard vial of 30 never lands on a half.)
         var items = new[] { ItemKind.IronFlask };
+        Assert.Equal(4.5, 3 * (1.0 + Values.IronFlaskHeal));
 
-        Assert.Equal(2, ItemEffects.VialHeal(1, items, Values with { IronFlaskHeal = 0.5f }));
+        Assert.Equal(5, ItemEffects.VialHeal(3, items, Values));
         Assert.Equal(0, ItemEffects.VialHeal(0, items, Values));
     }
 
@@ -213,6 +215,56 @@ public class ItemEffectTests
 
         Assert.Contains(events, e => e is GormDied);
         Assert.Contains(events, e => e == new PlayerHealed(world.Player.Id, Values.SilverRosaryHeal));
+    }
+
+    [Fact]
+    public void With_the_rosary_a_kill_by_the_flame_heals_the_player_who_set_it_off()
+    {
+        // Provisional (issue #195): a kill by damage over time counts too. The ghoul stands still (it would hit the player
+        // otherwise) and has exactly the health the whole standard flame takes; the player has number 3, so the heal
+        // is seen to go to the one who set the flame off.
+        var flame = Balance.Default.StatusEffects.CleansingFlame;
+        var flameTicks = CleansingFlame.DurationTicks(flame);
+        var wholeFlame = Enumerable.Range(1, flameTicks).Sum(tick => CleansingFlame.DamageOnTick(tick, flame));
+        var world = new GameWorld(GhoulAhead, balance: Balance.Default with
+        {
+            Ghoul = Balance.Default.Ghoul with { Speed = 0f, MaxHealth = wholeFlame },
+        });
+        world.Player.Id = 3;
+        world.Player.Take(ItemKind.SilverRosary);
+        world.Player.TakeDamage(20, []);
+        var ghoul = world.Ghouls[0];
+        world.ApplyStatus(ghoul, StatusKind.CleansingFlame, world.Player);
+
+        var events = Run(world, PlayerInput.None, flameTicks);
+
+        Assert.True(ghoul.IsDead, "The flame did not kill - the test would prove nothing.");
+        Assert.Contains(events, e => e == new TargetHitBy(ghoul.Id, 3, Weapon.CleansingFlame));
+        Assert.Equal(new PlayerHealed(3, Values.SilverRosaryHeal), Assert.Single(events.OfType<PlayerHealed>()));
+        Assert.Equal(Balance.Default.Player.MaxHealth - 20 + Values.SilverRosaryHeal, world.Player.Health);
+    }
+
+    [Fact]
+    public void With_the_rosary_only_the_player_who_killed_heals()
+    {
+        // Online co-op (decision record 0003): the kill heals its attacker, not every player. The world holds one player
+        // for now (GameWorld.Players), so the other one - also with a rosary, also hurt - stands beside it, as in the
+        // leech tests: the kill must not reach it, and the heal names the number of the killer.
+        var world = new GameWorld(GhoulAhead, balance: FrailGhouls);
+        var killer = world.Player;
+        killer.Id = 2;
+        killer.Take(ItemKind.SilverRosary);
+        killer.TakeDamage(20, []);
+        var other = new Player(LevelParser.Parse("P")) { Id = 1 };
+        other.Take(ItemKind.SilverRosary);
+        other.TakeDamage(20, []);
+
+        var events = ShootAt(world, world.Ghouls[0]);
+
+        Assert.True(world.Ghouls[0].IsDead);
+        Assert.Equal(new PlayerHealed(2, Values.SilverRosaryHeal), Assert.Single(events.OfType<PlayerHealed>()));
+        Assert.Equal(Balance.Default.Player.MaxHealth - 20 + Values.SilverRosaryHeal, killer.Health);
+        Assert.Equal(Balance.Default.Player.MaxHealth - 20, other.Health);
     }
 
     [Fact]
