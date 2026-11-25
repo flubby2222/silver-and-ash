@@ -140,6 +140,12 @@ public sealed record ProjectileHitPlayer(int ProjectileId, int PlayerId, Vector3
 /// <summary>Projectile <paramref name="ProjectileId"/> hit a wall, the floor or the ceiling at <paramref name="Point"/>.</summary>
 public sealed record ProjectileImpact(int ProjectileId, Vector3 Point) : GameEvent;
 
+/// <summary>
+/// Player <paramref name="PlayerId"/> shattered projectile <paramref name="ProjectileId"/> at <paramref name="Point"/> with a
+/// melee swing (Blade Parry, issue #196).
+/// </summary>
+public sealed record ProjectileParried(int ProjectileId, int PlayerId, Vector3 Point) : GameEvent;
+
 /// <summary>Bat <paramref name="BatId"/> took <paramref name="Damage"/>.</summary>
 public sealed record BatHit(int BatId, int Damage) : GameEvent;
 
@@ -395,6 +401,12 @@ public sealed record PlayerHit(int PlayerId, int Damage) : GameEvent;
 
 /// <summary>Player <paramref name="PlayerId"/> reached 0 health.</summary>
 public sealed record PlayerDied(int PlayerId) : GameEvent;
+
+/// <summary>
+/// The Ashen Heart of player <paramref name="PlayerId"/> broke instead of letting the player die (issue #196): the player
+/// goes on, the heart is back in the loot pool. No sound yet.
+/// </summary>
+public sealed record AshenHeartBroke(int PlayerId) : GameEvent;
 
 /// <summary>Ghoul <paramref name="GhoulId"/> reached 0 health and dies.</summary>
 public sealed record GhoulDied(int GhoulId) : GameEvent;

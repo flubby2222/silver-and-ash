@@ -418,6 +418,12 @@
     "huntersBootsSpeed": 0.1,           // Hunter's Boots: 10 % more top speed (ground and air)
     "ironFlaskHeal": 0.5,               // Iron Flask: a blood vial heals 50 % more (rounded to whole health)
     "silverRosaryHeal": 3,              // Silver Rosary: health back for every kill
-    "quickdrawHolsterReload": 0.3       // Quickdraw Holster: a reload takes 30 % less time; below 1
+    "quickdrawHolsterReload": 0.3,      // Quickdraw Holster: a reload takes 30 % less time; below 1
+                                        // Blade Parry (issue #196): no value - a swing shatters the blood bolts in its weapon's cone
+    "huntersEyeHeadshot": 0.5,          // Hunter's Eye: a headshot does 50 % more damage (on top of the weapon's headshot bonus)
+    "leech": {                          // Leech, the item (not the weapon effect of the same name above)
+      "share": 0.05                     // share of the damage dealt that heals (0.05 = 5 %); fractions are saved up; at most 1
+    },
+    "ashenHeartHealth": 30              // Ashen Heart: health to go on with instead of dying (at most the maximum health); then it breaks
   }
 }

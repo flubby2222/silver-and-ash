@@ -36,10 +36,12 @@ public enum HitZone
 /// Everything about one hit that decides its damage: which weapon, which zone, its base damage, - for a charged
 /// blade - how far it was charged (0 = not at all, 1 = fully), and how often the attacker chose
 /// <see cref="Boon.Damage"/>. <paramref name="TargetStatus"/>: the status effects the target carries (issue #504; none
-/// for a target that cannot carry any, like a training dummy).
+/// for a target that cannot carry any, like a training dummy). <paramref name="AttackerItems"/>: the items the attacker
+/// carries (issue #196: Hunter's Eye; none if not given).
 /// </summary>
 public sealed record Hit(
-    Weapon Weapon, HitZone Zone, int BaseDamage, float Charge = 0f, int DamageBoons = 0, StatusEffects? TargetStatus = null);
+    Weapon Weapon, HitZone Zone, int BaseDamage, float Charge = 0f, int DamageBoons = 0, StatusEffects? TargetStatus = null,
+    IReadOnlyList<ItemKind>? AttackerItems = null);
 
 /// <summary>The damage a hit really does, and whether it counts as a critical hit (shown differently).</summary>
 public readonly record struct DamageResult(int Amount, bool IsCritical);
@@ -77,6 +79,17 @@ public sealed record MarkedBonus(float Bonus) : IDamageRule
 }
 
 /// <summary>
+/// Hunter's Eye (issue #196): a headshot - a boss's head too - of an attacker who carries the item does more damage, on
+/// top of the weapon's own headshot bonus (<see cref="ItemEffects.HeadshotFactor"/>). Critical like every headshot.
+/// </summary>
+public sealed record HuntersEyeBonus(ItemsBalance Values) : IDamageRule
+{
+    public bool IsCritical => true;
+
+    public float Multiplier(Hit hit) => ItemEffects.HeadshotFactor(hit.Zone, hit.AttackerItems ?? [], Values);
+}
+
+/// <summary>
 /// The list of damage rules that apply in a game. Damage = base damage x all multipliers, rounded.
 /// Part of the game state (not static), so every game - and later every player - can have its own rules.
 /// </summary>
@@ -105,6 +118,7 @@ public sealed class DamageRules
         rules.Add(new ChargeBonus(balance.Whip.ChargeMaxMultiplier, Weapon.Whip));
         rules.Add(new DamageBoonBonus(balance.Boons.Damage));
         rules.Add(new MarkedBonus(balance.StatusEffects.Marked.Bonus));
+        rules.Add(new HuntersEyeBonus(balance.Items));
         return rules;
     }
 

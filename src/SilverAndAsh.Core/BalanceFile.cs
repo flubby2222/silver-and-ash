@@ -62,6 +62,7 @@ public static class BalanceFile
         "statusEffects.weaponShare", "statusEffects.weaponHitChance.worn", "statusEffects.weaponHitChance.forged",
         "statusEffects.weaponHitChance.royal", "statusEffects.weaponHitChance.vampiric",
         "items.huntersBootsSpeed", "items.ironFlaskHeal", "items.silverRosaryHeal", "items.quickdrawHolsterReload",
+        "items.huntersEyeHeadshot", "items.leech.share",
     };
 
     /// <summary>
@@ -131,6 +132,7 @@ public static class BalanceFile
         ["statusEffects.stun.seconds"] = 5,
         ["statusEffects.stun.gormImmuneSeconds"] = 60,
         ["statusEffects.leech.share"] = 1,   // all the damage back as health, no more (issue #510)
+        ["items.leech.share"] = 1,           // the same for the item (issue #196)
         ["statusEffects.weaponShare"] = 1,
         ["statusEffects.weaponHitChance.worn"] = 1,
         ["statusEffects.weaponHitChance.forged"] = 1,

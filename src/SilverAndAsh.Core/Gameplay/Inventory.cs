@@ -44,7 +44,8 @@ public sealed partial class Player
 
     /// <summary>
     /// The items this player has found, in the order taken (decision record 0008): passive for the whole run, no place
-    /// needed. Their effects work for this player from the moment taken (<see cref="ItemEffects"/>, #195); some still come with #196.
+    /// needed. Their effects work for this player from the moment taken (<see cref="ItemEffects"/>, #195 and #196). An
+    /// Ashen Heart leaves the list again when it breaks.
     /// </summary>
     public IReadOnlyList<ItemKind> Items => _items;
 
