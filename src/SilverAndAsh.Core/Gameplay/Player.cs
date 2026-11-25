@@ -455,7 +455,10 @@ public sealed partial class Player
         init => _cannotDie = () => value;
     }
 
-    /// <summary>Takes <paramref name="damage"/> (never below 0) and reports it into <paramref name="events"/>.</summary>
+    /// <summary>
+    /// Takes <paramref name="damage"/> (never below 0) and reports it into <paramref name="events"/>. A hit that would kill
+    /// breaks an Ashen Heart instead, if the player carries one (issue #196).
+    /// </summary>
     public void TakeDamage(int damage, ICollection<GameEvent> events)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
@@ -468,7 +471,7 @@ public sealed partial class Player
         var taken = Math.Min(damage, CannotDie ? Health - 1 : Health);
         Health -= taken;
         events.Add(new PlayerHit(Id, taken));
-        if (IsDead)
+        if (IsDead && !BreakAshenHeart(events))
         {
             events.Add(new PlayerDied(Id));
             _consecratedTicksLeft = 0;

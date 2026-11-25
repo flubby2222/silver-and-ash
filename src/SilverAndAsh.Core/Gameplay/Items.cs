@@ -1,9 +1,13 @@
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
-/// Every item of the game (decision record 0008): passive, for the whole run, no place needed. The first four work
-/// (issue #195, rules in <see cref="ItemEffects"/>); the others can be found, but do nothing yet - their effects come
-/// with issue #196.
+/// Every item of the game (decision record 0008): passive, for the whole run, no place needed. The rules are in
+/// <see cref="ItemEffects"/> (issues #195 and #196).
+/// <para>
+/// <see cref="Leech"/> is the item; the weapon effect of the same name is <see cref="StatusKind.Leech"/> (issue #510).
+/// Both heal the same way (<see cref="Player.HealByLeech"/>), each with its own share
+/// (<see cref="ItemsBalance.Leech"/> and <see cref="StatusEffectsBalance.Leech"/>).
+/// </para>
 /// </summary>
 public enum ItemKind
 {

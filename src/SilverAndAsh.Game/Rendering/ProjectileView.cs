@@ -21,9 +21,16 @@ internal sealed class ProjectileView
 
     public void OnEvent(GameEvent gameEvent)
     {
-        if (gameEvent is ProjectileImpact impact)
+        // A bolt shattered by Blade Parry (issue #196) splashes where it was struck, like one that hit a wall.
+        Vector3? point = gameEvent switch
         {
-            _splashes.Add((impact.Point, 0f));
+            ProjectileImpact impact => impact.Point,
+            ProjectileParried parried => parried.Point,
+            _ => null,
+        };
+        if (point is { } splash)
+        {
+            _splashes.Add((splash, 0f));
         }
     }
 

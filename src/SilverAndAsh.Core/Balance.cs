@@ -197,6 +197,20 @@ public sealed record ItemsBalance
 
     /// <summary>Quickdraw Holster: how much shorter a reload of a ranged weapon takes (0.3 = 30 % less time). Below 1.</summary>
     public float QuickdrawHolsterReload { get; init; } = 0.3f;
+
+    // Blade Parry (issue #196) has no value of its own: a swing shatters the blood bolts in its weapon's cone.
+
+    /// <summary>Hunter's Eye: how much more damage a headshot does (0.5 = 50 % more, on top of the weapon's headshot bonus).</summary>
+    public float HuntersEyeHeadshot { get; init; } = 0.5f;
+
+    /// <summary>
+    /// Leech, the item (issue #196): the share of the damage dealt that heals (0.05 = 5 %). The weapon effect of the same
+    /// name has its own share (<see cref="StatusEffectsBalance.Leech"/>); both save their fractions in the same place.
+    /// </summary>
+    public LeechBalance Leech { get; init; } = new() { Share = 0.05f };
+
+    /// <summary>Ashen Heart: the health a player goes on with instead of dying (never above the player's maximum).</summary>
+    public int AshenHeartHealth { get; init; } = 30;
 }
 
 /// <summary>Skills (skills draft, section 1): a skill point every so many levels.</summary>
