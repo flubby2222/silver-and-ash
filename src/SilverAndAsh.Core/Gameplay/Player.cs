@@ -433,7 +433,7 @@ public sealed partial class Player
     {
         ArgumentNullException.ThrowIfNull(events);
         var health = Leech.HealthFrom(damage, values);
-        if (IsDead)
+        if (IsDead)   // the dead neither heal nor save anything up
         {
             return 0;
         }
