@@ -33,11 +33,11 @@ internal sealed class StairsView : IDisposable
     private static readonly int StonePart = Index(StairsLook.Stone);
     private static readonly int GlowPart = Index(StairsLook.Glow);
 
-    private readonly Dictionary<TextureVariant, TexturedModel> _models;
+    private readonly WallVariantModels<ValueTuple> _models;
     private readonly Matrix4x4[] _turns = new Matrix4x4[2];
     private readonly Matrix4x4[] _frames = new Matrix4x4[2];
 
-    private StairsView(Dictionary<TextureVariant, TexturedModel> models)
+    private StairsView(WallVariantModels<ValueTuple> models)
     {
         _models = models;
     }
@@ -46,20 +46,8 @@ internal sealed class StairsView : IDisposable
     /// Loads the staircase of every wall variant from <paramref name="directory"/> (<see cref="StairsLook.FileName"/>). A
     /// missing or broken one: a warning in the log and the fallback for it. Needs the window.
     /// </summary>
-    public static StairsView Load(string directory, FileLog? log)
-    {
-        var models = new Dictionary<TextureVariant, TexturedModel>();
-        foreach (var variant in Enum.GetValues<TextureVariant>())
-        {
-            var path = Path.Combine(directory, StairsLook.FileName(variant));
-            if (TexturedModel.TryLoad(path, StairsLook.Parts, log) is { } model)
-            {
-                models[variant] = model;
-            }
-        }
-
-        return new StairsView(models);
-    }
+    public static StairsView Load(string directory, FileLog? log) =>
+        new(WallVariantModels.Load(directory, StairsLook.FileName, StairsLook.Parts, log));
 
     /// <summary>
     /// Draws the staircase if it has begun to rise and <paramref name="view"/> may see it. <paramref name="surfaces"/> and
@@ -96,13 +84,7 @@ internal sealed class StairsView : IDisposable
         }
     }
 
-    public void Dispose()
-    {
-        foreach (var model in _models.Values)
-        {
-            model.Dispose();
-        }
-    }
+    public void Dispose() => _models.Dispose();
 
     private static int Index(string name)
     {
@@ -119,12 +101,8 @@ internal sealed class StairsView : IDisposable
 
     // The variant the level really draws on the walls there (a missing B or C falls back to A there, too), else variant
     // A of the staircase, else none.
-    private TexturedModel? Model(Stairs stairs, SurfaceVariants surfaces, LevelTextures textures)
-    {
-        var wanted = textures.Resolve(SurfaceKind.Wall, StairsLook.Variant(surfaces, stairs.Position));
-        var pick = StairsLook.Pick(wanted, _models.ContainsKey(wanted), _models.ContainsKey(TextureVariant.A));
-        return pick is { } variant ? _models[variant] : null;
-    }
+    private TexturedModel? Model(Stairs stairs, SurfaceVariants surfaces, LevelTextures textures) =>
+        _models.Pick(textures.Resolve(SurfaceKind.Wall, StairsLook.Variant(surfaces, stairs.Position)));
 
     // The coded staircase from before the model: a pole, 16 steps winding round it, a light on top once it stands.
     private static void DrawPlaceholder(Matrix4x4 place, bool lit, float glow)

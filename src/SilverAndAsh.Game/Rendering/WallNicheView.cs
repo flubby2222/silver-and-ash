@@ -17,14 +17,18 @@ internal sealed class WallNicheView : IDisposable
 {
     private const int MostParts = 8;
 
-    // By file name: both sizes of a deep niche share one file.
-    private readonly Dictionary<string, TexturedModel> _models;
+    // Both sizes of a deep niche share one file, and so one model.
+    private readonly WallVariantModels<(WallNicheForm Form, WallNicheSize Size)> _niches;
+
+    // The fillings by file name.
+    private readonly Dictionary<string, TexturedModel> _fillings;
     private readonly Matrix4x4[] _turns = new Matrix4x4[MostParts];
     private readonly Matrix4x4[] _frames = new Matrix4x4[MostParts];
 
-    private WallNicheView(Dictionary<string, TexturedModel> models)
+    private WallNicheView(WallVariantModels<(WallNicheForm Form, WallNicheSize Size)> niches, Dictionary<string, TexturedModel> fillings)
     {
-        _models = models;
+        _niches = niches;
+        _fillings = fillings;
     }
 
     /// <summary>
@@ -34,34 +38,24 @@ internal sealed class WallNicheView : IDisposable
     /// </summary>
     public static WallNicheView Load(string directory, FileLog? log)
     {
-        var models = new Dictionary<string, TexturedModel>();
-        foreach (var form in Enum.GetValues<WallNicheForm>())
-        {
-            foreach (var size in Enum.GetValues<WallNicheSize>())
-            {
-                foreach (var variant in new[] { TextureVariant.A, TextureVariant.B, TextureVariant.C })
-                {
-                    var file = WallNicheLook.FileName(form, size, variant);
-                    if (!models.ContainsKey(file)
-                        && TexturedModel.TryLoad(Path.Combine(directory, file), WallNicheLook.PartsOf(form), log) is { } model)
-                    {
-                        models[file] = model;
-                    }
-                }
-            }
-        }
+        var shapes = Enum.GetValues<WallNicheForm>()
+            .SelectMany(form => Enum.GetValues<WallNicheSize>().Select(size => (form, size)));
+        var niches = WallVariantModels<(WallNicheForm Form, WallNicheSize Size)>.Load(
+            directory, shapes, (shape, variant) => WallNicheLook.FileName(shape.Form, shape.Size, variant),
+            shape => WallNicheLook.PartsOf(shape.Form), log);
 
         // The fillings of the deep niches (issue #553); a missing one leaves its pocket empty.
+        var fillings = new Dictionary<string, TexturedModel>();
         foreach (var filling in Enum.GetValues<WallNicheFilling>())
         {
             if (WallNicheFillingLook.FileName(filling) is { } file
                 && TexturedModel.TryLoad(Path.Combine(directory, file), WallNicheFillingLook.PartsOf(filling), log) is { } model)
             {
-                models[file] = model;
+                fillings[file] = model;
             }
         }
 
-        return new WallNicheView(models);
+        return new WallNicheView(niches, fillings);
     }
 
     /// <summary>
@@ -93,7 +87,7 @@ internal sealed class WallNicheView : IDisposable
             DrawFixed(model, niche.Position, niche.Facing);
 
             // Its filling only with the niche: without the pocket around it, it would stand in the wall.
-            if (WallNicheFillingLook.FileName(niche.Filling) is { } file && _models.TryGetValue(file, out var filling))
+            if (WallNicheFillingLook.FileName(niche.Filling) is { } file && _fillings.TryGetValue(file, out var filling))
             {
                 var (position, facing) = WallNicheFillingLook.Place(niche.Form, niche.Filling, niche.Position, niche.Facing);
                 DrawFixed(filling, position, facing);
@@ -116,17 +110,12 @@ internal sealed class WallNicheView : IDisposable
 
     public void Dispose()
     {
-        foreach (var model in _models.Values)
+        _niches.Dispose();
+        foreach (var model in _fillings.Values)
         {
             model.Dispose();
         }
     }
 
-    private TexturedModel? Model(ExhibitWallNiche niche, TextureVariant wanted)
-    {
-        var file = WallNicheLook.FileName(niche.Form, niche.Size, wanted);
-        var fallback = WallNicheLook.FileName(niche.Form, niche.Size, TextureVariant.A);
-        var pick = WallNicheLook.Pick(wanted, _models.ContainsKey(file), _models.ContainsKey(fallback));
-        return pick is { } variant ? _models[WallNicheLook.FileName(niche.Form, niche.Size, variant)] : null;
-    }
+    private TexturedModel? Model(ExhibitWallNiche niche, TextureVariant wanted) => _niches.Pick((niche.Form, niche.Size), wanted);
 }

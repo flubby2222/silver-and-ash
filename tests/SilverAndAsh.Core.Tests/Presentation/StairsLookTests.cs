@@ -191,7 +191,7 @@ public class StairsLookTests
     public void A_missing_model_falls_back_to_variant_a_then_to_the_placeholder(
         TextureVariant wanted, bool wantedLoaded, bool variantALoaded, TextureVariant? expected)
     {
-        Assert.Equal(expected, StairsLook.Pick(wanted, wantedLoaded, variantALoaded));
+        Assert.Equal(expected, WallVariantChoice.Pick(wanted, wantedLoaded, variantALoaded));
     }
 
     [Fact]

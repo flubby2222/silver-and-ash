@@ -114,11 +114,4 @@ public static class WallPillarLook
         };
         return (level.CellCenter(x, z) - (facing * (Level.CellSize / 2f)), facing);
     }
-
-    /// <summary>
-    /// The file to draw a pillar from: the one of <paramref name="wanted"/> (the variant of the wall behind it) if it was
-    /// loaded, else the one of variant A, else none - then the pillar is not drawn, the wall stays bare.
-    /// </summary>
-    public static TextureVariant? Pick(TextureVariant wanted, bool wantedLoaded, bool variantALoaded) =>
-        wantedLoaded ? wanted : variantALoaded ? TextureVariant.A : null;
 }

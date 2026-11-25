@@ -46,13 +46,6 @@ public static class StairsLook
     }
 
     /// <summary>
-    /// The file to draw: the one of <paramref name="wanted"/> (the variant the level really draws on the walls there) if
-    /// it was loaded, else the one of variant A, else none - then the placeholder.
-    /// </summary>
-    public static TextureVariant? Pick(TextureVariant wanted, bool wantedLoaded, bool variantALoaded) =>
-        wantedLoaded ? wanted : variantALoaded ? TextureVariant.A : null;
-
-    /// <summary>
     /// How far below its place the staircase is drawn at <paramref name="riseFraction"/> (0: all of it in the floor,
     /// 1: standing): fast at first, slowing down at the end.
     /// </summary>
