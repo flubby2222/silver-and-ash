@@ -19,13 +19,17 @@ Je Wandvariante v eine Datei stairs_spiral_<v>.glb mit zwei Knoten, beide fest u
   stairs   der Stein: Wandkachel der Variante auf den Seiten, Bodenkachel derselben Variante auf allen nach oben zeigenden
            Flaechen, Werkstein am Kapitell.
   glow     die Lampe oben (Messing/Gold, Verlauf von dunkel nach hell); das Spiel laesst nur sie pulsieren.
-Atlas 128 x 128: Wandkachel, Bodenkachel und Werkstein-Kachel (je 64 x 64 = 1 m), dazu der Messing-Verlauf. Keine neuen Farben:
+Atlas 256 x 512 (Issue #416): Wandkachel 2 x 6 mal nebeneinander, Bodenkachel und Werkstein-Kachel je 2 x 2 mal (jede Kachel
+64 x 64 = 1 m), dazu der Messing-Verlauf 2 x 2 mal. Keine neuen Farben:
 nur die der beiden Kacheln, die das Spiel ohnehin zeichnet, dazu Werkstein und Messing. Weil die Kacheln im Spiel je um 24 Farben
 haben, sind das zusammen gut 50 (das Probestueck hatte Kacheln mit 6 bis 8 Farben und kam auf 25); die Grenze von 32 Farben
 der art-bible gilt hier deshalb nicht fuer den ganzen Atlas.
 
 Steinflaechen bekommen ihre Textur-Koordinaten aus der Position wie SurfaceTexturing (eine 64-px-Kachel je Meter, u am
-Wandverlauf, v mit der Hoehe) und sind an den Metergrenzen geteilt. Die Treppe steht auf einer Zellmitte (ungerade Meter) und
+Wandverlauf, v mit der Hoehe). Sie werden nie geteilt (Issue #416): laeuft eine Flaeche ueber eine Metergrenze, laeuft die
+Koordinate in die Kopie der Kachel im Atlas weiter. So hat die Treppe keine T-Stellen, jede Kante gehoert zu genau zwei
+Dreiecken (306 statt 552 Dreiecke). Die Stufen sind Keile bis zur Achse (innen von der Spindel verdeckt), je 0,5 mm
+voneinander abgesetzt, damit sich benachbarte Stufen nicht an einer Kante beruehren. Die Treppe steht auf einer Zellmitte (ungerade Meter) und
 wird nicht gedreht, also laufen Fugen und Platten im Raster weiter. Aendert sich eine Kachel, passt die Treppe nicht mehr; ein
 Test vergleicht stairs_sources.sha256 mit assets/textures/textures.sha256 und schlaegt fehl, bis dieses Skript neu gelaufen ist.
 """
@@ -39,7 +43,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
-from psx import V, G, Part, rects_from_pixels, save_image, export_material, export_glb, report_parts  # noqa: E402
+from psx import V, G, Part, save_image, export_material, export_glb, report_parts  # noqa: E402
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(TOOLS))
@@ -48,10 +52,14 @@ TEXTURES = os.path.join(ROOT, "assets", "textures")
 PALETTE = os.path.join(ROOT, "assets", "palette", "hauptpalette.json")
 SOURCES = os.path.join(TOOLS, "stairs_sources.sha256")
 
-W = H = 128
-RECTS = {"stone": (0, 64, 64, 128), "floor": (64, 64, 128, 128), "werk": (0, 0, 64, 64), "glow": (64, 16, 128, 48)}
-UV = rects_from_pixels(RECTS, (W, H))
+W, H = 256, 512
+# Atlasfelder in Pixeln (y von unten); jedes Feld ist die Kachel mehrfach nebeneinander, damit keine Flaeche an einer Metergrenze
+# geteilt werden muss (emit): Wand 2 x 6 Kacheln (die Spindel ist 5,25 m hoch), Boden und Werkstein 2 x 2, Lampe 2 x 2 Verlaeufe.
+REGIONS = {"stone": (0, 128, 128, 512), "glow": (0, 0, 128, 64), "floor": (128, 0, 256, 128), "werk": (128, 128, 256, 256)}
+TILES = {"stone": (64, 64), "floor": (64, 64), "werk": (64, 64), "glow": (64, 32)}                # Pixel je Kachel (= je Meter)
+UV = {}                                                                             # Part verlangt die Rechtecke, emit nimmt REGIONS
 HEIGHT = 6.0                                                                        # = RoomTemplate.RoomCeilingHeight = Stairs.Height
+GAP = 0.0005                                                                        # Fuge unter jeder Stufe: sonst beruehren sich die Keile nur an Kanten (mehr als zwei Flaechen je Kante)
 STEPS = 20                                                                          # 0,5 + 0,25 * 19 = 5,25: die letzte Stufe liegt 0,25 unter dem Kapitell, wie vorher
 WALL = {"a": "catacomb_wall.png", "b": "catacomb_wall_b.png", "c": "catacomb_wall_c.png"}
 FLOOR = {"a": "catacomb_floor.png", "b": "catacomb_floor_b.png", "c": "catacomb_floor_c.png"}
@@ -83,11 +91,11 @@ def atlas(variant, werkstein, messing):
     wall, floor = load(WALL[variant]), load(FLOOR[variant])
     a = np.zeros((H, W, 3))
     for name, t in (("stone", wall), ("floor", floor), ("werk", werk_of(wall, werkstein))):
-        x0, y0, x1, y1 = RECTS[name]
-        a[y0:y1, x0:x1] = t[::-1]                                                   # Zeile 0 unten
-    x0, y0, x1, y1 = RECTS["glow"]
-    for row in range(y0, y1):                                                       # Verlauf von dunkel (unten) nach hell (oben)
-        a[row, x0:x1] = messing[3 + min(4, (row - y0) * 5 // (y1 - y0))]
+        x0, y0, x1, y1 = REGIONS[name]
+        a[y0:y1, x0:x1] = np.tile(t[::-1], ((y1 - y0) // 64, (x1 - x0) // 64, 1))   # Zeile 0 unten
+    x0, y0, x1, y1 = REGIONS["glow"]
+    for row in range(y0, y1):                                                       # Verlauf von dunkel (unten) nach hell (oben), je 32 Zeilen
+        a[row, x0:x1] = messing[3 + min(4, ((row - y0) % 32) * 5 // 32)]
     used = {tuple(p) for p in a.reshape(-1, 3).astype(int)}
     allowed = {tuple(c) for t in (wall, floor) for c in t.reshape(-1, 3)} | {tuple(c) for c in werkstein} | {tuple(c) for c in messing}
     allowed.add((0, 0, 0))                                                          # die ungenutzten Felder des Atlas
@@ -97,23 +105,12 @@ def atlas(variant, werkstein, messing):
 
 # --- Steinflaechen mit Welt-UV (wie die Tuerrahmen in door.py) ---------------------------------------------------------------
 
-def _clip(poly, axis, bound, keep_ge):
-    out = []
-    for i, cur in enumerate(poly):
-        prev = poly[i - 1]
-        c_in = cur[axis] >= bound - 1e-9 if keep_ge else cur[axis] <= bound + 1e-9
-        p_in = prev[axis] >= bound - 1e-9 if keep_ge else prev[axis] <= bound + 1e-9
-        if c_in != p_in:
-            t = (bound - prev[axis]) / (cur[axis] - prev[axis])
-            out.append((prev[0] + t * (cur[0] - prev[0]), prev[1] + t * (cur[1] - prev[1]), prev[2] + (cur[2] - prev[2]) * t))
-        if c_in:
-            out.append(cur)
-    return out
-
-
-def emit(part, pts, hint, field):
+def emit(part, pts, hint, field, fit=False):
     """Konvexe ebene Flaeche mit Normale nach `hint`; Waende: u am Wandverlauf, v mit der Hoehe; nach oben zeigende Steinflaechen
-    nehmen die Bodenkachel (u = x, v = z). Eine Kachel je Meter, an den Metergrenzen geteilt."""
+    nehmen die Bodenkachel (u = x, v = z). Eine Kachel je Meter. Die Flaeche wird nie geteilt: laeuft sie ueber eine Metergrenze,
+    liegt die Kachel im Atlas mehrfach nebeneinander (REGIONS), und die Textur-Koordinate laeuft ueber die Kopie weiter. So
+    haengt jede Kante an genau zwei Dreiecken (Regel 21) und die Treppe braucht keine Schnitt-Dreiecke. `fit=True` (verdeckte
+    Flaechen: Unterseite auf dem Boden, Kappen der Spindel) legt die Flaeche ohne Raster auf eine Kachel."""
     P = [V(*p) for p in pts]
     n = None
     for i in range(1, len(P) - 1):
@@ -136,28 +133,26 @@ def emit(part, pts, hint, field):
         pu, pv = (lambda p: p.x if n.y > 0 else -p.x), (lambda p: p.z)
         if n.y > 0 and field == "stone":
             field = "floor"
-    poly = [(pu(p), pv(p), p) for p in P]
-    i0, i1 = math.floor(min(q[0] for q in poly) + 1e-9), math.ceil(max(q[0] for q in poly) - 1e-9)
-    j0, j1 = math.floor(min(q[1] for q in poly) + 1e-9), math.ceil(max(q[1] for q in poly) - 1e-9)
-    u0, v0, u1, v1 = UV[field]
-    for i in range(i0, max(i1, i0 + 1)):
-        for j in range(j0, max(j1, j0 + 1)):
-            cell = _clip(_clip(_clip(_clip(poly, 0, i, True), 0, i + 1, False), 1, j, True), 1, j + 1, False)
-            cell = [q for k, q in enumerate(cell) if k == 0 or abs(q[0] - cell[k - 1][0]) + abs(q[1] - cell[k - 1][1]) > 1e-7]
-            if len(cell) >= 2 and abs(cell[0][0] - cell[-1][0]) + abs(cell[0][1] - cell[-1][1]) < 1e-7:
-                cell = cell[:-1]
-            if len(cell) < 3:
-                continue
-            area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(cell, cell[1:] + cell[:1])) / 2
-            if abs(area) < 1e-6:
-                continue
-            verts = [part.bm.verts.new(G(q[2] - part.pivot)) for q in cell]
-            uvs = [(u0 + (u1 - u0) * min(max(q[0] - i, 0), 1), v0 + (v1 - v0) * min(max(q[1] - j, 0), 1)) for q in cell]
-            part._face(verts, uvs)
+    x0, y0, x1, y1 = REGIONS[field]
+    tw, th = TILES[field]
+    us, vs = [pu(p) for p in P], [pv(p) for p in P]
+    if fit:
+        i0, j0 = min(us), min(vs)
+        su, sv = tw / max(max(us) - i0, 1e-6), th / max(max(vs) - j0, 1e-6)
+        su = sv = min(su, sv, tw)
+    else:
+        i0, j0 = math.floor(min(us) + 1e-9), math.floor(min(vs) + 1e-9)
+        su, sv = tw, th
+        assert max(us) - i0 <= (x1 - x0) / tw + 1e-9 and max(vs) - j0 <= (y1 - y0) / th + 1e-9, f"{field}: Flaeche passt nicht in die Kachelreihe"
+    uvs = [((x0 + min(max((u - i0) * su, 0.02), x1 - x0 - 0.02)) / W, (y0 + min(max((v - j0) * sv, 0.02), y1 - y0 - 0.02)) / H)
+           for u, v in zip(us, vs)]
+    part._face([part.bm.verts.new(G(p - part.pivot)) for p in P], uvs)
 
 
-def prism(part, pts, y0, y1, field, skip=(), top=True):
-    """Prisma aus einem konvexen Grundriss (x, z); Seitenkanten in `skip` entfallen (innen liegend)."""
+def prism(part, pts, y0, y1, field, skip=(), top=True, bottom=True, fit=()):
+    """Geschlossenes Prisma aus einem konvexen Grundriss (x, z); Seitenkanten in `skip` entfallen (innen liegend). `fit` nennt
+    die Kappen ("top", "bottom"), die verdeckt liegen. Eine Kappe, die nur als Ring oder Faecher gebaut wird, schaltet man mit
+    top=False oder bottom=False ab und baut sie selbst (ring, fan)."""
     cx, cz = sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)
     for i, (a, b) in enumerate(zip(pts, pts[1:] + pts[:1])):
         if i in skip:
@@ -165,7 +160,23 @@ def prism(part, pts, y0, y1, field, skip=(), top=True):
         mx, mz = (a[0] + b[0]) / 2 - cx, (a[1] + b[1]) / 2 - cz
         emit(part, [(a[0], y0, a[1]), (b[0], y0, b[1]), (b[0], y1, b[1]), (a[0], y1, a[1])], (mx, 0, mz), field)
     if top:
-        emit(part, [(p[0], y1, p[1]) for p in pts], (0, 1, 0), field)
+        emit(part, [(p[0], y1, p[1]) for p in pts], (0, 1, 0), field, "top" in fit)
+    if bottom:
+        emit(part, [(p[0], y0, p[1]) for p in pts], (0, -1, 0), field, "bottom" in fit)
+
+
+def fan(part, pts, y, field):
+    """Obere Kappe aus Dreiecken zur Mitte: jedes liegt in einer 2 x 2 Kachelreihe (ein ganzes Achteck mit mehr als 2 m passt nicht)."""
+    for a, b in zip(pts, pts[1:] + pts[:1]):
+        emit(part, [(0.0, y, 0.0), (a[0], y, a[1]), (b[0], y, b[1])], (0, 1, 0), field)
+
+
+def ring(part, outer, inner, y, field):
+    """Obere Kappe als Ring zwischen zwei gleich gedrehten Vielecken (aussen Sockel, innen die Stufe darueber)."""
+    for k in range(len(outer)):
+        k1 = (k + 1) % len(outer)
+        emit(part, [(outer[k][0], y, outer[k][1]), (outer[k1][0], y, outer[k1][1]), (inner[k1][0], y, inner[k1][1]),
+                    (inner[k][0], y, inner[k][1])], (0, 1, 0), field)
 
 
 def octagon(circ, rot=22.5):
@@ -174,18 +185,20 @@ def octagon(circ, rot=22.5):
 
 def spiral():
     st, gl = Part("stairs", (0, 0, 0), UV), Part("glow", (0, 0, 0), UV)
-    prism(st, octagon(1.1875), 0.0, 0.125, "stone")                                 # Sockel, zwei Stufen
-    prism(st, octagon(1.0625), 0.125, 0.25, "stone")
-    prism(st, octagon(0.3125), 0.25, HEIGHT - 0.5, "stone", top=False)             # Spindel
-    r_in, r_out, rise, n = 0.25, 1.0625, 0.25, STEPS
+    low, up = octagon(1.1875), octagon(1.0625)
+    prism(st, low, 0.0, 0.125, "stone", top=False, fit=("bottom",))                 # Sockel, zwei Stufen: unten Ring bis zur oberen Stufe,
+    ring(st, low, up, 0.125, "stone")                                               # die ihre Unterseite im Ring hat (ein Koerper)
+    prism(st, up, 0.125, 0.25, "stone", top=False, bottom=False)
+    fan(st, up, 0.25, "stone")
+    prism(st, octagon(0.3125), 0.25, HEIGHT - 0.5, "stone", fit=("top", "bottom"))  # Spindel
+    r_out, rise, n = 1.0625, 0.25, STEPS
     for i in range(n):                                                              # 20 Stufen, 45 Grad je Stufe
         a0, a1 = math.radians(45 * i), math.radians(45 * (i + 1))
-        pts = [(r_in * math.cos(a0), r_in * math.sin(a0)), (r_out * math.cos(a0), r_out * math.sin(a0)),
-               (r_out * math.cos(a1), r_out * math.sin(a1)), (r_in * math.cos(a1), r_in * math.sin(a1))]
+        pts = [(0.0, 0.0), (r_out * math.cos(a0), r_out * math.sin(a0)), (r_out * math.cos(a1), r_out * math.sin(a1))]
         top = 0.5 + rise * i
-        prism(st, pts, top - 0.25, top, "stone", skip=(3,), top=True)
-    prism(st, octagon(0.5), HEIGHT - 0.5, HEIGHT - 0.25, "werk")                                      # Kapitell: Werkstein, nur hier
-    prism(gl, octagon(0.3125), HEIGHT - 0.25, HEIGHT, "glow")                                   # Lampe
+        prism(st, pts, top - rise + GAP, top, "stone")                              # Keil bis zur Achse (innen von der Spindel verdeckt)
+    prism(st, octagon(0.5), HEIGHT - 0.5, HEIGHT - 0.25, "werk")                    # Kapitell: Werkstein, nur hier
+    prism(gl, octagon(0.3125), HEIGHT - 0.25, HEIGHT, "glow")                       # Lampe
     return [st, gl]
 
 
