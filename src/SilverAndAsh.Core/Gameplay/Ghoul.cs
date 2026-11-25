@@ -76,6 +76,9 @@ public sealed class Ghoul : IEnemy
     /// <summary>A push from a heavy blow (the club) - while it lasts the ghoul slides away and does nothing else.</summary>
     public Knockback Knockback { get; } = new();
 
+    /// <summary>The status effects it carries (issue #504), e.g. Marked.</summary>
+    public StatusEffects Status { get; } = new();
+
     /// <summary>Its crawling speed in m/s (for drawing: how fast the arms move).</summary>
     public float Speed => _ghoul.Speed;
 

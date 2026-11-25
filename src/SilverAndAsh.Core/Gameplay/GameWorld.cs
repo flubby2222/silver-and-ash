@@ -1684,7 +1684,11 @@ public sealed class GameWorld
             return;
         }
 
-        var result = DamageRules.Calculate(hit with { DamageBoons = attacker.BoonCount(Boon.Damage) });
+        var result = DamageRules.Calculate(hit with
+        {
+            DamageBoons = attacker.BoonCount(Boon.Damage),
+            TargetStatus = (target as IEnemy)?.Status,
+        });
         var wasAlive = target.IsHittable;
         var eventsBefore = _events.Count;
         target.TakeDamage(result.Amount, _events, result.IsCritical);
@@ -1715,6 +1719,43 @@ public sealed class GameWorld
         if (wasAlive && experience > 0)
         {
             attacker.AddExperience(experience, _events);
+        }
+    }
+
+    /// <summary>
+    /// Puts a status effect of <paramref name="kind"/> from <paramref name="source"/> on <paramref name="enemy"/> for its
+    /// duration from the balance values (issue #504), refreshing one that already lasts. A dead enemy takes none; then
+    /// this returns false. No weapon or skill sets an effect yet - for now only tests do.
+    /// </summary>
+    internal bool ApplyStatus(IEnemy enemy, StatusKind kind, Player source)
+    {
+        if (enemy.IsDead)
+        {
+            return false;
+        }
+
+        enemy.Status.Apply(kind, StatusTicks(kind), source.Id);
+        _events.Add(new StatusApplied(enemy.Id, kind, source.Id));
+        return true;
+    }
+
+    /// <summary>How many ticks a fresh effect of <paramref name="kind"/> lasts (at least one).</summary>
+    private int StatusTicks(StatusKind kind) => kind switch
+    {
+        StatusKind.Marked => Math.Max(1, SimulationClock.SecondsToTicks(Balance.StatusEffects.Marked.Seconds)),
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown status effect."),
+    };
+
+    /// <summary>
+    /// Counts down the status effects of every enemy by one tick, at the end of a tick (after every hit of it): an
+    /// effect of N ticks counts for the hits of N ticks - put on during tick T, of ticks T .. T+N-1; put on between
+    /// ticks, of the next N - and ends at the end of the last of them.
+    /// </summary>
+    private void TickStatusEffects()
+    {
+        foreach (var enemy in Enemies)
+        {
+            enemy.Status.Tick(enemy.Id, _events);
         }
     }
 
@@ -1836,6 +1877,7 @@ public sealed class GameWorld
 
         TickDoors();
         _stairs?.Tick();
+        TickStatusEffects();
         ClearRooms();
 
         // The clock of the run stops with victory or defeat; this tick still counts.

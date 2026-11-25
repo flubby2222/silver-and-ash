@@ -195,7 +195,8 @@ public class BalanceFileTests
     [InlineData("""{ "hearing": { "maxPan": 1.2 } }""", "hearing.maxPan")]
     [InlineData("""{ "difficulty": { "doorConeAngle": 91 } }""", "difficulty.doorConeAngle")]
     [InlineData("""{ "grates": { "blockHeight": 3.5 } }""", "grates.blockHeight")]
-    public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
+    [InlineData("""{ "statusEffects": { "marked": { "bonus": 1.5 } } }""", "statusEffects.marked.bonus")]
+    [InlineData("""{ "statusEffects": { "marked": { "seconds": 31 } } }""", "statusEffects.marked.seconds")]    public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);
 

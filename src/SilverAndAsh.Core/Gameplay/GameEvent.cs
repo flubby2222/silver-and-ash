@@ -389,3 +389,12 @@ public sealed record GhoulNoticed(int GhoulId, int PlayerId) : GameEvent;
 /// sound - which flaps are near enough to be heard is up to the presentation.
 /// </summary>
 public sealed record BatFlapped(int BatId, Vector3 At) : GameEvent;
+
+/// <summary>
+/// Player <paramref name="SourcePlayerId"/> put a status effect of <paramref name="Kind"/> on target
+/// <paramref name="TargetId"/> (issue #504) - also when it only refreshed one that already lasted.
+/// </summary>
+public sealed record StatusApplied(int TargetId, StatusKind Kind, int SourcePlayerId) : GameEvent;
+
+/// <summary>The status effect of <paramref name="Kind"/> on target <paramref name="TargetId"/> ran out (issue #504).</summary>
+public sealed record StatusEnded(int TargetId, StatusKind Kind) : GameEvent;

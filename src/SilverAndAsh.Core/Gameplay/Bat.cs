@@ -142,6 +142,9 @@ public sealed class Bat : IEnemy
     /// <summary>A push from a heavy blow (the club) - while it lasts the bat is flung away and does nothing else.</summary>
     public Knockback Knockback { get; } = new();
 
+    /// <summary>The status effects it carries (issue #504), e.g. Marked.</summary>
+    public StatusEffects Status { get; } = new();
+
     /// <summary>Middle of its body - where it spits from.</summary>
     public Vector3 Centre => Position + new Vector3(0f, HalfHeight, 0f);
 
