@@ -179,6 +179,9 @@ public sealed record StatusEffectsBalance
     /// <summary>Grave Chill (issue #508): the enemy walks and flies slower.</summary>
     public GraveChillBalance GraveChill { get; init; } = new();
 
+    /// <summary>Stun (issue #509): the enemy stands still and attacks no more; Gorm only staggers.</summary>
+    public StunBalance Stun { get; init; } = new();
+
     /// <summary>Share of found weapons that carry a status effect (skills draft, section 5: 0.3 = 30 %, the same for every tier).</summary>
     public float WeaponShare { get; init; } = 0.3f;
 
@@ -251,6 +254,23 @@ public sealed record GraveChillBalance
 
     /// <summary>Seconds a fresh chill lasts.</summary>
     public float Seconds { get; init; } = 2f;
+}
+
+/// <summary>
+/// Stun (skills draft, section 4; issue #509): a stunned ghoul or bat stands still and attacks no more - a blow it is
+/// drawing back for breaks off. Gorm only staggers for a moment (his wind-ups go on) and cannot be stunned for a while
+/// after that.
+/// </summary>
+public sealed record StunBalance
+{
+    /// <summary>Seconds a fresh stun lasts on a ghoul or a bat.</summary>
+    public float Seconds { get; init; } = 0.5f;
+
+    /// <summary>Seconds Gorm staggers instead: he stops walking, an attack he announces goes on.</summary>
+    public float GormStaggerSeconds { get; init; } = 0.2f;
+
+    /// <summary>Seconds after his stagger in which a new stun does nothing to Gorm.</summary>
+    public float GormImmuneSeconds { get; init; } = 5f;
 }
 
 /// <summary>Experience: what a kill is worth and how much each level needs.</summary>

@@ -102,6 +102,22 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 25.11.2026 (#509, Stun, vorläufig)
+
+**Anlass:** Issue #509. Vierter Statuseffekt nach *Marked*, *Cleansing Flame* und *Grave Chill*: Ein betäubter Ghul oder eine betäubte Fledermaus steht still und greift nicht an, ein laufendes Ausholen bricht ab. Gorm taumelt nur kurz (bleibt stehen, Ankündigungen laufen weiter) und ist danach eine Weile immun. Gefundene Waffen würfeln seither gleich wahrscheinlich zwischen den vier Effekten.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `statusEffects.stun.seconds` | – | 0,5 s (höchstens 5, **vorläufig**) | Wert aus dem Issue: lang genug, um einen Ghul aus dem Ausholen zu reißen, zu kurz, um einen Gegner wehrlos zu halten. |
+| `statusEffects.stun.gormStaggerSeconds` | – | 0,2 s (nie länger als `seconds`, **vorläufig**) | Wert aus dem Issue: Der Boss soll nur kurz stocken. Ist er länger als `seconds`, nimmt der Lader für beide die Standardwerte. |
+| `statusEffects.stun.gormImmuneSeconds` | – | 5 s (höchstens 60, **vorläufig**) | Wert aus dem Issue: Gorm lässt sich nicht im Dauertakt festhalten. Die Immunität beginnt schon mit dem Taumeln. |
+
+Alle drei Werte müssen größer als 0 sein; liegt einer außerhalb, warnt der Lader und nimmt den Standardwert.
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Wie bei #507 und #508 rechnet der Report keine Statuseffekte ein, und kein Bot-Modus zählt sie.
+
+**Offen:** Ein Lauf im Spiel steht aus. Ob 0,5 s spürbar sind und ob Gorm mit 0,2 s zu wenig reagiert, urteilt der Mensch im Spieltest.
+
 ### Zwischenschritt – 25.11.2026 (#508, Grave Chill, vorläufig)
 
 **Anlass:** Issue #508. Dritter Statuseffekt nach *Marked* und *Cleansing Flame*: Grave Chill verlangsamt Laufen und Fliegen eines Gegners (Ghul kriechen, Fledermaus kreisen und steigen, Gorm gehen, auch in Phase 2). Ankündigungen, Angriffe und der Sturzflug der Fledermaus behalten ihre Länge. Gefundene Waffen würfeln seither gleich wahrscheinlich zwischen den drei Effekten.

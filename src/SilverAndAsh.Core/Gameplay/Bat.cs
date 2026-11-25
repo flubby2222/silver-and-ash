@@ -234,6 +234,12 @@ public sealed class Bat : IEnemy
             return;
         }
 
+        if (Stun.Holds(Status))
+        {
+            BeStunned();
+            return;
+        }
+
         if (_target is { IsDead: true })
         {
             // Its prey is dead: it hangs still where it is (with online co-op it would look for the next player).
@@ -283,6 +289,28 @@ public sealed class Bat : IEnemy
                 Rise(level);
                 break;
         }
+    }
+
+    /// <summary>
+    /// One tick stunned (issue #509, provisional): it hangs still in the air where it is - it does not fall - and does
+    /// nothing else. Every attack breaks off: the glow before a spit, the screech before a dive and a dive under way
+    /// (it rises again afterwards). Once the stun is over it carries on: a spit or a dive that was due is announced
+    /// anew, with its full warning.
+    /// </summary>
+    private void BeStunned()
+    {
+        if (_spitWarned)
+        {
+            _spitWarned = false;
+            _spitTicksLeft = _spitWindUpTicks;
+        }
+
+        State = State switch
+        {
+            BatState.Screeching => BatState.Circling,
+            BatState.Diving => BatState.Rising,
+            _ => State,
+        };
     }
 
     /// <summary>

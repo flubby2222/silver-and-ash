@@ -11,6 +11,9 @@ public enum StatusKind
 
     /// <summary>Grave Chill: the enemy walks and flies slower while it lasts (issue #508, <see cref="Gameplay.GraveChill"/>).</summary>
     GraveChill,
+
+    /// <summary>Stun: the enemy stands still and attacks no more while it lasts; Gorm only staggers (issue #509, <see cref="Gameplay.Stun"/>).</summary>
+    Stun,
 }
 
 /// <summary>
@@ -31,6 +34,10 @@ public sealed class StatusEffects
     // the pulses of a flame keep their beat, so refreshing it often never holds its damage back).
     private readonly Dictionary<StatusKind, int> _ages = [];
 
+    // Ticks left in which an effect of a kind cannot be put on (issue #509: Gorm after a stun). Counted down with the
+    // effects; running out reports nothing.
+    private readonly Dictionary<StatusKind, int> _immunities = [];
+
     /// <summary>True while an effect of this kind lasts.</summary>
     public bool Has(StatusKind kind) => _effects.ContainsKey(kind);
 
@@ -42,6 +49,19 @@ public sealed class StatusEffects
     /// it. 0 for a fresh effect and for one that does not last.
     /// </summary>
     public int AgeOf(StatusKind kind) => _ages.GetValueOrDefault(kind);
+
+    /// <summary>True while an effect of this kind cannot be put on (issue #509).</summary>
+    public bool IsImmuneTo(StatusKind kind) => _immunities.ContainsKey(kind);
+
+    /// <summary>
+    /// For the next <paramref name="ticks"/> ticks no effect of <paramref name="kind"/> can be put on - the world asks
+    /// <see cref="IsImmuneTo"/> first (issue #509). A shorter immunity never cuts a longer one short.
+    /// </summary>
+    public void MakeImmune(StatusKind kind, int ticks)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(ticks);
+        _immunities[kind] = Math.Max(ticks, _immunities.GetValueOrDefault(kind));
+    }
 
     /// <summary>
     /// Every effect that lasts, in the order of the kinds - the same order on every machine (online co-op). For the
@@ -74,6 +94,7 @@ public sealed class StatusEffects
     /// </summary>
     public void Tick(int targetId, ICollection<GameEvent> events)
     {
+        TickImmunities();
         if (_effects.Count == 0)
         {
             return;
@@ -93,6 +114,18 @@ public sealed class StatusEffects
             _effects.Remove(kind);
             _ages.Remove(kind);
             events.Add(new StatusEnded(targetId, kind));
+        }
+    }
+
+    // One tick less of every immunity; one that reaches zero is gone, without an event.
+    private void TickImmunities()
+    {
+        foreach (var kind in _immunities.Keys.ToList())
+        {
+            if (--_immunities[kind] == 0)
+            {
+                _immunities.Remove(kind);
+            }
         }
     }
 }
