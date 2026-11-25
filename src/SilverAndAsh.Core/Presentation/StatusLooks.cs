@@ -3,11 +3,36 @@ using SilverAndAsh.Core.Gameplay;
 namespace SilverAndAsh.Core.Presentation;
 
 /// <summary>
+/// The shape a status effect takes on the body of an enemy (issue #775). One more shape is one more value here and one
+/// more entry in the game's table of drawings - never one more branch in the drawing of the others.
+/// </summary>
+public enum StatusForm
+{
+    /// <summary>A ring of small glowing motes circling the body (issue #506): the placeholder until a trial piece decides.</summary>
+    Motes,
+
+    /// <summary>
+    /// Frost (Grave Chill, variant A of the effects trial piece #616): rime flecks on the body and a disc of rime on the
+    /// floor below it; the body itself takes the cold tint of the look (<see cref="StatusLook.Tint"/>). See <see cref="FrostLook"/>.
+    /// </summary>
+    Frost,
+}
+
+/// <summary>
+/// A tint over the whole body of an enemy while an effect lasts (issue #775): its surface blended toward
+/// <paramref name="Colour"/> by <paramref name="Amount"/> (0..1), as a hit flash does - a hit flash wins over it.
+/// </summary>
+public readonly record struct StatusTint((byte R, byte G, byte B) Colour, float Amount);
+
+/// <summary>
 /// How one kind of status effect shows on an enemy (issue #506): the colour of its shimmer and of its time left, the
 /// ramp of the main palette that colour is a step of, and whether it shows its time left at all (Leech acts at once and
-/// shows none).
+/// shows none). Since issue #775 also the shape it takes on the body (<paramref name="Form"/>, motes unless a trial
+/// piece decided another) and the tint of the whole body, if any (<paramref name="Tint"/>).
 /// </summary>
-public readonly record struct StatusLook(StatusKind Kind, string Ramp, (byte R, byte G, byte B) Colour, bool ShowsTimer);
+public readonly record struct StatusLook(
+    StatusKind Kind, string Ramp, (byte R, byte G, byte B) Colour, bool ShowsTimer,
+    StatusForm Form = StatusForm.Motes, StatusTint? Tint = null);
 
 /// <summary>
 /// The looks of every status effect, one entry per kind (issue #506). A new kind is one more entry here - with its
@@ -30,7 +55,8 @@ public static class StatusLooks
 
         // Grave Chill: Stoff 7 (168, 181, 199), the light frost of variant A of the effects trial piece (issue #616) - the
         // coldest light step of the palette, a blue-grey well apart from the warm flame and the violet mark (issue #508).
-        new(StatusKind.GraveChill, EffectColours.Cloth, (168, 181, 199), ShowsTimer: true),
+        // On the body as variant A of that trial piece draws it (issue #775): frost and a cold tint, see FrostLook.
+        new(StatusKind.GraveChill, EffectColours.Cloth, FrostLook.Rime, ShowsTimer: true, Form: StatusForm.Frost, Tint: FrostLook.Tint),
 
         // Stun: Eisen 6 (163, 175, 187), the silver-grey of variant A of the effects trial piece (issue #509). Close to the
         // frost of Grave Chill in colour - the effects trial piece tells them apart by shape (sparks circling over the head).
@@ -56,5 +82,39 @@ public static class StatusLooks
         }
 
         throw new KeyNotFoundException($"No look for the status effect {kind}.");
+    }
+
+    /// <summary>
+    /// The tint over the whole body of <paramref name="ghoul"/> (issue #775): that of its first effect, in the order of
+    /// the kinds, whose look has one - null without such an effect, and once it is dead or still hidden, like the rest of
+    /// the status display. It ends on the tick its effect ends.
+    /// </summary>
+    public static StatusTint? TintOf(Ghoul ghoul) => TintOf(ghoul, All);
+
+    /// <inheritdoc cref="TintOf(Ghoul)"/>
+    public static StatusTint? TintOf(Bat bat) => TintOf(bat, All);
+
+    /// <inheritdoc cref="TintOf(Ghoul)"/>
+    public static StatusTint? TintOf(Gorm gorm) => TintOf(gorm, All);
+
+    /// <summary>The same with another table of looks (for tests).</summary>
+    internal static StatusTint? TintOf(IEnemy enemy, IReadOnlyList<StatusLook> looks)
+    {
+        ArgumentNullException.ThrowIfNull(enemy);
+        ArgumentNullException.ThrowIfNull(looks);
+        if (enemy.IsDead || enemy.IsHidden)
+        {
+            return null;
+        }
+
+        foreach (var (kind, _) in enemy.Status.InOrder())
+        {
+            if (Of(kind, looks).Tint is { } tint)
+            {
+                return tint;
+            }
+        }
+
+        return null;
     }
 }

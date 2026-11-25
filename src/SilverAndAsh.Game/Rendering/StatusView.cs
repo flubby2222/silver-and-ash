@@ -7,9 +7,11 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
-/// The status display on an enemy (issue #506), a placeholder until the trial piece of the effects: a shimmer of small
-/// glowing motes in the effect's colour circling the body, one ring per effect, and the time left of each effect as a
-/// small number above the head. What is shown comes from <see cref="EnemyStatusReadout"/>; here it is only drawn.
+/// The status display on an enemy (issue #506): per effect its shape on the body (<see cref="StatusForm"/>) - a shimmer
+/// of small glowing motes in the effect's colour circling the body until a trial piece decides, the frost of Grave Chill
+/// (issue #775) - and the time left of each effect as a small number above the head. What is shown comes from
+/// <see cref="EnemyStatusReadout"/>; here it is only drawn. The tint of the body itself is drawn by the enemy's view
+/// (<see cref="StatusLooks.TintOf(SilverAndAsh.Core.Gameplay.Ghoul)"/>, <see cref="Tint"/>).
 /// </summary>
 internal static class StatusView
 {
@@ -18,35 +20,129 @@ internal static class StatusView
     private const float RingGap = 0.1f;          // the ring circles this far outside the body
     private const float TurnPerTick = 0.05f;     // radians: about half a turn per second
     private const int LineGap = 1;               // pixels between two timers
+    private const int DiscSegments = 32;         // corners of the frost disc: round at 4 m (about 50 pixels across)
+    private const float DiscLift = 0.015f;       // the disc lies this far above the floor, so the floor does not cover it
     private static readonly Color Shadow = new(10, 8, 12, 255);
 
-    /// <summary>
-    /// The shimmer: per effect a ring of motes round the body, the first effect low, the next ones higher. It turns with
-    /// the world's ticks, so a photo of the same tick looks the same. Call between BeginFigures and EndFigures, after the
-    /// enemies.
-    /// </summary>
-    public static void DrawShimmer(IReadOnlyList<EnemyStatusReadout> readouts, long ticks)
+    // What draws one effect on one enemy: its readout, the effect's line and its number among the lines (the ring).
+    private delegate void FormDrawing(EnemyStatusReadout readout, StatusLine line, int ring, Scene scene);
+
+    // Everything a drawing may need of the frame.
+    private readonly record struct Scene(long Ticks, Vector3 Eye, LevelShader Shader);
+
+    // One drawing per shape - a new shape is one more entry here (issue #775), not one more branch in the others.
+    private static readonly IReadOnlyDictionary<StatusForm, FormDrawing> Drawings = new Dictionary<StatusForm, FormDrawing>
     {
-        var size = new Vector3(MoteSize);
+        [StatusForm.Motes] = DrawMotes,
+        [StatusForm.Frost] = DrawFrost,
+    };
+
+    /// <summary>
+    /// The shape of every effect on the body: the motes per effect a ring round the body, the first effect low, the next
+    /// ones higher, turning with the world's ticks (so a photo of the same tick looks the same); the frost as rime flecks
+    /// on the side facing <paramref name="eye"/> and a disc on the floor. Call between BeginFigures and EndFigures, after
+    /// the enemies.
+    /// </summary>
+    public static void DrawShimmer(IReadOnlyList<EnemyStatusReadout> readouts, long ticks, Vector3 eye, LevelShader shader)
+    {
+        var scene = new Scene(ticks, eye, shader);
         foreach (var readout in readouts)
         {
-            var radius = readout.Radius + RingGap;
             for (var ring = 0; ring < readout.Lines.Count; ring++)
             {
                 var line = readout.Lines[ring];
-                var colour = new Color(line.Colour.R, line.Colour.G, line.Colour.B, (byte)255);
-                var height = readout.Height * (0.3f + (0.25f * ring));
-                var turn = (ticks % 100_000) * TurnPerTick * (ring % 2 == 0 ? 1f : -1f);
-                for (var mote = 0; mote < MotesPerRing; mote++)
-                {
-                    var angle = turn + (mote * MathF.Tau / MotesPerRing) + (ring * 0.4f);
-                    var bob = 0.04f * MathF.Sin((turn * 2f) + mote);
-                    var at = readout.Feet + new Vector3(MathF.Cos(angle) * radius, height + bob, MathF.Sin(angle) * radius);
-                    ShadedBox.DrawGlowing(Matrix4x4.CreateTranslation(at), size, colour);
-                }
+                Drawings[line.Form](readout, line, ring, scene);
             }
         }
     }
+
+    /// <summary>
+    /// The tint of a body as the flash of <see cref="LevelShader.SetFlash"/> takes it: colour and amount, 0 without a tint.
+    /// </summary>
+    public static (Color Colour, float Amount) Tint(StatusTint? tint) =>
+        tint is { } shown ? (Colour(shown.Colour), shown.Amount) : (Color.White, 0f);
+
+    // A ring of motes circling the body (issue #506).
+    private static void DrawMotes(EnemyStatusReadout readout, StatusLine line, int ring, Scene scene)
+    {
+        var size = new Vector3(MoteSize);
+        var radius = readout.Radius + RingGap;
+        var colour = Colour(line.Colour);
+        var height = readout.Height * (0.3f + (0.25f * ring));
+        var turn = (scene.Ticks % 100_000) * TurnPerTick * (ring % 2 == 0 ? 1f : -1f);
+        for (var mote = 0; mote < MotesPerRing; mote++)
+        {
+            var angle = turn + (mote * MathF.Tau / MotesPerRing) + (ring * 0.4f);
+            var bob = 0.04f * MathF.Sin((turn * 2f) + mote);
+            var at = readout.Feet + new Vector3(MathF.Cos(angle) * radius, height + bob, MathF.Sin(angle) * radius);
+            ShadedBox.DrawGlowing(Matrix4x4.CreateTranslation(at), size, colour);
+        }
+    }
+
+    // The frost of Grave Chill (issue #775, variant A of the trial piece #616): unlit like the trial piece's effect
+    // colours - only the fog covers them - a disc of rime on the floor and rime flecks on the body.
+    private static void DrawFrost(EnemyStatusReadout readout, StatusLine line, int ring, Scene scene)
+    {
+        scene.Shader.SetGlow(1f);
+        DrawFrostDisc(readout.Feet with { Y = readout.Floor + DiscLift }, readout.DiscRadius, scene.Shader);
+
+        var size = new Vector3(FrostLook.FleckSize);
+        var rime = Colour(FrostLook.Rime);
+        foreach (var fleck in FrostLook.Flecks)
+        {
+            ShadedBox.DrawGlowing(Matrix4x4.CreateTranslation(FrostLook.FleckAt(fleck, readout, scene.Eye)), size, rime);
+        }
+
+        scene.Shader.SetGlow(0f);
+    }
+
+    // The disc: inside the rim the dot pattern of the cold and the dark rime, the rim in light rime. Flat triangles,
+    // counter-clockwise seen from above (the side the graphics card draws).
+    private static void DrawFrostDisc(Vector3 centre, float radius, LevelShader shader)
+    {
+        var inner = radius * FrostLook.RimStart;
+        var outer = radius;
+
+        shader.SetPattern(Colour(FrostLook.Cold), FrostLook.ColdShare);
+        var dark = Colour(FrostLook.DarkRime);
+        Rlgl.Begin(DrawMode.Triangles);
+        Rlgl.Color4ub(dark.R, dark.G, dark.B, dark.A);
+        for (var segment = 0; segment < DiscSegments; segment++)
+        {
+            Vertex(centre);
+            Vertex(Around(centre, inner, segment + 1));
+            Vertex(Around(centre, inner, segment));
+        }
+
+        Rlgl.End();
+        shader.SetPattern(dark, 0f);
+
+        var rim = Colour(FrostLook.Rime);
+        Rlgl.Begin(DrawMode.Triangles);
+        Rlgl.Color4ub(rim.R, rim.G, rim.B, rim.A);
+        for (var segment = 0; segment < DiscSegments; segment++)
+        {
+            Vertex(Around(centre, outer, segment));
+            Vertex(Around(centre, inner, segment));
+            Vertex(Around(centre, outer, segment + 1));
+
+            Vertex(Around(centre, inner, segment));
+            Vertex(Around(centre, inner, segment + 1));
+            Vertex(Around(centre, outer, segment + 1));
+        }
+
+        Rlgl.End();
+    }
+
+    private static Vector3 Around(Vector3 centre, float radius, int segment)
+    {
+        var angle = segment * MathF.Tau / DiscSegments;
+        return centre + new Vector3(MathF.Cos(angle) * radius, 0f, MathF.Sin(angle) * radius);
+    }
+
+    private static void Vertex(Vector3 at) => Rlgl.Vertex3f(at.X, at.Y, at.Z);
+
+    private static Color Colour((byte R, byte G, byte B) colour) => new(colour.R, colour.G, colour.B, (byte)255);
 
     /// <summary>
     /// The time left of every effect that shows one, one small number per line above the head, the first effect on

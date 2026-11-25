@@ -5,9 +5,11 @@ namespace SilverAndAsh.Core.Presentation;
 
 /// <summary>
 /// One line of the status display above an enemy (issue #506): the kind, its colour from <see cref="StatusLooks"/>
-/// and its time left as text ("0.4s") - null for a kind that shows no timer (Leech).
+/// and its time left as text ("0.4s") - null for a kind that shows no timer (Leech) - and the shape it takes on the body
+/// (issue #775).
 /// </summary>
-public readonly record struct StatusLine(StatusKind Kind, (byte R, byte G, byte B) Colour, string? Timer);
+public readonly record struct StatusLine(
+    StatusKind Kind, (byte R, byte G, byte B) Colour, string? Timer, StatusForm Form = StatusForm.Motes);
 
 /// <summary>
 /// What the status display shows on one enemy (issue #506), read-only like <see cref="HudReadout"/>: where the enemy is
@@ -22,6 +24,18 @@ public sealed record EnemyStatusReadout(int EnemyId, Vector3 Feet, float Height,
 
     /// <summary>The point just above the head where the lowest line of the timers sits.</summary>
     public Vector3 Anchor => Feet + new Vector3(0f, Height + 0.05f, 0f);
+
+    /// <summary>
+    /// The height of the floor below the enemy, in metres (issue #775: the disc of frost lies on it) - below its feet for
+    /// a bat in the air, at its feet for one that walks.
+    /// </summary>
+    public float Floor { get; init; }
+
+    /// <summary>
+    /// Radius of the disc of frost on the floor, in metres - after the size of the enemy's body
+    /// (<see cref="FrostLook.DiscRadiusFor"/>).
+    /// </summary>
+    public float DiscRadius => FrostLook.DiscRadiusFor(Radius);
 
     /// <summary>
     /// The display for every enemy that is alive, not hidden and carries at least one effect. A dead enemy shows none,
@@ -51,7 +65,10 @@ public sealed record EnemyStatusReadout(int EnemyId, Vector3 Feet, float Height,
             // The head is where the shot bodies end (a ghoul's head sits lower than its body for walking).
             var body = enemy.Body;
             var top = enemy.ShotBodies.Max(shot => shot.Position.Y + shot.Height) - body.Position.Y;
-            readouts.Add(new EnemyStatusReadout(enemy.Id, enemy.ShownPosition, top, body.Radius, lines));
+            readouts.Add(new EnemyStatusReadout(enemy.Id, enemy.ShownPosition, top, body.Radius, lines)
+            {
+                Floor = world.Level.CellAt(enemy.Body.Position).FloorHeight,
+            });
         }
 
         return readouts;
@@ -79,7 +96,7 @@ public sealed record EnemyStatusReadout(int EnemyId, Vector3 Feet, float Height,
             }
 
             var look = StatusLooks.Of(kind, looks);
-            lines.Add(new StatusLine(kind, look.Colour, look.ShowsTimer ? TimerText(effect.TicksLeft) : null));
+            lines.Add(new StatusLine(kind, look.Colour, look.ShowsTimer ? TimerText(effect.TicksLeft) : null, look.Form));
         }
 
         return lines;

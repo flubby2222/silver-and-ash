@@ -19,6 +19,8 @@ uniform float fogEnd;          // metres: only fog left; also the range of the l
 uniform float lanternMinimum;  // brightness far away (0..1)
 uniform float glow;            // a part that shines by itself (issue #480): the lantern never makes it darker than this (0: none)
 uniform int seeThrough;        // 1: keep the alpha of the colour - see-through effects such as dust (issue #609); 0: solid
+uniform vec4 pattern;          // a dot pattern of two colours (issue #775, the frost on the floor): where the threshold
+                               // of the pattern lies below a, the surface takes rgb instead of its own colour (a 0: none)
 
 // Picture variants (issue #234, decision record 0010). Variant 1 - the game as it is - has both switched off.
 uniform int quantize;          // 1: rasterise the colour to 5 bits per channel with the dot pattern
@@ -48,6 +50,13 @@ void main()
     // The surface: texture (white without one) blended toward the flash colour, times the shading brightness from the
     // vertex colour. Without texture and flash this is exactly the vertex colour, so variant 1 stays bit for bit the same.
     vec3 surface = mix(texture(texture0, fragTexCoord).rgb, flash.rgb, flash.a) * fragColor.rgb;
+
+    // The second colour of a dot pattern, unshaded (issue #775). Without one (a = 0) the surface stays as it is, so
+    // variant 1 stays bit for bit the same.
+    if (pattern.a > 0.0 && threshold() < pattern.a)
+    {
+        surface = pattern.rgb;
+    }
 
     // Solid unless asked otherwise: a colour with alpha below 1 would let the picture's black show through.
     float alpha = seeThrough == 1 ? fragColor.a * colDiffuse.a : 1.0;
