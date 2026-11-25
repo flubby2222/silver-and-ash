@@ -13,9 +13,14 @@ public class PlayerStepTests
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
     private static readonly float StepLength = Balance.Default.Player.MaxSpeed / Player.StepsPerSecond;
 
-    // Time for ticks that normally take milliseconds - only a loop without end runs into it. Until it is up, such a loop
-    // fills the memory with step events (about 0.3 GB a second), so it is no longer than needed.
-    private static readonly TimeSpan TimeLimit = TimeSpan.FromSeconds(5);
+    // Issue #767: whether ticks end is decided by counting, not by the clock. With the limit from #706 a tick reports at
+    // most Player.MaxStepsPerTick steps and a handful of other events; a tick past this many events counts without end.
+    // It is stopped there, after about a megabyte of step events.
+    private const int EventsNoEndingTickReaches = 10_000;
+
+    // Only an emergency brake for a loop that adds no events. The ticks take well under a millisecond; this is far beyond
+    // anything a slow or busy runner needs.
+    private static readonly TimeSpan EmergencyBrake = TimeSpan.FromMinutes(2);
 
     // A large open hall (60 x 60 m), so walls never get in the way.
     private static readonly Level OpenHall = CreateOpenHall(size: 31);
@@ -151,7 +156,7 @@ public class PlayerStepTests
     }
 
     [Fact]
-    public async Task A_player_without_top_speed_moved_on_the_ground_takes_no_steps_and_the_tick_ends()
+    public void A_player_without_top_speed_moved_on_the_ground_takes_no_steps_and_the_tick_ends()
     {
         // Issue #698: with MaxSpeed 0 the step length is 0, and counting steps never ended once the player moved on
         // the ground without walking - here by a dodge, whose speed does not depend on MaxSpeed. The ticks run on
@@ -162,9 +167,10 @@ public class PlayerStepTests
         var dodgeTicks = SimulationClock.SecondsToTicks(balance.Player.DodgeDuration);
         var shift = PlayerInput.None with { Dash = true };
 
-        var (ended, ticks) = await RunWithTimeLimit(player, () => Run(player, [shift, .. Enumerable.Repeat(PlayerInput.None, dodgeTicks)]));
+        var (stopped, ticks) = RunWatched(player, () => Run(player, [shift, .. Enumerable.Repeat(PlayerInput.None, dodgeTicks)]));
 
-        Assert.True(ended, "The ticks did not end - counting steps loops at a step length of 0.");
+        Assert.True(stopped is null, $"The ticks did not end ({stopped}) - counting steps loops at a step length of 0.");
+        Assert.Equal(1 + dodgeTicks, ticks.Count);
         Assert.True(player.IsGrounded);
         Assert.True(Vector3.Distance(start, player.Position) > 0f, "The dodge did not move the player - the test would check nothing.");
         Assert.Empty(Steps(ticks.SelectMany(tick => tick)));
@@ -173,7 +179,7 @@ public class PlayerStepTests
     [Theory]
     [InlineData(1e-8f)]
     [InlineData(1e-3f)]
-    public async Task A_player_with_a_tiny_top_speed_takes_only_a_few_steps_a_tick_and_the_tick_ends(float maxSpeed)
+    public void A_player_with_a_tiny_top_speed_takes_only_a_few_steps_a_tick_and_the_tick_ends(float maxSpeed)
     {
         // Issue #706: at a step length below the float resolution of the walked distance, taking a step no longer
         // shortens it and counting steps never ended (1e-8); just above, a tick reported hundreds of steps (1e-3).
@@ -183,9 +189,10 @@ public class PlayerStepTests
         var dodgeTicks = SimulationClock.SecondsToTicks(balance.Player.DodgeDuration);
         var shift = PlayerInput.None with { Dash = true };
 
-        var (ended, ticks) = await RunWithTimeLimit(player, () => Run(player, [shift, .. Enumerable.Repeat(PlayerInput.None, dodgeTicks)]));
+        var (stopped, ticks) = RunWatched(player, () => Run(player, [shift, .. Enumerable.Repeat(PlayerInput.None, dodgeTicks)]));
 
-        Assert.True(ended, $"The ticks did not end - counting steps loops at a step length of {player.StepLength} m.");
+        Assert.True(stopped is null, $"The ticks did not end ({stopped}) - counting steps loops at a step length of {player.StepLength} m.");
+        Assert.Equal(1 + dodgeTicks, ticks.Count);
         Assert.True(player.IsGrounded);
         Assert.True(Vector3.Distance(start, player.Position) > 0f, "The dodge did not move the player - the test would check nothing.");
         Assert.All(ticks, tick => Assert.InRange(Steps(tick).Count, 0, Player.MaxStepsPerTick));
@@ -222,33 +229,51 @@ public class PlayerStepTests
     }
 
     /// <summary>
-    /// Runs <paramref name="ticks"/> on their own thread, so a relapse into a loop without end turns a test red instead
-    /// of hanging the test run (issue #698). If the ticks do not end in time, the loop is stopped from outside: the
-    /// walked distance becomes NaN, which passes no comparison. Otherwise the thread would keep adding step events after
-    /// the test - many gigabytes within minutes (issue #706).
+    /// Runs <paramref name="ticks"/> on a thread of their own, so a relapse into a loop without end turns a test red
+    /// instead of hanging the test run (issue #698). Whether they end is decided by counting (issue #767): a tick with more
+    /// than <see cref="EventsNoEndingTickReaches"/> events is stopped from outside - the walked distance becomes NaN,
+    /// which passes no comparison. Otherwise the thread would keep adding step events after the test, many gigabytes
+    /// within minutes (issue #706). The clock only pulls the <see cref="EmergencyBrake"/>.
     /// </summary>
-    private static async Task<(bool Ended, List<List<GameEvent>> Ticks)> RunWithTimeLimit(Player player, Func<List<List<GameEvent>>> ticks)
+    /// <returns>Why the ticks were stopped (null if they ended on their own), and the events of every tick.</returns>
+    private static (string? Stopped, List<List<GameEvent>> Ticks) RunWatched(Player player, Func<List<List<GameEvent>>> ticks)
     {
         var stride = typeof(Player).GetField("_strideDistance", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.True(stride is not null, "Player has no field _strideDistance any more - the stop for a loop without end needs a new handle.");
 
-        var run = Task.Run(ticks);
-        if (await Task.WhenAny(run, Task.Delay(TimeLimit)) == run)
+        // A thread of its own, not one from the busy pool of the test run: its start does not wait for a free thread.
+        var run = Task.Factory.StartNew(ticks, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        var watch = Stopwatch.StartNew();
+        string? stopped = null;
+        while (stopped is null && !run.Wait(1))
         {
-            return (true, await run);
+            // Events grows while the loop runs; reading its count from here is only a look, it changes nothing.
+            if (player.Events.Count > EventsNoEndingTickReaches)
+            {
+                stopped = $"a tick reported more than {EventsNoEndingTickReaches} events";
+            }
+            else if (watch.Elapsed > EmergencyBrake)
+            {
+                stopped = $"still running after {EmergencyBrake.TotalMinutes} minutes";
+            }
+        }
+
+        if (stopped is null)
+        {
+            return (null, run.Result);
         }
 
         // A stop can get lost while the loop writes the field back, and a later tick may start counting anew - so keep
         // stopping until the ticks are through.
         var stopping = Stopwatch.StartNew();
-        while (!run.IsCompleted && stopping.Elapsed < TimeLimit)
+        while (!run.IsCompleted && stopping.Elapsed < EmergencyBrake)
         {
             stride.SetValue(player, float.NaN);
-            await Task.WhenAny(run, Task.Delay(1));
+            run.Wait(1);
         }
 
         Assert.True(run.IsCompleted, "The ticks did not end and could not be stopped - the test leaves a thread running.");
-        return (false, []);
+        return (stopped, []);
     }
 
     private static List<GameEvent> Run(Player player, PlayerInput input, int ticks)
