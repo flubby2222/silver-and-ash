@@ -93,6 +93,7 @@ hud-calm | ticks 1 menu None ----- | The HUD in a calm moment (issue #369): thre
 hud-items | ticks 1 menu None ----- | The HUD with the club in hand and the six items drawn last (issue #381): boots, rosary, holster, parry, leech, ashen heart.
 hud-boss | ticks 120 menu None ----S | The HUD in the boss fight (issue #369): Gorm's name and bar at the top, a quarter of his health gone.
 hud-skillpoint | ticks 1 menu None ----- | The HUD while a boon waits (issue #369): the skill point with its key [X] at the top left.
+hud-skillpoints | ticks 1 menu None ----- | The HUD with the first skill point (issue #502): the placeholder text beside the experience bar, every boon chosen.
 hud-pickup | ticks 45 menu None ---I- | The HUD just after Hunter's Eye is taken with F (issue #369): the gold toast above the items.
 hud-reload-start | ticks 20 menu None ---I- | The pistol just started reloading (R) with one round gone: the veil covers its picture (issue #370).
 hud-reload-mid | ticks 56 menu None ---I- | The pistol half way through its reload: the veil has shrunk to the right half of the frame (issues #370, #389).

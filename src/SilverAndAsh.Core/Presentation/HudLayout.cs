@@ -201,10 +201,10 @@ public sealed class HudLayout
             picture.Part("crosshair", (canvas.Width / 2) - (crosshair.Width / 2), (canvas.Height / 2) - (crosshair.Height / 2));
         }
 
-        var life = ArrangeLevel(picture, readout);
+        var topLeftRight = ArrangeLevel(picture, readout);
         if (readout.Boss is { } boss)
         {
-            ArrangeBoss(picture, boss, canvas, life.Right + Spacing);
+            ArrangeBoss(picture, boss, canvas, topLeftRight + Spacing);
         }
 
         ArrangeCurrency(picture, readout, canvas);
@@ -389,8 +389,8 @@ public sealed class HudLayout
 
     // Top left (issue #435, layout B): the life bar above the experience bar, the level frame with its number left of
     // them in the middle of the stack, and while a boon waits the skill point in a second row with the hint under it.
-    // Returns the body of the life frame.
-    private HudRect ArrangeLevel(Builder picture, HudReadout readout)
+    // Returns the rightmost column of the group's top rows (the life frame or the skill points beside the experience bar).
+    private int ArrangeLevel(Builder picture, HudReadout readout)
     {
         var lines = TopLeft();
         var level = picture.Frame("frame_level", Spacing, lines.LevelY);
@@ -416,7 +416,27 @@ public sealed class HudLayout
             picture.Text(LevelUpHint, Spacing, LevelHintTop(), 1, HudTextColor.Hint);
         }
 
-        return life;
+        var skillPoints = ArrangeSkillPoints(picture, readout.SkillPoints, xp);
+        return Math.Max(life.Right, skillPoints?.Right ?? 0);
+    }
+
+    /// <summary>The placeholder text of the skill points (issue #502): "1 skill point", "2 skill points" ...</summary>
+    public static string SkillPointsText(int points) =>
+        string.Create(CultureInfo.InvariantCulture, $"{points} skill point{(points == 1 ? string.Empty : "s")}");
+
+    // Beside the experience bar, the spacing right of its body and in the middle of its height: a placeholder text of
+    // the skill points while there are any (issue #502; the skill screen will get its own picture). Returns what it covers.
+    private HudRect? ArrangeSkillPoints(Builder picture, int points, HudRect xp)
+    {
+        if (points <= 0)
+        {
+            return null;
+        }
+
+        var text = SkillPointsText(points);
+        var size = TextSize(text, 1);
+        var placed = picture.Text(text, xp.Right + Spacing, Spread(xp.Y, xp.Height, [size.Height])[0], 1, HudTextColor.Main);
+        return Bounds(placed);
     }
 
     // The life bar (issue #435): as long as the highest health (LifeBar.Shape), in a frame cut to its length and closed by

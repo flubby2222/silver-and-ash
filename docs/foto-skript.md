@@ -60,6 +60,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `hud-rifle` | wie `hud-weapons`, aber mit dem Gewehr (2) in der Hand |
 | `hud-reload` | die Pistole im Startraum leergeschossen: „Reload [R]“ unter dem Fadenkreuz (Issue #259) |
 | `hud-texts` | alle Schriftzüge zugleich, jeder in seiner Zeile: „Reload [R]“ und „[F] Take Rifle (Forged)“ unter dem Fadenkreuz, „[X] Choose boon“ und die Weihezeit unten links (Issue #340) |
+| `hud-skillpoints` | das HUD mit dem ersten Skillpunkt: Platzhalter-Text „1 skill point“ rechts neben dem Erfahrungsbalken, alle Boons gewählt (Issue #502) |
 | `inventory` | die Menüseite „Equipment“ (G) mit voller Tasche, oben die beiden Reiter (Issue #348) |
 | `map` | die Menüseite „Map“ (Tab) früh im Durchlauf: links Werte und fünf gewählte Boons, rechts die Karte (Issues #347, #348) |
 | `map-skillpoint` | die Menüseite „Map“ (Tab), während ein Bonus wartet: oben links der gelbe Hinweis „[X] to level up“ über der Werte-Tafel (Issue #387) |

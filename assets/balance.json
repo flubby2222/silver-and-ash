@@ -348,5 +348,9 @@
       "bonus": 0.125,                   // more damage from every hit (0.125 = 12.5 %); at most 1
       "seconds": 3                      // s a fresh mark lasts; a shorter one never cuts a longer one short; at most 30
     }
+  },
+
+  "skills": {                           // skill points to learn skills with (issue #502)
+    "levelsPerPoint": 3                 // a point on every level that is a multiple of this (3: levels 3, 6, 9 ...); at most 20
   }
 }

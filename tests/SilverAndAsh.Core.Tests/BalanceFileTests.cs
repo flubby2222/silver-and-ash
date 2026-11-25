@@ -159,6 +159,7 @@ public class BalanceFileTests
     [InlineData("hearing", "nearDistance")]
     [InlineData("hearing", "rolloff")]
     [InlineData("hearing", "maxPan")]
+    [InlineData("skills", "levelsPerPoint")]
     public void Zero_is_refused_where_it_would_break_the_game(string section, string name)
     {
         var result = BalanceFile.Parse($$"""{ "{{section}}": { "{{name}}": 0 } }""");
@@ -196,7 +197,9 @@ public class BalanceFileTests
     [InlineData("""{ "difficulty": { "doorConeAngle": 91 } }""", "difficulty.doorConeAngle")]
     [InlineData("""{ "grates": { "blockHeight": 3.5 } }""", "grates.blockHeight")]
     [InlineData("""{ "statusEffects": { "marked": { "bonus": 1.5 } } }""", "statusEffects.marked.bonus")]
-    [InlineData("""{ "statusEffects": { "marked": { "seconds": 31 } } }""", "statusEffects.marked.seconds")]    public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
+    [InlineData("""{ "statusEffects": { "marked": { "seconds": 31 } } }""", "statusEffects.marked.seconds")]
+    [InlineData("""{ "skills": { "levelsPerPoint": 21 } }""", "skills.levelsPerPoint")]
+    public void Values_above_their_limit_fall_back_to_their_standard(string json, string name)
     {
         var result = BalanceFile.Parse(json);
 

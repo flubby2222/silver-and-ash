@@ -37,6 +37,7 @@ public sealed partial class Player
         _player = balance.Player;
         _experience = balance.Experience;
         _boons = balance.Boons;
+        _skills = balance.Skills;
         _consecratedFireRate = balance.ConsecratedAmmo.FireRateMultiplier;
         Position = level.PlayerStartPosition;
         PreviousPosition = Position;
@@ -254,8 +255,8 @@ public sealed partial class Player
     /// <summary>
     /// Adds <paramref name="amount"/> experience - plus the <see cref="Boon.Experience"/> bonus, counted from
     /// <paramref name="amount"/> - and climbs as many levels as it pays for; what is left over counts towards the next.
-    /// Every level up draws an offer of boons. Reports <see cref="ExperienceGained"/> and every <see cref="LevelUp"/>.
-    /// The dead gain nothing.
+    /// Every level up draws an offer of boons. Reports <see cref="ExperienceGained"/> and every <see cref="LevelUp"/>,
+    /// and every <see cref="SkillPointGained"/> right after the level up that brings it. The dead gain nothing.
     /// </summary>
     public void AddExperience(int amount, ICollection<GameEvent> events)
     {
@@ -283,10 +284,32 @@ public sealed partial class Player
             }
 
             events.Add(new LevelUp(Id, Level));
+            GainSkillPointAt(Level, events);
         }
     }
 
     private readonly ExperienceBalance _experience;
+
+    /// <summary>
+    /// Skill points of this run (issue #502): one on every level that is a multiple of
+    /// <see cref="SkillsBalance.LevelsPerPoint"/> - 0 at the start, back to 0 after death (a new world).
+    /// </summary>
+    public int SkillPoints { get; private set; }
+
+    private readonly SkillsBalance _skills;
+
+    /// <summary>Gives the skill point of <paramref name="level"/>, if it brings one, and reports it.</summary>
+    private void GainSkillPointAt(int level, ICollection<GameEvent> events)
+    {
+        // A step of 0 or less (set in code; the balancing file refuses it) brings no points rather than a division by 0.
+        if (_skills.LevelsPerPoint <= 0 || level % _skills.LevelsPerPoint != 0)
+        {
+            return;
+        }
+
+        SkillPoints++;
+        events.Add(new SkillPointGained(Id, SkillPoints));
+    }
 
     /// <summary>Every kill's experience is multiplied by this (1 = base; every Experience boon adds a bit, counted from the base).</summary>
     public float ExperienceMultiplier => 1f + (_boons.Experience * BoonCount(Boon.Experience));

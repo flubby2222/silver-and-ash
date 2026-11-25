@@ -337,6 +337,8 @@ public static class PhotoScenes
             }),
         new("hud-skillpoint", "The HUD while a boon waits (issue #369): the skill point with its key [X] at the top left.",
             studio => new PhotoSetup(LevelUp(Equipped(studio.StartRun())))),
+        new("hud-skillpoints", "The HUD with the first skill point (issue #502): the placeholder text beside the experience bar, every boon chosen.",
+            studio => new PhotoSetup(FirstSkillPoint(Equipped(studio.StartRun())))),
         new("hud-pickup", "The HUD just after Hunter's Eye is taken with F (issue #369): the gold toast above the items.",
             studio => new PhotoSetup(Equipped(BeforeEquipment(studio, piece => piece is ItemPiece { Item: ItemKind.HuntersEye })))
             {
@@ -1135,6 +1137,22 @@ public static class PhotoScenes
     private static GameWorld LevelUp(GameWorld world)
     {
         world.Player.AddExperience(world.Player.ExperienceToNextLevel, new List<GameEvent>());
+        return world;
+    }
+
+    // Level ups up to the first skill point (issue #502), each time the first boon on offer chosen - nothing waits.
+    private static GameWorld FirstSkillPoint(GameWorld world)
+    {
+        var player = world.Player;
+        while (player.SkillPoints == 0 && player.ExperienceToNextLevel > 0 && player.Level < 100)
+        {
+            player.AddExperience(player.ExperienceToNextLevel - player.Experience, new List<GameEvent>());
+            while (player.CurrentOffer.Count > 0)
+            {
+                player.Choose(player.CurrentOffer[0], new List<GameEvent>());
+            }
+        }
+
         return world;
     }
 

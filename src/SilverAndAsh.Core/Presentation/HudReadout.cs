@@ -37,6 +37,7 @@ public readonly record struct HudBoss(string Name, float Health);
 /// The highest health of the player (issue #435): the life bar is as long, one pixel per point on a canvas 480 lines high.
 /// </param>
 /// <param name="LifePerTick">What one health boon adds: the life bar has a tick mark every so many points (issue #435).</param>
+/// <param name="SkillPoints">The skill points of this run (issue #502): a placeholder text shows them while above 0.</param>
 public sealed record HudReadout(
     bool IsDead,
     float Life,
@@ -52,7 +53,8 @@ public sealed record HudReadout(
     float ConsecratedSecondsLeft,
     bool IsMeleeInUse = false,
     int MaxLife = 100,
-    int LifePerTick = 5)
+    int LifePerTick = 5,
+    int SkillPoints = 0)
 {
     /// <summary>The HUD of <paramref name="player"/> in <paramref name="world"/> as it is now.</summary>
     public static HudReadout Of(GameWorld world, Player player)
@@ -88,7 +90,8 @@ public sealed record HudReadout(
             player.IsConsecrated ? player.ConsecratedSecondsLeft : 0f,
             player.MeleeCharge.IsCharging || !player.MeleeCooldown.IsReady,
             player.MaxHealth,
-            world.Balance.Boons.Health);
+            world.Balance.Boons.Health,
+            player.SkillPoints);
     }
 
     private static float Fraction(int part, int whole) => whole > 0 ? Math.Clamp((float)part / whole, 0f, 1f) : 0f;

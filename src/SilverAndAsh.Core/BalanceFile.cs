@@ -72,7 +72,7 @@ public static class BalanceFile
 
     /// <summary>
     /// Highest sensible values. A jump may at most bring the head up to the ceiling. A mark at most doubles the damage
-    /// and lasts at most half a minute (issue #504).
+    /// and lasts at most half a minute (issue #504). A skill point comes at the latest every 20 levels (issue #502).
     /// </summary>
     private static readonly Dictionary<string, double> Maximum = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -115,6 +115,7 @@ public static class BalanceFile
         ["grates.blockHeight"] = GrateTravel.OpenHeight,
         ["statusEffects.marked.bonus"] = 1,
         ["statusEffects.marked.seconds"] = 30,
+        ["skills.levelsPerPoint"] = 20,
     };
 
     /// <summary>Values that must stay below a limit (a penalty of 100 % would mean standing still).</summary>
