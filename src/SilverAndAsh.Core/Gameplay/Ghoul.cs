@@ -160,13 +160,13 @@ public sealed class Ghoul : IEnemy
         return high && onHead ? HitZone.Head : HitZone.Body;
     }
 
-    public void TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
+    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
         ArgumentNullException.ThrowIfNull(events);
         if (IsDead)
         {
-            return;
+            return 0;
         }
 
         Health = Math.Max(0, Health - damage);
@@ -179,6 +179,8 @@ public sealed class Ghoul : IEnemy
             _corpseTicksLeft = _corpseTicks;
             events.Add(new GhoulDied(Id) { Place = Position });
         }
+
+        return damage;
     }
 
     /// <summary>
