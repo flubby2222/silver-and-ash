@@ -82,6 +82,7 @@ public sealed class Gorm : IEnemy
     public const float StepLength = 2f;
 
     private readonly GormBalance _gorm;
+    private readonly GraveChillBalance _chill;
     private readonly float _gravity;
     private readonly int _repathTicks;
     private readonly Random _random;
@@ -136,6 +137,7 @@ public sealed class Gorm : IEnemy
 
         balance ??= Balance.Default;
         _gorm = balance.Gorm;
+        _chill = balance.StatusEffects.GraveChill;
         _gravity = balance.Player.Gravity;
         _repathTicks = SimulationClock.SecondsToTicks(_gorm.RepathTime);
         _stoneTicks = Math.Max(1, SimulationClock.SecondsToTicks(_gorm.StoneWarning));
@@ -569,7 +571,8 @@ public sealed class Gorm : IEnemy
 
         FaceTowards(ColumnDetour.Around(level, Position, point, BodySizes.Gorm.Radius));
         var before = Position;
-        Move(level, Facing * (IsInPhase2 ? _gorm.Speed * _gorm.Phase2SpeedUp : _gorm.Speed), obstacles);
+        var speed = (IsInPhase2 ? _gorm.Speed * _gorm.Phase2SpeedUp : _gorm.Speed) * GraveChill.Pace(Status, _chill);
+        Move(level, Facing * speed, obstacles);
         CountSteps(before, events);
     }
 

@@ -1810,6 +1810,7 @@ public sealed class GameWorld
     {
         StatusKind.Marked => Math.Max(1, SimulationClock.SecondsToTicks(Balance.StatusEffects.Marked.Seconds)),
         StatusKind.CleansingFlame => CleansingFlame.DurationTicks(Balance.StatusEffects.CleansingFlame),
+        StatusKind.GraveChill => GraveChill.DurationTicks(Balance.StatusEffects.GraveChill),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown status effect."),
     };
 

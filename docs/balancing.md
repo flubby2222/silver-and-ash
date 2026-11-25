@@ -102,6 +102,21 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 25.11.2026 (#508, Grave Chill, vorläufig)
+
+**Anlass:** Issue #508. Dritter Statuseffekt nach *Marked* und *Cleansing Flame*: Grave Chill verlangsamt Laufen und Fliegen eines Gegners (Ghul kriechen, Fledermaus kreisen und steigen, Gorm gehen, auch in Phase 2). Ankündigungen, Angriffe und der Sturzflug der Fledermaus behalten ihre Länge. Gefundene Waffen würfeln seither gleich wahrscheinlich zwischen den drei Effekten.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `statusEffects.graveChill.slow` | – | 0,2 (unter 1, **vorläufig**) | Wert aus dem Issue: Der Gegner bewegt sich mit 80 % seiner Geschwindigkeit. Unter 1, damit er nie stillsteht. |
+| `statusEffects.graveChill.seconds` | – | 2 s (höchstens 30) | Wert aus dem Issue, gleich lang wie die Cleansing Flame. Erneutes Auslösen verlängert auf die volle Dauer, stapelt nicht. |
+
+Liegt ein Wert außerhalb, warnt der Lader und nimmt den Standardwert.
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Wie bei #507 rechnet der Report keine Statuseffekte ein, und kein Bot-Modus zählt sie; ein Vergleich würde nur zeigen, dass Türen, Wege und Stillstand gleich bleiben.
+
+**Offen:** Ein Lauf im Spiel steht aus. Ob 20 % Verlangsamung spürbar sind, urteilt der Mensch im Spieltest.
+
 ### Zwischenschritt – 25.11.2026 (#507, Cleansing Flame, vorläufig)
 
 **Anlass:** Issue #507. Zweiter Statuseffekt nach *Marked*: Die Cleansing Flame brennt einen Gegner in Pulsen. Gefundene Waffen würfeln seither zwischen *Marked* und *Cleansing Flame*.

@@ -216,6 +216,9 @@ public class BalanceFileTests
     [InlineData("""{ "statusEffects": { "marked": { "seconds": 31 } } }""", "statusEffects.marked.seconds")]
     [InlineData("""{ "statusEffects": { "cleansingFlame": { "seconds": 31 } } }""", "statusEffects.cleansingFlame.seconds")]
     [InlineData("""{ "statusEffects": { "cleansingFlame": { "damagePerSecond": 101 } } }""", "statusEffects.cleansingFlame.damagePerSecond")]
+    [InlineData("""{ "statusEffects": { "graveChill": { "seconds": 31 } } }""", "statusEffects.graveChill.seconds")]
+    [InlineData("""{ "statusEffects": { "graveChill": { "slow": 1 } } }""", "statusEffects.graveChill.slow")]
+    [InlineData("""{ "statusEffects": { "graveChill": { "slow": 1.5 } } }""", "statusEffects.graveChill.slow")]
     [InlineData("""{ "skills": { "levelsPerPoint": 21 } }""", "skills.levelsPerPoint")]
     [InlineData("""{ "statusEffects": { "weaponShare": 1.5 } }""", "statusEffects.weaponShare")]
     [InlineData("""{ "statusEffects": { "weaponHitChance": { "worn": 1.1 } } }""", "statusEffects.weaponHitChance.worn")]
@@ -502,6 +505,29 @@ public class BalanceFileTests
         var result = BalanceFile.Parse("""{ "statusEffects": { "cleansingFlame": { "seconds": 4, "damagePerSecond": 8, "tickSeconds": 0.25 } } }""");
 
         Assert.Equal(new CleansingFlameBalance { Seconds = 4f, DamagePerSecond = 8f, TickSeconds = 0.25f }, result.Balance.StatusEffects.CleansingFlame);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Theory]
+    [InlineData("slow", "0")]       // a chill that slows nothing
+    [InlineData("slow", "-0.2")]    // one that would speed the enemy up
+    [InlineData("seconds", "0")]
+    [InlineData("seconds", "-2")]
+    public void A_chill_value_of_zero_or_below_falls_back_to_its_standard(string name, string value)
+    {
+        // Issue #508.
+        var result = BalanceFile.Parse($$"""{ "statusEffects": { "graveChill": { "{{name}}": {{value}} } } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains($"statusEffects.graveChill.{name}"));
+    }
+
+    [Fact]
+    public void Chill_values_within_their_limits_are_read()
+    {
+        var result = BalanceFile.Parse("""{ "statusEffects": { "graveChill": { "slow": 0.5, "seconds": 4 } } }""");
+
+        Assert.Equal(new GraveChillBalance { Slow = 0.5f, Seconds = 4f }, result.Balance.StatusEffects.GraveChill);
         Assert.Empty(result.Warnings);
     }
 

@@ -121,6 +121,7 @@ public static class BalanceFile
         ["statusEffects.cleansingFlame.seconds"] = 30,
         ["statusEffects.cleansingFlame.damagePerSecond"] = 100,
         ["statusEffects.cleansingFlame.tickSeconds"] = 5,
+        ["statusEffects.graveChill.seconds"] = 30,
         ["statusEffects.weaponShare"] = 1,
         ["statusEffects.weaponHitChance.worn"] = 1,
         ["statusEffects.weaponHitChance.forged"] = 1,
@@ -133,6 +134,7 @@ public static class BalanceFile
     private static readonly Dictionary<string, double> Below = new(StringComparer.OrdinalIgnoreCase)
     {
         ["player.exhaustedJumpSpeedPenalty"] = 1,
+        ["statusEffects.graveChill.slow"] = 1,   // a chill of 100 % would freeze the enemy (issue #508)
     };
 
     /// <summary>Pairs where the first may not be above the second.</summary>
