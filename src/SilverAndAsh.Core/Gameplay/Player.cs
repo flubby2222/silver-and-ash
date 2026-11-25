@@ -418,6 +418,32 @@ public sealed partial class Player
     }
 
     /// <summary>
+    /// The fraction of a health point Leech has saved up for this player and not yet healed (issue #510): always below
+    /// one. Each player saves his own - one player's hits never heal another.
+    /// </summary>
+    public decimal LeechSaved { get; private set; }
+
+    /// <summary>
+    /// Leech took hold on a hit of this player that dealt <paramref name="damage"/> (issue #510): its share is added to
+    /// what is saved up, and the whole points of that heal through <see cref="Heal"/> - never above
+    /// <see cref="MaxHealth"/>; at full health they are gone, only the fraction stays. The dead neither heal nor save
+    /// anything. Returns how much was really healed.
+    /// </summary>
+    public int HealByLeech(int damage, LeechBalance values, ICollection<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        var health = Leech.HealthFrom(damage, values);
+        if (IsDead)   // the dead neither heal nor save anything up
+        {
+            return 0;
+        }
+
+        var (whole, rest) = Leech.Split(LeechSaved + health);
+        LeechSaved = rest;
+        return Heal(whole, events);
+    }
+
+    /// <summary>
     /// True on the test course (issue #718): damage still hits and is reported, but health never falls below 1, so a
     /// player walks every station to the end. False in a normal game. It is the world's rule
     /// (<see cref="GameWorld.PlayersCannotDie"/>), asked at every hit, so a player who joins later follows it too

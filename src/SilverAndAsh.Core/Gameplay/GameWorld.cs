@@ -1566,15 +1566,15 @@ public sealed class GameWorld
         var values = Balance.Melee(swing.Weapon);
         BreakWalls(swing, attacker, values);
 
-        var struck = new List<ITarget>();
+        var struck = new StruckTargets();
         foreach (var target in Targets.Where(target => target.IsHittable).ToList())
         {
             if (MeleeStrike.Hits(Level, swing.Origin, swing.Direction, target.Body, values))
             {
                 // A melee weapon hits the whole body at once - it has no hit zone (and so no headshot bonus).
-                if (Damage(target, new Hit(Weapons.ForDamage(swing.Weapon), HitZone.Body, values.Damage, swing.Charge), attacker))
+                if (Damage(target, new Hit(Weapons.ForDamage(swing.Weapon), HitZone.Body, values.Damage, swing.Charge), attacker, out var dealt))
                 {
-                    struck.Add(target);
+                    struck.Add(target, dealt);
                 }
 
                 KnockBack(target, attacker, values, swing.Charge);
@@ -1589,16 +1589,35 @@ public sealed class GameWorld
     /// lives may catch the weapon's status effect (issue #505), with <paramref name="attacker"/> as its source. Each one
     /// rolls once - also when several pellets of one blunderbuss shot hit it. Coming after the hits, the effect never
     /// raises the damage of the hit that set it off; it counts from the next hit on, in this tick or a later one.
+    /// An effect that acts on the attacker (Leech, issue #510) rolls for a killed enemy too: the killing hit dealt damage
+    /// like any other.
     /// </summary>
-    private void SetOffWeaponEffect(IReadOnlyList<ITarget> struck, WeaponKind weapon, Player attacker)
+    private void SetOffWeaponEffect(StruckTargets struck, WeaponKind weapon, Player attacker)
     {
-        foreach (var enemy in struck.OfType<IEnemy>().Where(enemy => !enemy.IsDead))
+        var onTheAttacker = WeaponEffects.Of(weapon) is { } carried && WeaponEffects.ActsOnTheAttacker(carried);
+        foreach (var enemy in struck.Targets.OfType<IEnemy>().Where(enemy => onTheAttacker || !enemy.IsDead))
         {
             if (WeaponEffects.RollHit(weapon) is { } effect)
             {
-                ApplyStatus(enemy, effect, attacker);
+                SetOff(effect, enemy, attacker, struck.DamageTo(enemy));
             }
         }
+    }
+
+    /// <summary>
+    /// A weapon's effect of <paramref name="kind"/> takes hold on a hit of <paramref name="attacker"/> on
+    /// <paramref name="enemy"/> that dealt <paramref name="damage"/>: Leech heals the attacker (issue #510), every other
+    /// effect goes on the enemy.
+    /// </summary>
+    private void SetOff(StatusKind kind, IEnemy enemy, Player attacker, int damage)
+    {
+        if (WeaponEffects.ActsOnTheAttacker(kind))
+        {
+            attacker.HealByLeech(damage, Balance.StatusEffects.Leech, _events);
+            return;
+        }
+
+        ApplyStatus(enemy, kind, attacker);
     }
 
     private static void KnockBack(ITarget target, Player attacker, MeleeBalance values, float charge)
@@ -1654,7 +1673,7 @@ public sealed class GameWorld
         var forward = Vector3.Normalize(shot.Direction);
 
         // Every target the shot struck, once - however many pellets hit it (the blunderbuss rule of issue #505).
-        var struck = new List<ITarget>();
+        var struck = new StruckTargets();
         for (var pellet = 0; pellet < values.Pellets; pellet++)
         {
             FirePellet(shot.Origin, Spread(forward, values.Spread), values, weapon, attacker, struck);
@@ -1694,9 +1713,9 @@ public sealed class GameWorld
 
     /// <summary>
     /// One bullet (or pellet) along <paramref name="direction"/>: hits up to 1 + pierce targets before the first wall.
-    /// Every target it really struck goes into <paramref name="struck"/>, if it is not in there already.
+    /// Every target it really struck goes into <paramref name="struck"/>, with the damage it dealt.
     /// </summary>
-    private void FirePellet(Vector3 origin, Vector3 direction, RangedBalance values, Weapon weapon, Player attacker, List<ITarget> struck)
+    private void FirePellet(Vector3 origin, Vector3 direction, RangedBalance values, Weapon weapon, Player attacker, StruckTargets struck)
     {
         var wall = Raycast.AgainstLevel(Level, origin, direction, values.Range);
         var reach = wall?.Distance ?? values.Range;
@@ -1712,9 +1731,9 @@ public sealed class GameWorld
         foreach (var (target, distance) in hits)
         {
             var zone = target.ZoneAt(origin + direction * distance!.Value);
-            if (Damage(target, new Hit(weapon, zone, values.Damage), attacker) && !struck.Contains(target))
+            if (Damage(target, new Hit(weapon, zone, values.Damage), attacker, out var dealt))
             {
-                struck.Add(target);
+                struck.Add(target, dealt);
             }
         }
 
@@ -1736,10 +1755,12 @@ public sealed class GameWorld
     /// Turns a hit of <paramref name="attacker"/> into damage with the world's rules and applies it. If it kills an
     /// enemy, the attacker gets that enemy's experience - only the killing hit counts (online co-op: the one who
     /// finishes it off, not everyone who hit it). Returns whether the hit counted (false in the showroom, or for a
-    /// target that ignores it).
+    /// target that ignores it), and in <paramref name="dealt"/> the damage it dealt (issue #510: what Leech takes its share of).
     /// </summary>
-    private bool Damage(ITarget target, Hit hit, Player attacker)
+    private bool Damage(ITarget target, Hit hit, Player attacker, out int dealt)
     {
+        dealt = 0;
+
         // The showroom's enemies are exhibits: hits do nothing to them.
         if (IsShowroom)
         {
@@ -1753,13 +1774,14 @@ public sealed class GameWorld
         });
         var wasAlive = target.IsHittable;
         var eventsBefore = _events.Count;
-        target.TakeDamage(result.Amount, _events, result.IsCritical);
+        var taken = target.TakeDamage(result.Amount, _events, result.IsCritical);
 
         // The target's own hit event does not say what hit it; this one does (issue #267: the blade sound only for the
         // blade). Only if the hit counted - a target that ignores it (already down) reports nothing.
         var counted = _events.Count > eventsBefore;
         if (counted)
         {
+            dealt = taken;
             _events.Insert(eventsBefore + 1, new TargetHitBy(target.Id, attacker.Id, hit.Weapon) { Hard = target is TrainingDummy });
         }
 
@@ -1790,12 +1812,13 @@ public sealed class GameWorld
     /// <summary>
     /// Puts a status effect of <paramref name="kind"/> from <paramref name="source"/> on <paramref name="enemy"/> for its
     /// duration from the balance values (issue #504), refreshing one that already lasts. A dead enemy takes none; then
-    /// this returns false - as for an enemy immune to the kind (issue #509: Gorm after a stun); neither reports anything.
+    /// this returns false - as for an enemy immune to the kind (issue #509: Gorm after a stun) or a kind that acts on the
+    /// attacker (issue #510: Leech); none of them reports anything.
     /// Weapons with an effect set it off through here (issue #505); tests may call it directly.
     /// </summary>
     internal bool ApplyStatus(IEnemy enemy, StatusKind kind, Player source)
     {
-        if (enemy.IsDead)
+        if (enemy.IsDead || WeaponEffects.ActsOnTheAttacker(kind))   // Leech (issue #510) is no state on the enemy
         {
             return false;
         }
@@ -1862,7 +1885,7 @@ public sealed class GameWorld
         var source = Players.FirstOrDefault(player => player.Id == flame.SourcePlayerId);
         if (amount > 0 && source is not null)
         {
-            Damage(enemy, new Hit(Weapon.CleansingFlame, HitZone.Body, amount), source);
+            Damage(enemy, new Hit(Weapon.CleansingFlame, HitZone.Body, amount), source, out _);
         }
     }
 

@@ -102,6 +102,22 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 25.11.2026 (#510, Leech, vorläufig)
+
+**Anlass:** Issue #510. Fünfter Statuseffekt: Löst ein Treffer *Leech* aus, heilt der Spieler, der getroffen hat, sofort um einen Anteil des Schadens. Keine Dauer, kein Timer, nie über das Höchstleben; Bruchteile sammelt jeder Spieler für sich. Gefundene Waffen würfeln seither gleich wahrscheinlich zwischen den fünf Effekten.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `statusEffects.leech.share` | – | 0,025 = 2,5 % des Schadens (höchstens 1, **vorläufig**) | Wert aus dem Issue. Ein Gewehrtreffer (80) gibt 2 Leben, eine Keule (50) 1,25, ein Donnerbüchsen-Schuss je nach Kugeln zusammen. |
+
+Der Wert muss größer als 0 sein; liegt er außerhalb, warnt der Lader und nimmt den Standardwert.
+
+**Welcher Schaden zählt (vorläufig):** der, den das Treffer-Ereignis des Gegners meldet. Gegen Gorm mit festsitzender Keule ist das der verdoppelte Schaden. Beim tödlichen Treffer meldet der Ghul heute den ganzen Schaden, Fledermaus und Gorm nur das restliche Leben – Leech zählt jeweils das. Die Meldungen anzugleichen ist eine eigene Aufgabe.
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Wie bei #507 bis #509 rechnet der Report keine Statuseffekte ein, und kein Bot-Modus zählt sie.
+
+**Offen:** Ein Lauf im Spiel steht aus. Leech greift nur, wenn der Treffer den Effekt auslöst (Chance der Seltenheit, 10 bis 25 %); ob das zusammen mit 2,5 % spürbar ist, urteilt der Mensch im Spieltest.
+
 ### Zwischenschritt – 25.11.2026 (#509, Stun, vorläufig)
 
 **Anlass:** Issue #509. Vierter Statuseffekt nach *Marked*, *Cleansing Flame* und *Grave Chill*: Ein betäubter Ghul oder eine betäubte Fledermaus steht still und greift nicht an, ein laufendes Ausholen bricht ab. Gorm taumelt nur kurz (bleibt stehen, Ankündigungen laufen weiter) und ist danach eine Weile immun. Gefundene Waffen würfeln seither gleich wahrscheinlich zwischen den vier Effekten.

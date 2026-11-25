@@ -126,6 +126,7 @@ public static class BalanceFile
         ["statusEffects.graveChill.seconds"] = 30,
         ["statusEffects.stun.seconds"] = 5,
         ["statusEffects.stun.gormImmuneSeconds"] = 60,
+        ["statusEffects.leech.share"] = 1,   // all the damage back as health, no more (issue #510)
         ["statusEffects.weaponShare"] = 1,
         ["statusEffects.weaponHitChance.worn"] = 1,
         ["statusEffects.weaponHitChance.forged"] = 1,

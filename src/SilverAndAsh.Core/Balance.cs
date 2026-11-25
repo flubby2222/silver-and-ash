@@ -182,6 +182,9 @@ public sealed record StatusEffectsBalance
     /// <summary>Stun (issue #509): the enemy stands still and attacks no more; Gorm only staggers.</summary>
     public StunBalance Stun { get; init; } = new();
 
+    /// <summary>Leech (issue #510): a share of the damage heals the player who dealt it.</summary>
+    public LeechBalance Leech { get; init; } = new();
+
     /// <summary>Share of found weapons that carry a status effect (skills draft, section 5: 0.3 = 30 %, the same for every tier).</summary>
     public float WeaponShare { get; init; } = 0.3f;
 
@@ -271,6 +274,16 @@ public sealed record StunBalance
 
     /// <summary>Seconds after his stagger in which a new stun does nothing to Gorm.</summary>
     public float GormImmuneSeconds { get; init; } = 5f;
+}
+
+/// <summary>
+/// Leech (skills draft, section 4; issue #510): when it takes hold, a share of the damage the hit dealt heals the player
+/// who dealt it - at once, with no duration. Health is a whole number, so the fractions are saved up per player.
+/// </summary>
+public sealed record LeechBalance
+{
+    /// <summary>Share of the damage that comes back as health (0.025 = 2.5 %).</summary>
+    public float Share { get; init; } = 0.025f;
 }
 
 /// <summary>Experience: what a kill is worth and how much each level needs.</summary>
