@@ -16,6 +16,12 @@ public enum StatusForm
     /// floor below it; the body itself takes the cold tint of the look (<see cref="StatusLook.Tint"/>). See <see cref="FrostLook"/>.
     /// </summary>
     Frost,
+
+    /// <summary>
+    /// Sparks (Stun, variant A of the effects trial piece #616, issue #778): three plus-shaped sparks circling above the
+    /// head, no tint of the body. See <see cref="StunLook"/>.
+    /// </summary>
+    Sparks,
 }
 
 /// <summary>
@@ -59,8 +65,9 @@ public static class StatusLooks
         new(StatusKind.GraveChill, EffectColours.Cloth, FrostLook.Rime, ShowsTimer: true, Form: StatusForm.Frost, Tint: FrostLook.Tint),
 
         // Stun: Eisen 6 (163, 175, 187), the silver-grey of variant A of the effects trial piece (issue #509). Close to the
-        // frost of Grave Chill in colour - the effects trial piece tells them apart by shape (sparks circling over the head).
-        new(StatusKind.Stun, EffectColours.Iron, (163, 175, 187), ShowsTimer: true),
+        // frost of Grave Chill in colour - the effects trial piece tells them apart by shape: sparks circling over the head
+        // (issue #778, see StunLook), no tint of the body.
+        new(StatusKind.Stun, EffectColours.Iron, StunLook.Arms, ShowsTimer: true, Form: StatusForm.Sparks),
 
         // Leech (issue #510): acts on the player at once and never sits on an enemy, so today nothing draws this look.
         // Violet belongs to Leech (effects trial piece, issue #616, version b1), but the ramp "Violett" is not in the main

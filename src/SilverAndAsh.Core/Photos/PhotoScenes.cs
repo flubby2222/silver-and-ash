@@ -162,10 +162,22 @@ public static class PhotoScenes
                 Ticks = 600,
                 StopWhen = world => !world.Ghouls[0].Status.Has(StatusKind.GraveChill),
             }),
-        new("ghoul-stunned-4m", "A ghoul 4 m away, just stunned: the silver-grey shimmer round it, its time left above its head (issue #509).",
+        new("ghoul-stunned-4m", "A ghoul 4 m away, just stunned: three silver-grey sparks circling above its head, its time left above them (issues #509, #778).",
             studio => new PhotoSetup(Stunned(studio.Arena('G', 4), 0))),
+        new("ghoul-stunned-10m", "A stunned ghoul 10 m away: can the sparks still be told at a distance? (issue #778)",
+            studio => new PhotoSetup(Stunned(studio.Arena('G', 10), 0))),
         new("ghouls-chilled-stunned", "Two ghouls side by side 6 m away, one just chilled (2.0s), the other just stunned (0.5s): can the two effects be told apart? (issue #509)",
             studio => new PhotoSetup(Stunned(Chilled(studio.ArenaPair('G', 6)), 1))),
+        new("ghouls-chilled-stunned-4m", "Two ghouls side by side 4 m away, the left one just stunned, the right one just chilled: sparks above the head next to frost on the body (issue #778).",
+            studio => new PhotoSetup(Stunned(Chilled(studio.ArenaPair('G', 4)), 1))),
+        new("ghouls-chilled-stunned-10m", "The same two ghouls 10 m away: frost and sparks still told apart by shape? (issue #778)",
+            studio => new PhotoSetup(Stunned(Chilled(studio.ArenaPair('G', 10)), 1))),
+        new("ghouls-burning-stunned-4m", "Two ghouls side by side 4 m away, the left one just stunned, the right one just set alight: the sparks next to the burning shimmer (issue #778).",
+            studio => new PhotoSetup(Stunned(Burning(studio.ArenaPair('G', 4)), 1))),
+        new("ghouls-marked-stunned-4m", "Two ghouls side by side 4 m away, the left one just stunned, the right one just marked: the sparks next to the violet shimmer (issue #778).",
+            studio => new PhotoSetup(Stunned(Marked(studio.ArenaPair('G', 4)), 1))),
+        new("ghoul-chilled-and-stunned-4m", "A ghoul 4 m away, chilled and stunned at once: frost on the body and sparks above the head, both timers (issue #778).",
+            studio => new PhotoSetup(Stunned(Chilled(studio.Arena('G', 4)), 0))),
         new("ghouls-chilled-burning", "Two ghouls side by side 6 m away, one just chilled, the other just set alight: frost next to the burning shimmer (issue #775).",
             studio => new PhotoSetup(Burning(Chilled(studio.ArenaPair('G', 6)), 1))),
         new("ghouls-chilled-marked", "Two ghouls side by side 6 m away, one just chilled, the other just marked: frost next to the violet shimmer (issue #775).",
@@ -212,6 +224,20 @@ public static class PhotoScenes
     private static GameWorld ChilledGorm(GameWorld world)
     {
         world.ApplyStatus(world.Gorm ?? throw new InvalidOperationException("The world has no Gorm."), StatusKind.GraveChill, world.Player);
+        return world;
+    }
+
+    // The first bat of the world stunned by a player, as a weapon would (issue #778).
+    private static GameWorld StunnedBat(GameWorld world)
+    {
+        world.ApplyStatus(world.Bats[0], StatusKind.Stun, world.Player);
+        return world;
+    }
+
+    // Gorm stunned by a player, as a weapon would (issue #778): he staggers, then is immune for a while.
+    private static GameWorld StunnedGorm(GameWorld world)
+    {
+        world.ApplyStatus(world.Gorm ?? throw new InvalidOperationException("The world has no Gorm."), StatusKind.Stun, world.Player);
         return world;
     }
 
@@ -306,6 +332,8 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.Arena('B', 10))),
         new("bat-chilled-4m", "A bat 4 m away, just chilled by a Grave Chill: its body tinted cold, rime flecks on it, the disc of rime on the floor below it (issue #775).",
             studio => new PhotoSetup(ChilledBat(studio.Arena('B', 4)))),
+        new("bat-stunned-4m", "A bat 4 m away in the air, just stunned: three sparks circling above it, its time left above them (issue #778).",
+            studio => new PhotoSetup(StunnedBat(studio.Arena('B', 4)))),
         new("bat-screech", "A bat screeching, the warning before its dive, halfway through (issue #249).",
             studio => new PhotoSetup(studio.Arena('B', 4))
             {
@@ -330,6 +358,16 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.BeforeGorm(6f))),
         new("gorm-chilled", "Gorm 8 m away, just chilled by a Grave Chill: his body tinted cold, rime flecks on him, the disc of rime at his feet; in a hall as high as his boss room (issue #775).",
             studio => new PhotoSetup(ChilledGorm(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight)))),
+        new("gorm-stunned", "Gorm 8 m away, just stunned - he staggers for a moment: three sparks circling above his head; in a hall as high as his boss room (issue #778).",
+            studio => new PhotoSetup(StunnedGorm(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight)))),
+        new("gorm-stunned-windup", "Gorm stunned while he whirls his chain above his head, the warning before the swing, which goes on: the sparks above his head next to the chain; in a hall as high as his boss room (issue #778).",
+            studio => new PhotoSetup(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight))
+            {
+                Ticks = 3000,
+                // At the moment of gorm-swing-windup the stun goes on, as a weapon would put it on; the picture is taken at once.
+                StopWhen = world => world.Gorm is { State: GormState.WindingUp, Attack: GormAttack.Swing, StateProgress: >= 0.82f }
+                    && StunnedGorm(world).Gorm!.Status.Has(StatusKind.Stun),
+            }),
         new("gorm-swing-windup", "Gorm whirling his chain above his head, the warning before the swing, the chain out to his right; in a hall as high as his boss room (issues #249, #254).",
             studio => new PhotoSetup(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight))
             {
