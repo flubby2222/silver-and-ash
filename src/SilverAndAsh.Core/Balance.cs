@@ -213,12 +213,42 @@ public sealed record ExperienceBalance
     /// <summary>Experience for killing a bat.</summary>
     public int Bat { get; init; } = 20;
 
-    /// <summary>Experience needed from level 0 (the start) to level 1.</summary>
-    public int FirstLevel { get; init; } = 100;
+    /// <summary>
+    /// What each level costs (issue #503, curve B of the skills draft): every level the same, from a threshold on more.
+    /// Each entry holds from its <see cref="LevelCost.FromLevel"/> until the next one - 270 from level 0 to 10, 540 from
+    /// 10 to 20, 1080 from 20 on. The balancing file only takes a table that starts at 0, rises and costs something.
+    /// </summary>
+    public IReadOnlyList<LevelCost> LevelCosts { get; init; } = [new(0, 270), new(10, 540), new(20, 1080)];
 
-    /// <summary>Every further level needs this many times as much as the one before (1.25: 100, 125, 156, 195 ...).</summary>
-    public float Growth { get; init; } = 1.25f;
+    /// <summary>
+    /// Experience needed from <paramref name="level"/> to the next one: the cost of the last threshold at or below it.
+    /// The one rule for the game (<see cref="Gameplay.Player.ExperienceToNextLevel"/>) and the balance report. 0 below
+    /// the first threshold or without any (only code can set that) - a level that needs nothing is never climbed.
+    /// </summary>
+    public int CostFrom(int level)
+    {
+        var cost = 0;
+        foreach (var threshold in LevelCosts)
+        {
+            if (level >= threshold.FromLevel)
+            {
+                cost = threshold.Cost;
+            }
+        }
+
+        return cost;
+    }
+
+    /// <summary>Equal when all values and every threshold are equal (a list on its own would compare as the same list).</summary>
+    public bool Equals(ExperienceBalance? other) =>
+        other is not null && Ghoul == other.Ghoul && Bat == other.Bat && LevelCosts.SequenceEqual(other.LevelCosts);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(Ghoul, Bat, LevelCosts.Count);
 }
+
+/// <summary>One threshold of the level costs: from <paramref name="FromLevel"/> on, every level costs <paramref name="Cost"/> experience.</summary>
+public sealed record LevelCost(int FromLevel, int Cost);
 
 /// <summary>
 /// The bonuses after a level up: small steps, each counted from the base value - so choosing one three times gives

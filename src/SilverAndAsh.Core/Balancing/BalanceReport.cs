@@ -157,7 +157,10 @@ public static class BalanceReport
             .ToList();
     }
 
-    /// <summary>The player level <paramref name="experience"/> leads to - as <see cref="Player.ExperienceToNextLevel"/> counts it, without boons.</summary>
+    /// <summary>
+    /// The player level <paramref name="experience"/> leads to, without boons - level by level with
+    /// <see cref="ExperienceBalance.CostFrom"/>, the same rule as <see cref="Player.ExperienceToNextLevel"/>.
+    /// </summary>
     public static int LevelReached(int experience, ExperienceBalance balance)
     {
         ArgumentNullException.ThrowIfNull(balance);
@@ -165,7 +168,7 @@ public static class BalanceReport
         var left = experience;
         while (true)
         {
-            var needed = (int)MathF.Round(balance.FirstLevel * MathF.Pow(balance.Growth, level), MidpointRounding.AwayFromZero);
+            var needed = balance.CostFrom(level);
             if (needed <= 0 || left < needed)
             {
                 return level;

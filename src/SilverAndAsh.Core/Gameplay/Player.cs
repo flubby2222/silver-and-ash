@@ -249,11 +249,10 @@ public sealed partial class Player
     public int Experience { get; private set; }
 
     /// <summary>
-    /// Experience needed for the next level: the first level's amount, then <see cref="ExperienceBalance.Growth"/>
-    /// times as much for each level (100, 125, 156, 195 ...), rounded.
+    /// Experience needed for the next level: the cost of the current level in <see cref="ExperienceBalance.LevelCosts"/>
+    /// (issue #503) - the same each level, more from a threshold on.
     /// </summary>
-    public int ExperienceToNextLevel =>
-        (int)MathF.Round(_experience.FirstLevel * MathF.Pow(_experience.Growth, Level), MidpointRounding.AwayFromZero);
+    public int ExperienceToNextLevel => _experience.CostFrom(Level);
 
     /// <summary>
     /// Adds <paramref name="amount"/> experience - plus the <see cref="Boon.Experience"/> bonus, counted from

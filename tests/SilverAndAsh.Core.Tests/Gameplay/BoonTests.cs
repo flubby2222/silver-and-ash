@@ -18,12 +18,12 @@ public class BoonTests
     };
 
     /// <summary>Experience of the first level in the standard balance - enough for exactly one level up.</summary>
-    private static readonly int FirstLevel = Balance.Default.Experience.FirstLevel;
+    private static readonly int FirstLevel = Balance.Default.Experience.LevelCosts[0].Cost;
 
-    /// <summary>A round level curve of its own (issue #586): 100 for the first level, 200 for the second, 400 ...</summary>
+    /// <summary>A round level curve of its own (issue #586, as a table since #503): 100 for the first level, 200 for the second, 400 from the third on.</summary>
     private static readonly Balance RoundCurve = OfferAll with
     {
-        Experience = new ExperienceBalance { FirstLevel = 100, Growth = 2f },
+        Experience = new ExperienceBalance { LevelCosts = [new(0, 100), new(1, 200), new(2, 400)] },
     };
 
     [Fact]
@@ -89,7 +89,7 @@ public class BoonTests
         {
             Boons = Balance.Default.Boons with { Offered = Pool.Length - 1 },
         });
-        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
+        player.AddExperience(Balance.Default.Experience.LevelCosts[0].Cost, []);
         var missing = Assert.Single(Pool.Except(player.CurrentOffer));
 
         Assert.False(player.Choose(missing, []));
@@ -122,7 +122,7 @@ public class BoonTests
         var twin = new GameWorld(LevelParser.Parse(Level));
         var player = world.Player;
         var ghoul = world.Ghouls[0];
-        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
+        player.AddExperience(Balance.Default.Experience.LevelCosts[0].Cost, []);
         var start = Start(world, twin);
         var ghoulAt = ghoul.Position;
 
@@ -138,7 +138,7 @@ public class BoonTests
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\n."), balance: OfferAll);
         var player = world.Player;
-        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
+        player.AddExperience(Balance.Default.Experience.LevelCosts[0].Cost, []);
         for (var tick = 0; tick < 3 * Second; tick++)
         {
             world.Tick(PlayerInput.None);
@@ -306,7 +306,7 @@ public class BoonTests
     public void The_view_turns_while_a_boon_waits()
     {
         var player = new Player(LevelParser.Parse("P"));
-        player.AddExperience(Balance.Default.Experience.FirstLevel, []);
+        player.AddExperience(Balance.Default.Experience.LevelCosts[0].Cost, []);
         var yaw = player.View.YawRadians;
 
         player.Look(PlayerInput.None with { Look = new Vector2(200f, 0f) });
@@ -429,7 +429,7 @@ public class BoonTests
         };
         var world = new GameWorld(LevelParser.Parse("P\nD"), balance: balance);
         var dummy = world.Dummies[0];
-        world.Player.AddExperience(balance.Experience.FirstLevel, []);
+        world.Player.AddExperience(balance.Experience.LevelCosts[0].Cost, []);
         world.Tick(PlayerInput.None with { ChooseBoon = Boon.Damage });
         Face(world.Player, dummy.Position + new Vector3(0f, 1f, 0f));
 
@@ -493,7 +493,7 @@ public class BoonTests
             Boons = OfferAll.Boons with { Health = 30, HealthCap = 1000, Damage = 0.5f, Experience = 1f },
         };
         var player = new Player(LevelParser.Parse("P"), balance: balance);
-        player.AddExperience(balance.Experience.FirstLevel, []);
+        player.AddExperience(balance.Experience.LevelCosts[0].Cost, []);
         player.Choose(Boon.Health, []);
 
         Assert.Equal(130, player.MaxHealth);

@@ -171,7 +171,6 @@ public class BalanceFileTests
     [InlineData("player", "staminaJumps")]
     [InlineData("pistol", "magazineSize")]
     [InlineData("pistol", "reloadTime")]
-    [InlineData("experience", "firstLevel")]
     [InlineData("hearing", "range")]
     [InlineData("hearing", "nearDistance")]
     [InlineData("hearing", "rolloff")]
@@ -518,6 +517,121 @@ public class BalanceFileTests
 
         Assert.Equal(Balance.Default, result.Balance);
         Assert.Contains(result.Warnings, w => w.Contains("silver-and-ash-no-such-file.json"));
+    }
+
+    [Fact]
+    public void It_reads_the_level_costs_as_a_table()
+    {
+        // Issue #503: the rows replace the standard table as a whole.
+        var result = BalanceFile.Parse("""{ "experience": { "levelCosts": [ { "fromLevel": 0, "cost": 50 }, { "fromLevel": 5, "cost": 80 } ] } }""");
+
+        Assert.Empty(result.Warnings);
+        Assert.Equal([new LevelCost(0, 50), new LevelCost(5, 80)], result.Balance.Experience.LevelCosts);
+        Assert.Equal(Balance.Default.Experience.Ghoul, result.Balance.Experience.Ghoul);
+    }
+
+    [Fact]
+    public void Without_level_costs_the_standard_table_stays()
+    {
+        var result = BalanceFile.Parse("""{ "experience": { "ghoul": 40 } }""");
+
+        Assert.Empty(result.Warnings);
+        Assert.Equal(Balance.Default.Experience.LevelCosts, result.Balance.Experience.LevelCosts);
+    }
+
+    [Fact]
+    public void An_empty_table_of_level_costs_is_refused()
+    {
+        var result = BalanceFile.Parse("""{ "experience": { "levelCosts": [] } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains("experience.levelCosts") && w.Contains("empty"));
+    }
+
+    [Fact]
+    public void A_table_of_level_costs_that_is_null_is_refused()
+    {
+        var result = BalanceFile.Parse("""{ "experience": { "levelCosts": null } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains("experience.levelCosts") && w.Contains("empty"));
+    }
+
+    [Fact]
+    public void A_row_of_level_costs_that_is_null_is_refused()
+    {
+        var result = BalanceFile.Parse("""{ "experience": { "levelCosts": [ { "fromLevel": 0, "cost": 50 }, null ] } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains("experience.levelCosts") && w.Contains("empty row"));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(-1)]
+    public void Level_costs_that_do_not_start_at_level_zero_are_refused(int first)
+    {
+        // Below the first row a level would cost nothing - the player would stay on level 0 forever.
+        var result = BalanceFile.Parse($$"""{ "experience": { "levelCosts": [ { "fromLevel": {{first}}, "cost": 50 }, { "fromLevel": 5, "cost": 80 } ] } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains("experience.levelCosts") && w.Contains("start at level 0"));
+    }
+
+    [Theory]
+    [InlineData(5, 3)]
+    [InlineData(5, 5)]
+    public void Level_costs_whose_thresholds_do_not_rise_are_refused(int second, int third)
+    {
+        var result = BalanceFile.Parse($$"""
+            { "experience": { "levelCosts": [
+              { "fromLevel": 0, "cost": 50 }, { "fromLevel": {{second}}, "cost": 80 }, { "fromLevel": {{third}}, "cost": 90 } ] } }
+            """);
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains("experience.levelCosts") && w.Contains("rise"));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-10)]
+    public void Level_costs_of_nothing_or_less_are_refused(int cost)
+    {
+        // A level that costs nothing would never be climbed (Player.AddExperience stops there).
+        var result = BalanceFile.Parse($$"""{ "experience": { "levelCosts": [ { "fromLevel": 0, "cost": 50 }, { "fromLevel": 5, "cost": {{cost}} } ] } }""");
+
+        Assert.Equal(Balance.Default, result.Balance);
+        Assert.Contains(result.Warnings, w => w.Contains("experience.levelCosts") && w.Contains("cost above 0"));
+    }
+
+    [Fact]
+    public void A_refused_table_of_level_costs_keeps_the_other_experience_values()
+    {
+        var result = BalanceFile.Parse("""{ "experience": { "ghoul": 40, "levelCosts": [] } }""");
+
+        Assert.Equal(40, result.Balance.Experience.Ghoul);
+        Assert.Equal(Balance.Default.Experience.LevelCosts, result.Balance.Experience.LevelCosts);
+    }
+
+    [Fact]
+    public void A_misspelled_name_in_a_row_of_level_costs_is_reported()
+    {
+        // The row then lacks its cost (0) and the table is refused as well.
+        var result = BalanceFile.Parse("""{ "experience": { "levelCosts": [ { "fromLevel": 0, "cots": 50 } ] } }""");
+
+        Assert.Contains(result.Warnings, w => w.Contains("experience.levelCosts[0].cots"));
+        Assert.Equal(Balance.Default.Experience.LevelCosts, result.Balance.Experience.LevelCosts);
+    }
+
+    [Fact]
+    public void Refusing_a_table_of_level_costs_leaves_the_standard_values_untouched()
+    {
+        // The standard table is handed over, not changed - the next file still sees the same standard.
+        var before = Balance.Default.Experience.LevelCosts.ToList();
+
+        BalanceFile.Parse("""{ "experience": { "levelCosts": [ { "fromLevel": 3, "cost": 0 } ] } }""");
+
+        Assert.Equal(before, Balance.Default.Experience.LevelCosts);
     }
 
     [Fact]
