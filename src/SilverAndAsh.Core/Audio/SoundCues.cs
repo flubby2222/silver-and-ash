@@ -199,13 +199,33 @@ public enum SoundKind
     /// (tick 126, <see cref="GratesBalance.LiftTicks"/>). Take "2 - smoother" of round 2 of the listening test of issue #540.
     /// </summary>
     GrateRising,
+
+    /// <summary>The hunter's axe swings and misses (issue #776): a short, heavy push of air, "C" of round 1 of issue #201.</summary>
+    AxeSwing,
+
+    /// <summary>The hunter's axe hits a creature (issue #776): a wet, round blow, "C" of round 1 of issue #201.</summary>
+    AxeHit,
+
+    /// <summary>
+    /// The hunter's axe hits something hard - the wooden training dummy (issue #776): a dull blow, a short splinter and
+    /// the haft droning on, "B" of round 1 of issue #201 (0.63 s).
+    /// </summary>
+    AxeHardHit,
+
+    /// <summary>
+    /// The hunter's axe is charged (issue #776): a rising drone, then a dull toneless thump
+    /// <see cref="SoundBoard.AxeChargeThumpSeconds"/> into the file - timed so the thump falls on the full charge
+    /// (<see cref="SoundCues"/>). "B" of round 2 of issue #201.
+    /// </summary>
+    AxeCharge,
 }
 
 /// <summary>
 /// One sound to play now: which file, at which volume (0 to 1, before <see cref="SoundBoard.MasterVolume"/>) and how far
-/// to the side (<see cref="SoundMix.Pan"/>: -1 left, 0 the middle, 1 right; issue #491).
+/// to the side (<see cref="SoundMix.Pan"/>: -1 left, 0 the middle, 1 right; issue #491). With <paramref name="Stop"/>
+/// it stops <paramref name="File"/> instead of playing it (a charge sound cut short by an early release, issue #776).
 /// </summary>
-public readonly record struct SoundCue(SoundKind Kind, string File, float Volume, float Pan = 0f);
+public readonly record struct SoundCue(SoundKind Kind, string File, float Volume, float Pan = 0f, bool Stop = false);
 
 /// <summary>
 /// The files of assets/audio/ and their volumes, as the audio designer handed them over (issues #267, #290; which file
@@ -364,7 +384,8 @@ public static class SoundBoard
 
     /// <summary>
     /// Which sound <paramref name="gameEvent"/> asks for, or null for none: a pistol shot (consecrated or not), reloading,
-    /// a swing and a hit of the silver blade (not one with the pistol or the club), a footstep per foot, a hurt player,
+    /// a swing and a hit of a melee weapon from <see cref="SwingKinds"/> and <see cref="HitKinds"/> (the silver blade and
+    /// the hunter's axe, issue #776; not the pistol or the club), a footstep per foot, a hurt player,
     /// a ghoul's wind-up and death, a door or chest opening, picking up silver, a consumable or a key; a jump, a dash or
     /// dodge, a landing from high enough (<see cref="LandingSoundMinimumFallHeight"/>), a ghoul noticing a player and
     /// the end of the consecration (issue #291); a bat's wing beat, warnings, spit, bite, missed dive, hit and death
@@ -382,9 +403,9 @@ public static class SoundBoard
         ReloadStarted => SoundKind.ReloadStarted,
         ReloadFinished => SoundKind.ReloadFinished,
 
-        // The club has no sound yet.
-        MeleeSwung { Weapon: WeaponKind.SilverBlade } => SoundKind.BladeSwing,
-        TargetHitBy { Weapon: Weapon.Blade } => SoundKind.Blade,
+        // Swings and hits by weapon from the tables below (issue #776); the club has no sound yet.
+        MeleeSwung swung => Lookup(SwingKinds, swung.Weapon),
+        TargetHitBy hit => Lookup(HitKinds, (hit.Weapon, hit.Hard)),
         PlayerStepped { Foot: Foot.Left } => SoundKind.StepLeft,
         PlayerStepped => SoundKind.StepRight,
         PlayerHit => SoundKind.PlayerHurt,
@@ -442,6 +463,70 @@ public static class SoundBoard
                 ((GrateStarted)gameEvent).Falling ? SoundKind.GrateFalling : SoundKind.GrateRising,
         }.ToImmutableDictionary();
 
+    /// <summary>The sound of a swing (<see cref="MeleeSwung"/>) by melee weapon; a weapon without an entry swings silently.</summary>
+    private static readonly ImmutableDictionary<WeaponKind, SoundKind> SwingKinds =
+        new Dictionary<WeaponKind, SoundKind>
+        {
+            [WeaponKind.SilverBlade] = SoundKind.BladeSwing,
+            [WeaponKind.HuntersAxe] = SoundKind.AxeSwing,
+        }.ToImmutableDictionary();
+
+    /// <summary>
+    /// The sound of a hit (<see cref="TargetHitBy"/>) by weapon and by whether the target is hard (the wooden dummy) or a
+    /// creature; a weapon without an entry hits silently (the pistol: the shot is its sound).
+    /// </summary>
+    private static readonly ImmutableDictionary<(Weapon Weapon, bool Hard), SoundKind> HitKinds =
+        new Dictionary<(Weapon Weapon, bool Hard), SoundKind>
+        {
+            [(Weapon.Blade, false)] = SoundKind.Blade,
+            [(Weapon.Blade, true)] = SoundKind.Blade,
+            [(Weapon.HuntersAxe, false)] = SoundKind.AxeHit,
+            [(Weapon.HuntersAxe, true)] = SoundKind.AxeHardHit,
+        }.ToImmutableDictionary();
+
+    /// <summary>
+    /// The hit sounds of a melee weapon and the swing sound each of them stands in for: a swing that hits something in
+    /// the same tick plays only the hit (<see cref="SoundCues"/>).
+    /// </summary>
+    public static ImmutableDictionary<SoundKind, SoundKind> SwingOfHit { get; } =
+        new Dictionary<SoundKind, SoundKind>
+        {
+            [SoundKind.Blade] = SoundKind.BladeSwing,
+            [SoundKind.AxeHit] = SoundKind.AxeSwing,
+            [SoundKind.AxeHardHit] = SoundKind.AxeSwing,
+        }.ToImmutableDictionary();
+
+    /// <summary>
+    /// The sound of charging a melee weapon (<see cref="MeleeChargeStarted"/>), by weapon; a weapon without an entry
+    /// charges silently.
+    /// </summary>
+    public static ImmutableDictionary<WeaponKind, SoundKind> ChargeKinds { get; } =
+        new Dictionary<WeaponKind, SoundKind>
+        {
+            [WeaponKind.HuntersAxe] = SoundKind.AxeCharge,
+        }.ToImmutableDictionary();
+
+    /// <summary>Seconds into axt-aufladen.wav where the drone ends in the thump (bauen.py of round 2: the pull lasts 1.0 s, the thump starts 0.01 s later).</summary>
+    public const float AxeChargeThumpSeconds = 1.01f;
+
+    /// <summary>
+    /// Where the end mark of a charge sound lies in its file (seconds): the thump that says "full". The sound starts so
+    /// long before the charge is full; a kind without an entry starts with the charge.
+    /// </summary>
+    public static ImmutableDictionary<SoundKind, float> ChargeMarkSeconds { get; } =
+        new Dictionary<SoundKind, float>
+        {
+            [SoundKind.AxeCharge] = AxeChargeThumpSeconds,
+        }.ToImmutableDictionary();
+
+    /// <summary>How many ticks the charge sound of <paramref name="kind"/> runs before its end mark (<see cref="ChargeMarkSeconds"/>).</summary>
+    public static int ChargeLeadTicks(SoundKind kind) =>
+        SimulationClock.SecondsToTicks(ChargeMarkSeconds.GetValueOrDefault(kind));
+
+    private static SoundKind? Lookup<TKey>(ImmutableDictionary<TKey, SoundKind> table, TKey key)
+        where TKey : notnull =>
+        table.TryGetValue(key, out var kind) ? kind : null;
+
     /// <summary>
     /// Whether <paramref name="gameEvent"/> stays silent because another event of the same tick (<paramref name="tick"/>)
     /// plays the sound of the same thing in <paramref name="pack"/>: a player opening the boss door raises both
@@ -478,11 +563,12 @@ public static class SoundBoard
 /// <item>Each set of files plays at most once per tick (a charged blade that hits three ghouls is one sound, not three
 /// at once - without spatial sound they would only add up to one louder one). Kinds that share their files in a pack
 /// (the old pack has one set for both feet) count as one.</item>
-/// <item>A blade swing that hits something in the same tick plays only the hit: Core resolves the swing in the tick it
-/// is made, so a <see cref="TargetHitBy"/> with the blade comes in the same events. The swing sound is the sound of a
-/// miss; both together would smear into one.</item>
+/// <item>A melee swing that hits something in the same tick plays only the hit (<see cref="SoundBoard.SwingOfHit"/>):
+/// Core resolves the swing in the tick it is made, so a <see cref="TargetHitBy"/> with the weapon comes in the same
+/// events. The swing sound is the sound of a miss; both together would smear into one.</item>
 /// <item>A creature's own hit sound (<see cref="SoundBoard.OwnHitKinds"/>, e.g. a bat's or Gorm's) replaces the
-/// blade's hit of the same tick (issues #297, #298).</item>
+/// melee weapon's hit of the same tick (issues #297, #298).</item>
+/// <item>A charge sound starts so that its thump falls on the full charge and stops on an early release (issue #776).</item>
 /// <item>The boss door's grinding replaces the creak of an ordinary door of the same tick (<see cref="SoundBoard.IsReplacedIn"/>,
 /// issue #569).</item>
 /// <item>Of several files it picks one at random, never the one it picked last time from that set.</item>
@@ -505,9 +591,13 @@ public sealed class SoundCues
     // The last pick of each set of files, keyed by the files themselves: kinds sharing them share it, too.
     private readonly Dictionary<string, int> _lastVariant = new(StringComparer.Ordinal);
 
-    // Ticks seen so far (one call of For with events per tick) and the tick each kind with a minimum gap last played.
+    // The tick of the last call (the world's clock, or one more per call of For with events) and the tick each kind
+    // with a minimum gap last played.
     private long _tick;
     private readonly Dictionary<SoundKind, long> _lastPlayedTick = [];
+
+    // Charge sounds by player (issue #776): planned, or playing and not yet at their end mark.
+    private readonly Dictionary<int, PendingCharge> _charges = [];
 
     /// <summary>Starts the choice of variants from <paramref name="seed"/> (the world's seed).</summary>
     public SoundCues(int seed) => _random = new Random(seed ^ SeedSalt);
@@ -520,7 +610,7 @@ public sealed class SoundCues
     public IReadOnlyList<SoundCue> For(IEnumerable<GameEvent> events, SoundPack pack, Vector3? listener = null)
     {
         ArgumentNullException.ThrowIfNull(events);
-        return Cues(events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener)), pack, _ => SoundMix.Centre);
+        return Cues(events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener)), pack, _ => SoundMix.Centre, _tick + 1);
     }
 
     /// <summary>
@@ -535,17 +625,60 @@ public sealed class SoundCues
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(hearing);
+        return Placed(events, pack, listener, hearing, _tick + 1);
+    }
+
+    /// <summary>
+    /// The placed sounds (<see cref="For(IEnumerable{GameEvent}, SoundPack, SoundListener, HearingBalance)"/>) of the
+    /// last tick of <paramref name="world"/>, on the world's own clock (<see cref="GameWorld.Ticks"/>): a paused tick does
+    /// not move it, so a planned charge sound neither starts in the pause nor runs out its plan there, and its stop on
+    /// a release after the pause still comes (issue #776). A call without a new world tick plays nothing.
+    /// </summary>
+    public IReadOnlyList<SoundCue> For(GameWorld world, SoundPack pack, SoundListener listener)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        return world.Ticks == _tick ? [] : Placed(world.Events, pack, listener, world.Balance.Hearing, world.Ticks);
+    }
+
+    /// <summary>
+    /// The charge sounds that play and have not yet reached their end mark (issue #776): the game holds them while the
+    /// world stands still (menu, lost focus), so their thump still falls on the full charge.
+    /// </summary>
+    public IReadOnlyList<string> PlayingChargeFiles =>
+        _charges.Values.Where(charge => charge.File is not null).Select(charge => charge.File!).ToList();
+
+    /// <summary>Stops every charge sound that plays (a new run replaces the world it belonged to) and forgets the plans.</summary>
+    public IReadOnlyList<SoundCue> StopCharges()
+    {
+        var cues = new List<SoundCue>();
+        foreach (var playerId in _charges.Keys.ToList())
+        {
+            EndCharge(playerId, cues);
+        }
+
+        return cues;
+    }
+
+    private List<SoundCue> Placed(
+        IEnumerable<GameEvent> events, SoundPack pack, SoundListener listener, HearingBalance hearing, long tick)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        ArgumentNullException.ThrowIfNull(hearing);
         return Cues(
             events.Where(gameEvent => SoundBoard.IsInEarshot(gameEvent, listener.Ears)),
             pack,
-            gameEvent => Hearing.MixFor(gameEvent, listener, hearing));
+            gameEvent => Hearing.MixFor(gameEvent, listener, hearing),
+            tick);
     }
 
-    /// <summary>The cues for <paramref name="events"/> (already filtered by earshot), each kind with the loudest of its <paramref name="mixFor"/>.</summary>
-    private List<SoundCue> Cues(IEnumerable<GameEvent> events, SoundPack pack, Func<GameEvent, SoundMix> mixFor)
+    /// <summary>
+    /// The cues for <paramref name="events"/> (already filtered by earshot) of tick <paramref name="now"/>, each kind
+    /// with the loudest of its <paramref name="mixFor"/>.
+    /// </summary>
+    private List<SoundCue> Cues(IEnumerable<GameEvent> events, SoundPack pack, Func<GameEvent, SoundMix> mixFor, long now)
     {
         ArgumentNullException.ThrowIfNull(pack);
-        _tick++;
+        _tick = now;
         var mixes = new Dictionary<SoundKind, SoundMix>();
         var kinds = new List<SoundKind>();
         var tick = events.ToList();
@@ -573,12 +706,12 @@ public sealed class SoundCues
             }
         }
 
-        if (kinds.Contains(SoundKind.Blade))
+        foreach (var (hit, swing) in SoundBoard.SwingOfHit.Where(pair => kinds.Contains(pair.Key)))
         {
-            kinds.Remove(SoundKind.BladeSwing);
+            kinds.Remove(swing);
             if (kinds.Any(kind => SoundBoard.OwnHitKinds.Contains(kind) && !pack.Variants(kind).IsEmpty))
             {
-                kinds.Remove(SoundKind.Blade);
+                kinds.Remove(hit);
             }
         }
 
@@ -602,8 +735,94 @@ public sealed class SoundCues
             cues.Add(new SoundCue(kind, files[NextVariant(set, files.Length)], SoundBoard.SoundVolume * mix.Volume, mix.Pan));
         }
 
+        AddChargeCues(tick, pack, mixFor, cues);
         return cues;
     }
+
+    /// <summary>
+    /// The charge sounds (<see cref="SoundBoard.ChargeKinds"/>, issue #776): a <see cref="MeleeChargeStarted"/> plans
+    /// the sound so that its end mark (<see cref="SoundBoard.ChargeMarkSeconds"/>, the thump) falls on the tick the charge
+    /// is full. A release (<see cref="MeleeSwung"/>), a stall (<see cref="MeleeChargeStalled"/>: the stamina ran out, the
+    /// charge will not become full) or death (<see cref="PlayerDied"/>) before that drops a planned
+    /// sound that has not started yet - a short tap stays silent - and stops one that is playing (a cue with
+    /// <see cref="SoundCue.Stop"/>); after the mark the tail rings on.
+    /// </summary>
+    private void AddChargeCues(
+        List<GameEvent> tick, SoundPack pack, Func<GameEvent, SoundMix> mixFor, List<SoundCue> cues)
+    {
+        foreach (var gameEvent in tick)
+        {
+            switch (gameEvent)
+            {
+                case MeleeChargeStarted started:
+                    PlanCharge(started, mixFor(started));
+                    break;
+                case MeleeSwung swung:
+                    EndCharge(swung.PlayerId, cues);
+                    break;
+                case MeleeChargeStalled stalled:
+                    // The charge stays short of full in this hold: no thump may say "full".
+                    EndCharge(stalled.PlayerId, cues);
+                    break;
+                case PlayerDied died:
+                    EndCharge(died.PlayerId, cues);
+                    break;
+            }
+        }
+
+        foreach (var (playerId, charge) in _charges.ToList())
+        {
+            if (charge.File is null && _tick >= charge.StartTick)
+            {
+                var files = pack.Variants(charge.Kind);
+                if (files.IsEmpty)
+                {
+                    _charges.Remove(playerId);
+                    continue;
+                }
+
+                var file = files[NextVariant(string.Join('|', files), files.Length)];
+                cues.Add(new SoundCue(charge.Kind, file, SoundBoard.SoundVolume * charge.Mix.Volume, charge.Mix.Pan));
+                _charges[playerId] = charge with { File = file };
+            }
+            else if (charge.File is not null && _tick >= charge.MarkTick)
+            {
+                _charges.Remove(playerId);
+            }
+        }
+    }
+
+    /// <summary>Plans the charge sound of <paramref name="started"/> (none for a weapon without one or out of earshot).</summary>
+    private void PlanCharge(MeleeChargeStarted started, SoundMix mix)
+    {
+        if (!SoundBoard.ChargeKinds.TryGetValue(started.Weapon, out var kind) || mix.Volume <= 0f)
+        {
+            return;
+        }
+
+        var mark = _tick + started.TicksToFull;
+        _charges[started.PlayerId] = new PendingCharge(kind, mark - SoundBoard.ChargeLeadTicks(kind), mark, mix, null);
+    }
+
+    /// <summary>Ends the charge of <paramref name="playerId"/>: stops its sound if it plays and has not reached its mark.</summary>
+    private void EndCharge(int playerId, List<SoundCue> cues)
+    {
+        if (!_charges.Remove(playerId, out var charge))
+        {
+            return;
+        }
+
+        if (charge.File is not null && _tick < charge.MarkTick)
+        {
+            cues.Add(new SoundCue(charge.Kind, charge.File, 0f, charge.Mix.Pan, Stop: true));
+        }
+    }
+
+    /// <summary>
+    /// A charge sound planned or playing: <paramref name="StartTick"/> when it starts, <paramref name="MarkTick"/> when
+    /// its end mark plays (the charge is full), <paramref name="File"/> the file once it has started.
+    /// </summary>
+    private readonly record struct PendingCharge(SoundKind Kind, long StartTick, long MarkTick, SoundMix Mix, string? File);
 
     /// <summary>
     /// The sound of <paramref name="pack"/> for <paramref name="kind"/> without an event of Core - the game's own

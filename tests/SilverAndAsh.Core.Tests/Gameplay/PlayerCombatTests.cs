@@ -121,8 +121,9 @@ public class PlayerCombatTests
         // The pistol fires on the press, the blade swings when its button is let go.
         var player = RunningPlayer();
 
+        // On the press the blade only begins its charge (MeleeChargeStarted, issue #776).
         player.Tick(Melee with { Shoot = true });
-        Assert.IsType<ShotFired>(Assert.Single(player.Events));
+        Assert.Collection(player.Events, e => Assert.IsType<MeleeChargeStarted>(e), e => Assert.IsType<ShotFired>(e));
 
         player.Tick(PlayerInput.None);
         Assert.IsType<MeleeSwung>(Assert.Single(player.Events));
