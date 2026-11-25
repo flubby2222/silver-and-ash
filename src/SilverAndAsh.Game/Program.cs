@@ -956,7 +956,8 @@ static void RunGame(
                     DrawPhotoScreen(setup);
                     Rlgl.DrawRenderBatchActive();
                     var screen = Raylib.LoadImageFromScreen();
-                    var screenPixels = ImagePixels.Rgba(screen);                    Raylib.UnloadImage(screen);
+                    var screenPixels = ImagePixels.Rgba(screen);
+                    Raylib.UnloadImage(screen);
                     Raylib.EndDrawing();
                     return new SmokeOutcome(scene.Name, SmokeCheck.Judge(picture.Pixels(), screenPixels));
                 }

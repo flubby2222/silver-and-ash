@@ -46,6 +46,15 @@ public sealed class SmokeCheckTests
     }
 
     [Fact]
+    public void The_option_with_a_single_other_switch_is_refused()
+    {
+        var error = Assert.Throws<ArgumentException>(() => SmokeCheck.Extract([SmokeCheck.Option, "--course"]));
+
+        Assert.Equal(
+            "'--smoke' goes alone - it draws every photo scene in the standard window. Found also: --course.", error.Message);
+    }
+
+    [Fact]
     public void A_picture_of_one_colour_is_a_single_colour()
     {
         Assert.True(SmokeCheck.IsSingleColour(Pixels(Grey, Grey, Grey)));
@@ -154,6 +163,22 @@ public sealed class SmokeCheckTests
                 "FAILED bat-2m: the window is a single colour (0, 0, 0)",
                 "SMOKE 3 scene(s) drawn, 2 failed.",
             ],
+            summary.Lines);
+    }
+
+    [Fact]
+    public void A_single_failed_scene_among_passed_ones_fails_the_run()
+    {
+        var summary = SmokeCheck.Summarise(
+        [
+            new("ghoul-4m", null),
+            new("room-combat", "the 3D picture is a single colour (16, 8, 16)"),
+            new("bat-2m", null),
+        ]);
+
+        Assert.Equal(SmokeCheck.FailedExitCode, summary.ExitCode);
+        Assert.Equal(
+            ["FAILED room-combat: the 3D picture is a single colour (16, 8, 16)", "SMOKE 3 scene(s) drawn, 1 failed."],
             summary.Lines);
     }
 
