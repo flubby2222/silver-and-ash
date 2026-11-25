@@ -28,6 +28,13 @@ public sealed class StatusEffects
     public StatusEffect? Get(StatusKind kind) => _effects.TryGetValue(kind, out var effect) ? effect : null;
 
     /// <summary>
+    /// Every effect that lasts, in the order of the kinds - the same order on every machine (online co-op). For the
+    /// display above an enemy (issue #506).
+    /// </summary>
+    public IEnumerable<(StatusKind Kind, StatusEffect Effect)> InOrder() =>
+        _effects.OrderBy(entry => entry.Key).Select(entry => (entry.Key, entry.Value));
+
+    /// <summary>
     /// Puts on an effect of <paramref name="kind"/> for <paramref name="ticks"/> ticks. If one of this kind already
     /// lasts, it is refreshed: it then lasts the longer of what is left and the new duration - a shorter one never cuts
     /// it short, and the strength stays the same (there is only one). The application that gives the longer time keeps

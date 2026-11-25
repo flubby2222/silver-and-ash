@@ -136,7 +136,22 @@ public static class PhotoScenes
                 Ticks = 600,
                 StopWhen = world => world.Ghouls[0] is { State: GhoulState.WindingUp, WindUpProgress: >= 0.5f },
             }),
+        new("ghoul-marked-4m", "A marked ghoul 4 m away, just marked: the shimmer round it, its time left above its head (issue #506).",
+            studio => new PhotoSetup(Marked(studio.Arena('G', 4)))),
+        new("ghoul-marked-late", "A marked ghoul coming closer, 0.4 s of its mark left (issue #506).",
+            studio => new PhotoSetup(Marked(studio.Arena('G', 4)))
+            {
+                Ticks = 600,
+                StopWhen = world => world.Ghouls[0].Status.Get(StatusKind.Marked) is not { TicksLeft: > 24 },
+            }),
     ];
+
+    // The first ghoul of the world marked by a player, as a skill would (issue #506).
+    private static GameWorld Marked(GameWorld world)
+    {
+        world.ApplyStatus(world.Ghouls[0], StatusKind.Marked, world.Player);
+        return world;
+    }
 
     // The weapons in hand: the pistol's shot, the blade and the club at rest, charged and swinging.
     private static PhotoScene[] WeaponScenes() =>

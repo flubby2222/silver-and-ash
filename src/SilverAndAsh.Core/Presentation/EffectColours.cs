@@ -14,6 +14,12 @@ public static class EffectColours
     /// <summary>The warm accent ramp: small things with a purpose, light among them.</summary>
     public const string Brass = "Messing/Gold";
 
+    /// <summary>
+    /// The light dressed stone of special portals; its lightest step is the most violet light colour of the palette and
+    /// stands for Marked until the trial piece of the effects decides (issue #506).
+    /// </summary>
+    public const string Ashlar = "Werkstein";
+
     /// <summary>The dust of a cracked wall breaking: Stein 14, the brightest step (like <see cref="ColumnDust.Colour"/>).</summary>
     public static (byte R, byte G, byte B) WallBreakDust { get; } = (151, 127, 137);
 
@@ -29,7 +35,10 @@ public static class EffectColours
     /// <summary>The dark mark the bullet leaves afterwards: Stein 1, the darkest step above the fog's black.</summary>
     public static (byte R, byte G, byte B) ImpactMark { get; } = (38, 34, 40);
 
-    /// <summary>Every colour of an environment effect or stand-in, by name, with the ramp it is a step of.</summary>
+    /// <summary>
+    /// Every colour of an environment effect or stand-in, by name, with the ramp it is a step of - and the colour of
+    /// every status effect on an enemy (<see cref="StatusLooks"/>, issue #506), named "status" and its kind.
+    /// </summary>
     public static IReadOnlyList<(string Name, string Ramp, (byte R, byte G, byte B) Colour)> All { get; } =
     [
         ("column dust", Stone, ColumnDust.Colour),
@@ -38,5 +47,6 @@ public static class EffectColours
         ("column stand-in edge", Stone, ColumnStandInEdge),
         ("impact spark", Brass, ImpactSpark),
         ("impact mark", Stone, ImpactMark),
+        .. StatusLooks.All.Select(look => ($"status {look.Kind}", look.Ramp, look.Colour)),
     ];
 }

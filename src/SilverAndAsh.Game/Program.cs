@@ -660,6 +660,10 @@ static void RunGame(
                 batView.Draw(bat, eye);
             }
 
+            // The status effects on the enemies (issue #506): the shimmer here, the timers over the picture below.
+            var statuses = EnemyStatusReadout.Of(gameWorld);
+            StatusView.DrawShimmer(statuses, gameWorld.Ticks);
+
             projectileView.Draw(gameWorld.Projectiles, alpha);
             pickupView.Draw(gameWorld.Pickups, alpha);
             pickupView.DrawLoot(gameWorld.Loot, alpha);
@@ -683,6 +687,7 @@ static void RunGame(
             }
 
             Raylib.EndMode3D();
+            StatusView.DrawTimers(statuses, gameWorld.Level, camera, picture.Width, picture.Height);
 
             // The edge effects in the small picture, so they get its big pixels (issue #370); not over the end screen.
             if (endSummary is null)
