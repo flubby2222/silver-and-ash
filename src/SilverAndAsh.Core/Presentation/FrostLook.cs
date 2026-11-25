@@ -24,8 +24,18 @@ public static class FrostLook
     /// <summary>The body blended 40 % toward the cold.</summary>
     public static StatusTint Tint { get; } = new(Cold, 0.4f);
 
-    /// <summary>Radius of the disc on the floor, in metres - the same for every enemy, as in the trial piece.</summary>
+    /// <summary>
+    /// Radius of the disc on the floor below a ghoul, in metres, as in the trial piece (which shows a ghoul). Other
+    /// enemies get a disc in the same proportion to their body: see <see cref="DiscRadiusFor"/>.
+    /// </summary>
     public const float DiscRadius = 0.62f;
+
+    /// <summary>
+    /// Radius of the disc below an enemy whose body (for walking and bumping) has <paramref name="bodyRadius"/>, in
+    /// metres: <see cref="DiscRadius"/> times the body's share of a ghoul's (decision of the lead on PR #783 - at
+    /// 0.62 m the disc vanished between Gorm's legs). A ghoul keeps exactly 0.62 m.
+    /// </summary>
+    public static float DiscRadiusFor(float bodyRadius) => DiscRadius * (bodyRadius / BodySizes.Ghoul.Radius);
 
     /// <summary>
     /// Where the light rim begins, as a part of <see cref="DiscRadius"/>: the trial piece draws the rim where the

@@ -32,6 +32,12 @@ public sealed record EnemyStatusReadout(int EnemyId, Vector3 Feet, float Height,
     public float Floor { get; init; }
 
     /// <summary>
+    /// Radius of the disc of frost on the floor, in metres - after the size of the enemy's body
+    /// (<see cref="FrostLook.DiscRadiusFor"/>).
+    /// </summary>
+    public float DiscRadius => FrostLook.DiscRadiusFor(Radius);
+
+    /// <summary>
     /// The display for every enemy that is alive, not hidden and carries at least one effect. A dead enemy shows none,
     /// even while its effects still run out (issue #506, from the review of #756).
     /// </summary>

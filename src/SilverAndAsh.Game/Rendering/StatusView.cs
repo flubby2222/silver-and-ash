@@ -84,7 +84,7 @@ internal static class StatusView
     private static void DrawFrost(EnemyStatusReadout readout, StatusLine line, int ring, Scene scene)
     {
         scene.Shader.SetGlow(1f);
-        DrawFrostDisc(readout.Feet with { Y = readout.Floor + DiscLift }, scene.Shader);
+        DrawFrostDisc(readout.Feet with { Y = readout.Floor + DiscLift }, readout.DiscRadius, scene.Shader);
 
         var size = new Vector3(FrostLook.FleckSize);
         var rime = Colour(FrostLook.Rime);
@@ -98,10 +98,10 @@ internal static class StatusView
 
     // The disc: inside the rim the dot pattern of the cold and the dark rime, the rim in light rime. Flat triangles,
     // counter-clockwise seen from above (the side the graphics card draws).
-    private static void DrawFrostDisc(Vector3 centre, LevelShader shader)
+    private static void DrawFrostDisc(Vector3 centre, float radius, LevelShader shader)
     {
-        var inner = FrostLook.DiscRadius * FrostLook.RimStart;
-        var outer = FrostLook.DiscRadius;
+        var inner = radius * FrostLook.RimStart;
+        var outer = radius;
 
         shader.SetPattern(Colour(FrostLook.Cold), FrostLook.ColdShare);
         var dark = Colour(FrostLook.DarkRime);

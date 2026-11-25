@@ -134,6 +134,25 @@ public class FrostLookTests
     }
 
     [Fact]
+    public void The_disc_grows_with_the_body_a_ghoul_keeps_the_disc_of_the_trial_piece_gorm_gets_a_larger_one()
+    {
+        var (ghoulWorld, _) = ChilledGhoul();
+        ghoulWorld.Tick(PlayerInput.None);
+        var ghoul = Assert.Single(EnemyStatusReadout.Of(ghoulWorld));
+
+        var gormWorld = GormHallWorld();
+        Assert.True(gormWorld.ApplyStatus(gormWorld.Gorm!, StatusKind.GraveChill, gormWorld.Player));
+        gormWorld.Tick(PlayerInput.None);
+        var gorm = Assert.Single(EnemyStatusReadout.Of(gormWorld));
+
+        Assert.Equal(FrostLook.DiscRadius, ghoul.DiscRadius);                  // the ghoul's picture stays as it was
+        Assert.True(gorm.Radius > ghoul.Radius, "Gorm's body must be wider than the ghoul's, or the test proves nothing.");
+        Assert.True(gorm.DiscRadius > ghoul.DiscRadius);
+        Assert.Equal(ghoul.DiscRadius / ghoul.Radius, gorm.DiscRadius / gorm.Radius, 4);  // the same proportion to the body
+        Assert.True(gorm.DiscRadius > gorm.Radius, "Gorm's disc must reach beyond his body, or it hides between his legs.");
+    }
+
+    [Fact]
     public void The_look_of_grave_chill_is_the_frost_of_the_trial_piece()
     {
         var look = StatusLooks.Of(StatusKind.GraveChill, StatusLooks.All);
