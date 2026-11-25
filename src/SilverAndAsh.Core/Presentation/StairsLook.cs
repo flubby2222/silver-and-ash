@@ -67,6 +67,34 @@ public static class StairsLook
     /// </summary>
     public const float PlaceholderLampThickness = 0.1f;
 
+    /// <summary>
+    /// The numbers of the placeholder (the stand-in without a model) and of the cull sphere, here and not in the view (issue
+    /// #750): the view has no second set, and a test checks them against the model and the box of the stairs.
+    /// </summary>
+    public const int PlaceholderSteps = 24;
+
+    /// <summary>How many placeholder steps make one turn round the pole.</summary>
+    public const int PlaceholderStepsPerTurn = 8;
+
+    /// <summary>The width of the placeholder's pole, in metres (it is square).</summary>
+    public const float PlaceholderPoleWidth = 0.35f;
+
+    /// <summary>The thickness of a placeholder step.</summary>
+    public const float PlaceholderStepThickness = 0.12f;
+
+    /// <summary>The width of a placeholder step (its length is <see cref="Stairs.Radius"/>).</summary>
+    public const float PlaceholderStepWidth = 0.55f;
+
+    /// <summary>The side of the placeholder's lamp (it is square, <see cref="PlaceholderLampThickness"/> thick).</summary>
+    public const float PlaceholderLampWidth = 0.5f;
+
+    /// <summary>
+    /// The radius of the sphere round the middle of the staircase (at half its height) that the view tests against the view
+    /// cone: the box of the stairs has its corners 3.45 m from there, the model and the placeholder are round and reach 3.23
+    /// and 3.24 m; a little more, for safety.
+    /// </summary>
+    public const float BoundingRadius = 3.5f;
+
     /// <summary>The height of the middle of the placeholder's lamp: its top ends at <see cref="Stairs.Height"/>.</summary>
     public static float PlaceholderLampMiddle => Stairs.Height - (PlaceholderLampThickness / 2f);
 }

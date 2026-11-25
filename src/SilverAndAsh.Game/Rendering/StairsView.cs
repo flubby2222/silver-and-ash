@@ -19,13 +19,6 @@ namespace SilverAndAsh.Game.Rendering;
 /// </summary>
 internal sealed class StairsView : IDisposable
 {
-    private const int Steps = 24;
-
-    // The box of the staircase (+-Stairs.Radius, 0..Stairs.Height, 6 m) has its corners 3.45 m from the middle at half height,
-    // but the model and the placeholder are round: their farthest points are 3.23 and 3.24 m away (half the height 3 m, the
-    // model 1.2 m out). A little more, for safety.
-    private const float BoundingRadius = 3.5f;
-
     private static readonly Color Stone = new(120, 114, 108, 255);
     private static readonly Color Pole = new(84, 80, 76, 255);
     private static readonly Color Light = new(210, 190, 140, 255);
@@ -57,7 +50,7 @@ internal sealed class StairsView : IDisposable
     public void Draw(Stairs? stairs, float seconds, ViewCone view, SurfaceVariants surfaces, LevelTextures textures)
     {
         if (stairs is null || stairs.RiseFraction <= 0f
-            || !view.MaySee(stairs.Position + new Vector3(0f, Stairs.Height / 2f, 0f), BoundingRadius))
+            || !view.MaySee(stairs.Position + new Vector3(0f, Stairs.Height / 2f, 0f), StairsLook.BoundingRadius))
         {
             return;
         }
@@ -107,16 +100,19 @@ internal sealed class StairsView : IDisposable
     // The coded staircase from before the model: a pole, 16 steps winding round it, a light on top once it stands.
     private static void DrawPlaceholder(Matrix4x4 place, bool lit, float glow)
     {
-        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, Stairs.Height / 2f, 0f) * place, new Vector3(0.35f, Stairs.Height, 0.35f), Pole);
-        for (var step = 0; step < Steps; step++)
+        ShadedBox.Draw(
+            Matrix4x4.CreateTranslation(0f, Stairs.Height / 2f, 0f) * place,
+            new Vector3(StairsLook.PlaceholderPoleWidth, Stairs.Height, StairsLook.PlaceholderPoleWidth),
+            Pole);
+        for (var step = 0; step < StairsLook.PlaceholderSteps; step++)
         {
-            var angle = step * (2f * MathF.PI / 8f);
-            var height = (step + 0.5f) * Stairs.Height / Steps;
+            var angle = step * (2f * MathF.PI / StairsLook.PlaceholderStepsPerTurn);
+            var height = ((2 * step) + 1) * Stairs.Height / (2 * StairsLook.PlaceholderSteps);
             var stepPlace =
                 Matrix4x4.CreateTranslation(Stairs.Radius / 2f, height, 0f) *
                 Matrix4x4.CreateRotationY(angle) *
                 place;
-            ShadedBox.Draw(stepPlace, new Vector3(Stairs.Radius, 0.12f, 0.55f), Stone);
+            ShadedBox.Draw(stepPlace, new Vector3(Stairs.Radius, StairsLook.PlaceholderStepThickness, StairsLook.PlaceholderStepWidth), Stone);
         }
 
         if (lit)
@@ -125,7 +121,7 @@ internal sealed class StairsView : IDisposable
             // Under the ceiling: its top ends where the box of the staircase does (issue #727).
             ShadedBox.Draw(
                 Matrix4x4.CreateTranslation(0f, StairsLook.PlaceholderLampMiddle, 0f) * place,
-                new Vector3(0.5f, StairsLook.PlaceholderLampThickness, 0.5f),
+                new Vector3(StairsLook.PlaceholderLampWidth, StairsLook.PlaceholderLampThickness, StairsLook.PlaceholderLampWidth),
                 color);
         }
     }

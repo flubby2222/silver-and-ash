@@ -371,6 +371,10 @@
       "damagePerSecond": 5,             // damage per second, spread over the pulses; at most 100
       "tickSeconds": 0.5                // s between two pulses; at most 5
     },
+    "graveChill": {                     // slows an enemy's walking and flying (issue #508); attacks keep their length
+      "slow": 0.2,                      // share of speed lost (0.2 = 20 % slower); below 1
+      "seconds": 2                      // s a fresh chill lasts; a refresh never slows harder; at most 30
+    },
     "weaponShare": 0.3,                 // share of found weapons with a status effect (0.3 = 30 %); 0 = none; at most 1
     "weaponHitChance": {                // chance per hit that a weapon's effect takes hold, by tier; 0 = never; at most 1
       "worn": 0.1,
