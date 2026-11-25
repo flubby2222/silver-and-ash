@@ -121,7 +121,7 @@ Ergebnis hier eintragen, neueste Runde oben.
 
 **Vorläufig festgelegt:** Aufgeladen zieht die Peitsche gleich weit wie unaufgeladen. Betäubte und herabstoßende Gegner werden mitgezogen. Fledermäuse werden waagrecht gezogen und behalten ihre Höhe. Ein Ghul bleibt an einer Grubenkante und vor einer Stufe über 0,4 m stehen; eine Wand dazwischen schirmt ihn ab.
 
-**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen; die Peitsche liegt noch in keiner Kiste und bei keinem Gegner (Teil 2: Modell, Klang, HUD).
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Die Peitsche kommt wie die Jagdaxt in den Beutevorrat (Kisten und Gorm); ob sich das Heranziehen im Lauf bewährt, zeigt erst ein Spieltest (Modell, Klang und HUD folgen in Teil 2).
 
 ### Zwischenschritt – 25.11.2026 (#510, Leech, vorläufig)
 
