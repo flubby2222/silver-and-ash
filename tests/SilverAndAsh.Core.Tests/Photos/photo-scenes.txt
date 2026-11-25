@@ -179,6 +179,7 @@ column-hit2-10m | ticks 1 menu None ----- | The breaking column of the showroom:
 column-broken-6m | ticks 1 menu None ----- | The breaking column of the showroom: Broken, from 6 m (issue #601).
 column-broken-10m | ticks 1 menu None ----- | The breaking column of the showroom: Broken, from 10 m (issue #601).
 showroom-stairs | ticks 1 menu None ----- | The spiral staircase in the showroom's hall from 5 m, looking up to its top: the staircase and its label under the 6 m ceiling, nothing through it (issue #727).
+showroom-boss-door | ticks 1 menu None ----- | The boss door of the showroom's section A from 4.5 m in front of its middle, looking at it 2.5 m up: the portal over two cells with its label (issue #599).
 equipment-rifle | ticks 1 menu None ----- | The rifle (Forged) lying in the showroom, 0.8 m away: "[F] Take Rifle (Forged)" in steel blue (issue #317).
 equipment-worn | ticks 1 menu None ----- | Hunter's Boots (Worn) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
 equipment-forged | ticks 1 menu None ----- | Silver Rosary (Forged) lying in the showroom, 0.8 m away: its glow and "[F] Take ..." in the colour of its tier (issue #317).
