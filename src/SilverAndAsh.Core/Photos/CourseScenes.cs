@@ -31,11 +31,14 @@ internal static class CourseScenes
 
     // Station 1: from its south-east corner up to the north-west, so the whole row of weapons on the north wall, the
     // items on the south wall and the sign over the first cell are in view.
-    internal static readonly Shot ArmsShot = new(11.5f, 8f, 232f, -14f);
+    // Turned and tilted so that no weapon lies behind the teleporter's pillars or under the sign, each one wholly in the
+    // picture and above the hands (#201).
+    internal static readonly Shot ArmsShot = new(11.5f, 8f, 228f, -20f);
 
     // Station 1 again, close to the row of weapons (issue #736): from the east end of the way, down at the row, every
     // weapon between the hands. The sign is not in this one: with it, the row would be as far off as in the first.
-    internal static readonly Shot ArmsRowShot = new(11f, 4.5f, 214f, -22f);
+    // Steeper than the hands need, so that the longest weapon at the west end is not cut off at the edge (#201).
+    internal static readonly Shot ArmsRowShot = new(10.5f, 4f, 208f, -28f);
 
     // Station 2: from the far south-east corner back west, the columns and the silver in front, the ghoul beyond, the sign
     // over the entrance.

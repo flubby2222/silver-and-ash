@@ -81,34 +81,74 @@ public class HuntersAxeTests
 
     // ---- The wide cone ---------------------------------------------------------------------------------------------
 
-    // An open room; the player stands in its middle looking along +Z.
+    // An open room (cells of 2 m); the player stands in its middle looking along +Z.
     private const string Room = ".......\n.......\n.......\n...P...\nG.....G\nG.....G\n.......";
 
-    /// <summary>
-    /// Puts the four ghouls of <see cref="Room"/> 1.5 m from the player: straight ahead, 70 degrees to the left and to
-    /// the right (seen from the tip of the cone behind the eyes that is about 52 degrees: outside the blade's 45, inside
-    /// the axe's 75), and one 110 degrees to the right (about 87 degrees from the tip: outside the axe's cone too).
-    /// </summary>
-    private static (Ghoul Ahead, Ghoul Left, Ghoul Right, Ghoul Outside) PlaceGhouls(GameWorld world)
-    {
-        var feet = world.Player.Position;
-        Ghoul Put(int index, float degrees)
-        {
-            var radians = degrees * MathF.PI / 180f;
-            var ghoul = world.Ghouls[index];
-            ghoul.PlaceAt(new Vector3(feet.X + 1.5f * MathF.Sin(radians), feet.Y, feet.Z + 1.5f * MathF.Cos(radians)));
-            return ghoul;
-        }
+    // How far inside and outside a limit of the axe a ghoul is put: degrees for the cone's edge, metres for its reach.
+    private const float EdgeDegrees = 3f;
+    private const float EdgeMetres = 0.1f;
 
-        return (Put(0, 0f), Put(1, -70f), Put(2, 70f), Put(3, 110f));
+    /// <summary>
+    /// Ghouls that neither see nor walk (sight range 0), so they stand where they were put until the swing, and survive
+    /// even a charged axe, so every hit can be read off their health.
+    /// </summary>
+    private static readonly Balance StillGhouls = ToughGhouls with { Ghoul = ToughGhouls.Ghoul with { SightRange = 0f } };
+
+    /// <summary>
+    /// Puts <paramref name="ghoul"/> on the floor so that the point of it a swing aims at (the top of its axis: a ghoul
+    /// is lower than the eyes) lies <paramref name="fromTip"/> metres from the tip of the cone of <paramref name="weapon"/>
+    /// - <see cref="MeleeBalance.ConeStartBehind"/> behind the eyes - at <paramref name="degrees"/> from the looking
+    /// direction, to the right (positive) or the left (negative).
+    /// </summary>
+    private static void PutAtAngle(GameWorld world, Ghoul ghoul, MeleeBalance weapon, float degrees, float fromTip)
+    {
+        var player = world.Player;
+        var forward = Vector3.Normalize(player.View.Forward with { Y = 0f });
+        var right = Vector3.Normalize(Vector3.Cross(forward, Vector3.UnitY));
+        var drop = player.EyePosition.Y - (player.Position.Y + BodySizes.Ghoul.Height);
+        var tip = player.EyePosition - forward * weapon.ConeStartBehind;
+        var radians = MathF.Abs(degrees) * MathF.PI / 180f;
+        var along = fromTip * MathF.Cos(radians);
+        var aside = MathF.Sqrt(MathF.Pow(fromTip * MathF.Sin(radians), 2) - drop * drop) * MathF.Sign(degrees);
+        var spot = tip + forward * along + right * aside;
+        ghoul.PlaceAt(spot with { Y = player.Position.Y });
+    }
+
+    /// <summary>
+    /// Puts <paramref name="ghoul"/> straight ahead so that its surface is <paramref name="surface"/> metres from the eyes
+    /// (the reach of a swing counts from the eyes to the body's surface).
+    /// </summary>
+    private static void PutAhead(GameWorld world, Ghoul ghoul, float surface)
+    {
+        var player = world.Player;
+        var forward = Vector3.Normalize(player.View.Forward with { Y = 0f });
+        var drop = player.EyePosition.Y - (player.Position.Y + BodySizes.Ghoul.Height);
+        var flat = MathF.Sqrt(MathF.Pow(surface + BodySizes.Ghoul.Radius, 2) - drop * drop);
+        ghoul.PlaceAt((player.EyePosition + forward * flat) with { Y = player.Position.Y });
+    }
+
+    /// <summary>
+    /// The four ghouls of <see cref="Room"/> around the edge of the axe's cone (<see cref="Balance.Default"/>): one
+    /// straight ahead, one <see cref="EdgeDegrees"/> inside the edge on the left and on the right, and one
+    /// <see cref="EdgeDegrees"/> outside it on the right - a bit farther out, so it does not stand on the one inside.
+    /// </summary>
+    private static (Ghoul Ahead, Ghoul Left, Ghoul Right, Ghoul Outside) PlaceAtTheAxeEdge(GameWorld world)
+    {
+        var half = Axe.Angle / 2f;
+        var (ahead, left, right, outside) = (world.Ghouls[0], world.Ghouls[1], world.Ghouls[2], world.Ghouls[3]);
+        PutAhead(world, ahead, Axe.Range / 2f);
+        PutAtAngle(world, left, Axe, -(half - EdgeDegrees), 1.6f);
+        PutAtAngle(world, right, Axe, half - EdgeDegrees, 1.6f);
+        PutAtAngle(world, outside, Axe, half + EdgeDegrees, 2.5f);
+        return (ahead, left, right, outside);
     }
 
     [Fact]
     public void One_swing_of_the_axe_hits_every_ghoul_in_its_wide_cone_but_not_the_one_beside_it()
     {
-        var world = With(WeaponKind.HuntersAxe, Room, ToughGhouls);
-        var (ahead, left, right, outside) = PlaceGhouls(world);
-        var full = ToughGhouls.Ghoul.MaxHealth;
+        var world = With(WeaponKind.HuntersAxe, Room, StillGhouls);
+        var (ahead, left, right, outside) = PlaceAtTheAxeEdge(world);
+        var full = StillGhouls.Ghoul.MaxHealth;
 
         var events = Swing(world);
 
@@ -120,11 +160,24 @@ public class HuntersAxeTests
     }
 
     [Fact]
+    public void The_ghouls_at_the_edge_of_the_cone_stand_where_they_were_put_until_the_swing()
+    {
+        // The edge tests only mean something if nobody walked in or out of the cone before the swing.
+        var world = With(WeaponKind.HuntersAxe, Room, StillGhouls);
+        var placed = PlaceAtTheAxeEdge(world);
+        var before = new[] { placed.Ahead, placed.Left, placed.Right, placed.Outside }.Select(ghoul => ghoul.Position).ToList();
+
+        Swing(world);
+
+        Assert.Equal(before, new[] { placed.Ahead, placed.Left, placed.Right, placed.Outside }.Select(ghoul => ghoul.Position));
+    }
+
+    [Fact]
     public void The_blade_hits_only_the_ghoul_ahead_of_the_same_four()
     {
-        var world = With(WeaponKind.SilverBlade, Room, ToughGhouls);
-        var (ahead, left, right, outside) = PlaceGhouls(world);
-        var full = ToughGhouls.Ghoul.MaxHealth;
+        var world = With(WeaponKind.SilverBlade, Room, StillGhouls);
+        var (ahead, left, right, outside) = PlaceAtTheAxeEdge(world);
+        var full = StillGhouls.Ghoul.MaxHealth;
 
         Swing(world);
 
@@ -132,6 +185,22 @@ public class HuntersAxeTests
         Assert.Equal(full, left.Health);
         Assert.Equal(full, right.Health);
         Assert.Equal(full, outside.Health);
+    }
+
+    [Fact]
+    public void The_axe_reaches_a_ghoul_just_inside_its_range_but_not_one_just_beyond()
+    {
+        var near = With(WeaponKind.HuntersAxe, Room, StillGhouls);
+        var far = With(WeaponKind.HuntersAxe, Room, StillGhouls);
+        PutAhead(near, near.Ghouls[0], Axe.Range - EdgeMetres);
+        PutAhead(far, far.Ghouls[0], Axe.Range + EdgeMetres);
+        var full = StillGhouls.Ghoul.MaxHealth;
+
+        Swing(near);
+        Swing(far);
+
+        Assert.Equal(full - Axe.Damage, near.Ghouls[0].Health);
+        Assert.Equal(full, far.Ghouls[0].Health);
     }
 
     // ---- Damage, pace and charging ---------------------------------------------------------------------------------
@@ -194,12 +263,29 @@ public class HuntersAxeTests
         var early = With(WeaponKind.HuntersAxe, "P\n.\n.");
         var full = With(WeaponKind.HuntersAxe, "P\n.\n.");
 
-        var half = Assert.Single(Swing(early, FullCharge / 2).OfType<MeleeSwung>());
+        // The first tick of holding is the press that starts charging; every further tick charges one tick's worth.
+        var charged = FullCharge / 2;
+        var half = Assert.Single(Swing(early, charged + 1).OfType<MeleeSwung>());
         var whole = Assert.Single(Swing(full, FullCharge + 2).OfType<MeleeSwung>());
 
         Assert.Equal(WeaponKind.HuntersAxe, whole.Weapon);
-        Assert.InRange(half.Charge, 0.3f, 0.7f);
+        Assert.Equal((float)charged / FullCharge, half.Charge);
         Assert.Equal(1f, whole.Charge);
+    }
+
+    [Fact]
+    public void Charging_the_axe_fully_costs_its_stamina_segments()
+    {
+        var world = With(WeaponKind.HuntersAxe, "P\n.\n.");
+        var stamina = world.Player.Stamina;
+        var cost = Axe.ChargeStaminaSegments * stamina.CostPerSegment;
+
+        // Press, then hold until the charge is just full - still holding, so nothing has refilled the bar yet.
+        Run(world, Melee, FullCharge + 1);
+
+        Assert.True(world.Player.MeleeCharge.IsFull);
+        Assert.True(cost > 0, "Charging the axe must cost stamina.");
+        Assert.Equal(stamina.Capacity - cost, stamina.Amount);
     }
 
     [Fact]
