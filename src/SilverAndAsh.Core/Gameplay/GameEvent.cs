@@ -177,6 +177,12 @@ public sealed record ExperienceGained(int PlayerId, int Amount) : GameEvent;
 /// <summary>Player <paramref name="PlayerId"/> reached level <paramref name="Level"/>.</summary>
 public sealed record LevelUp(int PlayerId, int Level) : GameEvent;
 
+/// <summary>
+/// Player <paramref name="PlayerId"/> gained a skill point with a level up (issue #502) and now has
+/// <paramref name="Points"/> of them. A kill worth several levels reports each point on its own.
+/// </summary>
+public sealed record SkillPointGained(int PlayerId, int Points) : GameEvent;
+
 /// <summary>Player <paramref name="PlayerId"/> chose <paramref name="Boon"/> after a level up.</summary>
 public sealed record BoonChosen(int PlayerId, Boon Boon) : GameEvent;
 

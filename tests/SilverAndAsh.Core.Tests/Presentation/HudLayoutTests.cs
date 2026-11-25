@@ -80,6 +80,7 @@ public class HudLayoutTests
         ConsecratedSecondsLeft = 12.5f,
         MaxLife = Balance.Default.Boons.HealthCap, // the longest life bar the game can reach (issue #435)
         LifePerTick = Balance.Default.Boons.Health,
+        SkillPoints = 99, // issue #502: the widest placeholder text
     };
 
     private static HudPicture Arrange(HudReadout readout, string? toast = null, HudCanvas? canvas = null) =>
@@ -437,6 +438,44 @@ public class HudLayoutTests
         var xp = Layout.Bounds(Single(waiting, "frame_xp"));
         Assert.True(hintRect.Y >= Math.Max(level.Bottom, xp.Bottom), $"The hint {hintRect} is not under level {level} and bar {xp}.");
         Assert.True(hintRect.X < level.Right && hintRect.Right > xp.X, $"The hint {hintRect} does not reach under the number and the bar.");
+    }
+
+    [Fact]
+    public void The_skill_points_show_beside_the_experience_bar_only_while_there_are_any()
+    {
+        // Issue #502: a placeholder text the spacing right of the experience body, in the middle of its height.
+        var calm = Arrange(Calm());
+        var one = Arrange(Calm() with { SkillPoints = 1 });
+        var two = Arrange(Calm() with { SkillPoints = 2 });
+
+        Assert.DoesNotContain(calm.Texts, text => text.Text.Contains("skill point", StringComparison.Ordinal));
+        var placed = Assert.Single(one.Texts, text => text.Text == "1 skill point");
+        Assert.Single(two.Texts, text => text.Text == "2 skill points");
+        Assert.Equal(HudTextColor.Main, placed.Color);
+        Assert.Empty(Font.Missing("0123456789 skill points"));
+
+        var xp = Layout.BodyOf(Single(one, "frame_xp"));
+        var rect = Layout.Bounds(placed);
+        Assert.Equal(xp.Right + HudLayout.Spacing, rect.X);
+        Assert.Equal(HudLayout.Spread(xp.Y, xp.Height, [rect.Height])[0], rect.Y);
+    }
+
+    [Theory]
+    [MemberData(nameof(PictureWidths))]
+    public void The_boss_keeps_the_spacing_right_of_the_skill_points_too(int pictureWidth)
+    {
+        // Issue #502: on the shortest life bar the skill points may reach further right than it - the boss frame, on the
+        // line of the life frame and as deep as the experience bar, must not run into them.
+        // This only states the contract: it does not guard the Math.Max line in HudLayout.ArrangeLevel. The boss frame
+        // stands centred and on every canvas width of today lies right of the text anyway, so without that line it
+        // would stay green as well.
+        var canvas = HudCanvas.For(pictureWidth);
+        var picture = Arrange(Busy() with { MaxLife = Balance.Default.Player.MaxHealth }, canvas: canvas);
+
+        var points = Layout.Bounds(Assert.Single(picture.Texts, text => text.Text == HudLayout.SkillPointsText(99)));
+        var boss = Layout.Bounds(Single(picture, "frame_boss"));
+        Assert.False(points.Overlaps(boss), $"The skill points {points} run into the boss {boss} on {canvas}");
+        Assert.True(Layout.BodyOf(Single(picture, "frame_boss")).X >= points.Right + HudLayout.Spacing);
     }
 
     [Fact]

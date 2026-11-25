@@ -192,6 +192,23 @@ public class HudReadoutTests
     }
 
     [Fact]
+    public void The_skill_points_are_read_from_the_player()
+    {
+        // Issue #502: none at the start; the level of the first point brings one.
+        var world = PlainWorld();
+        var player = world.Player;
+        Assert.Equal(0, HudReadout.Of(world, player).SkillPoints);
+
+        while (player.Level < Balance.Default.Skills.LevelsPerPoint)
+        {
+            player.AddExperience(player.ExperienceToNextLevel, new List<GameEvent>());
+        }
+
+        Assert.Equal(1, player.SkillPoints);
+        Assert.Equal(player.SkillPoints, HudReadout.Of(world, player).SkillPoints);
+    }
+
+    [Fact]
     public void A_health_boon_chosen_in_the_tick_lengthens_the_life_bar_by_one_tick()
     {
         // Issue #435: the bar is as long as the highest health and has a tick mark per health boon.

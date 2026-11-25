@@ -139,8 +139,18 @@ public sealed record Balance
     /// <summary>Status effects that enemies carry for a while (issue #504).</summary>
     public StatusEffectsBalance StatusEffects { get; init; } = new();
 
+    /// <summary>Skills: how a player earns the points to learn them (issue #502).</summary>
+    public SkillsBalance Skills { get; init; } = new();
+
     /// <summary>Seconds between the death of all players and the restart of the level.</summary>
     public float RestartDelay { get; init; } = 2f;
+}
+
+/// <summary>Skills (skills draft, section 1): a skill point every so many levels.</summary>
+public sealed record SkillsBalance
+{
+    /// <summary>A player gains a skill point on every level that is a multiple of this (3: levels 3, 6, 9 ...).</summary>
+    public int LevelsPerPoint { get; init; } = 3;
 }
 
 /// <summary>Status effects that enemies carry for a while (issue #504): one section per kind.</summary>
