@@ -8,6 +8,9 @@ public enum StatusKind
 
     /// <summary>Cleansing Flame: the enemy takes damage in pulses while it burns (issue #507, <see cref="Gameplay.CleansingFlame"/>).</summary>
     CleansingFlame,
+
+    /// <summary>Grave Chill: the enemy walks and flies slower while it lasts (issue #508, <see cref="Gameplay.GraveChill"/>).</summary>
+    GraveChill,
 }
 
 /// <summary>

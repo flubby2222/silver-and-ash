@@ -20,6 +20,9 @@ public static class EffectColours
     /// </summary>
     public const string Ashlar = "Werkstein";
 
+    /// <summary>The cold blue-grey of cloth; its lightest step is the frost of Grave Chill (issue #508).</summary>
+    public const string Cloth = "Stoff";
+
     /// <summary>The dust of a cracked wall breaking: Stein 14, the brightest step (like <see cref="ColumnDust.Colour"/>).</summary>
     public static (byte R, byte G, byte B) WallBreakDust { get; } = (151, 127, 137);
 

@@ -116,9 +116,9 @@ public class WeaponEffectTests
     }
 
     [Fact]
-    public void Weapons_can_carry_Marked_and_Cleansing_Flame_each_with_a_name()
+    public void Weapons_can_carry_Marked_Cleansing_Flame_and_Grave_Chill_each_with_a_name()
     {
-        Assert.Equal([StatusKind.Marked, StatusKind.CleansingFlame], WeaponEffects.Choosable);
+        Assert.Equal([StatusKind.Marked, StatusKind.CleansingFlame, StatusKind.GraveChill], WeaponEffects.Choosable);
         Assert.All(WeaponEffects.Choosable, effect => Assert.False(string.IsNullOrWhiteSpace(WeaponEffects.NameOf(effect))));
     }
 
