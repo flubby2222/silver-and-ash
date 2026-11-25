@@ -146,12 +146,30 @@ public static class PhotoScenes
             }),
         new("ghoul-burning-4m", "A ghoul 4 m away, just set alight by a Cleansing Flame: the white-gold shimmer round it, its time left above its head (issue #507).",
             studio => new PhotoSetup(Burning(studio.Arena('G', 4)))),
-        new("ghoul-chilled-4m", "A ghoul 4 m away, just chilled by a Grave Chill: the frost-blue shimmer round it, its time left above its head (issue #508).",
+        new("ghoul-chilled-4m", "A ghoul 4 m away, just chilled by a Grave Chill: the frost - its body tinted cold, rime flecks on it, a disc of rime on the floor - and its time left above its head (issues #508, #775).",
             studio => new PhotoSetup(Chilled(studio.Arena('G', 4)))),
+        new("ghoul-chilled-10m", "A chilled ghoul 10 m away: can the frost still be told at a distance? (issue #775)",
+            studio => new PhotoSetup(Chilled(studio.Arena('G', 10)))),
+        new("ghoul-chilled-late", "A chilled ghoul coming closer, 0.1 s of its chill left: the frost looks the same to its last tick (issue #775).",
+            studio => new PhotoSetup(Chilled(studio.Arena('G', 10)))
+            {
+                Ticks = 600,
+                StopWhen = world => world.Ghouls[0].Status.Get(StatusKind.GraveChill) is not { TicksLeft: > 6 },
+            }),
+        new("ghoul-chill-ended", "The same ghoul the tick its chill has run out: no frost left (issue #775).",
+            studio => new PhotoSetup(Chilled(studio.Arena('G', 10)))
+            {
+                Ticks = 600,
+                StopWhen = world => !world.Ghouls[0].Status.Has(StatusKind.GraveChill),
+            }),
         new("ghoul-stunned-4m", "A ghoul 4 m away, just stunned: the silver-grey shimmer round it, its time left above its head (issue #509).",
             studio => new PhotoSetup(Stunned(studio.Arena('G', 4), 0))),
         new("ghouls-chilled-stunned", "Two ghouls side by side 6 m away, one just chilled (2.0s), the other just stunned (0.5s): can the two effects be told apart? (issue #509)",
             studio => new PhotoSetup(Stunned(Chilled(studio.ArenaPair('G', 6)), 1))),
+        new("ghouls-chilled-burning", "Two ghouls side by side 6 m away, one just chilled, the other just set alight: frost next to the burning shimmer (issue #775).",
+            studio => new PhotoSetup(Burning(Chilled(studio.ArenaPair('G', 6)), 1))),
+        new("ghouls-chilled-marked", "Two ghouls side by side 6 m away, one just chilled, the other just marked: frost next to the violet shimmer (issue #775).",
+            studio => new PhotoSetup(Marked(Chilled(studio.ArenaPair('G', 6)), 1))),
     ];
 
     // Ghoul number index of the world stunned by a player, as a weapon would (issue #509).
@@ -161,17 +179,18 @@ public static class PhotoScenes
         return world;
     }
 
-    // The first ghoul of the world marked by a player, as a skill would (issue #506).
-    private static GameWorld Marked(GameWorld world)
+    // Ghoul number index (the first unless said otherwise) of the world marked by a player, as a skill would (issue #506).
+    private static GameWorld Marked(GameWorld world, int index = 0)
     {
-        world.ApplyStatus(world.Ghouls[0], StatusKind.Marked, world.Player);
+        world.ApplyStatus(world.Ghouls[index], StatusKind.Marked, world.Player);
         return world;
     }
 
-    // The first ghoul of the world set alight by a player's Cleansing Flame, as a weapon would (issue #507).
-    private static GameWorld Burning(GameWorld world)
+    // Ghoul number index (the first unless said otherwise) of the world set alight by a player's Cleansing Flame, as a
+    // weapon would (issue #507).
+    private static GameWorld Burning(GameWorld world, int index = 0)
     {
-        world.ApplyStatus(world.Ghouls[0], StatusKind.CleansingFlame, world.Player);
+        world.ApplyStatus(world.Ghouls[index], StatusKind.CleansingFlame, world.Player);
         return world;
     }
 
@@ -179,6 +198,20 @@ public static class PhotoScenes
     private static GameWorld Chilled(GameWorld world)
     {
         world.ApplyStatus(world.Ghouls[0], StatusKind.GraveChill, world.Player);
+        return world;
+    }
+
+    // The first bat of the world chilled by a player's Grave Chill (issue #775).
+    private static GameWorld ChilledBat(GameWorld world)
+    {
+        world.ApplyStatus(world.Bats[0], StatusKind.GraveChill, world.Player);
+        return world;
+    }
+
+    // Gorm chilled by a player's Grave Chill (issue #775).
+    private static GameWorld ChilledGorm(GameWorld world)
+    {
+        world.ApplyStatus(world.Gorm ?? throw new InvalidOperationException("The world has no Gorm."), StatusKind.GraveChill, world.Player);
         return world;
     }
 
@@ -252,6 +285,8 @@ public static class PhotoScenes
             studio => new PhotoSetup(studio.Arena('B', 4))),
         new("bat-10m", "A bat 10 m away in a bare hall.",
             studio => new PhotoSetup(studio.Arena('B', 10))),
+        new("bat-chilled-4m", "A bat 4 m away, just chilled by a Grave Chill: its body tinted cold, rime flecks on it, the disc of rime on the floor below it (issue #775).",
+            studio => new PhotoSetup(ChilledBat(studio.Arena('B', 4)))),
         new("bat-screech", "A bat screeching, the warning before its dive, halfway through (issue #249).",
             studio => new PhotoSetup(studio.Arena('B', 4))
             {
@@ -274,6 +309,8 @@ public static class PhotoScenes
     [
         new("gorm", "Gorm, the Chained, 6 m away in his boss room.",
             studio => new PhotoSetup(studio.BeforeGorm(6f))),
+        new("gorm-chilled", "Gorm 8 m away, just chilled by a Grave Chill: his body tinted cold, rime flecks on him, the disc of rime at his feet; in a hall as high as his boss room (issue #775).",
+            studio => new PhotoSetup(ChilledGorm(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight)))),
         new("gorm-swing-windup", "Gorm whirling his chain above his head, the warning before the swing, the chain out to his right; in a hall as high as his boss room (issues #249, #254).",
             studio => new PhotoSetup(studio.Arena('T', 8, RoomTemplate.RoomCeilingHeight))
             {

@@ -666,7 +666,7 @@ static void RunGame(
 
             // The status effects on the enemies (issue #506): the shimmer here, the timers over the picture below.
             var statuses = EnemyStatusReadout.Of(gameWorld);
-            StatusView.DrawShimmer(statuses, gameWorld.Ticks);
+            StatusView.DrawShimmer(statuses, gameWorld.Ticks, eye, levelShader);
 
             projectileView.Draw(gameWorld.Projectiles, alpha);
             pickupView.Draw(gameWorld.Pickups, alpha);

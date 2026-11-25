@@ -60,9 +60,14 @@ ghoul-windup | ticks 600 menu None ----S | A ghoul drawing back for a blow, half
 ghoul-marked-4m | ticks 1 menu None ----- | A marked ghoul 4 m away, just marked: the shimmer round it, its time left above its head (issue #506).
 ghoul-marked-late | ticks 600 menu None ----S | A marked ghoul coming closer, 0.4 s of its mark left (issue #506).
 ghoul-burning-4m | ticks 1 menu None ----- | A ghoul 4 m away, just set alight by a Cleansing Flame: the white-gold shimmer round it, its time left above its head (issue #507).
-ghoul-chilled-4m | ticks 1 menu None ----- | A ghoul 4 m away, just chilled by a Grave Chill: the frost-blue shimmer round it, its time left above its head (issue #508).
+ghoul-chilled-4m | ticks 1 menu None ----- | A ghoul 4 m away, just chilled by a Grave Chill: the frost - its body tinted cold, rime flecks on it, a disc of rime on the floor - and its time left above its head (issues #508, #775).
+ghoul-chilled-10m | ticks 1 menu None ----- | A chilled ghoul 10 m away: can the frost still be told at a distance? (issue #775)
+ghoul-chilled-late | ticks 600 menu None ----S | A chilled ghoul coming closer, 0.1 s of its chill left: the frost looks the same to its last tick (issue #775).
+ghoul-chill-ended | ticks 600 menu None ----S | The same ghoul the tick its chill has run out: no frost left (issue #775).
 ghoul-stunned-4m | ticks 1 menu None ----- | A ghoul 4 m away, just stunned: the silver-grey shimmer round it, its time left above its head (issue #509).
 ghouls-chilled-stunned | ticks 1 menu None ----- | Two ghouls side by side 6 m away, one just chilled (2.0s), the other just stunned (0.5s): can the two effects be told apart? (issue #509)
+ghouls-chilled-burning | ticks 1 menu None ----- | Two ghouls side by side 6 m away, one just chilled, the other just set alight: frost next to the burning shimmer (issue #775).
+ghouls-chilled-marked | ticks 1 menu None ----- | Two ghouls side by side 6 m away, one just chilled, the other just marked: frost next to the violet shimmer (issue #775).
 pistol-recoil | ticks 2 menu None ---I- | The pistol right after a shot: kicked up, hammer down, muzzle flash (issue #249).
 bullet-impact-wall | ticks 2 menu None ---I- | A pistol shot into the wall 3 m away, 2 ticks later: the spark of the impact still shows (issue #609).
 blade-charged | ticks 600 menu None ---IS | The silver blade fully charged, drawn back and trembling (issue #249).
@@ -76,9 +81,11 @@ club-charged-release | ticks 600 menu None ---IS | A fully charged club swing le
 showroom-club | ticks 1 menu None ----- | The club in hand before the club (Worn) lying in the showroom (issue #403).
 bat-4m | ticks 1 menu None ----- | A bat 4 m away in a bare hall.
 bat-10m | ticks 1 menu None ----- | A bat 10 m away in a bare hall.
+bat-chilled-4m | ticks 1 menu None ----- | A bat 4 m away, just chilled by a Grave Chill: its body tinted cold, rime flecks on it, the disc of rime on the floor below it (issue #775).
 bat-screech | ticks 1200 menu None ----S | A bat screeching, the warning before its dive, halfway through (issue #249).
 bat-dive | ticks 1200 menu None ----S | A bat diving at the player, within 4 m of its feet (issue #249).
 gorm | ticks 1 menu None ----- | Gorm, the Chained, 6 m away in his boss room.
+gorm-chilled | ticks 1 menu None ----- | Gorm 8 m away, just chilled by a Grave Chill: his body tinted cold, rime flecks on him, the disc of rime at his feet; in a hall as high as his boss room (issue #775).
 gorm-swing-windup | ticks 3000 menu None ----S | Gorm whirling his chain above his head, the warning before the swing, the chain out to his right; in a hall as high as his boss room (issues #249, #254).
 gorm-swing | ticks 3000 menu None ----S | Gorm sweeping his chain from his left to his right, a third of the way; in a hall as high as his boss room (issues #249, #254).
 gorm-throw-windup | ticks 3000 menu None ----S | Gorm about to throw his hook, which glows red: the warning, halfway through; in a hall as high as his boss room (issues #249, #254).
