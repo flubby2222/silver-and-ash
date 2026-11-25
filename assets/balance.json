@@ -193,8 +193,12 @@
   "experience": {
     "ghoul": 30,                        // experience for killing a ghoul (the killing hit counts)
     "bat": 20,                          // for a bat
-    "firstLevel": 100,                  // needed from level 0 to 1 ...
-    "growth": 1.25                      // ... and every further level x1.25 (100, 125, 156, 195, 244 ...)
+    // What each level costs: an entry holds from its level until the next entry. Must start at 0, rise, cost above 0.
+    "levelCosts": [
+      { "fromLevel": 0, "cost": 270 },  // levels 0 -> 1 up to 9 -> 10: 270 each
+      { "fromLevel": 10, "cost": 540 }, // from 10 -> 11 twice as much
+      { "fromLevel": 20, "cost": 1080 } // from 20 -> 21 four times as much
+    ]
   },
 
   // After a level up: some boons drawn from the pool, each counted from the base value (3 x 5 % = 15 %).
