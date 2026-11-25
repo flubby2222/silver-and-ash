@@ -59,37 +59,20 @@ using (log)
     int? look = null;
     WindowSize? window = null;
     PhotoRequest? photos = null;
+    var startOnTitle = true;
     try
     {
         var options = LaunchOptions.Parse(args);
         seed = options.Seed;
-        if (options.IsGenerated)
-        {
-            var templates = RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms"));
-            var levelZero = new LevelZero(templates);
-            newWorld = levelZero.NewRun;
-            nextWorld = levelZero.NextRun;
-            log?.Info($"Level 0 from {templates.Count} room templates.");
-        }
-        else
-        {
-            var levelPath = options.LevelPath(Path.Combine(AppContext.BaseDirectory, "assets", "levels"));
-            var level = LevelParser.ParseFile(levelPath);
-            newWorld = (worldSeed, balance) => new GameWorld(level, worldSeed, balance);
-            nextWorld = world => world.Restarted();
-            log?.Info($"Level '{levelPath}' loaded: {level.Width} x {level.Depth} cells.");
-        }
 
-        // Start option: --room assets/rooms/combat/l-hall.txt - one room template on its own, entered from its first
-        // door slot (issue #528, docs/level-format.md); --no-enemies leaves its enemies out.
-        RoomPreview? preview = null;
-        if (options.Room is { } room)
-        {
-            preview = new RoomPreview(RoomPreview.Load(room.Path, AppContext.BaseDirectory), room.WithEnemies);
-            newWorld = preview.NewWorld;
-            nextWorld = preview.NextWorld;
-            log?.Info($"Room template '{preview.Template.Name}' on its own{(room.WithEnemies ? string.Empty : ", without enemies")}.");
-        }
+        // What is played - level 0, a level file, or with --room assets/rooms/combat/l-hall.txt one room template on its
+        // own, entered from its first door slot (issues #528, #534, docs/level-format.md). Only that is loaded.
+        var start = StartWorlds.For(options, AppContext.BaseDirectory);
+        newWorld = start.NewWorld;
+        nextWorld = start.NextWorld;
+        startOnTitle = start.OpensOnTitle;
+        var preview = start.Preview;
+        log?.Info(start.Description);
 
 #if DEBUG
         // Test option: --give club - every run (and restart) starts with these weapons, to try them before they can
@@ -162,8 +145,11 @@ using (log)
                     : compare ? PhotoScenes.LookComparison
                     : preview is not null ? [preview.EntrancePhoto(seed ?? 0)]
                     : [PhotoScenes.Find(photo)!];
-                photos = new PhotoRequest(
-                    scenes, folder, RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms")), compare);
+                // The entrance photo needs only its own template (issue #534); the other scenes are built on level 0.
+                IReadOnlyList<RoomTemplate> templates = preview is not null
+                    ? [preview.Template]
+                    : RoomTemplateParser.LoadAll(Path.Combine(AppContext.BaseDirectory, "assets", "rooms"));
+                photos = new PhotoRequest(scenes, folder, templates, compare);
                 log?.Info($"Photo mode: {scenes.Count} scenes into '{folder}'.");
             }
         }
@@ -257,7 +243,7 @@ using (log)
         try
         {
             // Shown in the corner without the commit id ("0.1.0+abc123..." -> "0.1.0").
-            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look), window);
+            RunGame(newWorld, nextWorld, seed, displayVersion: version.Split('+')[0], log, photos, LookVariants.Get(look), window, startOnTitle);
             log?.Info("Game ended normally.");
         }
         catch (Exception exception)
@@ -271,9 +257,10 @@ using (log)
 
 // newWorld builds a world from a seed and balancing values; nextWorld the one after a run ended (new layout on level 0).
 // look: how the 3D world is drawn - the standard variant 2 (issue #237) unless --look chose another (debug version, issue #234).
+// startOnTitle: false starts the run at once, without the title screen (--room, issue #534).
 static void RunGame(
     Func<int, Balance, GameWorld> newWorld, Func<GameWorld, GameWorld> nextWorld, int? seed, string displayVersion, FileLog? log,
-    PhotoRequest? photos, LookVariant look, WindowSize? window)
+    PhotoRequest? photos, LookVariant look, WindowSize? window, bool startOnTitle)
 {
     // No MSAA (edge smoothing): the hard pixel edges of the low resolution are wanted. The bench (--bench) draws as
     // fast as it can: no VSync, and no frame rate limit is set anywhere.
@@ -356,8 +343,8 @@ static void RunGame(
         // A close look of a photo scene (issue #601): no hands, no level name, no showroom labels over the world.
         var onlyTheWorldShown = false;
 
-        // Title screen first; during a run Esc opens the menu (the world stands still - alone).
-        var onTitle = true;
+        // Title screen first (unless the start skips it); during a run Esc opens the menu (the world stands still - alone).
+        var onTitle = startOnTitle;
         var menuOpen = false;
         var quit = false;
         var titleMenu = new MenuView();
@@ -1090,6 +1077,12 @@ static void RunGame(
             SaveSettingsWhenDue();
             menuPage = page;
             (page == MenuPage.Settings ? settingsMenu : quitMenu).Open();
+        }
+
+        // Without the title screen (--room) the world built above is the run: it starts as "Start" would start it.
+        if (!onTitle)
+        {
+            StartFresh(gameWorld);
         }
 
         // Game loop: runs once per drawn frame until the window is closed (X button) or "Quit" is chosen.

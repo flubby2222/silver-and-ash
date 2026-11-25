@@ -84,6 +84,52 @@ public class RoomPreviewTests
         Assert.Equal(1f, forward.Z, 3);
     }
 
+    /// <summary>
+    /// Issue #534: a door slot on every side - the first slot of every template in assets/rooms lies north or west, so
+    /// south and east were never looked through.
+    /// </summary>
+    [Theory]
+    [InlineData(RoomSide.North, 0, 1)]
+    [InlineData(RoomSide.South, 0, -1)]
+    [InlineData(RoomSide.West, 1, 0)]
+    [InlineData(RoomSide.East, -1, 0)]
+    public void The_player_looks_into_the_room_through_a_door_slot_on_any_side(RoomSide side, int inwardsX, int inwardsZ)
+    {
+        var template = RoomWithDoorIn(side);
+        var preview = new RoomPreview(template, withEnemies: false);
+
+        var world = preview.NewWorld(Seed, Balance.Default);
+
+        Assert.Equal(side, Assert.Single(template.DoorSlots).Side);
+        Assert.Equal((inwardsX, inwardsZ), preview.Inwards);
+        var forward = world.Player.View.FlatForward;
+        Assert.Equal(inwardsX, forward.X, 3);
+        Assert.Equal(inwardsZ, forward.Z, 3);
+        var (x, z) = Level.ToGrid(world.Player.Position.X, world.Player.Position.Z);
+        Assert.Contains((x + inwardsX, z + inwardsZ), Assert.Single(preview.Build(Seed, Balance.Default).Rooms).FloorCells);
+    }
+
+    /// <summary>Issue #534: moved by the ring of wall, every enemy, chest and boss slot still stands on open floor of the room.</summary>
+    [Theory]
+    [MemberData(nameof(EveryTemplate))]
+    public void Every_slot_stands_on_open_floor_of_the_room(string template)
+    {
+        var preview = new RoomPreview(Load(template));
+
+        var generated = preview.Build(Seed, Balance.Default);
+
+        var room = Assert.Single(generated.Rooms);
+        var slots = room.GhoulSlots.Concat(room.BatSlots).Concat(room.ChestSlots ?? []).Concat(room.BossSlots ?? []).ToList();
+        var inTemplate = preview.Template.GhoulSlots.Count + preview.Template.BatSlots.Count
+            + preview.Template.ChestSlots.Count + preview.Template.BossSlots.Count;
+        Assert.Equal(inTemplate, slots.Count);
+        foreach (var (x, z) in slots)
+        {
+            Assert.False(generated.Level[x, z].IsSolid, $"{template}: slot {x}/{z} is in a wall.");
+            Assert.Contains((x, z), room.FloorCells);
+        }
+    }
+
     [Fact]
     public void A_combat_room_gets_its_enemies_as_in_a_run()
     {
@@ -222,26 +268,17 @@ public class RoomPreviewTests
 
     private static float Vector3Distance(System.Numerics.Vector3 a, System.Numerics.Vector3 b) => System.Numerics.Vector3.Distance(a, b);
 
-    // A folder named like a room kind below the test output (never the system temp folder), deleted afterwards.
-    private sealed class TemplateFolder : IDisposable
+    // A 3 x 3 combat room whose only door slot lies in the wall of the given side.
+    private static RoomTemplate RoomWithDoorIn(RoomSide side)
     {
-        private readonly string _root = Path.Combine(AppContext.BaseDirectory, "room-preview-tests", Guid.NewGuid().ToString("N"));
-
-        public TemplateFolder(string kind)
-        {
-            Kind = Path.Combine(_root, kind);
-            Directory.CreateDirectory(Kind);
-        }
-
-        private string Kind { get; }
-
-        public string Write(string name, string text)
-        {
-            var file = Path.Combine(Kind, name);
-            File.WriteAllText(file, text);
-            return file;
-        }
-
-        public void Dispose() => Directory.Delete(_root, recursive: true);
+        string[] rows =
+        [
+            side == RoomSide.North ? "##+##" : "#####",
+            "#...#",
+            (side == RoomSide.West ? "+" : "#") + "..." + (side == RoomSide.East ? "+" : "#"),
+            "#...#",
+            side == RoomSide.South ? "##+##" : "#####",
+        ];
+        return RoomTemplateParser.Parse(string.Join("\n", rows), RoomKind.Combat, $"combat/door-{side.ToString().ToLowerInvariant()}.txt");
     }
 }
