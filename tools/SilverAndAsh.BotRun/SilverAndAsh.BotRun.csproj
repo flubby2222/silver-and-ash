@@ -11,6 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="SilverAndAsh.Core.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\SilverAndAsh.Core\SilverAndAsh.Core.csproj" />
   </ItemGroup>
 
