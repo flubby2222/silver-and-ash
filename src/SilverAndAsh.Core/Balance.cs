@@ -93,11 +93,28 @@ public sealed record Balance
         Spread = 20f,
     };
 
+    /// <summary>
+    /// The stake crossbow (Vampiric, decision record 0008, issue #203): one stake per load that runs through a whole row
+    /// of enemies with the same damage in each - only a wall or a column stops it - and a slow reload. Provisional
+    /// values until the playtest.
+    /// </summary>
+    public RangedBalance StakeCrossbow { get; init; } = new()
+    {
+        Damage = 100,
+        HeadshotMultiplier = 2f,
+        Range = 60f,
+        Cooldown = 0.5f,
+        MagazineSize = 1,
+        ReloadTime = 3f,
+        Pierce = 4,
+    };
+
     /// <summary>The values of ranged weapon <paramref name="kind"/>.</summary>
     public RangedBalance Ranged(Gameplay.WeaponKind kind) => kind switch
     {
         Gameplay.WeaponKind.Rifle => Rifle,
         Gameplay.WeaponKind.Blunderbuss => Blunderbuss,
+        Gameplay.WeaponKind.StakeCrossbow => StakeCrossbow,
         _ => Pistol,
     };
 
@@ -966,7 +983,8 @@ public sealed record MeleeBalance
 
 /// <summary>
 /// Balancing values of a ranged weapon - the pistol (<see cref="Balance.Pistol"/>), the rifle
-/// (<see cref="Balance.Rifle"/>) and the blunderbuss (<see cref="Balance.Blunderbuss"/>) have the same kind of values (decision record 0008).
+/// (<see cref="Balance.Rifle"/>), the blunderbuss (<see cref="Balance.Blunderbuss"/>) and the stake crossbow
+/// (<see cref="Balance.StakeCrossbow"/>) have the same kind of values (decision record 0008).
 /// </summary>
 public sealed record RangedBalance
 {

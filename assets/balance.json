@@ -129,6 +129,18 @@
     "spread": 20                        // degrees, full width of the cone
   },
 
+  "stakeCrossbow": {                    // the stake crossbow (Vampiric): one stake through a whole row (provisional)
+    "damage": 100,                      // in every enemy it runs through, the same
+    "headshotMultiplier": 2,            // 200 % on the head
+    "range": 60,                        // m
+    "cooldown": 0.5,
+    "magazineSize": 1,                  // one stake per load ...
+    "reloadTime": 3,                    // ... and a slow reload (s)
+    "pierce": 4,                        // goes on through four more enemies after the first; walls and columns stop it
+    "pellets": 1,
+    "spread": 0
+  },
+
   "dummy": {
     "maxHealth": 100,
     "downTime": 3                       // s lying on the ground

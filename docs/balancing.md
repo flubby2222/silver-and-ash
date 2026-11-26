@@ -102,6 +102,27 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 26.11.2026 (#203, Pflockarmbrust, vorläufig)
+
+**Anlass:** Issue #203, Regeln. Neue Fernwaffe der Stufe Vampiric: ein schwerer Pflock je Ladung, der durch jeden Gegner in einer Reihe geht, bis eine Wand oder Säule ihn aufhält; langsames Nachladen. Neuer Block `stakeCrossbow`, gleiche Werte wie jede Fernwaffe.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `stakeCrossbow.damage` | – | 100 (**vorläufig**) | mehr als das Gewehr (80): ein Pflock tötet einen Ghul (100 Leben) mit einem Körpertreffer. Das gleicht aus, dass nach jedem Schuss nachgeladen werden muss |
+| `stakeCrossbow.pierce` | – | 4 = bis zu 5 Gegner (**vorläufig**) | „mehrere Gegner in einer Reihe“; das Gewehr geht durch einen. Jeder Gegner nimmt den vollen Schaden (wie beim Gewehr), jeder höchstens einmal je Pflock |
+| `stakeCrossbow.magazineSize` | – | 1 (**vorläufig**) | eine Armbrust hält einen Pflock; jeder Schuss braucht ein Nachladen |
+| `stakeCrossbow.reloadTime` | – | 3 s (**vorläufig**) | „langsam“ aus dem Issue: langsamer als jede andere Fernwaffe (Gewehr 2,5 s, Donnerbüchse 1,8 s) |
+| `stakeCrossbow.cooldown` | – | 0,5 s (**vorläufig**) | wirkt kaum, weil nach jedem Schuss nachgeladen wird; wie die Donnerbüchse, die auch nur einen Schuss hält |
+| `stakeCrossbow.range` | – | 60 m (**vorläufig**) | weit wie für lange Gänge, aber unter dem Gewehr (80 m), das die Waffe für gezielte Fernschüsse bleibt |
+| `stakeCrossbow.headshotMultiplier` | – | 2 (**vorläufig**) | weniger als das Gewehr (3), weil der Pflock schon den Körper durchschlägt; Gorms Kopf zählt wie bei jeder Fernwaffe |
+| `stakeCrossbow.pellets` / `spread` | – | 1 / 0 | ein Pflock, gerade aus |
+
+`damage`, `pierce` und `spread` dürfen 0 sein, aber nicht negativ; `spread` höchstens 90. Alle anderen Werte müssen größer als 0 sein. Sonst warnt der Lader und nimmt den Standardwert.
+
+**Vorläufig festgelegt:** Der Pflock fliegt wie Pistole und Gewehr sofort (kein sichtbares Geschoss wie die Wurfmesser). Er macht in jedem Gegner gleich viel Schaden, nimmt nicht ab. Hält ihn der fünfte Gegner auf, trifft er keine Wand mehr (wie beim Gewehr: nur ein Pflock, der weniger Gegner trifft als er kann, endet in Wand oder Säule).
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Die Armbrust kommt wie Jagdaxt und Peitsche in den Beutevorrat (Kisten und Gorm); ob 100 Schaden je Pflock bei 3 s Nachladen zu stark oder zu schwach sind, zeigt erst ein Spieltest (Modell und Klang folgen im eigenen Issue).
+
 ### Zwischenschritt – 26.11.2026 (#196, Items Teil 2, vorläufig)
 
 **Anlass:** Issue #196. Die zweiten vier Items wirken jetzt. Die Werte stehen im Abschnitt `items`.

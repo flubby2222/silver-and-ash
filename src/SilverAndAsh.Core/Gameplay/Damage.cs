@@ -20,6 +20,9 @@ public enum Weapon
 
     /// <summary>The whip (issue #202).</summary>
     Whip,
+
+    /// <summary>The stake crossbow (issue #203).</summary>
+    StakeCrossbow,
 }
 
 /// <summary>Where a body was hit.</summary>
@@ -112,6 +115,8 @@ public sealed class DamageRules
         rules.Add(new ZoneBonus(Weapon.Rifle, HitZone.BossHead, balance.Gorm.HeadMultiplier));
         rules.Add(new ZoneBonus(Weapon.Blunderbuss, HitZone.Head, balance.Blunderbuss.HeadshotMultiplier));
         rules.Add(new ZoneBonus(Weapon.Blunderbuss, HitZone.BossHead, balance.Gorm.HeadMultiplier));
+        rules.Add(new ZoneBonus(Weapon.StakeCrossbow, HitZone.Head, balance.StakeCrossbow.HeadshotMultiplier));
+        rules.Add(new ZoneBonus(Weapon.StakeCrossbow, HitZone.BossHead, balance.Gorm.HeadMultiplier));
         rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
         rules.Add(new ChargeBonus(balance.Club.ChargeMaxMultiplier, Weapon.Club));
         rules.Add(new ChargeBonus(balance.HuntersAxe.ChargeMaxMultiplier, Weapon.HuntersAxe));

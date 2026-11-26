@@ -128,6 +128,9 @@ public sealed class HudLayout
 
         // Until the whip has a sign of its own (issue #202, follow-up): the blade's, the nearest slender melee weapon.
         [WeaponKind.Whip] = "icon_blade",
+
+        // Until the stake crossbow has a sign of its own (issue #203, follow-up): the rifle's, the nearest long ranged weapon.
+        [WeaponKind.StakeCrossbow] = "icon_rifle",
     }.ToFrozenDictionary();
 
     private static readonly FrozenDictionary<ItemKind, string> ItemIcons = new Dictionary<ItemKind, string>
