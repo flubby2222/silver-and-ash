@@ -34,13 +34,22 @@ internal static class FightRetreat
     /// <summary>How far outside a strike zone the end point must lie, metres.</summary>
     public const float Margin = 0.3f;
 
+    /// <summary>A way that stays free this far (metres) is better than one that ends at a wall after <see cref="Step"/>.</summary>
+    public const float FarStep = 6f;
+
+    /// <summary>What a free way far ahead is worth in the score.</summary>
+    public const float OpenBonus = 3f;
+
+    /// <summary>What it is worth to go on the way of the tick before (no wavering between two ways).</summary>
+    public const float KeepHeading = 1f;
+
     /// <summary>The distance to an enemy's body that counts as safe, metres: more clearance is no better.</summary>
     public const float EnoughClearance = 2f;
 
     private const int Directions = 16;
 
     /// <summary>The unit direction to step in, or null when no direction is free.</summary>
-    public static Vector2? Choose(Vector2 from, IReadOnlyList<Foe> foes, Func<Vector2, bool> isFree)
+    public static Vector2? Choose(Vector2 from, IReadOnlyList<Foe> foes, Func<Vector2, bool> isFree, Vector2? previous = null)
     {
         var away = AwayFrom(from, foes);
         Vector2? best = null;
@@ -56,6 +65,8 @@ internal static class FightRetreat
             }
 
             var score = Score(from, end, Vector2.Dot(direction, away), foes);
+            score += isFree(from + (direction * FarStep)) ? OpenBonus : 0f;
+            score += previous is { } before ? KeepHeading * Vector2.Dot(direction, before) : 0f;
             if (score > bestScore)
             {
                 bestScore = score;

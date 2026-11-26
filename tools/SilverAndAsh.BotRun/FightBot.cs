@@ -26,7 +26,12 @@ internal sealed class FightBot
     private const float BatDiveRadius = 1.5f;
 
     // Enemies this close (to the edge of the body) push the retreat away from themselves, too.
-    private const float CrowdRange = 6f;
+    private const float PushRange = 6f;
+
+    // A vial is given up when the bot has not come this much nearer (m) in this many ticks.
+    private const float VialProgress = 0.5f;
+
+    private const int VialPatience = 180;
 
     private const float DoorReach = 1.8f;
 
@@ -47,6 +52,11 @@ internal sealed class FightBot
 
     private readonly Dictionary<int, Vector3?> _nearSides = [];
     private readonly Balance _balance;
+    private Vector2? _lastStep;
+    private readonly HashSet<Vector3> _givenUp = [];
+    private Vector3 _vialAim;
+    private float _vialBest;
+    private long _vialSince;
     private readonly Play _play;
     private readonly GameWorld _world;
     private readonly WeaponKind _weapon;
@@ -95,14 +105,15 @@ internal sealed class FightBot
         var seen = Visible(player);
         var target = seen.FirstOrDefault();
         var threat = seen.FirstOrDefault(IsAnnouncingBlow);
-        var vial = Nearest(player, _world.KnownBloodVials.Where(each => !each.IsTaken).Select(each => each.Position));
+        var vial = Nearest(player, _world.KnownBloodVials.Where(each => !each.IsTaken && !_givenUp.Contains(each.Position)).Select(each => each.Position));
         var key = Nearest(player, _world.Loot.Where(each => each.Kind == LootKind.Key && !each.IsTaken).Select(each => each.Position));
         var rounds = _isRanged ? player.Ranged.Magazine.Rounds : 0;
         var reloading = _isRanged && player.Ranged.Magazine.IsReloading;
         var view = new FightView(
             player.Health, player.MaxHealth, _isRanged, _reach, reloading, rounds,
             target is null ? null : DistanceTo(player, target), target is not null && Sees(player, target),
-            vial?.Distance, key?.Distance, threat is null ? null : DistanceTo(player, threat));
+            vial?.Distance, key?.Distance, threat is null ? null : DistanceTo(player, threat),
+            seen.Count(each => each is Ghoul && DistanceTo(player, each) < FightPolicy.CrowdRange));
         var choice = FightPolicy.Decide(view);
         _pressed = choice.Attack && !_pressed;
         return choice.Goal switch
@@ -111,10 +122,28 @@ internal sealed class FightBot
             FightGoal.Fight => Attack(player, target!),
             FightGoal.Retreat => Retreat(player, target!, threat ?? target!, seen, choice.Attack, choice.Reload),
             FightGoal.Approach => WalkTo(target!.Body.Position),
-            FightGoal.Vial => WalkTo(vial!.Value.Point),
+            FightGoal.Vial => WalkToVial(vial!.Value),
             FightGoal.Key => WalkTo(key!.Value.Point),
             _ => Route(player),
         };
+    }
+
+    // Walks to a vial. A vial the bot does not come nearer to for VialPatience ticks (behind something the way finder
+    // does not know) is given up for good.
+    private PlayerInput WalkToVial((Vector3 Point, float Distance) vial)
+    {
+        if (vial.Point != _vialAim || vial.Distance < _vialBest - VialProgress)
+        {
+            _vialAim = vial.Point;
+            _vialBest = vial.Distance;
+            _vialSince = _world.Ticks;
+        }
+        else if (_world.Ticks - _vialSince >= VialPatience)
+        {
+            _givenUp.Add(vial.Point);
+        }
+
+        return WalkTo(vial.Point);
     }
 
     // A tap each other tick: the press starts the swing or shot, the release lets the blade fly. The weapon's own
@@ -136,9 +165,10 @@ internal sealed class FightBot
     {
         var aimAt = _isRanged ? target : from;
         PhotoStudio.Face(player, new Vector3(aimAt.Body.Position.X, aimAt.Body.Position.Y + (aimAt.Body.Height / 2f), aimAt.Body.Position.Z));
-        var foes = seen.Where(each => DistanceTo(player, each) < CrowdRange).Select(each => FoeOf(player, each)).ToList();
+        var foes = seen.Where(each => DistanceTo(player, each) < PushRange).Select(each => FoeOf(player, each)).ToList();
         var here = new Vector2(player.Position.X, player.Position.Z);
-        var step = FightRetreat.Choose(here, foes, end => IsFree(player, end));
+        var step = FightRetreat.Choose(here, foes, end => IsFree(player, end), _lastStep);
+        _lastStep = step;
         if (step is not { } direction)
         {
             return Attack(player, target);
