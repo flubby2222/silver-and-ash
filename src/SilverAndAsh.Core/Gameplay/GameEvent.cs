@@ -134,7 +134,11 @@ public sealed record TargetHitBy(int TargetId, int PlayerId, Weapon Weapon) : Ga
 }
 
 /// <summary>Ghoul <paramref name="GhoulId"/> took <paramref name="Damage"/>; <paramref name="Critical"/> for a headshot.</summary>
-public sealed record GhoulHit(int GhoulId, int Damage, bool Critical = false) : GameEvent;
+public sealed record GhoulHit(int GhoulId, int Damage, bool Critical = false) : GameEvent
+{
+    /// <summary>How it was dealt (issue #771): a burn pulse is no reason to flash, flinch or cry out.</summary>
+    public DamageKind Kind { get; init; }
+}
 
 /// <summary>Projectile <paramref name="ProjectileId"/> was fired from <paramref name="Origin"/>.</summary>
 public sealed record ProjectileFired(int ProjectileId, Vector3 Origin) : GameEvent;
@@ -152,7 +156,11 @@ public sealed record ProjectileImpact(int ProjectileId, Vector3 Point) : GameEve
 public sealed record ProjectileParried(int ProjectileId, int PlayerId, Vector3 Point) : GameEvent;
 
 /// <summary>Bat <paramref name="BatId"/> took <paramref name="Damage"/>.</summary>
-public sealed record BatHit(int BatId, int Damage) : GameEvent;
+public sealed record BatHit(int BatId, int Damage) : GameEvent
+{
+    /// <summary>How it was dealt (issue #771): a burn pulse is no reason to flash, flinch or cry out.</summary>
+    public DamageKind Kind { get; init; }
+}
 
 /// <summary>Bat <paramref name="BatId"/> reached 0 health and tumbles to the floor.</summary>
 public sealed record BatDied(int BatId) : GameEvent;
@@ -292,7 +300,11 @@ public sealed record RoomCleared(int RoomIndex) : GameEvent;
 public sealed record RunWon : GameEvent;
 
 /// <summary>Gorm <paramref name="GormId"/> took <paramref name="Damage"/> (critical: a shot at his head).</summary>
-public sealed record GormHit(int GormId, int Damage, bool Critical = false) : GameEvent;
+public sealed record GormHit(int GormId, int Damage, bool Critical = false) : GameEvent
+{
+    /// <summary>How it was dealt (issue #771): a burn pulse is no reason to flash, flinch or cry out.</summary>
+    public DamageKind Kind { get; init; }
+}
 
 /// <summary>Gorm <paramref name="GormId"/> starts winding up <paramref name="Attack"/> - the warning.</summary>
 public sealed record GormWindUp(int GormId, GormAttack Attack) : GameEvent;

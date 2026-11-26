@@ -71,7 +71,7 @@ internal sealed class ModelGormView(TexturedModel model, LevelShader shader) : I
     {
         switch (gameEvent)
         {
-            case GormHit hit:
+            case GormHit { Kind: DamageKind.Strike } hit:
                 _flash = 1f;
                 _flashIsCritical = hit.Critical;
                 break;

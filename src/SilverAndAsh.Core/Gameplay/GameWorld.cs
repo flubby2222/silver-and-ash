@@ -1837,7 +1837,7 @@ public sealed class GameWorld
         });
         var wasAlive = target.IsHittable;
         var eventsBefore = _events.Count;
-        var taken = target.TakeDamage(result.Amount, _events, result.IsCritical);
+        var taken = target.TakeDamage(result.Amount, _events, result.IsCritical, DamageKinds.Of(hit.Weapon));
 
         // The target's own hit event does not say what hit it; this one does (issue #267: the blade sound only for the
         // blade). Only if the hit counted - a target that ignores it (already down) reports nothing.

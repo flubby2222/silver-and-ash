@@ -47,7 +47,7 @@ internal sealed class ModelBatView(TexturedModel model, LevelShader shader) : IB
     {
         switch (gameEvent)
         {
-            case BatHit hit:
+            case BatHit { Kind: DamageKind.Strike } hit:
                 StateOf(hit.BatId).Flash = 1f;
                 break;
             case BatDied died:
@@ -171,7 +171,7 @@ internal sealed class PlaceholderBatView : IBatView
     {
         switch (gameEvent)
         {
-            case BatHit hit:
+            case BatHit { Kind: DamageKind.Strike } hit:
                 StateOf(hit.BatId).Flash = 1f;
                 break;
             case BatDied died:

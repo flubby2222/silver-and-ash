@@ -273,7 +273,7 @@ public sealed class Gorm : IEnemy
         return onHeadHeight && forward > 0f && side <= BodySizes.Gorm.HeadWidth / 2f ? HitZone.BossHead : HitZone.Body;
     }
 
-    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
+    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false, DamageKind kind = DamageKind.Strike)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
         ArgumentNullException.ThrowIfNull(events);
@@ -291,7 +291,7 @@ public sealed class Gorm : IEnemy
         // Reported is what he really lost - a deadly hit counts only his last health.
         var taken = Math.Min(damage, Health);
         Health -= taken;
-        events.Add(new GormHit(Id, taken, critical) { Place = Position });
+        events.Add(new GormHit(Id, taken, critical) { Kind = kind, Place = Position });
         if (IsDead)
         {
             Velocity = Vector3.Zero;

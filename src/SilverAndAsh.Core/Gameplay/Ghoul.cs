@@ -160,7 +160,7 @@ public sealed class Ghoul : IEnemy
         return high && onHead ? HitZone.Head : HitZone.Body;
     }
 
-    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
+    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false, DamageKind kind = DamageKind.Strike)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
         ArgumentNullException.ThrowIfNull(events);
@@ -170,7 +170,7 @@ public sealed class Ghoul : IEnemy
         }
 
         Health = Math.Max(0, Health - damage);
-        events.Add(new GhoulHit(Id, damage, critical) { Place = Position });
+        events.Add(new GhoulHit(Id, damage, critical) { Kind = kind, Place = Position });
 
         // Being hit wakes it up, even if it never saw the attacker.
         _alerted = true;

@@ -474,6 +474,8 @@ public static class SoundBoard
         BatScreeched => SoundKind.BatScreech,
         BatBit => SoundKind.BatBite,
         BatDiveMissed => SoundKind.BatDiveMissed,
+        // The flame burns silently (issue #771) until its own sound has been listened to.
+        BatHit { Kind: DamageKind.Burn } => null,
         BatHit => SoundKind.BatHurt,
         BatDied => SoundKind.BatDied,
         GormStepped => SoundKind.GormStep,
@@ -484,6 +486,7 @@ public static class SoundBoard
         GormSwingStarted => SoundKind.GormChain,
         GormThrew => SoundKind.GormThrow,
         HookHit => SoundKind.GormHookHit,
+        GormHit { Kind: DamageKind.Burn } => null,
         GormHit { Critical: true } => SoundKind.GormHeadHurt,
         GormHit => SoundKind.GormHurt,
         GormRoared => SoundKind.GormRoar,

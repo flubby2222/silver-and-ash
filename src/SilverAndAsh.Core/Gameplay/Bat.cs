@@ -187,7 +187,7 @@ public sealed class Bat : IEnemy
     /// <summary>A bat is too small for a head zone: everything is body.</summary>
     public HitZone ZoneAt(Vector3 point) => HitZone.Body;
 
-    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
+    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false, DamageKind kind = DamageKind.Strike)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
         ArgumentNullException.ThrowIfNull(events);
@@ -198,7 +198,7 @@ public sealed class Bat : IEnemy
 
         var taken = Math.Min(damage, Health);
         Health -= taken;
-        events.Add(new BatHit(Id, taken) { Place = Centre });
+        events.Add(new BatHit(Id, taken) { Kind = kind, Place = Centre });
 
         // Being hit wakes it up, even if it never saw the attacker.
         _alerted = true;
