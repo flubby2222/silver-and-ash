@@ -1,5 +1,8 @@
 using System.Numerics;
+using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.Presentation;
+using SilverAndAsh.Core.World;
 
 namespace SilverAndAsh.Core.Tests.Presentation;
 
@@ -116,6 +119,40 @@ public class StakeCrossbowPoseTests
         Assert.Equal(StakeCrossbowPose.StakeDropHeight, StakeCrossbowPose.StakeLift(StakeCrossbowPose.StakeAt), 4);
         Assert.Equal(0f, StakeCrossbowPose.StakeLift(StakeCrossbowPose.StakeAt + 0.06f), 4);
         Assert.Equal(0f, StakeCrossbowPose.StakeLift(1f), 4);
+    }
+
+    [Fact]
+    public void A_real_reload_of_the_crossbow_tick_by_tick_shows_its_motion_to_the_end()
+    {
+        // Review of #796: ReloadMotion.HasMotion switches the whole motion on (tilt, crank, stake from above). Driven as the
+        // game does: shoot, press again for the reload, then one Step per tick with the magazine's own progress.
+        var world = new GameWorld(LevelParser.Parse("P\n."), 1);
+        world.Player.Equip(0, WeaponKind.StakeCrossbow);
+        world.Tick(PlayerInput.None with { Shoot = true });
+        for (var tick = 0; tick < SimulationClock.SecondsToTicks(Balance.Default.StakeCrossbow.Cooldown); tick++)
+        {
+            world.Tick(PlayerInput.None);
+        }
+
+        world.Tick(PlayerInput.None with { Shoot = true });
+        var magazine = world.Player.Ranged.Magazine;
+        Assert.True(magazine.IsReloading);
+
+        var motion = new ReloadMotion();
+        var strongest = 0f;
+        var cranked = 0f;
+        var frame = 1f / SimulationClock.TicksPerSecond;
+        while (magazine.IsReloading)
+        {
+            motion.Step(WeaponKind.StakeCrossbow, true, magazine.ReloadProgress, frame);
+            strongest = Math.Max(strongest, motion.Weight);
+            cranked = Math.Max(cranked, StakeCrossbowPose.CrankDegrees(motion.Progress) * motion.Weight);
+            world.Tick(PlayerInput.None);
+        }
+
+        Assert.Equal(1f, strongest, 3);
+        Assert.True(cranked > 360f * (StakeCrossbowPose.CrankTurns - 1), $"The crank turned only {cranked} degrees.");
+        Assert.True(motion.Progress > StakeCrossbowPose.StakeAt, "The motion did not follow the reload up to the stake.");
     }
 
     private static int IndexOf(string name) => StakeCrossbowPose.Parts.ToList().FindIndex(part => part.Name == name);
