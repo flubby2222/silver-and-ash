@@ -21,10 +21,8 @@ internal sealed class FightBot
     // An enemy outside the bot's room is fought if it is this close and nothing is in the way.
     private const float SightRange = 12f;
 
-    // The turns from "straight away" that a retreat tries, in this order (degrees), and how far it looks ahead (m).
-    private static readonly float[] RetreatTurns = [0f, 30f, -30f, 60f, -60f, 90f, -90f, 135f, -135f];
-
-    private const float RetreatLook = 3f;
+    // A bat's dive hits within this far (m) of the spot it dived at.
+    private const float BatDiveRadius = 1.5f;
 
     // Enemies this close (to the edge of the body) push the retreat away from themselves, too.
     private const float CrowdRange = 6f;
@@ -47,6 +45,7 @@ internal sealed class FightBot
     private const int SidestepTicks = 40;
 
     private readonly Dictionary<int, Vector3?> _nearSides = [];
+    private readonly Balance _balance;
     private readonly Play _play;
     private readonly GameWorld _world;
     private readonly WeaponKind _weapon;
@@ -67,6 +66,7 @@ internal sealed class FightBot
         _play = play;
         _world = play.World;
         _weapon = weapon;
+        _balance = balance;
         _isRanged = Weapons.Info(weapon).Hand == WeaponHand.Ranged;
         _reach = _isRanged ? balance.Ranged(weapon).Range : balance.Melee(weapon).Range;
         _room = _world.Rooms.First(room => room.Kind == RoomKind.Start);
@@ -129,56 +129,44 @@ internal sealed class FightBot
     private static bool IsAnnouncingBlow(ITarget enemy) =>
         enemy is Ghoul { State: GhoulState.WindingUp } or Bat { State: BatState.Screeching };
 
-    // Walks away from <from> with the view on the target (a melee bot: on the one that strikes). The way back, else
-    // the nearest free direction beside it; where all are walls the bot stands and fights.
+    // The step of a retreat: the view stays on the aim, the walk goes where FightRetreat finds the ground free of the
+    // blows that are coming; where every way is a wall the bot stands and fights.
     private PlayerInput Retreat(Player player, ITarget target, ITarget from, IReadOnlyList<ITarget> seen, bool shoot, bool reload)
     {
         var aimAt = _isRanged ? target : from;
         PhotoStudio.Face(player, new Vector3(aimAt.Body.Position.X, aimAt.Body.Position.Y + (aimAt.Body.Height / 2f), aimAt.Body.Position.Z));
-        if (RetreatMove(player, AwayFrom(player, from, seen)) is not { } move)
+        var foes = seen.Where(each => DistanceTo(player, each) < CrowdRange).Select(each => FoeOf(player, each)).ToList();
+        var here = new Vector2(player.Position.X, player.Position.Z);
+        var step = FightRetreat.Choose(here, foes, end => IsFree(player, end));
+        if (step is not { } direction)
         {
             return Attack(player, target);
         }
 
+        var view = player.View;
+        var flat = new Vector3(direction.X, 0f, direction.Y);
+        var move = new Vector2(Vector3.Dot(flat, view.FlatRight), Vector3.Dot(flat, view.FlatForward));
         return PlayerInput.None with { Move = move, Shoot = shoot && _pressed, Reload = reload };
     }
 
-    // Away from the enemy that strikes, and the more so the closer the others stand: each pushes with 1 / distance squared.
-    private static Vector3 AwayFrom(Player player, ITarget from, IReadOnlyList<ITarget> seen)
+    // What the bot makes of an enemy: its body and, when it shows a blow coming, where that blow lands: a ghoul where it
+    // faces and reaches, a bat where the bot stands now (it dives at the spot it saw).
+    private Foe FoeOf(Player player, ITarget enemy)
     {
-        var sum = Push(player, from, 4f);
-        foreach (var each in seen.Where(other => other != from && DistanceTo(player, other) < CrowdRange))
+        var at = new Vector2(enemy.Body.Position.X, enemy.Body.Position.Z);
+        StrikeZone? zone = enemy switch
         {
-            sum += Push(player, each, 1f);
-        }
-
-        return sum.LengthSquared() > 0f ? Vector3.Normalize(sum) : Vector3.UnitZ;
+            Ghoul { State: GhoulState.WindingUp } ghoul => new StrikeZone(
+                at, _balance.Ghoul.HitReach, new Vector2(ghoul.Facing.X, ghoul.Facing.Z), MathF.Cos(_balance.Ghoul.AttackHalfAngle * MathF.PI / 180f)),
+            Bat { State: BatState.Screeching } => new StrikeZone(new Vector2(player.Position.X, player.Position.Z), BatDiveRadius, Vector2.UnitY, -1f),
+            _ => null,
+        };
+        return new Foe(at, enemy.Body.Radius, zone);
     }
 
-    private static Vector3 Push(Player player, ITarget enemy, float weight)
-    {
-        var flat = new Vector3(player.Position.X - enemy.Body.Position.X, 0f, player.Position.Z - enemy.Body.Position.Z);
-        var distance = MathF.Max(flat.Length(), 0.1f);
-        return flat / distance * (weight / (distance * distance));
-    }
-
-    // The first of the directions from straight away to sideways that is free for a few metres, as a move in the view.
-    private Vector2? RetreatMove(Player player, Vector3 away)
-    {
-        foreach (var degrees in RetreatTurns)
-        {
-            var turn = degrees * MathF.PI / 180f;
-            var direction = new Vector3(
-                (away.X * MathF.Cos(turn)) - (away.Z * MathF.Sin(turn)), 0f, (away.X * MathF.Sin(turn)) + (away.Z * MathF.Cos(turn)));
-            if (Pathfinder.CanWalkStraight(_world.Level, player.Position, player.Position + (direction * RetreatLook), BodySizes.Player.Radius))
-            {
-                var view = player.View;
-                return new Vector2(Vector3.Dot(direction, view.FlatRight), Vector3.Dot(direction, view.FlatForward));
-            }
-        }
-
-        return null;
-    }
+    // Free for the retreat: a straight way to the point, no wall, no step up.
+    private bool IsFree(Player player, Vector2 end) => Pathfinder.CanWalkStraight(
+        _world.Level, player.Position, new Vector3(end.X, player.Position.Y, end.Y), BodySizes.Player.Radius);
 
     private void UpdateRoom()
     {
