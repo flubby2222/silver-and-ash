@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace SilverAndAsh.Core.Gameplay;
 
 /// <summary>
@@ -43,4 +45,17 @@ public static class Items
         ItemKind.AshenHeart => new("Ashen Heart", ItemTier.Vampiric, "Once: instead of dying, go on with 30 health. Then it breaks."),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown item."),
     };
+
+    /// <summary>
+    /// The items whose effect is in the game (issue #791) - since #195 and #196 all of them. A new item without its rule
+    /// yet stays out of this list; its card then says so (<see cref="Presentation.EquipmentCardText.Note"/>).
+    /// </summary>
+    private static readonly FrozenSet<ItemKind> WithEffect = new[]
+    {
+        ItemKind.HuntersBoots, ItemKind.IronFlask, ItemKind.SilverRosary, ItemKind.QuickdrawHolster,
+        ItemKind.BladeParry, ItemKind.HuntersEye, ItemKind.Leech, ItemKind.AshenHeart,
+    }.ToFrozenSet();
+
+    /// <summary>True if the effect of <paramref name="kind"/> is in the game, false if it comes later.</summary>
+    public static bool HasEffect(ItemKind kind) => WithEffect.Contains(kind);
 }

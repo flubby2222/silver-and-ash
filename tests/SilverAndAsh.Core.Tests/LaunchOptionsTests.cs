@@ -235,7 +235,7 @@ public class LaunchOptionsTests
     {
         var options = LaunchOptions.Parse(["--give", "club", "--seed", "5", "--give", "PISTOL"]);
 
-        Assert.Equal([WeaponKind.Club, WeaponKind.Pistol], options.Give!);
+        Assert.Equal([Equipment.Of(WeaponKind.Club), Equipment.Of(WeaponKind.Pistol)], options.Give!);
         Assert.Equal(5, options.Seed);
     }
 
@@ -248,6 +248,28 @@ public class LaunchOptionsTests
         var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--give", name]));
 
         Assert.Contains("club", error.Message);
+    }
+
+    [Fact]
+    public void Give_names_items_too_in_any_case_and_between_weapons()
+    {
+        var options = LaunchOptions.Parse(["--give", "leech", "--give", "club", "--give", "ASHENHEART"]);
+
+        Assert.Equal([Equipment.Of(ItemKind.Leech), Equipment.Of(WeaponKind.Club), Equipment.Of(ItemKind.AshenHeart)], options.Give!);
+    }
+
+    [Theory]
+    [InlineData("rosary")]
+    [InlineData("hunter's eye")]
+    [InlineData("HuntersBoots2")]
+    public void An_unknown_item_name_gives_the_message_of_an_unknown_weapon_with_every_known_name(string name)
+    {
+        var error = Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(["--give", name]));
+
+        Assert.StartsWith($"Unknown weapon '{name}'. Known: ", error.Message);
+        Assert.Contains("club", error.Message);
+        Assert.Contains("silverrosary", error.Message);
+        Assert.Contains("ashenheart", error.Message);
     }
 
     [Fact]
@@ -441,7 +463,7 @@ public class LaunchOptionsTests
             ["--room", "assets/rooms/combat/l-hall.txt", "--seed", "7", "--give", "club", "--photo", "entrance", "--out", "pictures"]);
 
         Assert.Equal(7, options.Seed);
-        Assert.Equal([WeaponKind.Club], options.Give);
+        Assert.Equal([Equipment.Of(WeaponKind.Club)], options.Give);
         Assert.Equal(RoomOptions.EntrancePhoto, options.Photo);
         Assert.Equal("pictures", options.PhotoFolder);
         Assert.NotNull(options.Room);

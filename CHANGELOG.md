@@ -7,6 +7,7 @@ Neue Einträge kommen zuerst unter **Unveröffentlicht**. Beim Release wird dara
 ## [Unveröffentlicht]
 
 ### Behoben
+- **Gegenstandskarte ohne falschen Hinweis:** Die Karte nach dem Aufheben eines Items schreibt unter die Wirkung nicht mehr „No effect yet - it comes in a later version.“ – alle acht Items wirken seit #195 und #196. Ob ein Item schon wirkt, steht jetzt als Liste bei den Items im Spielkern; nur ein Item ohne Wirkung bekäme den Satz noch. Zum Ausprobieren nimmt `--give` jetzt auch Item-Namen, etwa `--give leech` oder `--give ashenheart` (nur Debug-Version, siehe `docs/level-format.md`) (#791)
 - **Frost liegt am Körper und auf dem Boden:** Die Reifflecken von Grave Chill sitzen nur noch dort, wo man von Ghul, Fledermaus oder Gorm wirklich Körper sieht, aus jeder Blickrichtung. Vorher standen sie bei einem Ghul, der zum Hieb ausholt, und unter einer Fledermaus neben der Figur in der Luft. Die Bodenscheibe liegt jetzt an einer Stufe auf beiden Böden: Sie schwebt nicht mehr über dem tieferen Boden und steckt nicht im höheren. Wände und höhere Stufen schneiden sie ab. Farben, Zahl und Größe bleiben gleich. Neue Fotoszenen: `ghoul-chilled-windup`, `ghoul-chilled-step` und `gorm-chilled-step` (#785)
 
 ### Hinzugefügt
