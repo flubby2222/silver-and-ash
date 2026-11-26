@@ -17,7 +17,7 @@ public class FightRetreatTests
     private static FightView View(
         int? health = null, bool ranged = false, float reach = 2f, int rounds = 6, float? target = null,
         bool inSight = true, float? vial = null, float? threat = null, bool canDodge = false) =>
-        new(health ?? Balance.Player.MaxHealth, Balance.Player.MaxHealth, ranged, reach, false, rounds, target, inSight, vial, null, threat, 0, canDodge);
+        new(health ?? Balance.Player.MaxHealth, Balance.Player.MaxHealth, ranged, reach, false, rounds, target, inSight, vial, null, threat, canDodge);
 
     private static string GoalName(FightChoice choice) => choice.Goal.ToString();
 

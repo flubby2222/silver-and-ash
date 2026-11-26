@@ -29,8 +29,7 @@ internal enum FightGoal
 
 /// <summary>
 /// What the bot sees of one moment (<paramref name="ThreatDistance"/>: the nearest enemy that draws back for a blow, as
-/// its body shows it; <paramref name="Crowd"/>: how many ghouls stand within <see cref="FightPolicy.CrowdRange"/>;
-/// <paramref name="CanDodge"/>: on the ground, not dodging, and the stamina pays a dodge). Distances are in metres, flat, to the edge of the body. Everything the policy needs
+/// its body shows it; <paramref name="CanDodge"/>: on the ground, not dodging, and the stamina pays a dodge). Distances are in metres, flat, to the edge of the body. Everything the policy needs
 /// and nothing of the world - so the decision is a function and can be tested with plain numbers.
 /// </summary>
 internal readonly record struct FightView(
@@ -45,7 +44,6 @@ internal readonly record struct FightView(
     float? VialDistance,
     float? KeyDistance,
     float? ThreatDistance = null,
-    int Crowd = 0,
     bool CanDodge = false);
 
 /// <summary>The bot's decision: where to go or stand, whether to attack, whether to reload, whether to dodge (Shift).</summary>
@@ -73,12 +71,6 @@ internal static class FightPolicy
 
     /// <summary>A melee bot steps back from an enemy drawing back for a blow while it is this close (metres to the body's edge).</summary>
     public const float DodgeRange = 3f;
-
-    /// <summary>Ghouls this close (metres to the body's edge) count as a crowd.</summary>
-    public const float CrowdRange = 4f;
-
-    /// <summary>A melee bot does not fight when this many ghouls or more stand close: it walks away until they string out.</summary>
-    public const int CrowdSize = 99;
 
     /// <summary>A ranged bot walks away from an enemy this close (metres to the body's edge) and does not reload there.</summary>
     public const float KeepAway = 4.5f;
@@ -119,7 +111,7 @@ internal static class FightPolicy
     // A melee bot leaves the reach of a blow that is coming; a ranged one keeps its distance from whatever is near.
     private static bool ShouldStepBack(FightView view) => view.IsRanged
         ? view.TargetDistance < KeepAway
-        : view.ThreatDistance < DodgeRange || view.Crowd >= CrowdSize;
+        : view.ThreatDistance < DodgeRange;
 
     private static bool MustReload(FightView view) => view.IsRanged && view.Rounds == 0 && !view.IsReloading;
 
