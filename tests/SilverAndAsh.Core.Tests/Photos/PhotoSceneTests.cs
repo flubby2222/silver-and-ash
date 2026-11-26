@@ -149,6 +149,9 @@ public class PhotoSceneTests
             "ghouls-marked-stunned-4m", "ghoul-chilled-and-stunned-4m", "bat-stunned-4m", "gorm-stunned", "gorm-stunned-windup",
             "axe-rest", "axe-swing-04", "axe-swing-end", "axe-charged-release", "showroom-axe", "hud-axe", "course-1-axe",
             "ghoul-chilled-windup", "ghoul-chilled-step", "gorm-chilled-step",
+            "whip-rest", "whip-swing-out", "whip-swing-hit", "whip-swing-back", "whip-charging", "whip-charged-release",
+            "showroom-whip", "hud-whip", "course-1-whip",
+            "course-1-crossbow",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
@@ -162,6 +165,22 @@ public class PhotoSceneTests
 
         Assert.InRange((Built("axe-swing-04").Ticks - 1) / swingFrames, 0.38f, 0.43f);
         Assert.True(Built("axe-swing-end").Ticks - 1 >= swingFrames, "axe-swing-end must show the swing at its end.");
+    }
+
+    [Fact]
+    public void The_whip_swing_photos_show_the_lash_rolling_out_straight_and_sagging()
+    {
+        // Issue #786: pressed on tick 0, released on tick 1; each later tick is one frame of the swing. Each photo must
+        // show the strike file, in the part of the swing its name says.
+        var swingFrames = WeaponPose.SwingSeconds(WeaponKind.Whip, Balance.Default.Whip.Cooldown) * SimulationClock.TicksPerSecond;
+        float ProgressOf(string name) => (Built(name).Ticks - 1) / swingFrames;
+        bool ShowsLash(float progress) => WhipPose.ShowsStrike(progress, WeaponPose.SwingCurve(progress));
+
+        Assert.InRange(ProgressOf("whip-swing-out"), 0f, WeaponPose.StrikeEnd);
+        Assert.InRange(ProgressOf("whip-swing-hit"), WeaponPose.StrikeEnd, WeaponPose.HoldEnd);
+        Assert.InRange(ProgressOf("whip-swing-back"), WeaponPose.HoldEnd, 1f);
+        Assert.All(new[] { "whip-swing-out", "whip-swing-hit", "whip-swing-back" },
+            name => Assert.True(ShowsLash(ProgressOf(name)), $"{name} must show the lash out of the loop."));
     }
 
     [Fact]

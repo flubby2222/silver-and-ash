@@ -1,5 +1,6 @@
 using Raylib_cs;
 using SilverAndAsh.Core.Gameplay;
+using SilverAndAsh.Core.Presentation;
 
 namespace SilverAndAsh.Game.Rendering;
 
@@ -78,8 +79,8 @@ internal sealed class EquipmentCard
 
         var fade = Math.Clamp(MathF.Min(_seconds / FadeIn, (Duration - _seconds) / FadeOut), 0f, 1f);
         var tier = TierColours.Of(piece.Tier, _time);
-        var lines = Wrap(EffectOf(piece), Width - (2 * Padding), TextSize);
-        var note = NoteOf(piece);
+        var lines = Wrap(EquipmentCardText.Effect(piece), Width - (2 * Padding), TextSize);
+        var note = EquipmentCardText.Note(piece);
 
         var height = Padding + NameSize + 6 + TierSize + 10 + (lines.Count * (TextSize + 4)) + (note is null ? 0 : TierSize + 6) + Padding;
         var left = 20;
@@ -91,7 +92,7 @@ internal sealed class EquipmentCard
         var y = top + Padding;
         PixelText.Draw(_name, left + Padding, y, NameSize, Faded(Readable(tier), fade));
         y += NameSize + 6;
-        PixelText.Draw(TierLine(piece), left + Padding, y, TierSize, Faded(Note, fade));
+        PixelText.Draw(EquipmentCardText.TierLine(piece),left + Padding, y, TierSize, Faded(Note, fade));
         y += TierSize + 10;
         foreach (var line in lines)
         {
@@ -110,23 +111,6 @@ internal sealed class EquipmentCard
     /// dark wood brown of Worn reads well on a dark floor.
     /// </summary>
     public static Color Readable(Color tier) => Blend(tier, Text, 0.2f);
-
-    /// <summary>What the piece does.</summary>
-    private static string EffectOf(Equipment piece)
-    {
-        if (piece.Weapon is { } weapon)
-        {
-            var hand = Weapons.Info(weapon).Hand == WeaponHand.Melee ? "Melee weapon" : "Ranged weapon";
-            return $"{hand} - now in your bag. Open it with G to take it in hand.";
-        }
-
-        return Items.Info(piece.Item!.Value).Effect;
-    }
-
-    /// <summary>Honest about items: their effects come with #195 and #196 - until then the card says so.</summary>
-    private static string? NoteOf(Equipment piece) => piece.IsWeapon ? null : "No effect yet - it comes in a later version.";
-
-    private static string TierLine(Equipment piece) => $"{piece.Tier} {(piece.IsWeapon ? "weapon" : "item")}";
 
     /// <summary>Worn: a plain frame. Forged: its colour. Royal: its colour with a shine running once along the top. Vampiric: pulsing.</summary>
     private void DrawFrame(ItemTier tier, Color colour, int left, int top, int height, float fade)

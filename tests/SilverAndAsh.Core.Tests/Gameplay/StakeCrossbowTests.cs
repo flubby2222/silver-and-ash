@@ -77,6 +77,21 @@ public class StakeCrossbowTests
     }
 
     [Fact]
+    public void Give_stakecrossbow_on_the_command_line_puts_the_crossbow_into_a_free_place()
+    {
+        var give = LaunchOptions.Parse(["--give", "stakecrossbow"]).Give!;
+        var world = new GameWorld(LevelParser.Parse("P\n."));
+        var free = world.Player.RangedSlots.ToList().FindIndex(weapon => weapon is null);
+
+        GiveOptions.GiveTo(world, give);
+
+        Assert.Equal([Equipment.Of(WeaponKind.StakeCrossbow)], give);
+        var crossbow = world.Player.RangedSlots[free]!;
+        Assert.Equal(WeaponKind.StakeCrossbow, crossbow.Kind);
+        Assert.Equal(Crossbow.MagazineSize, crossbow.Magazine.Size);
+    }
+
+    [Fact]
     public void A_crossbow_in_a_place_has_its_magazine_and_cooldown()
     {
         var player = new Player(LevelParser.Parse("P"));

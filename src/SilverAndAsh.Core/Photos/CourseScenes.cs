@@ -60,6 +60,8 @@ internal static class CourseScenes
             studio => Settled(Within(studio, 0, ArmsRowShot))),
         new("course-1-axe", "Like course-1-arms-row, the hunter's axe in hand: its model in the light of the test course (issue #776).",
             studio => Settled(AxeInHand(Within(studio, 0, ArmsRowShot)))),
+        new("course-1-crossbow", "Like course-1-arms-row, the stake crossbow in the first place: its placeholder boxes in the light of the test course (issue #203).",
+            studio => ArmsRowWith(studio, CrossbowInHand)),
         new("course-2-columns", "Station 2 of the test course from its far corner back to its sign: two columns either side of the way, silver beside one, a ghoul beyond (issues #718, #722).",
             studio => new PhotoSetup(Within(studio, 1, ColumnsShot))),
         new("course-3-cracked-wall", "Station 3 of the test course close to and at a slant to the cracked wall in the middle of its north wall, the sign over the first cell beyond (issues #718, #722, #736).",
@@ -74,12 +76,23 @@ internal static class CourseScenes
             StairsAfterVictory),
     ];
 
+    /// <summary>Like course-1-arms-row, with what <paramref name="inHand"/> puts in a player's hand (issue #786: the whip).</summary>
+    internal static PhotoSetup ArmsRowWith(PhotoStudio studio, Func<GameWorld, GameWorld> inHand) =>
+        Settled(inHand(Within(studio, 0, ArmsRowShot)));
+
     // The picture is taken after the level's name has faded, so it covers nothing.
     private static PhotoSetup Settled(GameWorld world) => new(world) { Ticks = BannerTicks };
 
     private static GameWorld AxeInHand(GameWorld world)
     {
         world.Player.EquipMelee(WeaponKind.HuntersAxe);
+        return world;
+    }
+
+    // In the first place, the one a run starts with in hand.
+    private static GameWorld CrossbowInHand(GameWorld world)
+    {
+        world.Player.Equip(0, WeaponKind.StakeCrossbow);
         return world;
     }
 

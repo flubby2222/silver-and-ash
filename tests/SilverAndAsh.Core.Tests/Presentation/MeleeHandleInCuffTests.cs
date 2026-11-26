@@ -17,6 +17,7 @@ public class MeleeHandleInCuffTests
     [InlineData(WeaponKind.SilverBlade)]
     [InlineData(WeaponKind.Club)]
     [InlineData(WeaponKind.HuntersAxe)]
+    [InlineData(WeaponKind.Whip)]
     public void Every_corner_of_the_weapon_behind_the_cuffs_mouth_lies_inside_the_cuff(WeaponKind kind)
     {
         var files = WeaponPose.MeleeModel(kind)!;
@@ -24,7 +25,8 @@ public class MeleeHandleInCuffTests
         var cuff = CuffTriangles(files.Hand);
         var mouth = MouthZ(cuff);
 
-        var behind = weapon.Corners.Where(corner => corner.Z < mouth).Distinct().ToList();
+        // As drawn: the weapon scaled around the grip by its entry's Scale (the axe, the whip), the cuff unscaled.
+        var behind = weapon.Corners.Select(corner => corner * files.Scale).Where(corner => corner.Z < mouth).Distinct().ToList();
         var outside = behind.Where(corner => !ClubBendTests.Inside(corner, cuff)).ToList();
 
         // The handle really reaches behind the mouth (the check has something to check).

@@ -126,8 +126,8 @@ public sealed class HudLayout
         // A small rendering of its 3D model (issue #776, tools/hud/hud_axt.py), the size and middle of the club's sign.
         [WeaponKind.HuntersAxe] = "icon_axe",
 
-        // Until the whip has a sign of its own (issue #202, follow-up): the blade's, the nearest slender melee weapon.
-        [WeaponKind.Whip] = "icon_blade",
+        // A small rendering of its rest model with the loop (issue #786, tools/hud/hud_peitsche.py), placed like the axe's.
+        [WeaponKind.Whip] = "icon_whip",
 
         // Until the stake crossbow has a sign of its own (issue #203, follow-up): the rifle's, the nearest long ranged weapon.
         [WeaponKind.StakeCrossbow] = "icon_rifle",

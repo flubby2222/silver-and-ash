@@ -27,8 +27,8 @@ internal interface IWeaponView
 
 /// <summary>
 /// The weapons in the hands: the silver blade in the left hand, the pistol in the right. Both are the designer's models
-/// with their hands (<see cref="WeaponModels"/>, issue #249); the club and the hunter's axe are models held and swung
-/// like the blade (issues #403, #776). Rifle and blunderbuss - and a weapon whose model is missing - are placeholder boxes without a hand.
+/// with their hands (<see cref="WeaponModels"/>, issue #249); the club, the hunter's axe and the whip are models held
+/// and swung like the blade (issues #403, #776, #786; the whip's lash see <see cref="WhipPose"/>). Rifle and blunderbuss - and a weapon whose model is missing - are placeholder boxes without a hand.
 /// Movement by code, all of it soft so the player seems to glide through the world: a slow, gentle bob while walking,
 /// hands that trail behind when looking around or walking sideways ("weapon sway"), a dip with the landing nod,
 /// a swing of the blade, recoil and a muzzle flash for the pistol. Models and boxes move the same way.
@@ -98,6 +98,12 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
     private readonly Matrix4x4[] _oneFrame = new Matrix4x4[1];
     private readonly Matrix4x4[] _sleeveTurns = [Matrix4x4.Identity, Matrix4x4.Identity];
     private readonly Matrix4x4[] _sleeveFrames = new Matrix4x4[WeaponPose.HandParts.Count];
+    private readonly Matrix4x4[] _whipTurns = new Matrix4x4[WhipPose.Parts.Count];
+    private readonly Matrix4x4[] _whipFrames = new Matrix4x4[WhipPose.Parts.Count];
+    private readonly Matrix4x4[] _lashFrames = new Matrix4x4[WhipPose.Parts.Count];
+    private TexturedModel? _lash;   // the whip whose lash is still to be drawn in the world's depth
+    private float _whirl;           // the whip's loop whirling while charging (turns, 0..1)
+    private Matrix4x4 _loopMotion;  // the movements for the whip's loop at rest: shrunk a little more (WhipPose.LoopNearer)
 
     public void OnEvent(GameEvent gameEvent)
     {
@@ -105,6 +111,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         {
             case MeleeSwung:
                 _swing = 0f;
+                _whirl = 0f;
                 break;
             case ReloadFinished:
                 // The reload ran to its end: the click was the last of it, nothing to fade out.
@@ -149,6 +156,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         var windUpTarget = charge.IsCharging ? 0.25f + 0.75f * charge.Fraction : 0f;
         _windUp = WeaponPose.WindUpStep(_windUp, windUpTarget, frameSeconds);
         _fullyCharged = charge.IsCharging && charge.Fraction >= 1f;
+        _whirl = WhipPose.WhirlStep(_whirl, _windUp, charge.IsCharging, frameSeconds);
 
         // Turning: the hands lag behind the view and then glide back to their place.
         var yaw = player.View.YawRadians;
@@ -196,12 +204,14 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
 
         // The models: the same movements, then shrunk towards the eye (out of the walls, the picture unchanged).
         var modelMotion = soft * Matrix4x4.CreateScale(WeaponPose.ShrinkTowardsEye) * camera;
+        _loopMotion = soft * Matrix4x4.CreateScale(WeaponPose.ShrinkTowardsEye * WhipPose.LoopNearer) * camera;
 
         // With a depth of their own: their near plane is far closer to the eyes than the world's (issue #624).
         var world = WeaponDepthPass.Begin();
         DrawBlade(motion, modelMotion);
         DrawPistol(motion, modelMotion);
         WeaponDepthPass.End(world);
+        DrawLash();
     }
 
     private void DrawBlade(Matrix4x4 motion, Matrix4x4 modelMotion)
@@ -216,9 +226,19 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
 
         if (models is not null && models.TryGetMelee(_melee, out var blade, out var bladeHand))
         {
-            // The sleeve hangs on the grip; the club and the axe bend in the cuff (issues #417, #776).
-            var grip = WeaponPose.Blade(t, _windUp, tremble) * modelMotion;
-            DrawOnePart(blade, WeaponPose.MeleeBend(_melee, t, _windUp) * grip);
+            // The sleeve hangs on the grip; the club, the axe and the whip bend in the cuff (issues #417, #776, #786).
+            var pose = WeaponPose.Blade(t, _windUp, tremble);
+            var grip = pose * modelMotion;
+            var bend = WeaponPose.MeleeBend(_melee, t, _windUp);
+            if (models.TryGetStrike(_melee, out var strike))
+            {
+                DrawWhip(blade, strike, bend * pose, motion, modelMotion, t);
+            }
+            else
+            {
+                DrawOnePart(blade, bend * grip);
+            }
+
             DrawSleeve(bladeHand, grip, WeaponPose.BladeForearm(t, _windUp, tremble, bladeHand.Rig.Pivots[1]));
             return;
         }
@@ -242,12 +262,6 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
             return;
         }
 
-        if (_melee == WeaponKind.Whip)
-        {
-            DrawWhipBoxes(hand);
-            return;
-        }
-
         // Handle, guard and the long silver blade pointing forward and a little up.
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.03f) * hand, new Vector3(0.022f, 0.022f, 0.07f), Wood);
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.01f) * hand, new Vector3(0.055f, 0.012f, 0.012f), DarkSilver);
@@ -256,21 +270,47 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
             new Vector3(0.016f, 0.005f, 0.15f), Silver);
     }
 
-    // The whip until its model is in (issue #202): a short wooden grip with an iron cap, and the dark lash hanging from
-    // it in three ever thinner pieces, each bending further down.
-    private static void DrawWhipBoxes(Matrix4x4 hand)
+    // The whip (issue #786): the rest file with its loop, whirling while charging, drawn whole with the weapons (the loop
+    // a little nearer, WhipPose.LoopNearer); or the strike file while a swing is out, its lash rolling out. Then only the
+    // handle is drawn with the weapons: the lash reaches metres into the world, so it is posed unshrunk (the same
+    // picture) and drawn after the weapons' depth, in the world's (DrawLash).
+    private void DrawWhip(TexturedModel rest, TexturedModel strike, Matrix4x4 pose, Matrix4x4 motion, Matrix4x4 modelMotion, float t)
     {
-        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.01f) * hand, new Vector3(0.024f, 0.024f, 0.1f), Wood);
-        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.065f) * hand, new Vector3(0.028f, 0.028f, 0.012f), DarkSilver);
-        var lash = Matrix4x4.CreateTranslation(0f, 0f, 0.04f) * hand;
-        var thickness = 0.014f;
-        for (var piece = 0; piece < 3; piece++)
+        if (!WhipPose.ShowsStrike(_swing, t))
         {
-            lash = Matrix4x4.CreateRotationX(Deg(18f)) * lash;
-            ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.05f) * lash, new Vector3(thickness, thickness, 0.1f), Iron);
-            lash = Matrix4x4.CreateTranslation(0f, 0f, 0.1f) * lash;
-            thickness *= 0.7f;
+            WhipPose.RestTurns(_whirl, _whipTurns);
+            rest.Rig.Pose(_whipTurns, pose * modelMotion, _whipFrames);
+            rest.DrawPart(0, _whipFrames[0]);
+            rest.Rig.Pose(_whipTurns, pose * _loopMotion, _lashFrames);
+            for (var part = 1; part < _lashFrames.Length; part++)
+            {
+                rest.DrawPart(part, _lashFrames[part]);
+            }
+
+            return;
         }
+
+        WhipPose.LashTurns(_swing, _whipTurns);
+        strike.Rig.Pose(_whipTurns, pose * modelMotion, _whipFrames);
+        strike.DrawPart(0, _whipFrames[0]);
+        strike.Rig.Pose(_whipTurns, pose * motion, _lashFrames);
+        _lash = strike;
+    }
+
+    // The whip's lash, in the world's depth: walls in front of it hide it.
+    private void DrawLash()
+    {
+        if (_lash is null)
+        {
+            return;
+        }
+
+        for (var part = 1; part < _lashFrames.Length; part++)
+        {
+            _lash.DrawPart(part, _lashFrames[part]);
+        }
+
+        _lash = null;
     }
 
     // The stake crossbow until its model is in (issue #203): a wooden stock, the iron bow across its front and the pale

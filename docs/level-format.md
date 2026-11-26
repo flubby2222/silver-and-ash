@@ -68,10 +68,11 @@ dotnet run --project src/SilverAndAsh.Game -- --level test
 dotnet run --project src/SilverAndAsh.Game -- --level heights
 ```
 
-**Waffen ausprobieren**, bevor man sie finden kann: Mit `--give <waffe>` beginnt jeder Durchlauf mit dieser Waffe. Eine Nahkampfwaffe kommt in die Hand, eine Fernwaffe auf den ersten freien Platz. Das geht auch mehrfach und lässt sich mit `--seed` kombinieren. Es wirkt **nur in der Debug-Version** (`dotnet run`), nicht im Release:
+**Waffen und Items ausprobieren**, bevor man sie finden kann: Mit `--give <waffe>` oder `--give <item>` beginnt jeder Durchlauf mit dieser Waffe oder diesem Item. Eine Nahkampfwaffe kommt in die Hand, eine Fernwaffe auf den ersten freien Platz, ein Item zu den Items (Issue #791). Die Namen sind die englischen ohne Leer- und Satzzeichen, Groß- und Kleinschreibung egal: Waffen `silverblade`, `club`, `pistol` …, Items `huntersboots`, `ironflask`, `silverrosary`, `quickdrawholster`, `bladeparry`, `hunterseye`, `leech`, `ashenheart`. Ein unbekannter Name bricht mit „Unknown weapon '…'. Known: …“ und der vollständigen Liste ab. Das geht auch mehrfach und lässt sich mit `--seed` kombinieren. Es wirkt **nur in der Debug-Version** (`dotnet run`), nicht im Release:
 
 ```
 dotnet run --project src/SilverAndAsh.Game -- --give club
+dotnet run --project src/SilverAndAsh.Game -- --give leech --give ashenheart
 ```
 
 **Eine einzelne Raum-Vorlage begehen** (Issue #528), etwa um eine neue Vorlage zu prüfen: `--room <datei>` baut ein geschlossenes Level aus genau dieser Datei aus `assets/rooms/`. Der Ordner bestimmt die Raumart wie im Generator. Um die Vorlage läuft ein Ring aus Wand. Man steht im **ersten Türplatz** (`+`, in Leserichtung zuerst) und blickt in den Raum; alle anderen Türplätze sind Wand. Gegner und Kisten werden nach denselben Regeln wie auf Ebene 0 verteilt. Ein Kampfraum versiegelt sich beim Betreten, seine Gegner kommen hervor, ein Bossraum hat Gorm. Nach dem Tod beginnt derselbe Raum von vorn. Die Option geht auch im Release; mit `--seed` und `--give` lässt sie sich kombinieren, nicht mit `--level` oder `--showroom`. Das Spiel startet dann **ohne Titelmenü direkt im Raum** (über Esc → Titel kommt man trotzdem hin) und lädt **nur diese eine Vorlage**: Eine kaputte andere Vorlage in `assets/rooms/` hält die Vorschau nicht auf (Issue #534).

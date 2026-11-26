@@ -6,13 +6,14 @@ namespace SilverAndAsh.Game.Rendering;
 
 /// <summary>
 /// The designer's weapon models in the hands (issue #249): the pistol and the melee weapons with a model
-/// (<see cref="WeaponPose.MeleeModel"/>: the silver blade, the club and the hunter's axe, issues #403, #776), each with its sleeve (cuff and
-/// forearm, issue #265). A weapon is drawn as a model only if both its files loaded - otherwise the placeholder boxes,
+/// (<see cref="WeaponPose.MeleeModel"/>: the silver blade, the club, the hunter's axe and the whip, issues #403, #776, #786), each with its
+/// sleeve (cuff and forearm, issue #265). A weapon is drawn as a model only if all its files loaded - otherwise the placeholder boxes,
 /// so a weapon never floats without a sleeve or a sleeve without a weapon.
 /// </summary>
 internal sealed class WeaponModels : IDisposable
 {
     private readonly Dictionary<WeaponKind, (TexturedModel Weapon, TexturedModel Hand)> _melee = [];
+    private readonly Dictionary<WeaponKind, TexturedModel> _strikes = [];
 
     private WeaponModels(TexturedModel? pistol, TexturedModel? pistolHand)
     {
@@ -41,6 +42,13 @@ internal sealed class WeaponModels : IDisposable
     }
 
     /// <summary>
+    /// The second file of melee weapon <paramref name="kind"/>, drawn while it strikes (the whip's straight lash, issue
+    /// #786), or false if it has none.
+    /// </summary>
+    public bool TryGetStrike(WeaponKind kind, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out TexturedModel? strike) =>
+        _strikes.TryGetValue(kind, out strike);
+
+    /// <summary>
     /// Loads pistol.glb, pistol_hand.glb and the files of every melee weapon with a model from
     /// <paramref name="directory"/>. A missing or broken file: a warning in the log and the placeholder for that weapon.
     /// Needs the window.
@@ -60,14 +68,22 @@ internal sealed class WeaponModels : IDisposable
 
             var weapon = TexturedModel.TryLoad(Path.Combine(directory, files.Weapon), files.Parts, log);
             var hand = TexturedModel.TryLoad(Path.Combine(directory, files.Hand), WeaponPose.HandParts, log);
-            if (weapon is not null && hand is not null)
+            var strike = files.StrikeWeapon is { } strikeFile
+                ? TexturedModel.TryLoad(Path.Combine(directory, strikeFile), files.Parts, log)
+                : null;
+            if (weapon is not null && hand is not null && (files.StrikeWeapon is null || strike is not null))
             {
                 models._melee[kind] = (weapon, hand);
+                if (strike is not null)
+                {
+                    models._strikes[kind] = strike;
+                }
             }
             else
             {
                 weapon?.Dispose();
                 hand?.Dispose();
+                strike?.Dispose();
             }
         }
 
@@ -84,6 +100,12 @@ internal sealed class WeaponModels : IDisposable
             hand.Dispose();
         }
 
+        foreach (var strike in _strikes.Values)
+        {
+            strike.Dispose();
+        }
+
         _melee.Clear();
+        _strikes.Clear();
     }
 }
