@@ -23,7 +23,7 @@ public class FightStuckTests
     }
 
     // The ghoul lurks 4 m from the player (3.5 m to its edge), one wall cell between them; the way round is open.
-    private const string WallBetween = "#########\n#.......#\n#.......#\n#.P#G...#\n#.......#\n#.......#\n#########";
+    private const string WallBetween = "#############\n#...........#\n#...........#\n#....P#G....#\n#...........#\n#...........#\n#############";
 
     // The ghoul stands in a closed pocket of wall cells (diagonals too): no way to it, 4 m from the player.
     private const string WallAround = "###########\n#.........#\n#...###...#\n#..P#G#...#\n#...###...#\n#.........#\n###########";
