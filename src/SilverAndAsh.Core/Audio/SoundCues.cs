@@ -218,6 +218,31 @@ public enum SoundKind
     /// (<see cref="SoundCues"/>). "B" of round 2 of issue #201.
     /// </summary>
     AxeCharge,
+
+    /// <summary>
+    /// The whip lashes out and misses (issue #786): a long hiss rising up to a small crack 0.55 s in, "C long hiss" of
+    /// round 1 of issue #202.
+    /// </summary>
+    WhipSwing,
+
+    /// <summary>The whip hits a creature (issue #786): the leather's end cracks and drags over skin, "B weal" of round 1 of issue #202.</summary>
+    WhipHit,
+
+    /// <summary>
+    /// The whip hits something hard - the wooden training dummy (issue #786): a small crack on stone and trickling
+    /// dust, "C stone trickles" of round 1 of issue #202.
+    /// </summary>
+    WhipHardHit,
+
+    /// <summary>
+    /// The whip is charged (issue #786): the leather whirls through the air, pulsing ever faster and louder up to its peak
+    /// <see cref="SoundBoard.WhipChargePeakSeconds"/> into the file - timed so the peak falls on the full charge - and
+    /// fades without a thump. "B whirl" of round 1 of issue #202.
+    /// </summary>
+    WhipCharge,
+
+    /// <summary>The whip pulls a creature in (issue #786): the line tightens with a short dull jerk, "C leather jerk" of round 1 of issue #202.</summary>
+    WhipPull,
 }
 
 /// <summary>
@@ -461,7 +486,20 @@ public static class SoundBoard
                 ((DoorSwingStarted)gameEvent).Closing ? SoundKind.BossDoorClosing : SoundKind.BossDoorOpening,
             [typeof(GrateStarted)] = gameEvent =>
                 ((GrateStarted)gameEvent).Falling ? SoundKind.GrateFalling : SoundKind.GrateRising,
+            [typeof(MeleePulled)] = gameEvent => PullKind((MeleePulled)gameEvent),
         }.ToImmutableDictionary();
+
+    /// <summary>
+    /// The sound of pulling a creature in (<see cref="MeleePulled"/>, issue #786) by melee weapon; a weapon without an
+    /// entry pulls silently. The same sound however far the creature is pulled.
+    /// </summary>
+    private static readonly ImmutableDictionary<WeaponKind, SoundKind> PullKinds =
+        new Dictionary<WeaponKind, SoundKind>
+        {
+            [WeaponKind.Whip] = SoundKind.WhipPull,
+        }.ToImmutableDictionary();
+
+    private static SoundKind? PullKind(MeleePulled pulled) => Lookup(PullKinds, pulled.Weapon);
 
     /// <summary>The sound of a swing (<see cref="MeleeSwung"/>) by melee weapon; a weapon without an entry swings silently.</summary>
     private static readonly ImmutableDictionary<WeaponKind, SoundKind> SwingKinds =
@@ -469,6 +507,7 @@ public static class SoundBoard
         {
             [WeaponKind.SilverBlade] = SoundKind.BladeSwing,
             [WeaponKind.HuntersAxe] = SoundKind.AxeSwing,
+            [WeaponKind.Whip] = SoundKind.WhipSwing,
         }.ToImmutableDictionary();
 
     /// <summary>
@@ -482,6 +521,8 @@ public static class SoundBoard
             [(Weapon.Blade, true)] = SoundKind.Blade,
             [(Weapon.HuntersAxe, false)] = SoundKind.AxeHit,
             [(Weapon.HuntersAxe, true)] = SoundKind.AxeHardHit,
+            [(Weapon.Whip, false)] = SoundKind.WhipHit,
+            [(Weapon.Whip, true)] = SoundKind.WhipHardHit,
         }.ToImmutableDictionary();
 
     /// <summary>
@@ -494,6 +535,8 @@ public static class SoundBoard
             [SoundKind.Blade] = SoundKind.BladeSwing,
             [SoundKind.AxeHit] = SoundKind.AxeSwing,
             [SoundKind.AxeHardHit] = SoundKind.AxeSwing,
+            [SoundKind.WhipHit] = SoundKind.WhipSwing,
+            [SoundKind.WhipHardHit] = SoundKind.WhipSwing,
         }.ToImmutableDictionary();
 
     /// <summary>
@@ -504,10 +547,17 @@ public static class SoundBoard
         new Dictionary<WeaponKind, SoundKind>
         {
             [WeaponKind.HuntersAxe] = SoundKind.AxeCharge,
+            [WeaponKind.Whip] = SoundKind.WhipCharge,
         }.ToImmutableDictionary();
 
     /// <summary>Seconds into axt-aufladen.wav where the drone ends in the thump (bauen.py of round 2: the pull lasts 1.0 s, the thump starts 0.01 s later).</summary>
     public const float AxeChargeThumpSeconds = 1.01f;
+
+    /// <summary>
+    /// Seconds into peitsche-aufladen.wav where the whirl is loudest (bauen.py of round 1 of issue #202, aufladen_b:
+    /// "Gipfel bei 0,95 s"); it has no thump, so its peak says "full".
+    /// </summary>
+    public const float WhipChargePeakSeconds = 0.95f;
 
     /// <summary>
     /// Where the end mark of a charge sound lies in its file (seconds): the thump that says "full". The sound starts so
@@ -517,6 +567,7 @@ public static class SoundBoard
         new Dictionary<SoundKind, float>
         {
             [SoundKind.AxeCharge] = AxeChargeThumpSeconds,
+            [SoundKind.WhipCharge] = WhipChargePeakSeconds,
         }.ToImmutableDictionary();
 
     /// <summary>How many ticks the charge sound of <paramref name="kind"/> runs before its end mark (<see cref="ChargeMarkSeconds"/>).</summary>

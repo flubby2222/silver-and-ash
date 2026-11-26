@@ -159,6 +159,27 @@ public class HudLayoutTests
         Single(lit, "icon_axe_active");
     }
 
+    [Fact]
+    public void The_whip_shows_its_own_sign_in_the_middle_of_the_melee_frame()
+    {
+        // Issue #786: no longer the blade's sign, but the small rendering of the whip model, lit while it is chosen.
+        var picture = Arrange(Busy() with
+        {
+            Weapons = [new(WeaponKind.Whip, null, false, false), .. Busy().Weapons.Skip(1)],
+        });
+        var lit = Arrange(Busy() with
+        {
+            Weapons = [new(WeaponKind.Whip, null, false, true), .. Busy().Weapons.Skip(1).Select(weapon => weapon with { IsSelected = false })],
+        });
+
+        Assert.Equal("icon_whip", HudLayout.IconOf(WeaponKind.Whip));
+        var whip = Layout.Bounds(Single(picture, "icon_whip"));
+        var ground = Layout.BodyOf(Single(picture, "frame_weapon_0")).Inset(HudLayout.Rim);
+        AssertCentredIn(ground, whip);
+        Assert.DoesNotContain(picture.Parts, part => part.Name.StartsWith("icon_blade", StringComparison.Ordinal));
+        Single(lit, "icon_whip_active");
+    }
+
     [Theory]
     [InlineData(854, 854, 480)]
     [InlineData(768, 768, 480)]
