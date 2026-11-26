@@ -110,7 +110,7 @@ internal static class FightPolicy
 
     // A melee bot leaves the reach of a blow that is coming; a ranged one keeps its distance from whatever is near.
     private static bool ShouldStepBack(FightView view) => view.IsRanged
-        ? view.TargetDistance < KeepAway
+        ? view.TargetInSight && view.TargetDistance < KeepAway
         : view.ThreatDistance < DodgeRange;
 
     private static bool MustReload(FightView view) => view.IsRanged && view.Rounds == 0 && !view.IsReloading;
