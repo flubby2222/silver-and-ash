@@ -187,6 +187,19 @@ public class ReloadCancelSoundTests
     }
 
     [Fact]
+    public void A_death_after_the_reload_is_done_stops_nothing()
+    {
+        var world = With();
+        var events = new List<GameEvent>();
+        var sounds = new SoundCues(world.Seed);
+        StartAndRun(world, sounds, events, ReloadTicks + 5);
+        Assert.Single(events.OfType<ReloadFinished>());
+
+        Assert.DoesNotContain(sounds.For([new PlayerDied(world.Player.Id)], Pack1), StopsReload);
+        Assert.DoesNotContain(sounds.StopCharges(), StopsReload);
+    }
+
+    [Fact]
     public void A_switch_without_a_reload_under_way_stops_nothing()
     {
         var world = With("P\n.\n.", WeaponKind.Pistol);
