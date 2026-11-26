@@ -846,6 +846,27 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void A_pistol_bullet_flies_through_the_exhibits_and_ends_in_the_wall_as_a_bullet_impact()
+    {
+        // Issue #798 (241): the exhibits take no hit, so they do not stop a bullet: it ends where the wall is, with its mark.
+        var place = Layout.Placed.First(place => place.Piece is EnemyPiece { Enemy: ShowroomEnemy.Ghoul });
+        var exhibit = Layout.Level.CellCenter(place.X, place.Z);
+        var world = Layout.NewWorldAt(place.X - 1, place.Z, exhibit);
+        var ghoul = world.Ghouls.OrderBy(candidate => Vector3.Distance(candidate.Position, exhibit)).First();
+        Assert.True(ghoul.IsHittable, "The exhibit must be a target the bullet can strike - otherwise nothing is flown through.");
+        PhotoStudio.Face(world.Player, ghoul.Position + ghoul.Facing * BodySizes.Ghoul.TorsoForward + new Vector3(0f, BodySizes.Ghoul.TorsoHeight * 0.5f, 0f));
+        Assert.Equal(WeaponKind.Pistol, world.Player.Ranged.Kind);
+
+        world.Tick(PlayerInput.None with { Shoot = true });
+
+        Assert.Equal(WeaponKind.Pistol, Assert.Single(world.Events.OfType<ShotFired>()).Weapon);
+        Assert.Empty(world.Events.OfType<TargetHitBy>());
+        var impact = Assert.Single(world.Events.OfType<BulletImpact>());
+        Assert.Equal(WeaponKind.Pistol, impact.Weapon);
+        Assert.True(Vector3.Distance(world.Player.EyePosition, impact.Point) > Vector3.Distance(world.Player.EyePosition, ghoul.Position) + BodySizes.Ghoul.Radius, "The bullet stopped at the exhibit instead of flying on to the wall.");
+    }
+
+    [Fact]
     public void The_enemies_are_harmless_exhibits_and_nobody_dies()
     {
         // Stand next to each enemy for ten seconds, striking and shooting at it all the time.

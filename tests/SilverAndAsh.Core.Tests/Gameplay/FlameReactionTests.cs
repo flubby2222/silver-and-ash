@@ -65,6 +65,26 @@ public class FlameReactionTests
     }
 
     [Fact]
+    public void A_burning_ghoul_makes_no_sound_for_any_pulse()
+    {
+        // Issue #798 (248): the ghoul's hit sound comes from the weapon table (TargetHitBy by weapon), and the flame has no
+        // entry in it - the pulses of the whole flame, as the world reports them, ask the sound table for nothing.
+        var world = new GameWorld(LevelParser.Parse(GhoulCorridor), balance: Balance.Default with
+        {
+            Ghoul = Balance.Default.Ghoul with { Speed = 0f, MaxHealth = 100_000 },
+        });
+        var ticks = BurnForWholeFlame(world, world.Ghouls[0]);
+
+        var events = ticks.SelectMany(tick => tick).ToList();
+        Assert.Equal(StandardPulses().Count, events.OfType<GhoulHit>().Count());
+        Assert.Equal(StandardPulses().Count, events.OfType<TargetHitBy>().Count(hit => hit.Weapon == Weapon.CleansingFlame));
+        Assert.All(events.OfType<GhoulHit>(), hit => Assert.Null(SoundBoard.KindFor(hit)));
+        Assert.All(events.OfType<TargetHitBy>(), hit => Assert.Null(SoundBoard.KindFor(hit)));
+        Assert.Null(SoundBoard.KindFor(new TargetHitBy(1, 5, Weapon.CleansingFlame)));
+        Assert.Null(SoundBoard.KindFor(new TargetHitBy(1, 5, Weapon.CleansingFlame) { Hard = true }));
+    }
+
+    [Fact]
     public void A_burning_bat_reports_every_pulse_as_a_burn_and_the_sound_table_stays_silent_for_it()
     {
         var world = new GameWorld(LevelParser.Parse(BatRoom), balance: Balance.Default with
