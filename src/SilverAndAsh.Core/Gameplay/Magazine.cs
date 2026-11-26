@@ -67,8 +67,13 @@ public sealed class Magazine
         return true;
     }
 
-    /// <summary>Breaks a reload off (e.g. when the weapon is put away); the rounds stay as they were.</summary>
-    public void CancelReload() => _reloadTicksLeft = 0;
+    /// <summary>Breaks a reload off (e.g. when the weapon is put away); the rounds stay as they were. True if a reload was under way.</summary>
+    public bool CancelReload()
+    {
+        var wasReloading = IsReloading;
+        _reloadTicksLeft = 0;
+        return wasReloading;
+    }
 
     /// <summary>One tick: a reload counts down; true in the tick it is done (the magazine is full again).</summary>
     public bool Tick()

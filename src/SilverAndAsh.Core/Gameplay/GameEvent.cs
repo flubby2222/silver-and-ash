@@ -96,6 +96,13 @@ public sealed record ShotFired(
 /// </summary>
 public sealed record ReloadStarted(int PlayerId, WeaponKind Weapon = WeaponKind.Pistol) : GameEvent, IPlayerSound;
 
+/// <summary>
+/// The reload of player <paramref name="PlayerId"/>'s ranged weapon <paramref name="Weapon"/> broke off before it was done
+/// (weapon switch, swap with the bag, dropping the weapon; issue #800) - so a reload sound that plays can stop. Not sent
+/// for a weapon that was not reloading, and not for death (<see cref="PlayerDied"/> says that).
+/// </summary>
+public sealed record ReloadCancelled(int PlayerId, WeaponKind Weapon = WeaponKind.Pistol) : GameEvent, IPlayerSound;
+
 /// <summary>The magazine of player <paramref name="PlayerId"/>'s ranged weapon <paramref name="Weapon"/> is full again.</summary>
 public sealed record ReloadFinished(int PlayerId, WeaponKind Weapon = WeaponKind.Pistol) : GameEvent, IPlayerSound;
 

@@ -196,7 +196,7 @@ public sealed partial class Player
         }
 
         var putAway = Ranged;
-        putAway.Magazine.CancelReload();
+        CancelReload(putAway);
         _bag[index] = new BagEntry(putAway.Kind, putAway);
         _rangedSlots[SelectedSlot] = weapon;
         _events.Add(new WeaponSwitched(Id, SelectedSlot, weapon.Kind));
@@ -210,7 +210,7 @@ public sealed partial class Player
             return;
         }
 
-        weapon.Magazine.CancelReload();
+        CancelReload(weapon);
         _rangedSlots[slot] = null;
         _events.Add(new WeaponDropped(Id, weapon.Kind, Position, weapon));
         if (slot != SelectedSlot)

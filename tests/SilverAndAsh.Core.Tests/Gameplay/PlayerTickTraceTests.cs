@@ -39,12 +39,15 @@ public class PlayerTickTraceTests
     // All three changed on purpose in #203: ReloadStarted and ReloadFinished now name the weapon (the stake crossbow's
     // reload gets its own sound later), and the trace writes events as text. Without that field the traces give the
     // checksums from before, byte for byte.
+    // Both parcours traces changed on purpose in #800: a reload that breaks off (weapon switch) now raises ReloadCancelled
+    // (the crossbow's reload sound stops from it). Without that event the traces give the checksums from before, byte for byte;
+    // the Gorm duel stays as it was.
     // Two parcours seeds: together their bots reach almost every line of the tick (one alone misses a few).
     private const string GormDuelChecksum = "38BF6D01237EB5720F726CD80A15053465F711CD14FE424A144FCC2D43A07A6C";
 
     [Theory]
-    [InlineData(1, "4B578B14589045718D4A6F7C051F0EE2C74CA816BDF118FB7AB108C3945DE6F1")]
-    [InlineData(4, "9A2B102D9E88540ACA0341BB4E58220C05F2DCAD16E609C22CFAE5A1F9A92325")]
+    [InlineData(1, "EF56D8CECA06C7697B75C048AE153FFAFDD49BC325D0C05773E7281BF1F0C982")]
+    [InlineData(4, "A5E8C607E279927D41557D37111077930BF3706630879E2939B1E5AF28DA3105")]
     public void A_bot_run_through_a_parcours_gives_the_same_trace_as_before(int seed, string checksum)
     {
         var trace = ParcoursTrace(seed, ticks: 6000);
