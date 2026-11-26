@@ -151,7 +151,8 @@ public class PhotoSceneTests
             "ghoul-chilled-windup", "ghoul-chilled-step", "gorm-chilled-step",
             "whip-rest", "whip-swing-out", "whip-swing-hit", "whip-swing-back", "whip-charging", "whip-charged-release",
             "showroom-whip", "hud-whip", "course-1-whip",
-            "course-1-crossbow",
+            "course-1-crossbow", "crossbow-loaded", "crossbow-shot", "crossbow-relaxed", "crossbow-reload-pull", "crossbow-reload-catch", "crossbow-reload-end",
+            "showroom-crossbow", "hud-crossbow",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());

@@ -42,6 +42,7 @@ public static class PhotoScenes
         .. EquipmentScenes(),
         .. CourseScenes.All(),
         .. WhipScenes.All(),
+        .. StakeCrossbowScenes.All(),
     ];
 
     /// <summary>

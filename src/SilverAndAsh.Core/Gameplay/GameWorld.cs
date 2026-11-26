@@ -1777,25 +1777,30 @@ public sealed class GameWorld
         var wall = Raycast.AgainstLevel(Level, origin, direction, values.Range);
         var reach = wall?.Distance ?? values.Range;
 
-        // Every target on the ray before the wall, nearest first; the shot takes the first one and pierces on.
-        var hits = Targets.Where(candidate => candidate.IsHittable)
+        // Every target on the ray before the wall, nearest first; the shot takes the first one and pierces on. Only a hit
+        // that counts uses up a place (issue #793: a target that ignores the hit - the showroom's exhibits - does not
+        // stop a stake that would pierce on).
+        var places = 1 + values.Pierce;
+        var counted = 0;
+        foreach (var (target, distance) in Targets.Where(candidate => candidate.IsHittable)
             .Select(candidate => (Target: candidate, Distance: NearestShotBody(origin, direction, candidate)))
             .Where(hit => hit.Distance is { } distance && distance <= reach)
             .OrderBy(hit => hit.Distance)
-            .Take(1 + values.Pierce)
-            .ToList();
-
-        foreach (var (target, distance) in hits)
+            .ToList())
         {
             var zone = target.ZoneAt(origin + direction * distance!.Value);
             if (Damage(target, new Hit(weapon, zone, values.Damage), attacker, out var dealt))
             {
                 struck.Add(target, dealt);
+                if (++counted == places)
+                {
+                    break;
+                }
             }
         }
 
         // Not stopped by enough targets: the bullet ends in the wall.
-        if (hits.Count < 1 + values.Pierce && wall is { } impact)
+        if (counted < places && wall is { } impact)
         {
             _events.Add(new BulletImpact(impact.Point, impact.Normal, kind));
         }

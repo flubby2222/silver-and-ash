@@ -144,6 +144,16 @@ Vorschlag des Grafikdesigners, von der Leitung angenommen; der Einbau im Code st
 
 Figuren hängen im Spiel hinter einer austauschbaren Schnittstelle (z. B. `IGhoulView` in [`GhoulViews.cs`](../../src/SilverAndAsh.Game/Rendering/GhoulViews.cs)). Jede Datei unter `assets/` bekommt eine Zeile in `assets/HERKUNFT.md` (Datei, Skript, Datum); die Datei wird mit dem ersten integrierten Stück angelegt.
 
+## Breite Waffen in der Ich-Sicht
+
+Regel aus der Pflockarmbrust (Issue #793, Abnahme der Probe „A Eisenwinde“ aus Issue #203). Die Probe backt ihre Maße für die Probe-Ansicht ein (1,8 × 0,72 = 1,3); in der Ich-Sicht war die Armbrust damit größer als das Bild und rechts angeschnitten.
+
+- **Eine Waffe, die breiter ist als die Pistole, wird beim Backen verkleinert.** Der Erzeuger wählt einen eigenen Maßstab (`SHRINK`, bei der Armbrust 0,42 statt 0,72), die Form bleibt die der abgenommenen Probe. Die Probe selbst wird nicht verändert, das Skript prüft sie weiter Byte für Byte.
+- **Maßstab nach dem Bild, nicht nach der Zahl:** Die Waffe liegt mit allen Teilen im Bildrand (bei Ruhe, Schuss und Nachladen), die Spitzen eines breiten Bogens dürfen nicht angeschnitten sein. Der Test `StakeCrossbowPoseTests` prüft die Reichweite aller Dreiecke, das Foto `--photo crossbow-loaded` den Rand.
+- **Die Hand rückt nach innen, nicht die Waffe nach vorn:** Der Griff sitzt weiter links (x = 0,125); die Waffe wird nicht tiefer ins Bild geschoben, damit sie nicht in Wände schneidet.
+- **Zwei Haltungen statt einer Verformung:** gespannt und entspannt sind zwei Dateien mit denselben Knoten; das Spiel tauscht sie, statt ein Netz zu biegen. Bewegliche Teile (Kurbel, Pflock) sind eigene Knoten.
+- Maßstab, Griff und Haltung sind vorläufig, bis der Mensch im Spieltest urteilt.
+
 ## Was ein Probestück zeigen muss
 
 Alle Bilder entstehen in Blender, mit dem Skript des Probestücks, ohne Fenster:
@@ -276,6 +286,7 @@ Regel für die Betäubung an einem Gegner, im Spiel seit Issue #778 (abgenommen 
 | 25 | 2026-11-23 | Füllungen der tiefen Wandnische (#553) | Abnahme der Probe (Kopf `ea5109d`): Die Flaschen-Pyramide wurde nicht gewählt. Gewählt: liegender Flaschenstapel 3-2-2, in die Ecke aus linker Laibung und Rückwand geschoben, verstaubt, Hälse mit Korken nach vorn | **Kleine Gegenstände müssen am Umriss erkennbar sein.** **Vorräte liegen geordnet wie in einem Lager, in eine Ecke geschoben, nicht mittig verstreut.** |
 | 26 | 2026-11-24 | Rechtecke am Türrahmen (#715) | Spieltest 0.12.0: „Was stört sind nicht die Wandpfeiler sondern diese überstehenden, in die Tür ragenden Rechtecke, die dort keinen Sinn ergeben.“ Es waren die Kämpfer- und Sockelplatten des Türrahmens, eine Achtelmeter vor der Wandebene | **Kein Bauteil ragt ohne erkennbaren Zweck in eine Öffnung.** Platten und Sockel am Rahmen sitzen bündig in der Wandebene; was in der Öffnung steht, muss etwas tragen, halten oder schließen. |
 | 27 | 2026-11-25 | Wendeltreppe neu (#765) | Urteil des Auftraggebers über die drei Entwürfe: Entwurf b, Eisengeländer, aber das Eisen dunkler und weniger blau; der Handlauf bleibt eckig. Die alte Treppe war ein Stapel gleicher Stufen um eine Säule, ohne Geländer, und las sich im Nebel nicht als Treppe | **Eine Treppe braucht eine lesbare Führung.** Ein Geländer aus dunklem Eisen gibt der Silhouette eine Schraubenlinie, auch auf 10 m; Das Eisen des Treppengeländers nimmt die dunklen Stufen der Reihe Eisen, nicht die mittleren (zu blau neben dem warmen Stein; Urteil des Auftraggebers „dunkler, weniger blau“ gilt nur diesem Geländer, auch für neues Eisen unmittelbar neben warmem Stein). Fallgitter (neutrales K2), Türflügel (Regel 7), Kisten (Forged: Stufe 4) und die Katakomben-Auswahl „Eisen 1–3“ bleiben, wie sie sind. Teile, die man von nahem sieht, sind geschlossene Körper. Vorläufig: Das Geländer endet zwei Stufen früher als auf dem gewählten Blatt (bei 5,655 m statt 5,905 m, weil der Stein dort enden muss, wo die Lampe beginnt, `StairsLookTests`); das Urteil fällt im Spieltest. |
+| 28 | 2026-11-26 | Pflockarmbrust, Einbau (Issue #793, Probe #203 Entwurf A „Eisenwinde“) | Die Probe backt für ihre Ansicht ein; in der Ich-Sicht ist die Armbrust zu groß und rechts angeschnitten | Breite Waffen werden in der Ich-Sicht kleiner gebacken, siehe Abschnitt „Breite Waffen in der Ich-Sicht“. Der Pflock ist ein eigener Knoten, die Waffe hat zwei Haltungen (gespannt, entspannt), das HUD-Zeichen ist ein kleines Rendering des Modells und größer als bei den schmalen Waffen (`SCALE` 1,7), damit der Bogen lesbar bleibt (vorläufig) |
 
 ## HUD (entschieden, Issue #341)
 
