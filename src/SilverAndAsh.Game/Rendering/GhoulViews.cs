@@ -48,7 +48,7 @@ internal sealed class GhoulAnimations
     {
         switch (gameEvent)
         {
-            case GhoulHit hit:
+            case GhoulHit { Kind: DamageKind.Strike } hit:
                 var state = StateOf(hit.GhoulId);
                 state.Flash = 1f;
                 state.FlashIsCritical = hit.Critical;

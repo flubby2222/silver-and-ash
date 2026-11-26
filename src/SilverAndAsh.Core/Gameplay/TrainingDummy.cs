@@ -51,7 +51,7 @@ public sealed class TrainingDummy : ITarget
     /// Takes <paramref name="damage"/>. Reports <see cref="DummyHit"/> and, at 0 health, <see cref="DummyKnockedDown"/>
     /// into <paramref name="events"/>. A dummy that is already down ignores hits.
     /// </summary>
-    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false)
+    public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false, DamageKind kind = DamageKind.Strike)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(damage);
         ArgumentNullException.ThrowIfNull(events);

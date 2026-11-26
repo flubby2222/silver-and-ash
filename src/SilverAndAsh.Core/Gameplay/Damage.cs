@@ -25,6 +25,25 @@ public enum Weapon
     StakeCrossbow,
 }
 
+/// <summary>How damage reaches a target (issue #771): a blow or shot, or the pulse of a flame.</summary>
+public enum DamageKind
+{
+    /// <summary>A hit of a weapon: the target reacts to it (hurt sound, flash, flinch).</summary>
+    Strike,
+
+    /// <summary>Burning (Cleansing Flame): damage and kill credit as for a strike, but no reaction to each pulse.</summary>
+    Burn,
+}
+
+/// <summary>Which <see cref="DamageKind"/> the damage of a weapon is - one table entry per weapon that is not a strike.</summary>
+public static class DamageKinds
+{
+    private static readonly HashSet<Weapon> Burning = [Weapon.CleansingFlame];
+
+    /// <summary>The kind of damage <paramref name="weapon"/> does.</summary>
+    public static DamageKind Of(Weapon weapon) => Burning.Contains(weapon) ? DamageKind.Burn : DamageKind.Strike;
+}
+
 /// <summary>Where a body was hit.</summary>
 public enum HitZone
 {

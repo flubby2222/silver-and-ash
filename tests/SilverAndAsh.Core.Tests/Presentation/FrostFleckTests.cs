@@ -229,7 +229,7 @@ public class FrostFleckTests
 
         public HitZone ZoneAt(Vector3 point) => default;
 
-        public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false) => 0;
+        public int TakeDamage(int damage, ICollection<GameEvent> events, bool critical = false, DamageKind kind = DamageKind.Strike) => 0;
 
         public void PlaceAt(Vector3 position)
         {
