@@ -29,7 +29,8 @@ Aufbau: `<modus> [--seeds VON..BIS] [--repo ORDNER]`. Ohne `--seeds` laufen die 
 | `bat` | Eine wache Fledermaus am Bossportal (#627, #629): an jeder freien Stelle eines Rasters vor und hinter dem Portal in acht Richtungen weggeschlagen; um einen Spieler herum geflogen, der an vier Stellen im Portal steht; tot auf einen Sockel des Portals fallen gelassen, bis sie verschwunden ist. | etwa 25 s |
 | `stuck` | In jeder Arena und im Bossraum still stehen, erst an der Tür, dann in der Raummitte: kein Gegner (Ghul, Fledermaus, Gorm), der einen Spieler jagt, darf länger als das Doppelte seiner längsten erlaubten Pause aus der Balance hängen, ohne sich zu bewegen oder anzugreifen (#591, siehe [Hängende Gegner](#hängende-gegner-stuck)). Findet nur Gegner, die hängen, während der Spieler stillsteht. | etwa 1 min; 40 Seeds etwa 6 min |
 | `seeds` | Baut jede Ebene zweimal und vergleicht sie (gleicher Seed muss gleiche Ebene geben) und zählt, wie viele Versuche der Generator brauchte. | etwa 3 s; 1 000 Seeds etwa 100 s |
-| `all` | alle sieben nacheinander, in der Reihenfolge der Tabelle (auch `stuck`) | etwa 6 min |
+| `fight` | Ein **sterblicher** Spieler mit einer echten Waffe kämpft sich vom Start bis zu Gorm (#803, siehe [Kampf-Bot](#kampf-bot-fight)). Nicht in `all`. Mit `--weapon blade\|pistol\|axe\|whip\|crossbow\|all` (Standard `all`). | etwa 1 min für Seeds 1..6 und alle fünf Waffen |
+| `all` | alle sieben nacheinander, in der Reihenfolge der Tabelle (auch `stuck`, aber nicht `fight`) | etwa 6 min |
 
 Nebenbei prüft der Bot nach **jedem Tick**, dass weder ein Spieler noch ein Gegner (Ghul, Fledermaus, Gorm) in einer geschlossenen Tür oder im Stein eines Bossportals steckt und kein Spieler in einer festen Zelle. Für den Stein prüft er bei jedem Körper die Achse und 24 Punkte 5 mm innerhalb seines Rands (für jeden Körper gleich, auch für Gorm), in Höhen von den Füßen bis zum Kopf (`BossPortal.Contains`); ein Körper, der den Stein nur berührt, ist kein Befund. Der Abstand der Höhen folgt aus `BossPortalShape.Blocks`: vier Fünftel des dünnsten Blocks (heute der Kämpfer, 0,125 m, also 0,1 m). `slam` und `bat` prüfen zu Beginn selbst, dass für keine ihrer Körperhöhen ein Block zwischen zwei Messhöhen durchrutscht („the stone check misses the block …“, #647) – bekommt das Portal einen dünneren Block, rücken die Höhen von selbst enger. Auch eine tote Fledermaus zählt, solange sie noch fällt oder liegt.
 
@@ -82,6 +83,24 @@ git worktree remove ../vergleich-main
 `main.txt` und `pr.txt` nicht ins Repository legen. Solange `main` das Werkzeug noch nicht hat, geht das erst nach dem Merge von #573.
 
 Ein Agent, der selbst schon in einem Worktree arbeitet, legt keinen zweiten an. Er holt den Stand von `main` für einzelne Dateien mit `git checkout origin/main -- <pfad>`, lässt den Modus laufen und holt seinen eigenen Stand mit `git checkout HEAD -- <pfad>` zurück.
+
+### Kampf-Bot (`fight`)
+
+Der Modus `fight` (Issue #803) misst, wie weit ein sehr einfacher Spieler kommt, wenn er **sterblich** ist: Er spielt mit den Werten aus `assets/balance.json` (nicht mit dem unsterblichen `Play.Balance` der anderen Modi), mit echten Waffen und echten Gegnern, vom Start durch die Räume in der Reihenfolge der Route bis zu Gorm.
+
+```
+dotnet run --project tools/SilverAndAsh.BotRun -c Release -- fight --seeds 1..6 --weapon whip
+```
+
+**Ausgabe:** je Seed und Waffe eine Zeile (gewonnen oder verloren, Dauer in Spielzeit, Stufe, geräumte Kampfräume, Todesort mit Raum oder Gorm, wer den letzten Schaden verursacht hat, erlittener und ausgeteilter Schaden), am Ende je Waffe eine Zeile `WIN RATE`. Gleicher Seed und gleiche Waffe geben dieselbe Ausgabe. Ein Lauf endet nach spätestens 20 Minuten Spielzeit mit „TICK LIMIT“, oder nach 30 Sekunden ohne jede Veränderung (keine neue Zelle, kein Gegnerschaden, kein Raum, keine Tür) mit „STUCK (no progress)“. Beides ist kein Befund; ein Befund ist nur ein Fehler der Spiel-Regeln, den der Bot nebenbei findet (die Prüfungen nach jedem Tick laufen mit).
+
+**Eine untere Schranke, kein Maß für das Spiel:** Der Bot spielt einfach und immer gleich (`FightPolicy`): gehen oder zielen, angreifen, nachladen, heilen (unter der Hälfte des Lebens und mit einer Flasche in 25 m), den nächsten Gegner im Raum bekämpfen, sonst durch den nächsten Raum der Route zu Gorm. Er weicht nicht aus, zieht sich nicht zurück, wechselt die Waffe nicht, besucht keine Nebenräume und wählt bei einem Stufenaufstieg immer die erste Gabe. Was er gewinnt oder verliert, sagt, was *dieser* Bot schafft; ein Mensch schafft mehr. Die Ausgabe nennt das selbst („NOTE … lower bound“).
+
+**Wie er handelt:** Nur über `PlayerInput` im Tick (ADR 0003). Das Zielen ist die Ausnahme der Form halber: Im Spiel dreht `Player.Look` je Bild außerhalb des Ticks, darum dreht der Bot wie die übrigen Modi mit `PhotoStudio.Face` (`Play.Face`) zum Ziel. Der Weg führt über den Wegfinder (`Pathfinder`); Türen öffnet er mit `Interact`, Treppen ebenso. Steht er beim Gehen still (etwa an einem Sockel), weicht er 40 Ticks zur Seite aus.
+
+**Was gesetzt wird:** nichts außer der Start-Waffe. Sie kommt auf dem Weg von `--give` ins Spiel (`GiveOptions.GiveTo`); die beiden Start-Waffen (Silberklinge, Pistole) hat der Spieler schon. Kein erhöhtes Leben, kein Sonderschaden.
+
+**Was Core für den Bot nicht hergibt** (nicht gebaut, nur genannt): kein Ereignis, das bei einem Treffer die Quelle nennt (`PlayerHit` hat nur den Schaden, der Bot liest sie aus den Ereignissen desselben Ticks); keine Abfrage „wohin muss ich als Nächstes“ (der Bot sucht den Weg selbst über `Doors` und `Rooms`); keine Abfrage, ob ein Gegner den Spieler gerade treffen würde (darum weicht der Bot nicht aus); Hindernisse im Raum (Sockel, Kisten) kennt der Wegfinder nicht, darum das Ausweichen zur Seite.
 
 ### Hängende Gegner (`stuck`)
 

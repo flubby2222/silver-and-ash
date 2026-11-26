@@ -12,12 +12,14 @@ using SilverAndAsh.Core.World;
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- bat
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- stuck --seeds 1..40   -> enemies that hang (issue #591)
 //   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- seeds --seeds 1..1000
-//   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- all
+//   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- fight --seeds 1..6 --weapon whip  -> a mortal fight to Gorm (issue #803)
+//   dotnet run --project tools/SilverAndAsh.BotRun -c Release -- all                                -> everything but "fight"
 // Exit code: 0 = no findings, 1 = findings, 2 = wrong arguments or the tool itself failed, 3 = assets/balance.json gave
 // a warning (nothing was played, issue #688).
 
 // The modes, in the order "all" plays them. A new mode is one more line here (issue #629), not one more branch.
 var stuck = new HangingEnemies();
+var fight = new FightMode();
 BotMode[] modes =
 [
     new("arena", "every arena door: seal, escape attempts, clear, walk out; two arenas side by side; the boss door", ArenaDoors.Run),
@@ -27,8 +29,9 @@ BotMode[] modes =
     new("bat", "a bat at the boss portal: knocked at the stone, flying round a player there, falling dead onto a plinth", PortalBat.Run),
     new("stuck", "stand still in every arena and the boss room: no enemy that hunts a player may hang without attacking", stuck.Run, stuck.PrintLongest),
     new("seeds", "build every level twice: failures, generator tries, same level for the same seed", SeedProbe.Run, SeedProbe.PrintAttemptNote),
+    new("fight", "a mortal player fights from the start to Gorm with a real weapon (--weapon blade|pistol|axe|whip|crossbow|all); not in all", fight.Run, fight.PrintWinRates, InAll: false),
 ];
-var usage = $"Usage: <{string.Join('|', modes.Select(m => m.Name))}|all> [--seeds FROM..TO] [--repo FOLDER]";
+var usage = $"Usage: <{string.Join('|', modes.Select(m => m.Name))}|all> [--seeds FROM..TO] [--weapon NAMES (fight only)] [--repo FOLDER]";
 
 if (args.Length == 0 || args[0] is "--help" or "-h")
 {
@@ -43,7 +46,7 @@ if (args.Length == 0 || args[0] is "--help" or "-h")
 }
 
 var mode = args[0];
-var chosen = mode == "all" ? modes : modes.Where(m => m.Name == mode).ToArray();
+var chosen = mode == "all" ? modes.Where(m => m.InAll).ToArray() : modes.Where(m => m.Name == mode).ToArray();
 if (chosen.Length == 0)
 {
     Console.Error.WriteLine($"Unknown mode '{mode}'. {usage}");
@@ -62,6 +65,10 @@ for (var i = 1; i < args.Length; i++)
             break;
         case "--repo" when i + 1 < args.Length:
             repo = args[++i];
+            break;
+        case "--weapon" when i + 1 < args.Length && FightWeapons.TryParse(args[i + 1], out var weapons):
+            fight.Weapons = weapons;
+            i++;
             break;
         default:
             Console.Error.WriteLine($"Unknown or incomplete argument '{args[i]}'. {usage}");
@@ -83,6 +90,7 @@ if (ShippedBalance(repo) is not { } balance)
 }
 
 Play.Use(balance);
+fight.Balance = balance;
 var zero = new LevelZero(RoomTemplateParser.LoadAll(Path.Combine(repo, "assets", "rooms")));
 var report = new Report();
 foreach (var current in chosen)
@@ -149,7 +157,7 @@ static string? FindRepository()
 /// One mode of the bot: its name on the command line, one line of help, what it plays for one seed, and what it prints
 /// once after the last seed (if anything).
 /// </summary>
-internal sealed record BotMode(string Name, string Help, Action<LevelZero, int, Report> Run, Action<Report>? After = null);
+internal sealed record BotMode(string Name, string Help, Action<LevelZero, int, Report> Run, Action<Report>? After = null, bool InAll = true);
 
 /// <summary>Reads "7" or "1..6" (also "1-6").</summary>
 internal static class SeedRange
