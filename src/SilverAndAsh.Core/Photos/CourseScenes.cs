@@ -60,7 +60,7 @@ internal static class CourseScenes
             studio => Settled(Within(studio, 0, ArmsRowShot))),
         new("course-1-axe", "Like course-1-arms-row, the hunter's axe in hand: its model in the light of the test course (issue #776).",
             studio => Settled(AxeInHand(Within(studio, 0, ArmsRowShot)))),
-        new("course-1-crossbow", "Like course-1-arms-row, the stake crossbow in the first place: its placeholder boxes in the light of the test course (issue #203).",
+        new("course-1-crossbow", "Like course-1-arms-row, the stake crossbow in hand: its model in the light of the test course (issues #203, #793).",
             studio => ArmsRowWith(studio, CrossbowInHand)),
         new("course-2-columns", "Station 2 of the test course from its far corner back to its sign: two columns either side of the way, silver beside one, a ghoul beyond (issues #718, #722).",
             studio => new PhotoSetup(Within(studio, 1, ColumnsShot))),

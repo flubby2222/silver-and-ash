@@ -57,7 +57,7 @@ public class EnvironmentPaletteTests
     /// <summary>Not environment (figures, weapons, chests, enemies, effects): they keep their own colours.</summary>
     private static readonly string[] NotEnvironmentModels =
     [
-        "bat", "blade", "club", "ghoul", "hunters_axe", "pistol", "shock_wave", "well_of_sirius", "whip",
+        "bat", "blade", "club", "ghoul", "hunters_axe", "pistol", "shock_wave", "stake_crossbow", "well_of_sirius", "whip",
         "chest_beggar", "chest_guard", "chest_king", "chest_vampire",
         "crossbow_skeleton_announce", "crossbow_skeleton_rest", "crypt_warden_announce", "crypt_warden_rest",
         "gorm_body", "gorm_body_phase2", "gorm_limbs", "teleporter_locked", "teleporter_unlocked",

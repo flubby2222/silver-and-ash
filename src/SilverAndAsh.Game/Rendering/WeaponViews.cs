@@ -98,6 +98,10 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
     private readonly Matrix4x4[] _oneFrame = new Matrix4x4[1];
     private readonly Matrix4x4[] _sleeveTurns = [Matrix4x4.Identity, Matrix4x4.Identity];
     private readonly Matrix4x4[] _sleeveFrames = new Matrix4x4[WeaponPose.HandParts.Count];
+    private readonly Matrix4x4[] _crossbowTurns = new Matrix4x4[StakeCrossbowPose.Parts.Count];
+    private readonly Matrix4x4[] _crossbowFrames = new Matrix4x4[StakeCrossbowPose.Parts.Count];
+    private Magazine _magazine = new(1, 1f);   // the drawn ranged weapon's, set in Update
+    private Matrix4x4 _modelMotion = Matrix4x4.Identity;
     private readonly Matrix4x4[] _whipTurns = new Matrix4x4[WhipPose.Parts.Count];
     private readonly Matrix4x4[] _whipFrames = new Matrix4x4[WhipPose.Parts.Count];
     private readonly Matrix4x4[] _lashFrames = new Matrix4x4[WhipPose.Parts.Count];
@@ -140,6 +144,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         // Reloading: the motion follows the magazine of the weapon in the hand, and only if that weapon has a motion of
         // its own; a weapon switch starts from rest, a cancel fades out in a tenth of a second.
         var magazine = player.Ranged.Magazine;
+        _magazine = magazine;
         _reload.Step(_ranged, magazine is { IsReloading: true }, magazine.ReloadProgress, frameSeconds);
 
         // Bob only while walking on the ground; fades in and out instead of switching on and off.
@@ -205,6 +210,8 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         // The models: the same movements, then shrunk towards the eye (out of the walls, the picture unchanged).
         var modelMotion = soft * Matrix4x4.CreateScale(WeaponPose.ShrinkTowardsEye) * camera;
         _loopMotion = soft * Matrix4x4.CreateScale(WeaponPose.ShrinkTowardsEye * WhipPose.LoopNearer) * camera;
+
+        _modelMotion = modelMotion;
 
         // With a depth of their own: their near plane is far closer to the eyes than the world's (issue #624).
         var world = WeaponDepthPass.Begin();
@@ -313,7 +320,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         _lash = null;
     }
 
-    // The stake crossbow until its model is in (issue #203): a wooden stock, the iron bow across its front and the pale
+    // The stake crossbow when its model files are missing (fallback, issue #203): a wooden stock, the iron bow across its front and the pale
     // stake lying in the groove. No muzzle flash - it fires no powder.
     private static void DrawCrossbowBoxes(Matrix4x4 hand)
     {
@@ -326,6 +333,12 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
     {
         // Recoil: kicked back and up at once, then easing back into place.
         var kick = 1f - EaseOut(_recoil);
+        if (_ranged == WeaponKind.StakeCrossbow && models is { CrossbowLoaded: { } loaded, CrossbowRelaxed: { } relaxed, PistolHand: { } crossbowHand })
+        {
+            DrawCrossbowModel(loaded, relaxed, crossbowHand, kick);
+            return;
+        }
+
         if (_ranged == WeaponKind.Pistol && models is { Pistol: { } pistol, PistolHand: { } pistolHand })
         {
             DrawPistolModel(pistol, pistolHand, WeaponPose.Pistol(kick, _reload.Progress, _reload.Weight) * modelMotion, kick);
@@ -378,6 +391,27 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
             ShadedBox.Draw(
                 Matrix4x4.CreateTranslation(0f, 0.005f, muzzle) * hand, new Vector3(size, size, size), _holyFlash ? HolyFlash : MuzzleFlash);
         }
+    }
+
+    // The stake crossbow (issue #793): the loaded file while a stake is in it (or the reload is past the catch), else the
+    // relaxed one; the stake is drawn only while one lies in the groove. The crank turns in the reload.
+    private void DrawCrossbowModel(TexturedModel loaded, TexturedModel relaxed, TexturedModel hand, float kick)
+    {
+        var magazine = _magazine;
+        var reloading = magazine.IsReloading;
+        var progress = _reload.Progress;
+        var grip = StakeCrossbowPose.Pose(kick, progress, _reload.Weight) * _modelMotion;
+        var model = StakeCrossbowPose.ShowsLoaded(magazine.Rounds, reloading, progress) ? loaded : relaxed;
+        StakeCrossbowPose.Turns(progress, _reload.Weight, _crossbowTurns);
+        model.Rig.Pose(_crossbowTurns, grip, _crossbowFrames);
+        model.DrawPart(0, _crossbowFrames[0]);
+        model.DrawPart(StakeCrossbowPose.CrankIndex, _crossbowFrames[StakeCrossbowPose.CrankIndex]);
+        if (StakeCrossbowPose.ShowsStake(magazine.Rounds, reloading, progress))
+        {
+            model.DrawPart(StakeCrossbowPose.StakeIndex, _crossbowFrames[StakeCrossbowPose.StakeIndex]);
+        }
+
+        DrawSleeve(hand, grip, StakeCrossbowPose.Forearm(kick, progress, _reload.Weight, hand.Rig.Pivots[1]));
     }
 
     private void DrawPistolModel(TexturedModel pistol, TexturedModel hand, Matrix4x4 grip, float kick)

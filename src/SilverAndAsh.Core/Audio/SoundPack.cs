@@ -138,6 +138,13 @@ public sealed class SoundPack
         [SoundKind.WhipHardHit] = ["peitsche-treffer-hart.wav"],
         [SoundKind.WhipCharge] = ["peitsche-aufladen.wav"],
         [SoundKind.WhipPull] = ["peitsche-heranziehen.wav"],
+
+        // Issue #793: the stake crossbow, from round 2 of the listening test of issue #203 (tools/audio/armbrustklang.py). Shot
+        // "A string hiss", flesh "A stab", hard "B stone breaks", reload "B rope pull" (built to the reload time of balance.json).
+        [SoundKind.CrossbowShot] = ["armbrust-schuss.wav"],
+        [SoundKind.CrossbowHit] = ["armbrust-treffer-fleisch.wav"],
+        [SoundKind.CrossbowHardHit] = ["armbrust-treffer-hart.wav"],
+        [SoundKind.CrossbowReload] = ["armbrust-nachladen.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>

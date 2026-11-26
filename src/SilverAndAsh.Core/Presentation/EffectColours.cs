@@ -41,6 +41,9 @@ public static class EffectColours
     /// <summary>The dark mark the bullet leaves afterwards: Stein 1, the darkest step above the fog's black.</summary>
     public static (byte R, byte G, byte B) ImpactMark { get; } = (38, 34, 40);
 
+    /// <summary>The end of a stake sticking out of the stone where the stake crossbow's shot ended (issue #793): Eisen 5, the iron of its shaft.</summary>
+    public static (byte R, byte G, byte B) StakeStub { get; } = (126, 144, 165);
+
     /// <summary>
     /// Every colour of an environment effect or stand-in, by name, with the ramp it is a step of - and the colour of
     /// every status effect on an enemy (<see cref="StatusLooks"/>, issue #506), named "status" and its kind.
@@ -53,6 +56,7 @@ public static class EffectColours
         ("column stand-in edge", Stone, ColumnStandInEdge),
         ("impact spark", Brass, ImpactSpark),
         ("impact mark", Stone, ImpactMark),
+        ("stake stub", Iron, StakeStub),
         .. StatusLooks.All.Select(look => ($"status {look.Kind}", look.Ramp, look.Colour)),
 
         // The frost of Grave Chill on the body and the floor (issue #775).

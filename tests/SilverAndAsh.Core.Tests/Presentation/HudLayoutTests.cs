@@ -180,6 +180,25 @@ public class HudLayoutTests
         Single(lit, "icon_whip_active");
     }
 
+    [Fact]
+    public void The_stake_crossbow_has_its_own_small_picture_lit_while_it_is_chosen()
+    {
+        // Issue #793: the crossbow's own drawing, centred in its frame.
+        var picture = Arrange(Busy() with
+        {
+            Weapons = [new(WeaponKind.StakeCrossbow, null, false, false), .. Busy().Weapons.Skip(1)],
+        });
+        var lit = Arrange(Busy() with
+        {
+            Weapons = [new(WeaponKind.StakeCrossbow, null, false, true), .. Busy().Weapons.Skip(1).Select(weapon => weapon with { IsSelected = false })],
+        });
+
+        Assert.Equal("icon_crossbow", HudLayout.IconOf(WeaponKind.StakeCrossbow));
+        var ground = Layout.BodyOf(Single(picture, "frame_weapon_0")).Inset(HudLayout.Rim);
+        AssertCentredIn(ground, Layout.Bounds(Single(picture, "icon_crossbow")));
+        Single(lit, "icon_crossbow_active");
+    }
+
     [Theory]
     [InlineData(854, 854, 480)]
     [InlineData(768, 768, 480)]

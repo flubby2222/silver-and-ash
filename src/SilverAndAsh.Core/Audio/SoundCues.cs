@@ -243,6 +243,26 @@ public enum SoundKind
 
     /// <summary>The whip pulls a creature in (issue #786): the line tightens with a short dull jerk, "C leather jerk" of round 1 of issue #202.</summary>
     WhipPull,
+
+    /// <summary>The stake crossbow shoots (issue #793): the string snaps, a dull blow, a band of noise falling as the stake flies off, "A string hiss" of round 2 of issue #203.</summary>
+    CrossbowShot,
+
+    /// <summary>The stake crossbow's stake goes into a creature (issue #793): a short blow, a round thud and a wet slide, "A stab" of round 2 of issue #203.</summary>
+    CrossbowHit,
+
+    /// <summary>
+    /// The stake crossbow's stake hits something hard - the wooden training dummy or a wall (issue #793): a broad burst of
+    /// noise, a deep blow and three falling lumps, "B stone breaks" of round 2 of issue #203.
+    /// </summary>
+    CrossbowHardHit,
+
+    /// <summary>
+    /// The stake crossbow is reloaded (issue #793): the grip, one long pull of the rope with a low tone rising, the string
+    /// catching 0.6 s and the stake laid in 0.4 s before the end of the file, "B rope pull" of round 2 of issue #203. Built to
+    /// the reload time of balance.json (tools/audio/armbrustklang.py); the weapon's pose follows the same two marks
+    /// (<see cref="StakeCrossbowPose.CockedAt"/>, <see cref="StakeCrossbowPose.StakeAt"/>).
+    /// </summary>
+    CrossbowReload,
 }
 
 /// <summary>
@@ -422,11 +442,12 @@ public static class SoundBoard
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
-        // Other ranged weapons get files of their own later.
+        // Other ranged weapons get files of their own later; the tables below say which already have them.
         ShotFired { Weapon: WeaponKind.Pistol, Consecrated: true } => SoundKind.ConsecratedShot,
         ShotFired { Weapon: WeaponKind.Pistol } => SoundKind.Pistol,
-        ReloadStarted => SoundKind.ReloadStarted,
-        ReloadFinished => SoundKind.ReloadFinished,
+        ShotFired shot => Lookup(ShotKinds, shot.Weapon),
+        ReloadStarted started => ReloadStartKinds.GetValueOrDefault(started.Weapon, SoundKind.ReloadStarted),
+        ReloadFinished finished => SilentReloadEnds.Contains(finished.Weapon) ? null : SoundKind.ReloadFinished,
 
         // Swings and hits by weapon from the tables below (issue #776); the club has no sound yet.
         MeleeSwung swung => Lookup(SwingKinds, swung.Weapon),
@@ -487,6 +508,33 @@ public static class SoundBoard
             [typeof(GrateStarted)] = gameEvent =>
                 ((GrateStarted)gameEvent).Falling ? SoundKind.GrateFalling : SoundKind.GrateRising,
             [typeof(MeleePulled)] = gameEvent => PullKind((MeleePulled)gameEvent),
+            [typeof(BulletImpact)] = gameEvent => ImpactKind((BulletImpact)gameEvent),
+        }.ToImmutableDictionary();
+
+    /// <summary>The sound of a shot by ranged weapon besides the pistol's (issue #793); a weapon without an entry shoots silently.</summary>
+    private static readonly ImmutableDictionary<WeaponKind, SoundKind> ShotKinds =
+        new Dictionary<WeaponKind, SoundKind>
+        {
+            [WeaponKind.StakeCrossbow] = SoundKind.CrossbowShot,
+        }.ToImmutableDictionary();
+
+    /// <summary>The sound of starting to reload by ranged weapon; a weapon without an entry makes the pistol's (issue #793).</summary>
+    private static readonly ImmutableDictionary<WeaponKind, SoundKind> ReloadStartKinds =
+        new Dictionary<WeaponKind, SoundKind>
+        {
+            [WeaponKind.StakeCrossbow] = SoundKind.CrossbowReload,
+        }.ToImmutableDictionary();
+
+    /// <summary>The weapons whose reload is one sound that already ends with the weapon ready: no extra sound at the end (issue #793).</summary>
+    private static readonly ImmutableHashSet<WeaponKind> SilentReloadEnds = [WeaponKind.StakeCrossbow];
+
+    private static SoundKind? ImpactKind(BulletImpact impact) => Lookup(ImpactKinds, impact.Weapon);
+
+    /// <summary>The sound of a shot ending in a wall, a column, the floor or the ceiling (<see cref="BulletImpact"/>) by ranged weapon; a weapon without an entry makes none (the pistol leaves its mark only).</summary>
+    private static readonly ImmutableDictionary<WeaponKind, SoundKind> ImpactKinds =
+        new Dictionary<WeaponKind, SoundKind>
+        {
+            [WeaponKind.StakeCrossbow] = SoundKind.CrossbowHardHit,
         }.ToImmutableDictionary();
 
     /// <summary>
@@ -523,6 +571,8 @@ public static class SoundBoard
             [(Weapon.HuntersAxe, true)] = SoundKind.AxeHardHit,
             [(Weapon.Whip, false)] = SoundKind.WhipHit,
             [(Weapon.Whip, true)] = SoundKind.WhipHardHit,
+            [(Weapon.StakeCrossbow, false)] = SoundKind.CrossbowHit,
+            [(Weapon.StakeCrossbow, true)] = SoundKind.CrossbowHardHit,
         }.ToImmutableDictionary();
 
     /// <summary>

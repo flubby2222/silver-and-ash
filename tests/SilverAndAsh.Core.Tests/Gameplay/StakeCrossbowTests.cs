@@ -217,6 +217,21 @@ public class StakeCrossbowTests
     }
 
     [Fact]
+    public void A_target_that_ignores_the_hit_does_not_use_up_a_place_of_the_stake()
+    {
+        // Issue #793: in the showroom the exhibits take no damage. Their hits do not count, so they do not stop the stake:
+        // as many exhibits as it has places would otherwise swallow it before the wall.
+        var level = LevelParser.Parse(Row(MostTargets) + "\n#");
+        var world = new GameWorld(level, 1, Sturdy) { Showroom = new ShowroomExhibits(null, [], [], [], []) };
+        world.Player.Equip(0, WeaponKind.StakeCrossbow);
+
+        var events = Shoot(world);
+
+        Assert.Empty(events.OfType<TargetHitBy>());
+        Assert.Equal(WeaponKind.StakeCrossbow, Assert.Single(events.OfType<BulletImpact>()).Weapon);
+    }
+
+    [Fact]
     public void The_pistol_s_bullet_in_the_wall_still_says_it_was_the_pistol()
     {
         var world = new GameWorld(LevelParser.Parse("P\n.\n#"), 1, Sturdy);

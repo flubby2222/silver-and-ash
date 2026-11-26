@@ -31,6 +31,12 @@ internal sealed class WeaponModels : IDisposable
 
     public TexturedModel? Pistol { get; }
 
+    /// <summary>The stake crossbow's loaded file (issue #793); null together with <see cref="CrossbowRelaxed"/> if either is missing.</summary>
+    public TexturedModel? CrossbowLoaded { get; private set; }
+
+    /// <summary>The stake crossbow's relaxed file (issue #793).</summary>
+    public TexturedModel? CrossbowRelaxed { get; private set; }
+
     public TexturedModel? PistolHand { get; }
 
     /// <summary>The model and sleeve of melee weapon <paramref name="kind"/>, or false for the placeholder boxes.</summary>
@@ -59,6 +65,7 @@ internal sealed class WeaponModels : IDisposable
             TexturedModel.TryLoad(Path.Combine(directory, "pistol.glb"), WeaponPose.PistolParts, log),
             TexturedModel.TryLoad(Path.Combine(directory, "pistol_hand.glb"), WeaponPose.HandParts, log));
 
+        models.LoadCrossbow(directory, log);
         foreach (var kind in Enum.GetValues<WeaponKind>())
         {
             if (WeaponPose.MeleeModel(kind) is not { } files)
@@ -90,8 +97,27 @@ internal sealed class WeaponModels : IDisposable
         return models;
     }
 
+    // The stake crossbow's two files: both or neither, so it never shows a bow without its string (the boxes then).
+    private void LoadCrossbow(string directory, FileLog? log)
+    {
+        var loaded = TexturedModel.TryLoad(Path.Combine(directory, StakeCrossbowPose.LoadedFile), StakeCrossbowPose.Parts, log);
+        var relaxed = TexturedModel.TryLoad(Path.Combine(directory, StakeCrossbowPose.RelaxedFile), StakeCrossbowPose.Parts, log);
+        if (loaded is not null && relaxed is not null)
+        {
+            CrossbowLoaded = loaded;
+            CrossbowRelaxed = relaxed;
+        }
+        else
+        {
+            loaded?.Dispose();
+            relaxed?.Dispose();
+        }
+    }
+
     public void Dispose()
     {
+        CrossbowLoaded?.Dispose();
+        CrossbowRelaxed?.Dispose();
         Pistol?.Dispose();
         PistolHand?.Dispose();
         foreach (var (weapon, hand) in _melee.Values)

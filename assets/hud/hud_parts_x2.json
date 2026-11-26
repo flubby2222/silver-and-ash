@@ -2,7 +2,7 @@
  "image": "hud_parts_x2.png",
  "scale": 2,
  "width": 1024,
- "height": 622,
+ "height": 659,
  "designWidth": 1708,
  "designHeight": 960,
  "notes": [
@@ -872,6 +872,26 @@
    "layoutX": 1389,
    "layoutY": 907,
    "source": "tools/hud/hud_peitsche.py"
+  },
+  {
+   "name": "icon_crossbow",
+   "x": 0,
+   "y": 623,
+   "w": 58,
+   "h": 36,
+   "layoutX": 1389,
+   "layoutY": 907,
+   "source": "tools/hud/hud_armbrust.py"
+  },
+  {
+   "name": "icon_crossbow_active",
+   "x": 59,
+   "y": 623,
+   "w": 58,
+   "h": 36,
+   "layoutX": 1389,
+   "layoutY": 907,
+   "source": "tools/hud/hud_armbrust.py"
   }
  ]
 }
