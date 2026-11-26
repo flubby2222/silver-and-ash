@@ -90,11 +90,14 @@ public sealed record ShotFired(
     int PlayerId, Vector3 Origin, Vector3 Direction, bool Consecrated = false, WeaponKind Weapon = WeaponKind.Pistol)
     : GameEvent, IPlayerSound;
 
-/// <summary>Player <paramref name="PlayerId"/> started reloading (R, or a shot with an empty magazine).</summary>
-public sealed record ReloadStarted(int PlayerId) : GameEvent, IPlayerSound;
+/// <summary>
+/// Player <paramref name="PlayerId"/> started reloading the ranged weapon <paramref name="Weapon"/> (R, or a shot with an
+/// empty magazine). The weapon is there for its own sound (issue #203: the stake crossbow's winch).
+/// </summary>
+public sealed record ReloadStarted(int PlayerId, WeaponKind Weapon = WeaponKind.Pistol) : GameEvent, IPlayerSound;
 
-/// <summary>Player <paramref name="PlayerId"/>'s magazine is full again.</summary>
-public sealed record ReloadFinished(int PlayerId) : GameEvent, IPlayerSound;
+/// <summary>The magazine of player <paramref name="PlayerId"/>'s ranged weapon <paramref name="Weapon"/> is full again.</summary>
+public sealed record ReloadFinished(int PlayerId, WeaponKind Weapon = WeaponKind.Pistol) : GameEvent, IPlayerSound;
 
 /// <summary>Player <paramref name="PlayerId"/> took the ranged weapon <paramref name="Kind"/> from place <paramref name="Slot"/> into the hand.</summary>
 public sealed record WeaponSwitched(int PlayerId, int Slot, WeaponKind Kind) : GameEvent;
@@ -106,9 +109,11 @@ public sealed record WeaponSwitched(int PlayerId, int Slot, WeaponKind Kind) : G
 public sealed record WeaponDropped(int PlayerId, WeaponKind Kind, Vector3 Position, RangedWeapon? Ranged = null) : GameEvent;
 
 /// <summary>
-/// A shot hit a wall, floor or ceiling at <paramref name="Point"/>; <paramref name="Normal"/> points out of the surface.
+/// A shot of the ranged weapon <paramref name="Weapon"/> hit a wall, a column, the floor or the ceiling at
+/// <paramref name="Point"/>; <paramref name="Normal"/> points out of the surface. The weapon is there for its own sound
+/// and mark (issue #203: a stake sticks in the stone where a bullet leaves a hole).
 /// </summary>
-public sealed record BulletImpact(Vector3 Point, Vector3 Normal) : GameEvent;
+public sealed record BulletImpact(Vector3 Point, Vector3 Normal, WeaponKind Weapon = WeaponKind.Pistol) : GameEvent;
 
 /// <summary>
 /// Training dummy <paramref name="DummyId"/> took <paramref name="Damage"/>; <paramref name="Critical"/> for a critical

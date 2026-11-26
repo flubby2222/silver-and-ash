@@ -128,6 +128,9 @@ public sealed class HudLayout
 
         // A small rendering of its rest model with the loop (issue #786, tools/hud/hud_peitsche.py), placed like the axe's.
         [WeaponKind.Whip] = "icon_whip",
+
+        // Until the stake crossbow has a sign of its own (issue #203, follow-up): the rifle's, the nearest long ranged weapon.
+        [WeaponKind.StakeCrossbow] = "icon_rifle",
     }.ToFrozenDictionary();
 
     private static readonly FrozenDictionary<ItemKind, string> ItemIcons = new Dictionary<ItemKind, string>

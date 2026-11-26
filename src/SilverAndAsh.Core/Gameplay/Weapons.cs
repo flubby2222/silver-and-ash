@@ -46,6 +46,13 @@ public enum WeaponKind
     /// swings it (Gorm stands firm).
     /// </summary>
     Whip,
+
+    /// <summary>
+    /// The stake crossbow (Vampiric, issue #203): one heavy stake per load that runs through every enemy in a row until
+    /// a wall or a column stops it, and a slow reload. Shown as "Crossbow" - "Stake Crossbow" is too wide for the name in
+    /// the equipment box and 3 pixels too wide for the pickup toast with an effect (provisional, as for the axe).
+    /// </summary>
+    StakeCrossbow,
 }
 
 /// <summary>What a weapon is: its name (shown in the game), its hand and its tier.</summary>
@@ -64,6 +71,7 @@ public static class Weapons
         WeaponKind.Blunderbuss => new("Blunderbuss", WeaponHand.Ranged, ItemTier.Forged),
         WeaponKind.HuntersAxe => new("Hunting Axe", WeaponHand.Melee, ItemTier.Royal),
         WeaponKind.Whip => new("Whip", WeaponHand.Melee, ItemTier.Royal),
+        WeaponKind.StakeCrossbow => new("Crossbow", WeaponHand.Ranged, ItemTier.Vampiric),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
 
@@ -77,6 +85,7 @@ public static class Weapons
         WeaponKind.Blunderbuss => Weapon.Blunderbuss,
         WeaponKind.HuntersAxe => Weapon.HuntersAxe,
         WeaponKind.Whip => Weapon.Whip,
+        WeaponKind.StakeCrossbow => Weapon.StakeCrossbow,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
 }

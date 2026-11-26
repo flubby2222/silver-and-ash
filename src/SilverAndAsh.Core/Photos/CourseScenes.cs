@@ -32,13 +32,13 @@ internal static class CourseScenes
     // Station 1: from its south-east corner up to the north-west, so the whole row of weapons on the north wall, the
     // items on the south wall and the sign over the first cell are in view.
     // Turned and tilted so that no weapon lies behind the teleporter's pillars or under the sign, each one wholly in the
-    // picture and above the hands (#201). With the whip (#202) the station is a cell wider: the camera moves east with it.
-    internal static readonly Shot ArmsShot = new(13f, 8f, 228f, -20f);
+    // picture and above the hands (#201). With the whip (#202) and the stake crossbow (#203) the station grew a cell each time: the camera moves east with it.
+    internal static readonly Shot ArmsShot = new(15f, 8.5f, 227f, -20f);
 
     // Station 1 again, close to the row of weapons (issue #736): from the east end of the way, down at the row, every
     // weapon between the hands. The sign is not in this one: with it, the row would be as far off as in the first.
     // Steeper than the hands need, so that the longest weapon at the west end is not cut off at the edge (#201).
-    internal static readonly Shot ArmsRowShot = new(12f, 4f, 208f, -28f);
+    internal static readonly Shot ArmsRowShot = new(14.5f, 4f, 215f, -30f);
 
     // Station 2: from the far south-east corner back west, the columns and the silver in front, the ghoul beyond, the sign
     // over the entrance.
@@ -60,6 +60,8 @@ internal static class CourseScenes
             studio => Settled(Within(studio, 0, ArmsRowShot))),
         new("course-1-axe", "Like course-1-arms-row, the hunter's axe in hand: its model in the light of the test course (issue #776).",
             studio => Settled(AxeInHand(Within(studio, 0, ArmsRowShot)))),
+        new("course-1-crossbow", "Like course-1-arms-row, the stake crossbow in the first place: its placeholder boxes in the light of the test course (issue #203).",
+            studio => ArmsRowWith(studio, CrossbowInHand)),
         new("course-2-columns", "Station 2 of the test course from its far corner back to its sign: two columns either side of the way, silver beside one, a ghoul beyond (issues #718, #722).",
             studio => new PhotoSetup(Within(studio, 1, ColumnsShot))),
         new("course-3-cracked-wall", "Station 3 of the test course close to and at a slant to the cracked wall in the middle of its north wall, the sign over the first cell beyond (issues #718, #722, #736).",
@@ -84,6 +86,13 @@ internal static class CourseScenes
     private static GameWorld AxeInHand(GameWorld world)
     {
         world.Player.EquipMelee(WeaponKind.HuntersAxe);
+        return world;
+    }
+
+    // In the first place, the one a run starts with in hand.
+    private static GameWorld CrossbowInHand(GameWorld world)
+    {
+        world.Player.Equip(0, WeaponKind.StakeCrossbow);
         return world;
     }
 

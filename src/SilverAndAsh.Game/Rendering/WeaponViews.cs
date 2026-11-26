@@ -313,6 +313,15 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         _lash = null;
     }
 
+    // The stake crossbow until its model is in (issue #203): a wooden stock, the iron bow across its front and the pale
+    // stake lying in the groove. No muzzle flash - it fires no powder.
+    private static void DrawCrossbowBoxes(Matrix4x4 hand)
+    {
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, -0.015f, 0.02f) * hand, new Vector3(0.034f, 0.035f, 0.24f), Wood);
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.005f, 0.13f) * hand, new Vector3(0.24f, 0.014f, 0.018f), Iron);
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.012f, 0.06f) * hand, new Vector3(0.012f, 0.012f, 0.2f), Silver);
+    }
+
     private void DrawPistol(Matrix4x4 motion, Matrix4x4 modelMotion)
     {
         // Recoil: kicked back and up at once, then easing back into place.
@@ -327,6 +336,12 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
             Matrix4x4.CreateRotationX(Deg(-14f * kick)) *
             Matrix4x4.CreateTranslation(PistolHand + new Vector3(0f, 0.012f * kick, -0.035f * kick)) *
             motion;
+
+        if (_ranged == WeaponKind.StakeCrossbow)
+        {
+            DrawCrossbowBoxes(hand);
+            return;
+        }
 
         // Consecrated ammunition loaded: the barrel shimmers pale and holy.
         var barrel = _consecrated ? Blend(DarkSilver, HolyGlow, 0.45f + 0.35f * MathF.Sin(_time * 6f)) : DarkSilver;

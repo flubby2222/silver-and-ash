@@ -682,7 +682,7 @@ public sealed partial class Player
             weapon.Cooldown.Tick();
             if (weapon.Magazine.Tick())
             {
-                _events.Add(new ReloadFinished(Id) { Place = Position });
+                _events.Add(new ReloadFinished(Id, weapon.Kind) { Place = Position });
             }
         }
     }
@@ -1080,7 +1080,7 @@ public sealed partial class Player
         {
             if (ranged.Magazine.StartReload(ReloadTicks(ranged.Magazine)))
             {
-                _events.Add(new ReloadStarted(Id) { Place = Position });
+                _events.Add(new ReloadStarted(Id, ranged.Kind) { Place = Position });
             }
         }
         else if (shootPressed && ranged.Cooldown.IsReady && ranged.Magazine.TryTake())

@@ -1719,25 +1719,20 @@ public sealed class GameWorld
 
     /// <summary>
     /// A shot hits the first thing on its ray within the weapon's range: a target (damage) or a wall, floor or
-    /// ceiling (an impact). A piercing weapon (the rifle) goes on through as many more targets as its
-    /// <see cref="RangedBalance.Pierce"/> says - walls always stop it. Instant - no flying bullet ("hitscan").
+    /// ceiling (an impact). A piercing weapon (the rifle, the stake crossbow) goes on through as many more targets as
+    /// its <see cref="RangedBalance.Pierce"/> says, each of them once and with the full damage - walls and columns always
+    /// stop it. Instant - no flying bullet ("hitscan").
     /// </summary>
     private void FireShot(ShotFired shot, Player attacker)
     {
         var values = Balance.Ranged(shot.Weapon);
-        var weapon = shot.Weapon switch
-        {
-            WeaponKind.Rifle => Weapon.Rifle,
-            WeaponKind.Blunderbuss => Weapon.Blunderbuss,
-            _ => Weapon.Pistol,
-        };
         var forward = Vector3.Normalize(shot.Direction);
 
         // Every target the shot struck, once - however many pellets hit it (the blunderbuss rule of issue #505).
         var struck = new StruckTargets();
         for (var pellet = 0; pellet < values.Pellets; pellet++)
         {
-            FirePellet(shot.Origin, Spread(forward, values.Spread), values, weapon, attacker, struck);
+            FirePellet(shot.Origin, Spread(forward, values.Spread), values, shot.Weapon, attacker, struck);
         }
 
         SetOffWeaponEffect(struck, shot.Weapon, attacker);
@@ -1776,8 +1771,9 @@ public sealed class GameWorld
     /// One bullet (or pellet) along <paramref name="direction"/>: hits up to 1 + pierce targets before the first wall.
     /// Every target it really struck goes into <paramref name="struck"/>, with the damage it dealt.
     /// </summary>
-    private void FirePellet(Vector3 origin, Vector3 direction, RangedBalance values, Weapon weapon, Player attacker, StruckTargets struck)
+    private void FirePellet(Vector3 origin, Vector3 direction, RangedBalance values, WeaponKind kind, Player attacker, StruckTargets struck)
     {
+        var weapon = Weapons.ForDamage(kind);
         var wall = Raycast.AgainstLevel(Level, origin, direction, values.Range);
         var reach = wall?.Distance ?? values.Range;
 
@@ -1801,7 +1797,7 @@ public sealed class GameWorld
         // Not stopped by enough targets: the bullet ends in the wall.
         if (hits.Count < 1 + values.Pierce && wall is { } impact)
         {
-            _events.Add(new BulletImpact(impact.Point, impact.Normal));
+            _events.Add(new BulletImpact(impact.Point, impact.Normal, kind));
         }
     }
 
