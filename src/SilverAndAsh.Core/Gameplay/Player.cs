@@ -1091,6 +1091,15 @@ public sealed partial class Player
         }
     }
 
+    /// <summary>Breaks off the reload of <paramref name="weapon"/> that is put away or dropped, and tells it (issue #800).</summary>
+    private void CancelReload(RangedWeapon weapon)
+    {
+        if (weapon.Magazine.CancelReload())
+        {
+            _events.Add(new ReloadCancelled(Id, weapon.Kind) { Place = Position });
+        }
+    }
+
     private void SwitchRanged(PlayerInput input)
     {
         var target = SelectedSlot;
@@ -1118,7 +1127,7 @@ public sealed partial class Player
             return;
         }
 
-        Ranged.Magazine.CancelReload();
+        CancelReload(Ranged);
         SelectedSlot = target;
         _events.Add(new WeaponSwitched(Id, target, Ranged.Kind));
     }

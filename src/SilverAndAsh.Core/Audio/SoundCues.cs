@@ -531,6 +531,9 @@ public static class SoundBoard
     /// <summary>The weapons whose reload is one sound that already ends with the weapon ready: no extra sound at the end (issue #793).</summary>
     private static readonly ImmutableHashSet<WeaponKind> SilentReloadEnds = [WeaponKind.StakeCrossbow];
 
+    /// <summary>True if the reload of <paramref name="weapon"/> is one sound that runs as long as the reload (issue #800): it stops when the reload breaks off.</summary>
+    public static bool ReloadIsOneSound(WeaponKind weapon) => SilentReloadEnds.Contains(weapon);
+
     private static SoundKind? ImpactKind(BulletImpact impact) => Lookup(ImpactKinds, impact.Weapon);
 
     /// <summary>The sound of a shot ending in a wall, a column, the floor or the ceiling (<see cref="BulletImpact"/>) by ranged weapon; a weapon without an entry makes none (the pistol leaves its mark only).</summary>
@@ -703,6 +706,9 @@ public sealed class SoundCues
     // Charge sounds by player (issue #776): planned, or playing and not yet at their end mark.
     private readonly Dictionary<int, PendingCharge> _charges = [];
 
+    // Reload sounds by player (issue #800): the cue that plays until the weapon is ready, to stop it when the reload breaks off.
+    private readonly Dictionary<int, SoundCue> _reloads = [];
+
     /// <summary>Starts the choice of variants from <paramref name="seed"/> (the world's seed).</summary>
     public SoundCues(int seed) => _random = new Random(seed ^ SeedSalt);
 
@@ -751,13 +757,18 @@ public sealed class SoundCues
     public IReadOnlyList<string> PlayingChargeFiles =>
         _charges.Values.Where(charge => charge.File is not null).Select(charge => charge.File!).ToList();
 
-    /// <summary>Stops every charge sound that plays (a new run replaces the world it belonged to) and forgets the plans.</summary>
+    /// <summary>Stops every charge sound and every reload sound that plays (a new run replaces the world it belonged to) and forgets the plans.</summary>
     public IReadOnlyList<SoundCue> StopCharges()
     {
         var cues = new List<SoundCue>();
         foreach (var playerId in _charges.Keys.ToList())
         {
             EndCharge(playerId, cues);
+        }
+
+        foreach (var playerId in _reloads.Keys.ToList())
+        {
+            StopReload(playerId, cues);
         }
 
         return cues;
@@ -840,6 +851,7 @@ public sealed class SoundCues
         }
 
         AddChargeCues(tick, pack, mixFor, cues);
+        AddReloadStops(tick, cues);
         return cues;
     }
 
@@ -893,6 +905,44 @@ public sealed class SoundCues
             {
                 _charges.Remove(playerId);
             }
+        }
+    }
+
+    /// <summary>
+    /// The reload sounds that are one long sound (<see cref="SoundBoard.ReloadIsOneSound"/>, issue #800): the cue made for
+    /// a <see cref="ReloadStarted"/> is kept until the reload is done (<see cref="ReloadFinished"/>); a break
+    /// (<see cref="ReloadCancelled"/>) or death (<see cref="PlayerDied"/>) before that stops the file (a cue with
+    /// <see cref="SoundCue.Stop"/>). A reload nobody heard (no cue) has nothing to stop.
+    /// </summary>
+    private void AddReloadStops(List<GameEvent> tick, List<SoundCue> cues)
+    {
+        foreach (var gameEvent in tick)
+        {
+            switch (gameEvent)
+            {
+                case ReloadStarted started when SoundBoard.ReloadIsOneSound(started.Weapon)
+                    && SoundBoard.KindFor(started) is { } kind
+                    && cues.FindIndex(cue => cue.Kind == kind && !cue.Stop) is var at and >= 0:
+                    _reloads[started.PlayerId] = cues[at];
+                    break;
+                case ReloadFinished finished:
+                    _reloads.Remove(finished.PlayerId);
+                    break;
+                case ReloadCancelled cancelled:
+                    StopReload(cancelled.PlayerId, cues);
+                    break;
+                case PlayerDied died:
+                    StopReload(died.PlayerId, cues);
+                    break;
+            }
+        }
+    }
+
+    private void StopReload(int playerId, List<SoundCue> cues)
+    {
+        if (_reloads.Remove(playerId, out var reload))
+        {
+            cues.Add(reload with { Volume = 0f, Stop = true });
         }
     }
 
