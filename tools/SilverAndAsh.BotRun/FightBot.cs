@@ -21,6 +21,11 @@ internal sealed class FightBot
     // An enemy outside the bot's room is fought if it is this close and nothing is in the way.
     private const float SightRange = 12f;
 
+    // The turns from "straight away" that a retreat tries, in this order (degrees), and how far it looks ahead (m).
+    private static readonly float[] RetreatTurns = [0f, 45f, -45f, 90f, -90f, 135f, -135f];
+
+    private const float RetreatLook = 2f;
+
     private const float DoorReach = 1.8f;
 
     private const float StairsReach = 1.2f;
@@ -83,7 +88,9 @@ internal sealed class FightBot
                 : PlayerInput.None with { SelectSlot = slot };
         }
 
-        var target = ChooseTarget(player);
+        var seen = Visible(player);
+        var target = seen.FirstOrDefault();
+        var threat = seen.FirstOrDefault(each => each is Ghoul { State: GhoulState.WindingUp });
         var vial = Nearest(player, _world.KnownBloodVials.Where(each => !each.IsTaken).Select(each => each.Position));
         var key = Nearest(player, _world.Loot.Where(each => each.Kind == LootKind.Key && !each.IsTaken).Select(each => each.Position));
         var rounds = _isRanged ? player.Ranged.Magazine.Rounds : 0;
@@ -91,13 +98,14 @@ internal sealed class FightBot
         var view = new FightView(
             player.Health, player.MaxHealth, _isRanged, _reach, reloading, rounds,
             target is null ? null : DistanceTo(player, target), target is not null && Sees(player, target.Body.Position),
-            vial?.Distance, key?.Distance);
+            vial?.Distance, key?.Distance, threat is null ? null : DistanceTo(player, threat));
         var choice = FightPolicy.Decide(view);
         _pressed = choice.Attack && !_pressed;
         return choice.Goal switch
         {
             FightGoal.Hold => PlayerInput.None with { Reload = choice.Reload },
             FightGoal.Fight => Attack(player, target!),
+            FightGoal.Retreat => Retreat(player, target!, threat ?? target!, choice.Attack),
             FightGoal.Approach => WalkTo(target!.Body.Position),
             FightGoal.Vial => WalkTo(vial!.Value.Point),
             FightGoal.Key => WalkTo(key!.Value.Point),
@@ -114,20 +122,53 @@ internal sealed class FightBot
         return _isRanged ? PlayerInput.None with { Shoot = _pressed } : PlayerInput.None with { Melee = _pressed };
     }
 
+    // Walks away from <from> with the view on the target (a melee bot: on the one that strikes). The way back, else
+    // the nearest free direction beside it; where all are walls the bot stands and fights.
+    private PlayerInput Retreat(Player player, ITarget target, ITarget from, bool shoot)
+    {
+        var aimAt = _isRanged ? target : from;
+        PhotoStudio.Face(player, new Vector3(aimAt.Body.Position.X, aimAt.Body.Position.Y + (aimAt.Body.Height / 2f), aimAt.Body.Position.Z));
+        var away = Vector3.Normalize(new Vector3(player.Position.X - from.Body.Position.X, 0f, player.Position.Z - from.Body.Position.Z));
+        if (RetreatMove(player, away) is not { } move)
+        {
+            return Attack(player, target);
+        }
+
+        return PlayerInput.None with { Move = move, Shoot = shoot && _pressed };
+    }
+
+    // The first of the directions from straight away to sideways that is free for a few metres, as a move in the view.
+    private Vector2? RetreatMove(Player player, Vector3 away)
+    {
+        foreach (var degrees in RetreatTurns)
+        {
+            var turn = degrees * MathF.PI / 180f;
+            var direction = new Vector3(
+                (away.X * MathF.Cos(turn)) - (away.Z * MathF.Sin(turn)), 0f, (away.X * MathF.Sin(turn)) + (away.Z * MathF.Cos(turn)));
+            if (Pathfinder.CanWalkStraight(_world.Level, player.Position, player.Position + (direction * RetreatLook), BodySizes.Player.Radius))
+            {
+                var view = player.View;
+                return new Vector2(Vector3.Dot(direction, view.FlatRight), Vector3.Dot(direction, view.FlatForward));
+            }
+        }
+
+        return null;
+    }
+
     private void UpdateRoom()
     {
         var cell = Play.Cell(_world.Player.Position);
         _room = _world.Rooms.FirstOrDefault(room => room.Cells.Contains(cell)) ?? _room;
     }
 
-    // The nearest enemy of the room the bot stands in, or one close by that it can see.
-    private ITarget? ChooseTarget(Player player) => _world.Targets
+    // The enemies of the room the bot stands in, or close by in plain sight, the nearest first.
+    private List<ITarget> Visible(Player player) => _world.Targets
         .Where(each => each is Ghoul or Bat or Gorm && each.IsHittable)
         .Select(each => (Enemy: each, Distance: DistanceTo(player, each)))
         .Where(each => _room.Cells.Contains(Play.Cell(each.Enemy.Body.Position)) || (each.Distance <= SightRange && Sees(player, each.Enemy.Body.Position)))
         .OrderBy(each => each.Distance)
         .Select(each => each.Enemy)
-        .FirstOrDefault();
+        .ToList();
 
     private static float DistanceTo(Player player, ITarget target) =>
         MathF.Max(0f, Play.Distance(player.Position, target.Body.Position) - target.Body.Radius);
