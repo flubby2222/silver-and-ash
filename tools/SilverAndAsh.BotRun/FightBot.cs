@@ -113,14 +113,15 @@ internal sealed class FightBot
             player.Health, player.MaxHealth, _isRanged, _reach, reloading, rounds,
             target is null ? null : DistanceTo(player, target), target is not null && Sees(player, target),
             vial?.Distance, key?.Distance, threat is null ? null : DistanceTo(player, threat),
-            seen.Count(each => each is Ghoul && DistanceTo(player, each) < FightPolicy.CrowdRange));
+            seen.Count(each => each is Ghoul && DistanceTo(player, each) < FightPolicy.CrowdRange),
+            player.IsGrounded && !player.IsDodging && player.Stamina.CanPayFor(_balance.Player.DodgeStaminaSegments));
         var choice = FightPolicy.Decide(view);
         _pressed = choice.Attack && !_pressed;
         return choice.Goal switch
         {
             FightGoal.Hold => PlayerInput.None with { Reload = choice.Reload },
             FightGoal.Fight => Attack(player, target!),
-            FightGoal.Retreat => Retreat(player, target!, threat ?? target!, seen, choice.Attack, choice.Reload),
+            FightGoal.Retreat => Retreat(player, target!, threat ?? target!, seen, choice.Attack, choice.Reload, choice.Dodge),
             FightGoal.Approach => WalkTo(target!.Body.Position),
             FightGoal.Vial => WalkToVial(vial!.Value),
             FightGoal.Key => WalkTo(key!.Value.Point),
@@ -161,7 +162,7 @@ internal sealed class FightBot
 
     // The step of a retreat: the view stays on the aim, the walk goes where FightRetreat finds the ground free of the
     // blows that are coming; where every way is a wall the bot stands and fights.
-    private PlayerInput Retreat(Player player, ITarget target, ITarget from, IReadOnlyList<ITarget> seen, bool shoot, bool reload)
+    private PlayerInput Retreat(Player player, ITarget target, ITarget from, IReadOnlyList<ITarget> seen, bool shoot, bool reload, bool dodge)
     {
         var aimAt = _isRanged ? target : from;
         PhotoStudio.Face(player, new Vector3(aimAt.Body.Position.X, aimAt.Body.Position.Y + (aimAt.Body.Height / 2f), aimAt.Body.Position.Z));
@@ -177,7 +178,7 @@ internal sealed class FightBot
         var view = player.View;
         var flat = new Vector3(direction.X, 0f, direction.Y);
         var move = new Vector2(Vector3.Dot(flat, view.FlatRight), Vector3.Dot(flat, view.FlatForward));
-        return PlayerInput.None with { Move = move, Shoot = shoot && _pressed, Reload = reload };
+        return PlayerInput.None with { Move = move, Shoot = shoot && _pressed, Reload = reload, Dash = dodge };
     }
 
     // What the bot makes of an enemy: its body and, when it shows a blow coming, where that blow lands: a ghoul where it

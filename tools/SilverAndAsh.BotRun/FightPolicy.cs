@@ -29,7 +29,8 @@ internal enum FightGoal
 
 /// <summary>
 /// What the bot sees of one moment (<paramref name="ThreatDistance"/>: the nearest enemy that draws back for a blow, as
-/// its body shows it; <paramref name="Crowd"/>: how many ghouls stand within <see cref="FightPolicy.CrowdRange"/>). Distances are in metres, flat, to the edge of the body. Everything the policy needs
+/// its body shows it; <paramref name="Crowd"/>: how many ghouls stand within <see cref="FightPolicy.CrowdRange"/>;
+/// <paramref name="CanDodge"/>: on the ground, not dodging, and the stamina pays a dodge). Distances are in metres, flat, to the edge of the body. Everything the policy needs
 /// and nothing of the world - so the decision is a function and can be tested with plain numbers.
 /// </summary>
 internal readonly record struct FightView(
@@ -44,10 +45,11 @@ internal readonly record struct FightView(
     float? VialDistance,
     float? KeyDistance,
     float? ThreatDistance = null,
-    int Crowd = 0);
+    int Crowd = 0,
+    bool CanDodge = false);
 
-/// <summary>The bot's decision: where to go or stand, whether to attack, whether to reload.</summary>
-internal readonly record struct FightChoice(FightGoal Goal, bool Attack, bool Reload);
+/// <summary>The bot's decision: where to go or stand, whether to attack, whether to reload, whether to dodge (Shift).</summary>
+internal readonly record struct FightChoice(FightGoal Goal, bool Attack, bool Reload, bool Dodge = false);
 
 /// <summary>
 /// The bot's whole play, fixed and simple (issues #803, #805): step back from an enemy that draws back for a blow, keep a
@@ -88,7 +90,7 @@ internal static class FightPolicy
     {
         if (ShouldStepBack(view))
         {
-            return new(FightGoal.Retreat, CanShootOnTheWay(view), MustReload(view));
+            return new(FightGoal.Retreat, CanShootOnTheWay(view), MustReload(view), view.CanDodge && view.ThreatDistance < DodgeRange);
         }
 
         if (MustReload(view))
