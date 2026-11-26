@@ -846,6 +846,24 @@ public class ShowroomLayoutTests
     }
 
     [Fact]
+    public void A_pistol_bullet_flies_through_the_exhibits_and_ends_in_the_wall_as_a_bullet_impact()
+    {
+        // Issue #798 (241): the exhibits take no hit, so they do not stop a bullet: it ends where the wall is, with its mark.
+        var place = Layout.Placed.First(place => place.Piece is EnemyPiece);
+        var exhibit = Layout.Level.CellCenter(place.X, place.Z);
+        var world = Layout.NewWorldAt(place.X - 1, place.Z, exhibit + new Vector3(0f, 1.2f, 0f));
+        Assert.Equal(WeaponKind.Pistol, world.Player.Ranged.Kind);
+
+        world.Tick(PlayerInput.None with { Shoot = true });
+
+        Assert.Equal(WeaponKind.Pistol, Assert.Single(world.Events.OfType<ShotFired>()).Weapon);
+        Assert.Empty(world.Events.OfType<TargetHitBy>());
+        var impact = Assert.Single(world.Events.OfType<BulletImpact>());
+        Assert.Equal(WeaponKind.Pistol, impact.Weapon);
+        Assert.True(impact.Point.X > exhibit.X + Level.CellSize / 2f, "The bullet stopped at the exhibit instead of flying on to the wall.");
+    }
+
+    [Fact]
     public void The_enemies_are_harmless_exhibits_and_nobody_dies()
     {
         // Stand next to each enemy for ten seconds, striking and shooting at it all the time.

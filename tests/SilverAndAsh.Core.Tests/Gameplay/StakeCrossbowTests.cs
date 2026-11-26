@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
 using SilverAndAsh.Core.World;
+using static SilverAndAsh.Core.Tests.TestKit;
 
 namespace SilverAndAsh.Core.Tests.Gameplay;
 
@@ -134,13 +135,16 @@ public class StakeCrossbowTests
     [Fact]
     public void Each_target_in_the_row_takes_the_full_damage()
     {
-        // All of them are hit at the same height, so each one loses the same: the damage does not fall off along the row.
+        // All of them are hit at the same height, so each one loses exactly the same: the damage does not fall off along the row.
         var world = World(Row(MostTargets));
 
-        Shoot(world);
+        var events = Shoot(world);
 
-        Assert.All(world.Dummies, dummy => Assert.Equal(Lost(world.Dummies[0]), Lost(dummy)));
-        Assert.True(Lost(world.Dummies[0]) >= Crossbow.Damage);
+        // The shot goes out at eye height, which is head height on a dummy: every hit is a head shot of the same size.
+        var headShot = DamageRules.Standard().Calculate(new Hit(Weapon.StakeCrossbow, HitZone.Head, Crossbow.Damage)).Amount;
+        Assert.All(events.OfType<DummyHit>(), hit => Assert.True(hit.Critical, "Not a head shot - the expected damage would be wrong."));
+        Assert.Equal(MostTargets, events.OfType<DummyHit>().Count());
+        Assert.All(world.Dummies, dummy => Assert.Equal(headShot, Lost(dummy)));
     }
 
     [Fact]
@@ -310,6 +314,28 @@ public class StakeCrossbowTests
 
         var damage = (int)MathF.Round(Crossbow.Damage * Crossbow.HeadshotMultiplier, MidpointRounding.AwayFromZero);
         Assert.Contains(new DummyHit(0, damage, Critical: true), world.Events);
+    }
+
+    [Fact]
+    public void A_crossbow_shot_at_Gorm_s_head_through_the_world_does_the_head_shot_damage()
+    {
+        // Issue #798 (233): not only the rule - the shot flies through GameWorld, finds Gorm's head zone and reports it.
+        // Gorm stands still and does not attack, so the aim at his head holds until the shot.
+        var gormBalance = Balance.Default.Gorm with { MaxHealth = 100_000, Speed = 0f, NearRange = 0f, FarRange = 0f };
+        var world = GormHallWorld(balance: Balance.Default with { Gorm = gormBalance });
+        EnterGormHall(world);
+        world.Player.Equip(0, WeaponKind.StakeCrossbow);
+        var gorm = world.Gorm!;
+        var head = gorm.Position + gorm.Facing * BodySizes.Gorm.Radius + new Vector3(0f, BodySizes.Gorm.Height - BodySizes.Gorm.HeadHeight / 2f, 0f);
+        Assert.Equal(HitZone.BossHead, gorm.ZoneAt(head));
+        AimAt(world, head);
+
+        world.Tick(PlayerInput.None with { Shoot = true });
+
+        var damage = (int)MathF.Round(Crossbow.Damage * gormBalance.HeadMultiplier, MidpointRounding.AwayFromZero);
+        Assert.True(damage > Crossbow.Damage, "The head must count more than the body - otherwise the test proves nothing.");
+        Assert.Contains(new GormHit(gorm.Id, damage, Critical: true), world.Events);
+        Assert.Equal(gormBalance.MaxHealth - damage, gorm.Health);
     }
 
     /// <summary>Turns the view (like the mouse would) so it looks at <paramref name="point"/>.</summary>
