@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.World;
 
@@ -100,7 +101,7 @@ internal sealed class FightBot
         var reloading = _isRanged && player.Ranged.Magazine.IsReloading;
         var view = new FightView(
             player.Health, player.MaxHealth, _isRanged, _reach, reloading, rounds,
-            target is null ? null : DistanceTo(player, target), target is not null && Sees(player, target.Body.Position),
+            target is null ? null : DistanceTo(player, target), target is not null && Sees(player, target),
             vial?.Distance, key?.Distance, threat is null ? null : DistanceTo(player, threat));
         var choice = FightPolicy.Decide(view);
         _pressed = choice.Attack && !_pressed;
@@ -178,7 +179,7 @@ internal sealed class FightBot
     private List<ITarget> Visible(Player player) => _world.Targets
         .Where(each => each is Ghoul or Bat or Gorm && each.IsHittable)
         .Select(each => (Enemy: each, Distance: DistanceTo(player, each)))
-        .Where(each => _room.Cells.Contains(Play.Cell(each.Enemy.Body.Position)) || (each.Distance <= SightRange && Sees(player, each.Enemy.Body.Position)))
+        .Where(each => _room.Cells.Contains(Play.Cell(each.Enemy.Body.Position)) || (each.Distance <= SightRange && Sees(player, each.Enemy)))
         .OrderBy(each => each.Distance)
         .Select(each => each.Enemy)
         .ToList();
@@ -186,8 +187,9 @@ internal sealed class FightBot
     private static float DistanceTo(Player player, ITarget target) =>
         MathF.Max(0f, Play.Distance(player.Position, target.Body.Position) - target.Body.Radius);
 
-    private bool Sees(Player player, Vector3 point) =>
-        Pathfinder.CanWalkStraight(_world.Level, player.Position, point, 0.05f, float.PositiveInfinity);
+    // The enemy's middle can be seen from the eyes: nothing solid in between (a bat may hover over a pedestal).
+    private bool Sees(Player player, ITarget enemy) => LineOfSight.IsClear(
+        _world.Level, player.EyePosition, enemy.Body.Position + new Vector3(0f, enemy.Body.Height / 2f, 0f));
 
     private static (Vector3 Point, float Distance)? Nearest(Player player, IEnumerable<Vector3> points) => points
         .Select(point => (Point: point, Distance: Play.Distance(player.Position, point)))

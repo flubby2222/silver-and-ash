@@ -94,7 +94,7 @@ internal static class FightPolicy
             return new(FightGoal.Hold, false, false);
         }
 
-        if (IsHurt(view) && view.VialDistance <= PickupRange)
+        if (IsHurt(view) && view.VialDistance <= PickupRange && !IsInStrikingDistance(view))
         {
             return new(FightGoal.Vial, false, false);
         }
@@ -117,6 +117,10 @@ internal static class FightPolicy
     private static bool CanShootOnTheWay(FightView view) =>
         view.IsRanged && view.Rounds > 0 && !view.IsReloading && view.TargetInSight
         && view.TargetDistance <= AttackDistance(view.IsRanged, view.Reach);
+
+    // An enemy in sight within the distance an attack starts from is dealt with before the bot walks to a vial.
+    private static bool IsInStrikingDistance(FightView view) =>
+        view.TargetInSight && view.TargetDistance <= AttackDistance(view.IsRanged, view.Reach);
 
     private static bool IsHurt(FightView view) => view.Health < view.MaxHealth * HurtShare;
 
