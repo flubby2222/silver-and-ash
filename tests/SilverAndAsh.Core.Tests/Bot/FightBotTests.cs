@@ -35,14 +35,14 @@ public class FightBotTests
     [Fact]
     public void AHurtPlayerWithAVialInReach_GoesForTheVialBeforeFighting()
     {
-        var hurt = (int)(Balance.Player.MaxHealth * FightPolicy.HurtShare) - 1;
+        var hurt = Balance.Player.MaxHealth / 2 - 1;
         Assert.Equal(FightGoal.Vial, FightPolicy.Decide(View(health: hurt, target: 1f, vial: 10f)).Goal);
     }
 
     [Fact]
     public void AtHalfHealth_ThePlayerIsNotYetHurt()
     {
-        var half = (int)(Balance.Player.MaxHealth * FightPolicy.HurtShare);
+        var half = Balance.Player.MaxHealth / 2;
         Assert.Equal(FightGoal.Fight, FightPolicy.Decide(View(health: half, target: 1f, vial: 10f)).Goal);
     }
 
