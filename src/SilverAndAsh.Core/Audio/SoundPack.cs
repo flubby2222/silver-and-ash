@@ -130,6 +130,14 @@ public sealed class SoundPack
         [SoundKind.AxeHit] = ["axt-treffer-fleisch.wav"],
         [SoundKind.AxeHardHit] = ["axt-treffer-hart.wav"],
         [SoundKind.AxeCharge] = ["axt-aufladen.wav"],
+
+        // Issue #786: the whip, from round 1 of the listening test of issue #202 (tools/audio/peitschenklang.py). Swing "C
+        // long hiss", hit "B weal", hard hit "C stone trickles", charge "B whirl", pull "C leather jerk".
+        [SoundKind.WhipSwing] = ["peitsche-schlag.wav"],
+        [SoundKind.WhipHit] = ["peitsche-treffer-fleisch.wav"],
+        [SoundKind.WhipHardHit] = ["peitsche-treffer-hart.wav"],
+        [SoundKind.WhipCharge] = ["peitsche-aufladen.wav"],
+        [SoundKind.WhipPull] = ["peitsche-heranziehen.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>

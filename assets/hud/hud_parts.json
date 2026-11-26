@@ -1,7 +1,7 @@
 {
  "image": "hud_parts.png",
  "width": 512,
- "height": 291,
+ "height": 305,
  "designWidth": 854,
  "designHeight": 480,
  "notes": [
@@ -855,6 +855,26 @@
    "layoutX": 698,
    "layoutY": 456,
    "source": "tools/hud/hud_axt.py"
+  },
+  {
+   "name": "icon_whip",
+   "x": 0,
+   "y": 292,
+   "w": 22,
+   "h": 13,
+   "layoutX": 698,
+   "layoutY": 456,
+   "source": "tools/hud/hud_peitsche.py"
+  },
+  {
+   "name": "icon_whip_active",
+   "x": 23,
+   "y": 292,
+   "w": 22,
+   "h": 13,
+   "layoutX": 698,
+   "layoutY": 456,
+   "source": "tools/hud/hud_peitsche.py"
   }
  ]
 }

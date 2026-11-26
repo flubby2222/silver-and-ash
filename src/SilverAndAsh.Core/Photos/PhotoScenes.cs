@@ -41,6 +41,7 @@ public static class PhotoScenes
         .. ShowroomBossDoorScenes(),
         .. EquipmentScenes(),
         .. CourseScenes.All(),
+        .. WhipScenes.All(),
     ];
 
     /// <summary>
@@ -952,7 +953,7 @@ public static class PhotoScenes
 
     // The showroom with a player 0.8 m south of the first piece that is `isPiece`, looking at it - close enough for F
     // (issue #317).
-    private static GameWorld BeforeEquipment(PhotoStudio studio, Func<ShowroomPiece, bool> isPiece)
+    internal static GameWorld BeforeEquipment(PhotoStudio studio, Func<ShowroomPiece, bool> isPiece)
     {
         var layout = ShowroomLayout.Build();
         var placed = layout.Placed.First(place => isPiece(place.Piece));
@@ -1206,7 +1207,7 @@ public static class PhotoScenes
     private static PhotoSetup ChargedClubSwing(PhotoStudio studio) => ChargedSwing(ClubInHand(studio.Arena('G', 10)), 7);
 
     // Charges fully, lets go and stops `framesAfter` ticks after the swing.
-    private static PhotoSetup ChargedSwing(GameWorld world, int framesAfter)
+    internal static PhotoSetup ChargedSwing(GameWorld world, int framesAfter)
     {
         var released = false;
         return new PhotoSetup(world)
@@ -1351,7 +1352,7 @@ public static class PhotoScenes
         return world;
     }
 
-    private static GameWorld AllWeapons(GameWorld world)
+    internal static GameWorld AllWeapons(GameWorld world)
     {
         world.Player.EquipMelee(WeaponKind.Club);
         world.Player.Equip(1, WeaponKind.Rifle);

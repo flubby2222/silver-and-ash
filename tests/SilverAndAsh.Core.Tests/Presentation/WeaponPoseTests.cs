@@ -196,11 +196,17 @@ public class WeaponPoseTests
     // Of each triangle only the piece beyond the near plane and within the picture's edges is drawn
     // (the sleeves are long on purpose and run out of the picture). That piece is the triangle clipped by those
     // planes; its farthest point is one of its corners. None lies farther from the eye (the camera-space origin) than
-    // the reach.
-    internal static void AssertWithinReach(string file, Matrix4x4 pose, Func<string, Matrix4x4> turnOf)
+    // the reach. Only the parts drawn with the weapons are checked: all of them, or those named by drawnWithWeapons (the
+    // whip's lash is drawn in the world's depth, issue #786).
+    internal static void AssertWithinReach(string file, Matrix4x4 pose, Func<string, Matrix4x4> turnOf, Func<string, bool>? drawnWithWeapons = null)
     {
         foreach (var (name, polygons) in Placed(file, pose, turnOf))
         {
+            if (drawnWithWeapons is not null && !drawnWithWeapons(name))
+            {
+                continue;
+            }
+
             foreach (var triangle in polygons)
             {
                 var drawn = Clip(triangle, point => point.Z - WeaponPose.NearPlane);
