@@ -81,10 +81,10 @@ internal static class FightPolicy
     {
         if (ShouldStepBack(view))
         {
-            return new(FightGoal.Retreat, CanShootOnTheWay(view), false);
+            return new(FightGoal.Retreat, CanShootOnTheWay(view), MustReload(view));
         }
 
-        if (view.IsRanged && view.Rounds == 0 && !view.IsReloading)
+        if (MustReload(view))
         {
             return new(FightGoal.Hold, false, true);
         }
@@ -111,6 +111,8 @@ internal static class FightPolicy
     private static bool ShouldStepBack(FightView view) => view.IsRanged
         ? view.TargetDistance < KeepAway
         : view.ThreatDistance < DodgeRange;
+
+    private static bool MustReload(FightView view) => view.IsRanged && view.Rounds == 0 && !view.IsReloading;
 
     private static bool CanShootOnTheWay(FightView view) =>
         view.IsRanged && view.Rounds > 0 && !view.IsReloading && view.TargetInSight

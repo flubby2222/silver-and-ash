@@ -22,9 +22,12 @@ internal sealed class FightBot
     private const float SightRange = 12f;
 
     // The turns from "straight away" that a retreat tries, in this order (degrees), and how far it looks ahead (m).
-    private static readonly float[] RetreatTurns = [0f, 45f, -45f, 90f, -90f, 135f, -135f];
+    private static readonly float[] RetreatTurns = [0f, 30f, -30f, 60f, -60f, 90f, -90f, 135f, -135f];
 
-    private const float RetreatLook = 2f;
+    private const float RetreatLook = 3f;
+
+    // Enemies this close (to the edge of the body) push the retreat away from themselves, too.
+    private const float CrowdRange = 6f;
 
     private const float DoorReach = 1.8f;
 
@@ -90,7 +93,7 @@ internal sealed class FightBot
 
         var seen = Visible(player);
         var target = seen.FirstOrDefault();
-        var threat = seen.FirstOrDefault(each => each is Ghoul { State: GhoulState.WindingUp });
+        var threat = seen.FirstOrDefault(IsAnnouncingBlow);
         var vial = Nearest(player, _world.KnownBloodVials.Where(each => !each.IsTaken).Select(each => each.Position));
         var key = Nearest(player, _world.Loot.Where(each => each.Kind == LootKind.Key && !each.IsTaken).Select(each => each.Position));
         var rounds = _isRanged ? player.Ranged.Magazine.Rounds : 0;
@@ -105,7 +108,7 @@ internal sealed class FightBot
         {
             FightGoal.Hold => PlayerInput.None with { Reload = choice.Reload },
             FightGoal.Fight => Attack(player, target!),
-            FightGoal.Retreat => Retreat(player, target!, threat ?? target!, choice.Attack),
+            FightGoal.Retreat => Retreat(player, target!, threat ?? target!, seen, choice.Attack, choice.Reload),
             FightGoal.Approach => WalkTo(target!.Body.Position),
             FightGoal.Vial => WalkTo(vial!.Value.Point),
             FightGoal.Key => WalkTo(key!.Value.Point),
@@ -122,19 +125,41 @@ internal sealed class FightBot
         return _isRanged ? PlayerInput.None with { Shoot = _pressed } : PlayerInput.None with { Melee = _pressed };
     }
 
+    // What an enemy shows before it strikes: the ghoul draws back, the bat hovers and screeches.
+    private static bool IsAnnouncingBlow(ITarget enemy) =>
+        enemy is Ghoul { State: GhoulState.WindingUp } or Bat { State: BatState.Screeching };
+
     // Walks away from <from> with the view on the target (a melee bot: on the one that strikes). The way back, else
     // the nearest free direction beside it; where all are walls the bot stands and fights.
-    private PlayerInput Retreat(Player player, ITarget target, ITarget from, bool shoot)
+    private PlayerInput Retreat(Player player, ITarget target, ITarget from, IReadOnlyList<ITarget> seen, bool shoot, bool reload)
     {
         var aimAt = _isRanged ? target : from;
         PhotoStudio.Face(player, new Vector3(aimAt.Body.Position.X, aimAt.Body.Position.Y + (aimAt.Body.Height / 2f), aimAt.Body.Position.Z));
-        var away = Vector3.Normalize(new Vector3(player.Position.X - from.Body.Position.X, 0f, player.Position.Z - from.Body.Position.Z));
-        if (RetreatMove(player, away) is not { } move)
+        if (RetreatMove(player, AwayFrom(player, from, seen)) is not { } move)
         {
             return Attack(player, target);
         }
 
-        return PlayerInput.None with { Move = move, Shoot = shoot && _pressed };
+        return PlayerInput.None with { Move = move, Shoot = shoot && _pressed, Reload = reload };
+    }
+
+    // Away from the enemy that strikes, and the more so the closer the others stand: each pushes with 1 / distance squared.
+    private static Vector3 AwayFrom(Player player, ITarget from, IReadOnlyList<ITarget> seen)
+    {
+        var sum = Push(player, from, 4f);
+        foreach (var each in seen.Where(other => other != from && DistanceTo(player, other) < CrowdRange))
+        {
+            sum += Push(player, each, 1f);
+        }
+
+        return sum.LengthSquared() > 0f ? Vector3.Normalize(sum) : Vector3.UnitZ;
+    }
+
+    private static Vector3 Push(Player player, ITarget enemy, float weight)
+    {
+        var flat = new Vector3(player.Position.X - enemy.Body.Position.X, 0f, player.Position.Z - enemy.Body.Position.Z);
+        var distance = MathF.Max(flat.Length(), 0.1f);
+        return flat / distance * (weight / (distance * distance));
     }
 
     // The first of the directions from straight away to sideways that is free for a few metres, as a move in the view.
