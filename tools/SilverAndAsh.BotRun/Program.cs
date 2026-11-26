@@ -66,7 +66,13 @@ for (var i = 1; i < args.Length; i++)
         case "--repo" when i + 1 < args.Length:
             repo = args[++i];
             break;
-        case "--weapon" when i + 1 < args.Length && FightWeapons.TryParse(args[i + 1], out var weapons):
+        case "--weapon" when i + 1 < args.Length:
+            if (!FightWeapons.TryParse(args[i + 1], out var weapons))
+            {
+                Console.Error.WriteLine(FightWeapons.UnknownMessage(args[i + 1]));
+                return 2;
+            }
+
             fight.Weapons = weapons;
             i++;
             break;

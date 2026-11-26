@@ -54,7 +54,7 @@ internal readonly record struct FightChoice(FightGoal Goal, bool Attack, bool Re
 /// <summary>
 /// The bot's whole play, fixed and simple (issues #803, #805): step back from an enemy that draws back for a blow, keep a
 /// ranged weapon's distance, reload only with nobody near, heal when hurt and a vial lies in reach, fight what is in
-/// front of it, otherwise walk the route. No choice of weapon, no dash or dodge. What it wins is a lower bound of what a
+/// front of it, otherwise walk the route. No choice of weapon. What it wins is a lower bound of what a
 /// player can do.
 /// </summary>
 internal static class FightPolicy
