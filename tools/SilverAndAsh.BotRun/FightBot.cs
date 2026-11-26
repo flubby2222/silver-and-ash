@@ -2,6 +2,7 @@ using System.Numerics;
 using SilverAndAsh.Core;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Photos;
 using SilverAndAsh.Core.World;
 
@@ -21,6 +22,17 @@ internal sealed class FightBot
     // An enemy outside the bot's room is fought if it is this close and nothing is in the way.
     private const float SightRange = 12f;
 
+    // A bat's dive hits within this far (m) of the spot it dived at.
+    private const float BatDiveRadius = 1.5f;
+
+    // Enemies this close (to the edge of the body) push the retreat away from themselves, too.
+    private const float PushRange = 6f;
+
+    // A vial is given up when the bot has not come this much nearer (m) in this many ticks.
+    private const float VialProgress = 0.5f;
+
+    private const int VialPatience = 180;
+
     private const float DoorReach = 1.8f;
 
     private const float StairsReach = 1.2f;
@@ -39,6 +51,12 @@ internal sealed class FightBot
     private const int SidestepTicks = 40;
 
     private readonly Dictionary<int, Vector3?> _nearSides = [];
+    private readonly Balance _balance;
+    private Vector2? _lastStep;
+    private readonly HashSet<Vector3> _givenUp = [];
+    private Vector3 _vialAim;
+    private float _vialBest;
+    private long _vialSince;
     private readonly Play _play;
     private readonly GameWorld _world;
     private readonly WeaponKind _weapon;
@@ -59,6 +77,7 @@ internal sealed class FightBot
         _play = play;
         _world = play.World;
         _weapon = weapon;
+        _balance = balance;
         _isRanged = Weapons.Info(weapon).Hand == WeaponHand.Ranged;
         _reach = _isRanged ? balance.Ranged(weapon).Range : balance.Melee(weapon).Range;
         _room = _world.Rooms.First(room => room.Kind == RoomKind.Start);
@@ -83,26 +102,49 @@ internal sealed class FightBot
                 : PlayerInput.None with { SelectSlot = slot };
         }
 
-        var target = ChooseTarget(player);
-        var vial = Nearest(player, _world.KnownBloodVials.Where(each => !each.IsTaken).Select(each => each.Position));
+        var seen = Visible(player);
+        var target = seen.FirstOrDefault();
+        var threat = seen.FirstOrDefault(IsAnnouncingBlow);
+        var vial = Nearest(player, _world.KnownBloodVials.Where(each => !each.IsTaken && !_givenUp.Contains(each.Position)).Select(each => each.Position));
         var key = Nearest(player, _world.Loot.Where(each => each.Kind == LootKind.Key && !each.IsTaken).Select(each => each.Position));
         var rounds = _isRanged ? player.Ranged.Magazine.Rounds : 0;
         var reloading = _isRanged && player.Ranged.Magazine.IsReloading;
         var view = new FightView(
             player.Health, player.MaxHealth, _isRanged, _reach, reloading, rounds,
-            target is null ? null : DistanceTo(player, target), target is not null && Sees(player, target.Body.Position),
-            vial?.Distance, key?.Distance);
+            target is null ? null : DistanceTo(player, target), target is not null && Sees(player, target),
+            vial?.Distance, key?.Distance, threat is null ? null : DistanceTo(player, threat),
+            seen.Count(each => each is Ghoul && DistanceTo(player, each) < FightPolicy.CrowdRange),
+            player.IsGrounded && !player.IsDodging && player.Stamina.CanPayFor(_balance.Player.DodgeStaminaSegments));
         var choice = FightPolicy.Decide(view);
         _pressed = choice.Attack && !_pressed;
         return choice.Goal switch
         {
             FightGoal.Hold => PlayerInput.None with { Reload = choice.Reload },
             FightGoal.Fight => Attack(player, target!),
+            FightGoal.Retreat => Retreat(player, target!, threat ?? target!, seen, choice.Attack, choice.Reload, choice.Dodge),
             FightGoal.Approach => WalkTo(target!.Body.Position),
-            FightGoal.Vial => WalkTo(vial!.Value.Point),
+            FightGoal.Vial => WalkToVial(vial!.Value),
             FightGoal.Key => WalkTo(key!.Value.Point),
             _ => Route(player),
         };
+    }
+
+    // Walks to a vial. A vial the bot does not come nearer to for VialPatience ticks (behind something the way finder
+    // does not know) is given up for good.
+    private PlayerInput WalkToVial((Vector3 Point, float Distance) vial)
+    {
+        if (vial.Point != _vialAim || vial.Distance < _vialBest - VialProgress)
+        {
+            _vialAim = vial.Point;
+            _vialBest = vial.Distance;
+            _vialSince = _world.Ticks;
+        }
+        else if (_world.Ticks - _vialSince >= VialPatience)
+        {
+            _givenUp.Add(vial.Point);
+        }
+
+        return WalkTo(vial.Point);
     }
 
     // A tap each other tick: the press starts the swing or shot, the release lets the blade fly. The weapon's own
@@ -114,26 +156,71 @@ internal sealed class FightBot
         return _isRanged ? PlayerInput.None with { Shoot = _pressed } : PlayerInput.None with { Melee = _pressed };
     }
 
+    // What an enemy shows before it strikes: the ghoul draws back, the bat hovers and screeches.
+    private static bool IsAnnouncingBlow(ITarget enemy) =>
+        enemy is Ghoul { State: GhoulState.WindingUp } or Bat { State: BatState.Screeching };
+
+    // The step of a retreat: the view stays on the aim, the walk goes where FightRetreat finds the ground free of the
+    // blows that are coming; where every way is a wall the bot stands and fights.
+    private PlayerInput Retreat(Player player, ITarget target, ITarget from, IReadOnlyList<ITarget> seen, bool shoot, bool reload, bool dodge)
+    {
+        var aimAt = _isRanged ? target : from;
+        PhotoStudio.Face(player, new Vector3(aimAt.Body.Position.X, aimAt.Body.Position.Y + (aimAt.Body.Height / 2f), aimAt.Body.Position.Z));
+        var foes = seen.Where(each => DistanceTo(player, each) < PushRange).Select(each => FoeOf(player, each)).ToList();
+        var here = new Vector2(player.Position.X, player.Position.Z);
+        var step = FightRetreat.Choose(here, foes, end => IsFree(player, end), _lastStep);
+        _lastStep = step;
+        if (step is not { } direction)
+        {
+            return Attack(player, target);
+        }
+
+        var view = player.View;
+        var flat = new Vector3(direction.X, 0f, direction.Y);
+        var move = new Vector2(Vector3.Dot(flat, view.FlatRight), Vector3.Dot(flat, view.FlatForward));
+        return PlayerInput.None with { Move = move, Shoot = shoot && _pressed, Reload = reload, Dash = dodge };
+    }
+
+    // What the bot makes of an enemy: its body and, when it shows a blow coming, where that blow lands: a ghoul where it
+    // faces and reaches, a bat where the bot stands now (it dives at the spot it saw).
+    private Foe FoeOf(Player player, ITarget enemy)
+    {
+        var at = new Vector2(enemy.Body.Position.X, enemy.Body.Position.Z);
+        StrikeZone? zone = enemy switch
+        {
+            Ghoul { State: GhoulState.WindingUp } ghoul => new StrikeZone(
+                at, _balance.Ghoul.HitReach, new Vector2(ghoul.Facing.X, ghoul.Facing.Z), MathF.Cos(_balance.Ghoul.AttackHalfAngle * MathF.PI / 180f)),
+            Bat { State: BatState.Screeching } => new StrikeZone(new Vector2(player.Position.X, player.Position.Z), BatDiveRadius, Vector2.UnitY, -1f),
+            _ => null,
+        };
+        return new Foe(at, enemy.Body.Radius, zone);
+    }
+
+    // Free for the retreat: a straight way to the point, no wall, no step up.
+    private bool IsFree(Player player, Vector2 end) => Pathfinder.CanWalkStraight(
+        _world.Level, player.Position, new Vector3(end.X, player.Position.Y, end.Y), BodySizes.Player.Radius);
+
     private void UpdateRoom()
     {
         var cell = Play.Cell(_world.Player.Position);
         _room = _world.Rooms.FirstOrDefault(room => room.Cells.Contains(cell)) ?? _room;
     }
 
-    // The nearest enemy of the room the bot stands in, or one close by that it can see.
-    private ITarget? ChooseTarget(Player player) => _world.Targets
+    // The enemies of the room the bot stands in, or close by in plain sight, the nearest first.
+    private List<ITarget> Visible(Player player) => _world.Targets
         .Where(each => each is Ghoul or Bat or Gorm && each.IsHittable)
         .Select(each => (Enemy: each, Distance: DistanceTo(player, each)))
-        .Where(each => _room.Cells.Contains(Play.Cell(each.Enemy.Body.Position)) || (each.Distance <= SightRange && Sees(player, each.Enemy.Body.Position)))
+        .Where(each => _room.Cells.Contains(Play.Cell(each.Enemy.Body.Position)) || (each.Distance <= SightRange && Sees(player, each.Enemy)))
         .OrderBy(each => each.Distance)
         .Select(each => each.Enemy)
-        .FirstOrDefault();
+        .ToList();
 
     private static float DistanceTo(Player player, ITarget target) =>
         MathF.Max(0f, Play.Distance(player.Position, target.Body.Position) - target.Body.Radius);
 
-    private bool Sees(Player player, Vector3 point) =>
-        Pathfinder.CanWalkStraight(_world.Level, player.Position, point, 0.05f, float.PositiveInfinity);
+    // The enemy's middle can be seen from the eyes: nothing solid in between (a bat may hover over a pedestal).
+    private bool Sees(Player player, ITarget enemy) => LineOfSight.IsClear(
+        _world.Level, player.EyePosition, enemy.Body.Position + new Vector3(0f, enemy.Body.Height / 2f, 0f));
 
     private static (Vector3 Point, float Distance)? Nearest(Player player, IEnumerable<Vector3> points) => points
         .Select(point => (Point: point, Distance: Play.Distance(player.Position, point)))

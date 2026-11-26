@@ -93,6 +93,9 @@ internal static class FightWeapons
         return found.Count > 0;
     }
 
+    /// <summary>The message for a --weapon value that is no weapon (issue #805, hint 263): it names the valid ones.</summary>
+    public static string UnknownMessage(string text) => $"Unknown weapon '{text}'. Valid: all, {Known}.";
+
     public static string Known { get; } = string.Join(", ", Names.Keys.Order());
 }
 
@@ -100,7 +103,7 @@ internal static class FightWeapons
 /// Mode "fight" (issue #803): a mortal player with a real weapon fights his way from the start to Gorm, played by the
 /// simple bot <see cref="FightBot"/>. Nothing is set but the start weapon, which comes the way --give gives it
 /// (<see cref="GiveOptions.GiveTo"/>). Not part of "all": a run takes long, and a lost fight is no finding.
-/// What it measures is a lower bound - the bot neither dodges nor retreats nor picks its weapon.
+/// What it measures is a lower bound - the bot keeps away, retreats and dodges (issue #805) but does not pick its weapon.
 /// </summary>
 internal sealed class FightMode
 {
@@ -118,7 +121,7 @@ internal sealed class FightMode
 
     public IReadOnlyList<WeaponKind> Weapons { get; set; } = FightWeapons.All;
 
-    public const string LowerBound = "NOTE the fight bot plays simply and the same every time (walk or aim, attack, reload, heal at half health, rooms in order up to Gorm; no dodging, no retreat, no side rooms): every result is a lower bound of what a player achieves, not what the game allows.";
+    public const string LowerBound = "NOTE the fight bot plays simply and the same every time (walk or aim, attack, reload, heal at half health, rooms in order up to Gorm; it keeps its distance, steps out of reach and dodges, but picks no weapon and visits no side rooms): every result is a lower bound of what a player achieves, not what the game allows.";
 
     public void Run(LevelZero zero, int seed, Report report)
     {

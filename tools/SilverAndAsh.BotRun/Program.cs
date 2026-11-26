@@ -17,20 +17,10 @@ using SilverAndAsh.Core.World;
 // Exit code: 0 = no findings, 1 = findings, 2 = wrong arguments or the tool itself failed, 3 = assets/balance.json gave
 // a warning (nothing was played, issue #688).
 
-// The modes, in the order "all" plays them. A new mode is one more line here (issue #629), not one more branch.
+// The modes, in the order "all" plays them: see BotModes.cs.
 var stuck = new HangingEnemies();
 var fight = new FightMode();
-BotMode[] modes =
-[
-    new("arena", "every arena door: seal, escape attempts, clear, walk out; two arenas side by side; the boss door", ArenaDoors.Run),
-    new("death", "die in a sealed arena and in the boss fight, restart, walk in again", DeathAndRestart.Run),
-    new("boss", "run to the boss (antechamber, teleporters, boss door), win, climb the stairs", BossRun.Run),
-    new("slam", "the boss door slams shut with a body in its doorway (player, ghoul, bat, Gorm): nobody in the stone", DoorSlam.Run),
-    new("bat", "a bat at the boss portal: knocked at the stone, flying round a player there, falling dead onto a plinth", PortalBat.Run),
-    new("stuck", "stand still in every arena and the boss room: no enemy that hunts a player may hang without attacking", stuck.Run, stuck.PrintLongest),
-    new("seeds", "build every level twice: failures, generator tries, same level for the same seed", SeedProbe.Run, SeedProbe.PrintAttemptNote),
-    new("fight", "a mortal player fights from the start to Gorm with a real weapon (--weapon blade|pistol|axe|whip|crossbow|all); not in all", fight.Run, fight.PrintWinRates, InAll: false),
-];
+var modes = BotModes.Create(stuck, fight);
 var usage = $"Usage: <{string.Join('|', modes.Select(m => m.Name))}|all> [--seeds FROM..TO] [--weapon NAMES (fight only)] [--repo FOLDER]";
 
 if (args.Length == 0 || args[0] is "--help" or "-h")
@@ -66,7 +56,13 @@ for (var i = 1; i < args.Length; i++)
         case "--repo" when i + 1 < args.Length:
             repo = args[++i];
             break;
-        case "--weapon" when i + 1 < args.Length && FightWeapons.TryParse(args[i + 1], out var weapons):
+        case "--weapon" when i + 1 < args.Length:
+            if (!FightWeapons.TryParse(args[i + 1], out var weapons))
+            {
+                Console.Error.WriteLine(FightWeapons.UnknownMessage(args[i + 1]));
+                return 2;
+            }
+
             fight.Weapons = weapons;
             i++;
             break;
