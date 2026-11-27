@@ -323,7 +323,8 @@ public class FightSightTests
 
         // The middle cell is (5, 3), west of the dividing wall and in sight of the player at (2, 2); after the look
         // round the nearest cell it cannot see lies east of the wall.
-        Assert.Equal(inTheMiddle, point.X < Centre(world, 6, 3).X);
+        Assert.Equal(inTheMiddle, point == Centre(world, 5, 3));
+        Assert.Equal(!inTheMiddle, point.X > Centre(world, 6, 3).X);
     }
 
     [Theory]
@@ -356,6 +357,65 @@ public class FightSightTests
         var again = memory.SearchPoint(world.Player, TheRoom(world))!.Value;
 
         Assert.Equal(same, again == first);
+    }
+
+    [Fact]
+    public void WhenTheGhoulIsSeenAgainElsewhere_TheBotRemembersTheLaterSpot()
+    {
+        var (world, _) = Start(Pocket);
+        var memory = new FightMemory(world);
+        var ghoul = TheGhoul(world);
+        Play.PlaceEnemyAt(ghoul, Centre(world, 2, 6));
+        memory.Look(world.Player, TheRoom(world));
+        Play.PlaceEnemyAt(ghoul, Centre(world, 5, 6));
+        memory.Look(world.Player, TheRoom(world));
+        Play.PlaceEnemyAt(ghoul, Centre(world, 11, 4));
+        memory.Look(world.Player, TheRoom(world));
+
+        Assert.True(Vector3.Distance(memory.LastSeenSpot(world.Player)!.Value, Centre(world, 5, 6)) < 0.1f);
+    }
+
+    // Every cell in sight: nothing is left to look at, so the search starts over in the middle of the room.
+    [Fact]
+    public void WhenEveryCellIsSearched_TheSearchStartsOverInTheMiddle()
+    {
+        var (world, _) = Start(["#########", "#.P.....#", "#.......#", "#...G...#", "#.......#", "#.......#", "#########"], RoomKind.Combat);
+        var memory = new FightMemory(world);
+
+        var point = memory.SearchPoint(world.Player, TheRoom(world));
+
+        Assert.Equal(Centre(world, 4, 3), point);
+    }
+
+    // The closed pocket is in the room, but there is no way to it: the search never goes there.
+    [Fact]
+    public void TheSearch_NeverSendsTheBotToACellItCannotWalkTo()
+    {
+        var (world, play) = Start(Pocket, RoomKind.Combat);
+        var memory = new FightMemory(world);
+        var pocket = TheGhoul(world).Body.Position;
+
+        for (var round = 0; round < 150; round++)
+        {
+            var point = memory.SearchPoint(world.Player, TheRoom(world));
+            Assert.NotNull(point);
+            Assert.NotEqual(pocket, point!.Value);
+            play.PlaceAt(point.Value);
+            play.Ticks(10, PlayerInput.None);
+        }
+    }
+
+    [Fact]
+    public void TheSearchOfAnotherRoom_DoesNotGoOnWithTheCellOfTheFirst()
+    {
+        var (world, play) = Arena();
+        var memory = new FightMemory(world);
+        play.Ticks(10, PlayerInput.None);
+        var first = memory.SearchPoint(world.Player, TheRoom(world))!.Value;
+
+        var other = memory.SearchPoint(world.Player, world.Rooms.Single(room => room.Kind == RoomKind.Boss));
+
+        Assert.NotEqual(first, other);
     }
 
     // Issue #809 (hint 273): a ranged bot that sees the target closer than the keep-away distance keeps stepping back.
