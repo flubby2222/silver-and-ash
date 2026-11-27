@@ -12,13 +12,23 @@ public class FightStuckTests
 {
     private static readonly Balance Balance = Balance.Default;
 
+    // Since #809 the bot knows a ghoul only by sight, so it has to look for one it cannot see: the room is a combat room
+    // (not cleared, so it searches it), with an empty start room before it and a closed boss room after it (the route
+    // needs one). The maps, the ghouls and every assertion below are the ones from #807.
     private static GameWorld WorldOf(string map)
     {
-        var level = LevelParser.Parse(map);
-        var cells = Enumerable.Range(0, level.Width).SelectMany(x => Enumerable.Range(0, level.Depth).Select(z => (x, z)))
+        var rows = map.Split((char)10);
+        var left = rows[0].Length;
+        var level = LevelParser.Parse(string.Join((char)10, rows.Select((row, z) => row + (z is >= 1 and <= 3 ? "#...#" : "#####"))));
+        var open = Enumerable.Range(0, level.Width).SelectMany(x => Enumerable.Range(0, level.Depth).Select(z => (x, z)))
             .Where(cell => !level[cell.x, cell.z].IsSolid)
             .ToList();
-        PlacedRoom[] rooms = [new(0, RoomKind.Start, "start", 0, 0, level.Width, level.Depth, 0, cells, [], [])];
+        PlacedRoom[] rooms =
+        [
+            new(0, RoomKind.Start, "s", 0, 0, 0, 0, 0, [], [], []),
+            new(1, RoomKind.Combat, "t", 0, 0, left, level.Depth, 1, open.Where(cell => cell.x < left).ToList(), [], []),
+            new(2, RoomKind.Boss, "boss", left, 0, 5, level.Depth, 2, open.Where(cell => cell.x >= left).ToList(), [], []),
+        ];
         return new GameWorld(level, 1, Balance, [], rooms);
     }
 

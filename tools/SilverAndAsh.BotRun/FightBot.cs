@@ -19,9 +19,6 @@ internal sealed class FightBot
     // The way (a few points) is worked out again this often, and when the goal moves to another cell.
     private const int RepathEvery = 15;
 
-    // An enemy outside the bot's room is fought if it is this close and nothing is in the way.
-    private const float SightRange = 12f;
-
     // A bat's dive hits within this far (m) of the spot it dived at.
     private const float BatDiveRadius = 1.5f;
 
@@ -58,6 +55,7 @@ internal sealed class FightBot
     private float _vialBest;
     private long _vialSince;
     private readonly Play _play;
+    private readonly FightMemory _memory;
     private readonly GameWorld _world;
     private readonly WeaponKind _weapon;
     private readonly bool _isRanged;
@@ -76,6 +74,7 @@ internal sealed class FightBot
     {
         _play = play;
         _world = play.World;
+        _memory = new FightMemory(_world);
         _weapon = weapon;
         _balance = balance;
         _isRanged = Weapons.Info(weapon).Hand == WeaponHand.Ranged;
@@ -88,6 +87,7 @@ internal sealed class FightBot
     {
         var player = _world.Player;
         UpdateRoom();
+        _memory.Look(player, _room);
         var input = Choose(player);
         return player.PendingBoons > 0 ? input with { ChooseBoon = player.CurrentOffer[0] } : input;
     }
@@ -102,18 +102,20 @@ internal sealed class FightBot
                 : PlayerInput.None with { SelectSlot = slot };
         }
 
-        var seen = Visible(player);
+        var seen = _memory.Seen;
         var target = seen.FirstOrDefault();
+        var remembered = target is null ? _memory.LastSeenSpot(player) : null;
+        var search = target is null && remembered is null ? _memory.SearchPoint(player, _room) : null;
         var threat = seen.FirstOrDefault(IsAnnouncingBlow);
         var vial = Nearest(player, _world.KnownBloodVials.Where(each => !each.IsTaken && !_givenUp.Contains(each.Position)).Select(each => each.Position));
-        var key = Nearest(player, _world.Loot.Where(each => each.Kind == LootKind.Key && !each.IsTaken).Select(each => each.Position));
+        var key = Nearest(player, _world.Loot.Where(each => each.Kind == LootKind.Key && !each.IsTaken && _memory.KnowsKey(each)).Select(each => each.Position));
         var rounds = _isRanged ? player.Ranged.Magazine.Rounds : 0;
         var reloading = _isRanged && player.Ranged.Magazine.IsReloading;
         var view = new FightView(
             player.Health, player.MaxHealth, _isRanged, _reach, reloading, rounds,
-            target is null ? null : DistanceTo(player, target), target is not null && Sees(player, target),
+            AimDistance(player, target, remembered), target is not null,
             vial?.Distance, key?.Distance, threat is null ? null : DistanceTo(player, threat),
-            player.IsGrounded && !player.IsDodging && player.Stamina.CanPayFor(_balance.Player.DodgeStaminaSegments));
+            player.IsGrounded && !player.IsDodging && player.Stamina.CanPayFor(_balance.Player.DodgeStaminaSegments), search is not null);
         var choice = FightPolicy.Decide(view);
         _pressed = choice.Attack && !_pressed;
         return choice.Goal switch
@@ -121,9 +123,10 @@ internal sealed class FightBot
             FightGoal.Hold => PlayerInput.None with { Reload = choice.Reload },
             FightGoal.Fight => Attack(player, target!),
             FightGoal.Retreat => Retreat(player, target!, threat ?? target!, seen, choice.Attack, choice.Reload, choice.Dodge),
-            FightGoal.Approach => WalkTo(target!.Body.Position),
+            FightGoal.Approach => WalkTo(target?.Body.Position ?? remembered!.Value),
             FightGoal.Vial => WalkToVial(vial!.Value),
             FightGoal.Key => WalkTo(key!.Value.Point),
+            FightGoal.Search => WalkTo(search!.Value),
             _ => Route(player),
         };
     }
@@ -205,21 +208,12 @@ internal sealed class FightBot
         _room = _world.Rooms.FirstOrDefault(room => room.Cells.Contains(cell)) ?? _room;
     }
 
-    // The enemies of the room the bot stands in, or close by in plain sight, the nearest first.
-    private List<ITarget> Visible(Player player) => _world.Targets
-        .Where(each => each is Ghoul or Bat or Gorm && each.IsHittable)
-        .Select(each => (Enemy: each, Distance: DistanceTo(player, each)))
-        .Where(each => _room.Cells.Contains(Play.Cell(each.Enemy.Body.Position)) || (each.Distance <= SightRange && Sees(player, each.Enemy)))
-        .OrderBy(each => each.Distance)
-        .Select(each => each.Enemy)
-        .ToList();
+    // The distance to the enemy in sight, or to the spot where one was last seen; null with neither.
+    private static float? AimDistance(Player player, ITarget? target, Vector3? remembered) =>
+        target is not null ? DistanceTo(player, target) : remembered is { } spot ? Play.Distance(player.Position, spot) : null;
 
     private static float DistanceTo(Player player, ITarget target) =>
         MathF.Max(0f, Play.Distance(player.Position, target.Body.Position) - target.Body.Radius);
-
-    // The enemy's middle can be seen from the eyes: nothing solid in between (a bat may hover over a pedestal).
-    private bool Sees(Player player, ITarget enemy) => LineOfSight.IsClear(
-        _world.Level, player.EyePosition, enemy.Body.Position + new Vector3(0f, enemy.Body.Height / 2f, 0f));
 
     private static (Vector3 Point, float Distance)? Nearest(Player player, IEnumerable<Vector3> points) => points
         .Select(point => (Point: point, Distance: Play.Distance(player.Position, point)))
