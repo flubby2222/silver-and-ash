@@ -113,7 +113,6 @@ internal sealed class FightBot
             player.Health, player.MaxHealth, _isRanged, _reach, reloading, rounds,
             target is null ? null : DistanceTo(player, target), target is not null && Sees(player, target),
             vial?.Distance, key?.Distance, threat is null ? null : DistanceTo(player, threat),
-            seen.Count(each => each is Ghoul && DistanceTo(player, each) < FightPolicy.CrowdRange),
             player.IsGrounded && !player.IsDodging && player.Stamina.CanPayFor(_balance.Player.DodgeStaminaSegments));
         var choice = FightPolicy.Decide(view);
         _pressed = choice.Attack && !_pressed;
