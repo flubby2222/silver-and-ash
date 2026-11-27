@@ -109,6 +109,33 @@ public class FightSightTests
         Assert.Equal(seen, memory.Seen.Count == 1);
     }
 
+    [Fact]
+    public void AnEnemyInTheRoom_IsSeenFromAnyDistance()
+    {
+        // One long room: the ghoul stands 14 m from the player, in plain sight (more than the range outside a room).
+        var (world, _) = Start(["####################", "#..P...............#", "#..................#", "#.......G..........#", "#..................#"]);
+        var memory = new FightMemory(world);
+        Play.PlaceEnemyAt(TheGhoul(world), Centre(world, 11, 2));
+
+        memory.Look(world.Player, TheRoom(world));
+
+        Assert.Single(memory.Seen);
+    }
+
+    [Fact]
+    public void AGhoulSeenRightNextToTheBot_IsRemembered()
+    {
+        var (world, _) = Start(Pocket);
+        var memory = new FightMemory(world);
+        var next = world.Player.Position + new Vector3(0.5f, 0f, 0f);
+        Play.PlaceEnemyAt(TheGhoul(world), next);
+
+        memory.Look(world.Player, TheRoom(world));
+
+        Assert.Single(memory.Seen);
+        Assert.NotNull(memory.LastSeenSpot(world.Player));
+    }
+
     // Seen at one spot, then gone (back in the closed pocket): what the bot remembers is the spot it saw.
     private static (GameWorld World, Play Play, FightMemory Memory, Vector3 Spot, Vector3 Pocket) SeenThenGone()
     {
