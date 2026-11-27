@@ -23,6 +23,9 @@ internal enum FightGoal
     /// <summary>Walk to a key lying about.</summary>
     Key,
 
+    /// <summary>Walk to the next place of a room that is not cleared yet, to find the enemy that is not in sight.</summary>
+    Search,
+
     /// <summary>Walk on along the route to Gorm.</summary>
     Route,
 }
@@ -44,7 +47,8 @@ internal readonly record struct FightView(
     float? VialDistance,
     float? KeyDistance,
     float? ThreatDistance = null,
-    bool CanDodge = false);
+    bool CanDodge = false,
+    bool HasSearch = false);
 
 /// <summary>The bot's decision: where to go or stand, whether to attack, whether to reload, whether to dodge (Shift).</summary>
 internal readonly record struct FightChoice(FightGoal Goal, bool Attack, bool Reload, bool Dodge = false);
@@ -105,8 +109,16 @@ internal static class FightPolicy
             return Engage(view, distance);
         }
 
-        return view.KeyDistance <= PickupRange ? new(FightGoal.Key, false, false) : new(FightGoal.Route, false, false);
+        return OnTheWay(view);
     }
+
+    // Nothing to fight: a key in reach, a room still to search, otherwise the route.
+    private static FightChoice OnTheWay(FightView view) => view switch
+    {
+        { KeyDistance: <= PickupRange } => new(FightGoal.Key, false, false),
+        { HasSearch: true } => new(FightGoal.Search, false, false),
+        _ => new(FightGoal.Route, false, false),
+    };
 
     // A melee bot leaves the reach of a blow that is coming; a ranged one keeps its distance from whatever is near.
     private static bool ShouldStepBack(FightView view) => view.IsRanged
