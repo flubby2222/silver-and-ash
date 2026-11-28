@@ -160,10 +160,10 @@ public class GrateSoundTests
         Assert.True(Math.Abs(wav.Samples[0]) < 33 && Math.Abs(wav.Samples[^1]) < 33, "click at the start or end");
     }
 
-    private sealed record WavFile(int Channels, int SampleRate, int BitsPerSample, short[] Samples);
+    internal sealed record WavFile(int Channels, int SampleRate, int BitsPerSample, short[] Samples);
 
     // A canonical RIFF/WAVE file: "fmt " chunk, then "data" with 16-bit samples.
-    private static WavFile ReadWav(string path)
+    internal static WavFile ReadWav(string path)
     {
         var bytes = File.ReadAllBytes(path);
         Assert.Equal("RIFF", System.Text.Encoding.ASCII.GetString(bytes, 0, 4));

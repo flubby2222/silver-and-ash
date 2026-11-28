@@ -131,6 +131,17 @@ public class BalanceFileTests
     }
 
     [Fact]
+    public void The_well_may_never_be_lucky_and_its_water_may_be_silent()
+    {
+        var result = BalanceFile.Parse("""{ "well": { "luckChance": 0, "waterVolume": 0, "waterRange": 5 } }""");
+
+        Assert.Equal(0f, result.Balance.Well.LuckChance);
+        Assert.Equal(0f, result.Balance.Well.WaterVolume);
+        Assert.Equal(5f, result.Balance.Well.WaterRange);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
     public void Weapons_may_carry_no_status_effect_and_never_trigger_one()
     {
         var result = BalanceFile.Parse("""
@@ -178,6 +189,7 @@ public class BalanceFileTests
     [InlineData("hearing", "nearDistance")]
     [InlineData("hearing", "rolloff")]
     [InlineData("hearing", "maxPan")]
+    [InlineData("well", "waterRange")]
     [InlineData("skills", "levelsPerPoint")]
     public void Zero_is_refused_where_it_would_break_the_game(string section, string name)
     {
@@ -213,6 +225,8 @@ public class BalanceFileTests
     [InlineData("""{ "difficulty": { "batShareNear": 1.1 } }""", "difficulty.batShareNear")]
     [InlineData("""{ "difficulty": { "batShareFar": 3 } }""", "difficulty.batShareFar")]
     [InlineData("""{ "hearing": { "maxPan": 1.2 } }""", "hearing.maxPan")]
+    [InlineData("""{ "well": { "luckChance": 1.5 } }""", "well.luckChance")]
+    [InlineData("""{ "well": { "waterVolume": 1.2 } }""", "well.waterVolume")]
     [InlineData("""{ "difficulty": { "doorConeAngle": 91 } }""", "difficulty.doorConeAngle")]
     [InlineData("""{ "grates": { "blockHeight": 3.5 } }""", "grates.blockHeight")]
     [InlineData("""{ "statusEffects": { "marked": { "bonus": 1.5 } } }""", "statusEffects.marked.bonus")]

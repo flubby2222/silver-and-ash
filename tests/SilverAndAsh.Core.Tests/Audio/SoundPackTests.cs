@@ -85,6 +85,10 @@ public class SoundPackTests
         // Issue #558: the portcullis falling shut and rising.
         { new GrateStarted(0, Falling: true), SoundKind.GrateFalling, ["fallgitter-fallen.wav"] },
         { new GrateStarted(0, Falling: false), SoundKind.GrateRising, ["fallgitter-heben.wav"] },
+
+        // Issue #815: the coin thrown into Sirius' Relief, and the luck when the well gives.
+        { new WellOfSiriusUsed(0), SoundKind.WellThrow, ["brunnen-wurf.wav"] },
+        { new WellOfSiriusGave(0), SoundKind.WellLuck, ["brunnen-glueck.wav"] },
     };
 
     private static readonly Column Pillar = Column.AtCell(3, 6);

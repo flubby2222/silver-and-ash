@@ -30,6 +30,12 @@ internal sealed class SoundPlayer : IDisposable
     // The sounds held while the world stands still (Hold); which ones, Core decides.
     private readonly HeldSounds _held = new();
 
+    // The loops of things in the world (issue #815: the well's water), by file; which play, how loud and from where,
+    // Core decides (SoundLoops, LoopFader). Streams like the music, so they loop without a gap.
+    private readonly Dictionary<string, Music> _loops = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _loopsRunning = new(StringComparer.Ordinal);
+    private readonly LoopFader _loopFader = new();
+
     // The player's volumes from the settings (issue #349), each 0 to 1.
     private float _master = 1f;
     private float _effects = 1f;
@@ -118,7 +124,78 @@ internal sealed class SoundPlayer : IDisposable
             }
         }
 
-        return new SoundPlayer(true, sounds, music, log);
+        var player = new SoundPlayer(true, sounds, music, log);
+        if (list is not null)
+        {
+            player.LoadLoops(directory, list);
+        }
+
+        return player;
+    }
+
+    private void LoadLoops(string directory, ModelChecksums list)
+    {
+        foreach (var name in SoundLoops.Files)
+        {
+            if (Checked(directory, name, list, _log) is { } path)
+            {
+                var stream = Raylib.LoadMusicStream(path);
+                if (Raylib.IsMusicValid(stream))
+                {
+                    stream.Looping = true;
+                    Raylib.SetMusicVolume(stream, 0f);
+                    _loops[name] = stream;
+                    _log?.Info(string.Create(
+                        CultureInfo.InvariantCulture, $"Loop loaded: '{name}', {Raylib.GetMusicTimeLength(stream):0.0} s."));
+                }
+                else
+                {
+                    _log?.Warning($"Loop '{name}' could not be loaded - it stays silent.");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Once per drawn frame: plays the loops of things in the world (issue #815) as <paramref name="wishes"/> say
+    /// (<see cref="SoundLoops.For"/>, or <see cref="SoundLoops.Silent"/> without a world), each at its volume and to its
+    /// side, faded by <see cref="LoopFader"/>. A silent loop is paused where it is; while <paramref name="held"/> (the
+    /// world stands still - menu, lost focus) every loop is, and goes on from there afterwards. The pan runs from -1 to 1
+    /// as for the short sounds (<see cref="Play"/>).
+    /// </summary>
+    public void Loops(IReadOnlyList<LoopCue> wishes, bool held, float frameSeconds)
+    {
+        ArgumentNullException.ThrowIfNull(wishes);
+        foreach (var cue in _loopFader.Step(wishes, frameSeconds, held))
+        {
+            if (!_loops.TryGetValue(cue.File, out var stream))
+            {
+                continue;
+            }
+
+            var audible = cue.Volume > 0f && !held;
+            if (audible != _loopsRunning.Contains(cue.File))
+            {
+                if (audible)
+                {
+                    // Play starts a stream that never ran and takes a paused one out of its pause where it stood.
+                    Raylib.PlayMusicStream(stream);
+                    _loopsRunning.Add(cue.File);
+                }
+                else
+                {
+                    Raylib.PauseMusicStream(stream);
+                    _loopsRunning.Remove(cue.File);
+                }
+            }
+
+            if (audible)
+            {
+                Raylib.SetMusicVolume(stream, cue.Volume * _effects);
+                Raylib.SetMusicPan(stream, cue.Pan);
+                Raylib.UpdateMusicStream(stream);
+            }
+        }
     }
 
     /// <summary>
@@ -278,6 +355,14 @@ internal sealed class SoundPlayer : IDisposable
         }
 
         _music.Clear();
+        foreach (var stream in _loops.Values)
+        {
+            Raylib.StopMusicStream(stream);
+            Raylib.UnloadMusicStream(stream);
+        }
+
+        _loops.Clear();
+        _loopsRunning.Clear();
 
         Raylib.CloseAudioDevice();
         _deviceOpen = false;
