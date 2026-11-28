@@ -147,6 +147,14 @@ public sealed record GhoulHit(int GhoulId, int Damage, bool Critical = false) : 
     public DamageKind Kind { get; init; }
 }
 
+/// <summary>
+/// The knife <paramref name="KnifeId"/> that player <paramref name="PlayerId"/> threw from <paramref name="Weapon"/>
+/// sticks at <paramref name="Point"/>, flown in along <paramref name="Direction"/> (issue #204): in target
+/// <paramref name="TargetId"/>, or - without one - in a wall, a column, the floor or the ceiling. In stone a
+/// <see cref="BulletImpact"/> of the same weapon follows it; in a target the hit events came just before it.
+/// </summary>
+public sealed record KnifeStuck(int KnifeId, int PlayerId, WeaponKind Weapon, Vector3 Point, Vector3 Direction, int? TargetId = null) : GameEvent;
+
 /// <summary>Projectile <paramref name="ProjectileId"/> was fired from <paramref name="Origin"/>.</summary>
 public sealed record ProjectileFired(int ProjectileId, Vector3 Origin) : GameEvent;
 

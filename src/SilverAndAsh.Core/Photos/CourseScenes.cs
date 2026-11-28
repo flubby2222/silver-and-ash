@@ -29,16 +29,16 @@ internal static class CourseScenes
     // +X; pitch negative = down). Eye height is the player's.
     internal readonly record struct Shot(float East, float South, float YawDegrees, float PitchDegrees);
 
-    // Station 1: from its south-east corner up to the north-west, so the whole row of weapons on the north wall, the
-    // items on the south wall and the sign over the first cell are in view.
-    // Turned and tilted so that no weapon lies behind the teleporter's pillars or under the sign, each one wholly in the
-    // picture and above the hands (#201). With the whip (#202) and the stake crossbow (#203) the station grew a cell each time: the camera moves east with it.
-    internal static readonly Shot ArmsShot = new(15f, 8.5f, 227f, -20f);
+    // Station 1: from its south-west corner to the north-east, so both rows of weapons by the north wall, the Leech on
+    // the south wall, the teleporter on the way and the sign over the first cell are in view.
+    // With the throwing knives (#204) one row of nine weapons was too long: no stand in the room showed the sign and
+    // every weapon, and none of those left a nearer stand for the second photo. Since then the weapons lie in two rows,
+    // the station is five cells wide again, and the teleporter stands a cell further east, where it hides no weapon.
+    internal static readonly Shot ArmsShot = new(0.5f, 9.5f, 141f, -7f);
 
-    // Station 1 again, close to the row of weapons (issue #736): from the east end of the way, down at the row, every
-    // weapon between the hands. The sign is not in this one: with it, the row would be as far off as in the first.
-    // Steeper than the hands need, so that the longest weapon at the west end is not cut off at the edge (#201).
-    internal static readonly Shot ArmsRowShot = new(14.5f, 4f, 215f, -30f);
+    // Station 1 again, close to the rows of weapons (issue #736): from the way north and down at the rows, every weapon
+    // above the hands. The sign is not in this one: with it, the rows would be as far off as in the first.
+    internal static readonly Shot ArmsRowShot = new(4.5f, 6f, 180f, -28f);
 
     // Station 2: from the far south-east corner back west, the columns and the silver in front, the ghoul beyond, the sign
     // over the entrance.
@@ -54,9 +54,9 @@ internal static class CourseScenes
     /// <summary>One scene per station, in the order of <see cref="TestCourse.Stations"/>.</summary>
     public static PhotoScene[] All() =>
     [
-        new("course-1-arms", "Station 1 of the test course from its south-east corner: every weapon along the north wall, the items on the south wall, the start teleporter on the way and the sign (issues #718, #722).",
+        new("course-1-arms", "Station 1 of the test course from its south-west corner: every weapon in two rows by the north wall, the Leech on the south wall, the start teleporter on the way and the sign (issues #718, #722, #204).",
             studio => Settled(Within(studio, 0, ArmsShot))),
-        new("course-1-arms-row", "Station 1 of the test course close to its row of weapons on the north wall, from the east end of the way to the sign over the first cell (issue #736).",
+        new("course-1-arms-row", "Station 1 of the test course close to its two rows of weapons by the north wall, from the way northwards and down at them (issues #736, #204).",
             studio => Settled(Within(studio, 0, ArmsRowShot))),
         new("course-1-axe", "Like course-1-arms-row, the hunter's axe in hand: its model in the light of the test course (issue #776).",
             studio => Settled(AxeInHand(Within(studio, 0, ArmsRowShot)))),

@@ -102,6 +102,29 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 28.11.2026 (#204, Wurfmesser, vorläufig)
+
+**Anlass:** Issue #204, Teil 1 (Regeln). Neue Fernwaffe der Stufe Vampiric: hoher Schaden, niedrige Feuerrate, und als einzige Fernwaffe echte Geschosse statt Sofort-Treffer. Neuer Block `throwingKnives` (gleiche Werte wie jede Fernwaffe) und neuer Block `knifeFlight` für den Flug.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `knifeFlight.speed` | – | 30 m/s (**vorläufig**) | Wert aus dem Issue („etwa 30 m/s“), das 2,5-Fache des Blutbolzens (12 m/s). Ein Messer fliegt je Tick 0,5 m; auf 6 m zu einer kreisenden Fledermaus (3 m/s) braucht es 12 Ticks, in denen sie 0,6 m weiter ist – mehr als ihr Radius (0,35 m), also muss man vorhalten |
+| `throwingKnives.damage` | – | 90 (**vorläufig**) | „hoher Schaden“: mehr als das Gewehr (80), weniger als die Armbrust (100). Eine Fledermaus (40 Leben) fällt mit einem Messer, ein Ghul (100 Leben) mit einem Kopftreffer oder zwei Messern |
+| `throwingKnives.cooldown` | – | 1 s (**vorläufig**) | „niedrige Feuerrate“: langsamer als Pistole und Armbrust (0,5 bis 0,7 s), schneller als das Gewehr (1,4 s), das sofort trifft |
+| `throwingKnives.magazineSize` | – | 3 (**vorläufig**) | eine Hand voll Messer; wer nicht vorhält, hat zwei weitere Würfe, bevor nachgeladen wird |
+| `throwingKnives.reloadTime` | – | 2 s (**vorläufig**) | zwischen Donnerbüchse (1,8 s) und Gewehr (2,5 s); deutlich unter der Armbrust (3 s), weil drei Würfe mit Flugzeit schon langsam sind |
+| `throwingKnives.range` | – | 40 m (**vorläufig**) | so weit fliegt ein Messer, dann ist es weg (1,3 s Flug). Unter Armbrust (60 m) und Gewehr (80 m): auf diese Entfernung trifft man ein bewegtes Ziel ohnehin kaum |
+| `throwingKnives.headshotMultiplier` | – | 2 (**vorläufig**) | wie die Armbrust; Gorms Kopf zählt wie bei jeder Fernwaffe |
+| `throwingKnives.pierce` | – | 0, fest | ein Messer bleibt im ersten Treffer stecken. Ein Wert über 0 wird abgelehnt |
+| `throwingKnives.pellets` / `spread` | – | 1 / 0 | ein Messer je Wurf, gerade aus |
+| `knifeFlight.stuckMax` | – | 24 (**vorläufig**) | so viele Messer bleiben in Wänden und Körpern stecken; beim nächsten verschwindet das älteste. Wirkt erst mit der Darstellung (Teil 2) |
+
+`damage` und `spread` dürfen 0 sein, `spread` höchstens 90, `pierce` muss 0 sein. Alle anderen Werte, auch `speed` und `stuckMax`, müssen größer als 0 sein. Sonst warnt der Lader und nimmt den Standardwert.
+
+**Vorläufig festgelegt:** Das Messer fliegt aus den Augen entlang der Blickrichtung, gerade, ohne Schwerkraft, und hat keine Breite (es trifft, was seine Linie kreuzt). Die erste Strecke fliegt es schon im Tick des Wurfs. Am Ende der Reichweite verschwindet es ohne Spur. Ein Messer in einem Gegner wandert mit ihm und verschwindet, sobald er nicht mehr getroffen werden kann (tot oder am Boden).
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen. Die Messer kommen wie die Armbrust in den Beutevorrat (Kisten und Gorm). Der Kampf-Bot kennt sie noch nicht (er hält nicht vor). Ob 90 Schaden bei einem Wurf je Sekunde passen, zeigt erst ein Spieltest mit Modell und Klang (eigenes Issue).
+
 ### Zwischenschritt – 26.11.2026 (#203, Pflockarmbrust, vorläufig)
 
 **Anlass:** Issue #203, Regeln. Neue Fernwaffe der Stufe Vampiric: ein schwerer Pflock je Ladung, der durch jeden Gegner in einer Reihe geht, bis eine Wand oder Säule ihn aufhält; langsames Nachladen. Neuer Block `stakeCrossbow`, gleiche Werte wie jede Fernwaffe.

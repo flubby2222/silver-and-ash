@@ -53,6 +53,14 @@ public enum WeaponKind
     /// the equipment box and 3 pixels too wide for the pickup toast with an effect (provisional, as for the axe).
     /// </summary>
     StakeCrossbow,
+
+    /// <summary>
+    /// The throwing knives (Vampiric, issue #204): heavy damage at a low rate of fire. Unlike every other ranged weapon a
+    /// knife really flies (<see cref="ThrownKnife"/>): fast and straight, so a moving target must be led, and it sticks in
+    /// what it hits (<see cref="StuckKnife"/>). Shown as "Knives" - "Throwing Knives" is wider than "Stake Crossbow",
+    /// which was already too wide for the equipment box (provisional, as for the crossbow).
+    /// </summary>
+    ThrowingKnives,
 }
 
 /// <summary>What a weapon is: its name (shown in the game), its hand and its tier.</summary>
@@ -72,6 +80,7 @@ public static class Weapons
         WeaponKind.HuntersAxe => new("Hunting Axe", WeaponHand.Melee, ItemTier.Royal),
         WeaponKind.Whip => new("Whip", WeaponHand.Melee, ItemTier.Royal),
         WeaponKind.StakeCrossbow => new("Crossbow", WeaponHand.Ranged, ItemTier.Vampiric),
+        WeaponKind.ThrowingKnives => new("Knives", WeaponHand.Ranged, ItemTier.Vampiric),
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
 
@@ -86,6 +95,7 @@ public static class Weapons
         WeaponKind.HuntersAxe => Weapon.HuntersAxe,
         WeaponKind.Whip => Weapon.Whip,
         WeaponKind.StakeCrossbow => Weapon.StakeCrossbow,
+        WeaponKind.ThrowingKnives => Weapon.ThrowingKnives,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown weapon."),
     };
 }
