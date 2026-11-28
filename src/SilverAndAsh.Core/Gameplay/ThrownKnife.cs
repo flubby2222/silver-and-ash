@@ -132,7 +132,7 @@ internal sealed class ThrownKnives
 
             knife.RangeLeft = 0f;
             Stick(stuck, knife.Flight.StuckMax);
-            events.Add(new KnifeStuck(stuck.Id, knife.ThrowerId, stuck.Weapon, stuck.Point, stuck.Direction, stuck.TargetId));
+            events.Add(new KnifeStuck(stuck.Id, knife.ThrowerId, stuck.Weapon, stuck.Point, stuck.Direction, stuck.TargetId) { Place = stuck.Point });
             if (stone is { } wall)
             {
                 events.Add(new BulletImpact(wall.Point, wall.Normal, stuck.Weapon));
