@@ -241,7 +241,16 @@ In 3 m sind die drei Klingen ab 1,8-fach einzeln lesbar, die Griffe liegen als e
 
 ## Übergabe an Teil 2
 
-Stand 2026-11-28: Entwurf e „Schwarzrücken“ steht. 4b ist nicht abgenommen; die Haltung wählt der Auftraggeber aus Runde 5. Die Zeilen unten nennen meine Empfehlung s12 und daneben s40.
+**Abgenommen vom Auftraggeber am 2026-11-28: Entwurf e „Schwarzrücken“ in der Haltung s12** (gestaffelt, Tiefe 12 mm). Die Beute am Boden ist ein eigenes Probestück (Issue #819).
+
+**Bedingung:** Das Handmodell wird nie aus der Manschette gezogen. Beim Loslassen ersetzt das Geschoss (ganzes Messer) es, beim Nachladen erscheint es im Ärmel. Sein Schnitt liegt 35 mm hinter dem Haltepunkt und wäre sonst zu sehen.
+
+| Datei | Inhalt | Erzeuger |
+|---|---|---|
+| `runde-5/messer-e-hand-s12.glb` | Handmodell: das Messer 47 mm (84,6 mm) hinter dem Klingenansatz abgeschnitten, Schnitt verschlossen, 100 Dreiecke, drei in der Hand 300 | `runde-5/handmodell.py` |
+| `runde-5/messer-e-geschoss.glb` | das ganze Messer für Geschoss und Beute, 196 Dreiecke; Byte für Byte gleich `runde-4/messer-e-kurzband.glb` (das Skript prüft es) | `runde-5/handmodell.py` |
+
+`handmodell.py` schreibt das Handmodell zweimal und bricht ab, wenn die beiden Läufe sich in einem Byte unterscheiden. `runde-5/pruefe_datei.py` lädt die geschriebene Datei dreimal und misst die Haltung s12 daran (`runde-5/datei-zahlen.txt`): 0 / 0 / 0 Dreieckspaare gegen den Ärmel, 0 sichtbare Punkte hinter dem Deckel, 0 Bildzeilen mit Überdeckung, Bildpunkte je Messer 8917 / 8694 / 8924, freier Versatz 5 bis 14 mm in 1-mm-Schritten (gewählt 8). Die drei Stümpfe stecken im Ärmel in 54 + 54 Dreieckspaaren ineinander; im Bild überdeckt sich nichts.
 
 | Was | Wo |
 |---|---|
@@ -252,9 +261,9 @@ Stand 2026-11-28: Entwurf e „Schwarzrücken“ steht. 4b ist nicht abgenommen;
 | Haltung s12 (Empfehlung) | Tiefe 12 mm (21,6 mm), Versatz 8 mm (14,4 mm) nach +x, Neigung 44°, Kippen 6°, Fächer −17°, 0°, +17° um einen Drehpunkt 62 mm (111,6 mm) hinter dem Klingenansatz, Staffel entlang der Dicke 0 / 6 / 12 mm (0 / 10,8 / 21,6 mm) für rechts / Mitte / links. Werte in Klammern sind mit 1,8 multipliziert und gelten für die Datei, wie sie ist |
 | Haltung s40 | wie s12, aber Tiefe 40 mm (72 mm) und Drehpunkt 90 mm (162 mm); ganzes Messer |
 | Matrixfolge je Messer (Blender-Achsen), s12 | `T(14,4 mm nach +x) · T(Auge + Haltepunkt) · R_y(6°) · Neigung(44°) · T(0, −21,6 mm, 0) · T(0, 111,6 mm, 0) · R_z(Fächerwinkel) · T(0, −111,6 mm, 0) · R_y(90°) · T(Staffel, 0, 0)`; Vorlage im Code: `blatt.py` (`held`) und `runde-5/staffel.py` (`put`) |
-| Handmodell für s12 | das Messer 35 mm (63 mm) hinter dem Haltepunkt abgeschnitten, also 47 mm (84,6 mm) hinter dem Klingenansatz, Schnitt geschlossen; 84 Dreiecke je Messer. Es entsteht bisher nur im Speicher (`staffel.py`, `cut_mesh`); eine `.glb` schreibe ich erst, wenn die Tiefe gewählt ist. s40 braucht kein zweites Modell |
-| Geschoss und Beute | immer das ganze Messer `messer-e-kurzband.glb`, Geschoss im Spielmaß (Faktor 1/1,8), Spitze voraus, dreht um die Querachse; Vorlage `blatt.py` (`thrown`). Beute: siehe Runde 5, eigene Anordnung nötig |
-| Prüfskripte | `runde-5/runde5.py` (Dreiecksprüfung Messer gegen Ärmel und Messer gegen Messer, Sichtprüfung hinter dem Deckel, Überdeckung im Bild, Blatt), `runde-4/flug_ziel.py` (Flug und Ziel) |
-| Sollbilder | `runde-5/ansichten/s12-ich-sicht-854x480.png` (oder `s40-…`), `runde-4/ansichten/kurz-flug-854x480.png`, `kurz-steckt-854x480.png` |
+| Handmodell | `runde-5/messer-e-hand-s12.glb`, dreimal, nur im Ärmel (Bedingung oben) |
+| Geschoss und Beute | immer das ganze Messer `runde-5/messer-e-geschoss.glb`, Geschoss im Spielmaß (Faktor 1/1,8), Spitze voraus, dreht um die Querachse; Vorlage `blatt.py` (`thrown`). Beute: Issue #819 |
+| Prüfskripte | `runde-5/pruefe_datei.py` (Haltung s12 an der geschriebenen Datei: Dreiecksprüfung Messer gegen Ärmel und Messer gegen Messer, Sichtprüfung hinter dem Deckel, Überdeckung im Bild), `runde-5/runde5.py` (alle Varianten, Blatt), `runde-4/flug_ziel.py` (Flug und Ziel) |
+| Sollbilder | `runde-5/ansichten/datei-s12-ich-sicht-854x480.png`, `datei-s12-pruef-*.png`, `runde-4/ansichten/kurz-flug-854x480.png`, `kurz-steckt-854x480.png` |
 
-Offen: die Wahl der Tiefe; Haltungen für Wurf und Nachladen (es gibt noch keine, geprüft ist nur die Ruhehaltung); ein Beute-Modell, das in 8 m liest. Ändert Teil 2 Sichtfeld, Haltepunkt oder Ärmel, gelten die Prüfzahlen nicht mehr; dann `runde5.py` mit den neuen Werten laufen lassen.
+Offen: Haltungen für Wurf und Nachladen (es gibt noch keine, geprüft ist nur die Ruhehaltung). Ändert Teil 2 Sichtfeld, Haltepunkt oder Ärmel, gelten die Prüfzahlen nicht mehr; dann `pruefe_datei.py` mit den neuen Werten laufen lassen. Die Schnittfläche des Handmodells hat keine eigene Textur (sie ist nie zu sehen).

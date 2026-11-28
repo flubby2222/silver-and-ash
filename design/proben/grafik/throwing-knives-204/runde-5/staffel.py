@@ -47,8 +47,9 @@ class Scene:
     pass
 
 
-def setup(extra=()):
-    """Leere Szene, Gang, Aermel, Silver Blade, drei Messer; extra = weitere Modelle aus assets/models (nur gelesen)."""
+def setup(extra=(), knife=None):
+    """Leere Szene, Gang, Aermel, Silver Blade, drei Messer; extra = weitere Modelle aus assets/models (nur gelesen);
+    knife = (Datei, Ordner) statt des ganzen Messers aus Runde 4."""
     s = Scene()
     stone = os.path.join(tempfile.gettempdir(), "messer_stein")
     os.makedirs(stone, exist_ok=True)
@@ -56,7 +57,7 @@ def setup(extra=()):
     MATS.clear()
     B.HOME.clear()
     B.POSES = {"e": (PITCH, ROLL, (0.0, 0.0, 0.0))}
-    s.knives = B.copies(B.load("messer-e-kurzband.glb", "ek", KNIFE), 3)
+    s.knives = B.copies(B.load(*(("messer-e-kurzband.glb", "ek", KNIFE) if knife is None else (knife[0], "ek", knife[1]))), 3)
     s.wraps = [wrap_only(g) for g in s.knives]
     s.sleeve = B.load("pistol_hand.glb", "pistolh", MODELS, smooth=True)
     s.blade = B.load("blade.glb", "blade", MODELS, smooth=True) + B.load("blade_hand.glb", "bladeh", MODELS, smooth=True)

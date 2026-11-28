@@ -1,0 +1,10 @@
+Throwing Knives e, Haltung s12, gemessen an der Datei messer-e-hand-s12.glb (dreimal geladen)
+Dreiecke je Messer: 100
+Haltung: Tiefe 12 mm, Drehpunkt 62 mm, Versatz 8 mm, Staffel 0/6/12 mm, Faecher +-17 Grad, Neigung 44, Kippen 6
+Dreieckspaare gegen den Aermel (ohne Deckel), rechts/Mitte/links: [0, 0, 0]
+sichtbare Punkte hinter dem Deckel: [0, 0, 0]
+Dreieckspaare Messer gegen Messer (rechts-Mitte, Mitte-links, rechts-links): [54, 54, 0] (hinter dem Deckel)
+Bildzeilen mit Ueberdeckung benachbarter Messer: 0
+Bildpunkte je Messer: [8917, 8694, 8924]
+Wicklung sichtbar/ueberdeckt px: 184/0, 555/0, 437/0
+Versatz ohne Durchstich und ohne sichtbaren Punkt (mm, 1-mm-Schritte): [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
