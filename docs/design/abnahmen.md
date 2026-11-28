@@ -32,7 +32,7 @@ Was die Zahlen nicht können: Je Release gibt es nur wenige Urteile, das ergibt 
 | 2026-11-28 | Grafik | Wurfmesser (#204) | 1 | abgelehnt (a und b; drei Messer in der Hand bleiben) | passt nicht in die Welt | nein | a, daneben |
 | 2026-11-28 | Grafik | Wurfmesser (#204) | 2 | Nacharbeit (Entwurf e „Schwarzrücken“ ist gut; d und c entfallen) | Lage im Ärmel (wirkt am untersten Ende gehalten) | nein | e, Treffer |
 | 2026-11-28 | Grafik | Wurfmesser (#204) | 3 | Nacharbeit (Tiefe 40 mm gewählt; dazu nach links, damit nichts in den Ärmel sticht) | Durchstich am Ärmel | nein | 40 mm, Treffer |
-| 2026-11-28 | Grafik | Wurfmesser (#204) | 4 | Nacharbeit (Variante 4b zunächst gewählt; nach Korrektur des Designers zurück: Messer staffeln, tiefer in den Ärmel) | Griffe überdecken sich im Bild | nein | 4b, Treffer |
+| 2026-11-28 | Grafik | Wurfmesser (#204) | 4 | Nacharbeit (Variante 4b zunächst gewählt; nach Korrektur des Designers zurück: Messer staffeln, tiefer in den Ärmel) | Griffe überdecken sich im Bild | nein | 4b, Treffer (Wahl nach Korrektur zurückgenommen; zählt in der Retro nicht als Treffer) |
 | 2026-11-28 | Grafik | Wurfmesser (#204) | 5 | angenommen (Variante s12: gestaffelt, 28 mm tiefer; Beute am Boden wird eigenes Probestück) | – | – | s12, Treffer |
 | 2026-11-28 | Audio | Wurfmesser (#204) | 1 | angenommen (Wurf a „Stoff, Schwirren“, Treffer Gegner a „Stich, zittert“, Treffer Stein b „Abprallen, Schaben“) | – | – | – (keine Empfehlung festgehalten) |
 
