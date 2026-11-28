@@ -195,6 +195,8 @@ def hit_point(ghoul, x, height):
 CENTRE = V(0, 0, 0.033 * SCALE)
 TARGET_Z = EYE.z + 3.5                                          # Ziel 3,5 m vor dem Auge
 STUCK_PITCH, STUCK_YAW, STUCK_DEPTH = -24.0, 20.0, 0.055        # Griff haengt nach oben-aussen, 5,5 cm der Klinge im Ziel
+TIP = 0.17                                                      # Klingenlaenge in Skriptmass (Runde 2 setzt ihre eigene)
+TITLE = "Silver & Ash - Throwing Knives (Issue 204), Stufe Vampiric: Entwurf a und b (Aermel, Licht, Kamera, Gang, Ziel gleich)"
 
 
 def main():
@@ -250,7 +252,7 @@ def main():
         top = max((o.matrix_world @ Vector(c)).z for o in ghoul for c in o.bound_box)
         hit = hit_point(ghoul, 0.07, top * 0.70)
         m = thrown(hit, STUCK_PITCH, STUCK_YAW)
-        tip = (m @ Vector((0, -0.17 * SCALE, 0)) - m @ Vector((0, 0, 0)))            # Klingenansatz -> Spitze (Blender)
+        tip = (m @ Vector((0, -TIP * SCALE, 0)) - m @ Vector((0, 0, 0)))            # Klingenansatz -> Spitze (Blender)
         m = Matrix.Translation(tip.normalized() * STUCK_DEPTH - tip) @ m
         place(one, m)
         img = player(list(room) + ghoul + one, cam)
@@ -285,7 +287,7 @@ def main():
     cw = W + gap
     rows_h = [250, 212, 360, 360, 360]
     sheet = np.zeros((34 + sum(h + lab + gap for h in rows_h) + 4, 2 * cw - gap, 3)) + FOG_COLOR
-    text(sheet, "Silver & Ash - Throwing Knives (Issue 204), Stufe Vampiric: Entwurf a und b (Aermel, Licht, Kamera, Gang, Ziel gleich)", 6, 4, 18)
+    text(sheet, TITLE, 6, 4, 18)
     ys, y = [], 34
     for h in rows_h:
         ys.append(y)
@@ -307,6 +309,7 @@ def main():
         paste(sheet, tiles[(k, "klein")], x0 + 404, ys[4] + lab)
     save_png(sheet[::-1], os.path.join(HERE, "blatt.png"))
     print("BLATT geschrieben:", sheet.shape[1], "x", sheet.shape[0])
+    return sheet
 
 
 if __name__ == "__main__":

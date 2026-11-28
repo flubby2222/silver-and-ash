@@ -1,0 +1,48 @@
+Gemessen von bibliothek.py aus dem unbeleuchteten Farbdurchgang (Seite = Blick entlang x, oben = Blick entlang y).
+blade: 152 Dreiecke; Masse 0.130 x 0.154 x 0.376 m; Textur 128x128, 31 Farben, 622 Texel/m
+    Textur, haeufigste Farben: (113, 113, 124) 9%, (25, 28, 41) 8%, (228, 233, 246) 6%, (151, 153, 163) 5%, (78, 54, 39) 5%, (161, 163, 173) 4%
+    Seitenansicht: Mittel RGB 135,128,130; Helligkeit 10/50/90 % = 59/138/202; hell (>170) 27 %, dunkel (<50) 0 %; blutrot (ab Stufe 3) 0.0 %, warm 37 %, kuehl 0 %
+    von oben:      Mittel RGB 157,155,162; Helligkeit 10/50/90 % = 59/164/212; hell (>170) 48 %, dunkel (<50) 0 %; blutrot (ab Stufe 3) 0.0 %, warm 18 %, kuehl 0 %
+pistol: 584 Dreiecke; Masse 0.052 x 0.190 x 0.365 m; Textur 128x128, 32 Farben, 881 Texel/m
+    Textur, haeufigste Farben: (81, 54, 37) 6%, (91, 61, 41) 6%, (73, 49, 33) 6%, (77, 85, 121) 5%, (150, 148, 151) 5%, (175, 165, 146) 5%
+    Seitenansicht: Mittel RGB 95,81,76; Helligkeit 10/50/90 % = 54/60/171; hell (>170) 13 %, dunkel (<50) 6 %; blutrot (ab Stufe 3) 0.0 %, warm 48 %, kuehl 0 %
+    von oben:      Mittel RGB 105,98,100; Helligkeit 10/50/90 % = 54/67/197; hell (>170) 22 %, dunkel (<50) 7 %; blutrot (ab Stufe 3) 0.0 %, warm 20 %, kuehl 0 %
+club: 368 Dreiecke; Masse 0.083 x 0.083 x 0.378 m; Textur 128x128, 32 Farben, 427 Texel/m
+    Textur, haeufigste Farben: (142, 105, 67) 6%, (59, 64, 82) 6%, (24, 27, 40) 5%, (27, 30, 45) 5%, (111, 77, 47) 4%, (78, 86, 123) 4%
+    Seitenansicht: Mittel RGB 94,73,58; Helligkeit 10/50/90 % = 54/69/112; hell (>170) 0 %, dunkel (<50) 6 %; blutrot (ab Stufe 3) 0.0 %, warm 73 %, kuehl 18 %
+    von oben:      Mittel RGB 90,70,56; Helligkeit 10/50/90 % = 54/69/106; hell (>170) 0 %, dunkel (<50) 7 %; blutrot (ab Stufe 3) 0.0 %, warm 73 %, kuehl 20 %
+hunters_axe: 580 Dreiecke; Masse 0.318 x 0.056 x 0.562 m; Textur 128x128, 16 Farben, 395 Texel/m
+    Textur, haeufigste Farben: (92, 112, 140) 14%, (110, 76, 46) 11%, (163, 175, 187) 10%, (20, 18, 28) 10%, (55, 57, 84) 10%, (73, 83, 112) 8%
+    Seitenansicht: Mittel RGB 140,130,124; Helligkeit 10/50/90 % = 35/173/203; hell (>170) 56 %, dunkel (<50) 23 %; blutrot (ab Stufe 3) 0.0 %, warm 47 %, kuehl 29 %
+    von oben:      Mittel RGB 115,113,119; Helligkeit 10/50/90 % = 52/109/203; hell (>170) 29 %, dunkel (<50) 10 %; blutrot (ab Stufe 3) 0.0 %, warm 30 %, kuehl 58 %
+whip_rest: 1200 Dreiecke; Masse 0.278 x 0.406 x 0.681 m; Textur 128x128, 14 Farben, 247 Texel/m
+    Textur, haeufigste Farben: (80, 41, 37) 18%, (73, 83, 112) 15%, (55, 57, 84) 14%, (20, 18, 28) 10%, (110, 76, 46) 9%, (38, 36, 56) 7%
+    Seitenansicht: Mittel RGB 102,68,53; Helligkeit 10/50/90 % = 35/52/106; hell (>170) 6 %, dunkel (<50) 18 %; blutrot (ab Stufe 3) 0.0 %, warm 94 %, kuehl 3 %
+    von oben:      Mittel RGB 106,74,59; Helligkeit 10/50/90 % = 35/52/106; hell (>170) 9 %, dunkel (<50) 16 %; blutrot (ab Stufe 3) 0.0 %, warm 91 %, kuehl 4 %
+whip_strike: 1200 Dreiecke; Masse 0.121 x 0.140 x 8.776 m; Textur 128x128, 14 Farben, 115 Texel/m
+    Textur, haeufigste Farben: (80, 41, 37) 18%, (73, 83, 112) 15%, (55, 57, 84) 14%, (20, 18, 28) 10%, (110, 76, 46) 9%, (38, 36, 56) 7%
+    Seitenansicht: Mittel RGB 100,65,49; Helligkeit 10/50/90 % = 35/52/106; hell (>170) 3 %, dunkel (<50) 19 %; blutrot (ab Stufe 3) 0.0 %, warm 97 %, kuehl 1 %
+    von oben:      Mittel RGB 101,66,50; Helligkeit 10/50/90 % = 35/52/106; hell (>170) 3 %, dunkel (<50) 16 %; blutrot (ab Stufe 3) 0.0 %, warm 97 %, kuehl 2 %
+stake_crossbow_loaded: 428 Dreiecke; Masse 0.345 x 0.132 x 0.263 m; Textur 128x128, 20 Farben, 808 Texel/m
+    Textur, haeufigste Farben: (55, 57, 84) 13%, (52, 27, 34) 12%, (195, 192, 164) 11%, (80, 41, 37) 11%, (38, 36, 56) 9%, (110, 76, 46) 8%
+    Seitenansicht: Mittel RGB 90,71,68; Helligkeit 10/50/90 % = 35/59/154; hell (>170) 7 %, dunkel (<50) 17 %; blutrot (ab Stufe 3) 0.0 %, warm 58 %, kuehl 40 %
+    von oben:      Mittel RGB 91,79,80; Helligkeit 10/50/90 % = 52/59/154; hell (>170) 9 %, dunkel (<50) 7 %; blutrot (ab Stufe 3) 0.0 %, warm 36 %, kuehl 62 %
+stake_crossbow_relaxed: 416 Dreiecke; Masse 0.345 x 0.132 x 0.263 m; Textur 128x128, 20 Farben, 807 Texel/m
+    Textur, haeufigste Farben: (55, 57, 84) 13%, (52, 27, 34) 12%, (195, 192, 164) 11%, (80, 41, 37) 11%, (38, 36, 56) 9%, (110, 76, 46) 8%
+    Seitenansicht: Mittel RGB 87,68,66; Helligkeit 10/50/90 % = 35/59/141; hell (>170) 6 %, dunkel (<50) 18 %; blutrot (ab Stufe 3) 0.0 %, warm 58 %, kuehl 40 %
+    von oben:      Mittel RGB 83,73,79; Helligkeit 10/50/90 % = 52/59/154; hell (>170) 6 %, dunkel (<50) 8 %; blutrot (ab Stufe 3) 0.0 %, warm 31 %, kuehl 66 %
+entwurf a (verworfen): 168 Dreiecke; Masse 0.035 x 0.049 x 0.511 m; Textur 128x128, 15 Farben, 698 Texel/m
+    Textur, haeufigste Farben: (55, 57, 84) 25%, (163, 175, 187) 15%, (175, 25, 35) 9%, (200, 30, 40) 9%, (198, 205, 210) 9%, (150, 20, 30) 8%
+    Seitenansicht: Mittel RGB 109,92,111; Helligkeit 10/50/90 % = 59/59/203; hell (>170) 32 %, dunkel (<50) 10 %; blutrot (ab Stufe 3) 12.2 %, warm 3 %, kuehl 74 %
+entwurf b (verworfen): 172 Dreiecke; Masse 0.035 x 0.180 x 0.471 m; Textur 128x128, 15 Farben, 495 Texel/m
+    Textur, haeufigste Farben: (55, 57, 84) 25%, (163, 175, 187) 15%, (175, 25, 35) 9%, (200, 30, 40) 9%, (198, 205, 210) 9%, (150, 20, 30) 8%
+    Seitenansicht: Mittel RGB 107,78,93; Helligkeit 10/50/90 % = 35/59/173; hell (>170) 24 %, dunkel (<50) 13 %; blutrot (ab Stufe 3) 20.5 %, warm 7 %, kuehl 62 %
+entwurf c (Runde 2): 112 Dreiecke; Masse 0.030 x 0.056 x 0.338 m; Textur 128x128, 13 Farben, 794 Texel/m
+    Textur, haeufigste Farben: (80, 41, 37) 15%, (73, 83, 112) 14%, (110, 76, 46) 13%, (198, 205, 210) 12%, (163, 175, 187) 11%, (126, 144, 165) 10%
+    Seitenansicht: Mittel RGB 144,148,157; Helligkeit 10/50/90 % = 52/173/203; hell (>170) 54 %, dunkel (<50) 2 %; blutrot (ab Stufe 3) 0.0 %, warm 17 %, kuehl 50 %
+entwurf d (Runde 2): 152 Dreiecke; Masse 0.024 x 0.053 x 0.342 m; Textur 128x128, 13 Farben, 742 Texel/m
+    Textur, haeufigste Farben: (80, 41, 37) 15%, (73, 83, 112) 14%, (110, 76, 46) 13%, (198, 205, 210) 12%, (163, 175, 187) 11%, (126, 144, 165) 10%
+    Seitenansicht: Mittel RGB 98,100,116; Helligkeit 10/50/90 % = 59/106/173; hell (>170) 14 %, dunkel (<50) 1 %; blutrot (ab Stufe 3) 1.6 %, warm 19 %, kuehl 79 %
+entwurf e (Runde 2): 196 Dreiecke; Masse 0.018 x 0.051 x 0.409 m; Textur 128x128, 13 Farben, 1144 Texel/m
+    Textur, haeufigste Farben: (55, 57, 84) 24%, (73, 83, 112) 17%, (150, 20, 30) 16%, (52, 27, 34) 9%, (126, 144, 165) 7%, (80, 41, 37) 6%
+    Seitenansicht: Mittel RGB 97,92,111; Helligkeit 10/50/90 % = 39/83/173; hell (>170) 16 %, dunkel (<50) 11 %; blutrot (ab Stufe 3) 5.8 %, warm 12 %, kuehl 71 %
