@@ -143,3 +143,39 @@ Alle Längen im Skriptmaß; Datei und Ich-Sicht sind 1,8-fach, die Werte in Klam
 | Sichtfeld der Prüfung | 70° senkrecht, 854 × 480 |
 
 Als Matrix, wie in `blatt.py` (`held`) und `runde-4/versatz.py` (`put`): `T(Versatz) · T(Auge + Haltepunkt) · R_y(6°) · Neigung(44°) · T(0, −72 mm, 0) · T(0, 153 mm, 0) · R_z(Fächer) · T(0, −153 mm, 0) · R_y(90°)`, alles in Blender-Achsen. Wer Tiefe, Fächer oder Ärmel ändert, lässt `versatz.py` neu laufen: Das freie Fenster ist nur 4 mm breit.
+
+## Runde 4b: mittig aus der Öffnung (`runde-4/`)
+
+Urteil der Leitung zu Runde 4 (vorläufig): 3,5 mm sind frei von Durchstichen, aber in der Ich-Sicht sitzt das rechte Messer weiter auf der rechten Ecke der Manschette. Gemeint war: Der Fächer soll aus der Öffnung kommen, nicht aus der Kante. Das stimmt auch in Zahlen: Der sichtbare obere Rand der Manschette reicht im Bild von x 511 bis 631, die Achse des rechten Messers tritt bei 3,5 mm an x 626 ein, 5 Pixel neben der Ecke.
+
+Zwei Änderungen, beide im erlaubten Rahmen (Tiefe 40 mm, Neigung, Kippen, Fächerwinkel ±17°, Klingen und Ärmel bleiben):
+
+- **Drehpunkt des Fächers 70 statt 85 mm hinter dem Klingenansatz.** Die Griffe laufen im Ärmel enger zusammen; vor der Manschette stehen die Klingenansätze 20 statt 25 mm auseinander, die Spitzen fast wie zuvor.
+- **Kürzere Bandenden** (`runde-4/messer3b.py` schreibt `runde-4/messer-e-kurzband.glb`): Das lange Ende reicht bis 97 statt 110 mm hinter den Klingenansatz, das kurze bis 92 statt 98 mm. Blatt, Angel, Wicklung, Ring, Knoten und Textur sind unverändert (196 Dreiecke, 13 Farben, geschlossen). In der Hand sieht man die Bänder nicht, sie stecken im Ärmel; im Flug bleibt das rote Band, nur kürzer.
+
+Abtastung mit kurzen Bändern in 0,5-mm-Schritten (dieselbe Dreiecksprüfung wie in Runde 4):
+
+| Drehpunkt | Bänder | frei von Durchstichen bei Versatz |
+|---|---|---|
+| 85 mm | lang (Runde 4) | 1,5 bis 5,5 mm |
+| 85 mm | kurz | bis 8,5 mm (geprüft ab 6 mm) |
+| 75 mm | kurz | 0 bis 12 mm |
+| **70 mm** | **kurz** | **0 bis 13,5 mm** |
+| 65 mm | kurz | bis 12 mm (geprüft ab 6 mm); die Griffe laufen am Rand der Manschette schon fast ineinander |
+
+**Neue Variante: 8 mm nach links, Drehpunkt 70 mm, kurze Bänder.** Die Achsen der drei Messer treten bei x 598, 572 und 547 durch die Öffnung: 33 Pixel bis zur rechten Ecke, 36 bis zur linken. Null Durchstiche, mit mindestens 5,5 mm Luft nach beiden Seiten (Runde 4: 2 mm). Fächer im Bild x 394 bis 609, y 153 bis 345; 69 mm Abstand zur Silver Blade, keine Überdeckung. Blatt: `runde-4/versatz-b.png` (oben 3,5 mm aus Runde 4, unten die neue Variante), erzeugt von `runde-4/versatz_b.py`; Einzelbilder `runde-4/ansichten/vb-*.png`.
+
+**Empfehlung: die neue Variante (8 mm, Drehpunkt 70 mm, kurze Bänder) ins Spiel.** Sie löst, was man im Bild sieht, und ist gegen kleine Abweichungen in Teil 2 unempfindlicher. Preis: Die drei Wicklungen stehen am Rand der Manschette dichter, sie berühren sich dort fast; die Klingen bleiben klar getrennt.
+
+### Endwerte der Haltung, Variante 4b (ersetzen die Tabelle oben, wenn der Auftraggeber 4b wählt)
+
+| Größe | Wert |
+|---|---|
+| Modell | `runde-4/messer-e-kurzband.glb`, dreimal (auch als Wurfgeschoss, damit Hand und Flug dasselbe Messer zeigen) |
+| Haltepunkt des Ärmels relativ zum Auge | (−0,100; −0,095; 0,205) m, unverändert |
+| Tiefe | 40 mm (72 mm), unverändert |
+| Versatz der drei Messer gegen den Ärmel nach links (+x) | 8 mm (14,4 mm) |
+| Neigung, Kippen | 44°, 6°, unverändert |
+| Fächer | −17°, 0°, +17°, Drehpunkt 70 mm (126 mm) hinter dem Klingenansatz |
+
+Matrix wie oben, mit 126 mm statt 153 mm an beiden Stellen und dem neuen Versatz.

@@ -32,7 +32,8 @@ from psx import FOG_COLOR, MATS, save_png  # noqa: E402
 GLB = os.path.join(HERE, "..", "runde-2")
 DEPTH = 0.040                                    # Runde 3, vom Auftraggeber gewaehlt
 POSE = (44.0, 6.0, (-17.0, 0.0, 17.0))           # Neigung, Kippen, Faecher: unveraendert
-# (Schluessel, Versatz nach links in m Skriptmass, Beschriftung)
+PIVOT = 0.085                                    # Drehpunkt des Faechers hinter dem Klingenansatz (Runde 1 bis 3)
+# (Schluessel, Versatz nach links in m Skriptmass, Beschriftung[, {"pivot": m, "model": "kurz"}])
 VARIANTS = [("v00", 0.000, "40 mm, ohne Versatz (Runde 3)"),
             ("v035", 0.0035, "40 mm, 3,5 mm nach links (Empfehlung: Mitte des freien Fensters 1,5 bis 5,5 mm)"),
             ("v25", 0.025, "40 mm, 25 mm nach links (wie bestellt)")]
@@ -83,7 +84,8 @@ def pierce(knives, walls):
     return out
 
 
-def put(knives, dx):
+def put(knives, dx, pivot=PIVOT):
+    B.FAN_PIVOT = pivot * SCALE
     for group, angle in zip(knives, POSE[2]):
         B.place(group, Matrix.Translation(G(V(dx * SCALE, 0, 0))) @ B.held("e", angle))
 
@@ -104,7 +106,8 @@ def frame_and_gap(knives, blade):
     return a.min(0), a.max(0), gap * 1000
 
 
-def main():
+def main(variants=None, sheet_name="versatz.png", scan=True, title="Runde 4: Versatz nach links gegen den Aermel"):
+    variants = [tuple(v) + ({},) * (4 - len(v)) for v in (variants or VARIANTS)]
     out = os.path.join(HERE, "ansichten")
     os.makedirs(out, exist_ok=True)
     stone = os.path.join(tempfile.gettempdir(), "messer_stein")
@@ -114,7 +117,12 @@ def main():
     B.HOME.clear()
     B.POSES = {"e": POSE}
     B.GRIP = DEPTH * SCALE
-    knives = B.copies(B.load("messer-e-schwarzruecken.glb", "e", GLB), 3)
+    models = {"lang": B.copies(B.load("messer-e-schwarzruecken.glb", "e", GLB), 3)}
+    if any(o.get("model") == "kurz" for _k, _d, _l, o in variants):          # messer3b.py: kuerzere Bandenden
+        models["kurz"] = B.copies(B.load("messer-e-kurzband.glb", "ek", HERE), 3)
+    for group in models.values():
+        B.place([o for g in group for o in g], B.AWAY)
+    knives = models["lang"]
     sleeve = B.load("pistol_hand.glb", "pistolh", MODELS, smooth=True)
     blade = B.load("blade.glb", "blade", MODELS, smooth=True) + B.load("blade_hand.glb", "bladeh", MODELS, smooth=True)
     cam = B.camera()
@@ -130,24 +138,27 @@ def main():
 
     lines = ["Throwing Knives e, Tiefe 40 mm: Durchstiche durch die Aermelwand je Versatz nach links (Skriptmass)",
              "Spalten: Versatz mm | Dreieckspaare rechtes, mittleres, linkes Messer (im Bild) | betroffene Teile", ""]
-    for dx in SCAN:
+    for dx in SCAN if scan else []:
         put(knives, dx)
         r = pierce(knives, walls)
         lines.append(f"{dx * 1000:5.2f} | {r[0][0]:3d} {r[1][0]:3d} {r[2][0]:3d} | "
                      + "; ".join(f"{n}: {', '.join(p)}" for n, (c, p) in zip(("rechts", "Mitte", "links"), r) if c))
-    with open(os.path.join(HERE, "versatz-zahlen.txt"), "w", encoding="utf-8", newline="\n") as f:
-        f.write("\n".join(lines) + "\n")
-    print("\n".join("VERSATZ " + s for s in lines))
+    if scan:
+        with open(os.path.join(HERE, "versatz-zahlen.txt"), "w", encoding="utf-8", newline="\n") as f:
+            f.write("\n".join(lines) + "\n")
+        print("\n".join("VERSATZ " + s for s in lines))
 
     # Pruefkameras: auf die rechte Wand des Kragens (dort sticht Runde 3 durch) und auf die linke Unterseite des Aermels
     checks = [("pruef-rechts-oben", V(-0.30, 0.26, 0.22), V(-0.02, -0.01, -0.01), 22),
               ("pruef-links-unten", V(0.50, -0.22, -0.02), V(0, -0.07, -0.07), 26)]
     empty = np.array(B.player(list(room), cam))
     only_blade = np.abs(np.array(B.player(list(room) + blade, cam)) - empty).sum(2) > 1e-4
-    shown = [o for g in knives for o in g]
     tiles = []
-    for key, dx, label in VARIANTS:
-        put(knives, dx)
+    for key, dx, label, opt in variants:
+        B.place([o for g in knives for o in g], B.AWAY)
+        knives = models[opt.get("model", "lang")]
+        shown = [o for g in knives for o in g]
+        put(knives, dx, opt.get("pivot", PIVOT))
         r = pierce(knives, walls)
         lo, hi, gap = frame_and_gap(knives, blade)
         total = sum(c for c, _p in r)
@@ -171,7 +182,7 @@ def main():
     lab, gapx = 22, 8
     w, h = 854, 480
     sheet = np.zeros((lab + len(tiles) * (h + 2 * lab + 6), w + 2 * gapx + 427 + 426, 3)) + FOG_COLOR
-    B.text(sheet, "Silver & Ash - Throwing Knives e, Runde 4: Versatz nach links gegen den Aermel. Links Ich-Sicht 854 x 480, "
+    B.text(sheet, f"Silver & Ash - Throwing Knives e, {title}. Links Ich-Sicht 854 x 480, "
            "Mitte Manschette dreifach, rechts Pruefkameras (von rechts oben, von links unten)", 6, 2, 14)
     for i, (label, note, eye, extra) in enumerate(tiles):
         y = lab + i * (h + 2 * lab + 6)
@@ -181,7 +192,7 @@ def main():
         for j, img in enumerate(extra):
             B.paste(sheet, img, w + 2 * gapx + 426, y + lab + j * 240)
         B.paste(sheet, B.up_n(B.crop(eye, (575, 400), 142, 160), 3), w + gapx, y + lab)
-    save_png(sheet[::-1], os.path.join(HERE, "versatz.png"))
+    save_png(sheet[::-1], os.path.join(HERE, sheet_name))
     print("VERSATZ Blatt geschrieben:", sheet.shape[1], "x", sheet.shape[0])
 
 
