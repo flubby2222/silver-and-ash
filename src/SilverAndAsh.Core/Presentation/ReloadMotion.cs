@@ -18,7 +18,7 @@ public sealed class ReloadMotion
     public float Weight { get; private set; }
 
     /// <summary>Weapons that have a reload motion of their own. Every magazine weapon that gets one is added here.</summary>
-    public static bool HasMotion(WeaponKind kind) => kind is WeaponKind.Pistol or WeaponKind.StakeCrossbow;
+    public static bool HasMotion(WeaponKind kind) => kind is WeaponKind.Pistol or WeaponKind.StakeCrossbow or WeaponKind.ThrowingKnives;
 
     /// <summary>Follows the magazine of the drawn weapon; resets at once when another weapon is drawn.</summary>
     public void Step(WeaponKind drawn, bool reloading, float magazineProgress, float frameSeconds)

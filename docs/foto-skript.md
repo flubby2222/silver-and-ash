@@ -66,6 +66,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `gorm-phase2` | Gorm in Phase 2 (rote Male) aus 10 m in seinem Bossraum, am Ende seines Brüllens |
 | `hud-weapons` | das HUD mit allen Waffenplätzen belegt (Keule, Pistole, Gewehr, Donnerbüchse) |
 | `hud-rifle` | wie `hud-weapons`, aber mit dem Gewehr (2) in der Hand |
+| `knives-rest-3`, `knives-rest-2`, `knives-rest-1`, `knives-throw`, `knives-flight`, `knives-dummy-3m`, `knives-gorm-3m`, `knives-stone-3m`, `knives-reload-down`, `knives-reload-up`, `hud-knives` | die Wurfmesser: Fächer in der Hand mit drei, zwei und einem Messer, Wurf, Messer im Flug, im Dummy, in Gorm und in der Wand aus 3 m, Nachladen, HUD-Zeichen (Issue #821) |
 | `hud-reload` | die Pistole im Startraum leergeschossen: „Reload [R]“ unter dem Fadenkreuz (Issue #259) |
 | `hud-texts` | alle Schriftzüge zugleich, jeder in seiner Zeile: „Reload [R]“ und „[F] Take Rifle (Forged)“ unter dem Fadenkreuz, „[X] Choose boon“ und die Weihezeit unten links (Issue #340) |
 | `hud-skillpoints` | das HUD mit dem ersten Skillpunkt: Platzhalter-Text „1 skill point“ rechts neben dem Erfahrungsbalken, alle Boons gewählt (Issue #502) |

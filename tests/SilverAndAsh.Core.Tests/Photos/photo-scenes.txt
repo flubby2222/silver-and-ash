@@ -245,3 +245,14 @@ crossbow-reload-catch | ticks 180 menu None ---I- | The stake crossbow in the re
 crossbow-reload-end | ticks 206 menu None ---I- | The stake crossbow in the reload, the stake laid in just before its end (issue #793).
 showroom-crossbow | ticks 1 menu None ----- | The stake crossbow in hand before the Crossbow (Vampiric) lying in the showroom (issue #793).
 hud-crossbow | ticks 1 menu None ----- | Like hud-weapons, but the stake crossbow in hand: its icon, a small picture of the model (issue #793).
+knives-rest-3 | ticks 1 menu None ----- | The throwing knives in hand, all three: a fan out of the cuff, the left one foremost (issue #821).
+knives-rest-2 | ticks 51 menu None ---I- | The throwing knives after the first throw, at rest: the left knife is gone, two stand in the cuff (issue #821).
+knives-rest-1 | ticks 113 menu None ---I- | The throwing knives after the second throw, at rest: only the middle knife stands in the cuff (issue #821).
+knives-throw | ticks 7 menu None ---I- | The throwing knives six ticks into a throw: the hand pulled across, the thrown knife already out of it (issue #821).
+knives-flight | ticks 2 menu None ---I- | A thrown knife in flight, the tick after it left the hand, tumbling towards a dummy 8 m away (issue #821).
+knives-dummy-3m | ticks 51 menu None ---I- | A throwing knife in a dummy, seen from 3 m, the handle towards the thrower; a second one would fell the dummy (issue #821).
+knives-gorm-3m | ticks 11 menu None ---I- | A throwing knife in Gorm 3 m away, a few ticks after it hit: the knife goes with the body. A ghoul falls to one knife and takes it with it (issue #821).
+knives-stone-3m | ticks 175 menu None ---I- | Three throwing knives in the wall, seen from 3 m: the hand empty, the handles hang a little (issue #821).
+knives-reload-down | ticks 199 menu None ---I- | The throwing knives in the reload, a fifth of the way: the empty hand goes down out of the picture (issue #821).
+knives-reload-up | ticks 271 menu None ---I- | The throwing knives in the reload, four fifths of the way: the hand comes back with three knives, the fan opening (issue #821).
+hud-knives | ticks 1 menu None ----- | Like hud-weapons, but the throwing knives in hand: their icon, a small picture of the knife (issue #821).

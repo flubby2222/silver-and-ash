@@ -22,6 +22,7 @@ internal sealed class ImpactMarks
     private const float StakeCrackSize = 0.2f;
     private const float StakeStubWidth = 0.03f;
     private const float StakeStubLength = 0.09f;
+    private const float KnifeNickSize = 0.03f;
 
     // Steps of the palette (EffectColours, issue #609).
     private static readonly Color Spark = PaletteColour.Opaque(EffectColours.ImpactSpark);
@@ -61,6 +62,14 @@ internal sealed class ImpactMarks
 
     private static float LifeOf(BulletImpact impact) => impact.Weapon == WeaponKind.StakeCrossbow ? StakeLifeSeconds : LifeSeconds;
 
+    // A throwing knife (issue #821) leaves only a nick: the knife itself sticks there and must not vanish in a bullet's mark.
+    private static float SizeOf(BulletImpact impact) => impact.Weapon switch
+    {
+        WeaponKind.StakeCrossbow => StakeCrackSize,
+        WeaponKind.ThrowingKnives => KnifeNickSize,
+        _ => Size,
+    };
+
     /// <summary>Draws all marks. Call between BeginMode3D and EndMode3D.</summary>
     public void Draw()
     {
@@ -69,7 +78,7 @@ internal sealed class ImpactMarks
             // A thin square lying flat on the surface, lifted a few millimetres so it is not swallowed by it.
             var normal = impact.Normal;
             var isStake = impact.Weapon == WeaponKind.StakeCrossbow;
-            var size = FlatOn(normal, isStake ? StakeCrackSize : Size, Thickness);
+            var size = FlatOn(normal, SizeOf(impact), Thickness);
             var centre = impact.Point + normal * (Thickness / 2f + 0.003f);
             ShadedBox.Draw(Matrix4x4.CreateTranslation(centre), size, age < SparkSeconds ? Spark : Mark);
             if (isStake)

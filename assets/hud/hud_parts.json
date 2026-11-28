@@ -1,7 +1,7 @@
 {
  "image": "hud_parts.png",
  "width": 512,
- "height": 319,
+ "height": 333,
  "designWidth": 854,
  "designHeight": 480,
  "notes": [
@@ -895,6 +895,26 @@
    "layoutX": 698,
    "layoutY": 456,
    "source": "tools/hud/hud_armbrust.py"
+  },
+  {
+   "name": "icon_knives",
+   "x": 0,
+   "y": 320,
+   "w": 22,
+   "h": 13,
+   "layoutX": 698,
+   "layoutY": 456,
+   "source": "tools/hud/hud_wurfmesser.py"
+  },
+  {
+   "name": "icon_knives_active",
+   "x": 23,
+   "y": 320,
+   "w": 22,
+   "h": 13,
+   "layoutX": 698,
+   "layoutY": 456,
+   "source": "tools/hud/hud_wurfmesser.py"
   }
  ]
 }

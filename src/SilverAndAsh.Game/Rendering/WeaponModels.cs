@@ -39,6 +39,12 @@ internal sealed class WeaponModels : IDisposable
 
     public TexturedModel? PistolHand { get; }
 
+    /// <summary>The throwing knife in the hand, cut off behind the cuff (issue #821); null together with <see cref="Knife"/> if either is missing.</summary>
+    public TexturedModel? KnifeHand { get; private set; }
+
+    /// <summary>The whole throwing knife, for the flight and for what it sticks in (issue #821).</summary>
+    public TexturedModel? Knife { get; private set; }
+
     /// <summary>The model and sleeve of melee weapon <paramref name="kind"/>, or false for the placeholder boxes.</summary>
     public bool TryGetMelee(WeaponKind kind, out TexturedModel weapon, out TexturedModel hand)
     {
@@ -66,6 +72,7 @@ internal sealed class WeaponModels : IDisposable
             TexturedModel.TryLoad(Path.Combine(directory, "pistol_hand.glb"), WeaponPose.HandParts, log));
 
         models.LoadCrossbow(directory, log);
+        models.LoadKnives(directory, log);
         foreach (var kind in Enum.GetValues<WeaponKind>())
         {
             if (WeaponPose.MeleeModel(kind) is not { } files)
@@ -114,8 +121,27 @@ internal sealed class WeaponModels : IDisposable
         }
     }
 
+    // The throwing knives' two files: both or neither, so the knife that leaves the hand is the one that flies.
+    private void LoadKnives(string directory, FileLog? log)
+    {
+        var hand = TexturedModel.TryLoad(Path.Combine(directory, ThrowingKnivesPose.HandFile), ThrowingKnivesPose.Parts, log);
+        var whole = TexturedModel.TryLoad(Path.Combine(directory, ThrowingKnivesPose.KnifeFile), ThrowingKnivesPose.Parts, log);
+        if (hand is not null && whole is not null)
+        {
+            KnifeHand = hand;
+            Knife = whole;
+        }
+        else
+        {
+            hand?.Dispose();
+            whole?.Dispose();
+        }
+    }
+
     public void Dispose()
     {
+        KnifeHand?.Dispose();
+        Knife?.Dispose();
         CrossbowLoaded?.Dispose();
         CrossbowRelaxed?.Dispose();
         Pistol?.Dispose();

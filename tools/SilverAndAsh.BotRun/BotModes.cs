@@ -12,6 +12,7 @@ internal static class BotModes
         new("slam", "the boss door slams shut with a body in its doorway (player, ghoul, bat, Gorm): nobody in the stone", DoorSlam.Run),
         new("bat", "a bat at the boss portal: knocked at the stone, flying round a player there, falling dead onto a plinth", PortalBat.Run),
         new("stuck", "stand still in every arena and the boss room: no enemy that hunts a player may hang without attacking", stuck.Run, stuck.PrintLongest),
+        new("knives", "the throwing knives from the start and from the middle of every room, all round, level, up and down: stuck limit, range, no knife in the stone", KnifeThrows.Run),
         new("seeds", "build every level twice: failures, generator tries, same level for the same seed", SeedProbe.Run, SeedProbe.PrintAttemptNote),
         new("fight", "a mortal player fights from the start to Gorm with a real weapon (--weapon blade|pistol|axe|whip|crossbow|all); not in all", fight.Run, fight.PrintWinRates, InAll: false),
     ];

@@ -578,6 +578,7 @@ static void RunGame(
         using var weaponModels = WeaponModels.Load(Path.Combine(AppContext.BaseDirectory, "assets", "models"), log);
         newWeaponView = () => new WeaponView(weaponModels, levelShader);
         weaponView = newWeaponView();
+        var thrownKnifeView = new ThrownKnifeView(weaponModels.Knife);
 
         // The level geometry is built here and sent to the graphics card - again only when a run brings a new layout.
         // The stones of walls, floors and ceilings (assets/textures/, issue #233). Only level 0, the catacombs, exists yet.
@@ -713,6 +714,7 @@ static void RunGame(
             StatusView.DrawShimmer(statuses, gameWorld.Ticks, eye, levelShader);
 
             projectileView.Draw(gameWorld.Projectiles, alpha);
+            thrownKnifeView.Draw(gameWorld.FlyingKnives, gameWorld.StuckKnives, alpha);
             pickupView.Draw(gameWorld.Pickups, alpha);
             pickupView.DrawLoot(gameWorld.Loot, alpha);
             pickupView.DrawEquipment(gameWorld.EquipmentDrops, alpha);

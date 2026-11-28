@@ -85,6 +85,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
     private WeaponKind _melee;      // which melee weapon is in the left hand
     private WeaponKind _ranged;     // which ranged weapon is in the right hand
     private readonly ReloadMotion _reload = new();
+    private readonly KnifeThrowClock _knifeThrow = new();
     private float _bobPhase;
     private float _bobStrength;
     private Vector2 _turnSway;      // x = right, y = up, in metres
@@ -125,6 +126,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
                 _recoil = 0f;
                 _flash = 1f;
                 _holyFlash = shot.Consecrated;
+                _knifeThrow.Released(shot.Weapon);
                 break;
         }
     }
@@ -146,6 +148,7 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         var magazine = player.Ranged.Magazine;
         _magazine = magazine;
         _reload.Step(_ranged, magazine is { IsReloading: true }, magazine.ReloadProgress, frameSeconds);
+        _knifeThrow.Step(_ranged, frameSeconds);
 
         // Bob only while walking on the ground; fades in and out instead of switching on and off.
         var walking = player.IsGrounded ? Math.Clamp(player.HorizontalSpeed / player.WalkSpeed, 0f, 1f) : 0f;
@@ -329,8 +332,8 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.012f, 0.06f) * hand, new Vector3(0.012f, 0.012f, 0.2f), Silver);
     }
 
-    // The throwing knives until their model is in (issue #204): one knife held by its dark grip, the pale blade forward.
-    // No muzzle flash - nothing burns.
+    // The throwing knives when their model files are missing (fallback, issue #204): one knife held by its dark grip,
+    // the pale blade forward. No muzzle flash - nothing burns.
     private static void DrawKnifeBoxes(Matrix4x4 hand)
     {
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.02f) * hand, new Vector3(0.018f, 0.026f, 0.09f), Wood);
@@ -345,6 +348,12 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         if (_ranged == WeaponKind.StakeCrossbow && models is { CrossbowLoaded: { } loaded, CrossbowRelaxed: { } relaxed, PistolHand: { } crossbowHand })
         {
             DrawCrossbowModel(loaded, relaxed, crossbowHand, kick);
+            return;
+        }
+
+        if (_ranged == WeaponKind.ThrowingKnives && models is { KnifeHand: { } knife, PistolHand: { } knifeHand })
+        {
+            DrawKnivesModel(knife, knifeHand);
             return;
         }
 
@@ -427,6 +436,24 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         }
 
         DrawSleeve(hand, grip, StakeCrossbowPose.Forearm(kick, progress, _reload.Weight, hand.Rig.Pivots[1]));
+    }
+
+    // The throwing knives (issue #821): as many as the magazine holds stand as a fan out of the cuff; cuff and knives
+    // move as one through throw and reload (ThrowingKnivesPose), the thrown knife flies in the world (ThrownKnifeView).
+    private void DrawKnivesModel(TexturedModel knife, TexturedModel hand)
+    {
+        var magazine = _magazine;
+        var move = ThrowingKnivesPose.Motion(_knifeThrow.Tick, _reload.Progress, _reload.Weight);
+        var rounds = ThrowingKnivesPose.ShownRounds(magazine.Rounds, magazine.Size, magazine.IsReloading, magazine.ReloadProgress);
+        for (var index = 0; index < ThrowingKnivesPose.Count; index++)
+        {
+            if (ThrowingKnivesPose.Shows(index, rounds))
+            {
+                DrawOnePart(knife, ThrowingKnivesPose.InHand(index, move) * _modelMotion);
+            }
+        }
+
+        DrawSleeve(hand, ThrowingKnivesPose.Sleeve(move) * _modelMotion, ThrowingKnivesPose.Forearm(move, hand.Rig.Pivots[1]));
     }
 
     private void DrawPistolModel(TexturedModel pistol, TexturedModel hand, Matrix4x4 grip, float kick)

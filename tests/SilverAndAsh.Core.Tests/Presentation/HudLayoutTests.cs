@@ -199,6 +199,25 @@ public class HudLayoutTests
         Single(lit, "icon_crossbow_active");
     }
 
+    [Fact]
+    public void The_throwing_knives_have_their_own_small_picture_lit_while_they_are_chosen()
+    {
+        // Issue #821: the knives' own drawing instead of the blade's, centred in its frame.
+        var picture = Arrange(Busy() with
+        {
+            Weapons = [new(WeaponKind.ThrowingKnives, null, false, false), .. Busy().Weapons.Skip(1)],
+        });
+        var lit = Arrange(Busy() with
+        {
+            Weapons = [new(WeaponKind.ThrowingKnives, null, false, true), .. Busy().Weapons.Skip(1).Select(weapon => weapon with { IsSelected = false })],
+        });
+
+        Assert.Equal("icon_knives", HudLayout.IconOf(WeaponKind.ThrowingKnives));
+        var ground = Layout.BodyOf(Single(picture, "frame_weapon_0")).Inset(HudLayout.Rim);
+        AssertCentredIn(ground, Layout.Bounds(Single(picture, "icon_knives")));
+        Single(lit, "icon_knives_active");
+    }
+
     [Theory]
     [InlineData(854, 854, 480)]
     [InlineData(768, 768, 480)]
