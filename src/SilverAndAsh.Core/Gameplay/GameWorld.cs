@@ -23,6 +23,9 @@ public sealed class GameWorld
 
     /// <summary>Only for the spread of pellets: so shooting does not change what the other random rolls give.</summary>
     private readonly Random _shotRandom;
+
+    /// <summary>Only for the luck of a throw into the well: so a throw does not change how the enemies move or what they drop.</summary>
+    private readonly Random _wellRandom;
     private int _ticksAllPlayersDead;
     private readonly List<TrainingDummy> _dummies;
     private readonly List<Ghoul> _ghouls;
@@ -101,6 +104,7 @@ public sealed class GameWorld
         _random = new Random(seed);
         _lootRandom = new Random(unchecked((seed * 397) ^ 0x5117E2));
         _shotRandom = new Random(unchecked((seed * 7919) ^ 0x5407));
+        _wellRandom = new Random(unchecked((seed * 2861) ^ 0x51B1_05));
         _dummies = level.DummyPositions.Select((position, index) => new TrainingDummy(index, position, Balance)).ToList();
 
         // Ghoul numbers continue after the dummies': every target has its own number.
@@ -733,8 +737,9 @@ public sealed class GameWorld
     }
 
     // Provisional (issue #438): price, what it gives and the most throws are not decided - using the well spends it,
-    // and a lucky throw (WellBalance.LuckChance, from the world's seeded random numbers) is told but hands out nothing
-    // yet (issue #815: the sounds hang on these two events).
+    // and a lucky throw (WellBalance.LuckChance, from the well's own seeded random numbers) is told but hands out nothing
+    // yet (issue #815: the sounds hang on these two events). The luck has a generator of its own: a throw must not
+    // shift what the fights roll afterwards.
     private void UseWell(WellOfSirius well, Player player)
     {
         if (!well.Use())
@@ -743,7 +748,7 @@ public sealed class GameWorld
         }
 
         _events.Add(new WellOfSiriusUsed(player.Id) { Place = well.Position });
-        if (_random.NextDouble() < Balance.Well.LuckChance)
+        if (_wellRandom.NextDouble() < Balance.Well.LuckChance)
         {
             _events.Add(new WellOfSiriusGave(player.Id) { Place = well.Position });
         }

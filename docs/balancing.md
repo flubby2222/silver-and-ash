@@ -114,7 +114,9 @@ Ergebnis hier eintragen, neueste Runde oben.
 
 `luckChance` und `waterVolume` dürfen 0 sein und höchstens 1; `waterRange` muss größer als 0 sein. Sonst warnt der Lader und nimmt den Standardwert.
 
-**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen; die Werte ändern keinen Kampf.
+**Report und Bot-Läufe:** vom Tester gelaufen (Bericht am PR #817): `BotRun all --seeds 1..6`, `fight --seeds 1..6`, `seeds --seeds 1..1000` und `BalanceReport` geben auf `main` (`ab3658b7`) und mit diesem Schritt Zeile für Zeile dieselbe Ausgabe, 0 Befunde. Die Bots benutzen den Brunnen nicht.
+
+**Der Wurf ändert keinen Kampf:** Das Glück hat einen eigenen, aus dem Seed der Welt abgeleiteten Zufallsstrom (`_wellRandom` in `GameWorld`, wie Beute und Streuung). In der ersten Fassung zog der Wurf aus dem Strom der Kämpfe; danach flogen die Fledermäuse bei 23 von 60 Seeds anders als ohne Wurf (Befund des Testers). Jetzt vergleicht ein Test dieselbe Welt mit und ohne Wurf Tick für Tick.
 
 **Offen:** Ob das Gurgeln zu laut oder zu leise ist und ob 8 m passen, urteilt der Mensch im Spieltest (Prüfstrecke, Station 5).
 

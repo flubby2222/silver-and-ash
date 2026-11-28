@@ -246,6 +246,71 @@ public class WellSoundTests
         Assert.Equal(0f, fader.Step(off, quarter)[0].Volume);
     }
 
+    // Frames of the game at the well: what the fader makes of the wishes, frame by frame.
+    private static LoopCue Frame(LoopFader fader, IReadOnlyList<LoopCue> wishes, bool held = false) =>
+        Assert.Single(fader.Step(wishes, 1f / SimulationClock.TicksPerSecond, held), cue => cue.File == WaterFile);
+
+    private static (GameWorld World, LoopFader Fader, LoopCue AtTheWell) HeardAtTheWell()
+    {
+        var world = WellOfSiriusTests.Corridor();
+        WellOfSiriusTests.StandBeforeWell(world);
+        var fader = new LoopFader();
+        var cue = default(LoopCue);
+        for (var frame = 0; frame < SimulationClock.TicksPerSecond; frame++)
+        {
+            cue = Frame(fader, SoundLoops.For(world, SoundListener.Of(world.Player)));
+        }
+
+        Assert.Equal(Well.WaterVolume, cue.Volume, Tolerance);
+        return (world, fader, cue);
+    }
+
+    [Fact]
+    public void Leaving_the_world_from_the_menu_the_water_is_silent_from_the_first_frame()
+    {
+        // Tester's finding on PR #817: at the well, Esc, then "Title" - the water came back for the 0.4 s of its fade.
+        var (world, fader, atTheWell) = HeardAtTheWell();
+
+        // The Esc menu: the world is held, the game still asks for the world's loops; the fader keeps the volume.
+        for (var frame = 0; frame < 30; frame++)
+        {
+            Assert.Equal(atTheWell, Frame(fader, SoundLoops.For(world, SoundListener.Of(world.Player)), held: true));
+        }
+
+        // "Title": no world any more, and no hold. Silent in this very frame and after.
+        Assert.Equal(0f, Frame(fader, SoundLoops.Silent).Volume);
+        Assert.Equal(0f, Frame(fader, SoundLoops.Silent).Volume);
+    }
+
+    [Fact]
+    public void Back_from_the_menu_into_the_world_the_water_goes_on_as_loud_as_before()
+    {
+        var (world, fader, atTheWell) = HeardAtTheWell();
+        for (var frame = 0; frame < 30; frame++)
+        {
+            Frame(fader, SoundLoops.For(world, SoundListener.Of(world.Player)), held: true);
+        }
+
+        Assert.Equal(atTheWell, Frame(fader, SoundLoops.For(world, SoundListener.Of(world.Player))));
+    }
+
+    [Fact]
+    public void Without_a_hold_a_loop_that_ends_still_fades_out()
+    {
+        // The well is spent or the run ends while the water sounds: it was audible, so it fades instead of clicking.
+        var (_, fader, atTheWell) = HeardAtTheWell();
+
+        var first = Frame(fader, SoundLoops.Silent);
+
+        Assert.True(first.Volume > 0f && first.Volume < atTheWell.Volume, $"volume {first.Volume}");
+        for (var frame = 0; frame < (int)(LoopFader.FadeSeconds * SimulationClock.TicksPerSecond) + 1; frame++)
+        {
+            first = Frame(fader, SoundLoops.Silent);
+        }
+
+        Assert.Equal(0f, first.Volume);
+    }
+
     [Fact]
     public void A_loop_that_is_only_further_away_follows_at_once_within_the_fade_pace()
     {

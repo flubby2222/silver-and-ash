@@ -166,7 +166,7 @@ internal sealed class SoundPlayer : IDisposable
     public void Loops(IReadOnlyList<LoopCue> wishes, bool held, float frameSeconds)
     {
         ArgumentNullException.ThrowIfNull(wishes);
-        foreach (var cue in _loopFader.Step(wishes, held ? 0f : frameSeconds))
+        foreach (var cue in _loopFader.Step(wishes, frameSeconds, held))
         {
             if (!_loops.TryGetValue(cue.File, out var stream))
             {

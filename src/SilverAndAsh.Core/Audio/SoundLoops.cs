@@ -76,6 +76,11 @@ public static class SoundLoops
 /// Smooths the loops of <see cref="SoundLoops"/> from frame to frame (issue #815): a loop whose thing goes away at once
 /// (the well is spent, a new world comes) fades out over <see cref="FadeSeconds"/> instead of breaking off with a
 /// click, and comes in as softly. While it fades out it stays on the side it was last heard from. Presentation only.
+/// <para>
+/// A fade is for a loop that sounds. While the world is held (Esc menu) no loop sounds; the fader keeps each one's
+/// volume so it goes on from there. But a loop that is to be silent when the hold ends - the world was left from the
+/// menu for the title screen - is silent at once: it must not start again only to fade out.
+/// </para>
 /// </summary>
 public sealed class LoopFader
 {
@@ -83,19 +88,31 @@ public sealed class LoopFader
     public const float FadeSeconds = 0.4f;
 
     private readonly Dictionary<string, LoopCue> _playing = new(StringComparer.Ordinal);
+    private bool _wasHeld;
 
-    /// <summary>One drawn frame of <paramref name="seconds"/>: each loop of <paramref name="wishes"/>, its volume moved towards the wished one.</summary>
-    public IReadOnlyList<LoopCue> Step(IReadOnlyList<LoopCue> wishes, float seconds)
+    /// <summary>
+    /// One drawn frame of <paramref name="seconds"/>: each loop of <paramref name="wishes"/>, its volume moved towards
+    /// the wished one. While <paramref name="held"/> no time passes and nothing moves; in the first frame after it a
+    /// loop wished silent is cut to silence (it did not sound during the hold, so nothing clicks).
+    /// </summary>
+    public IReadOnlyList<LoopCue> Step(IReadOnlyList<LoopCue> wishes, float seconds, bool held = false)
     {
         ArgumentNullException.ThrowIfNull(wishes);
-        var step = MathF.Max(0f, seconds) / FadeSeconds;
+        var step = held ? 0f : MathF.Max(0f, seconds) / FadeSeconds;
+        var cutSilent = _wasHeld && !held;
+        _wasHeld = held;
         var result = new List<LoopCue>(wishes.Count);
         foreach (var wish in wishes)
         {
             var last = _playing.GetValueOrDefault(wish.File, new LoopCue(wish.File, 0f, wish.Pan));
-            var volume = wish.Volume > last.Volume
-                ? MathF.Min(wish.Volume, last.Volume + step)
-                : MathF.Max(wish.Volume, last.Volume - step);
+            if (held)
+            {
+                result.Add(last);
+                continue;
+            }
+
+            var volume = FadedVolume(wish, last, step, cutSilent);
+
 
             // A silent wish has no side: keep the last one until the loop has faded out.
             var cue = new LoopCue(wish.File, volume, wish.Volume > 0f ? wish.Pan : last.Pan);
@@ -104,5 +121,17 @@ public sealed class LoopFader
         }
 
         return result;
+    }
+
+    private static float FadedVolume(LoopCue wish, LoopCue last, float step, bool cutSilent)
+    {
+        if (cutSilent && wish.Volume <= 0f)
+        {
+            return 0f;
+        }
+
+        return wish.Volume > last.Volume
+            ? MathF.Min(wish.Volume, last.Volume + step)
+            : MathF.Max(wish.Volume, last.Volume - step);
     }
 }

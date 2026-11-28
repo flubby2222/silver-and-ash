@@ -188,6 +188,93 @@ public class WellOfSiriusTests
         Assert.DoesNotContain(Run(spent, PressF, 1), e => e is WellOfSiriusGave);
     }
 
+    // One run in an open room with two bats and the well two cells ahead: walk up, look down at the well, press F at
+    // tick 100 (or not), then face the nearest bat, strike and shoot until the end. Every tick says where the bats are, how they are
+    // and what lies on the floor.
+    private static (List<string> Trace, bool Thrown, int BatsKilled, int Drops) FightAfterTheWell(int seed, bool throwCoin)
+    {
+        var world = new GameWorld(
+            LevelParser.Parse("..P..\n.....\n.....\n.....\nB...B"), seed, Balance.Default, well: new WellPlan(2, 2, 0));
+        var trace = new List<string>();
+        var thrown = false;
+        var drops = 0;
+        for (var tick = 0; tick < 40 * Second; tick++)
+        {
+            if (tick == 90)
+            {
+                world.Player.Look(PlayerInput.None with { Look = new Vector2(0f, 20f * MathF.PI / 180f / ControlSettings.MouseSensitivity) });
+            }
+
+            var input = tick switch
+            {
+                < 60 => Forward,
+                < 100 => PlayerInput.None,
+                100 => throwCoin ? PressF : PlayerInput.None,
+                _ => PlayerInput.None with { Melee = tick % 30 == 0, Shoot = tick % 30 == 15 }, // a blow and a shot every half second
+            };
+            if (tick > 100 && world.Bats.Where(bat => bat.IsHittable).MinBy(bat => Vector3.Distance(bat.Centre, world.Player.EyePosition)) is { } nearest)
+            {
+                // Fight as a player would: face the nearest bat.
+                var direction = Vector3.Normalize(nearest.Centre - world.Player.EyePosition);
+                world.Player.Look(PlayerInput.None with
+                {
+                    Look = new Vector2(
+                        -(MathF.Atan2(direction.X, direction.Z) - world.Player.View.YawRadians) / ControlSettings.MouseSensitivity,
+                        -(MathF.Asin(direction.Y) - world.Player.View.PitchRadians) / ControlSettings.MouseSensitivity),
+                });
+            }
+
+            world.Tick(input);
+            thrown |= world.Events.Any(e => e is WellOfSiriusUsed);
+            drops = Math.Max(drops, world.Pickups.Count + world.Loot.Count);
+            trace.Add(string.Join(
+                " | ",
+                world.Bats.Select(bat => $"{bat.Position} {bat.Health}")
+                    .Concat(world.Pickups.Select(pickup => $"{pickup.Kind} {pickup.Position}"))
+                    .Concat(world.Loot.Select(loot => $"{loot.Kind} {loot.Amount} {loot.Position}"))
+                    .Append($"{world.Player.Position} {world.Player.Health}")));
+        }
+
+        return (trace, thrown, world.Bats.Count(bat => bat.IsDead), drops);
+    }
+
+    [Fact]
+    public void A_throw_changes_neither_the_flight_of_the_bats_nor_what_they_drop()
+    {
+        // Review of PR #817: the luck of a throw has random numbers of its own, so the fight after a throw is the one
+        // there would have been without it - the same world with and without the throw, compared tick by tick.
+        var killed = 0;
+        var drops = 0;
+        var lucky = 0;
+        foreach (var seed in Enumerable.Range(1, 12))
+        {
+            var with = FightAfterTheWell(seed, throwCoin: true);
+            var without = FightAfterTheWell(seed, throwCoin: false);
+            Assert.True(with.Thrown, $"Seed {seed}: the coin was never thrown - the test would prove nothing.");
+            Assert.False(without.Thrown);
+
+            var firstDifference = Enumerable.Range(0, with.Trace.Count).FirstOrDefault(tick => with.Trace[tick] != without.Trace[tick], -1);
+            Assert.True(
+                firstDifference < 0,
+                $"Seed {seed}: the throw changed the fight from tick {firstDifference} on.");
+            Assert.NotEqual(with.Trace[100], with.Trace[^1]); // the bats did fly after the throw
+            killed += with.BatsKilled;
+            drops += with.Drops;
+            lucky += Corridor(seed: seed) is var corridor && LuckyIn(corridor) ? 1 : 0;
+        }
+
+        // The comparison covered what it names: bats died and left something, and both kinds of throw were among the seeds.
+        Assert.True(killed > 0, "No bat died in any run.");
+        Assert.True(drops > 0, "No bat dropped anything in any run.");
+        Assert.InRange(lucky, 1, 11);
+    }
+
+    private static bool LuckyIn(GameWorld corridor)
+    {
+        StandBeforeWell(corridor);
+        return Run(corridor, PressF, 1).Any(e => e is WellOfSiriusGave);
+    }
+
     [Fact]
     public void A_spent_well_is_no_longer_offered_and_F_does_nothing_more()
     {
