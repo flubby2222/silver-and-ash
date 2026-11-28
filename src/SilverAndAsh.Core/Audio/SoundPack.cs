@@ -145,6 +145,11 @@ public sealed class SoundPack
         [SoundKind.CrossbowHit] = ["armbrust-treffer-fleisch.wav"],
         [SoundKind.CrossbowHardHit] = ["armbrust-treffer-hart.wav"],
         [SoundKind.CrossbowReload] = ["armbrust-nachladen.wav"],
+
+        // Issue #815: Sirius' Relief, from the listening test of issue #438 (tools/audio/brunnenklang.py). Throw "A coin
+        // plops", luck "A sparkle rises"; no luck stays silent. The water is a loop, not an event: see SoundLoops.
+        [SoundKind.WellThrow] = ["brunnen-wurf.wav"],
+        [SoundKind.WellLuck] = ["brunnen-glueck.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>

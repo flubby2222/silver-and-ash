@@ -11,7 +11,12 @@ namespace SilverAndAsh.Core.Gameplay;
 /// ready until a player uses it with F, then it is spent and stays dry.
 /// <para>
 /// Provisional: what a throw of silver costs, what it may give and how often one may throw are not decided yet. Until
-/// then using it costs nothing and gives nothing - it only turns from ready to spent.
+/// then using it costs nothing and hands out nothing - it turns from ready to spent, and the world rolls whether the
+/// throw was lucky (<see cref="WellBalance.LuckChance"/>, <see cref="WellOfSiriusGave"/>), so the luck can be heard.
+/// </para>
+/// <para>
+/// Heard (issue #815): the coin at every throw, the luck only when it gives, and the water as a loop while the well is
+/// ready (<see cref="Audio.SoundLoops"/>).
 /// </para>
 /// </summary>
 public sealed class WellOfSirius : IInteractable

@@ -337,10 +337,14 @@
     "blockHeight": 1.85                 // metres: a rising grate blocks until its spike tips are above this (a falling one at once)
   },
 
-  // Sirius' Relief, the well (#438, #716). Price per throw, chances and the most throws are still open: using it only spends it.
+  // Sirius' Relief, the well (#438, #716). Price per throw, what it gives and the most throws are still open: using it
+  // spends it, and a lucky throw is only told and heard (#815).
   "well": {
     "levelChance": 1,                   // chance that a level has a well (at most one); provisional: every level
-    "collisionRadius": 0.95             // m: the circle nobody walks through
+    "collisionRadius": 0.95,            // m: the circle nobody walks through
+    "luckChance": 0.5,                  // chance that a throw is lucky; provisional until #438 decides the rules
+    "waterRange": 8,                    // m from the ears: the water of a ready well is silent from here on (#815)
+    "waterVolume": 1                    // volume of that water right at the well, 0 to 1 (the file peaks at -18 dBFS)
   },
 
   // Free-standing columns (#539): the gap to a wall, door or other column is 0 (never: nothing leans on a column) or

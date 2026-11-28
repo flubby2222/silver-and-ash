@@ -53,7 +53,7 @@ public static class BalanceFile
         "drops.ghoulChance", "drops.batChance", "drops.consecratedAmmoShare", "bloodVial.heal",
         "keys.roomChance", "keys.enemyChance", "loot.higherTierChance", "loot.itemShare", "chests.combatRoomChance", "chests.treasureChestsMin", "chests.treasureChestsMax",
         "chests.beggar.combatShareNear", "chests.beggar.combatShareFar", "chests.beggar.treasureShare", "chests.beggar.lockedTreasureShare", "chests.beggar.secretShare", "chests.beggar.lockedChance", "chests.beggar.silverMin", "chests.beggar.silverMax", "chests.beggar.bloodVialChance", "chests.beggar.equipmentChance", "chests.guard.combatShareNear", "chests.guard.combatShareFar", "chests.guard.treasureShare", "chests.guard.lockedTreasureShare", "chests.guard.secretShare", "chests.guard.lockedChance", "chests.guard.silverMin", "chests.guard.silverMax", "chests.guard.bloodVialChance", "chests.guard.equipmentChance", "chests.king.combatShareNear", "chests.king.combatShareFar", "chests.king.treasureShare", "chests.king.lockedTreasureShare", "chests.king.secretShare", "chests.king.lockedChance", "chests.king.silverMin", "chests.king.silverMax", "chests.king.bloodVialChance", "chests.king.equipmentChance", "chests.vampire.combatShareNear", "chests.vampire.combatShareFar", "chests.vampire.treasureShare", "chests.vampire.lockedTreasureShare", "chests.vampire.secretShare", "chests.vampire.lockedChance", "chests.vampire.silverMin", "chests.vampire.silverMax", "chests.vampire.bloodVialChance", "chests.vampire.equipmentChance", "silver.ghoulChance", "silver.batChance", "silver.ghoulMin", "silver.ghoulMax", "silver.batMin", "silver.batMax",
-        "experience.ghoul", "experience.bat", "well.levelChance",
+        "experience.ghoul", "experience.bat", "well.levelChance", "well.luckChance", "well.waterVolume",
         "boons.staminaRegen", "boons.health", "boons.damage", "boons.experience",
         "layout.corridorChance", "layout.maxLoops", "gorm.pauseTime", "gorm.stoneCount", "gorm.stoneDamage", "gorm.equipmentVampiricChance", "gorm.extraSilver", "layout.treasureRooms", "layout.lockedTreasureRooms", "layout.secretRooms",
         "difficulty.budgetNear", "difficulty.budgetFar", "difficulty.budgetBoss",
@@ -124,6 +124,8 @@ public static class BalanceFile
         ["gorm.phase2Health"] = 1,
         ["gorm.equipmentVampiricChance"] = 1,
         ["hearing.maxPan"] = 1,
+        ["well.luckChance"] = 1,
+        ["well.waterVolume"] = 1,   // the file's own level is the loudest the water gets (issue #815)
         ["difficulty.doorConeAngle"] = 90,
         ["grates.blockHeight"] = GrateTravel.OpenHeight,
         ["statusEffects.marked.bonus"] = 1,

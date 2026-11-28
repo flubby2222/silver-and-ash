@@ -732,12 +732,20 @@ public sealed class GameWorld
         }
     }
 
-    // Provisional (issue #438): price, chances and the most throws are not decided - using the well only spends it.
+    // Provisional (issue #438): price, what it gives and the most throws are not decided - using the well spends it,
+    // and a lucky throw (WellBalance.LuckChance, from the world's seeded random numbers) is told but hands out nothing
+    // yet (issue #815: the sounds hang on these two events).
     private void UseWell(WellOfSirius well, Player player)
     {
-        if (well.Use())
+        if (!well.Use())
         {
-            _events.Add(new WellOfSiriusUsed(player.Id) { Place = well.Position });
+            return;
+        }
+
+        _events.Add(new WellOfSiriusUsed(player.Id) { Place = well.Position });
+        if (_random.NextDouble() < Balance.Well.LuckChance)
+        {
+            _events.Add(new WellOfSiriusGave(player.Id) { Place = well.Position });
         }
     }
 

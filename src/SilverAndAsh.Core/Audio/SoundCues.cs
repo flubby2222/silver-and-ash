@@ -263,6 +263,18 @@ public enum SoundKind
     /// (<see cref="StakeCrossbowPose.CockedAt"/>, <see cref="StakeCrossbowPose.StakeAt"/>).
     /// </summary>
     CrossbowReload,
+
+    /// <summary>
+    /// A player throws into Sirius' Relief (issue #815): a short dull tick of metal and a deep bubble rising after it,
+    /// "A coin plops" of the listening test of issue #438 (0.80 s). Plays on every throw, lucky or not.
+    /// </summary>
+    WellThrow,
+
+    /// <summary>
+    /// The throw into Sirius' Relief was lucky (issue #815): quiet grains of tone rising over a warm low tone that swells,
+    /// "A sparkle rises" of the listening test of issue #438 (2.70 s). A throw without luck has no sound of its own.
+    /// </summary>
+    WellLuck,
 }
 
 /// <summary>
@@ -399,11 +411,11 @@ public static class SoundBoard
     public static ImmutableArray<MusicTrack> MusicTracks => [.. Enum.GetValues<MusicTrack>().Where(track => track != MusicTrack.None)];
 
     /// <summary>
-    /// Every file of assets/audio/: the short sounds, the files of sound pack 1 that wait for their events, the music and
-    /// the old ambience (no longer played).
+    /// Every file of assets/audio/: the short sounds, the files of sound pack 1 that wait for their events, the loops of
+    /// things in the world (<see cref="SoundLoops"/>, issue #815), the music and the old ambience (no longer played).
     /// </summary>
     public static ImmutableArray<string> AllFiles =>
-        [.. SoundFiles, .. SoundPack.Pack1WithoutEvent, .. MusicTracks.Select(track => MusicFile(track)!), Ambience];
+        [.. SoundFiles, .. SoundPack.Pack1WithoutEvent, .. SoundLoops.Files, .. MusicTracks.Select(track => MusicFile(track)!), Ambience];
 
     /// <summary>
     /// Which music <paramref name="situation"/> asks for (issue #271): the title theme on the title screen; while a run is
@@ -438,7 +450,8 @@ public static class SoundBoard
     /// the throw and the hook's hit, a hit on his body or head, his roar and his death (issue #298); taking equipment,
     /// a Vampiric piece with a sound of its own (issue #317); a skill point from a level up (issue #375); the events
     /// of <see cref="KindsByEventType"/> - a blow on a column by its stage and the column's break (issue #605), the boss
-    /// door swinging shut or open (issue #569), a portcullis falling or rising (issue #558).
+    /// door swinging shut or open (issue #569), a portcullis falling or rising (issue #558), a throw into Sirius' Relief
+    /// and its luck (issue #815).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -512,6 +525,10 @@ public static class SoundBoard
                 ((GrateStarted)gameEvent).Falling ? SoundKind.GrateFalling : SoundKind.GrateRising,
             [typeof(MeleePulled)] = gameEvent => PullKind((MeleePulled)gameEvent),
             [typeof(BulletImpact)] = gameEvent => ImpactKind((BulletImpact)gameEvent),
+
+            // Issue #815: every throw into the well is heard, the luck on top of it; no luck has no sound of its own.
+            [typeof(WellOfSiriusUsed)] = _ => SoundKind.WellThrow,
+            [typeof(WellOfSiriusGave)] = _ => SoundKind.WellLuck,
         }.ToImmutableDictionary();
 
     /// <summary>The sound of a shot by ranged weapon besides the pistol's (issue #793); a weapon without an entry shoots silently.</summary>

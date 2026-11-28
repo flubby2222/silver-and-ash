@@ -102,6 +102,22 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 28.11.2026 (#815, Klang des Brunnens, vorläufig)
+
+**Anlass:** Issue #815. Der Brunnen bekommt seine drei abgenommenen Klänge; dafür braucht der Spielkern einen Glückswurf und das Wasser eine Reichweite.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `well.luckChance` | – | 0,5 (**vorläufig**) | Die Regeln des Brunnens (#438) sind offen. Bis dahin hat jeder zweite Wurf Glück, damit im Spieltest beide Fälle zu hören sind. Ausgeteilt wird nichts |
+| `well.waterRange` | – | 8 m (**vorläufig**) | „nur im Nahbereich“: Die allgemeine Hörweite ist 30 m (`hearing.range`). Das Gurgeln liegt im Mittenband, das das Ambiente freihält (Audio Bible, Regel 6), und soll deshalb nicht den ganzen Raum füllen. Voll bis 2 m (`hearing.nearDistance`), dann mit derselben Biegung wie jeder Klang: 4 m etwa 0,54, 5 m etwa 0,35, 6 m etwa 0,19 |
+| `well.waterVolume` | – | 1 (**vorläufig**) | Die Datei ist selbst leise (Spitze −18,0 dBFS, Mittel −36,2 dBFS, rund 12 dB unter dem Wurf); lauter als die abgenommene Probe wird sie nicht (Höchstwert 1) |
+
+`luckChance` und `waterVolume` dürfen 0 sein und höchstens 1; `waterRange` muss größer als 0 sein. Sonst warnt der Lader und nimmt den Standardwert.
+
+**Report und Bot-Läufe:** für diesen Schritt nicht gelaufen; die Werte ändern keinen Kampf.
+
+**Offen:** Ob das Gurgeln zu laut oder zu leise ist und ob 8 m passen, urteilt der Mensch im Spieltest (Prüfstrecke, Station 5).
+
 ### Zwischenschritt – 28.11.2026 (#204, Wurfmesser, vorläufig)
 
 **Anlass:** Issue #204, Teil 1 (Regeln). Neue Fernwaffe der Stufe Vampiric: hoher Schaden, niedrige Feuerrate, und als einzige Fernwaffe echte Geschosse statt Sofort-Treffer. Neuer Block `throwingKnives` (gleiche Werte wie jede Fernwaffe) und neuer Block `knifeFlight` für den Flug.

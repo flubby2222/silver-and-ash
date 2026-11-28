@@ -1222,6 +1222,13 @@ static void RunGame(
             // menu), none on the end screen - as it stood after the latest frame.
             sounds.Update(SoundBoard.MusicFor(new MusicSituation(onTitle, menuOpen, RunOver: endSummary is not null, Part: runMusic.PartIn(gameWorld))), Raylib.GetFrameTime());
 
+            // The loops of things in the world (issue #815: the water of the well), heard from where the player stands;
+            // none without a world to listen to, held while the Esc menu is open. Core says which, how loud and from where.
+            sounds.Loops(
+                onTitle || endSummary is not null ? SoundLoops.Silent : SoundLoops.For(gameWorld, SoundListener.Of(player)),
+                held: menuOpen,
+                Raylib.GetFrameTime());
+
             // Title screen: no world runs, the mouse is free.
             if (onTitle)
             {

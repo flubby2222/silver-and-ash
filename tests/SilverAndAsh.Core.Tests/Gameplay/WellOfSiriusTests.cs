@@ -11,14 +11,19 @@ public class WellOfSiriusTests
 {
     private static readonly int Second = SimulationClock.TicksPerSecond;
     private static readonly PlayerInput Forward = PlayerInput.None with { Move = new Vector2(0f, 1f) };
-    private static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
+    internal static readonly PlayerInput PressF = PlayerInput.None with { Interact = true };
+
+    // With the standard values the throw of these two worlds goes this way (issue #815). A balancing round that changes
+    // well.luckChance may need other seeds; the two tests that use them then say so.
+    internal const int LuckySeed = 1;
+    internal const int UnluckySeed = 2;
 
     // A corridor along +Z, one cell wide: the player in row 0, the well in row 3.
-    private static GameWorld Corridor(Balance? balance = null) =>
-        new(LevelParser.Parse("#P#\n#.#\n#.#\n#.#\n#.#\n#.#"), 1, balance ?? Balance.Default, well: new WellPlan(1, 3, 0));
+    internal static GameWorld Corridor(Balance? balance = null, int seed = 1) =>
+        new(LevelParser.Parse("#P#\n#.#\n#.#\n#.#\n#.#\n#.#"), seed, balance ?? Balance.Default, well: new WellPlan(1, 3, 0));
 
     /// <summary>Walks into the well until it stops the player, then looks down at it a little.</summary>
-    private static void StandBeforeWell(GameWorld world)
+    internal static void StandBeforeWell(GameWorld world)
     {
         Run(world, Forward, 3 * Second);
         Run(world, PlayerInput.None, Second / 2);
@@ -102,6 +107,85 @@ public class WellOfSiriusTests
         Assert.Empty(world.EquipmentDrops);
         Assert.Empty(world.Loot);
         Assert.Empty(world.Pickups);
+    }
+
+    [Fact]
+    public void A_lucky_throw_tells_it_right_after_the_throw_from_the_well()
+    {
+        var world = Corridor(seed: LuckySeed);
+        StandBeforeWell(world);
+
+        var events = Run(world, PressF, 1);
+
+        var used = events.FindIndex(e => e is WellOfSiriusUsed);
+        var gave = events.FindIndex(e => e is WellOfSiriusGave);
+        Assert.True(used >= 0 && gave == used + 1, $"used at {used}, gave at {gave}");
+        Assert.Equal(new WellOfSiriusGave(world.Player.Id), events[gave]);
+        Assert.Equal(world.Well!.Position, events[gave].Place);
+        Assert.Single(events, e => e is WellOfSiriusGave);
+    }
+
+    [Fact]
+    public void An_unlucky_throw_tells_only_the_throw()
+    {
+        var world = Corridor(seed: UnluckySeed);
+        StandBeforeWell(world);
+
+        var events = Run(world, PressF, 1);
+
+        Assert.True(world.Well!.IsSpent);
+        Assert.Single(events, e => e is WellOfSiriusUsed);
+        Assert.DoesNotContain(events, e => e is WellOfSiriusGave);
+    }
+
+    [Fact]
+    public void The_same_seed_throws_the_same_way_and_both_ways_happen()
+    {
+        static bool Lucky(int seed)
+        {
+            var world = Corridor(seed: seed);
+            StandBeforeWell(world);
+            return Run(world, PressF, 1).Any(e => e is WellOfSiriusGave);
+        }
+
+        var first = Enumerable.Range(1, 40).Select(Lucky).ToArray();
+        var second = Enumerable.Range(1, 40).Select(Lucky).ToArray();
+
+        Assert.Equal(first, second);
+        Assert.Contains(true, first);
+        Assert.Contains(false, first);
+    }
+
+    [Theory]
+    [InlineData(0f, false)]
+    [InlineData(1f, true)]
+    public void The_luck_comes_from_the_balancing_values(float chance, bool lucky)
+    {
+        var balance = Balance.Default with { Well = Balance.Default.Well with { LuckChance = chance } };
+        foreach (var seed in Enumerable.Range(1, 20))
+        {
+            var world = Corridor(balance, seed);
+            StandBeforeWell(world);
+
+            Assert.Equal(lucky, Run(world, PressF, 1).Any(e => e is WellOfSiriusGave));
+        }
+    }
+
+    [Fact]
+    public void Without_a_throw_there_is_no_luck_either()
+    {
+        // Looking away or at a spent well: no throw, so no luck - even at a chance of 1.
+        var always = Balance.Default with { Well = Balance.Default.Well with { LuckChance = 1f } };
+        var world = Corridor(always);
+        Run(world, Forward, 3 * Second);
+        world.Player.Look(PlayerInput.None with { Look = new Vector2(MathF.PI / ControlSettings.MouseSensitivity, 0f) });
+        Assert.DoesNotContain(Run(world, PressF, 1), e => e is WellOfSiriusGave);
+
+        var spent = Corridor(always);
+        StandBeforeWell(spent);
+        Assert.Single(Run(spent, PressF, 1), e => e is WellOfSiriusGave);
+        Run(spent, PlayerInput.None, 1);
+        Assert.DoesNotContain(Run(spent, PressF, 1), e => e is WellOfSiriusGave);
     }
 
     [Fact]

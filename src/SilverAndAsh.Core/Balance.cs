@@ -738,8 +738,9 @@ public sealed record DifficultyBalance
 }
 
 /// <summary>
-/// Sirius' Relief (issue #438). Price per throw, chances and the most throws are not decided yet; until then using
-/// it only turns it from ready to spent.
+/// Sirius' Relief (issue #438). Price per throw, what it gives and the most throws are not decided yet; until then
+/// using it turns it from ready to spent and rolls for luck, nothing more. How far and how loud its water is heard
+/// (issue #815) stands here too.
 /// </summary>
 public sealed record WellBalance
 {
@@ -748,6 +749,22 @@ public sealed record WellBalance
 
     /// <summary>Radius in metres of the circle nobody walks through.</summary>
     public float CollisionRadius { get; init; } = 0.95f;
+
+    /// <summary>
+    /// Chance that a throw is lucky (<see cref="Gameplay.WellOfSiriusGave"/>, issue #815). Provisional until the rules
+    /// of issue #438 are decided: half of the throws, so both cases can be heard.
+    /// </summary>
+    public float LuckChance { get; init; } = 0.5f;
+
+    /// <summary>
+    /// Metres from the ears at which the water of a ready well falls silent (issue #815); it fades from
+    /// <see cref="HearingBalance.NearDistance"/> on like every placed sound. Short on purpose: the gurgling lies in the
+    /// middle band that ambience keeps free (audio bible, rule 6), so it is heard only near the well.
+    /// </summary>
+    public float WaterRange { get; init; } = 8f;
+
+    /// <summary>Volume of that water right at the well, 0 to 1 (the file itself is quiet: peak -18 dBFS).</summary>
+    public float WaterVolume { get; init; } = 1f;
 }
 
 /// <summary>
