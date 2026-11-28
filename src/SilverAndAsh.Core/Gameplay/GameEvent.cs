@@ -208,10 +208,20 @@ public sealed record ChestUnlocked(int ChestId, int PlayerId) : GameEvent;
 public sealed record ChestOpened(int ChestId, int PlayerId, ChestTier Tier) : GameEvent;
 
 /// <summary>
-/// Player <paramref name="PlayerId"/> used Sirius' Relief; it is spent now (issue #438). No sound yet - a new kind
-/// of sound needs a listening test first.
+/// Player <paramref name="PlayerId"/> used Sirius' Relief - a throw into the well; it is spent now (issue #438). Every
+/// throw is heard (<see cref="Audio.SoundKind.WellThrow"/>, issue #815), lucky or not.
 /// </summary>
 public sealed record WellOfSiriusUsed(int PlayerId) : GameEvent;
+
+/// <summary>
+/// The throw of player <paramref name="PlayerId"/> into Sirius' Relief was lucky (issue #815): the well gives. Comes in
+/// the same tick as <see cref="WellOfSiriusUsed"/>, after it; a throw without luck raises only that one.
+/// <para>
+/// Provisional: what the well gives is not decided yet (issue #438) - so far the event carries the luck alone and
+/// nothing is handed out.
+/// </para>
+/// </summary>
+public sealed record WellOfSiriusGave(int PlayerId) : GameEvent;
 
 /// <summary>Player <paramref name="PlayerId"/> picked up pickup <paramref name="PickupId"/> of <paramref name="Kind"/>.</summary>
 public sealed record PickupTaken(int PickupId, int PlayerId, ConsumableKind Kind) : GameEvent;
