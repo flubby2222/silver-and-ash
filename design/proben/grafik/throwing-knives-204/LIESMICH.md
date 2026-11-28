@@ -165,7 +165,7 @@ Abtastung mit kurzen Bändern in 0,5-mm-Schritten (dieselbe Dreiecksprüfung wie
 
 **Neue Variante: 8 mm nach links, Drehpunkt 70 mm, kurze Bänder.** Die Achsen der drei Messer treten bei x 598, 572 und 547 durch die Öffnung: 33 Pixel bis zur rechten Ecke, 36 bis zur linken. Null Durchstiche, mit mindestens 5,5 mm Luft nach beiden Seiten (Runde 4: 2 mm). Fächer im Bild x 394 bis 609, y 153 bis 345; 69 mm Abstand zur Silver Blade, keine Überdeckung. Blatt: `runde-4/versatz-b.png` (oben 3,5 mm aus Runde 4, unten die neue Variante), erzeugt von `runde-4/versatz_b.py`; Einzelbilder `runde-4/ansichten/vb-*.png`.
 
-**Empfehlung: die neue Variante (8 mm, Drehpunkt 70 mm, kurze Bänder) ins Spiel.** Sie löst, was man im Bild sieht, und ist gegen kleine Abweichungen in Teil 2 unempfindlicher. Preis: Die drei Wicklungen stehen am Rand der Manschette dichter, sie berühren sich dort fast; die Klingen bleiben klar getrennt.
+**Empfehlung: die neue Variante (8 mm, Drehpunkt 70 mm, kurze Bänder) ins Spiel.** Sie löst, was man im Bild sieht, und ist gegen kleine Abweichungen in Teil 2 unempfindlicher. Preis: Die drei Wicklungen stehen am Rand der Manschette dichter; die Klingen bleiben klar getrennt. Nachgemessen (`runde-4/wicklung_abstand.py`, je Messer eine Maske in der Ich-Sicht): In Runde 4 lagen zwischen den Griffen direkt über dem Manschettenrand 2 bis 6 Bildpunkte Luft. In 4b überdecken sich benachbarte Griffe dort um 10 bis 13 Bildpunkte, und zwar über 42 Bildzeilen (y 345 bis 386), also fast die ganze sichtbare Wicklung: Die drei Wicklungen lesen sich als ein Bündel, nicht als drei Griffe. Die Messer liegen in einer Ebene und stecken dort ineinander. **Der Auftraggeber hat 4b so abgenommen („4b nehmen“, 2026-11-28).** Wer das später lösen will, staffelt die Messer um ihre Dicke (je etwa 5 mm längs der Dickenachse, wie Karten in der Hand) und lässt `versatz_b.py` neu laufen; das ist nicht Teil dieser Probe.
 
 ### Endwerte der Haltung, Variante 4b (ersetzen die Tabelle oben, wenn der Auftraggeber 4b wählt)
 
@@ -179,3 +179,33 @@ Abtastung mit kurzen Bändern in 0,5-mm-Schritten (dieselbe Dreiecksprüfung wie
 | Fächer | −17°, 0°, +17°, Drehpunkt 70 mm (126 mm) hinter dem Klingenansatz |
 
 Matrix wie oben, mit 126 mm statt 153 mm an beiden Stellen und dem neuen Versatz.
+
+## Flug und Ziel mit kurzem Band (`runde-4/flug-ziel-kurzband.png`)
+
+`runde-4/flug_ziel.py` rendert Flug und Ziel wie in Runde 2 (gleiche Kamera, gleicher Gang, gleicher Ghul, gleiche Lagen), links mit langem, rechts mit kurzem Band. Einzelbilder: `runde-4/ansichten/lang-*.png` und `kurz-*.png`. Rote Bildpunkte im Spielbild 854 × 480 (r ≥ 70 und r > 1,8 × g und b; sonst ist im Gang nichts rot):
+
+| Bild | langes Band | kurzes Band |
+|---|---|---|
+| Flug aus Sicht des Werfers, drei Messer in 1,5, 3 und 5 m | 5 | 5 |
+| quer in 2, 4 und 8 m | 9 | 5 |
+| im Ghul aus 3,5 m | 1 | 1 |
+
+Befund: Von hinten im Flug verliert das kurze Band nichts; man sieht dort den Knoten und den Ansatz der Enden, nicht ihre Länge. Im Ziel war das Band aus Wurfweite schon mit langen Enden nur ein Bildpunkt; dort trägt der Ring die Lesbarkeit, nicht das Band. Nur quer zur Blickrichtung fehlen 4 von 9 roten Bildpunkten, und so sieht der Werfer sein eigenes Messer nicht. **Empfehlung: ein Modell für Hand und Geschoss, `messer-e-kurzband.glb` (196 Dreiecke je Messer, drei in der Hand 588).** Zwei Modelle (Hand kurz, Geschoss lang, je 196 Dreiecke) brächten 4 Bildpunkte in einer Ansicht, die im Spiel kaum vorkommt, und dafür ein Messer, das beim Loslassen seine Form wechselt.
+
+## Übergabe an Teil 2
+
+Abgenommen vom Auftraggeber am 2026-11-28: Entwurf e „Schwarzrücken“, Tiefe 40 mm, Variante 4b.
+
+| Was | Wo |
+|---|---|
+| Modell (Hand und Geschoss) | `runde-4/messer-e-kurzband.glb`: ein Knoten `knife`, 196 Dreiecke, Textur 128 × 128 eingebettet (13 Farben der Hauptpalette), Maßstab 1,8 eingebacken, Ursprung am Klingenansatz, in Blender Spitze −Y, Klingenbreite Z, Dicke X |
+| Erzeuger | `runde-4/messer3b.py` (ruft `runde-2/messer3.py` und kürzt nur die Bandenden; braucht `messer_gemeinsam.py` und `psx.py` aus diesem Ordner). Für `tools/` am besten beide zu einem Skript zusammenziehen |
+| Textur einzeln | `runde-4/textur3b.png` (gleicher Inhalt wie `runde-2/textur3.png`) |
+| Ärmel | `assets/models/pistol_hand.glb`, unverändert am Haltepunkt (−0,100; −0,095; 0,205) m relativ zum Auge (Spielachsen: x links im Bild, y oben, z vorn) |
+| Haltung | Tabelle „Endwerte der Haltung, Variante 4b“ oben: Tiefe 40 mm (72 mm), Versatz 8 mm (14,4 mm) nach +x, Neigung 44°, Kippen 6°, Fächer −17°, 0°, +17° um einen Drehpunkt 70 mm (126 mm) hinter dem Klingenansatz. Werte in Klammern sind mit 1,8 multipliziert und gelten für die Datei, wie sie ist |
+| Matrixfolge je Messer (Blender-Achsen) | `T(14,4 mm nach +x) · T(Auge + Haltepunkt) · R_y(6°) · Neigung(44°) · T(0, −72 mm, 0) · T(0, 126 mm, 0) · R_z(Fächerwinkel) · T(0, −126 mm, 0) · R_y(90°)`; Vorlage im Code: `blatt.py` (`held`) und `runde-4/versatz.py` (`put`) |
+| Geschoss | dasselbe Modell im Spielmaß (Faktor 1/1,8), Spitze voraus, dreht um die Querachse; Vorlage `blatt.py` (`thrown`) |
+| Prüfskripte | `runde-4/versatz_b.py` (Dreiecksprüfung Messer gegen Ärmel, Deckel der Manschette ausgenommen, plus Blatt; frei von 0 bis 13,5 mm Versatz), `runde-4/wicklung_abstand.py` (Abstand der Griffe im Bild), `runde-4/flug_ziel.py` (Flug und Ziel) |
+| Sollbilder | `runde-4/ansichten/vb-ich-sicht-854x480.png`, `kurz-flug-854x480.png`, `kurz-steckt-854x480.png` |
+
+Offen und bekannt: Die drei Wicklungen überdecken sich am Manschettenrand (siehe Runde 4b). Ändert Teil 2 Sichtfeld, Haltepunkt oder Ärmel, gelten die Prüfzahlen nicht mehr; dann `versatz_b.py` mit den neuen Werten laufen lassen.
