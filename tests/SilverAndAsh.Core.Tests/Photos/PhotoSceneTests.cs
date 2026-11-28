@@ -153,6 +153,8 @@ public class PhotoSceneTests
             "showroom-whip", "hud-whip", "course-1-whip",
             "course-1-crossbow", "crossbow-loaded", "crossbow-shot", "crossbow-relaxed", "crossbow-reload-pull", "crossbow-reload-catch", "crossbow-reload-end",
             "showroom-crossbow", "hud-crossbow",
+            "knives-rest-3", "knives-rest-2", "knives-rest-1", "knives-throw", "knives-flight", "knives-dummy-3m", "knives-gorm-3m", "knives-stone-3m",
+            "knives-reload-down", "knives-reload-up", "hud-knives",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
