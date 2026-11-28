@@ -1,0 +1,84 @@
+Throwing Knives als Beute (#819), Runde 4: A + B + C zusammen. Spielbild 854 x 480, 260 Bilder, 50 je Sekunde, Schleife 5.2 s.
+
+A Aufleuchten, Puls 1.73 s. Groesster Sprung zwischen zwei Stufen (Mittel ueber das Stueck, groesster Kanal, von 255; alle Stufenfarben, 3 m und 8 m):
+  4 Stufen: 49.3; 6 Stufen: 33.9; 8 Stufen: 24.6; 10 Stufen: 19.9; 12 Stufen: 16.3; 16 Stufen: 12.1
+  gewaehlt: 8 Stufen (Runde 3: 4). Der Sprung halbiert sich auf 3.1 Schritte der 15-Bit-Farbe (ein Schritt = 8);
+  eine Stufe steht im Mittel 124 ms = 7.4 Ticks, bleibt also als Stufe lesbar. Bei 16 Stufen waeren es 58 ms = 3.5 Ticks (Film kombi-a2-c1-a16).
+
+B Bodenschein, Puls 2.60 s, Punkte 4 bis 12 von 16 mal Faktor der Stufe. Staerke = Summe des gewichteten Farbabstands
+  (0,30 R, 0,59 G, 0,11 B) aller Bildpunkte zum leeren Boden, hellstes Bild; Ziel = Mittel von Worn, Forged, Vampiric.
+  Worn: Faktor 1.25 (Punkte hell 15.0 von 16); Staerke 3 m 34988 -> 41941, 8 m 1740 -> 1960; Bildpunkte 3 m 1194 -> 1429, 8 m 64 -> 73
+  Forged: Faktor 0.98 (Punkte hell 11.8 von 16); Staerke 3 m 58166 -> 58166, 8 m 2700 -> 2700; Bildpunkte 3 m 1182 -> 1182, 8 m 61 -> 61
+  Royal: Faktor 0.40 (Punkte hell 4.8 von 16); Staerke 3 m 138278 -> 51934, 8 m 5845 -> 1666; Bildpunkte 3 m 1195 -> 452, 8 m 62 -> 18
+  Vampiric: Faktor 0.76 (Punkte hell 9.2 von 16); Staerke 3 m 77522 -> 61549, 8 m 3041 -> 2271; Bildpunkte 3 m 1190 -> 941, 8 m 61 -> 46
+  staerkste / schwaechste Stufe 3 m: vorher 3.95, nachher 1.47
+  staerkste / schwaechste Stufe 8 m: vorher 3.36, nachher 1.62
+
+C Funken, Aufstieg 0,06 bis 0,62 m in 1.73 s, Kreis 0,20 bis 0,28 m:
+  c1: 9 Funken, Kante 3 cm (oben 2 cm), 6.8 gleichzeitig; Kante in 3 m 3.4 px, in 8 m 1.3 px; Flaeche zusammen 44 cm2
+  c2: 12 Funken, Kante 2 cm (oben 2 cm), 8.4 gleichzeitig; Kante in 3 m 2.3 px, in 8 m 0.9 px; Flaeche zusammen 34 cm2
+  Runde 3: 6 Funken, Kante 5 cm (oben 3 cm), 4.8 gleichzeitig; Kante in 3 m 5.7 px, in 8 m 2.1 px; Flaeche zusammen 82 cm2
+
+heute: Item-Wuerfel mit Leuchtplatte (dunkelstes Bild 56, hellstes 97)
+  3 m, Bildpunkte mit Stufe dunkel / hell: Worn 2185 / 1867 (im Puls 1824 bis 2203); Forged 2049 / 1845 (im Puls 1802 bis 2132); Royal 1962 / 1840 (im Puls 1811 bis 2134); Vampiric 2111 / 1930 (im Puls 1854 bis 2205)
+  3 m, kleinster Farbabstand zweier Stufen dunkel / hell: 39 / 25
+  8 m, Bildpunkte mit Stufe dunkel / hell: Worn 156 / 168 (im Puls 144 bis 168); Forged 158 / 151 (im Puls 138 bis 160); Royal 152 / 162 (im Puls 149 bis 167); Vampiric 155 / 170 (im Puls 150 bis 176)
+  8 m, kleinster Farbabstand zweier Stufen dunkel / hell: 23 / 18
+
+nur B (Runde 3 mit neuem Faktor), a2 (dunkelstes Bild 0, hellstes 55)
+  3 m, Bildpunkte mit Stufe dunkel / hell: Worn 451 / 1426 (im Puls 449 bis 1428); Forged 349 / 1176 (im Puls 346 bis 1177); Royal 136 / 450 (im Puls 135 bis 451); Vampiric 316 / 939 (im Puls 314 bis 940)
+  3 m, kleinster Farbabstand zweier Stufen dunkel / hell: 86 / 85
+  8 m, Bildpunkte mit Stufe dunkel / hell: Worn 19 / 73 (im Puls 19 bis 73); Forged 15 / 61 (im Puls 15 bis 61); Royal 6 / 18 (im Puls 6 bis 18); Vampiric 15 / 46 (im Puls 15 bis 46)
+  8 m, kleinster Farbabstand zweier Stufen dunkel / hell: 58 / 60
+
+A+B+C1, a2 (dunkelstes Bild 259, hellstes 212)
+  3 m, Bildpunkte mit Stufe dunkel / hell: Worn 677 / 1932 (im Puls 677 bis 2081); Forged 555 / 1497 (im Puls 532 bis 1689); Royal 649 / 925 (im Puls 603 bis 1087); Vampiric 849 / 1464 (im Puls 839 bis 1589)
+  3 m, kleinster Farbabstand zweier Stufen dunkel / hell: 17 / 69
+  8 m, Bildpunkte mit Stufe dunkel / hell: Worn 33 / 151 (im Puls 32 bis 162); Forged 22 / 129 (im Puls 22 bis 130); Royal 40 / 98 (im Puls 34 bis 108); Vampiric 34 / 106 (im Puls 33 bis 135)
+  8 m, kleinster Farbabstand zweier Stufen dunkel / hell: 8 / 46
+
+A+B+C2, a2 (dunkelstes Bild 4, hellstes 211)
+  3 m, Bildpunkte mit Stufe dunkel / hell: Worn 687 / 1925 (im Puls 672 bis 2082); Forged 524 / 1487 (im Puls 524 bis 1685); Royal 671 / 940 (im Puls 591 bis 1077); Vampiric 893 / 1462 (im Puls 821 bis 1591)
+  3 m, kleinster Farbabstand zweier Stufen dunkel / hell: 18 / 69
+  8 m, Bildpunkte mit Stufe dunkel / hell: Worn 29 / 157 (im Puls 29 bis 161); Forged 21 / 125 (im Puls 21 bis 130); Royal 40 / 100 (im Puls 33 bis 106); Vampiric 34 / 105 (im Puls 32 bis 132)
+  8 m, kleinster Farbabstand zweier Stufen dunkel / hell: 7 / 47
+
+A+B+C1, Item-Wuerfel (dunkelstes Bild 250, hellstes 212)
+  3 m, Bildpunkte mit Stufe dunkel / hell: Worn 1157 / 1810 (im Puls 1110 bis 2129); Forged 964 / 1491 (im Puls 873 bis 1775); Royal 680 / 1031 (im Puls 671 bis 1070); Vampiric 982 / 1474 (im Puls 930 bis 1621)
+  3 m, kleinster Farbabstand zweier Stufen dunkel / hell: 55 / 79
+  8 m, Bildpunkte mit Stufe dunkel / hell: Worn 91 / 141 (im Puls 77 bis 156); Forged 70 / 129 (im Puls 59 bis 141); Royal 72 / 94 (im Puls 67 bis 101); Vampiric 76 / 124 (im Puls 75 bis 128)
+  8 m, kleinster Farbabstand zweier Stufen dunkel / hell: 34 / 54
+
+A+B+C2, Item-Wuerfel (dunkelstes Bild 257, hellstes 212)
+  3 m, Bildpunkte mit Stufe dunkel / hell: Worn 1132 / 1793 (im Puls 1101 bis 2119); Forged 905 / 1485 (im Puls 863 bis 1750); Royal 689 / 1043 (im Puls 659 bis 1051); Vampiric 995 / 1479 (im Puls 908 bis 1603)
+  3 m, kleinster Farbabstand zweier Stufen dunkel / hell: 52 / 79
+  8 m, Bildpunkte mit Stufe dunkel / hell: Worn 91 / 141 (im Puls 76 bis 155); Forged 58 / 129 (im Puls 58 bis 135); Royal 65 / 97 (im Puls 65 bis 97); Vampiric 82 / 127 (im Puls 73 bis 127)
+  8 m, kleinster Farbabstand zweier Stufen dunkel / hell: 30 / 54
+
+A+B+C1, a2, Phase je Stueck (dunkelstes Bild 61, hellstes 40)
+  3 m, Bildpunkte mit Stufe dunkel / hell: Worn 1577 / 2070 (im Puls 600 bis 2106); Forged 666 / 881 (im Puls 643 bis 1709); Royal 862 / 725 (im Puls 670 bis 1045); Vampiric 1442 / 1497 (im Puls 807 bis 1602)
+  3 m, kleinster Farbabstand zweier Stufen dunkel / hell: 56 / 69
+  8 m, Bildpunkte mit Stufe dunkel / hell: Worn 66 / 115 (im Puls 35 bis 155); Forged 66 / 42 (im Puls 21 bis 143); Royal 88 / 100 (im Puls 41 bis 110); Vampiric 53 / 130 (im Puls 36 bis 132)
+  8 m, kleinster Farbabstand zweier Stufen dunkel / hell: 21 / 33
+
+A+B+C1, a2 dicht, Frostscheibe, Vampiric-Puls (dunkelstes Bild 254, hellstes 40)
+  4 m, Bildpunkte mit Stufe dunkel / hell: Worn 400 / 902 (im Puls 253 bis 914); Forged 595 / 299 (im Puls 231 bis 735); Royal 537 / 537 (im Puls 372 bis 566); Vampiric 714 / 534 (im Puls 370 bis 724)
+  4 m, kleinster Farbabstand zweier Stufen dunkel / hell: 45 / 39
+  8 m, Bildpunkte mit Stufe dunkel / hell: Worn 93 / 88 (im Puls 28 bis 146); Forged 72 / 98 (im Puls 20 bis 126); Royal 74 / 100 (im Puls 41 bis 101); Vampiric 41 / 124 (im Puls 26 bis 133)
+  8 m, kleinster Farbabstand zweier Stufen dunkel / hell: 10 / 47
+
+Unruhe: Bildpunkte je Stueck, die sich innerhalb von 0,1 s um >= 16 aendern (Mittel ueber Schleife und vier Stufen), 3 m / 8 m:
+  heute: 108 / 10.5
+  ohne: 549 / 52.7
+  nur-a: 504 / 53.2
+  nur-b: 602 / 55.5
+  nur-c1: 652 / 67.8
+  nur-c2: 628 / 63.8
+  nur-c-alt: 734 / 79.1
+  kombi-a2-c1: 652 / 70.9
+  kombi-a2-c2: 632 / 67.1
+
+dicht, 4 m: Farbabstand Worn gegen Vampiric (mit eigenem Puls 2.6 s) ueber die Schleife 27 bis 85
+dicht, 8 m: Farbabstand Worn gegen Vampiric (mit eigenem Puls 2.6 s) ueber die Schleife 21 bis 61
+dicht, 4 m: Punkte des Forged-Scheins gegen die Frostscheibe daneben: Farbabstand 38 bis 43; hoechstens 62 von 496 Punkten liegen auf der Frostscheibe
+dicht, 8 m: Punkte des Forged-Scheins gegen die Frostscheibe daneben: Farbabstand 28 bis 33; hoechstens 7 von 60 Punkten liegen auf der Frostscheibe

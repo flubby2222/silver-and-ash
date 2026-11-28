@@ -158,6 +158,101 @@ Farbabstand der Stufenfarben zu belegten Effektfarben (ohne Nebel, Summe der Kan
 - Münzen und Schlüssel, die keine Stufe haben.
 - Der Shader ist in Python nachgerechnet, nicht im Spiel gelaufen.
 
+## Runde 4: Aufleuchten, Bodenschein und Funken zusammen
+
+Urteil zu Runde 3: alle drei Bauarten zusammen. A flüssiger, B bei Royal schwächer, C kleiner, zurückhaltender, ein paar mehr. Der Schimmer gilt für alle Beute mit Stufe und ersetzt die eckige Leuchtplatte.
+
+Skript: `runde-4/schimmer4.py` (Aufruf `blender --background --python schimmer4.py`, braucht `ffmpeg`). Ergebnis in `runde-4/`:
+
+- `schimmer-819-runde-4.png`: Blatt mit Messwerten.
+- Filme, Spielbild 854 × 480, **50 Bilder/s**, 260 Bilder = 5,2 s, nahtlos: `schimmer4-kombi-a2-c1.gif`, `schimmer4-kombi-a2-c2.gif`, `schimmer4-kombi-wuerfel-c1.gif`, `schimmer4-kombi-wuerfel-c2.gif`, `schimmer4-kombi-a2-c1-a16.gif` (A mit 16 Stufen), `schimmer4-versetzt.gif` (jedes Stück mit eigener Phase), `schimmer4-dicht.gif` (dicht beieinander, Frostscheibe, Vampiric mit eigenem Puls), `schimmer4-heute.gif`.
+- `schimmer4-zahlen.txt`: alle Zählungen.
+
+### Was sich je Bauart geändert hat
+
+**A Aufleuchten: 8 Stufen statt 4**, Puls 1,73 s. Größter Sprung zwischen zwei Stufen (Mittel über das Stück, stärkster Farbkanal, von 255):
+
+| Stufen | 4 | 6 | 8 | 10 | 12 | 16 |
+|---|---|---|---|---|---|---|
+| größter Sprung | 49,3 | 33,9 | 24,6 | 19,9 | 16,3 | 12,1 |
+
+Mit 8 Stufen halbiert sich der Sprung (6,2 auf 3,1 Schritte der 15-Bit-Farbe), und eine Stufe steht im Mittel 124 ms (7,4 Ticks): Sie bleibt als Stufe lesbar, wie es die Art Bible für Aufleuchten verlangt („in groben Stufen“). Bei 16 Stufen steht eine Stufe 58 ms (3,5 Ticks), das ist praktisch ein stufenloser Verlauf; der Film `-a16` zeigt ihn zur Wahl.
+
+**B Bodenschein: Faktor je Stufe auf den Punktanteil.** Stärke = Summe des gewichteten Farbabstands (0,30 R, 0,59 G, 0,11 B) aller Bildpunkte zum leeren Boden im hellsten Bild. Ziel ist das Mittel von Worn, Forged und Vampiric.
+
+| | Faktor | Punkte hell (von 16) | Stärke 3 m vorher / nachher | Stärke 8 m vorher / nachher | Bildpunkte 8 m vorher / nachher |
+|---|---|---|---|---|---|
+| Worn | 1,25 (Grenze) | 15,0 | 34988 / 41941 | 1740 / 1960 | 64 / 73 |
+| Forged | 0,98 | 11,8 | 58166 / 58166 | 2700 / 2700 | 61 / 61 |
+| Royal | 0,40 | 4,8 | 138278 / 51934 | 5845 / 1666 | 62 / 18 |
+| Vampiric | 0,76 | 9,2 | 77522 / 61549 | 3041 / 2271 | 61 / 46 |
+
+Verhältnis stärkste zu schwächster Stufe: in 3 m vorher 3,95, nachher 1,47; in 8 m vorher 3,36, nachher 1,62. Ganz gleich wird es nicht: Worn ist bei 15 von 16 Punkten am Anschlag, und der Nebel verschiebt die Verhältnisse zwischen 3 m und 8 m. Royal war gemessen 2,4-mal so stark wie das Mittel der anderen. Nach dem Angleichen trägt der Royal-Schein allein in 8 m nur noch 6 bis 18 px; in der Kombination tragen A und C mit.
+
+**C Funken: zwei Stufen der Zurückhaltung.** Radius (0,20 bis 0,28 m) und Winkel je Funke verschieden, Aufstieg 0,06 bis 0,62 m.
+
+| | Funken | Kante | gleichzeitig | Kante in 3 m / 8 m | Fläche zusammen |
+|---|---|---|---|---|---|
+| Runde 3 | 6 | 5 cm, oben 3 cm | 4,8 | 5,7 / 2,1 px | 82 cm² |
+| c1 | 9 | 3 cm, oben 2 cm | 6,8 | 3,4 / 1,3 px | 44 cm² |
+| c2 | 12 | 2 cm | 8,4 | 2,3 / 0,9 px | 34 cm² |
+
+c2 liegt in 8 m unter einem Bildpunkt: Ein Funke erscheint dort nur, wenn eine Bildpunktmitte in ihm liegt, er blinkt also.
+
+### Messung der Kombination in 8 m
+
+Bildpunkte mit Stufe, dunkelstes / hellstes Bild, in Klammern der kleinste Wert im Puls.
+
+| | Worn | Forged | Royal | Vampiric | kleinster Farbabstand zweier Stufen, dunkel / hell |
+|---|---|---|---|---|---|
+| heute: Würfel mit Platte | 156 / 168 (144) | 158 / 151 (138) | 152 / 162 (149) | 155 / 170 (150) | 23 / 18 |
+| A+B+C1, a2 | 33 / 151 (32) | 22 / 129 (22) | 40 / 98 (34) | 34 / 106 (33) | 8 / 46 |
+| A+B+C2, a2 | 29 / 157 (29) | 21 / 125 (21) | 40 / 100 (33) | 34 / 105 (32) | 7 / 47 |
+| A+B+C1, Würfel | 91 / 141 (77) | 70 / 129 (59) | 72 / 94 (67) | 76 / 124 (75) | 34 / 54 |
+| A+B+C2, Würfel | 91 / 141 (76) | 58 / 129 (58) | 65 / 97 (65) | 82 / 127 (73) | 30 / 54 |
+
+- Gegenüber dem besten Einzelwert aus Runde 3 (B an a2: 15 bis 16 px im dunkelsten Bild) trägt die Kombination an a2 22 bis 40 px.
+- Im dunkelsten Bild liegt der mittlere Farbabstand zweier Stufen an a2 bei nur 7 bis 8: Dann zählen vor allem die kaum getönten Messer mit. Der Bodenschein allein trennt die Stufen im selben Bild mit 58.
+- Am Würfel ist die Kombination in jedem Bild besser getrennt als die heutige Platte (30 bis 54 gegen 18 bis 23), bei weniger Bildpunkten (58 bis 156 gegen 138 bis 176).
+
+### Ruhe
+
+Unruhe = Bildpunkte je Stück, die sich innerhalb von 0,1 s um mindestens 16 ändern, Mittel über die Schleife, 3 m / 8 m:
+
+| heute (Würfel + Platte) | a2 ohne Schimmer | nur A | nur B | nur C1 | nur C2 | Funken Runde 3 | A+B+C1 | A+B+C2 |
+|---|---|---|---|---|---|---|---|---|
+| 108 / 10,5 | 549 / 52,7 | 504 / 53,2 | 602 / 55,5 | 652 / 67,8 | 628 / 63,8 | 734 / 79,1 | 652 / 70,9 | 632 / 67,1 |
+
+Den größten Teil der Unruhe macht die Drehung der drei Messer (549 px ohne jeden Schimmer; der einfarbige Würfel dreht sich mit 108 px). Der Schimmer legt an a2 in 3 m 19 % (C1) oder 15 % (C2) darauf, in 8 m 35 % oder 27 %; fast alles davon kommt von den Funken. Die Funken der Runde 3 lagen allein schon höher als jetzt alle drei zusammen.
+
+### Geprüft, was in Runde 3 offen war
+
+- **Versetzte Phasen** (`schimmer4-versetzt.gif`): jedes Stück mit Phase aus seiner Nummer, wie `t*k + Id` im Spiel. In 8 m trägt jede Stufe über die ganze Schleife mindestens 21 bis 41 px.
+- **Dicht beieinander** (`schimmer4-dicht.gif`, Abstand 0,6 m, Scheine überlappen 0,12 m): Wo zwei Scheine sich treffen, gewinnt der nähere Mittelpunkt. In 8 m mindestens 20 bis 41 px je Stück.
+- **Vampiric mit eigenem Puls** (150,20,30 bis 200,30,40; hier 2,6 s statt 3,14 s, damit die Schleife schließt): Farbabstand Worn gegen Vampiric über die Schleife 27 bis 85 in 4 m, 21 bis 61 in 8 m.
+- **Forged neben Frostscheibe:** Farbabstand der Schein-Punkte zur Frostscheibe 38 bis 43 in 4 m, 28 bis 33 in 8 m; höchstens 62 von 496 Punkten (4 m) liegen auf der Scheibe. Die Frostscheibe ist hier nach `StatusView.DrawFrostDisc` nachgebaut, der Rand mit 6 cm angenommen.
+- Beide Scheiben liegen im Spiel 15 mm über dem Boden und würden flimmern, wo sie sich decken; der Bodenschein braucht eine eigene Höhe (etwa 20 mm).
+
+### Einbau der Kombination
+
+- **Shader `level.fs`:** ein neues Uniform (etwa `int patternOnly`) und zwei Zeilen: Liegt die Schwelle des Musters nicht unter `pattern.a`, wird der Bildpunkt verworfen statt mit der Flächenfarbe gefüllt. Dazu ein Setter in `LevelShader.cs`. A und C brauchen nichts Neues (`SetFlash`, `SetGlow`, `ShadedBox.DrawGlowing`).
+- **Zeichenaufrufe je Stück:** Stück wie heute (a2: drei Messer), 3 für den Bodenschein (drei Ringe mit je eigenem Punktanteil; als ein Netz mit dem Anteil in der Eckenfarbe wäre es 1 Aufruf und eine weitere Shader-Zeile), 7 (c1) oder 8 bis 9 (c2) Funken. Zusammen 11 bis 13 Aufrufe mehr als heute, einer weniger durch die entfallende Platte.
+- **Daten:** je Stufe ein Faktor für den Bodenschein (1,25 / 0,98 / 0,40 / 0,76) neben den Stufenfarben; Pulsdauern 1,73 s (A, 8 Stufen) und 2,6 s (B); Phase je Stück aus der Id.
+- Alles liegt in `SilverAndAsh.Game/Rendering`; `Core` bleibt unberührt.
+
+### Empfehlung Runde 4
+
+**A mit 8 Stufen + B mit Faktor je Stufe + C1.** C1 statt C2, weil seine Funken in 8 m noch 1,3 px groß sind (C2: 0,9 px, blinkt), bei einer Unruhe, die nur 3 % über C2 liegt (652 gegen 632 px in 3 m) und 11 % unter den Funken der Runde 3 allein.
+
+### Nicht geprüft (Runde 4)
+
+- Der Shader ist in Python nachgerechnet, nicht im Spiel gelaufen; die Funken sind als Quadrate ins Bild gerechnet, nicht als Würfel gerendert.
+- 50 Bilder/s im Film, 60 im Spiel. Ob ein Betrachter das GIF mit 50 Bildern/s abspielt, hängt vom Programm ab; manche bremsen auf 10.
+- Ob Royal mit Faktor 0,40 dem Auge gleich stark erscheint: Die Messgröße gewichtet nur Farbabstand, nicht die bedeckte Fläche. Auf dem Blatt wirkt Royal nachher eher als Punktfeld denn als Schein.
+- Die GIFs haben 256 Farben je Film; einzelne Töne sind auf die nächste Palettenfarbe gelegt.
+- Ein echter Raum, ein Gegner auf der Frostscheibe, Münzen und Schlüssel (ohne Stufe), Beute auf Stufen oder an Wänden (der Bodenschein braucht ebenen Boden unter sich).
+- Mehr als vier Stücke im Bild und was die zusätzlichen Zeichenaufrufe kosten.
+
 ## Nicht geprüft (Runde 1)
 
 - Nebel und Raumlicht eines echten Raums; gemessen ist nur der Proberaum der Runde 5.
