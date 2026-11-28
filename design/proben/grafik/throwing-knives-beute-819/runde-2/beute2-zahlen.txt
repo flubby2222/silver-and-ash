@@ -1,0 +1,28 @@
+Throwing Knives als Beute (#819), Runde 2: Bildpunkte im Spielbild 854 x 480, Auge 1,6 m. Messer 2,5-fach, 196 Dreiecke je Messer.
+Schweben: Unterkante 0.12 m, je Winkel -0.04 / +0.00 / +0.04 m. Neigung 24 Grad nach aussen.
+Radius des Kreises der Spitzen (mm Skriptmass): Dreieckspaare Messer gegen Messer: 0: 0, 2: 0, 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 14: 0, 16: 0, 18: 0, 20: 0, 22: 0, 24: 0, 26: 0, 28: 0, 30: 0, 32: 0, 34: 0
+a1 Radius 34 mm (in der Welt 85 mm), a2 Radius 0 mm (in der Welt 0 mm)
+
+Block 1, Stufe Vampiric. Je Drehwinkel (0 / 74 / 149 Grad): Bildpunkte je Messer [1, 2, 3] | von mehr als einem Messer belegt | Hoehe x Breite des Umrisses
+heute: Quader mit Platte, 3 m: [1142] | 0 | 17 x 70 ; [1094] | 0 | 43 x 62 ; [962] | 0 | 33 x 50
+heute: Quader mit Platte, 8 m: [124] | 0 | 5 x 25 ; [86] | 0 | 9 x 16 ; [105] | 0 | 7 x 21
+heute: Item-Wuerfel mit Platte, 3 m: [561] | 0 | 27 x 22 ; [597] | 0 | 29 x 24 ; [627] | 0 | 30 x 26
+heute: Item-Wuerfel mit Platte, 8 m: [56] | 0 | 8 x 7 ; [70] | 0 | 8 x 9 ; [69] | 0 | 8 x 9
+a1: wie Runde 1, schwebend, 3 m: [107, 177, 272] | 0 | 68 x 48 ; [226, 186, 205] | 0 | 69 x 50 ; [120, 260, 142] | 0 | 68 x 58
+a1: wie Runde 1, schwebend, 8 m: [15, 30, 35] | 10 | 22 x 14 ; [29, 18, 28] | 0 | 21 x 17 ; [19, 38, 21] | 0 | 19 x 19
+a2: Spitzen unten zusammen, 3 m: [123, 142, 322] | 13 | 63 x 52 ; [249, 269, 163] | 42 | 61 x 47 ; [135, 283, 212] | 57 | 63 x 48
+a2: Spitzen unten zusammen, 8 m: [15, 26, 35] | 11 | 21 x 15 ; [31, 24, 27] | 6 | 21 x 17 ; [17, 37, 25] | 2 | 22 x 17
+
+Block 2, a2, Winkel 74 Grad: Bildpunkte, die sich vom Stueck 'ohne' unterscheiden (3 m / 8 m)
+ohne: Band blutrot wie in der Datei, Worn: 0 / 0
+ohne: Band blutrot wie in der Datei, Forged: 0 / 0
+ohne: Band blutrot wie in der Datei, Royal: 0 / 0
+ohne: Band blutrot wie in der Datei, Vampiric: 0 / 0
+Band in der Stufenfarbe, Worn: 27 / 2
+Band in der Stufenfarbe, Forged: 27 / 2
+Band in der Stufenfarbe, Royal: 27 / 2
+Band in der Stufenfarbe, Vampiric: 27 / 2
+Knoten: Wuerfel 0.09 m in der Stufenfarbe, Worn: 139 / 17
+Knoten: Wuerfel 0.09 m in der Stufenfarbe, Forged: 138 / 17
+Knoten: Wuerfel 0.09 m in der Stufenfarbe, Royal: 139 / 17
+Knoten: Wuerfel 0.09 m in der Stufenfarbe, Vampiric: 139 / 17
