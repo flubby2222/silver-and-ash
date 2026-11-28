@@ -1,0 +1,73 @@
+Throwing Knives (Issue 204), Bewegungsprobe: Zahlen aus pruefe.py
+Zeiten: Wurfabstand 60 Ticks, Nachladen 120 Ticks (assets/balance.json); Wurf A 18 Ticks, Wurf B 40 Ticks, danach Ruhe bis Tick 60
+
+Faecher (Ruhehaltung, alle drei Messer):
+   0 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 205
+   4 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 193
+   8 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 162
+  10 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 144
+  12 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 79
+  13 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 18
+  14 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 0
+  15 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 0
+  16 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 0
+  17 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 0
+  18 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 0
+  20 Grad: Dreieckspaare gegen den Aermel 0, sichtbar hinter dem Deckel 0, Bildzeilen mit Ueberdeckung 0
+  frei: [14, 15, 16, 17, 18, 20] Grad; Nachladen oeffnet von 15 auf 17 Grad
+
+Wurf A Schnapp, jeder Tick:
+  3 -> 2 Messer: 19 Ticks | Dreieckspaare gegen den Aermel 0 | sichtbare Punkte hinter dem Deckel 0 | offenes Unterarm-Ende im Bild 0 | kleinster Abstand zur Silver Blade 81 mm | naechster Punkt am Auge 8.6 cm (Grenze 5) | weitester Punkt 23.1 cm (Grenze 30) | groesster Knick Manschette/Unterarm 21.6 Grad
+  2 -> 1 Messer: 19 Ticks | Dreieckspaare gegen den Aermel 0 | sichtbare Punkte hinter dem Deckel 0 | offenes Unterarm-Ende im Bild 0 | kleinster Abstand zur Silver Blade 81 mm | naechster Punkt am Auge 8.6 cm (Grenze 5) | weitester Punkt 23.1 cm (Grenze 30) | groesster Knick Manschette/Unterarm 21.6 Grad
+  1 -> 0 Messer: 19 Ticks | Dreieckspaare gegen den Aermel 0 | sichtbare Punkte hinter dem Deckel 0 | offenes Unterarm-Ende im Bild 0 | kleinster Abstand zur Silver Blade 81 mm | naechster Punkt am Auge 8.6 cm (Grenze 5) | weitester Punkt 12.6 cm (Grenze 30) | groesster Knick Manschette/Unterarm 21.6 Grad
+Wurf A Schnapp, Schluesselhaltungen im Bild (alle drei Messer):
+  Tick  0: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [6080, 6240, 6931] px, im Zielfenster 2959 px
+  Tick  1: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [4311, 4590, 5550] px, im Zielfenster 1468 px
+  Tick  2: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [3777, 4066, 5114] px, im Zielfenster 825 px
+  Tick  4: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [3777, 4066, 5114] px, im Zielfenster 825 px
+  Tick  8: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [5129, 5373, 6213] px, im Zielfenster 2302 px
+  Tick 12: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [8152, 8054, 8416] px, im Zielfenster 3546 px
+  Tick 16: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [9889, 9507, 9563] px, im Zielfenster 3894 px
+
+Wurf B Durchzug, jeder Tick:
+  3 -> 2 Messer: 41 Ticks | Dreieckspaare gegen den Aermel 0 | sichtbare Punkte hinter dem Deckel 0 | offenes Unterarm-Ende im Bild 0 | kleinster Abstand zur Silver Blade 19 mm | naechster Punkt am Auge 7.9 cm (Grenze 5) | weitester Punkt 25.0 cm (Grenze 30) | groesster Knick Manschette/Unterarm 26.5 Grad
+  2 -> 1 Messer: 41 Ticks | Dreieckspaare gegen den Aermel 0 | sichtbare Punkte hinter dem Deckel 0 | offenes Unterarm-Ende im Bild 0 | kleinster Abstand zur Silver Blade 19 mm | naechster Punkt am Auge 7.9 cm (Grenze 5) | weitester Punkt 24.8 cm (Grenze 30) | groesster Knick Manschette/Unterarm 26.5 Grad
+  1 -> 0 Messer: 41 Ticks | Dreieckspaare gegen den Aermel 0 | sichtbare Punkte hinter dem Deckel 0 | offenes Unterarm-Ende im Bild 0 | kleinster Abstand zur Silver Blade 19 mm | naechster Punkt am Auge 7.9 cm (Grenze 5) | weitester Punkt 14.2 cm (Grenze 30) | groesster Knick Manschette/Unterarm 26.5 Grad
+Wurf B Durchzug, Schluesselhaltungen im Bild (alle drei Messer):
+  Tick  0: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [5936, 6083, 6724] px, im Zielfenster 3285 px
+  Tick  2: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [2950, 3216, 4252] px, im Zielfenster 0 px
+  Tick  4: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [2165, 2394, 3543] px, im Zielfenster 0 px
+  Tick  6: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [2065, 2284, 3442] px, im Zielfenster 0 px
+  Tick 10: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [1761, 1946, 3146] px, im Zielfenster 0 px
+  Tick 16: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [2378, 2620, 3726] px, im Zielfenster 0 px
+  Tick 22: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [4024, 4263, 5081] px, im Zielfenster 1565 px
+  Tick 28: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [6735, 6773, 7207] px, im Zielfenster 5090 px
+  Tick 34: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [8917, 8694, 8924] px, im Zielfenster 3667 px
+  Tick 37: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [9687, 9343, 9454] px, im Zielfenster 3741 px
+
+Nachladen, jeder Tick (120 Ticks, Fortschritt = Tick / 120):
+  0 -> 3 Messer: 121 Ticks | Dreieckspaare gegen den Aermel 0 | sichtbare Punkte hinter dem Deckel 0 | offenes Unterarm-Ende im Bild 0 | kleinster Abstand zur Silver Blade 53 mm | naechster Punkt am Auge 8.2 cm (Grenze 5) | weitester Punkt 20.4 cm (Grenze 30) | groesster Knick Manschette/Unterarm 34.8 Grad
+  strengster Fall, immer drei Messer: 121 Ticks | Dreieckspaare gegen den Aermel 0 | sichtbare Punkte hinter dem Deckel 0 | offenes Unterarm-Ende im Bild 0 | kleinster Abstand zur Silver Blade 53 mm | naechster Punkt am Auge 8.2 cm (Grenze 5) | weitester Punkt 20.4 cm (Grenze 30) | groesster Knick Manschette/Unterarm 34.8 Grad
+Nachladen, Schluesselhaltungen im Bild (alle drei Messer):
+  Fortschritt 0.04: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [9147, 8910, 8914] px, im Zielfenster 2977 px
+  Fortschritt 0.08: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [9738, 8690, 7819] px, im Zielfenster 0 px
+  Fortschritt 0.54: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [5561, 4348, 2787] px, im Zielfenster 0 px
+  Fortschritt 0.58: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [10267, 9261, 8528] px, im Zielfenster 16 px
+  Fortschritt 0.62: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [9470, 9266, 9315] px, im Zielfenster 1873 px
+  Fortschritt 0.68: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [8644, 8394, 8408] px, im Zielfenster 4180 px
+  Fortschritt 0.72: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [8539, 8291, 8288] px, im Zielfenster 4433 px
+  Fortschritt 0.76: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [8581, 8360, 8549] px, im Zielfenster 4249 px
+  Fortschritt 0.80: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [8783, 8565, 8807] px, im Zielfenster 3881 px
+  Fortschritt 0.88: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [8917, 8694, 8924] px, im Zielfenster 3667 px
+  Fortschritt 0.93: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [9232, 8977, 9147] px, im Zielfenster 3892 px
+  Fortschritt 1.00: Bildzeilen mit Ueberdeckung 0, Wicklung ueberdeckt 0 px, sichtbar je Messer [8917, 8694, 8924] px, im Zielfenster 3667 px
+Nachladen, Manschette unter dem Bildrand (hier erscheinen die drei Handmodelle):
+  Fortschritt 0.13: Bildpunkte der Messer 0, Ecken von Manschette und Messern im Bild 0
+  Fortschritt 0.30: Bildpunkte der Messer 0, Ecken von Manschette und Messern im Bild 0
+  Fortschritt 0.49: Bildpunkte der Messer 0, Ecken von Manschette und Messern im Bild 0
+  Ticks 15 bis 60: Ecken von Manschette und Messern im Bild, Summe 0
+
+Vergleich der beiden Wuerfe:
+  Wurf A Schnapp: Hand ruht wieder nach 18 von 60 Ticks (42 Ticks Ruhe vor dem naechsten Wurf) | groesster Knick 21.6 Grad | kleinster Abstand zur Silver Blade 81 mm | Haltepunkt wandert bis 45 px, groesster Sprung je Tick 22 px | im Zielfenster 120 x 120 px bis 3894 px | Aermel und Messer bedecken bis 46853 px
+  Wurf B Durchzug: Hand ruht wieder nach 40 von 60 Ticks (20 Ticks Ruhe vor dem naechsten Wurf) | groesster Knick 26.5 Grad | kleinster Abstand zur Silver Blade 19 mm | Haltepunkt wandert bis 160 px, groesster Sprung je Tick 54 px | im Zielfenster 120 x 120 px bis 5090 px | Aermel und Messer bedecken bis 47226 px
+ERGEBNIS: alle Phasen frei
