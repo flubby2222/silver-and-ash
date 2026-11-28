@@ -110,3 +110,36 @@ Urteil des Auftraggebers zu Runde 2 (2026-11-28): „E ist gut, das Modell soll 
 | 32 mm | nur ein schmaler Streifen Wicklung; die Klingen wachsen fast aus dem Ärmel, die Wicklung als Erkennungszeichen geht verloren |
 
 Noch offen: Ring und Band sind bei jeder dieser Tiefen im Ärmel verborgen; der Fächer dreht weiter um einen Punkt nahe am Knauf, die Griffe laufen dort ineinander.
+
+## Runde 4: Versatz zur Seite (`runde-4/`)
+
+Urteil des Auftraggebers zu Runde 3 (2026-11-28): „40mm und etwar 25 mm nach links, damit das Modell nicht in den Ärmel clipt“. Die Tiefe 40 mm ist damit gewählt. Am Modell ändert sich nichts.
+
+`runde-4/versatz.py` prüft an der Geometrie statt am Bild: jedes Dreieck der drei Messer gegen jedes Dreieck des Ärmels (`assets/models/pistol_hand.glb`, nur gelesen). Der Deckel der Manschette zählt nicht, dort tritt der Griff ein; jedes andere Dreieck ist ein Durchstich. Abgetastet wird der Versatz nach links von 0 bis 30 mm (`runde-4/versatz-zahlen.txt`). Blatt: `runde-4/versatz.png` (je Zeile Ich-Sicht 854 × 480, Manschette dreifach, zwei Prüfkameras), Einzelbilder unter `runde-4/ansichten/`.
+
+| Versatz nach links | Befund |
+|---|---|
+| 0 mm (Runde 3) | Die Wicklung des im Bild rechten Messers sticht durch die obere rechte Wand des Kragens (4 Dreieckspaare). Das ist die Stelle, die der Auftraggeber gesehen hat |
+| 1,5 bis 5,5 mm | frei: kein Dreieck des Ärmels außer dem Deckel wird berührt |
+| **3,5 mm (Empfehlung)** | Mitte des freien Fensters. Fächer ganz im Bild (x 394 bis 634, y 152 bis 347), 69 mm Abstand zur Silver Blade, im Bild keine Überdeckung |
+| ab 5,75 mm | das Band des rechten Messers sticht hinten durch die linke Ärmelwand; ab 9 mm die Wicklung des linken Messers, ab 12 mm auch Band und Ring des mittleren und linken |
+| 25 mm (wie bestellt) | 156 Dreieckspaare: Griffe, Ringe und Bänder aller drei Messer stehen aus der linken Ärmelwand, in der Ich-Sicht steht der linke Griff neben der Manschette, und der Fächer überdeckt die Silver Blade (318 Pixel) |
+
+Grund für das schmale Fenster: Der Ärmel knickt hinter der Manschette nach rechts unten ab, die Messer laufen gerade nach hinten. Mehr Platz nach links gäbe es erst mit kürzeren Bändern oder einem Fächer, der im Ärmel enger steht; das wäre eine Änderung an Modell oder Fächer und gehört nicht in diese Runde.
+
+### Endwerte der Haltung (für Teil 2, die Code-Sitzung)
+
+Alle Längen im Skriptmaß; Datei und Ich-Sicht sind 1,8-fach, die Werte in Klammern sind schon multipliziert (Spielachsen: x nach links im Bild, y oben, z vorn; Blender-Datei: Spitze −Y, Klingenbreite Z).
+
+| Größe | Wert |
+|---|---|
+| Modell | `runde-2/messer-e-schwarzruecken.glb`, dreimal, unverändert |
+| Haltepunkt des Ärmels relativ zum Auge | (−0,100; −0,095; 0,205) m, Ärmel `pistol_hand.glb` unverändert dort |
+| Tiefe: Klingenansatz bis Haltepunkt, längs der Messerachse | 40 mm (72 mm) |
+| Versatz der drei Messer gegen den Ärmel nach links (+x) | 3,5 mm (6,3 mm) |
+| Neigung der Spitze nach vorn oben | 44° |
+| Kippen im Bild (um die Blickachse) | 6° |
+| Fächer | −17°, 0°, +17° um die Dickenachse des Messers, Drehpunkt 85 mm (153 mm) hinter dem Klingenansatz |
+| Sichtfeld der Prüfung | 70° senkrecht, 854 × 480 |
+
+Als Matrix, wie in `blatt.py` (`held`) und `runde-4/versatz.py` (`put`): `T(Versatz) · T(Auge + Haltepunkt) · R_y(6°) · Neigung(44°) · T(0, −72 mm, 0) · T(0, 153 mm, 0) · R_z(Fächer) · T(0, −153 mm, 0) · R_y(90°)`, alles in Blender-Achsen. Wer Tiefe, Fächer oder Ärmel ändert, lässt `versatz.py` neu laufen: Das freie Fenster ist nur 4 mm breit.
