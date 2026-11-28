@@ -23,6 +23,9 @@ public enum Weapon
 
     /// <summary>The stake crossbow (issue #203).</summary>
     StakeCrossbow,
+
+    /// <summary>The throwing knives (issue #204).</summary>
+    ThrowingKnives,
 }
 
 /// <summary>How damage reaches a target (issue #771): a blow or shot, or the pulse of a flame.</summary>
@@ -136,6 +139,8 @@ public sealed class DamageRules
         rules.Add(new ZoneBonus(Weapon.Blunderbuss, HitZone.BossHead, balance.Gorm.HeadMultiplier));
         rules.Add(new ZoneBonus(Weapon.StakeCrossbow, HitZone.Head, balance.StakeCrossbow.HeadshotMultiplier));
         rules.Add(new ZoneBonus(Weapon.StakeCrossbow, HitZone.BossHead, balance.Gorm.HeadMultiplier));
+        rules.Add(new ZoneBonus(Weapon.ThrowingKnives, HitZone.Head, balance.ThrowingKnives.HeadshotMultiplier));
+        rules.Add(new ZoneBonus(Weapon.ThrowingKnives, HitZone.BossHead, balance.Gorm.HeadMultiplier));
         rules.Add(new ChargeBonus(balance.Blade.ChargeMaxMultiplier));
         rules.Add(new ChargeBonus(balance.Club.ChargeMaxMultiplier, Weapon.Club));
         rules.Add(new ChargeBonus(balance.HuntersAxe.ChargeMaxMultiplier, Weapon.HuntersAxe));

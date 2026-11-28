@@ -49,7 +49,7 @@ public static class BalanceFile
         "huntersAxe.damage", "huntersAxe.chargeStaminaSegments", "huntersAxe.coneStartBehind", "huntersAxe.knockback", "huntersAxe.chargedKnockback",
         "whip.damage", "whip.chargeStaminaSegments", "whip.coneStartBehind", "whip.knockback", "whip.chargedKnockback",
         "blade.pullTo", "club.pullTo", "huntersAxe.pullTo", "whip.pullTo",
-        "pistol.damage", "pistol.pierce", "rifle.damage", "rifle.pierce", "pistol.spread", "rifle.spread", "blunderbuss.damage", "blunderbuss.pierce", "blunderbuss.spread", "stakeCrossbow.damage", "stakeCrossbow.pierce", "stakeCrossbow.spread", "ghoul.attackDamage", "bat.biteDamage", "bat.spitAimBelowEyes", "bloodBolt.damage",
+        "pistol.damage", "pistol.pierce", "rifle.damage", "rifle.pierce", "pistol.spread", "rifle.spread", "blunderbuss.damage", "blunderbuss.pierce", "blunderbuss.spread", "stakeCrossbow.damage", "stakeCrossbow.pierce", "stakeCrossbow.spread", "throwingKnives.damage", "throwingKnives.pierce", "throwingKnives.spread", "ghoul.attackDamage", "bat.biteDamage", "bat.spitAimBelowEyes", "bloodBolt.damage",
         "drops.ghoulChance", "drops.batChance", "drops.consecratedAmmoShare", "bloodVial.heal",
         "keys.roomChance", "keys.enemyChance", "loot.higherTierChance", "loot.itemShare", "chests.combatRoomChance", "chests.treasureChestsMin", "chests.treasureChestsMax",
         "chests.beggar.combatShareNear", "chests.beggar.combatShareFar", "chests.beggar.treasureShare", "chests.beggar.lockedTreasureShare", "chests.beggar.secretShare", "chests.beggar.lockedChance", "chests.beggar.silverMin", "chests.beggar.silverMax", "chests.beggar.bloodVialChance", "chests.beggar.equipmentChance", "chests.guard.combatShareNear", "chests.guard.combatShareFar", "chests.guard.treasureShare", "chests.guard.lockedTreasureShare", "chests.guard.secretShare", "chests.guard.lockedChance", "chests.guard.silverMin", "chests.guard.silverMax", "chests.guard.bloodVialChance", "chests.guard.equipmentChance", "chests.king.combatShareNear", "chests.king.combatShareFar", "chests.king.treasureShare", "chests.king.lockedTreasureShare", "chests.king.secretShare", "chests.king.lockedChance", "chests.king.silverMin", "chests.king.silverMax", "chests.king.bloodVialChance", "chests.king.equipmentChance", "chests.vampire.combatShareNear", "chests.vampire.combatShareFar", "chests.vampire.treasureShare", "chests.vampire.lockedTreasureShare", "chests.vampire.secretShare", "chests.vampire.lockedChance", "chests.vampire.silverMin", "chests.vampire.silverMax", "chests.vampire.bloodVialChance", "chests.vampire.equipmentChance", "silver.ghoulChance", "silver.batChance", "silver.ghoulMin", "silver.ghoulMax", "silver.batMin", "silver.batMax",
@@ -94,6 +94,8 @@ public static class BalanceFile
         ["rifle.spread"] = 90,
         ["blunderbuss.spread"] = 90,
         ["stakeCrossbow.spread"] = 90,
+        ["throwingKnives.spread"] = 90,
+        ["throwingKnives.pierce"] = 0,   // a knife sticks in the first thing it hits (issue #204)
         ["ghoul.attackHalfAngle"] = 180,
         ["drops.ghoulChance"] = 1,
         ["drops.batChance"] = 1,

@@ -131,6 +131,9 @@ public sealed class HudLayout
 
         // A small rendering of its loaded model (issue #793, tools/hud/hud_armbrust.py), placed like the axe's.
         [WeaponKind.StakeCrossbow] = "icon_crossbow",
+
+        // Until the throwing knives have a sign of their own (issue #204, follow-up): the blade's, the nearest in shape.
+        [WeaponKind.ThrowingKnives] = "icon_blade",
     }.ToFrozenDictionary();
 
     private static readonly FrozenDictionary<ItemKind, string> ItemIcons = new Dictionary<ItemKind, string>

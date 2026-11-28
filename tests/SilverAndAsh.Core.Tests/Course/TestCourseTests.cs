@@ -205,6 +205,21 @@ public class TestCourseTests
     }
 
     [Fact]
+    public void The_weapons_of_the_first_station_lie_in_two_rows_each_in_a_cell_of_its_own()
+    {
+        // Issue #204: one row of nine weapons no longer fitted on one photo. Two rows keep the room five cells wide.
+        var world = TestCourse.NewWorld(Seed, Balance.Default);
+        var cells = world.EquipmentDrops.OfType<WeaponDrop>().Select(drop => CellOf(drop.Position)).ToList();
+
+        Assert.Equal(cells.Count, cells.Distinct().Count());
+        var rows = cells.GroupBy(cell => cell.Z).OrderBy(row => row.Key).ToList();
+        Assert.Equal(2, rows.Count);
+        Assert.Equal(rows[0].Key + 1, rows[1].Key);
+        Assert.True(rows[0].Count() >= rows[1].Count(), "The row by the wall is filled first.");
+        Assert.DoesNotContain(CellOf(world.Teleporters[0].Position), cells);
+    }
+
+    [Fact]
     public void The_cracked_wall_breaks_open_to_a_secret_room_with_a_chest()
     {
         var run = new CourseRun(Seed);

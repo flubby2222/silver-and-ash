@@ -30,7 +30,7 @@ Nach dem Titelbildschirm stehst du am Westende des Wegs und blickst nach Osten. 
 
 | Nr. | Station | Raumart | Was zu sehen ist |
 |---|---|---|---|
-| 1 | **Arms** | Start | Alle Waffen in einer Reihe an der Nordwand, die Gegenstände *Leech* und *Ashen Heart* an der Südwand, je mit `[F]`-Hinweis; der Teleporter des Starts auf dem Weg |
+| 1 | **Arms** | Start | Alle Waffen in zwei Reihen an der Nordwand (eine Reihe aus neun Waffen passte auf kein Foto mehr, Issue #204), die Gegenstände *Leech* und *Ashen Heart* an der Südwand, je mit `[F]`-Hinweis; der Teleporter des Starts auf dem Weg |
 | 2 | **Columns** | Start | Zwei Säulen links und rechts des Wegs, Silber neben einer, dahinter ein wacher Ghul |
 | 3 | **Cracked wall** | Start | Rissige Wand in der Mitte der Nordwand, dahinter die geheime Kammer mit Truhe. **So geht sie auf:** dicht vor die Wand treten, sie ansehen, die linke Maustaste halten, bis die Nahkampfwaffe voll aufgeladen ist und zittert, dann loslassen. Jeder voll aufgeladene Nahkampfhieb aus Reichweite bricht sie auf, mit der Silberklinge wie mit der Keule; **F**, normale Hiebe und Schüsse tun nichts |
 | 4 | **Portcullis** | Arena | Betritt ein Spieler sie, fallen die Gitter; ein Ghul und eine Fledermaus kommen bei der Säule heraus |
