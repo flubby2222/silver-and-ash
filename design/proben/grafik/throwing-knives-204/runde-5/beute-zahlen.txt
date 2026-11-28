@@ -1,0 +1,10 @@
+Beute 4b, 1,8-fach, 3 m: Bildpunkte je Messer [73, 79, 88], davon von mehr als einem Messer belegt 25
+Beute gestaffelt, 1,8-fach, 3 m: Bildpunkte je Messer [75, 79, 89], davon von mehr als einem Messer belegt 30
+Beute gestaffelt, 1:1, 3 m: Bildpunkte je Messer [24, 27, 24], davon von mehr als einem Messer belegt 11
+Beute gestaffelt, 2,5-fach, 3 m: Bildpunkte je Messer [161, 171, 181], davon von mehr als einem Messer belegt 88
+Beute gestaffelt, 2,5-fach, Faecher +-32, 3 m: Bildpunkte je Messer [161, 178, 195], davon von mehr als einem Messer belegt 58
+Beute 4b, 1,8-fach, 8 m: Bildpunkte je Messer [5, 6, 6], davon von mehr als einem Messer belegt 2
+Beute gestaffelt, 1,8-fach, 8 m: Bildpunkte je Messer [5, 5, 7], davon von mehr als einem Messer belegt 3
+Beute gestaffelt, 1:1, 8 m: Bildpunkte je Messer [1, 2, 3], davon von mehr als einem Messer belegt 2
+Beute gestaffelt, 2,5-fach, 8 m: Bildpunkte je Messer [11, 12, 15], davon von mehr als einem Messer belegt 10
+Beute gestaffelt, 2,5-fach, Faecher +-32, 8 m: Bildpunkte je Messer [8, 14, 17], davon von mehr als einem Messer belegt 6
