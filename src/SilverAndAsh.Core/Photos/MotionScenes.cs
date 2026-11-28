@@ -114,6 +114,7 @@ public static class MotionScenes
             }),
         new("column-breaking", "The breaking column of the showroom from 6 m: it stands at Z2, breaks, falls apart in its dust and lies as Z3 (issue #601).",
             BeforeBreakingColumn, FrameEvery: 3),
+        .. LootShimmerScenes.Clips(),
     ];
 
     /// <summary>The clip called <paramref name="name"/>, or null.</summary>

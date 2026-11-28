@@ -44,6 +44,7 @@ public static class PhotoScenes
         .. WhipScenes.All(),
         .. StakeCrossbowScenes.All(),
         .. ThrowingKnivesScenes.All(),
+        .. LootShimmerScenes.All(),
     ];
 
     /// <summary>

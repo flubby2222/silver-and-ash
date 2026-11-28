@@ -256,3 +256,11 @@ knives-stone-3m | ticks 175 menu None ---I- | Three throwing knives in the wall,
 knives-reload-down | ticks 199 menu None ---I- | The throwing knives in the reload, a fifth of the way: the empty hand goes down out of the picture (issue #821).
 knives-reload-up | ticks 271 menu None ---I- | The throwing knives in the reload, four fifths of the way: the hand comes back with three knives, the fan opening (issue #821).
 hud-knives | ticks 1 menu None ----- | Like hud-weapons, but the throwing knives in hand: their icon, a small picture of the knife (issue #821).
+loot-shimmer-3m | ticks 30 menu None --O-- | Loot of all four tiers 3 m away, an item of each (boxes) and the throwing knives: each floats without a plate, lights up, glows on the floor and throws sparks in the colour of its tier (issue #825).
+loot-shimmer-8m | ticks 30 menu None --O-- | The same loot of all four tiers 8 m away: can each piece and its tier still be told? (issue #825)
+loot-shimmer-weapons-3m | ticks 30 menu None --O-- | Weapons lying as loot 3 m away - club, rifle, hunting axe, crossbow as bars until they have models, and the throwing knives as three knives, tips together (issue #825).
+loot-shimmer-knives-2m | ticks 30 menu None --O-- | The throwing knives lying as loot, seen from 2 m: three knives, tips together at the bottom, leaning apart (form a2 of the trial piece, issue #825).
+loot-shimmer-pair-3m | ticks 30 menu None --O-- | Two pieces of loot 0.4 m apart, 3 m away: their glows on the floor overlap without flickering (issue #825).
+loot-shimmer-frost-4m | ticks 3 menu None --O-- | A piece of loot next to a chilled ghoul 4 m away: its glow on the floor lies over the disc of rime without flickering (issue #825).
+loot-shimmer-step-4m | ticks 30 menu None --O-- | Two pieces of loot 4 m away, the right one at a pillar, the left one in front of a step of 0.25 m: the glow is cut off at the wall and does not climb the step (issue #825).
+loot-shimmer-30 | ticks 30 menu None --O-- | Thirty pieces of loot in one hall, 3 m to 8 m away - to measure the frame rate with --bench (issue #825).
