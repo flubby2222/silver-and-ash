@@ -43,6 +43,7 @@ Mehrere dieser Regeln erzwingen Hooks in [.claude/hooks/](.claude/hooks/). Block
 - Stil-Dokumente: `docs/design/art-bible.md` und `docs/design/audio-bible.md`. Designer lesen sie vor jeder Aufgabe; jede Ablehnung wird dort zur Regel.
 - **Alles per Skript erzeugt, nichts heruntergeladen** (Modelle mit Blender-Python, Audio per Synthese). Jede Asset-Datei steht mit Skript und Datum in `assets/HERKUNFT.md`.
 - Probestücke entstehen außerhalb des Spiels. Ins Spiel kommt erst, was den Stil dreimal in Folge ohne Nacharbeit trifft.
+- **Designer werden gemessen:** Jedes Urteil des Menschen trägt die Leitung in `docs/design/abnahmen.md` ein; die drei Kennzahlen daraus stehen in jeder Retro. Das Vorhandene ist für Designer Orientierung, kein Maßstab.
 - **Ton beurteilt der Mensch:** Die Leitung kann nicht hören. Pro neuer Geräusch-Kategorie eine Hörprobe vor der ersten Integration.
 
 ## Nach dem Merge
