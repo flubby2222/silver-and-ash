@@ -329,6 +329,15 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0.012f, 0.06f) * hand, new Vector3(0.012f, 0.012f, 0.2f), Silver);
     }
 
+    // The throwing knives until their model is in (issue #204): one knife held by its dark grip, the pale blade forward.
+    // No muzzle flash - nothing burns.
+    private static void DrawKnifeBoxes(Matrix4x4 hand)
+    {
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, -0.02f) * hand, new Vector3(0.018f, 0.026f, 0.09f), Wood);
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.03f) * hand, new Vector3(0.05f, 0.012f, 0.012f), Iron);
+        ShadedBox.Draw(Matrix4x4.CreateTranslation(0f, 0f, 0.11f) * hand, new Vector3(0.006f, 0.03f, 0.15f), Silver);
+    }
+
     private void DrawPistol(Matrix4x4 motion, Matrix4x4 modelMotion)
     {
         // Recoil: kicked back and up at once, then easing back into place.
@@ -353,6 +362,12 @@ internal sealed class WeaponView(WeaponModels? models = null, LevelShader? shade
         if (_ranged == WeaponKind.StakeCrossbow)
         {
             DrawCrossbowBoxes(hand);
+            return;
+        }
+
+        if (_ranged == WeaponKind.ThrowingKnives)
+        {
+            DrawKnifeBoxes(hand);
             return;
         }
 

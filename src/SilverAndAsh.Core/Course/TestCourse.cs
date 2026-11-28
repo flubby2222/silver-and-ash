@@ -29,7 +29,7 @@ public static class TestCourse
     /// </summary>
     public static IReadOnlyList<CourseStation> Stations { get; } =
     [
-        new("Arms", RoomKind.Start, Math.Max(5, Enum.GetValues<WeaponKind>().Length), Arms), // one cell per weapon in its row
+        new("Arms", RoomKind.Start, Math.Max(5, (Enum.GetValues<WeaponKind>().Length + 1) / 2), Arms), // the weapons lie in two rows, one cell each
         new("Columns", RoomKind.Start, 7, Columns),
         new("Cracked wall", RoomKind.Start, 5, room => room.SecretRoomNorth()),
         new("Portcullis", RoomKind.Combat, 7, Portcullis),
@@ -126,19 +126,21 @@ public static class TestCourse
         return level;
     }
 
-    // 1: every weapon lying in a row along the north wall (and in the hands, see NewWorld), both vampiric items along
-    // the south wall - each with its [F] prompt - and the teleporter of the start on the way.
+    // 1: every weapon lying in two rows by the north wall (and in the hands, see NewWorld) - one row of nine was too
+    // long for one photo (issue #204) -, both vampiric items along the south wall - each with its [F] prompt - and the
+    // teleporter of the start on the way, east of the middle so that it hides no weapon from the photo's stand.
     private static void Arms(CourseRoom room)
     {
         var step = 0;
         foreach (var kind in Enum.GetValues<WeaponKind>())
         {
-            room.Weapon(kind, step++, CourseRoom.Top);
+            room.Weapon(kind, step % room.Station.Width, CourseRoom.Top + (step / room.Station.Width));
+            step++;
         }
 
         room.Item(ItemKind.Leech, 1, CourseRoom.Bottom);
         room.Item(ItemKind.AshenHeart, 3, CourseRoom.Bottom);
-        room.Teleporter(2, CourseRoom.Way, TeleporterSite.Start);
+        room.Teleporter(3, CourseRoom.Way, TeleporterSite.Start);
     }
 
     // 2: two columns either side of the way, silver beside one of them, a ghoul beyond them - awake, as outside an arena.

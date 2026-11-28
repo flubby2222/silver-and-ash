@@ -109,13 +109,43 @@ public sealed record Balance
         Pierce = 4,
     };
 
+    /// <summary>
+    /// The throwing knives (Vampiric, decision record 0008, issue #204): heavy damage, a low rate of fire, a few knives
+    /// to a hand. A knife flies (<see cref="Gameplay.ThrownKnife"/>) instead of hitting at once and sticks in the first thing it
+    /// meets, so <see cref="RangedBalance.Pierce"/> must stay 0; <see cref="RangedBalance.Range"/> is how far it flies.
+    /// Provisional values until the playtest.
+    /// </summary>
+    public RangedBalance ThrowingKnives { get; init; } = new()
+    {
+        Damage = 90,
+        HeadshotMultiplier = 2f,
+        Range = 40f,
+        Cooldown = 1f,
+        MagazineSize = 3,
+        ReloadTime = 2f,
+    };
+
+    /// <summary>How a thrown knife flies and how many stay stuck (issue #204).</summary>
+    public ThrownBalance KnifeFlight { get; init; } = new();
+
     /// <summary>The values of ranged weapon <paramref name="kind"/>.</summary>
     public RangedBalance Ranged(Gameplay.WeaponKind kind) => kind switch
     {
         Gameplay.WeaponKind.Rifle => Rifle,
         Gameplay.WeaponKind.Blunderbuss => Blunderbuss,
         Gameplay.WeaponKind.StakeCrossbow => StakeCrossbow,
+        Gameplay.WeaponKind.ThrowingKnives => ThrowingKnives,
         _ => Pistol,
+    };
+
+    /// <summary>
+    /// How a shot of ranged weapon <paramref name="kind"/> flies, or null if it hits at once like a bullet. The table
+    /// that decides between the two: a weapon in here throws real projectiles.
+    /// </summary>
+    public ThrownBalance? Thrown(Gameplay.WeaponKind kind) => kind switch
+    {
+        Gameplay.WeaponKind.ThrowingKnives => KnifeFlight,
+        _ => null,
     };
 
     /// <summary>The training dummy.</summary>
@@ -983,8 +1013,9 @@ public sealed record MeleeBalance
 
 /// <summary>
 /// Balancing values of a ranged weapon - the pistol (<see cref="Balance.Pistol"/>), the rifle
-/// (<see cref="Balance.Rifle"/>), the blunderbuss (<see cref="Balance.Blunderbuss"/>) and the stake crossbow
-/// (<see cref="Balance.StakeCrossbow"/>) have the same kind of values (decision record 0008).
+/// (<see cref="Balance.Rifle"/>), the blunderbuss (<see cref="Balance.Blunderbuss"/>), the stake crossbow
+/// (<see cref="Balance.StakeCrossbow"/>) and the throwing knives (<see cref="Balance.ThrowingKnives"/>) have the same
+/// kind of values (decision record 0008).
 /// </summary>
 public sealed record RangedBalance
 {
@@ -1292,6 +1323,19 @@ public sealed record BatBalance
 
     /// <summary>The way to its target is searched again at most this often, in seconds.</summary>
     public float RepathTime { get; init; } = 0.5f;
+}
+
+/// <summary>
+/// Balancing values of a thrown weapon's flight (the throwing knives, <see cref="Balance.KnifeFlight"/>): what a weapon
+/// that really flies has on top of its <see cref="RangedBalance"/>.
+/// </summary>
+public sealed record ThrownBalance
+{
+    /// <summary>Speed in m/s - far faster than a blood bolt, but a moving target must still be led.</summary>
+    public float Speed { get; init; } = 30f;
+
+    /// <summary>How many knives stay stuck in walls and bodies at once; with one more the oldest is gone.</summary>
+    public int StuckMax { get; init; } = 24;
 }
 
 /// <summary>Balancing values of the bat's blood bolt.</summary>

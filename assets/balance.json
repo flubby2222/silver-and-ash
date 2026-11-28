@@ -141,6 +141,23 @@
     "spread": 0
   },
 
+  "throwingKnives": {                   // the throwing knives (Vampiric): heavy, slow, and they really fly (provisional)
+    "damage": 90,
+    "headshotMultiplier": 2,            // 200 % on the head
+    "range": 40,                        // m a knife flies before it is gone
+    "cooldown": 1,                      // s between throws
+    "magazineSize": 3,                  // knives to a hand ...
+    "reloadTime": 2,                    // ... and the time to draw the next three (s)
+    "pierce": 0,                        // must stay 0: a knife sticks in the first thing it hits
+    "pellets": 1,                       // knives per throw ...
+    "spread": 0                         // ... in a cone this wide (degrees)
+  },
+
+  "knifeFlight": {                      // how a thrown knife flies (the blood bolt has 12 m/s)
+    "speed": 30,                        // m/s, straight ahead: a moving target must be led
+    "stuckMax": 24                      // knives that stay stuck in walls and bodies; with one more the oldest is gone
+  },
+
   "dummy": {
     "maxHealth": 100,
     "downTime": 3                       // s lying on the ground

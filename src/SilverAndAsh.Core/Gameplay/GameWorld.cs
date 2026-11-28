@@ -31,6 +31,7 @@ public sealed class GameWorld
     private bool _gormLootDropped;
     private Stairs? _stairs;
     private readonly List<Projectile> _projectiles = [];
+    private readonly ThrownKnives _knives = new();
     private readonly List<Pickup> _pickups = [];
     private readonly HashSet<int> _dropsRolled = [];
     private int _nextPickupId;
@@ -1529,6 +1530,47 @@ public sealed class GameWorld
         _projectiles.RemoveAll(projectile => projectile.IsGone);
     }
 
+    /// <summary>The knives a player threw that are still in flight (issue #204).</summary>
+    public IReadOnlyList<ThrownKnife> FlyingKnives => _knives.Flying;
+
+    /// <summary>The knives that stick in walls and in targets, oldest first (issue #204).</summary>
+    public IReadOnlyList<StuckKnife> StuckKnives => _knives.Stuck;
+
+    /// <summary>
+    /// A shot of a weapon that throws (<see cref="Balance.Thrown"/>) hits nothing yet: each of its knives starts to fly,
+    /// from the eyes along the view like a bullet. They move from this tick on (<see cref="MoveKnives"/>).
+    /// </summary>
+    private void Throw(ShotFired shot, Player thrower, RangedBalance values, ThrownBalance flight)
+    {
+        var forward = Vector3.Normalize(shot.Direction);
+        for (var knife = 0; knife < values.Pellets; knife++)
+        {
+            _knives.Throw(thrower, shot.Weapon, shot.Origin, Spread(forward, values.Spread), flight, values.Range);
+        }
+    }
+
+    /// <summary>Moves every knife in flight one tick, after the enemies moved: a knife meets them where they are now.</summary>
+    private void MoveKnives() => _knives.Move(Level, Targets.ToList(), StrikeWithKnife, _events);
+
+    /// <summary>
+    /// A knife in flight met <paramref name="target"/> in <paramref name="zone"/>: the damage of its weapon, for its
+    /// thrower, and the weapon's effect as after any other shot. Returns whether the hit counted - if not, the knife
+    /// flies on (the showroom's exhibits).
+    /// </summary>
+    private bool StrikeWithKnife(ThrownKnife knife, ITarget target, HitZone zone)
+    {
+        var hit = new Hit(Weapons.ForDamage(knife.Weapon), zone, Balance.Ranged(knife.Weapon).Damage);
+        if (!Damage(target, hit, knife.Thrower, out var dealt))
+        {
+            return false;
+        }
+
+        var struck = new StruckTargets();
+        struck.Add(target, dealt);
+        SetOffWeaponEffect(struck, knife.Weapon, knife.Thrower);
+        return true;
+    }
+
     /// <summary>Does a ball at <paramref name="centre"/> touch the upright cylinder <paramref name="body"/>?</summary>
     private static bool Touches(Vector3 centre, float radius, CylinderBody body)
     {
@@ -1721,11 +1763,17 @@ public sealed class GameWorld
     /// A shot hits the first thing on its ray within the weapon's range: a target (damage) or a wall, floor or
     /// ceiling (an impact). A piercing weapon (the rifle, the stake crossbow) goes on through as many more targets as
     /// its <see cref="RangedBalance.Pierce"/> says, each of them once and with the full damage - walls and columns always
-    /// stop it. Instant - no flying bullet ("hitscan").
+    /// stop it. Instant - no flying bullet ("hitscan") - unless the weapon throws: then its knives start to fly instead.
     /// </summary>
     private void FireShot(ShotFired shot, Player attacker)
     {
         var values = Balance.Ranged(shot.Weapon);
+        if (Balance.Thrown(shot.Weapon) is { } flight)
+        {
+            Throw(shot, attacker, values, flight);
+            return;
+        }
+
         var forward = Vector3.Normalize(shot.Direction);
 
         // Every target the shot struck, once - however many pellets hit it (the blunderbuss rule of issue #505).
@@ -2079,6 +2127,7 @@ public sealed class GameWorld
         }
 
         MoveProjectiles();
+        MoveKnives();
         DropFromTheDead();
         DropGormsLoot();
         MovePickups();
