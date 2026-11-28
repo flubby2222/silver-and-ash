@@ -389,6 +389,9 @@ public class ThrowingKnivesPoseTests
     public void A_stuck_knife_has_part_of_its_blade_in_the_target_and_its_handle_hanging_up_outside(int id)
     {
         var point = new Vector3(2f, 1.2f, 5f);
+
+        // Part of the blade, not all of it: at least 2 cm are in the target, and more than a third of the blade shows.
+        Assert.InRange(ThrowingKnivesPose.StuckDepth, 0.02f, ThrowingKnivesPose.BladeLength * 2f / 3f);
         foreach (var direction in (Vector3[])[Vector3.UnitZ, Vector3.Normalize(new Vector3(1f, -0.2f, 0.4f)), -Vector3.UnitX])
         {
             var pose = ThrowingKnivesPose.Stuck(point, direction, id);
