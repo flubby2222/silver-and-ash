@@ -1,0 +1,11 @@
+Throwing Knives als Beute (#819): Bildpunkte im Spielbild 854 x 480, Auge 1,6 m. Messer 2,5-fach, 196 Dreiecke je Messer.
+Je Drehwinkel (0 / 74 / 149 Grad): Bildpunkte je Messer [1, 2, 3] | von mehr als einem Messer belegt | Hoehe x Breite des Umrisses
+
+heute: Quader 0,55 x 0,09 x 0,12 m, 3 m: [1142] | 0 | 17 x 70 ; [1094] | 0 | 43 x 62 ; [962] | 0 | 33 x 50
+heute: Quader 0,55 x 0,09 x 0,12 m, 8 m: [124] | 0 | 5 x 25 ; [86] | 0 | 9 x 16 ; [105] | 0 | 7 x 21
+a "Dreistich", 3 m: [140, 197, 225] | 64 | 65 x 43 ; [195, 115, 235] | 55 | 63 x 38 ; [136, 250, 109] | 0 | 65 x 49
+a "Dreistich", 8 m: [16, 30, 31] | 18 | 21 x 16 ; [29, 16, 28] | 9 | 19 x 15 ; [19, 34, 15] | 0 | 21 x 18
+b "Dreibein", 3 m: [134, 264, 175] | 28 | 66 x 43 ; [306, 100, 117] | 33 | 69 x 41 ; [174, 182, 235] | 82 | 63 x 42
+b "Dreibein", 8 m: [14, 35, 29] | 3 | 21 x 15 ; [39, 11, 23] | 2 | 21 x 15 ; [21, 28, 25] | 9 | 20 x 16
+c "Staffel", 3 m: [215, 212, 192] | 0 | 61 x 44 ; [128, 131, 128] | 0 | 58 x 32 ; [259, 245, 230] | 0 | 45 x 65
+c "Staffel", 8 m: [29, 26, 23] | 0 | 20 x 19 ; [31, 21, 21] | 0 | 20 x 7 ; [24, 17, 18] | 0 | 17 x 23
