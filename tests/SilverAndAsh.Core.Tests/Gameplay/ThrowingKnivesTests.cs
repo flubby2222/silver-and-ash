@@ -522,6 +522,80 @@ public class ThrowingKnivesTests
         Assert.Equal(0.5f, ThrownKnives.DistanceTo(dummy, beside, -Vector3.UnitX)!.Value, 4);
     }
 
+    // ---- The nearest thing on one tick's stretch (review of PR #813) ------------------------------------------------
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Of_two_targets_on_the_stretch_of_one_tick_the_knife_sticks_in_the_nearer(bool fartherFirstInTheList)
+    {
+        // Two dummies crowd so close that the knife reaches both within the stretch of one tick: only the order along
+        // its line decides. The world places dummies on cell centres (2 m apart, four stretches), so this test drives
+        // the knives of a world directly - the same Move the world calls once a tick - with dummies placed freely.
+        var level = LevelParser.Parse(Corridor(4, "."));
+        var thrower = new Player(level);
+        var eye = thrower.EyePosition;
+        var radius = BodySizes.Dummy.Radius;
+        var side = radius / 2f;
+        var depth = MathF.Sqrt(radius * radius - side * side);   // from a dummy's front on the line to its centre
+        var start = 2f * Step;                                   // the third tick's stretch begins here
+        var near = new TrainingDummy(0, new Vector3(eye.X + side, 0f, eye.Z + start + Step * 0.25f + depth), Sturdy);
+        var far = new TrainingDummy(1, new Vector3(eye.X - side, 0f, eye.Z + start + Step * 0.75f + depth), Sturdy);
+        var toNear = Raycast.AgainstCylinder(eye, Vector3.UnitZ, near.Body)!.Value;
+        var toFar = Raycast.AgainstCylinder(eye, Vector3.UnitZ, far.Body)!.Value;
+        Assert.True(start < toNear && toNear < toFar && toFar < start + Step, "Both dummies must be met on the third tick's stretch, one before the other.");
+
+        var knives = new ThrownKnives();
+        var events = new List<GameEvent>();
+        IReadOnlyList<ITarget> targets = fartherFirstInTheList ? [far, near] : [near, far];
+        bool Strike(ThrownKnife knife, ITarget target, HitZone zone) => target.TakeDamage(Knives.Damage, events) > 0;
+        knives.Throw(thrower, WeaponKind.ThrowingKnives, eye, Vector3.UnitZ, Flight, Knives.Range);
+
+        knives.Move(level, targets, Strike, events);
+        knives.Move(level, targets, Strike, events);
+        Assert.DoesNotContain(events, e => e is KnifeStuck or DummyHit);
+        knives.Move(level, targets, Strike, events);
+
+        Assert.Equal(near.Id, Assert.Single(events.OfType<KnifeStuck>()).TargetId);
+        Assert.Equal(near.Id, Assert.Single(events.OfType<DummyHit>()).DummyId);
+        Assert.Equal(Sturdy.Dummy.MaxHealth, far.Health);
+        Assert.Equal(near.Id, Assert.Single(knives.Stuck).TargetId);
+        Assert.Empty(knives.Flying);
+    }
+
+    [Fact]
+    public void Stone_just_before_a_target_on_the_stretch_of_one_tick_keeps_the_knife()
+    {
+        // A column stands so close before the dummy that the knife would reach both within the stretch of one tick:
+        // it sticks in the column, the dummy behind is not hurt.
+        var open = LevelParser.Parse(Corridor(2, "D\n."));
+        var probe = World(open);
+        var eye = probe.Player.EyePosition;
+        var forward = probe.Player.View.Forward;
+        var toDummy = Raycast.AgainstCylinder(eye, forward, probe.Dummies[0].Body)!.Value;
+        var tick = TicksFor(toDummy);
+        var start = (tick - 1) * Step;                // the stretch of the tick in which the knife reaches the dummy
+        var intoStretch = toDummy - start;
+        Assert.True(intoStretch > 0.02f, "The dummy's front lies on the edge of a stretch - no room for stone before it.");
+
+        // The column's front halfway between the start of that stretch and the dummy's front.
+        var column = new Column(eye.X, eye.Z + start + intoStretch / 2f + Column.Radius);
+        var world = World(open.WithColumns([column]));
+        var stone = Raycast.AgainstLevel(world.Level, eye, forward, Knives.Range)!.Value;
+        Assert.True(start < stone.Distance && stone.Distance < toDummy, "The column's front must lie on the same stretch as the dummy's, before it.");
+
+        var (events, stuckInTick) = ThrowAndWatch(world);
+        events.AddRange(Run(world, PlayerInput.None, SimulationClock.TicksPerSecond));
+
+        Assert.Equal(tick, stuckInTick);
+        var stuck = Assert.Single(events.OfType<KnifeStuck>());
+        Assert.Null(stuck.TargetId);
+        Assert.True(Vector3.Distance(stone.Point, stuck.Point) < 0.001f, $"The knife stuck at {stuck.Point}, the column's front is at {stone.Point}.");
+        Assert.Equal(WeaponKind.ThrowingKnives, Assert.Single(events.OfType<BulletImpact>()).Weapon);
+        Assert.DoesNotContain(events, e => e is DummyHit or TargetHitBy);
+        Assert.Equal(0, Lost(world.Dummies[0]));
+    }
+
     // ---- Damage ----------------------------------------------------------------------------------------------------
 
     [Fact]
