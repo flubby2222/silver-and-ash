@@ -91,6 +91,73 @@ Zum Vergleich: Der heutige Item-Würfel zeigt 561 bis 627 px in 3 m und 56 bis 7
 - Ein Raum des Spiels mit seinen Wandzonen und Lichtquellen; gerechnet sind Nebel und Laterne des Shaders im Proberaum.
 - In Runde 1 teilten sich die Messerkopien ein Netz und damit das Licht des zuletzt gestellten Messers. Die Zählungen dort betrifft das nicht, die Helligkeit der Klingen im Blatt der Runde 1 schon. Runde 2 gibt jedem Messer ein eigenes Netz.
 
+## Runde 3: pulsierender Schimmer in der Stufenfarbe
+
+Urteil zu Runde 2: Form a2 ist gewählt, Knoten und Band entfallen. Gewünscht ist ein pulsierender Schimmer in der Stufenfarbe, als System für alle Beute.
+
+Skript: `runde-3/schimmer.py` (Aufruf `blender --background --python schimmer.py`, braucht `ffmpeg` im Pfad). Es rendert Gang und Platten einmal, je Bild nur die bewegten Stücke, und setzt Laterne, Nebel und 15-Bit-Raster mit den Formeln aus `assets/shaders/level.fs` zusammen. Ergebnis in `runde-3/`:
+
+- `schimmer-819-runde-3.png`: Standbild-Blatt mit Messwerten.
+- `schimmer-<bauart>-a2.gif` und `schimmer-<bauart>-wuerfel.gif` für a, b, c, dazu `schimmer-heute.gif` (Würfel mit Platte) und `schimmer-ohne.gif` (a2 ohne Schimmer). Spielbild 854 × 480, 20 Bilder/s, 105 Bilder = 5,25 s, nahtlose Schleife (eine Drehung, zwei Auf und Ab). Vorn 3 m, hinten 8 m; von links Worn, Forged, Royal, Vampiric.
+- `schimmer-zahlen.txt`: alle Zählungen.
+
+Farben aus `ChestView.Colours` (Vampiric auf der Mitte seines eigenen Pulses gehalten). Bewegung wie `PickupView.DrawEquipment`: Auf und Ab ±0,04 m, Drehung um die Hochachse.
+
+### Die drei Bauarten
+
+| | Was pulsiert | Pulsdauer | Stärke | Einbau |
+|---|---|---|---|---|
+| A Aufleuchten | das Stück selbst, in vier harten Stufen | 1,75 s | a2: Fläche zu 20 bis 70 % in die Stufenfarbe gemischt; Würfel: Helligkeit 60 bis 100 % | `LevelShader.SetFlash` und `SetGlow` je Stück in `PickupView`; beides gibt es schon, keine neue Geometrie |
+| B Bodenschein | gerasterte Scheibe am Boden unter dem Stück (drei Ringe, Radius 0,16 / 0,27 / 0,36 m, 15 mm über dem Boden), Stufenfarbe unbeleuchtet, im Nebel | 2,625 s | Anteil gesetzter Rasterpunkte 4 bis 12 von 16 in der Mitte, außen 60 % und 30 % davon | Scheibe als Netz mit `SetPattern`; neu im Shader: Bildpunkte außerhalb des Musters verwerfen statt sie mit der Fläche zu füllen (etwa zwei Zeilen in `level.fs`, ein Uniform) |
+| C Funken | sechs unbeleuchtete Würfel (0,05 m, oben 0,03 m), die auf einem Kreis mit 0,25 m Radius von 0,06 auf 0,78 m steigen | 1,75 s je Schub, Lebensdauer 0,8 s | 4 bis 6 Funken gleichzeitig | `ShadedBox.DrawGlowing` wie die Motes in `StatusView`; nichts Neues im Shader |
+
+Ein weicher Lichthof um das Stück ist nicht gebaut: Die Art Bible verbietet weiches Glühen und Leuchtschein („helle Dinge hellen die Umgebung auf“). B ist die Fassung, die dieser Regel folgt; C ist der Lichthof als harte Einzelstücke.
+
+### Messung: Bildpunkte, die die Stufe tragen, in 8 m
+
+Gezählt sind Bildpunkte, die sich vom selben Bild ohne Stufenfarbe um mehr als 16 unterscheiden (Summe der drei Kanäle). Angabe dunkelstes / hellstes Bild des Pulses, darunter der kleinste Wert im ganzen Puls.
+
+| | Worn | Forged | Royal | Vampiric | kleinster Wert im Puls | kleinster Farbabstand zweier Stufen, dunkel / hell |
+|---|---|---|---|---|---|---|
+| heute: Würfel mit Platte | 156 / 168 | 158 / 151 | 152 / 162 | 155 / 170 | 138 bis 150 | 23 / 18 |
+| A, a2 | 9 / 81 | 1 / 72 | 23 / 74 | 14 / 68 | 0 bis 22 | 14 / 36 |
+| A, Würfel | 62 / 76 | 40 / 69 | 56 / 69 | 63 / 76 | 28 bis 56 | 21 / 50 |
+| B, a2 | 16 / 64 | 15 / 61 | 16 / 62 | 15 / 61 | 15 bis 16 | 58 / 60 |
+| B, Würfel | 79 / 115 | 73 / 115 | 72 / 132 | 71 / 133 | 63 bis 72 | 39 / 47 |
+| C, a2 | 12 / 30 | 11 / 26 | 6 / 27 | 14 / 25 | 6 bis 11 | 63 / 60 |
+| C, Würfel | 74 / 87 | 72 / 92 | 63 / 96 | 63 / 101 | 60 bis 63 | 37 / 40 |
+
+Das engste Stufenpaar ist überall Worn gegen Vampiric. In 3 m (Werte in `schimmer-zahlen.txt`): B an a2 349 bis 353 / 1174 bis 1191 px, A an a2 170 bis 513 / 447 bis 552, C an a2 98 bis 176 / 170 bis 234, heute 1803 bis 2207.
+
+Lesart:
+
+- Keine Bauart erreicht die Menge von Würfel plus Platte (138 px und mehr). B am Würfel kommt mit 63 bis 133 px am nächsten und trennt die Stufen dabei besser (Abstand 39 bis 47 gegen 18 bis 23).
+- A verliert die Stufe im dunklen Bild: an a2 in Forged 1 px, im Puls bis 0. Worn auf a2 hebt sich vom braunen Boden kaum ab.
+- B trägt die Stufe unabhängig von der Eigenfarbe des Stücks: an a2 in allen vier Stufen 15 bis 16 px im dunkelsten Bild.
+- C bleibt an a2 bei 6 bis 14 px im dunkelsten Bild und zerfällt in Einzelpunkte.
+
+### Verwechslung mit Gegner- und Treffer-Effekten
+
+Farbabstand der Stufenfarben zu belegten Effektfarben (ohne Nebel, Summe der Kanalabstände geteilt durch drei): Forged gegen Reif dunkel 16, gegen Kälte 61; Vampiric gegen Warnung Gorm 26, gegen kritischen Treffer 59; Royal gegen Glut Gorm 65, gegen Schlüssel 82; Worn mindestens 102.
+
+- A benutzt denselben Weg wie das Trefferblitzen der Gegner (`SetFlash`) und das heilige Glühen der Waffe; Vampiric blitzt damit rot auf einem Stück am Boden.
+- B liegt wie die Frostscheibe am Boden und ist gerastert wie sie. Die Frostscheibe ist größer (Radius 0,62 m), hat einen hellen Rand und liegt unter einem Gegner; Forged liegt farblich nur 16 neben ihrem dunklen Ton. Das ist die engste Stelle der Empfehlung.
+- C sind dieselben 0,05-m-Würfel wie die Motes, die im Statuseffekt um Gegner kreisen; hier steigen sie, dort kreisen sie.
+
+### Empfehlung Runde 3
+
+**B Bodenschein.** Grund: im dunkelsten Bild des Pulses trägt er an a2 in 8 m in jeder Stufe 15 bis 16 px (A 1 bis 23, C 6 bis 14), und der kleinste Farbabstand zweier Stufen ist 58 bis 60 (A 14 bis 36, heute 18 bis 23). Er ist die einzige Bauart, die an Würfel und a2 gleich aussieht, also als System taugt. Preis: eine kleine Shader-Erweiterung, weniger Bildpunkte als die heutige Platte, und es liegt wieder etwas am Boden, wenn auch durchsichtig und rund.
+
+### Nicht geprüft (Runde 3)
+
+- Die GIFs haben eine Palette von 256 Farben je Film; A an a2 hat bis 415 Farben in einem Bild, C 267, B 253. In den GIFs von A und C sind einzelne Farbtöne daher auf die nächste Palettenfarbe gelegt. Gemessen ist am unverfälschten Bild, nicht am GIF.
+- Die Filme laufen mit 20 Bildern/s, das Spiel mit 60.
+- Ein Raum des Spiels, mehrere Beutestücke dicht beieinander, Beute neben einem Gegner mit Frost.
+- Der eigene Puls von Vampiric (hier auf der Mitte gehalten) zusammen mit dem Schimmer-Puls.
+- Versetzte Phasen je Stück (im Spiel über die Id); hier pulsieren alle acht Stücke gleichzeitig.
+- Münzen und Schlüssel, die keine Stufe haben.
+- Der Shader ist in Python nachgerechnet, nicht im Spiel gelaufen.
+
 ## Nicht geprüft (Runde 1)
 
 - Nebel und Raumlicht eines echten Raums; gemessen ist nur der Proberaum der Runde 5.

@@ -1,0 +1,83 @@
+Throwing Knives als Beute (#819), Runde 3: Schimmer in der Stufenfarbe. Spielbild 854 x 480, Auge 1,6 m, 105 Bilder, 20 je Sekunde.
+A Aufleuchten: Puls 1.75 s in vier Stufen; a2 Stufenfarbe 0.20 bis 0.70 der Oberflaeche, Wuerfel Helligkeit 0.60 bis 1.00; Laterne am Gipfel aus (glow 0 bis 1).
+B Bodenschein: Puls 2.625 s; Punkte 4 bis 12 von 16 im innersten Ring; Ringe bis 0.16 m x 1.0, bis 0.27 m x 0.6, bis 0.36 m x 0.3.
+C Funken: 6 je Stueck, Aufstieg 1.75 s von 0,06 auf 0.78 m, Kreis 0.25 m, Kante 0.05 m, ab halber Hoehe 0.03 m.
+heute: Platte 0,45 x 0,45 m, Mischung Dunkel -> Stufe 0,10 bis 0,60, Puls hier 2.625 s (Spiel 2,09 s).
+Gezaehlt: Bildpunkte mit Farbabstand >= 16 zum Bild ohne Stufenfarbe (a2: a2 ohne Schimmer; Wuerfel und heute: leerer Gang).
+Dunkelstes und hellstes Bild: kleinste und groesste Summe (Bildpunkte x mittlerer Farbabstand) der vier Stufen in 8 m.
+
+heute: Item-Wuerfel mit Leuchtplatte (dunkelstes Bild 75, hellstes Bild 39; hoechstens 180 Farben je Bild)
+  3 m, dunkel / hell: Worn 2187 px (Abstand 46) / 1868 px (Abstand 65); Forged 2052 px (Abstand 36) / 1844 px (Abstand 64); Royal 1963 px (Abstand 56) / 1840 px (Abstand 83); Vampiric 2113 px (Abstand 67) / 1945 px (Abstand 79)
+  3 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 1825 / 2203; Forged 1803 / 2133; Royal 1814 / 2135; Vampiric 1853 / 2207
+  3 m, dunkel: mittlere Farbe je Stufe Worn (54, 38, 26), Forged (47, 55, 69), Royal (101, 80, 35), Vampiric (86, 16, 22); kleinster Abstand zweier Stufen 39 (Worn / Vampiric)
+  3 m, hell: mittlere Farbe je Stufe Worn (39, 28, 22), Forged (36, 40, 50), Royal (73, 58, 29), Vampiric (61, 15, 20); kleinster Abstand zweier Stufen 26 (Worn / Vampiric)
+  8 m, dunkel / hell: Worn 156 px (Abstand 29) / 168 px (Abstand 38); Forged 158 px (Abstand 26) / 151 px (Abstand 42); Royal 152 px (Abstand 39) / 162 px (Abstand 55); Vampiric 155 px (Abstand 41) / 170 px (Abstand 48)
+  8 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 144 / 168; Forged 138 / 160; Royal 149 / 167; Vampiric 150 / 176
+  8 m, dunkel: mittlere Farbe je Stufe Worn (37, 26, 21), Forged (33, 36, 48), Royal (67, 53, 26), Vampiric (55, 12, 18); kleinster Abstand zweier Stufen 23 (Worn / Vampiric)
+  8 m, hell: mittlere Farbe je Stufe Worn (31, 21, 19), Forged (27, 28, 37), Royal (54, 42, 23), Vampiric (46, 12, 17); kleinster Abstand zweier Stufen 18 (Worn / Vampiric)
+
+A Aufleuchten, a2 (dunkelstes Bild 104, hellstes Bild 13; hoechstens 415 Farben je Bild)
+  3 m, dunkel / hell: Worn 197 px (Abstand 22) / 552 px (Abstand 42); Forged 170 px (Abstand 21) / 447 px (Abstand 54); Royal 475 px (Abstand 26) / 529 px (Abstand 100); Vampiric 513 px (Abstand 22) / 523 px (Abstand 82)
+  3 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 171 / 610; Forged 131 / 469; Royal 408 / 584; Vampiric 431 / 643
+  3 m, dunkel: mittlere Farbe je Stufe Worn (87, 88, 91), Forged (70, 58, 66), Royal (73, 63, 59), Vampiric (73, 53, 65); kleinster Abstand zweier Stufen 7 (Forged / Vampiric)
+  3 m, hell: mittlere Farbe je Stufe Worn (72, 54, 43), Forged (65, 74, 93), Royal (138, 113, 59), Vampiric (125, 36, 46); kleinster Abstand zweier Stufen 54 (Worn / Forged)
+  8 m, dunkel / hell: Worn 9 px (Abstand 19) / 81 px (Abstand 31); Forged 1 px (Abstand 20) / 72 px (Abstand 46); Royal 23 px (Abstand 19) / 74 px (Abstand 80); Vampiric 14 px (Abstand 18) / 68 px (Abstand 55)
+  8 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 4 / 84; Forged 0 / 72; Royal 22 / 82; Vampiric 10 / 80
+  8 m, dunkel: mittlere Farbe je Stufe Worn (70, 69, 70), Forged (60, 20, 28), Royal (47, 38, 37), Vampiric (55, 41, 49); kleinster Abstand zweier Stufen 14 (Royal / Vampiric)
+  8 m, hell: mittlere Farbe je Stufe Worn (59, 44, 38), Forged (55, 61, 77), Royal (104, 84, 48), Vampiric (91, 29, 38); kleinster Abstand zweier Stufen 36 (Worn / Vampiric)
+
+A Aufleuchten, Item-Wuerfel (dunkelstes Bild 0, hellstes Bild 13; hoechstens 150 Farben je Bild)
+  3 m, dunkel / hell: Worn 666 px (Abstand 52) / 607 px (Abstand 37); Forged 554 px (Abstand 39) / 631 px (Abstand 58); Royal 561 px (Abstand 49) / 631 px (Abstand 132); Vampiric 670 px (Abstand 63) / 610 px (Abstand 97)
+  3 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 536 / 709; Forged 491 / 638; Royal 500 / 638; Vampiric 537 / 708
+  3 m, dunkel: mittlere Farbe je Stufe Worn (42, 29, 18), Forged (37, 45, 56), Royal (90, 72, 27), Vampiric (75, 11, 15); kleinster Abstand zweier Stufen 38 (Worn / Vampiric)
+  3 m, hell: mittlere Farbe je Stufe Worn (83, 57, 35), Forged (72, 88, 110), Royal (173, 137, 52), Vampiric (147, 21, 29); kleinster Abstand zweier Stufen 74 (Worn / Vampiric)
+  8 m, dunkel / hell: Worn 62 px (Abstand 26) / 76 px (Abstand 36); Forged 40 px (Abstand 19) / 69 px (Abstand 64); Royal 56 px (Abstand 27) / 69 px (Abstand 118); Vampiric 63 px (Abstand 34) / 76 px (Abstand 74)
+  8 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 51 / 77; Forged 28 / 70; Royal 56 / 71; Vampiric 56 / 77
+  8 m, dunkel: mittlere Farbe je Stufe Worn (30, 21, 15), Forged (25, 29, 38), Royal (55, 44, 20), Vampiric (46, 8, 14); kleinster Abstand zweier Stufen 21 (Worn / Vampiric)
+  8 m, hell: mittlere Farbe je Stufe Worn (66, 46, 31), Forged (57, 68, 86), Royal (132, 104, 43), Vampiric (107, 18, 26); kleinster Abstand zweier Stufen 50 (Worn / Vampiric)
+
+B Bodenschein, a2 (dunkelstes Bild 0, hellstes Bild 23; hoechstens 253 Farben je Bild)
+  3 m, dunkel / hell: Worn 350 px (Abstand 52) / 1191 px (Abstand 52); Forged 349 px (Abstand 96) / 1174 px (Abstand 96); Royal 351 px (Abstand 181) / 1189 px (Abstand 182); Vampiric 353 px (Abstand 117) / 1187 px (Abstand 116)
+  3 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 349 / 1191; Forged 346 / 1176; Royal 348 / 1192; Vampiric 351 / 1189
+  3 m, dunkel: mittlere Farbe je Stufe Worn (108, 74, 44), Forged (92, 108, 140), Royal (212, 164, 60), Vampiric (172, 20, 30); kleinster Abstand zweier Stufen 85 (Worn / Vampiric)
+  3 m, hell: mittlere Farbe je Stufe Worn (108, 76, 44), Forged (92, 109, 140), Royal (212, 167, 61), Vampiric (172, 22, 34); kleinster Abstand zweier Stufen 84 (Worn / Vampiric)
+  8 m, dunkel / hell: Worn 16 px (Abstand 40) / 64 px (Abstand 46); Forged 15 px (Abstand 81) / 61 px (Abstand 84); Royal 16 px (Abstand 144) / 62 px (Abstand 148); Vampiric 15 px (Abstand 88) / 61 px (Abstand 90)
+  8 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 16 / 64; Forged 15 / 61; Royal 16 / 62; Vampiric 15 / 61
+  8 m, dunkel: mittlere Farbe je Stufe Worn (84, 54, 36), Forged (68, 84, 108), Royal (162, 124, 52), Vampiric (130, 20, 28); kleinster Abstand zweier Stufen 58 (Worn / Vampiric)
+  8 m, hell: mittlere Farbe je Stufe Worn (84, 57, 36), Forged (71, 84, 108), Royal (162, 128, 52), Vampiric (131, 20, 28); kleinster Abstand zweier Stufen 60 (Worn / Vampiric)
+
+B Bodenschein, Item-Wuerfel (dunkelstes Bild 102, hellstes Bild 29; hoechstens 165 Farben je Bild)
+  3 m, dunkel / hell: Worn 1028 px (Abstand 40) / 1730 px (Abstand 46); Forged 913 px (Abstand 57) / 1589 px (Abstand 77); Royal 823 px (Abstand 130) / 1672 px (Abstand 155); Vampiric 960 px (Abstand 93) / 1774 px (Abstand 104)
+  3 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 968 / 1844; Forged 833 / 1708; Royal 820 / 1674; Vampiric 957 / 1794
+  3 m, dunkel: mittlere Farbe je Stufe Worn (82, 56, 34), Forged (72, 86, 109), Royal (172, 135, 50), Vampiric (140, 19, 26); kleinster Abstand zweier Stufen 70 (Worn / Vampiric)
+  3 m, hell: mittlere Farbe je Stufe Worn (94, 66, 39), Forged (82, 98, 125), Royal (191, 151, 56), Vampiric (156, 21, 31); kleinster Abstand zweier Stufen 77 (Worn / Vampiric)
+  8 m, dunkel / hell: Worn 79 px (Abstand 25) / 115 px (Abstand 35); Forged 73 px (Abstand 38) / 115 px (Abstand 57); Royal 72 px (Abstand 80) / 132 px (Abstand 106); Vampiric 71 px (Abstand 54) / 133 px (Abstand 68)
+  8 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 63 / 125; Forged 65 / 125; Royal 72 / 132; Vampiric 71 / 133
+  8 m, dunkel: mittlere Farbe je Stufe Worn (53, 36, 25), Forged (46, 54, 70), Royal (106, 83, 35), Vampiric (85, 15, 21); kleinster Abstand zweier Stufen 39 (Worn / Vampiric)
+  8 m, hell: mittlere Farbe je Stufe Worn (67, 46, 30), Forged (57, 67, 86), Royal (126, 100, 41), Vampiric (103, 17, 24); kleinster Abstand zweier Stufen 47 (Worn / Vampiric)
+
+C Funken, a2 (dunkelstes Bild 52, hellstes Bild 12; hoechstens 267 Farben je Bild)
+  3 m, dunkel / hell: Worn 176 px (Abstand 56) / 226 px (Abstand 53); Forged 121 px (Abstand 101) / 170 px (Abstand 103); Royal 98 px (Abstand 181) / 190 px (Abstand 185); Vampiric 169 px (Abstand 119) / 234 px (Abstand 118)
+  3 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 131 / 265; Forged 110 / 223; Royal 98 / 197; Vampiric 119 / 254
+  3 m, dunkel: mittlere Farbe je Stufe Worn (110, 76, 46), Forged (92, 112, 140), Royal (214, 170, 64), Vampiric (175, 25, 35); kleinster Abstand zweier Stufen 83 (Worn / Vampiric)
+  3 m, hell: mittlere Farbe je Stufe Worn (110, 76, 46), Forged (92, 112, 140), Royal (214, 170, 64), Vampiric (174, 25, 35); kleinster Abstand zweier Stufen 83 (Worn / Vampiric)
+  8 m, dunkel / hell: Worn 12 px (Abstand 64) / 30 px (Abstand 57); Forged 11 px (Abstand 107) / 26 px (Abstand 102); Royal 6 px (Abstand 171) / 27 px (Abstand 164); Vampiric 14 px (Abstand 99) / 25 px (Abstand 99)
+  8 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 11 / 30; Forged 7 / 26; Royal 6 / 27; Vampiric 10 / 30
+  8 m, dunkel: mittlere Farbe je Stufe Worn (86, 59, 39), Forged (75, 88, 112), Royal (169, 133, 53), Vampiric (135, 21, 31); kleinster Abstand zweier Stufen 63 (Worn / Vampiric)
+  8 m, hell: mittlere Farbe je Stufe Worn (85, 58, 39), Forged (72, 86, 110), Royal (164, 130, 53), Vampiric (132, 22, 31); kleinster Abstand zweier Stufen 60 (Worn / Vampiric)
+
+C Funken, Item-Wuerfel (dunkelstes Bild 23, hellstes Bild 12; hoechstens 176 Farben je Bild)
+  3 m, dunkel / hell: Worn 867 px (Abstand 39) / 791 px (Abstand 38); Forged 729 px (Abstand 51) / 797 px (Abstand 56); Royal 536 px (Abstand 114) / 817 px (Abstand 126); Vampiric 665 px (Abstand 88) / 879 px (Abstand 93)
+  3 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 672 / 951; Forged 596 / 859; Royal 536 / 829; Vampiric 665 / 946
+  3 m, dunkel: mittlere Farbe je Stufe Worn (77, 53, 32), Forged (67, 82, 102), Royal (159, 126, 48), Vampiric (133, 19, 27); kleinster Abstand zweier Stufen 66 (Worn / Vampiric)
+  3 m, hell: mittlere Farbe je Stufe Worn (81, 56, 34), Forged (70, 85, 106), Royal (167, 133, 50), Vampiric (141, 20, 28); kleinster Abstand zweier Stufen 70 (Worn / Vampiric)
+  8 m, dunkel / hell: Worn 74 px (Abstand 30) / 87 px (Abstand 32); Forged 72 px (Abstand 38) / 92 px (Abstand 53); Royal 63 px (Abstand 78) / 96 px (Abstand 98); Vampiric 63 px (Abstand 54) / 101 px (Abstand 60)
+  8 m, wenigste / meiste Bildpunkte im ganzen Puls: Worn 61 / 100; Forged 60 / 92; Royal 63 / 97; Vampiric 60 / 106
+  8 m, dunkel: mittlere Farbe je Stufe Worn (55, 38, 26), Forged (44, 51, 66), Royal (100, 79, 33), Vampiric (83, 14, 21); kleinster Abstand zweier Stufen 37 (Worn / Vampiric)
+  8 m, hell: mittlere Farbe je Stufe Worn (60, 41, 28), Forged (51, 60, 77), Royal (115, 91, 38), Vampiric (90, 15, 22); kleinster Abstand zweier Stufen 40 (Worn / Vampiric)
+
+Stufenfarben gegen vergebene Effektfarben (ohne Nebel), naechste Farbe und Abstand:
+  Worn (110, 76, 46): Warnung Gorm 102, Reif dunkel 115, kritischer Treffer 125
+  Forged (92, 112, 140): Reif dunkel 16, Kaelte 61, Muenze 79
+  Royal (214, 170, 64): Glut Gorm 65, Schluessel 82, Muenze 125
+  Vampiric (175, 25, 35): Warnung Gorm 26, kritischer Treffer 59, Glut Gorm 127
