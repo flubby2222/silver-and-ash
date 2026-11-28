@@ -31,5 +31,7 @@ Was die Zahlen nicht können: Je Release gibt es nur wenige Urteile, das ergibt 
 | 2026-11-26 | Grafik | Pflockarmbrust (#203) | 1 | angenommen (Entwurf A „Eisenwinde“) | – | – | B, daneben |
 | 2026-11-28 | Grafik | Wurfmesser (#204) | 1 | abgelehnt (a und b; drei Messer in der Hand bleiben) | passt nicht in die Welt | nein | a, daneben |
 | 2026-11-28 | Grafik | Wurfmesser (#204) | 2 | Nacharbeit (Entwurf e „Schwarzrücken“ ist gut; d und c entfallen) | Lage im Ärmel (wirkt am untersten Ende gehalten) | nein | e, Treffer |
+| 2026-11-28 | Grafik | Wurfmesser (#204) | 3 | Nacharbeit (Tiefe 40 mm gewählt; dazu nach links, damit nichts in den Ärmel sticht) | Durchstich am Ärmel | nein | 40 mm, Treffer |
+| 2026-11-28 | Grafik | Wurfmesser (#204) | 4 | angenommen (Variante 4b: 8 mm nach links, Fächer im Ärmel enger, kürzere Bänder; Flug- und Zielbild mit kurzem Band stehen noch aus) | – | – | 4b, Treffer |
 
 Die Urteile vor dem 2026-11-26 stehen in den Tabellen „Gelernte Regeln“ der beiden Stil-Dokumente und sind hier noch nicht nachgetragen. Bis das geschehen ist, gelten die Kennzahlen erst ab dem Release nach 0.12.
