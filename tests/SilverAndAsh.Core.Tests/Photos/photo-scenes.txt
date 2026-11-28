@@ -252,7 +252,7 @@ knives-throw | ticks 7 menu None ---I- | The throwing knives six ticks into a th
 knives-flight | ticks 2 menu None ---I- | A thrown knife in flight, the tick after it left the hand, tumbling towards a dummy 8 m away (issue #821).
 knives-dummy-3m | ticks 51 menu None ---I- | A throwing knife in a dummy, seen from 3 m, the handle towards the thrower; a second one would fell the dummy (issue #821).
 knives-gorm-3m | ticks 11 menu None ---I- | A throwing knife in Gorm 3 m away, a few ticks after it hit: the knife goes with the body. A ghoul falls to one knife and takes it with it (issue #821).
-knives-stone-3m | ticks 175 menu None ---I- | Three throwing knives in the wall, seen from 3 m: the hand empty, the handles hang a little (issue #821).
+knives-stone-3m | ticks 175 menu None ---I- | Three throwing knives in the wall, seen from 3 m: the hand empty, the handles hang a little (issue #821). For this picture they do not glance off first (issue #822).
 knives-reload-down | ticks 199 menu None ---I- | The throwing knives in the reload, a fifth of the way: the empty hand goes down out of the picture (issue #821).
 knives-reload-up | ticks 271 menu None ---I- | The throwing knives in the reload, four fifths of the way: the hand comes back with three knives, the fan opening (issue #821).
 hud-knives | ticks 1 menu None ----- | Like hud-weapons, but the throwing knives in hand: their icon, a small picture of the knife (issue #821).

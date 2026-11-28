@@ -8,11 +8,12 @@ using SilverAndAsh.Core.World;
 namespace SilverAndAsh.BotRun;
 
 /// <summary>
-/// Mode "knives" (issues #816, #821): a player with the throwing knives stands at the start and in the middle of every
+/// Mode "knives" (issues #816, #821, #822): a player with the throwing knives stands at the start and in the middle of every
 /// room, turns once round and throws hand after hand - level, up and down, reloading in between. After every tick: no
 /// more knives stick than the balance allows, no knife flies inside the stone or longer than its range lasts, a knife in
-/// a target sticks in one that can be hit, and the hand never holds more or fewer knives than there are. At the end
-/// every thrown knife is accounted for: it stuck, or its range ran out.
+/// a target sticks in one that can be hit, no knife glances off stone more often than the balance allows (and each
+/// ricochet is counted one up), and the hand never holds more or fewer knives than there are. At the end every thrown
+/// knife is accounted for: it stuck, or its range ran out.
 /// </summary>
 internal static class KnifeThrows
 {
@@ -73,6 +74,7 @@ internal static class KnifeThrows
     private sealed class Watch(Play play, Report report)
     {
         private readonly Dictionary<int, int> _flownTicks = [];
+        private readonly Dictionary<int, int> _ricochets = [];
         private int _events;
         private int _thrown;
         private int _stuck;
@@ -150,6 +152,9 @@ internal static class KnifeThrows
                     _thrown++;
                     report.Count("knives thrown");
                     break;
+                case KnifeRicocheted ricochet:
+                    Ricochet(ricochet);
+                    break;
                 case KnifeStuck { TargetId: null }:
                     _stuck++;
                     report.Count("knives stuck in stone");
@@ -159,6 +164,16 @@ internal static class KnifeThrows
                     report.Count("knives stuck in a target");
                     break;
             }
+        }
+
+        // A ricochet: the knife's next one, and not one more than the balance allows.
+        private void Ricochet(KnifeRicocheted ricochet)
+        {
+            var count = _ricochets[ricochet.KnifeId] = _ricochets.GetValueOrDefault(ricochet.KnifeId) + 1;
+            report.Count("knife ricochets");
+            report.Check(ricochet.Count != count, $"{play.Context}: knife {ricochet.KnifeId} reports ricochet {ricochet.Count}, it is its {count}");
+            report.Check(count > Flight.Ricochets, $"{play.Context}: knife {ricochet.KnifeId} glances off {count} times, the balance allows {Flight.Ricochets}");
+            report.Check(MathF.Abs(ricochet.Direction.Length() - 1f) > 0.001f, $"{play.Context}: knife {ricochet.KnifeId} flies on along {ricochet.Direction}, not a direction of length 1");
         }
 
         private void Check()
@@ -176,6 +191,7 @@ internal static class KnifeThrows
                 var ticks = _flownTicks[knife.Id] = _flownTicks.GetValueOrDefault(knife.Id) + 1;
                 report.Check(ticks > LongestFlight, $"{play.Context}: knife {knife.Id} flies for {ticks} ticks, its range lasts {LongestFlight}");
                 report.Check(knife.RangeLeft <= 0f || knife.RangeLeft > Knives.Range, $"{play.Context}: knife {knife.Id} in flight has {knife.RangeLeft} m of range left");
+                report.Check(knife.Ricochets != _ricochets.GetValueOrDefault(knife.Id), $"{play.Context}: knife {knife.Id} has glanced off {knife.Ricochets} times, {_ricochets.GetValueOrDefault(knife.Id)} ricochets were reported");
                 report.Check(World.Level.CellAt(knife.Position).IsSolid, $"{play.Context}: knife {knife.Id} flies inside the stone at {knife.Position}");
             }
         }

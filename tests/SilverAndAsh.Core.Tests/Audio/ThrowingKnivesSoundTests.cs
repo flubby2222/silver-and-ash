@@ -11,7 +11,8 @@ namespace SilverAndAsh.Core.Tests.Audio;
 /// Issue #820: the throwing knives are heard - the throw, the knife sticking in a target and the knife sticking in
 /// stone, each with the take the human chose in the listening test of issue #204 (throw "A", target "A", stone "B").
 /// Played the way the game plays it: tick by tick from the world's events, with the balancing values of the game. A
-/// knife at the end of its range has no event and so no sound (issue #816).
+/// knife at the end of its range has no event and so no sound (issue #816). Since issue #822 a knife glances off stone
+/// before it sticks there: every ricochet is heard with the stone's sound, from the place it glanced off.
 /// </summary>
 public class ThrowingKnivesSoundTests
 {
@@ -24,6 +25,9 @@ public class ThrowingKnivesSoundTests
     private const float Tolerance = 1e-5f;
 
     private static readonly HearingBalance Ears = Balance.Default.Hearing;
+
+    /// <summary>How often a knife is heard on stone: at every ricochet the game allows, and where it sticks.</summary>
+    private static readonly int StoneSounds = Balance.Default.KnifeFlight.Ricochets + 1;
     private static readonly PlayerInput Shoot = PlayerInput.None with { Shoot = true };
 
     /// <summary>What was heard in one tick (the throw is tick 1), and the knife that stuck in that tick, if one did.</summary>
@@ -126,30 +130,62 @@ public class ThrowingKnivesSoundTests
     }
 
     [Fact]
-    public void A_knife_thrown_at_a_wall_is_heard_at_the_throw_and_then_from_the_wall_it_sticks_in()
+    public void A_knife_thrown_at_a_wall_is_heard_at_the_throw_at_each_ricochet_and_from_the_wall_it_sticks_in()
     {
+        // Thrown level along the corridor: off the wall ahead, off the wall behind the thrower, and the wall ahead keeps it.
         var world = World(Corridor(5, "#"));
+        var cues = new SoundCues(world.Seed);
+        var heard = new List<(int Tick, SoundCue Cue, SoundListener Listener, GameEvent From)>();
 
-        var (heard, stuck) = ThrowAndListen(world, 2 * SimulationClock.TicksPerSecond);
+        for (var tick = 1; tick <= 2 * SimulationClock.TicksPerSecond; tick++)
+        {
+            world.Tick(tick == 1 ? Shoot : PlayerInput.None);
+            var listener = SoundListener.Of(world.Player);
+            foreach (var cue in cues.For(world.Events, SoundPack.Pack1, listener, world.Balance.Hearing).Where(IsKnifeSound))
+            {
+                heard.Add((tick, cue, listener, world.Events.Single(e => e is ShotFired or KnifeRicocheted or KnifeStuck)));
+            }
+        }
 
-        var knife = Assert.Single(stuck);
-        Assert.Null(knife.TargetId);
-        Assert.Equal([ThrowFile, StoneFile], heard.Select(entry => entry.Cue.File).ToArray());
+        Assert.Equal(2, Balance.Default.KnifeFlight.Ricochets);
+        Assert.Equal([ThrowFile, StoneFile, StoneFile, StoneFile], heard.Select(entry => entry.Cue.File).ToArray());
+        Assert.Empty(world.FlyingKnives);
 
         // The throw in the tick of the trigger, in the thrower's own hand: the middle, full volume.
         Assert.Equal(1, heard[0].Tick);
+        Assert.IsType<ShotFired>(heard[0].From);
         Assert.Equal(SoundBoard.SoundVolume, heard[0].Cue.Volume);
         Assert.Equal(0f, heard[0].Cue.Pan);
 
-        // The stone in the tick the knife sticks, some ticks later (it really flies), from the wall ahead: quieter.
-        var stone = heard[1];
-        Assert.Same(knife, stone.Stuck);
-        Assert.True(stone.Tick > 1, $"stuck in tick {stone.Tick}");
-        Assert.Equal(knife.Point, knife.Place);
-        var mix = Hearing.Mix(stone.Listener.Ears, stone.Listener.Facing, knife.Point, Ears);
-        Assert.True(mix.Volume is > 0f and < 1f, $"volume {mix.Volume}");
-        Assert.Equal(SoundBoard.SoundVolume * mix.Volume, stone.Cue.Volume, Tolerance);
-        Assert.Equal(0f, stone.Cue.Pan, Tolerance);
+        // Each stone some ticks after the one before (the knife really flies), from where the knife met it.
+        Assert.Equal([1, 2], heard.Select(entry => entry.From).OfType<KnifeRicocheted>().Select(ricochet => ricochet.Count).ToArray());
+        var knife = Assert.IsType<KnifeStuck>(heard[3].From);
+        Assert.Null(knife.TargetId);
+        Assert.True(heard[1].Tick > 1 && heard[2].Tick > heard[1].Tick && heard[3].Tick > heard[2].Tick, "The stones are not heard one after the other.");
+        Assert.All(heard.Skip(1), stone =>
+        {
+            Assert.NotNull(stone.From.Place);
+            var mix = Hearing.Mix(stone.Listener.Ears, stone.Listener.Facing, stone.From.Place.Value, Ears);
+            Assert.True(mix.Volume > 0f, $"volume {mix.Volume}");
+            Assert.Equal(SoundBoard.SoundVolume * mix.Volume, stone.Cue.Volume, Tolerance);
+            Assert.Equal(0f, stone.Cue.Pan, Tolerance);
+        });
+
+        // The wall ahead is far: quieter than the wall right behind the thrower.
+        Assert.True(heard[1].Cue.Volume < SoundBoard.SoundVolume, $"volume {heard[1].Cue.Volume}");
+        Assert.True(heard[2].Cue.Volume > heard[1].Cue.Volume, "The wall behind the thrower is nearer than the wall ahead.");
+        Assert.Equal(heard[1].Cue.Volume, heard[3].Cue.Volume, Tolerance);
+    }
+
+    [Fact]
+    public void A_ricochet_asks_for_the_stone_s_sound_and_only_for_the_knives()
+    {
+        var point = new Vector3(1f, 2f, 3f);
+
+        Assert.Equal(SoundKind.KnifeStoneHit, SoundBoard.KindFor(new KnifeRicocheted(1, 0, WeaponKind.ThrowingKnives, point, Vector3.UnitX, Vector3.UnitZ, 1)));
+
+        // Something else that glances off one day does not sound like a knife.
+        Assert.Null(SoundBoard.KindFor(new KnifeRicocheted(1, 0, WeaponKind.Pistol, point, Vector3.UnitX, Vector3.UnitZ, 1)));
     }
 
     [Theory]
@@ -177,9 +213,9 @@ public class ThrowingKnivesSoundTests
     }
 
     [Theory]
-    [InlineData("#", StoneFile)]
-    [InlineData("G\n.", TargetFile)]
-    public void Someone_aside_hears_the_throw_and_the_knife_from_their_side_and_nobody_out_of_range(string end, string file)
+    [InlineData("#", StoneFile, true)]
+    [InlineData("G\n.", TargetFile, false)]
+    public void Someone_aside_hears_the_throw_and_the_knife_from_their_side_and_nobody_out_of_range(string end, string file, bool stone)
     {
         var world = World(Corridor(5, end));
         var aside = new Vector3((Ears.NearDistance + Ears.Range) / 2f, 0f, 0f);
@@ -193,8 +229,9 @@ public class ThrowingKnivesSoundTests
         {
             world.Tick(tick == 1 ? Shoot : PlayerInput.None);
 
-            // The listeners stand beside whatever sounds in this tick: the hand at the throw, the knife where it sticks.
-            foreach (var place in world.Events.Where(e => e is ShotFired or KnifeStuck).Select(e => e.Place))
+            // The listeners stand beside whatever sounds in this tick: the hand at the throw, the knife where it glances
+            // off stone and where it sticks.
+            foreach (var place in world.Events.Where(e => e is ShotFired or KnifeRicocheted or KnifeStuck).Select(e => e.Place))
             {
                 Assert.NotNull(place);
                 var near = new SoundListener(Bystander, place.Value + aside, Vector3.UnitZ);
@@ -204,7 +241,8 @@ public class ThrowingKnivesSoundTests
             }
         }
 
-        Assert.Equal([ThrowFile, file], heard.Select(cue => cue.File).ToArray());
+        // Stone is heard at every ricochet and where the knife sticks; a target once.
+        Assert.Equal(new[] { ThrowFile }.Concat(Enumerable.Repeat(file, stone ? StoneSounds : 1)).ToArray(), heard.Select(cue => cue.File).ToArray());
         Assert.All(heard, cue =>
         {
             Assert.True(cue.Volume is > 0f and < SoundBoard.SoundVolume, $"volume {cue.Volume}");
@@ -232,21 +270,29 @@ public class ThrowingKnivesSoundTests
     [Fact]
     public void Three_knives_in_a_row_are_three_throws_and_three_knives_in_the_wall()
     {
+        // Since issue #822 each knife glances off twice before it sticks, so the next is thrown while the one before
+        // still flies: the sounds of the knives interleave. Every throw is heard once and every knife on every stone.
         var world = World(Corridor(5, "#"));
         var cues = new SoundCues(world.Seed);
         var heard = new List<string>();
+        var knives = Balance.Default.ThrowingKnives.MagazineSize;
         var cooldown = SimulationClock.SecondsToTicks(Balance.Default.ThrowingKnives.Cooldown);
+        var throwing = knives * (cooldown + 1);
 
-        for (var tick = 0; tick < Balance.Default.ThrowingKnives.MagazineSize * (cooldown + 1); tick++)
+        for (var tick = 0; tick < throwing + 2 * SimulationClock.TicksPerSecond; tick++)
         {
-            world.Tick(tick % (cooldown + 1) == 0 ? Shoot : PlayerInput.None);
+            world.Tick(tick < throwing && tick % (cooldown + 1) == 0 ? Shoot : PlayerInput.None);
             heard.AddRange(cues.For(world.Events, SoundPack.Pack1, SoundListener.Of(world.Player), world.Balance.Hearing)
                 .Where(IsKnifeSound)
                 .Select(cue => cue.File));
         }
 
-        var each = Enumerable.Repeat(new[] { ThrowFile, StoneFile }, Balance.Default.ThrowingKnives.MagazineSize).SelectMany(pair => pair);
-        Assert.Equal(each.ToArray(), heard.ToArray());
+        Assert.Equal(ThrowFile, heard[0]);
+        Assert.Equal(knives, heard.Count(file => file == ThrowFile));
+        Assert.Equal(knives * StoneSounds, heard.Count(file => file == StoneFile));
+        Assert.Equal(knives * (1 + StoneSounds), heard.Count);
+        Assert.Empty(world.FlyingKnives);
+        Assert.Equal(knives, world.StuckKnives.Count(knife => knife.TargetId is null));
     }
 
     [Theory]

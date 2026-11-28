@@ -102,6 +102,24 @@ Musterraum, Prüfstrecke und seit #754 auch die Raum-Vorschau (`--room`) schreib
 
 Ergebnis hier eintragen, neueste Runde oben.
 
+### Zwischenschritt – 28.11.2026 (#822, Wurfmesser prallen ab, vorläufig)
+
+**Anlass:** Issue #822. Ein Wurfmesser prallt von Stein ab, solange es keinen Gegner getroffen hat.
+
+| Wert | vorher | nachher | warum |
+|---|---|---|---|
+| `knifeFlight.ricochets` | – (das Messer blieb im ersten Stein stecken) | 2 (**vorläufig**) | Wert aus dem Issue: zweimal abprallen, der dritte Stein hält das Messer. Bei 30 m/s und 40 m Reichweite reicht das in den Räumen des Spiels (Kanten bis etwa 20 m) für einen Wurf über die Bande und zurück. `0` schaltet das Abprallen ab |
+
+`ricochets` darf 0 sein, aber nicht negativ. Sonst warnt der Lader und nimmt den Standardwert.
+
+**Vorläufig festgelegt (von der Leitung):** voller Schaden nach dem Abprallen, kein Tempoverlust (deshalb gibt es dafür keinen Wert in der Datei), der Werfer wird nicht getroffen (Spieler sind für Messer keine Ziele; das Messer fliegt durch ihn hindurch). **Vorläufig von der Code-Sitzung:** Die Reichweite zählt über den ganzen Weg, ein Abpraller schenkt keine neue. Nach dem Abprallen fliegt das Messer im selben Tick den Rest seiner Strecke. Ein Messer, das schon im Stein startet (Werfer steht an der Wand), bleibt dort stecken, ohne abzuprallen. Der Abpraller klingt wie das Messer in Stein (#820), ohne Spur an der Wand.
+
+**Report:** `BalanceReport --compare` mit der Datei von `main` (`cc0e5d91`) gegen diesen Schritt, 500 Ebenen: jede Zeile gleich, Unterschied überall 0,0. Der Report rechnet keine Würfe.
+
+**Bot-Lauf:** `BotRun knives --seeds 1..6` mit den neuen Prüfungen (kein Messer prallt öfter ab, als die Datei erlaubt; die Abpraller sind von 1 an gezählt; die Richtung hat Länge 1; kein Messer im Stein): 0 Befunde bei 6336 Würfen, 11962 Abprallern, 5674 Messern im Stein und 370 im Ziel.
+
+**Offen:** Ob zwei Abpraller mit vollem Schaden zu stark sind (ein Messer hat 90 Schaden und in einem engen Gang drei Wege zum Gegner), zeigt der Spieltest.
+
 ### Zwischenschritt – 28.11.2026 (#815, Klang des Brunnens, vorläufig)
 
 **Anlass:** Issue #815. Der Brunnen bekommt seine drei abgenommenen Klänge; dafür braucht der Spielkern einen Glückswurf und das Wasser eine Reichweite.

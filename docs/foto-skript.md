@@ -66,7 +66,7 @@ dotnet run --project src/SilverAndAsh.Game -- --photo list
 | `gorm-phase2` | Gorm in Phase 2 (rote Male) aus 10 m in seinem Bossraum, am Ende seines Brüllens |
 | `hud-weapons` | das HUD mit allen Waffenplätzen belegt (Keule, Pistole, Gewehr, Donnerbüchse) |
 | `hud-rifle` | wie `hud-weapons`, aber mit dem Gewehr (2) in der Hand |
-| `knives-rest-3`, `knives-rest-2`, `knives-rest-1`, `knives-throw`, `knives-flight`, `knives-dummy-3m`, `knives-gorm-3m`, `knives-stone-3m`, `knives-reload-down`, `knives-reload-up`, `hud-knives` | die Wurfmesser: Fächer in der Hand mit drei, zwei und einem Messer, Wurf, Messer im Flug, im Dummy, in Gorm und in der Wand aus 3 m, Nachladen, HUD-Zeichen (Issue #821) |
+| `knives-rest-3`, `knives-rest-2`, `knives-rest-1`, `knives-throw`, `knives-flight`, `knives-dummy-3m`, `knives-gorm-3m`, `knives-stone-3m`, `knives-reload-down`, `knives-reload-up`, `hud-knives` | die Wurfmesser: Fächer in der Hand mit drei, zwei und einem Messer, Wurf, Messer im Flug, im Dummy, in Gorm und in der Wand aus 3 m (für dieses Bild ohne Abprallen, Issue #822), Nachladen, HUD-Zeichen (Issue #821) |
 | `hud-reload` | die Pistole im Startraum leergeschossen: „Reload [R]“ unter dem Fadenkreuz (Issue #259) |
 | `hud-texts` | alle Schriftzüge zugleich, jeder in seiner Zeile: „Reload [R]“ und „[F] Take Rifle (Forged)“ unter dem Fadenkreuz, „[X] Choose boon“ und die Weihezeit unten links (Issue #340) |
 | `hud-skillpoints` | das HUD mit dem ersten Skillpunkt: Platzhalter-Text „1 skill point“ rechts neben dem Erfahrungsbalken, alle Boons gewählt (Issue #502) |
@@ -213,6 +213,7 @@ powershell -ExecutionPolicy Bypass -File tools\clip.ps1 "$env:LOCALAPPDATA\Silve
 | `gorm-slam-far` | derselbe Schlag aus 14 m, außerhalb der Reichweite (12 m): die ganze Welle von vorn, bis sie vor dem Spieler ausläuft, Boden Variante A |
 | `gorm-slam-far-b`, `gorm-slam-far-c` | dasselbe auf Boden Variante B bzw. C (C, das Kopfsteinpflaster, liegt im Spiel nie im Bossraum) |
 | `column-breaking` | die zerbrechende Säule im Musterraum aus 6 m, von der Hallenseite in voller Höhe, ohne Waffen in der Hand, Raumtitel und Schilder (`PhotoSetup.ShowsOnlyTheWorld`), alle drei Ticks ein Bild: der Bruch, der Fall der Stücke (81 Ticks) mit der Staubwolke und der liegende Stumpf (Issue #601) |
+| `knives-ricochet` | ein Wurfmesser prallt in einer Ecke der Halle vom Boden und von der Seitenwand ab und bleibt in der Wand 3 m voraus stecken, mit den Werten des Spiels, jeden Tick ein Bild; für einen langsamen Film `tools\clip.ps1 … -Fps 20 -Half` (Issue #822) |
 
 **Eine Bewegungs-Szene ergänzen:** ein Eintrag in `MotionScenes.All` ([`MotionScenes.cs`](../src/SilverAndAsh.Core/Photos/MotionScenes.cs)) – dieselben Bausteine wie bei den Fotos, nur mit `Input` je Tick und genug `Ticks` für den ganzen Ablauf, zum Beispiel:
 

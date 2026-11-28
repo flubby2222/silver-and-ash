@@ -155,7 +155,8 @@
 
   "knifeFlight": {                      // how a thrown knife flies (the blood bolt has 12 m/s)
     "speed": 30,                        // m/s, straight ahead: a moving target must be led
-    "stuckMax": 24                      // knives that stay stuck in walls and bodies; with one more the oldest is gone
+    "stuckMax": 24,                     // knives that stay stuck in walls and bodies; with one more the oldest is gone
+    "ricochets": 2                      // times a knife glances off stone before the next stone keeps it (0 = never); a target always stops it
   },
 
   "dummy": {

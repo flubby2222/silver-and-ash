@@ -155,6 +155,14 @@ public sealed record GhoulHit(int GhoulId, int Damage, bool Critical = false) : 
 /// </summary>
 public sealed record KnifeStuck(int KnifeId, int PlayerId, WeaponKind Weapon, Vector3 Point, Vector3 Direction, int? TargetId = null) : GameEvent;
 
+/// <summary>
+/// The knife <paramref name="KnifeId"/> that player <paramref name="PlayerId"/> threw from <paramref name="Weapon"/>
+/// glanced off stone at <paramref name="Point"/> (issue #822) - a wall, a column, the floor or the ceiling, whose
+/// surface points along <paramref name="Normal"/> - and flies on along <paramref name="Direction"/>. It is the
+/// knife's <paramref name="Count"/>th ricochet (1 for the first). For the sound, and later a spark.
+/// </summary>
+public sealed record KnifeRicocheted(int KnifeId, int PlayerId, WeaponKind Weapon, Vector3 Point, Vector3 Normal, Vector3 Direction, int Count) : GameEvent;
+
 /// <summary>Projectile <paramref name="ProjectileId"/> was fired from <paramref name="Origin"/>.</summary>
 public sealed record ProjectileFired(int ProjectileId, Vector3 Origin) : GameEvent;
 

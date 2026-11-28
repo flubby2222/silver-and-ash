@@ -467,7 +467,7 @@ public static class SoundBoard
     /// a Vampiric piece with a sound of its own (issue #317); a skill point from a level up (issue #375); the events
     /// of <see cref="KindsByEventType"/> - a blow on a column by its stage and the column's break (issue #605), the boss
     /// door swinging shut or open (issue #569), a portcullis falling or rising (issue #558), a throw into Sirius' Relief
-    /// and its luck (issue #815), a thrown knife sticking in a target or in stone (issue #820).
+    /// and its luck (issue #815), a thrown knife sticking in a target or in stone (issue #820) and glancing off stone (issue #822).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -548,7 +548,12 @@ public static class SoundBoard
 
             // Issue #820: a thrown knife is heard where it sticks.
             [typeof(KnifeStuck)] = gameEvent => StuckKind((KnifeStuck)gameEvent),
+
+            // Issue #822: and where it glances off stone.
+            [typeof(KnifeRicocheted)] = gameEvent => RicochetKind((KnifeRicocheted)gameEvent),
         }.ToImmutableDictionary();
+
+    private static SoundKind? RicochetKind(KnifeRicocheted ricochet) => Lookup(RicochetKinds, ricochet.Weapon);
 
     private static SoundKind? StuckKind(KnifeStuck stuck) => Lookup(StuckKinds, (stuck.Weapon, stuck.TargetId is not null));
 
@@ -563,6 +568,17 @@ public static class SoundBoard
         {
             [(WeaponKind.ThrowingKnives, true)] = SoundKind.KnifeHit,
             [(WeaponKind.ThrowingKnives, false)] = SoundKind.KnifeStoneHit,
+        }.ToImmutableDictionary();
+
+    /// <summary>
+    /// The sound of a thrown weapon glancing off stone (<see cref="KnifeRicocheted"/>, issue #822) by weapon; a weapon
+    /// without an entry glances off silently. The knives make the sound of sticking in stone - "B glancing off, scraping"
+    /// of the listening test of issue #204 - until a ricochet has a sound of its own.
+    /// </summary>
+    private static readonly ImmutableDictionary<WeaponKind, SoundKind> RicochetKinds =
+        new Dictionary<WeaponKind, SoundKind>
+        {
+            [WeaponKind.ThrowingKnives] = SoundKind.KnifeStoneHit,
         }.ToImmutableDictionary();
 
     /// <summary>The sound of a shot by ranged weapon besides the pistol's (issue #793); a weapon without an entry shoots silently.</summary>

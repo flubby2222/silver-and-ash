@@ -195,9 +195,11 @@ public sealed class PhotoStudio
     /// <paramref name="metres"/> in front of the player (a multiple of 2, the cell size), looking at it. The ceiling
     /// lies at <paramref name="ceiling"/> (default: as high as a corridor; Gorm's boss room: <see cref="RoomTemplate.RoomCeilingHeight"/>).
     /// The floor shows texture <paramref name="floor"/> (default A, like every hand-made level); walls and ceiling stay A.
+    /// <paramref name="balance"/>: other balancing values than the studio's for this one world - for a picture of
+    /// something the game's values no longer show by themselves (a knife in the first wall it meets, issue #822).
     /// </summary>
-    public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight, TextureVariant floor = TextureVariant.A) =>
-        ArenaOf(HallText(metres, x => x == HallWidth / 2 ? figure : null), ceiling, floor);
+    public GameWorld Arena(char figure, int metres, float ceiling = Cell.DefaultCeilingHeight, TextureVariant floor = TextureVariant.A, Balance? balance = null) =>
+        ArenaOf(HallText(metres, x => x == HallWidth / 2 ? figure : null), ceiling, floor, balance ?? Balance);
 
     /// <summary>
     /// The bare hall of <see cref="Arena"/>, with a step (issue #785): every column beyond the figure's (larger x) is a
@@ -209,7 +211,7 @@ public sealed class PhotoStudio
         var text = HallText(metres, x => x == HallWidth / 2 ? figure : null);
         var stepped = string.Join('\n', text.Split('\n').Select(row =>
             new string(row.Select((symbol, x) => x > HallWidth / 2 && symbol == '.' ? '1' : symbol).ToArray())));
-        var world = ArenaOf(stepped, ceiling, TextureVariant.A);
+        var world = ArenaOf(stepped, ceiling, TextureVariant.A, Balance);
 
         var enemy = world.Enemies.Single();
         var edge = ((HallWidth / 2) + 1) * Level.CellSize;
@@ -219,7 +221,7 @@ public sealed class PhotoStudio
         return world;
     }
 
-    private GameWorld ArenaOf(string text, float ceiling, TextureVariant floor)
+    private GameWorld ArenaOf(string text, float ceiling, TextureVariant floor, Balance balance)
     {
         var level = LevelParser.Parse(text);
         if (ceiling != Cell.DefaultCeilingHeight)
@@ -231,7 +233,7 @@ public sealed class PhotoStudio
                 select (x, z, level[x, z] with { CeilingHeight = ceiling }));
         }
 
-        var world = new GameWorld(level, Seed, Balance)
+        var world = new GameWorld(level, Seed, balance)
         {
             Surfaces = floor == TextureVariant.A ? SurfaceVariants.Plain : SurfaceVariants.Of(
                 [new RoomLook(TextureVariant.A, floor, TextureVariant.A)],
