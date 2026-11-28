@@ -95,3 +95,18 @@ blender --background --python bibliothek.py   (Bestandsblätter und Zahlen)
 - **e ist dunkler als die Silberklinge** und zeigt mehr Rot als jede Bestandswaffe. Das ist Absicht (Vampiric, Unterscheidung von der Klinge), aber ein Urteil, das der Auftraggeber fällen sollte.
 
 **Zu d:** ruhiger und näher am Bestand; liest sich in der Hand gut, hat aber wenig Eigenes und trägt Rot, obwohl die Armbrust derselben Stufe keines trägt. **Zu c:** eine verkleinerte Silberklinge; neben der Klinge links stehen dann vier gleiche Dolche im Bild. Als Entwurf ziehe ich c zurück.
+
+## Runde 3: Tiefe in der Manschette (`runde-3/`)
+
+Urteil des Auftraggebers zu Runde 2 (2026-11-28): „E ist gut, das Modell soll aber etwas weiter in den Ärmel Ragen. Sieht grade aus, als würde er alle drei messer am untersten Ende halten.“ e ist angenommen; c und d sind erledigt. Am Modell ändert sich nichts, nur die Lage in der Hand.
+
+`runde-3/tiefe.py` rendert dieselbe Ich-Sicht mit vier Abständen vom Klingenansatz zum Haltepunkt des Ärmels (Skriptmaß; die Wicklung ist 42 mm lang, dahinter folgt der Ring). Blatt: `runde-3/tiefen.png`, Einzelbilder `runde-3/ansichten/<r2|t50|t40|t32>-ich-sicht-854x480.png`.
+
+| Abstand | Was man sieht |
+|---|---|
+| 70 mm (Runde 2) | die ganze Wicklung frei, Ring am Rand der Manschette: am letzten Ende gehalten |
+| 50 mm | etwa drei Viertel der Wicklung frei; kaum anders als Runde 2 |
+| **40 mm (Empfehlung)** | die vordere Hälfte der Wicklung frei: die Faust sitzt um die hintere Hälfte und den Ring; Fächer und Klingen bleiben ganz lesbar |
+| 32 mm | nur ein schmaler Streifen Wicklung; die Klingen wachsen fast aus dem Ärmel, die Wicklung als Erkennungszeichen geht verloren |
+
+Noch offen: Ring und Band sind bei jeder dieser Tiefen im Ärmel verborgen; der Fächer dreht weiter um einen Punkt nahe am Knauf, die Griffe laufen dort ineinander.
