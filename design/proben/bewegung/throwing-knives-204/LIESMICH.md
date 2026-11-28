@@ -79,6 +79,15 @@ Geprüft wird jeder Tick, nicht nur die Schlüsselhaltungen: Wurf A 19 Ticks und
 
 Empfehlung: **A**. Messwert: Der Abstand zur Silver Blade bleibt bei 81 mm; bei B sinkt er auf 19 mm, die rechte Manschette drängt im Bild an die linke. A passt außerdem zum Kern, in dem das Messer ohne Ausholen sofort fliegt.
 
+## Clips (`clip.py`)
+
+Drei GIFs der Ich-Sicht: `wurf-a-schnapp.gif`, `wurf-b-durchzug.gif` (je 854 x 480) und `wurf-a-und-b.gif` (beide nebeneinander, je 427 x 240). Ablauf: 30 Ticks Ruhe, drei Würfe im Abstand von 60 Ticks (3, 2, 1, 0 Messer), 120 Ticks Nachladen, 30 Ticks Ruhe; zusammen 360 Ticks = 6 Sekunden in Echtzeit.
+
+- Gezeigt ist jeder zweite Tick bei 30 Bildern je Sekunde (180 Bilder). GIF kennt nur ganze Hundertstelsekunden je Bild; 60 Bilder je Sekunde lassen sich damit nicht halten.
+- Das fliegende Messer liegt, wo es der Kern führt: am Auge gestartet, 0,5 m je Tick geradeaus, Spitze nach vorn, ohne Drehung. Von hinten gesehen ist es nur ein kleiner Punkt in der Bildmitte; gezeigt bis Tick 10 nach dem Loslassen.
+- Das Nachladen beginnt im Clip 60 Ticks nach dem dritten Wurf; wann es im Spiel beginnt, legt der Kern fest.
+- Die GIFs schreibt ffmpeg aus den gerenderten Bildern (Palette je Clip, ohne Rasterung). Sie liegen außerhalb des Repositorys.
+
 ## Unsicher
 
 - Die Drehung des fliegenden Messers auf dem Blatt ist nur Anschauung; der Kern kennt keine Drehung des Geschosses.
@@ -101,6 +110,12 @@ Aufruf, im Ordner der Probe:
 ```
 blender --background --python pruefe.py
 blender --background --python blatt_bewegung.py -- <Ordner für Blatt und Einzelbilder>
+blender --background --python clip.py -- <Ordner für Clips> a
+blender --background --python clip.py -- <Ordner für Clips> b
+blender --background --python clip.py -- <Ordner für Clips> r
+blender --background --python clip.py -- <Ordner für Clips> gif
 ```
+
+Die drei Render-Schritte der Clips können gleichzeitig laufen; der letzte braucht ffmpeg im Suchpfad.
 
 Die Prüfung braucht etwa zehn Minuten, das Blatt etwa fünf.
