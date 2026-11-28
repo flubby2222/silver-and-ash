@@ -717,7 +717,7 @@ static void RunGame(
             thrownKnifeView.Draw(gameWorld.FlyingKnives, gameWorld.StuckKnives, alpha);
             pickupView.Draw(gameWorld.Pickups, alpha);
             pickupView.DrawLoot(gameWorld.Loot, alpha);
-            pickupView.DrawEquipment(gameWorld.EquipmentDrops, alpha);
+            pickupView.DrawEquipment(gameWorld.EquipmentDrops, alpha, gameWorld.Level, gameWorld.Ticks, levelShader, weaponModels.Knife);
 
             impactMarks.Draw();
             wallBreakView.Draw(doorView, levelShader, gameWorld.Ticks);

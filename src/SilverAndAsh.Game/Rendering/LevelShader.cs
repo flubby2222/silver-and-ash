@@ -16,6 +16,7 @@ internal sealed class LevelShader : IDisposable
     private readonly int _glowLocation;
     private readonly int _seeThroughLocation;
     private readonly int _patternLocation;
+    private readonly int _patternOnlyLocation;
 
     public LevelShader(string shaderDirectory)
     {
@@ -36,9 +37,11 @@ internal sealed class LevelShader : IDisposable
         _glowLocation = Raylib.GetShaderLocation(Shader, "glow");
         _seeThroughLocation = Raylib.GetShaderLocation(Shader, "seeThrough");
         _patternLocation = Raylib.GetShaderLocation(Shader, "pattern");
+        _patternOnlyLocation = Raylib.GetShaderLocation(Shader, "patternOnly");
         SetFloat("glow", 0f);
         SetInt("seeThrough", 0);
         Raylib.SetShaderValue(Shader, _patternLocation, Vector4.Zero, ShaderUniformDataType.Vec4);
+        SetInt("patternOnly", 0);
 
         // These values do not change while playing - set them once.
         SetFloat("fogStart", LookSettings.FogStart);
@@ -118,6 +121,17 @@ internal sealed class LevelShader : IDisposable
         Rlgl.DrawRenderBatchActive();
         var value = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, Math.Clamp(share, 0f, 1f));
         Raylib.SetShaderValue(Shader, _patternLocation, value, ShaderUniformDataType.Vec4);
+    }
+
+    /// <summary>
+    /// Draws of what comes next only the dots of its pattern (<see cref="SetPattern"/>) and leaves out the pixels between
+    /// them, so what lies behind shows there (issue #825, the glow of loot on the floor). Switch it off again afterwards.
+    /// </summary>
+    public void SetPatternOnly(bool on)
+    {
+        // As with the flash: triangles collected before must not get the new value.
+        Rlgl.DrawRenderBatchActive();
+        Raylib.SetShaderValue(Shader, _patternOnlyLocation, on ? 1 : 0, ShaderUniformDataType.Int);
     }
 
     /// <summary>

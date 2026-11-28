@@ -21,6 +21,8 @@ uniform float glow;            // a part that shines by itself (issue #480): the
 uniform int seeThrough;        // 1: keep the alpha of the colour - see-through effects such as dust (issue #609); 0: solid
 uniform vec4 pattern;          // a dot pattern of two colours (issue #775, the frost on the floor): where the threshold
                                // of the pattern lies below a, the surface takes rgb instead of its own colour (a 0: none)
+uniform int patternOnly;       // 1: only the dots of the pattern are drawn, the pixels between them left out (issue #825,
+                               // the glow of loot on the floor); 0: between the dots the surface's own colour
 
 // Picture variants (issue #234, decision record 0010). Variant 1 - the game as it is - has both switched off.
 uniform int quantize;          // 1: rasterise the colour to 5 bits per channel with the dot pattern
@@ -53,9 +55,17 @@ void main()
 
     // The second colour of a dot pattern, unshaded (issue #775). Without one (a = 0) the surface stays as it is, so
     // variant 1 stays bit for bit the same.
-    if (pattern.a > 0.0 && threshold() < pattern.a)
+    if (pattern.a > 0.0)
     {
-        surface = pattern.rgb;
+        if (threshold() < pattern.a)
+        {
+            surface = pattern.rgb;
+        }
+        else if (patternOnly == 1)
+        {
+            // Only the dots (issue #825): this pixel shows what lies behind.
+            discard;
+        }
     }
 
     // Solid unless asked otherwise: a colour with alpha below 1 would let the picture's black show through.

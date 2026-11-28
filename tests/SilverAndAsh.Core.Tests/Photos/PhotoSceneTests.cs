@@ -155,6 +155,8 @@ public class PhotoSceneTests
             "showroom-crossbow", "hud-crossbow",
             "knives-rest-3", "knives-rest-2", "knives-rest-1", "knives-throw", "knives-flight", "knives-dummy-3m", "knives-gorm-3m", "knives-stone-3m",
             "knives-reload-down", "knives-reload-up", "hud-knives",
+            "loot-shimmer-3m", "loot-shimmer-8m", "loot-shimmer-weapons-3m", "loot-shimmer-knives-2m", "loot-shimmer-pair-3m",
+            "loot-shimmer-frost-4m", "loot-shimmer-step-4m", "loot-shimmer-30",
         ];
 
         Assert.Equal(wanted.Order(), PhotoScenes.All.Select(scene => scene.Name).Order());
