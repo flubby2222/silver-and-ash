@@ -150,6 +150,12 @@ public sealed class SoundPack
         // plops", luck "A sparkle rises"; no luck stays silent. The water is a loop, not an event: see SoundLoops.
         [SoundKind.WellThrow] = ["brunnen-wurf.wav"],
         [SoundKind.WellLuck] = ["brunnen-glueck.wav"],
+
+        // Issue #820: the throwing knives, from the listening test of issue #204 (tools/audio/messerklang.py). Throw "A cloth,
+        // whirring", in a target "A stab, quivers", in stone "B glancing off, scraping". A knife at the end of its range is silent.
+        [SoundKind.KnifeThrow] = ["wurfmesser-wurf.wav"],
+        [SoundKind.KnifeHit] = ["wurfmesser-treffer-gegner.wav"],
+        [SoundKind.KnifeStoneHit] = ["wurfmesser-treffer-stein.wav"],
     }.ToImmutableDictionary());
 
     /// <summary>The pack the game starts with: the new one.</summary>

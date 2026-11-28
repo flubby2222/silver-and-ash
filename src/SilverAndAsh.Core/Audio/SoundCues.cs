@@ -275,6 +275,22 @@ public enum SoundKind
     /// "A sparkle rises" of the listening test of issue #438 (2.70 s). A throw without luck has no sound of its own.
     /// </summary>
     WellLuck,
+
+    /// <summary>
+    /// A throwing knife leaves the hand (issue #820): "A cloth, whirring" of the listening test of issue #204 (0.46 s).
+    /// </summary>
+    KnifeThrow,
+
+    /// <summary>
+    /// A throwing knife sticks in a target (issue #820): "A stab, quivers" of the listening test of issue #204 (0.29 s).
+    /// </summary>
+    KnifeHit,
+
+    /// <summary>
+    /// A throwing knife sticks in stone - a wall, a column, the floor or the ceiling (issue #820): "B glancing off,
+    /// scraping" of the listening test of issue #204 (0.50 s).
+    /// </summary>
+    KnifeStoneHit,
 }
 
 /// <summary>
@@ -451,7 +467,7 @@ public static class SoundBoard
     /// a Vampiric piece with a sound of its own (issue #317); a skill point from a level up (issue #375); the events
     /// of <see cref="KindsByEventType"/> - a blow on a column by its stage and the column's break (issue #605), the boss
     /// door swinging shut or open (issue #569), a portcullis falling or rising (issue #558), a throw into Sirius' Relief
-    /// and its luck (issue #815).
+    /// and its luck (issue #815), a thrown knife sticking in a target or in stone (issue #820).
     /// </summary>
     public static SoundKind? KindFor(GameEvent gameEvent) => gameEvent switch
     {
@@ -529,6 +545,24 @@ public static class SoundBoard
             // Issue #815: every throw into the well is heard, the luck on top of it; no luck has no sound of its own.
             [typeof(WellOfSiriusUsed)] = _ => SoundKind.WellThrow,
             [typeof(WellOfSiriusGave)] = _ => SoundKind.WellLuck,
+
+            // Issue #820: a thrown knife is heard where it sticks.
+            [typeof(KnifeStuck)] = gameEvent => StuckKind((KnifeStuck)gameEvent),
+        }.ToImmutableDictionary();
+
+    private static SoundKind? StuckKind(KnifeStuck stuck) => Lookup(StuckKinds, (stuck.Weapon, stuck.TargetId is not null));
+
+    /// <summary>
+    /// The sound of a thrown weapon sticking (<see cref="KnifeStuck"/>, issue #820) by weapon and by whether it sticks in
+    /// a target or in stone; a weapon without an entry sticks silently. The <see cref="BulletImpact"/> a knife in stone
+    /// reports as well stays silent (no entry in <see cref="ImpactKinds"/>), and so does its <see cref="TargetHitBy"/>
+    /// (no entry in <see cref="HitKinds"/>): one sound per knife.
+    /// </summary>
+    private static readonly ImmutableDictionary<(WeaponKind Weapon, bool InTarget), SoundKind> StuckKinds =
+        new Dictionary<(WeaponKind Weapon, bool InTarget), SoundKind>
+        {
+            [(WeaponKind.ThrowingKnives, true)] = SoundKind.KnifeHit,
+            [(WeaponKind.ThrowingKnives, false)] = SoundKind.KnifeStoneHit,
         }.ToImmutableDictionary();
 
     /// <summary>The sound of a shot by ranged weapon besides the pistol's (issue #793); a weapon without an entry shoots silently.</summary>
@@ -536,6 +570,7 @@ public static class SoundBoard
         new Dictionary<WeaponKind, SoundKind>
         {
             [WeaponKind.StakeCrossbow] = SoundKind.CrossbowShot,
+            [WeaponKind.ThrowingKnives] = SoundKind.KnifeThrow,
         }.ToImmutableDictionary();
 
     /// <summary>The sound of starting to reload by ranged weapon; a weapon without an entry makes the pistol's (issue #793).</summary>
