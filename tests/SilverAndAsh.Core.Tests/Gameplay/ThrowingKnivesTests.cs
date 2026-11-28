@@ -26,6 +26,12 @@ public class ThrowingKnivesTests
     /// <summary>A bat that survives a knife, so the knife can be seen sticking in it. It flies as every bat does.</summary>
     private static readonly Balance SturdyBat = Balance.Default with { Bat = Balance.Default.Bat with { MaxHealth = 100_000 } };
 
+    /// <summary>
+    /// Knives that stick in the first stone they meet. Since issue #822 the game's knives glance off stone first
+    /// (ThrowingKnivesRicochetTests); what sticking in stone does is tested here with the ricochets switched off.
+    /// </summary>
+    private static readonly Balance FirstStoneKeeps = Sturdy with { KnifeFlight = Flight with { Ricochets = 0 } };
+
     /// <summary>A 14 x 14 m room: the player in the middle, the bat in a corner - it sees the player and comes to circle.</summary>
     private const string BatRoom = "B......\n.......\n.......\n...P...\n.......\n.......\n.......";
 
@@ -376,8 +382,8 @@ public class ThrowingKnivesTests
     [Fact]
     public void A_wall_stops_the_knife_and_it_sticks_there()
     {
-        var world = World("P\n.\n#\nD");
-        var wall = Raycast.AgainstLevel(world.Level, world.Player.EyePosition, world.Player.View.Forward, Knives.Range)!.Value;
+        var world = World("P\n.\n#\nD", FirstStoneKeeps);
+        var wall =Raycast.AgainstLevel(world.Level, world.Player.EyePosition, world.Player.View.Forward, Knives.Range)!.Value;
 
         var (events, stuckInTick) = ThrowAndWatch(world);
 
@@ -456,7 +462,7 @@ public class ThrowingKnivesTests
     [Fact]
     public void A_knife_in_a_wall_stays_when_a_target_falls()
     {
-        var balance = Balance.Default with { Dummy = Balance.Default.Dummy with { MaxHealth = 1 } };
+        var balance = FirstStoneKeeps with { Dummy = Balance.Default.Dummy with { MaxHealth = 1 } };
         var world = World("P\n.\nD\n.\n#", balance);
         AimAt(world, world.Player.EyePosition + new Vector3(0f, 1.5f, 3f));   // over the dummy's head, into stone
         var (first, _) = ThrowAndWatch(world);
@@ -567,7 +573,8 @@ public class ThrowingKnivesTests
     public void Stone_just_before_a_target_on_the_stretch_of_one_tick_keeps_the_knife()
     {
         // A column stands so close before the dummy that the knife would reach both within the stretch of one tick:
-        // it sticks in the column, the dummy behind is not hurt.
+        // without ricochets it sticks in the column, the dummy behind is not hurt. (With them it glances off the column:
+        // ThrowingKnivesRicochetTests.)
         var open = LevelParser.Parse(Corridor(2, "D\n."));
         var probe = World(open);
         var eye = probe.Player.EyePosition;
@@ -580,7 +587,7 @@ public class ThrowingKnivesTests
 
         // The column's front halfway between the start of that stretch and the dummy's front.
         var column = new Column(eye.X, eye.Z + start + intoStretch / 2f + Column.Radius);
-        var world = World(open.WithColumns([column]));
+        var world = World(open.WithColumns([column]), FirstStoneKeeps);
         var stone = Raycast.AgainstLevel(world.Level, eye, forward, Knives.Range)!.Value;
         Assert.True(start < stone.Distance && stone.Distance < toDummy, "The column's front must lie on the same stretch as the dummy's, before it.");
 

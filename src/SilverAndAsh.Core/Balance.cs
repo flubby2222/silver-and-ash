@@ -1353,6 +1353,12 @@ public sealed record ThrownBalance
 
     /// <summary>How many knives stay stuck in walls and bodies at once; with one more the oldest is gone.</summary>
     public int StuckMax { get; init; } = 24;
+
+    /// <summary>
+    /// How often a knife glances off stone before the next stone keeps it (issue #822); 0 = it sticks in the first.
+    /// A target ends the flight at once, however often the knife has glanced off.
+    /// </summary>
+    public int Ricochets { get; init; } = 2;
 }
 
 /// <summary>Balancing values of the bat's blood bolt.</summary>

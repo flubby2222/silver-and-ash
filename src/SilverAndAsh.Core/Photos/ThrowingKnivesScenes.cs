@@ -1,6 +1,7 @@
 using System.Numerics;
 using SilverAndAsh.Core.Gameplay;
 using SilverAndAsh.Core.Input;
+using SilverAndAsh.Core.Physics;
 using SilverAndAsh.Core.Presentation;
 using SilverAndAsh.Core.World;
 
@@ -38,7 +39,7 @@ internal static class ThrowingKnivesScenes
             studio => Thrown(Before(studio, 'D'), 1, Settled)),
         new("knives-gorm-3m", "A throwing knife in Gorm 3 m away, a few ticks after it hit: the knife goes with the body. A ghoul falls to one knife and takes it with it (issue #821).",
             studio => Thrown(Before(studio, 'T', RoomTemplate.RoomCeilingHeight), 1, 10)),
-        new("knives-stone-3m", "Three throwing knives in the wall, seen from 3 m: the hand empty, the handles hang a little (issue #821).",
+        new("knives-stone-3m", "Three throwing knives in the wall, seen from 3 m: the hand empty, the handles hang a little (issue #821). For this picture they do not glance off first (issue #822).",
             studio => Thrown(BeforeWall(studio), ThrowingKnivesPose.Count, Settled)),
         new("knives-reload-down", "The throwing knives in the reload, a fifth of the way: the empty hand goes down out of the picture (issue #821).",
             studio => Reloading(studio, 0.2f)),
@@ -47,6 +48,47 @@ internal static class ThrowingKnivesScenes
         new("hud-knives", "Like hud-weapons, but the throwing knives in hand: their icon, a small picture of the knife (issue #821).",
             studio => new PhotoSetup(KnivesInHand(PhotoScenes.AllWeapons(studio.StartRun())))),
     ];
+
+    // Ticks of stillness before the throw of the clip, and after its knife has stuck.
+    private const int Rest = 12;
+    private const int Afterwards = 40;
+
+    // Where the knife of the clip ends: in the wall, so far from the side wall and so high above the floor.
+    private const float StuckFromSideWall = 0.9f;
+    private const float StuckHeight = 0.9f;
+
+    /// <summary>
+    /// The clip of a knife that glances off twice (issue #822), with the game's values: the player stands in a corner
+    /// of the hall, 3 m from either wall, and throws at the floor before it. The knife glances off the floor and off
+    /// the side wall, and the wall ahead - the third stone - keeps it. All of it happens within 4 m, in view. The throw
+    /// aims at the picture the place in the wall has behind the side wall and under the floor. A picture after every
+    /// tick: the knife flies half a metre in one.
+    /// </summary>
+    public static MotionScene Ricochet() =>
+        new("knives-ricochet", "A throwing knife thrown at the floor in a corner of the hall glances off the floor and off the side wall and sticks in the wall 3 m ahead (issue #822).",
+            studio =>
+            {
+                var world = KnivesInHand(studio.Arena('D', DummyMetres));
+                var player = world.Player;
+                var ahead = Vector3.Normalize(player.Position - world.Targets.Single().Body.Position) with { Y = 0f };
+                var aside = new Vector3(-ahead.Z, 0f, ahead.X);
+
+                // Into the corner: as far from the side wall as the wall behind the start is away.
+                var toSideWall = Raycast.AgainstLevel(world.Level, player.EyePosition, aside, world.Level.Width * Level.CellSize)!.Value.Distance;
+                player.PlaceAt(player.Position + (aside * (toSideWall - WallMetres)));
+
+                var eye = player.EyePosition;
+                var picture = eye + (ahead * WallMetres) + (aside * (WallMetres + StuckFromSideWall));
+                picture.Y = -StuckHeight;
+                PhotoStudio.Face(player, picture);
+                var flight = (int)MathF.Ceiling(Vector3.Distance(eye, picture) / (world.Balance.KnifeFlight.Speed * SimulationClock.SecondsPerTick));
+                return new PhotoSetup(world)
+                {
+                    Ticks = Rest + flight + Afterwards,
+                    Input = tick => PlayerInput.None with { Shoot = tick == Rest },
+                };
+            },
+            FrameEvery: 1);
 
     // Ticks from one throw to the next: the weapon's cooldown and two ticks of room.
     private static int ThrowEvery(GameWorld world) => SimulationClock.SecondsToTicks(world.Balance.ThrowingKnives.Cooldown) + 2;
@@ -103,9 +145,12 @@ internal static class ThrowingKnivesScenes
     }
 
     // The bare hall, the player turned round to the wall 3 m behind them, looking at it a little below eye height.
+    // The knives of this world stick in the first stone: with the game's ricochets (issue #822) none would end in the
+    // wall the picture is taken of.
     private static GameWorld BeforeWall(PhotoStudio studio)
     {
-        var world = KnivesInHand(studio.Arena('D', DummyMetres));
+        var firstStoneKeeps = studio.Balance with { KnifeFlight = studio.Balance.KnifeFlight with { Ricochets = 0 } };
+        var world = KnivesInHand(studio.Arena('D', DummyMetres, balance: firstStoneKeeps));
         var player = world.Player;
         var away = Vector3.Normalize(player.Position - world.Targets.Single().Body.Position) with { Y = 0f };
         PhotoStudio.Face(player, player.Position + (away * WallMetres) + new Vector3(-0.1f, 1.35f, 0f));

@@ -60,9 +60,48 @@ public class MotionSceneTests
     {
         string[] wanted = ["blade-charge", "blade-quick", "pistol-shot", "pistol-reload", "door-normal-opening", "door-boss-opening",
             "pistol-shot-in-swing", "pistol-reload-in-swing", "pistol-reload-cancelled", "rifle-reload-to-pistol",
-            "gorm-slam", "gorm-slam-far", "gorm-slam-far-b", "gorm-slam-far-c", "stairs-rising", "column-breaking"];
+            "gorm-slam", "gorm-slam-far", "gorm-slam-far-b", "gorm-slam-far-c", "stairs-rising", "column-breaking",
+            "knives-ricochet"]; // issue #822
 
         Assert.Equal(wanted.Order(), MotionScenes.All.Select(scene => scene.Name).Order());
+    }
+
+    [Fact]
+    public void The_knife_of_the_ricochet_clip_glances_off_floor_and_side_wall_and_sticks_in_the_wall_ahead()
+    {
+        // Issue #822: the clip shows the whole rule with the game's values - two ricochets, then the third stone keeps
+        // the knife - and all of it near enough to be seen.
+        var scene = Scene("knives-ricochet");
+        var setup = scene.Build(Studio());
+        var world = setup.World;
+        var eye = world.Player.EyePosition;
+        var view = world.Player.View.Forward;
+        var events = new List<GameEvent>();
+        var flying = 0;
+
+        setup.Film(scene.FrameEvery, _ => flying += world.FlyingKnives.Count, afterTick: () => events.AddRange(world.Events));
+
+        Assert.Equal(2, Balance.Default.KnifeFlight.Ricochets);
+        var ricochets = events.OfType<KnifeRicocheted>().ToList();
+        Assert.Equal([1, 2], ricochets.Select(ricochet => ricochet.Count).ToArray());
+        Assert.Equal(Vector3.UnitY, ricochets[0].Normal);
+        Assert.Equal(0f, ricochets[0].Point.Y, 3);
+        Assert.Equal(0f, ricochets[1].Normal.Y);
+        var stuck = Assert.Single(events.OfType<KnifeStuck>());
+        Assert.Null(stuck.TargetId);
+        var inWall = Assert.Single(world.StuckKnives);
+        Assert.Equal(0.9f, MathF.Abs(Vector3.Dot(inWall.Point - ricochets[1].Point, ricochets[1].Normal)), 2);
+        Assert.Equal(0.9f, inWall.Point.Y, 2);
+        Assert.Equal(Balance.Default.Dummy.MaxHealth, Assert.Single(world.Dummies).Health);
+
+        // Every stone the knife meets lies before the camera and within 5 m of it.
+        Assert.All(ricochets.Select(ricochet => ricochet.Point).Append(inWall.Point), point =>
+        {
+            Assert.InRange(Vector3.Distance(eye, point), 1f, 5f);
+            Assert.True(Vector3.Dot(Vector3.Normalize(point - eye), view) > MathF.Cos(MathF.PI / 6f), $"{point} is more than 30 degrees off the view.");
+        });
+        Assert.True(flying >= 8, $"The knife is in the air on only {flying} pictures.");
+        Assert.Empty(world.FlyingKnives);
     }
 
     [Fact]
